@@ -1,14 +1,14 @@
-from typing import List
+from typing import List, Union
 
 from lang.exceptions import StackUnderflow, UnhandledOperationError
-from lang.operations import Divide, IntPush, Minus, Multiply, Operation, Plus, PrintInt
+from lang.operations import Divide, IntPrint, IntPush, Minus, Multiply, Operation, Plus
 
 
 def run_program(operations: List[Operation]) -> None:
     Program(operations).run()
 
 
-StackItem = int
+StackItem = Union[int, bool]
 
 
 class Program:
@@ -34,7 +34,7 @@ class Program:
                 self.push(operation.value)
                 self.instruction_pointer += 1
 
-            elif isinstance(operation, PrintInt):
+            elif isinstance(operation, IntPrint):
                 x = self.pop()
                 print(x, end="")
                 self.instruction_pointer += 1

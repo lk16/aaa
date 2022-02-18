@@ -6,12 +6,12 @@ from pytest import CaptureFixture
 from lang.exceptions import StackUnderflow, UnhandledOperationError
 from lang.operations import (
     Divide,
+    IntPrint,
     IntPush,
     Minus,
     Multiply,
     Operation,
     Plus,
-    PrintInt,
     UnhandledOperation,
 )
 from lang.run import run_program
@@ -23,12 +23,12 @@ from lang.run import run_program
         ([], ""),
         ([IntPush(1)], ""),
         ([IntPush(1), IntPush(1)], ""),
-        ([IntPush(1), PrintInt()], "1"),
-        ([IntPush(1), PrintInt(), IntPush(2), PrintInt()], "12"),
-        ([IntPush(6), IntPush(2), Plus(), PrintInt()], "8"),
-        ([IntPush(6), IntPush(2), Minus(), PrintInt()], "4"),
-        ([IntPush(6), IntPush(2), Multiply(), PrintInt()], "12"),
-        ([IntPush(6), IntPush(2), Divide(), PrintInt()], "3"),
+        ([IntPush(1), IntPrint()], "1"),
+        ([IntPush(1), IntPrint(), IntPush(2), IntPrint()], "12"),
+        ([IntPush(6), IntPush(2), Plus(), IntPrint()], "8"),
+        ([IntPush(6), IntPush(2), Minus(), IntPrint()], "4"),
+        ([IntPush(6), IntPush(2), Multiply(), IntPrint()], "12"),
+        ([IntPush(6), IntPush(2), Divide(), IntPrint()], "3"),
     ],
 )
 def test_run_program_ok(
@@ -49,7 +49,7 @@ def test_run_program_fail() -> None:
 @pytest.mark.parametrize(
     ["operations"],
     [
-        ([PrintInt()],),
+        ([IntPrint()],),
         ([Plus()],),
         ([IntPush(1), Plus()],),
         ([Minus()],),

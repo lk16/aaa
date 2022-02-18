@@ -3,7 +3,7 @@ from typing import List
 import pytest
 
 from lang.exceptions import ParseError
-from lang.operations import Divide, IntPush, Minus, Multiply, Operation, Plus, PrintInt
+from lang.operations import Divide, IntPrint, IntPush, Minus, Multiply, Operation, Plus
 from lang.parse import parse
 
 
@@ -15,7 +15,7 @@ from lang.parse import parse
         ("1 1", [IntPush(1), IntPush(1)]),
         ("11", [IntPush(11)]),
         ("123456789", [IntPush(123456789)]),
-        ("int_print", [PrintInt()]),
+        ("int_print", [IntPrint()]),
         ("+", [Plus()]),
         ("-", [Minus()]),
         ("*", [Multiply()]),

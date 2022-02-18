@@ -18,7 +18,7 @@ class IntPush(Operation):
 
 
 @dataclass
-class PrintInt(Operation):
+class IntPrint(Operation):
     ...
 
 

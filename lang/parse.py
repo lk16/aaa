@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from lang.exceptions import ParseError
-from lang.operations import Divide, IntPush, Minus, Multiply, Operation, Plus, PrintInt
+from lang.operations import Divide, IntPrint, IntPush, Minus, Multiply, Operation, Plus
 
 
 def parse(code: str) -> List[Operation]:
@@ -10,7 +10,7 @@ def parse(code: str) -> List[Operation]:
         operation: Operation
 
         simple_operations: Dict[str, Operation] = {
-            "int_print": PrintInt(),
+            "int_print": IntPrint(),
             "+": Plus(),
             "-": Minus(),
             "*": Multiply(),
