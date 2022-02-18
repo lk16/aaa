@@ -1,7 +1,20 @@
 from typing import Dict, List
 
 from lang.exceptions import ParseError
-from lang.operations import Divide, IntPrint, IntPush, Minus, Multiply, Operation, Plus
+from lang.operations import (
+    And,
+    BoolPrint,
+    BoolPush,
+    Divide,
+    IntPrint,
+    IntPush,
+    Minus,
+    Multiply,
+    Not,
+    Operation,
+    Or,
+    Plus,
+)
 
 
 def parse(code: str) -> List[Operation]:
@@ -15,6 +28,12 @@ def parse(code: str) -> List[Operation]:
             "-": Minus(),
             "*": Multiply(),
             "/": Divide(),
+            "true": BoolPush(True),
+            "false": BoolPush(False),
+            "and": And(),
+            "or": Or(),
+            "not": Not(),
+            "bool_print": BoolPrint(),
         }
 
         if word in simple_operations:

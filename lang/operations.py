@@ -40,3 +40,28 @@ class Multiply(Operation):
 @dataclass
 class Divide(Operation):
     ...
+
+
+@dataclass
+class BoolPush(Operation):
+    value: bool
+
+
+@dataclass
+class And(Operation):
+    ...
+
+
+@dataclass
+class Or(Operation):
+    ...
+
+
+@dataclass
+class Not(Operation):
+    ...
+
+
+@dataclass
+class BoolPrint(Operation):
+    ...

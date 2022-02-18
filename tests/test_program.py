@@ -13,6 +13,11 @@ from lang.run import run_program
         ("1 2 + int_print", "3"),
         ("1 2 3 4 + + + int_print", "10"),
         ("1 2 3 * + int_print", "7"),
+        ("true bool_print", "true"),
+        ("false bool_print", "false"),
+        ("true false and bool_print", "false"),
+        ("false not bool_print", "true"),
+        ("false true or bool_print", "true"),
     ],
 )
 def test_run_program_ok(

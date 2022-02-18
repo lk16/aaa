@@ -3,7 +3,20 @@ from typing import List
 import pytest
 
 from lang.exceptions import ParseError
-from lang.operations import Divide, IntPrint, IntPush, Minus, Multiply, Operation, Plus
+from lang.operations import (
+    And,
+    BoolPrint,
+    BoolPush,
+    Divide,
+    IntPrint,
+    IntPush,
+    Minus,
+    Multiply,
+    Not,
+    Operation,
+    Or,
+    Plus,
+)
 from lang.parse import parse
 
 
@@ -20,6 +33,12 @@ from lang.parse import parse
         ("-", [Minus()]),
         ("*", [Multiply()]),
         ("/", [Divide()]),
+        ("true", [BoolPush(True)]),
+        ("false", [BoolPush(False)]),
+        ("and", [And()]),
+        ("or", [Or()]),
+        ("not", [Not()]),
+        ("bool_print", [BoolPrint()]),
     ],
 )
 def test_parse_ok(code: str, expected_operations: List[Operation]) -> None:

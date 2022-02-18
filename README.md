@@ -22,10 +22,9 @@ poetry shell
 
 ### Features
 - integers
+- booleans
 
 ### Upcoming features
-- booleans
-- boolean operations (`not`, `or`, `and`)
 - integer comparisons (`=`, `>`, `<`, `>=`, `<=`)
 - stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)

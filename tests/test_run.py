@@ -5,12 +5,17 @@ from pytest import CaptureFixture
 
 from lang.exceptions import StackUnderflow, UnhandledOperationError
 from lang.operations import (
+    And,
+    BoolPrint,
+    BoolPush,
     Divide,
     IntPrint,
     IntPush,
     Minus,
     Multiply,
+    Not,
     Operation,
+    Or,
     Plus,
     UnhandledOperation,
 )
@@ -58,6 +63,12 @@ def test_run_program_fail() -> None:
         ([IntPush(1), Multiply()],),
         ([Divide()],),
         ([IntPush(1), Divide()],),
+        ([BoolPrint()],),
+        ([And()],),
+        ([BoolPush(True), And()],),
+        ([Or()],),
+        ([BoolPush(True), Or()],),
+        ([Not()],),
     ],
 )
 def test_run_program_stack_underflow(operations: List[Operation]) -> None:
