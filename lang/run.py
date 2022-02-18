@@ -33,14 +33,22 @@ class Program:
     def push(self, item: StackItem) -> None:
         self.stack.append(item)
 
-    def pop(self) -> StackItem:
+    def pop(self, expected_type: type) -> StackItem:
         try:
-            return self.stack.pop()
+            item = self.stack.pop()
         except IndexError as e:
             raise StackUnderflow from e
 
-    def pop_two(self) -> Tuple[StackItem, StackItem]:
-        return self.pop(), self.pop()
+        # TODO: remove type checking here once we have static type checking
+        if type(item) != expected_type:
+            raise TypeError(
+                f"Expected {expected_type.__name__} on top of stack, but found {type(item).__name__}"
+            )
+
+        return item
+
+    def pop_two(self, expected_type: type) -> Tuple[StackItem, StackItem]:
+        return self.pop(expected_type), self.pop(expected_type)
 
     def run(self) -> None:
         # NOTE This wIll be set to false by future jump operations like if/else/while
@@ -53,48 +61,48 @@ class Program:
                 self.push(operation.value)
 
             elif isinstance(operation, IntPrint):
-                x = self.pop()
+                x = self.pop(int)
                 print(x, end="")
 
             elif isinstance(operation, Plus):
-                x, y = self.pop_two()
+                x, y = self.pop_two(int)
                 self.push(x + y)
 
             elif isinstance(operation, Minus):
-                x, y = self.pop_two()
+                x, y = self.pop_two(int)
                 self.push(y - x)
 
             elif isinstance(operation, Multiply):
-                x, y = self.pop_two()
+                x, y = self.pop_two(int)
                 self.push(x * y)
 
             elif isinstance(operation, Divide):
-                x, y = self.pop_two()
+                x, y = self.pop_two(int)
                 self.push(y // x)
 
             elif isinstance(operation, BoolPush):
                 self.push(operation.value)
 
             elif isinstance(operation, And):
-                x, y = self.pop_two()
+                x, y = self.pop_two(bool)
                 self.push(x and y)
 
             elif isinstance(operation, Or):
-                x, y = self.pop_two()
+                x, y = self.pop_two(bool)
                 self.push(x or y)
 
             elif isinstance(operation, Not):
-                x = self.pop()
+                x = self.pop(bool)
                 self.push(not x)
 
             elif isinstance(operation, BoolPrint):
-                x = self.pop()
+                x = self.pop(bool)
                 if x:
                     print("true", end="")
                 else:
                     print("false", end="")
 
-            else:  # pragma: nocover
+            else:
                 raise UnhandledOperationError(operation)
 
             if increment_instruction_pointer:

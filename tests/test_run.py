@@ -44,10 +44,17 @@ def test_run_program_ok(
     assert expected_output == output
 
 
-def test_run_program_fail() -> None:
+def test_run_program_unhandled_operation() -> None:
     operations: List[Operation] = [UnhandledOperation()]
 
     with pytest.raises(UnhandledOperationError):
+        run_program(operations)
+
+
+def test_run_program_type_error() -> None:
+    operations: List[Operation] = [BoolPush(True), IntPrint()]
+
+    with pytest.raises(TypeError):
         run_program(operations)
 
 
