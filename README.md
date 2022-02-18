@@ -21,7 +21,6 @@ pytest --cov=lang --cov-report=term-missing --pdb -vv
 ```
 
 ### Upcoming features
-- math operations (`+`, `-`, `/`, `*`)
 - strings
 - string operations (`print`)
 - booleans

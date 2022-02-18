@@ -20,3 +20,23 @@ class PushInt(Operation):
 @dataclass
 class PrintInt(Operation):
     ...
+
+
+@dataclass
+class Plus(Operation):
+    ...
+
+
+@dataclass
+class Minus(Operation):
+    ...
+
+
+@dataclass
+class Multiply(Operation):
+    ...
+
+
+@dataclass
+class Divide(Operation):
+    ...

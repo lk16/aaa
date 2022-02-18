@@ -4,7 +4,16 @@ import pytest
 from pytest import CaptureFixture
 
 from lang.exceptions import StackUnderflow, UnhandledOperationError
-from lang.operations import Operation, PrintInt, PushInt, UnhandledOperation
+from lang.operations import (
+    Divide,
+    Minus,
+    Multiply,
+    Operation,
+    Plus,
+    PrintInt,
+    PushInt,
+    UnhandledOperation,
+)
 from lang.run import run_program
 
 
@@ -16,6 +25,10 @@ from lang.run import run_program
         ([PushInt(1), PushInt(1)], ""),
         ([PushInt(1), PrintInt()], "1"),
         ([PushInt(1), PrintInt(), PushInt(2), PrintInt()], "12"),
+        ([PushInt(6), PushInt(2), Plus(), PrintInt()], "8"),
+        ([PushInt(6), PushInt(2), Minus(), PrintInt()], "4"),
+        ([PushInt(6), PushInt(2), Multiply(), PrintInt()], "12"),
+        ([PushInt(6), PushInt(2), Divide(), PrintInt()], "3"),
     ],
 )
 def test_run_program_ok(
@@ -26,17 +39,27 @@ def test_run_program_ok(
     assert expected_output == output
 
 
-@pytest.mark.parametrize(
-    ["operations", "expected_exception"],
-    [
-        ([UnhandledOperation()], UnhandledOperationError(UnhandledOperation())),
-        ([PrintInt()], StackUnderflow()),
-    ],
-)
-def test_run_program_fail(
-    operations: List[Operation], expected_exception: Exception
-) -> None:
-    with pytest.raises(type(expected_exception)) as e:
+def test_run_program_fail() -> None:
+    operations: List[Operation] = [UnhandledOperation()]
+
+    with pytest.raises(UnhandledOperationError):
         run_program(operations)
 
-    expected_exception.args == e.value.args
+
+@pytest.mark.parametrize(
+    ["operations"],
+    [
+        ([PrintInt()],),
+        ([Plus()],),
+        ([PushInt(1), Plus()],),
+        ([Minus()],),
+        ([PushInt(1), Minus()],),
+        ([Multiply()],),
+        ([PushInt(1), Multiply()],),
+        ([Divide()],),
+        ([PushInt(1), Divide()],),
+    ],
+)
+def test_run_program_stack_underflow(operations: List[Operation]) -> None:
+    with pytest.raises(StackUnderflow):
+        run_program(operations)

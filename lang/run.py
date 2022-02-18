@@ -1,7 +1,7 @@
 from typing import List
 
 from lang.exceptions import StackUnderflow, UnhandledOperationError
-from lang.operations import Operation, PrintInt, PushInt
+from lang.operations import Divide, Minus, Multiply, Operation, Plus, PrintInt, PushInt
 
 
 def run_program(operations: List[Operation]) -> None:
@@ -35,7 +35,32 @@ class Program:
                 self.instruction_pointer += 1
 
             elif isinstance(operation, PrintInt):
-                print(self.pop(), end="")
+                x = self.pop()
+                print(x, end="")
+                self.instruction_pointer += 1
+
+            elif isinstance(operation, Plus):
+                x = self.pop()
+                y = self.pop()
+                self.push(x + y)
+                self.instruction_pointer += 1
+
+            elif isinstance(operation, Minus):
+                x = self.pop()
+                y = self.pop()
+                self.push(y - x)
+                self.instruction_pointer += 1
+
+            elif isinstance(operation, Multiply):
+                x = self.pop()
+                y = self.pop()
+                self.push(x * y)
+                self.instruction_pointer += 1
+
+            elif isinstance(operation, Divide):
+                x = self.pop()
+                y = self.pop()
+                self.push(y // x)
                 self.instruction_pointer += 1
 
             else:  # pragma: nocover
