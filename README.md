@@ -6,10 +6,8 @@ The name of this language is just the first letter of the latin alphabet [repeat
 
 ### How to run
 ```sh
-# Install dependencies
+# Install dependencies and enter poetry environment
 poetry install
-
-# Enter poetry environment
 poetry shell
 
 # Run an Aaa program from shell argument
@@ -17,6 +15,9 @@ poetry shell
 
 # Run an Aaa program from file
 ./aaa.py run samples/print_number.aaa
+
+# Run unit tests
+pytest --cov=lang --cov-report=term-missing --pdb -vv
 ```
 
 ### Upcoming features
