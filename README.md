@@ -12,14 +12,19 @@ poetry install
 # Enter poetry environment
 poetry shell
 
-# Run an Aaa program
+# Run an Aaa program from shell argument
+./aaa.py cmd '42 print_int'
+
+# Run an Aaa program from file
 ./aaa.py run samples/print_number.aaa
 ```
 
 ### Upcoming features
 - math operations (`+`, `-`, `/`, `*`)
-- boolean operations (`not`, `or`, `and`)
-- string operations
+- strings
+- string operations (`print`)
+- booleans
+- boolean operations (`not`, `or`, `and`, `=`, `>`, `str_eq`)
 - stack operations (`drop`, `dup`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)

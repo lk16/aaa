@@ -21,5 +21,12 @@ def run(file: str) -> None:
     run_program(program)
 
 
+@cli.command()
+@click.argument("code", type=str)
+def cmd(code: str) -> None:
+    program = parse(code)
+    run_program(program)
+
+
 if __name__ == "__main__":
     cli()
