@@ -65,3 +65,33 @@ class Not(Operation):
 @dataclass
 class BoolPrint(Operation):
     ...
+
+
+@dataclass
+class IntEquals(Operation):
+    ...
+
+
+@dataclass
+class IntGreaterThan(Operation):
+    ...
+
+
+@dataclass
+class IntGreaterEquals(Operation):
+    ...
+
+
+@dataclass
+class IntLessThan(Operation):
+    ...
+
+
+@dataclass
+class IntLessEquals(Operation):
+    ...
+
+
+@dataclass
+class IntNotEqual(Operation):
+    ...

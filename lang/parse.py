@@ -6,6 +6,12 @@ from lang.operations import (
     BoolPrint,
     BoolPush,
     Divide,
+    IntEquals,
+    IntGreaterEquals,
+    IntGreaterThan,
+    IntLessEquals,
+    IntLessThan,
+    IntNotEqual,
     IntPrint,
     IntPush,
     Minus,
@@ -34,6 +40,12 @@ def parse(code: str) -> List[Operation]:
             "or": Or(),
             "not": Not(),
             "bool_print": BoolPrint(),
+            "=": IntEquals(),
+            ">": IntGreaterThan(),
+            ">=": IntGreaterEquals(),
+            "<": IntLessThan(),
+            "<=": IntLessEquals(),
+            "!=": IntNotEqual(),
         }
 
         if word in simple_operations:

@@ -25,7 +25,6 @@ poetry shell
 - booleans
 
 ### Upcoming features
-- integer comparisons (`=`, `>`, `<`, `>=`, `<=`)
 - stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)

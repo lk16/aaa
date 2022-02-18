@@ -6,6 +6,12 @@ from lang.operations import (
     BoolPrint,
     BoolPush,
     Divide,
+    IntEquals,
+    IntGreaterEquals,
+    IntGreaterThan,
+    IntLessEquals,
+    IntLessThan,
+    IntNotEqual,
     IntPrint,
     IntPush,
     Minus,
@@ -50,7 +56,8 @@ class Program:
     def pop_two(self, expected_type: type) -> Tuple[StackItem, StackItem]:
         return self.pop(expected_type), self.pop(expected_type)
 
-    def run(self) -> None:
+    def run(self) -> None:  # noqa: C901  # allow high complexity of this function
+
         # NOTE This wIll be set to false by future jump operations like if/else/while
         increment_instruction_pointer = True
 
@@ -101,6 +108,30 @@ class Program:
                     print("true", end="")
                 else:
                     print("false", end="")
+
+            elif isinstance(operation, IntEquals):
+                x, y = self.pop_two(int)
+                self.push(x == y)
+
+            elif isinstance(operation, IntLessThan):
+                x, y = self.pop_two(int)
+                self.push(y < x)
+
+            elif isinstance(operation, IntLessEquals):
+                x, y = self.pop_two(int)
+                self.push(y <= x)
+
+            elif isinstance(operation, IntGreaterThan):
+                x, y = self.pop_two(int)
+                self.push(y > x)
+
+            elif isinstance(operation, IntGreaterEquals):
+                x, y = self.pop_two(int)
+                self.push(y >= x)
+
+            elif isinstance(operation, IntNotEqual):
+                x, y = self.pop_two(int)
+                self.push(y != x)
 
             else:
                 raise UnhandledOperationError(operation)

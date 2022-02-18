@@ -18,6 +18,13 @@ from lang.run import run_program
         ("true false and bool_print", "false"),
         ("false not bool_print", "true"),
         ("false true or bool_print", "true"),
+        ("2 3 = bool_print", "false"),
+        ("3 3 = bool_print", "true"),
+        ("2 3 > bool_print", "false"),
+        ("2 3 < bool_print", "true"),
+        ("2 3 <= bool_print", "true"),
+        ("2 3 >= bool_print", "false"),
+        ("2 3 != bool_print", "true"),
     ],
 )
 def test_run_program_ok(
@@ -26,5 +33,6 @@ def test_run_program_ok(
     operations = parse(code)
     run_program(operations)
 
-    output, _ = capfd.readouterr()
-    assert expected_output == output
+    stdout, stderr = capfd.readouterr()
+    assert expected_output == stdout
+    assert "" == stderr
