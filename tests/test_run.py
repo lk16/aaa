@@ -3,7 +3,7 @@ from typing import List
 import pytest
 from pytest import CaptureFixture
 
-from lang.exceptions import StackUnderflow, UnhandledOperationError
+from lang.exceptions import StackUnderflow, UnexpectedType, UnhandledOperationError
 from lang.operations import (
     And,
     BoolPrint,
@@ -62,10 +62,10 @@ def test_run_program_unhandled_operation() -> None:
         run_program(operations)
 
 
-def test_run_program_type_error() -> None:
+def test_run_program_unexpected_type() -> None:
     operations: List[Operation] = [BoolPush(True), IntPrint()]
 
-    with pytest.raises(TypeError):
+    with pytest.raises(UnexpectedType):
         run_program(operations)
 
 

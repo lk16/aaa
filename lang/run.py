@@ -1,6 +1,6 @@
 from typing import List, Tuple, Union
 
-from lang.exceptions import StackUnderflow, UnhandledOperationError
+from lang.exceptions import StackUnderflow, UnexpectedType, UnhandledOperationError
 from lang.operations import (
     And,
     BoolPrint,
@@ -61,8 +61,8 @@ class Program:
 
         # TODO: remove type checking here once we have static type checking
         if type(item) != expected_type:
-            raise TypeError(
-                f"Expected {expected_type.__name__} on top of stack, but found {type(item).__name__}"
+            raise UnexpectedType(
+                f"expected {expected_type.__name__} on top of stack, but found {type(item).__name__}"
             )
 
         return item
