@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Tuple, Union
 
 from lang.exceptions import StackUnderflow, UnhandledOperationError
 from lang.operations import (
@@ -39,63 +39,53 @@ class Program:
         except IndexError as e:
             raise StackUnderflow from e
 
+    def pop_two(self) -> Tuple[StackItem, StackItem]:
+        return self.pop(), self.pop()
+
     def run(self) -> None:
+        # NOTE This wIll be set to false by future jump operations like if/else/while
+        increment_instruction_pointer = True
+
         while self.instruction_pointer < len(self.operations):
             operation = self.operations[self.instruction_pointer]
 
             if isinstance(operation, IntPush):
                 self.push(operation.value)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, IntPrint):
                 x = self.pop()
                 print(x, end="")
-                self.instruction_pointer += 1
 
             elif isinstance(operation, Plus):
-                x = self.pop()
-                y = self.pop()
+                x, y = self.pop_two()
                 self.push(x + y)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, Minus):
-                x = self.pop()
-                y = self.pop()
+                x, y = self.pop_two()
                 self.push(y - x)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, Multiply):
-                x = self.pop()
-                y = self.pop()
+                x, y = self.pop_two()
                 self.push(x * y)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, Divide):
-                x = self.pop()
-                y = self.pop()
+                x, y = self.pop_two()
                 self.push(y // x)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, BoolPush):
                 self.push(operation.value)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, And):
-                x = self.pop()
-                y = self.pop()
+                x, y = self.pop_two()
                 self.push(x and y)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, Or):
-                x = self.pop()
-                y = self.pop()
+                x, y = self.pop_two()
                 self.push(x or y)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, Not):
                 x = self.pop()
                 self.push(not x)
-                self.instruction_pointer += 1
 
             elif isinstance(operation, BoolPrint):
                 x = self.pop()
@@ -103,7 +93,9 @@ class Program:
                     print("true", end="")
                 else:
                     print("false", end="")
-                self.instruction_pointer += 1
 
             else:  # pragma: nocover
                 raise UnhandledOperationError(operation)
+
+            if increment_instruction_pointer:
+                self.instruction_pointer += 1
