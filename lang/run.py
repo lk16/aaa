@@ -1,7 +1,7 @@
 from typing import List
 
 from lang.exceptions import StackUnderflow, UnhandledOperationError
-from lang.operations import Divide, Minus, Multiply, Operation, Plus, PrintInt, PushInt
+from lang.operations import Divide, IntPush, Minus, Multiply, Operation, Plus, PrintInt
 
 
 def run_program(operations: List[Operation]) -> None:
@@ -30,7 +30,7 @@ class Program:
         while self.instruction_pointer < len(self.operations):
             operation = self.operations[self.instruction_pointer]
 
-            if isinstance(operation, PushInt):
+            if isinstance(operation, IntPush):
                 self.push(operation.value)
                 self.instruction_pointer += 1
 

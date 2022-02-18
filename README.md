@@ -11,7 +11,7 @@ poetry install
 poetry shell
 
 # Run an Aaa program from shell argument
-./aaa.py cmd '42 print_int'
+./aaa.py cmd '42 int_print'
 
 # Run an Aaa program from file
 ./aaa.py run samples/print_number.aaa
@@ -20,18 +20,24 @@ poetry shell
 ./aaa.py runtests
 ```
 
+### Features
+- integers
+
 ### Upcoming features
-- strings
-- string operations (`print`)
 - booleans
-- boolean operations (`not`, `or`, `and`, `=`, `>`, `str_eq`)
-- stack operations (`drop`, `dup`)
+- boolean operations (`not`, `or`, `and`)
+- integer comparisons (`=`, `>`, `<`, `>=`, `<=`)
+- stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)
+- strings
+- string operations (`str_print`)
+- characters
+- character operations (`char_eq`)
 - static type checking
 - clear syntax errors
 - comments (`//`)
-- functions
+- functions (`fn`)
 - structs / classes ?
 - compile to native executable
 - compile itself

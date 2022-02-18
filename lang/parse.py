@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from lang.exceptions import ParseError
-from lang.operations import Divide, Minus, Multiply, Operation, Plus, PrintInt, PushInt
+from lang.operations import Divide, IntPush, Minus, Multiply, Operation, Plus, PrintInt
 
 
 def parse(code: str) -> List[Operation]:
@@ -10,7 +10,7 @@ def parse(code: str) -> List[Operation]:
         operation: Operation
 
         simple_operations: Dict[str, Operation] = {
-            "print_int": PrintInt(),
+            "int_print": PrintInt(),
             "+": Plus(),
             "-": Minus(),
             "*": Multiply(),
@@ -20,7 +20,7 @@ def parse(code: str) -> List[Operation]:
         if word in simple_operations:
             operation = simple_operations[word]
         elif word.isdigit():
-            operation = PushInt(int(word))
+            operation = IntPush(int(word))
         else:
             raise ParseError(f"Syntax error: can't handle '{code}'")
         operations.append(operation)

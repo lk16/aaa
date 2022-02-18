@@ -13,7 +13,7 @@ class UnhandledOperation(Operation):
 
 
 @dataclass
-class PushInt(Operation):
+class IntPush(Operation):
     value: int
 
 

@@ -9,10 +9,10 @@ from lang.run import run_program
     ["code", "expected_output"],
     [
         ("1", ""),
-        ("1 print_int", "1"),
-        ("1 2 + print_int", "3"),
-        ("1 2 3 4 + + + print_int", "10"),
-        ("1 2 3 * + print_int", "7"),
+        ("1 int_print", "1"),
+        ("1 2 + int_print", "3"),
+        ("1 2 3 4 + + + int_print", "10"),
+        ("1 2 3 * + int_print", "7"),
     ],
 )
 def test_run_program_ok(
