@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import subprocess
+
 import click
 
 from lang.parse import parse
@@ -26,6 +28,11 @@ def run(file: str) -> None:
 def cmd(code: str) -> None:
     program = parse(code)
     run_program(program)
+
+
+@cli.command()
+def runtests() -> None:
+    subprocess.run("pytest --cov=lang --cov-report=term-missing --pdb".split())
 
 
 if __name__ == "__main__":

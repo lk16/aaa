@@ -17,7 +17,7 @@ poetry shell
 ./aaa.py run samples/print_number.aaa
 
 # Run unit tests
-pytest --cov=lang --cov-report=term-missing --pdb -vv
+./aaa.py runtests
 ```
 
 ### Upcoming features
