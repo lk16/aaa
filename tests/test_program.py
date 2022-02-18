@@ -25,6 +25,11 @@ from lang.run import run_program
         ("2 3 <= bool_print", "true"),
         ("2 3 >= bool_print", "false"),
         ("2 3 != bool_print", "true"),
+        ("1 2 drop int_print", "1"),
+        ("1 dup int_print int_print", "11"),
+        ("1 2 swap int_print int_print", "12"),
+        ("1 2 over int_print int_print int_print", "121"),
+        ("1 2 3 rot int_print int_print int_print", "132"),
     ],
 )
 def test_run_program_ok(

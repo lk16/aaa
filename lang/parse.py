@@ -6,6 +6,8 @@ from lang.operations import (
     BoolPrint,
     BoolPush,
     Divide,
+    Drop,
+    Dup,
     IntEquals,
     IntGreaterEquals,
     IntGreaterThan,
@@ -19,7 +21,10 @@ from lang.operations import (
     Not,
     Operation,
     Or,
+    Over,
     Plus,
+    Rot,
+    Swap,
 )
 
 
@@ -46,6 +51,11 @@ def parse(code: str) -> List[Operation]:
             "<": IntLessThan(),
             "<=": IntLessEquals(),
             "!=": IntNotEqual(),
+            "drop": Drop(),
+            "dup": Dup(),
+            "swap": Swap(),
+            "over": Over(),
+            "rot": Rot(),
         }
 
         if word in simple_operations:

@@ -9,6 +9,8 @@ from lang.operations import (
     BoolPrint,
     BoolPush,
     Divide,
+    Drop,
+    Dup,
     IntEquals,
     IntGreaterEquals,
     IntGreaterThan,
@@ -22,7 +24,10 @@ from lang.operations import (
     Not,
     Operation,
     Or,
+    Over,
     Plus,
+    Rot,
+    Swap,
     UnhandledOperation,
 )
 from lang.run import run_program
@@ -94,6 +99,15 @@ def test_run_program_type_error() -> None:
         ([IntPush(1), IntGreaterEquals()],),
         ([IntNotEqual()],),
         ([IntPush(1), IntNotEqual()],),
+        ([Drop()],),
+        ([Dup()],),
+        ([Swap()],),
+        ([IntPush(1), Swap()],),
+        ([Over()],),
+        ([IntPush(1), Over()],),
+        ([Rot()],),
+        ([IntPush(1), Rot()],),
+        ([IntPush(1), IntPush(1), Rot()],),
     ],
 )
 def test_run_program_stack_underflow(operations: List[Operation]) -> None:

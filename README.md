@@ -21,11 +21,12 @@ poetry shell
 ```
 
 ### Features
-- integers
-- booleans
+- types: integers and booleans
+- integers and integer operations
+- booleans and boolean operations
+- stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 
 ### Upcoming features
-- stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)
 - strings

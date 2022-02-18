@@ -95,3 +95,28 @@ class IntLessEquals(Operation):
 @dataclass
 class IntNotEqual(Operation):
     ...
+
+
+@dataclass
+class Drop(Operation):
+    ...
+
+
+@dataclass
+class Dup(Operation):
+    ...
+
+
+@dataclass
+class Swap(Operation):
+    ...
+
+
+@dataclass
+class Over(Operation):
+    ...
+
+
+@dataclass
+class Rot(Operation):
+    ...
