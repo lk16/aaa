@@ -10,6 +10,7 @@ from lang.operations import (
     And,
     BoolPrint,
     BoolPush,
+    CharNewLinePrint,
     Divide,
     Drop,
     Dup,
@@ -67,6 +68,7 @@ def parse(code: str) -> List[Operation]:
             "swap": Swap(),
             "over": Over(),
             "rot": Rot(),
+            "\\n": CharNewLinePrint(),
         }
 
         if word in simple_operations:

@@ -10,6 +10,7 @@ from lang.operations import (
     And,
     BoolPrint,
     BoolPush,
+    CharNewLinePrint,
     Divide,
     Drop,
     Dup,
@@ -190,6 +191,10 @@ class Program:
             elif isinstance(operation, End):
                 # End of block doesn't do anything
                 pass
+
+            elif isinstance(operation, CharNewLinePrint):
+                # Just print a newline
+                print()
 
             else:
                 raise UnhandledOperationError(operation)

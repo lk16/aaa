@@ -134,3 +134,8 @@ class If(Operation):
 @dataclass
 class End(Operation):
     ...
+
+
+@dataclass
+class CharNewLinePrint(Operation):
+    ...
