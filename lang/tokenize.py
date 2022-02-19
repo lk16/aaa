@@ -40,6 +40,7 @@ class TokenType(IntEnum):
     UNHANDLED = auto()  # For testing purposes
     STRING = auto()
     SUBSTRING = auto()
+    COMMENT = auto()
 
 
 simple_tokens: List[Tuple[str, TokenType]] = [
@@ -96,11 +97,10 @@ class Tokenizer:
     def try_tokenize_simple(self) -> Optional[Token]:
         line_part = self.line[self.offset :]
 
-        # HACK: by sorting in reverse order, we always try the longest simple token # with the same prefix.
-        # This way we  guarantee to for example match <= with LESS_EQUAL instead of with LESS_THAN.
-        # TODO: find better solution
-        for token_str, token_type in sorted(simple_tokens, reverse=True):
-            if line_part.startswith(token_str):
+        for token_str, token_type in simple_tokens:
+            # Force a space after the matched simple token
+            # This rules out problems like mismatching <= with LESS_THAN instead of LESS_EQUAL
+            if (line_part + " ").startswith(token_str + " "):
                 return Token(
                     self.filename,
                     self.line_number,
@@ -170,6 +170,20 @@ class Tokenizer:
         while self.offset < len(self.line):
             if self.line[self.offset] == " ":
                 self.offset += 1
+                continue
+
+            token: Optional[Token]
+
+            if self.line[self.offset : self.offset + 2] == "//":
+                token = Token(
+                    self.filename,
+                    self.line_number,
+                    self.offset,
+                    self.line[self.offset :],
+                    TokenType.COMMENT,
+                )
+                tokens.append(token)
+                self.offset += len(token.value)
                 continue
 
             token = self.try_tokenize_simple()

@@ -61,6 +61,10 @@ from lang.tokenize import tokenize
         ('"abc" 1 2 substr .', "b"),
         ('"abc" 3 2 substr .', ""),
         ('"abc" 7 8 substr .', ""),
+        ("// 1 .", ""),
+        ("0 . \n// 1 .\n2 .", "02"),
+        ("0 . \n1 . // 2 .\n3 .", "013"),
+        ("0 . \n1 . // invalidcode\n3 .", "013"),
     ],
 )
 def test_run_program_ok(

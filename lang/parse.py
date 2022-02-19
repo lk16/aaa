@@ -41,7 +41,7 @@ from lang.operations import (
 from lang.tokenize import Token, TokenType
 
 
-def parse(tokens: List[Token]) -> List[Operation]:
+def parse(tokens: List[Token]) -> List[Operation]:  # noqa: C901 # Allow high complexity
     operations: List[Operation] = []
 
     # Stack of indexes in block start operations (such as If) in the operations list
@@ -142,6 +142,9 @@ def parse(tokens: List[Token]) -> List[Operation]:
                 .replace("\\\\", "\\")
             )
             operation = StringPush(string)
+
+        elif token.type == TokenType.COMMENT:
+            continue  # Comments obviously don't do anything
 
         else:
             raise UnhandledTokenType(token)

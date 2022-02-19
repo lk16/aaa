@@ -36,10 +36,10 @@ poetry shell
 - branching (`if`, `else`, `end`)
 - loops (`while`)
 - strings and string operations (`+`, `=`, `substr`)
+- comments (`//`)
 
 ### Upcoming aaa features
 - functions (`fn`)
-- comments (`//`)
 - loops (`break`, `continue`)
 - assertions (`assert`)
 - debug tools (`breakpoint`)

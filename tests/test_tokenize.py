@@ -42,18 +42,6 @@ from lang.tokenize import TokenType, tokenize
         ("while", [TokenType.WHILE]),
         ("1", [TokenType.INTEGER]),
         ("1234567", [TokenType.INTEGER]),
-        ("truetrue", [TokenType.TRUE, TokenType.TRUE]),
-        ("1+1", [TokenType.INTEGER, TokenType.PLUS, TokenType.INTEGER]),
-        (
-            "trueif123.end",
-            [
-                TokenType.TRUE,
-                TokenType.IF,
-                TokenType.INTEGER,
-                TokenType.PRINT,
-                TokenType.END,
-            ],
-        ),
     ],
 )
 def test_tokenize_ok(code: str, expected_token_types: List[TokenType]) -> None:
