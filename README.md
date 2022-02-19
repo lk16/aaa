@@ -29,10 +29,10 @@ poetry shell
 - integers and integer operations
 - booleans and boolean operations
 - stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
-- branching (`if`, `end`)
+- branching (`if`, `else`, `end`)
 
 ### Upcoming features
-- branching (`else`, `elif`)
+- branching (`elif`)
 - loops (`while`)
 - strings
 - string operations (`str_print`)

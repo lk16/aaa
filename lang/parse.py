@@ -14,6 +14,7 @@ from lang.operations import (
     Divide,
     Drop,
     Dup,
+    Else,
     End,
     If,
     IntEquals,
@@ -78,6 +79,25 @@ def parse(code: str) -> List[Operation]:
             operation = If(None)
             block_operations_offset_stack.append(len(operations))
 
+        elif word == "else":
+            operation = Else(None)
+
+            try:
+                block_start_offset = block_operations_offset_stack.pop()
+            except IndexError as e:
+                # end without matching start block
+                raise UnexpectedOperation(operation) from e
+
+            block_start = operations[block_start_offset]
+
+            if isinstance(block_start, If):
+                block_start.jump_if_false = len(operations)
+
+            else:  # pragma: nocover
+                raise InvalidBlockStackValue(block_start)
+
+            block_operations_offset_stack.append(len(operations))
+
         elif word == "end":
             operation = End()
 
@@ -91,6 +111,10 @@ def parse(code: str) -> List[Operation]:
 
             if isinstance(block_start, If):
                 block_start.jump_if_false = len(operations)
+
+            elif isinstance(block_start, Else):
+                block_start.jump_end = len(operations)
+                pass
 
             else:  # pragma: nocover
                 raise InvalidBlockStackValue(block_start)

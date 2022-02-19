@@ -16,6 +16,7 @@ from lang.operations import (
     Divide,
     Drop,
     Dup,
+    Else,
     End,
     If,
     IntEquals,
@@ -69,6 +70,7 @@ def test_run_program_ok(
     [
         ([UnhandledOperation()], UnhandledOperationError),
         ([BoolPush(True), If(None)], InvalidJump),
+        ([Else(None)], InvalidJump),
     ],
 )
 def test_run_program_fails(

@@ -14,6 +14,7 @@ from lang.operations import (
     Divide,
     Drop,
     Dup,
+    Else,
     End,
     If,
     IntEquals,
@@ -191,6 +192,16 @@ class Program:
             elif isinstance(operation, End):
                 # End of block doesn't do anything
                 pass
+
+            elif isinstance(operation, Else):
+                # When jumping to an jump_if_false from an If, we don't actually execute this Else.
+                # This is because we advance the instruction pointer at the end of this big loop.
+                # So the only way to actually hit an Else operation is by finishing the preceding If block.
+                # That means we can jump to the corresponding End (which we don't execute either for the same reason).
+                if operation.jump_end is None:
+                    raise InvalidJump
+
+                self.instruction_pointer = operation.jump_end
 
             elif isinstance(operation, CharNewLinePrint):
                 # Just print a newline

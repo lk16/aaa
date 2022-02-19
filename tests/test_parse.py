@@ -8,6 +8,7 @@ from lang.operations import (
     BoolPrint,
     BoolPush,
     Divide,
+    Else,
     End,
     If,
     IntPrint,
@@ -58,6 +59,7 @@ def test_parse_ok(code: str, expected_operations: List[Operation]) -> None:
         ),
         ("-1", SyntaxException("-1")),
         ("if", BlockStackNotEmpty()),
+        ("else", UnexpectedOperation(Else(None))),
         ("end", UnexpectedOperation(End())),
     ],
 )

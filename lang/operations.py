@@ -127,8 +127,15 @@ class Rot(Operation):
 @dataclass
 class If(Operation):
     # Instruction to jump to if the condition is false.
-    # Initialization is done when we find corresponding operations (else/end) while parsing.
+    # Initialization is done when we find a corresponding operation ("else" or "end") while parsing.
     jump_if_false: Optional[int]
+
+
+@dataclass
+class Else(Operation):
+    # Instruction to jump to if the condition is false.
+    # Initialization is done when we find corresponding "end" while parsing.
+    jump_end: Optional[int]
 
 
 @dataclass

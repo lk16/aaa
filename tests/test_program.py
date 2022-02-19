@@ -37,6 +37,10 @@ from lang.run import run_program
         ("3 int_print true if 4 int_print end", "34"),
         ("3 int_print false if 4 int_print end", "3"),
         ("\\n", "\n"),
+        ("true if 1 int_print else 0 int_print end", "1"),
+        ("false if 1 int_print else 0 int_print end", "0"),
+        ("7 int_print true if 1 int_print else 0 int_print end 8 int_print", "718"),
+        ("7 int_print false if 1 int_print else 0 int_print end 8 int_print", "708"),
     ],
 )
 def test_run_program_ok(
