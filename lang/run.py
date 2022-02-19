@@ -2,6 +2,7 @@ from typing import List, Tuple, Union
 
 from lang.exceptions import (
     InvalidJump,
+    StackNotEmptyAtExit,
     StackUnderflow,
     UnexpectedType,
     UnhandledOperationError,
@@ -227,3 +228,6 @@ class Program:
                 raise UnhandledOperationError(operation)
 
             self.instruction_pointer += 1
+
+        if self.stack:
+            raise StackNotEmptyAtExit

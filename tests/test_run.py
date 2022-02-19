@@ -1,10 +1,10 @@
 from typing import List, Type
 
 import pytest
-from pytest import CaptureFixture
 
 from lang.exceptions import (
     InvalidJump,
+    StackNotEmptyAtExit,
     StackUnderflow,
     UnexpectedType,
     UnhandledOperationError,
@@ -16,7 +16,6 @@ from lang.operations import (
     Drop,
     Dup,
     Else,
-    End,
     If,
     IntEquals,
     IntGreaterEquals,
@@ -42,30 +41,6 @@ from lang.run import run_program
 
 
 @pytest.mark.parametrize(
-    ["operations", "expected_output"],
-    [
-        ([], ""),
-        ([IntPush(1)], ""),
-        ([IntPush(1), IntPush(1)], ""),
-        ([IntPush(1), Print()], "1"),
-        ([IntPush(1), Print(), IntPush(2), Print()], "12"),
-        ([IntPush(6), IntPush(2), Plus(), Print()], "8"),
-        ([IntPush(6), IntPush(2), Minus(), Print()], "4"),
-        ([IntPush(6), IntPush(2), Multiply(), Print()], "12"),
-        ([IntPush(6), IntPush(2), Divide(), Print()], "3"),
-        ([BoolPush(True), If(4), IntPush(5), Print(), End()], "5"),
-        ([BoolPush(False), If(4), IntPush(5), Print(), End()], ""),
-    ],
-)
-def test_run_program_ok(
-    operations: List[Operation], expected_output: str, capfd: CaptureFixture[str]
-) -> None:
-    run_program(operations)
-    output, _ = capfd.readouterr()
-    assert expected_output == output
-
-
-@pytest.mark.parametrize(
     ["operations", "expected_exception"],
     [
         ([UnhandledOperation()], UnhandledOperationError),
@@ -74,6 +49,7 @@ def test_run_program_ok(
         ([Else(None)], InvalidJump),
         ([BoolPush(True), While(None)], InvalidJump),
         ([BoolPush(False), While(None)], InvalidJump),
+        ([IntPush(3)], StackNotEmptyAtExit),
     ],
 )
 def test_run_program_fails(

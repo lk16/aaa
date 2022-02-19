@@ -45,3 +45,7 @@ class InvalidJump(RuntimeError):
 class UnexpectedOperation(RunTimeError):
     def __init__(self, operation: Operation) -> None:
         super().__init__(f"Unexpected operation {type(operation)}")
+
+
+class StackNotEmptyAtExit(RunTimeError):
+    ...

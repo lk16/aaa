@@ -8,11 +8,14 @@ from lang.run import run_program
 @pytest.mark.parametrize(
     ["code", "expected_output"],
     [
-        ("1", ""),
+        ("1 drop", ""),
         ("1 .", "1"),
         ("1 2 + .", "3"),
         ("1 2 3 4 + + + .", "10"),
         ("1 2 3 * + .", "7"),
+        ("3 2 - . ", "1"),
+        ("6 2 / . ", "3"),
+        ("7 2 / . ", "3"),
         ("true .", "true"),
         ("false .", "false"),
         ("true false and .", "false"),
@@ -44,7 +47,7 @@ from lang.run import run_program
         ("false while 1 . false end", ""),
         ("true while 1 . false end", "1"),
         ("false true true true while 1 . end", "111"),
-        ("0 true while dup . 1 + dup 9 <= end", "0123456789"),
+        ("0 true while dup . 1 + dup 9 <= end drop", "0123456789"),
     ],
 )
 def test_run_program_ok(
