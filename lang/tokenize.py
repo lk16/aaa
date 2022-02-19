@@ -42,6 +42,7 @@ class TokenType(IntEnum):
     STRING = auto()
     SUBSTRING = auto()
     COMMENT = auto()
+    STRING_LENGTH = auto()
 
 
 simple_tokens: List[Tuple[str, TokenType]] = [
@@ -73,6 +74,7 @@ simple_tokens: List[Tuple[str, TokenType]] = [
     ("end", TokenType.END),
     ("while", TokenType.WHILE),
     ("substr", TokenType.SUBSTRING),
+    ("strlen", TokenType.STRING_LENGTH),
 ]
 
 

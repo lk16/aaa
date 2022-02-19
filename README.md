@@ -35,7 +35,7 @@ poetry shell
 - stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)
-- strings and string operations (`+`, `=`, `substr`)
+- strings and string operations (`+`, `=`, `strlen`, `substr`)
 - comments (`//`)
 
 ### Upcoming aaa features

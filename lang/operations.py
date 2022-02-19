@@ -168,3 +168,8 @@ class SubString(Operation):
 @dataclass
 class Modulo(Operation):
     ...
+
+
+@dataclass
+class StringLength(Operation):
+    ...

@@ -35,6 +35,7 @@ from lang.operations import (
     Plus,
     Print,
     Rot,
+    StringLength,
     StringPush,
     SubString,
     Swap,
@@ -296,6 +297,11 @@ class Program:
                 else:
                     self.push(string[start:end])
 
+                self.instruction_pointer += 1
+
+            elif isinstance(operation, StringLength):
+                x = self.pop(str)
+                self.push(len(x))  # type: ignore
                 self.instruction_pointer += 1
 
             else:

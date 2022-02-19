@@ -33,6 +33,7 @@ from lang.operations import (
     Plus,
     Print,
     Rot,
+    StringLength,
     StringPush,
     SubString,
     Swap,
@@ -76,6 +77,7 @@ def parse(tokens: List[Token]) -> List[Operation]:  # noqa: C901 # Allow high co
             TokenType.PRINT_NEWLINE: CharNewLinePrint(),
             TokenType.PRINT: Print(),
             TokenType.SUBSTRING: SubString(),
+            TokenType.STRING_LENGTH: StringLength(),
         }
 
         if token.type in simple_tokens:

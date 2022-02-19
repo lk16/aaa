@@ -66,6 +66,8 @@ from lang.tokenize import tokenize
         ("0 . \n1 . // 2 .\n3 .", "013"),
         ("0 . \n1 . // invalidcode\n3 .", "013"),
         ("7 3 % .", "1"),
+        ('"" strlen .', "0"),
+        ('"abc" strlen .', "3"),
     ],
 )
 def test_run_program_ok(
