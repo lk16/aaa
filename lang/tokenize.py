@@ -33,6 +33,7 @@ class TokenType(IntEnum):
     END = auto()
     WHILE = auto()
     INTEGER = auto()
+    UNHANDLED = auto()  # For testing purposes
 
 
 simple_tokens: List[Tuple[str, TokenType]] = [
@@ -67,7 +68,7 @@ simple_tokens: List[Tuple[str, TokenType]] = [
 
 @dataclass
 class Token:
-    file_name: str
+    filename: str
     line_number: int
     offset: int
     value: str

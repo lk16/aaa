@@ -86,7 +86,7 @@ class Program:
         self, verbose: bool
     ) -> None:
 
-        if verbose:
+        if verbose:  # pragma: nocover
             for ip, operation in enumerate(self.operations):
                 print(f"DEBUG | IP: {ip:>2} | {operation.__repr__()}", file=sys.stderr)
 
@@ -263,7 +263,7 @@ class Program:
             else:
                 raise UnhandledOperationError(operation)
 
-            if verbose:
+            if verbose:  # pragma: nocover
                 print(
                     f"DEBUG | {operation.__repr__():>25} | IP: {self.instruction_pointer:>2} | Stack: "
                     + " ".join(str(item) for item in self.stack),

@@ -3,7 +3,7 @@ from typing import Dict, List
 from lang.exceptions import (
     BlockStackNotEmpty,
     InvalidBlockStackValue,
-    UnexpectedOperation,
+    UnexpectedToken,
     UnhandledTokenType,
 )
 from lang.operations import (
@@ -87,7 +87,7 @@ def parse(tokens: List[Token]) -> List[Operation]:
                 block_start_offset = block_operations_offset_stack.pop()
             except IndexError as e:
                 # end without matching start block
-                raise UnexpectedOperation(operation) from e
+                raise UnexpectedToken(token) from e
 
             block_start = operations[block_start_offset]
 
@@ -106,7 +106,7 @@ def parse(tokens: List[Token]) -> List[Operation]:
                 block_start_offset = block_operations_offset_stack.pop()
             except IndexError as e:
                 # end without matching start block
-                raise UnexpectedOperation(operation) from e
+                raise UnexpectedToken(token) from e
 
             block_start = operations[block_start_offset]
 
