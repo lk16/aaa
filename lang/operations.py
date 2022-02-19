@@ -141,3 +141,15 @@ class CharNewLinePrint(Operation):
 @dataclass
 class Print(Operation):
     ...
+
+
+@dataclass
+class While(Operation):
+    # Instruction to jump to if the condition is false.
+    # Initialization is done when we find corresponding "end" while parsing.
+    jump_end: Optional[int]
+
+
+@dataclass
+class WhileEnd(Operation):
+    jump_start: int

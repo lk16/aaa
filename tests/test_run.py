@@ -36,6 +36,7 @@ from lang.operations import (
     Rot,
     Swap,
     UnhandledOperation,
+    While,
 )
 from lang.run import run_program
 
@@ -69,7 +70,10 @@ def test_run_program_ok(
     [
         ([UnhandledOperation()], UnhandledOperationError),
         ([BoolPush(True), If(None)], InvalidJump),
+        ([BoolPush(False), If(None)], InvalidJump),
         ([Else(None)], InvalidJump),
+        ([BoolPush(True), While(None)], InvalidJump),
+        ([BoolPush(False), While(None)], InvalidJump),
     ],
 )
 def test_run_program_fails(

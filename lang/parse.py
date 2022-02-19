@@ -33,6 +33,8 @@ from lang.operations import (
     Print,
     Rot,
     Swap,
+    While,
+    WhileEnd,
 )
 
 
@@ -114,8 +116,16 @@ def parse(code: str) -> List[Operation]:
                 block_start.jump_end = len(operations)
                 pass
 
+            elif isinstance(block_start, While):
+                operation = WhileEnd(block_start_offset)
+                block_start.jump_end = len(operations)
+
             else:  # pragma: nocover
                 raise InvalidBlockStackValue(block_start)
+
+        elif word == "while":
+            operation = While(None)
+            block_operations_offset_stack.append(len(operations))
 
         elif word.isdigit():
             operation = IntPush(int(word))

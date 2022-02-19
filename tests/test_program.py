@@ -41,6 +41,10 @@ from lang.run import run_program
         ("false if 1 . else 0 . end", "0"),
         ("7 . true if 1 . else 0 . end 8 .", "718"),
         ("7 . false if 1 . else 0 . end 8 .", "708"),
+        ("false while 1 . false end", ""),
+        ("true while 1 . false end", "1"),
+        ("false true true true while 1 . end", "111"),
+        ("0 true while dup . 1 + dup 9 <= end", "0123456789"),
     ],
 )
 def test_run_program_ok(

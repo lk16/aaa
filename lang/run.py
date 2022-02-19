@@ -33,6 +33,8 @@ from lang.operations import (
     Print,
     Rot,
     Swap,
+    While,
+    WhileEnd,
 )
 
 
@@ -171,6 +173,7 @@ class Program:
             elif isinstance(operation, If):
                 x = self.pop(bool)
 
+                # TODO move this check to parse
                 if operation.jump_if_false is None:
                     raise InvalidJump
 
@@ -182,13 +185,14 @@ class Program:
                 pass
 
             elif isinstance(operation, Else):
+                # TODO move this check to parse
+                if operation.jump_end is None:
+                    raise InvalidJump
+
                 # When jumping to an jump_if_false from an If, we don't actually execute this Else.
                 # This is because we advance the instruction pointer at the end of this big loop.
                 # So the only way to actually hit an Else operation is by finishing the preceding If block.
                 # That means we can jump to the corresponding End (which we don't execute either for the same reason).
-                if operation.jump_end is None:
-                    raise InvalidJump
-
                 self.instruction_pointer = operation.jump_end
 
             elif isinstance(operation, CharNewLinePrint):
@@ -204,6 +208,20 @@ class Program:
                         print("false", end="")
                 else:
                     print(x, end="")
+
+            elif isinstance(operation, While):
+                x = self.pop(bool)
+
+                # TODO move this check to parse
+                if operation.jump_end is None:
+                    raise InvalidJump
+
+                if not x:
+                    self.instruction_pointer = operation.jump_end
+
+            elif isinstance(operation, WhileEnd):
+                self.instruction_pointer = operation.jump_start
+                continue  # don't increment instruction pointer
 
             else:
                 raise UnhandledOperationError(operation)
