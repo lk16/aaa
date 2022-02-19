@@ -1,0 +1,20 @@
+0
+true while
+    1 +
+    dup 3 % 0 = if
+        "fizz" .
+        dup 5 % 0 = if
+            "buzz" .
+        end
+    else
+        dup 5 % 0 = if
+            "buzz" .
+        else
+            dup .
+        end
+    end
+    \n
+    dup
+    100 <
+end
+drop

@@ -16,13 +16,14 @@ def cli() -> None:
 
 @cli.command()
 @click.argument("filename", type=click.Path(exists=True))
-def run(filename: str) -> None:
+@click.option("--verbose/--no-verbose", "-v", type=bool)
+def run(filename: str, verbose: bool) -> None:
     with open(filename, "r") as f:
         code = f.read()
 
     tokens = tokenize(code, filename)
     program = parse(tokens)
-    run_program(program)
+    run_program(program, verbose=verbose)
 
 
 @cli.command()

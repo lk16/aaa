@@ -15,14 +15,14 @@ poetry shell
 
 ### Examples
 ```sh
-# Run code from a file. This prints "42\n".
-./aaa.py run samples/print_number.aaa
-
 # Run code form a shell argument. This prints "9001\n".
 ./aaa.py cmd '3 5 + 8 = if 9001 . end \n'
 
 # Show off some features. This prints "aaa\n"
 ./aaa.py cmd '"a" 0 true while over . 1 + dup 3 < end drop drop \n'
+
+# Run code from a file. Implements the famous fizzbuzz interview question.
+./aaa.py run examples/fizzbuzz.aaa
 
 # Run unit tests
 ./aaa.py runtests
