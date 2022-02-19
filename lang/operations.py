@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -8,6 +9,7 @@ class Operation:
 
 @dataclass
 class UnhandledOperation(Operation):
+    # TODO: move to tests folder
     # This exists for testing purposes
     ...
 
@@ -119,4 +121,16 @@ class Over(Operation):
 
 @dataclass
 class Rot(Operation):
+    ...
+
+
+@dataclass
+class If(Operation):
+    # Instruction to jump to if the condition is false.
+    # Initialization is done when we find corresponding operations (else/end) while parsing.
+    jump_if_false: Optional[int]
+
+
+@dataclass
+class End(Operation):
     ...

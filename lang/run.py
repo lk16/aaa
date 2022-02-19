@@ -1,6 +1,11 @@
 from typing import List, Tuple, Union
 
-from lang.exceptions import StackUnderflow, UnexpectedType, UnhandledOperationError
+from lang.exceptions import (
+    InvalidJump,
+    StackUnderflow,
+    UnexpectedType,
+    UnhandledOperationError,
+)
 from lang.operations import (
     And,
     BoolPrint,
@@ -8,6 +13,8 @@ from lang.operations import (
     Divide,
     Drop,
     Dup,
+    End,
+    If,
     IntEquals,
     IntGreaterEquals,
     IntGreaterThan,
@@ -71,9 +78,6 @@ class Program:
         return self.pop(expected_type), self.pop(expected_type)
 
     def run(self) -> None:  # noqa: C901  # allow high complexity of this function
-
-        # NOTE This wIll be set to false by future jump operations like if/else/while
-        increment_instruction_pointer = True
 
         while self.instruction_pointer < len(self.operations):
             operation = self.operations[self.instruction_pointer]
@@ -174,8 +178,20 @@ class Program:
                 self.push(x)
                 self.push(z)
 
+            elif isinstance(operation, If):
+                x = self.pop(bool)
+
+                if operation.jump_if_false is None:
+                    raise InvalidJump
+
+                if not x:
+                    self.instruction_pointer = operation.jump_if_false
+
+            elif isinstance(operation, End):
+                # End of block doesn't do anything
+                pass
+
             else:
                 raise UnhandledOperationError(operation)
 
-            if increment_instruction_pointer:
-                self.instruction_pointer += 1
+            self.instruction_pointer += 1

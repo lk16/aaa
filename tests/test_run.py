@@ -1,9 +1,14 @@
-from typing import List
+from typing import List, Type
 
 import pytest
 from pytest import CaptureFixture
 
-from lang.exceptions import StackUnderflow, UnexpectedType, UnhandledOperationError
+from lang.exceptions import (
+    InvalidJump,
+    StackUnderflow,
+    UnexpectedType,
+    UnhandledOperationError,
+)
 from lang.operations import (
     And,
     BoolPrint,
@@ -11,6 +16,8 @@ from lang.operations import (
     Divide,
     Drop,
     Dup,
+    End,
+    If,
     IntEquals,
     IntGreaterEquals,
     IntGreaterThan,
@@ -45,6 +52,8 @@ from lang.run import run_program
         ([IntPush(6), IntPush(2), Minus(), IntPrint()], "4"),
         ([IntPush(6), IntPush(2), Multiply(), IntPrint()], "12"),
         ([IntPush(6), IntPush(2), Divide(), IntPrint()], "3"),
+        ([BoolPush(True), If(4), IntPush(5), IntPrint(), End()], "5"),
+        ([BoolPush(False), If(4), IntPush(5), IntPrint(), End()], ""),
     ],
 )
 def test_run_program_ok(
@@ -55,10 +64,17 @@ def test_run_program_ok(
     assert expected_output == output
 
 
-def test_run_program_unhandled_operation() -> None:
-    operations: List[Operation] = [UnhandledOperation()]
-
-    with pytest.raises(UnhandledOperationError):
+@pytest.mark.parametrize(
+    ["operations", "expected_exception"],
+    [
+        ([UnhandledOperation()], UnhandledOperationError),
+        ([BoolPush(True), If(None)], InvalidJump),
+    ],
+)
+def test_run_program_fails(
+    operations: List[Operation], expected_exception: Type[Exception]
+) -> None:
+    with pytest.raises(expected_exception):
         run_program(operations)
 
 

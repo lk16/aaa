@@ -2,12 +2,14 @@ from typing import List
 
 import pytest
 
-from lang.exceptions import ParseError
+from lang.exceptions import BlockStackNotEmpty, SyntaxException, UnexpectedOperation
 from lang.operations import (
     And,
     BoolPrint,
     BoolPush,
     Divide,
+    End,
+    If,
     IntPrint,
     IntPush,
     Minus,
@@ -39,6 +41,8 @@ from lang.parse import parse
         ("or", [Or()]),
         ("not", [Not()]),
         ("bool_print", [BoolPrint()]),
+        ("if end", [If(1), End()]),
+        ("if if end end", [If(3), If(2), End(), End()]),
     ],
 )
 def test_parse_ok(code: str, expected_operations: List[Operation]) -> None:
@@ -50,9 +54,11 @@ def test_parse_ok(code: str, expected_operations: List[Operation]) -> None:
     [
         (
             "unexpectedthing",
-            ParseError(f"Syntax error: can't handle 'unexpectedthing'"),
+            SyntaxException("unexpectedthing"),
         ),
-        ("-1", ParseError(f"Syntax error: can't handle '-1'")),
+        ("-1", SyntaxException("-1")),
+        ("if", BlockStackNotEmpty()),
+        ("end", UnexpectedOperation(End())),
     ],
 )
 def test_parse_fail(code: str, expected_exception: Exception) -> None:

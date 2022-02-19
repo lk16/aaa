@@ -30,6 +30,12 @@ from lang.run import run_program
         ("1 2 swap int_print int_print", "12"),
         ("1 2 over int_print int_print int_print", "121"),
         ("1 2 3 rot int_print int_print int_print", "132"),
+        ("true if 4 int_print end", "4"),
+        ("false if 4 int_print end", ""),
+        ("true if 4 int_print end 5 int_print", "45"),
+        ("false if 4 int_print end 5 int_print", "5"),
+        ("3 int_print true if 4 int_print end", "34"),
+        ("3 int_print false if 4 int_print end", "3"),
     ],
 )
 def test_run_program_ok(
