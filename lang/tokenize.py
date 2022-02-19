@@ -89,6 +89,9 @@ class Tokenizer:
     def try_tokenize_simple(self) -> Optional[Token]:
         line_part = self.line[self.offset :]
 
+        # HACK: by sorting in reverse order, we try always try the longest simple token
+        # with the same prefix: we match <= with LESS_EQUAL instead of with LESS_THAN
+        # TODO: find better solution
         for token_str, token_type in sorted(simple_tokens, reverse=True):
             if line_part.startswith(token_str):
                 return Token(
