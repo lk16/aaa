@@ -11,7 +11,6 @@ from lang.exceptions import (
 )
 from lang.operations import (
     And,
-    BoolPrint,
     BoolPush,
     Divide,
     Drop,
@@ -25,7 +24,6 @@ from lang.operations import (
     IntLessEquals,
     IntLessThan,
     IntNotEqual,
-    IntPrint,
     IntPush,
     Minus,
     Multiply,
@@ -34,6 +32,7 @@ from lang.operations import (
     Or,
     Over,
     Plus,
+    Print,
     Rot,
     Swap,
     UnhandledOperation,
@@ -47,14 +46,14 @@ from lang.run import run_program
         ([], ""),
         ([IntPush(1)], ""),
         ([IntPush(1), IntPush(1)], ""),
-        ([IntPush(1), IntPrint()], "1"),
-        ([IntPush(1), IntPrint(), IntPush(2), IntPrint()], "12"),
-        ([IntPush(6), IntPush(2), Plus(), IntPrint()], "8"),
-        ([IntPush(6), IntPush(2), Minus(), IntPrint()], "4"),
-        ([IntPush(6), IntPush(2), Multiply(), IntPrint()], "12"),
-        ([IntPush(6), IntPush(2), Divide(), IntPrint()], "3"),
-        ([BoolPush(True), If(4), IntPush(5), IntPrint(), End()], "5"),
-        ([BoolPush(False), If(4), IntPush(5), IntPrint(), End()], ""),
+        ([IntPush(1), Print()], "1"),
+        ([IntPush(1), Print(), IntPush(2), Print()], "12"),
+        ([IntPush(6), IntPush(2), Plus(), Print()], "8"),
+        ([IntPush(6), IntPush(2), Minus(), Print()], "4"),
+        ([IntPush(6), IntPush(2), Multiply(), Print()], "12"),
+        ([IntPush(6), IntPush(2), Divide(), Print()], "3"),
+        ([BoolPush(True), If(4), IntPush(5), Print(), End()], "5"),
+        ([BoolPush(False), If(4), IntPush(5), Print(), End()], ""),
     ],
 )
 def test_run_program_ok(
@@ -81,7 +80,7 @@ def test_run_program_fails(
 
 
 def test_run_program_unexpected_type() -> None:
-    operations: List[Operation] = [BoolPush(True), IntPrint()]
+    operations: List[Operation] = [BoolPush(True), IntPush(3), Plus()]
 
     with pytest.raises(UnexpectedType):
         run_program(operations)
@@ -90,7 +89,7 @@ def test_run_program_unexpected_type() -> None:
 @pytest.mark.parametrize(
     ["operations"],
     [
-        ([IntPrint()],),
+        ([Print()],),
         ([Plus()],),
         ([IntPush(1), Plus()],),
         ([Minus()],),
@@ -99,7 +98,6 @@ def test_run_program_unexpected_type() -> None:
         ([IntPush(1), Multiply()],),
         ([Divide()],),
         ([IntPush(1), Divide()],),
-        ([BoolPrint()],),
         ([And()],),
         ([BoolPush(True), And()],),
         ([Or()],),

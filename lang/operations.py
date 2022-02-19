@@ -20,11 +20,6 @@ class IntPush(Operation):
 
 
 @dataclass
-class IntPrint(Operation):
-    ...
-
-
-@dataclass
 class Plus(Operation):
     ...
 
@@ -61,11 +56,6 @@ class Or(Operation):
 
 @dataclass
 class Not(Operation):
-    ...
-
-
-@dataclass
-class BoolPrint(Operation):
     ...
 
 
@@ -145,4 +135,9 @@ class End(Operation):
 
 @dataclass
 class CharNewLinePrint(Operation):
+    ...
+
+
+@dataclass
+class Print(Operation):
     ...

@@ -8,7 +8,6 @@ from lang.exceptions import (
 )
 from lang.operations import (
     And,
-    BoolPrint,
     BoolPush,
     CharNewLinePrint,
     Divide,
@@ -23,7 +22,6 @@ from lang.operations import (
     IntLessEquals,
     IntLessThan,
     IntNotEqual,
-    IntPrint,
     IntPush,
     Minus,
     Multiply,
@@ -32,6 +30,7 @@ from lang.operations import (
     Or,
     Over,
     Plus,
+    Print,
     Rot,
     Swap,
 )
@@ -47,7 +46,6 @@ def parse(code: str) -> List[Operation]:
         operation: Operation
 
         simple_operations: Dict[str, Operation] = {
-            "int_print": IntPrint(),
             "+": Plus(),
             "-": Minus(),
             "*": Multiply(),
@@ -57,7 +55,6 @@ def parse(code: str) -> List[Operation]:
             "and": And(),
             "or": Or(),
             "not": Not(),
-            "bool_print": BoolPrint(),
             "=": IntEquals(),
             ">": IntGreaterThan(),
             ">=": IntGreaterEquals(),
@@ -70,6 +67,7 @@ def parse(code: str) -> List[Operation]:
             "over": Over(),
             "rot": Rot(),
             "\\n": CharNewLinePrint(),
+            ".": Print(),
         }
 
         if word in simple_operations:

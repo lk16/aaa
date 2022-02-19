@@ -11,14 +11,15 @@ poetry install
 poetry shell
 
 # Run an Aaa program from shell argument
-./aaa.py cmd '1337 int_print \n'
+./aaa.py cmd '1337 . \n'
 # prints "1337\n"
 
-./aaa.py cmd '12 2 / 8 * 6 - 42 = if 9001 int_print end \n'
+./aaa.py cmd '12 2 / 8 * 6 - 42 = if 9001 . end \n'
 # prints "9001\n"
 
 # Run an Aaa program from file
 ./aaa.py run samples/print_number.aaa
+# prints "42\n"
 
 # Run unit tests
 ./aaa.py runtests

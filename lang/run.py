@@ -8,7 +8,6 @@ from lang.exceptions import (
 )
 from lang.operations import (
     And,
-    BoolPrint,
     BoolPush,
     CharNewLinePrint,
     Divide,
@@ -23,7 +22,6 @@ from lang.operations import (
     IntLessEquals,
     IntLessThan,
     IntNotEqual,
-    IntPrint,
     IntPush,
     Minus,
     Multiply,
@@ -32,6 +30,7 @@ from lang.operations import (
     Or,
     Over,
     Plus,
+    Print,
     Rot,
     Swap,
 )
@@ -87,10 +86,6 @@ class Program:
             if isinstance(operation, IntPush):
                 self.push(operation.value)
 
-            elif isinstance(operation, IntPrint):
-                z = self.pop(int)
-                print(z, end="")
-
             elif isinstance(operation, Plus):
                 z, y = self.pop_two(int)
                 self.push(z + y)
@@ -121,13 +116,6 @@ class Program:
             elif isinstance(operation, Not):
                 z = self.pop(bool)
                 self.push(not z)
-
-            elif isinstance(operation, BoolPrint):
-                z = self.pop(bool)
-                if z:
-                    print("true", end="")
-                else:
-                    print("false", end="")
 
             elif isinstance(operation, IntEquals):
                 z, y = self.pop_two(int)
@@ -206,6 +194,16 @@ class Program:
             elif isinstance(operation, CharNewLinePrint):
                 # Just print a newline
                 print()
+
+            elif isinstance(operation, Print):
+                x = self.pop_untyped()
+                if type(x) == bool:
+                    if x:
+                        print("true", end="")
+                    else:
+                        print("false", end="")
+                else:
+                    print(x, end="")
 
             else:
                 raise UnhandledOperationError(operation)

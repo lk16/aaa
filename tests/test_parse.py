@@ -5,13 +5,11 @@ import pytest
 from lang.exceptions import BlockStackNotEmpty, SyntaxException, UnexpectedOperation
 from lang.operations import (
     And,
-    BoolPrint,
     BoolPush,
     Divide,
     Else,
     End,
     If,
-    IntPrint,
     IntPush,
     Minus,
     Multiply,
@@ -19,6 +17,7 @@ from lang.operations import (
     Operation,
     Or,
     Plus,
+    Print,
 )
 from lang.parse import parse
 
@@ -31,7 +30,6 @@ from lang.parse import parse
         ("1 1", [IntPush(1), IntPush(1)]),
         ("11", [IntPush(11)]),
         ("123456789", [IntPush(123456789)]),
-        ("int_print", [IntPrint()]),
         ("+", [Plus()]),
         ("-", [Minus()]),
         ("*", [Multiply()]),
@@ -41,7 +39,7 @@ from lang.parse import parse
         ("and", [And()]),
         ("or", [Or()]),
         ("not", [Not()]),
-        ("bool_print", [BoolPrint()]),
+        (".", [Print()]),
         ("if end", [If(1), End()]),
         ("if if end end", [If(3), If(2), End(), End()]),
     ],
