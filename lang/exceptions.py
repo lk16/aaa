@@ -1,13 +1,14 @@
 from lang.operations import Operation
+from lang.tokenize import Token
 
 
 class ParseError(Exception):
     ...
 
 
-class SyntaxException(Exception):
-    def __init__(self, word: str) -> None:
-        super().__init__(f"Parse error: can't handle '{word}'")
+class UnhandledTokenType(Exception):
+    def __init__(self, token: Token) -> None:
+        super().__init__(f"Unhandled token type: {type(token).__name__}'")
 
 
 class InvalidBlockStackValue(ParseError):

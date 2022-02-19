@@ -3,8 +3,8 @@ from typing import Dict, List
 from lang.exceptions import (
     BlockStackNotEmpty,
     InvalidBlockStackValue,
-    SyntaxException,
     UnexpectedOperation,
+    UnhandledTokenType,
 )
 from lang.operations import (
     And,
@@ -22,7 +22,6 @@ from lang.operations import (
     IntLessEquals,
     IntLessThan,
     IntNotEqual,
-    IntPush,
     Minus,
     Multiply,
     Not,
@@ -36,50 +35,51 @@ from lang.operations import (
     While,
     WhileEnd,
 )
+from lang.tokenize import Token, TokenType
 
 
-def parse(code: str) -> List[Operation]:
+def parse(tokens: List[Token]) -> List[Operation]:
     operations: List[Operation] = []
 
     # Stack of indexes in block start operations (such as If) in the operations list
     block_operations_offset_stack: List[int] = []
 
-    for word in code.split():
+    for token in tokens:
         operation: Operation
 
-        simple_operations: Dict[str, Operation] = {
-            "+": Plus(),
-            "-": Minus(),
-            "*": Multiply(),
-            "/": Divide(),
-            "true": BoolPush(True),
-            "false": BoolPush(False),
-            "and": And(),
-            "or": Or(),
-            "not": Not(),
-            "=": IntEquals(),
-            ">": IntGreaterThan(),
-            ">=": IntGreaterEquals(),
-            "<": IntLessThan(),
-            "<=": IntLessEquals(),
-            "!=": IntNotEqual(),
-            "drop": Drop(),
-            "dup": Dup(),
-            "swap": Swap(),
-            "over": Over(),
-            "rot": Rot(),
-            "\\n": CharNewLinePrint(),
-            ".": Print(),
+        simple_tokens: Dict[TokenType, Operation] = {
+            TokenType.PLUS: Plus(),
+            TokenType.MINUS: Minus(),
+            TokenType.STAR: Multiply(),
+            TokenType.SLASH: Divide(),
+            TokenType.TRUE: BoolPush(True),
+            TokenType.FALSE: BoolPush(False),
+            TokenType.AND: And(),
+            TokenType.OR: Or(),
+            TokenType.NOT: Not(),
+            TokenType.EQUAL: IntEquals(),
+            TokenType.GREATER_THAN: IntGreaterThan(),
+            TokenType.GREATER_EQUAL: IntGreaterEquals(),
+            TokenType.LESS_THAN: IntLessThan(),
+            TokenType.LESS_EQUAL: IntLessEquals(),
+            TokenType.NOT_EQUAL: IntNotEqual(),
+            TokenType.DROP: Drop(),
+            TokenType.DUPLICATE: Dup(),
+            TokenType.SWAP: Swap(),
+            TokenType.OVER: Over(),
+            TokenType.ROTATE: Rot(),
+            TokenType.PRINT_NEWLINE: CharNewLinePrint(),
+            TokenType.PRINT: Print(),
         }
 
-        if word in simple_operations:
-            operation = simple_operations[word]
+        if token.type in simple_tokens:
+            operation = simple_tokens[token.type]
 
-        elif word == "if":
-            operation = If(None)
+        elif token.type == TokenType.IF:
+            operation == If(None)
             block_operations_offset_stack.append(len(operations))
 
-        elif word == "else":
+        elif token.type == TokenType.ELSE:
             operation = Else(None)
 
             try:
@@ -98,7 +98,7 @@ def parse(code: str) -> List[Operation]:
 
             block_operations_offset_stack.append(len(operations))
 
-        elif word == "end":
+        elif token.type == TokenType.END:
             operation = End()
 
             try:
@@ -123,15 +123,16 @@ def parse(code: str) -> List[Operation]:
             else:  # pragma: nocover
                 raise InvalidBlockStackValue(block_start)
 
-        elif word == "while":
+        elif token.type == TokenType.WHILE:
             operation = While(None)
             block_operations_offset_stack.append(len(operations))
 
-        elif word.isdigit():
-            operation = IntPush(int(word))
+        elif token.type == TokenType.INTEGER:
+            # TODO we need to get the value from the token here and IntPush
+            raise NotImplementedError
 
         else:
-            raise SyntaxException(word)
+            raise UnhandledTokenType(token)
 
         operations.append(operation)
 
