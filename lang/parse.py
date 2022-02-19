@@ -22,6 +22,7 @@ from lang.operations import (
     IntLessEquals,
     IntLessThan,
     IntNotEqual,
+    IntPush,
     Minus,
     Multiply,
     Not,
@@ -76,7 +77,7 @@ def parse(tokens: List[Token]) -> List[Operation]:
             operation = simple_tokens[token.type]
 
         elif token.type == TokenType.IF:
-            operation == If(None)
+            operation = If(None)
             block_operations_offset_stack.append(len(operations))
 
         elif token.type == TokenType.ELSE:
@@ -128,8 +129,7 @@ def parse(tokens: List[Token]) -> List[Operation]:
             block_operations_offset_stack.append(len(operations))
 
         elif token.type == TokenType.INTEGER:
-            # TODO we need to get the value from the token here and IntPush
-            raise NotImplementedError
+            operation = IntPush(int(token.value))
 
         else:
             raise UnhandledTokenType(token)

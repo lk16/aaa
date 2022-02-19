@@ -1,5 +1,9 @@
+from typing import TYPE_CHECKING
+
 from lang.operations import Operation
-from lang.tokenize import Token
+
+if TYPE_CHECKING:
+    from lang.tokenize import Token
 
 
 class ParseError(Exception):
@@ -7,7 +11,7 @@ class ParseError(Exception):
 
 
 class UnhandledTokenType(Exception):
-    def __init__(self, token: Token) -> None:
+    def __init__(self, token: "Token") -> None:
         super().__init__(f"Unhandled token type: {type(token).__name__}'")
 
 

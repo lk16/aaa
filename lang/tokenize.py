@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto
-from typing import Dict, List, Optional
+from typing import List, Optional, Tuple
 
 from lang.exceptions import TokenizeError
 
@@ -35,34 +35,34 @@ class TokenType(IntEnum):
     INTEGER = auto()
 
 
-simple_tokens: Dict[str, TokenType] = {
-    "+": TokenType.PLUS,
-    "-": TokenType.MINUS,
-    "*": TokenType.STAR,
-    "/": TokenType.SLASH,
-    "true": TokenType.TRUE,
-    "false": TokenType.FALSE,
-    "and": TokenType.AND,
-    "or": TokenType.OR,
-    "not": TokenType.NOT,
-    "=": TokenType.EQUAL,
-    ">": TokenType.GREATER_THAN,
-    ">=": TokenType.GREATER_EQUAL,
-    "<": TokenType.LESS_THAN,
-    "<=": TokenType.LESS_EQUAL,
-    "!=": TokenType.NOT_EQUAL,
-    "drop": TokenType.DROP,
-    "dup": TokenType.DUPLICATE,
-    "swap": TokenType.SWAP,
-    "over": TokenType.OVER,
-    "rot": TokenType.ROTATE,
-    "\\n": TokenType.PRINT_NEWLINE,
-    ".": TokenType.PRINT,
-    "if": TokenType.IF,
-    "else": TokenType.ELSE,
-    "end": TokenType.END,
-    "while": TokenType.WHILE,
-}
+simple_tokens: List[Tuple[str, TokenType]] = [
+    ("+", TokenType.PLUS),
+    ("-", TokenType.MINUS),
+    ("*", TokenType.STAR),
+    ("/", TokenType.SLASH),
+    ("true", TokenType.TRUE),
+    ("false", TokenType.FALSE),
+    ("and", TokenType.AND),
+    ("or", TokenType.OR),
+    ("not", TokenType.NOT),
+    ("=", TokenType.EQUAL),
+    (">", TokenType.GREATER_THAN),
+    (">=", TokenType.GREATER_EQUAL),
+    ("<", TokenType.LESS_THAN),
+    ("<=", TokenType.LESS_EQUAL),
+    ("!=", TokenType.NOT_EQUAL),
+    ("drop", TokenType.DROP),
+    ("dup", TokenType.DUPLICATE),
+    ("swap", TokenType.SWAP),
+    ("over", TokenType.OVER),
+    ("rot", TokenType.ROTATE),
+    ("\\n", TokenType.PRINT_NEWLINE),
+    (".", TokenType.PRINT),
+    ("if", TokenType.IF),
+    ("else", TokenType.ELSE),
+    ("end", TokenType.END),
+    ("while", TokenType.WHILE),
+]
 
 
 @dataclass
@@ -70,8 +70,12 @@ class Token:
     file_name: str
     line_number: int
     offset: int
-    length: int
+    value: str
     type: TokenType
+
+
+def tokenize(code: str, filename: str) -> List[Token]:
+    return Tokenizer(code, filename).run()
 
 
 class Tokenizer:
@@ -84,13 +88,13 @@ class Tokenizer:
     def try_tokenize_simple(self) -> Optional[Token]:
         line_part = self.line[self.offset :]
 
-        for token_str, token_type in simple_tokens.items():
+        for token_str, token_type in sorted(simple_tokens, reverse=True):
             if line_part.startswith(token_str):
                 return Token(
                     self.filename,
                     self.line_number,
                     self.offset,
-                    len(token_str),
+                    token_str,
                     token_type,
                 )
         return None
@@ -107,7 +111,7 @@ class Tokenizer:
             self.filename,
             self.line_number,
             self.offset,
-            length,
+            self.line[self.offset : self.offset + length],
             TokenType.INTEGER,
         )
 
@@ -123,13 +127,13 @@ class Tokenizer:
             token = self.try_tokenize_simple()
             if token:
                 tokens.append(token)
-                self.offset += token.length
+                self.offset += len(token.value)
                 continue
 
             if self.line[self.offset].isdigit():
                 token = self.tokenize_integer()
                 tokens.append(token)
-                self.offset += token.length
+                self.offset += len(token.value)
                 continue
 
             raise TokenizeError(self.filename, self.line_number, self.offset, self.line)

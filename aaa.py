@@ -6,6 +6,7 @@ import click
 
 from lang.parse import parse
 from lang.run import run_program
+from lang.tokenize import tokenize
 
 
 @click.group()
@@ -14,20 +15,26 @@ def cli() -> None:
 
 
 @cli.command()
-@click.argument("file", type=click.Path(exists=True))
-def run(file: str) -> None:
-    with open(file, "r") as f:
+@click.argument("filename", type=click.Path(exists=True))
+def run(filename: str) -> None:
+    with open(filename, "r") as f:
         code = f.read()
 
-    program = parse(code)
+    tokens = tokenize(code, filename)
+    program = parse(tokens)
     run_program(program)
 
 
 @cli.command()
 @click.argument("code", type=str)
-def cmd(code: str) -> None:
-    program = parse(code)
-    run_program(program)
+@click.option("--verbose/--no-verbose", "-v", type=bool)
+def cmd(code: str, verbose: bool) -> None:
+    tokens = tokenize(code, "<stdin>")
+    program = parse(tokens)
+    run_program(program, verbose=verbose)
+
+    if verbose:
+        print()
 
 
 @cli.command()

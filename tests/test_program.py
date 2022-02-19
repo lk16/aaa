@@ -3,6 +3,7 @@ from pytest import CaptureFixture
 
 from lang.parse import parse
 from lang.run import run_program
+from lang.tokenize import tokenize
 
 
 @pytest.mark.parametrize(
@@ -53,7 +54,8 @@ from lang.run import run_program
 def test_run_program_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
-    operations = parse(code)
+    tokens = tokenize(code, "<stdin>")
+    operations = parse(tokens)
     run_program(operations)
 
     stdout, stderr = capfd.readouterr()

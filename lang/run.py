@@ -1,3 +1,4 @@
+import sys
 from typing import List, Tuple, Union
 
 from lang.exceptions import (
@@ -39,8 +40,8 @@ from lang.operations import (
 )
 
 
-def run_program(operations: List[Operation]) -> None:
-    Program(operations).run()
+def run_program(operations: List[Operation], verbose: bool = False) -> None:
+    Program(operations).run(verbose=verbose)
 
 
 StackItem = Union[int, bool]
@@ -81,87 +82,119 @@ class Program:
     def pop_two(self, expected_type: type) -> Tuple[StackItem, StackItem]:
         return self.pop(expected_type), self.pop(expected_type)
 
-    def run(self) -> None:  # noqa: C901  # allow high complexity of this function
+    def run(  # noqa: C901  # allow high complexity of this function
+        self, verbose: bool
+    ) -> None:
+
+        if verbose:
+            for ip, operation in enumerate(self.operations):
+                print(f"DEBUG | IP: {ip:>2} | {operation.__repr__()}", file=sys.stderr)
+
+            print(
+                f"\nDEBUG | {'':>25} | IP: {self.instruction_pointer:>2} | Stack: "
+                + " ".join(str(item) for item in self.stack),
+                file=sys.stderr,
+            )
 
         while self.instruction_pointer < len(self.operations):
+
             operation = self.operations[self.instruction_pointer]
 
             if isinstance(operation, IntPush):
                 self.push(operation.value)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Plus):
                 z, y = self.pop_two(int)
                 self.push(z + y)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Minus):
                 z, y = self.pop_two(int)
                 self.push(y - z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Multiply):
                 z, y = self.pop_two(int)
                 self.push(z * y)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Divide):
                 z, y = self.pop_two(int)
                 self.push(y // z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, BoolPush):
                 self.push(operation.value)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, And):
                 z, y = self.pop_two(bool)
                 self.push(z and y)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Or):
                 z, y = self.pop_two(bool)
                 self.push(z or y)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Not):
                 z = self.pop(bool)
                 self.push(not z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, IntEquals):
                 z, y = self.pop_two(int)
                 self.push(z == y)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, IntLessThan):
                 z, y = self.pop_two(int)
                 self.push(y < z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, IntLessEquals):
                 z, y = self.pop_two(int)
                 self.push(y <= z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, IntGreaterThan):
                 z, y = self.pop_two(int)
                 self.push(y > z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, IntGreaterEquals):
                 z, y = self.pop_two(int)
                 self.push(y >= z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, IntNotEqual):
                 z, y = self.pop_two(int)
                 self.push(y != z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Drop):
                 self.pop_untyped()
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Dup):
                 z = self.top_untyped()
                 self.push(z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Swap):
                 z = self.pop_untyped()
                 y = self.pop_untyped()
                 self.push(z)
                 self.push(y)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Over):
                 z = self.pop_untyped()
                 y = self.top_untyped()
                 self.push(z)
                 self.push(y)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Rot):
                 x = self.pop_untyped()
@@ -170,6 +203,7 @@ class Program:
                 self.push(y)
                 self.push(x)
                 self.push(z)
+                self.instruction_pointer += 1
 
             elif isinstance(operation, If):
                 x = self.pop(bool)
@@ -181,24 +215,23 @@ class Program:
                 if not x:
                     self.instruction_pointer = operation.jump_if_false
 
+                self.instruction_pointer += 1
+
             elif isinstance(operation, End):
                 # End of block doesn't do anything
-                pass
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Else):
                 # TODO move this check to parse
                 if operation.jump_end is None:
                     raise InvalidJump
 
-                # When jumping to an jump_if_false from an If, we don't actually execute this Else.
-                # This is because we advance the instruction pointer at the end of this big loop.
-                # So the only way to actually hit an Else operation is by finishing the preceding If block.
-                # That means we can jump to the corresponding End (which we don't execute either for the same reason).
-                self.instruction_pointer = operation.jump_end
+                # Jump beyond the else instruction
+                self.instruction_pointer = operation.jump_end + 1
 
             elif isinstance(operation, CharNewLinePrint):
-                # Just print a newline
-                print()
+                print()  # Just print a newline
+                self.instruction_pointer += 1
 
             elif isinstance(operation, Print):
                 x = self.pop_untyped()
@@ -210,6 +243,8 @@ class Program:
                 else:
                     print(x, end="")
 
+                self.instruction_pointer += 1
+
             elif isinstance(operation, While):
                 x = self.pop(bool)
 
@@ -220,14 +255,20 @@ class Program:
                 if not x:
                     self.instruction_pointer = operation.jump_end
 
+                self.instruction_pointer += 1
+
             elif isinstance(operation, WhileEnd):
                 self.instruction_pointer = operation.jump_start
-                continue  # don't increment instruction pointer
 
             else:
                 raise UnhandledOperationError(operation)
 
-            self.instruction_pointer += 1
+            if verbose:
+                print(
+                    f"DEBUG | {operation.__repr__():>25} | IP: {self.instruction_pointer:>2} | Stack: "
+                    + " ".join(str(item) for item in self.stack),
+                    file=sys.stderr,
+                )
 
         if self.stack:
             raise StackNotEmptyAtExit
