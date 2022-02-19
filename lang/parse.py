@@ -32,6 +32,7 @@ from lang.operations import (
     Plus,
     Print,
     Rot,
+    StringPush,
     Swap,
     While,
     WhileEnd,
@@ -130,6 +131,15 @@ def parse(tokens: List[Token]) -> List[Operation]:
 
         elif token.type == TokenType.INTEGER:
             operation = IntPush(int(token.value))
+
+        elif token.type == TokenType.STRING:
+            string = (
+                token.value[1:-1]
+                .replace("\\n", "\n")
+                .replace('\\"', '"')
+                .replace("\\\\", "\\")
+            )
+            operation = StringPush(string)
 
         else:
             raise UnhandledTokenType(token)

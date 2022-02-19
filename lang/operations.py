@@ -153,3 +153,8 @@ class While(Operation):
 @dataclass
 class WhileEnd(Operation):
     jump_start: int
+
+
+@dataclass
+class StringPush(Operation):
+    value: str

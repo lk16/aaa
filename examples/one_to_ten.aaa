@@ -1,0 +1,8 @@
+0 true
+while
+    1 +
+    dup .
+    \n
+    dup 10 <
+end
+drop

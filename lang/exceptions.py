@@ -62,7 +62,19 @@ class TokenizeError(Exception):
     def __init__(self, filename: str, line_number: int, offset: int, line: str) -> None:
         super().__init__(
             f"Tokenize error on {filename}:{line_number}:{offset}:\n"
-            + "{line}\n"
+            + f"{line}\n"
             + " " * offset
             + "^"
         )
+
+
+class StringTokenizeError(TokenizeError):
+    ...
+
+
+class UnterminatedStringError(TokenizeError):
+    ...
+
+
+class InvalidStringEscapeSequence(StringTokenizeError):
+    ...

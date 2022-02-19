@@ -1,8 +1,12 @@
-from typing import List
+from typing import List, Type
 
 import pytest
 
-from lang.exceptions import TokenizeError
+from lang.exceptions import (
+    InvalidStringEscapeSequence,
+    TokenizeError,
+    UnterminatedStringError,
+)
 from lang.tokenize import TokenType, tokenize
 
 
@@ -58,6 +62,16 @@ def test_tokenize_ok(code: str, expected_token_types: List[TokenType]) -> None:
     assert expected_token_types == token_types
 
 
-def test_tokenize_fail() -> None:
-    with pytest.raises(TokenizeError):
-        tokenize("adsfasdf", "<stdin>")
+@pytest.mark.parametrize(
+    ["code", "expected_exception"],
+    [
+        ("adsfasdf", TokenizeError),
+        ('"', UnterminatedStringError),
+        ('"\\"', UnterminatedStringError),
+        ('"\\', UnterminatedStringError),
+        ('"\\x"', InvalidStringEscapeSequence),
+    ],
+)
+def test_tokenize_fail(code: str, expected_exception: Type[Exception]) -> None:
+    with pytest.raises(expected_exception):
+        tokenize(code, "<stdin>")

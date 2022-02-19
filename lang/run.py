@@ -34,6 +34,7 @@ from lang.operations import (
     Plus,
     Print,
     Rot,
+    StringPush,
     Swap,
     While,
     WhileEnd,
@@ -44,7 +45,7 @@ def run_program(operations: List[Operation], verbose: bool = False) -> None:
     Program(operations).run(verbose=verbose)
 
 
-StackItem = Union[int, bool]
+StackItem = Union[int, bool, str]
 
 
 class Program:
@@ -106,22 +107,22 @@ class Program:
 
             elif isinstance(operation, Plus):
                 z, y = self.pop_two(int)
-                self.push(z + y)
+                self.push(z + y)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Minus):
                 z, y = self.pop_two(int)
-                self.push(y - z)
+                self.push(y - z)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Multiply):
                 z, y = self.pop_two(int)
-                self.push(z * y)
+                self.push(z * y)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Divide):
                 z, y = self.pop_two(int)
-                self.push(y // z)
+                self.push(y // z)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, BoolPush):
@@ -150,22 +151,22 @@ class Program:
 
             elif isinstance(operation, IntLessThan):
                 z, y = self.pop_two(int)
-                self.push(y < z)
+                self.push(y < z)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntLessEquals):
                 z, y = self.pop_two(int)
-                self.push(y <= z)
+                self.push(y <= z)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntGreaterThan):
                 z, y = self.pop_two(int)
-                self.push(y > z)
+                self.push(y > z)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntGreaterEquals):
                 z, y = self.pop_two(int)
-                self.push(y >= z)
+                self.push(y >= z)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntNotEqual):
@@ -259,6 +260,10 @@ class Program:
 
             elif isinstance(operation, WhileEnd):
                 self.instruction_pointer = operation.jump_start
+
+            elif isinstance(operation, StringPush):
+                self.push(operation.value)
+                self.instruction_pointer += 1
 
             else:
                 raise UnhandledOperationError(operation)

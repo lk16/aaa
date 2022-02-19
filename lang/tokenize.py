@@ -2,7 +2,11 @@ from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import List, Optional, Tuple
 
-from lang.exceptions import TokenizeError
+from lang.exceptions import (
+    InvalidStringEscapeSequence,
+    TokenizeError,
+    UnterminatedStringError,
+)
 
 
 class TokenType(IntEnum):
@@ -34,6 +38,7 @@ class TokenType(IntEnum):
     WHILE = auto()
     INTEGER = auto()
     UNHANDLED = auto()  # For testing purposes
+    STRING = auto()
 
 
 simple_tokens: List[Tuple[str, TokenType]] = [
@@ -89,8 +94,8 @@ class Tokenizer:
     def try_tokenize_simple(self) -> Optional[Token]:
         line_part = self.line[self.offset :]
 
-        # HACK: by sorting in reverse order, we try always try the longest simple token
-        # with the same prefix: we match <= with LESS_EQUAL instead of with LESS_THAN
+        # HACK: by sorting in reverse order, we always try the longest simple token # with the same prefix.
+        # This way we  guarantee to for example match <= with LESS_EQUAL instead of with LESS_THAN.
         # TODO: find better solution
         for token_str, token_type in sorted(simple_tokens, reverse=True):
             if line_part.startswith(token_str):
@@ -119,6 +124,43 @@ class Tokenizer:
             TokenType.INTEGER,
         )
 
+    def tokenize_string(self) -> Token:
+
+        i = self.offset + 1
+        while i < len(self.line):
+            char = self.line[i]
+
+            if char == '"':
+                return Token(
+                    self.filename,
+                    self.line_number,
+                    self.offset,
+                    self.line[self.offset : i + 1],
+                    TokenType.STRING,
+                )
+
+            if char == "\\":
+                try:
+                    next_char = self.line[i + 1]
+                except IndexError:
+                    raise UnterminatedStringError(
+                        self.filename, self.line_number, self.offset, self.line
+                    )
+
+                if next_char not in ["\\", '"', "n"]:
+                    raise InvalidStringEscapeSequence(
+                        self.filename, self.line_number, self.offset, self.line
+                    )
+
+                i += 2
+
+            else:
+                i += 1
+
+        raise UnterminatedStringError(
+            self.filename, self.line_number, self.offset, self.line
+        )
+
     def tokenize_line(self) -> List[Token]:
         self.offset = 0
         tokens = []
@@ -132,15 +174,21 @@ class Tokenizer:
             if token:
                 tokens.append(token)
                 self.offset += len(token.value)
-                continue
 
-            if self.line[self.offset].isdigit():
+            elif self.line[self.offset] == '"':
+                token = self.tokenize_string()
+                tokens.append(token)
+                self.offset += len(token.value)
+
+            elif self.line[self.offset].isdigit():
                 token = self.tokenize_integer()
                 tokens.append(token)
                 self.offset += len(token.value)
-                continue
 
-            raise TokenizeError(self.filename, self.line_number, self.offset, self.line)
+            else:
+                raise TokenizeError(
+                    self.filename, self.line_number, self.offset, self.line
+                )
 
         return tokens
 

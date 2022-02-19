@@ -2,46 +2,48 @@
 Stack-based language, like forth.
 
 ### Name
-The name of this language is just the first letter of the latin alphabet [repeated](https://en.uncyclopedia.co/wiki/AAAAAAAAA!) three times. Unless the code doesn't work as expected, then it's short for Aaaaaaargh.
+The name of this language is just the first letter of the latin alphabet [repeated](#Examples) three times. When code in this language doesn't work its meaning becomes an [abbreviation](https://en.uncyclopedia.co/wiki/AAAAAAAAA!).
 
-### How to run
+### Setup
 ```sh
-# Install dependencies and enter poetry environment
+# Install dependencies
 poetry install
+
+# Enter poetry environment
 poetry shell
+```
 
-# Run an Aaa program from shell argument
-./aaa.py cmd '1337 . \n'
-# prints "1337\n"
-
-./aaa.py cmd '12 2 / 8 * 6 - 42 = if 9001 . end \n'
-# prints "9001\n"
-
-# Run an Aaa program from file
+### Examples
+```sh
+# Run code from a file. This prints "42\n".
 ./aaa.py run samples/print_number.aaa
-# prints "42\n"
+
+# Run code form a shell argument. This prints "9001\n".
+./aaa.py cmd '3 5 + 8 = if 9001 . end \n'
+
+# Show off some features. This prints "aaa\n"
+./aaa.py cmd '"a" 0 true while over . 1 + dup 3 < end drop drop \n'
 
 # Run unit tests
 ./aaa.py runtests
 ```
 
-### Features
+### Aaa features
 - types: integers and booleans
 - integers and integer operations
 - booleans and boolean operations
 - stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)
-
-### Upcoming features
 - strings
-- string operations (`str_print`)
-- characters
-- character operations (`char_eq`)
+
+### Upcoming aaa features
+- string operations (`str_concat`, `str_sub`, `str_eq`)
+- functions (`fn`)
+- comments (`//`)
+- loops (`break`, `continue`)
 - static type checking
 - clear syntax errors
-- comments (`//`)
-- functions (`fn`)
 - structs / classes ?
 - compile to native executable
 - compile itself

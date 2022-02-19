@@ -49,6 +49,10 @@ from lang.tokenize import tokenize
         ("true while 1 . false end", "1"),
         ("false true true true while 1 . end", "111"),
         ("0 true while dup . 1 + dup 9 <= end drop", "0123456789"),
+        ('"foo" .', "foo"),
+        ('"\\\\" .', "\\"),
+        ('"\\n" .', "\n"),
+        ('"\\"" .', '"'),
     ],
 )
 def test_run_program_ok(
