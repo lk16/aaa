@@ -26,6 +26,7 @@ from lang.operations import (
     IntNotEqual,
     IntPush,
     Minus,
+    Modulo,
     Multiply,
     Not,
     Operation,
@@ -134,6 +135,11 @@ class Program:
             elif isinstance(operation, Divide):
                 x, y = self.pop_two(int)
                 self.push(y // x)  # type: ignore
+                self.instruction_pointer += 1
+
+            elif isinstance(operation, Modulo):
+                x, y = self.pop_two(int)
+                self.push(y % x)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, BoolPush):

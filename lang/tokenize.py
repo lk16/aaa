@@ -14,6 +14,7 @@ class TokenType(IntEnum):
     MINUS = auto()
     STAR = auto()
     SLASH = auto()
+    PERCENT = auto()
     TRUE = auto()
     FALSE = auto()
     AND = auto()
@@ -48,6 +49,7 @@ simple_tokens: List[Tuple[str, TokenType]] = [
     ("-", TokenType.MINUS),
     ("*", TokenType.STAR),
     ("/", TokenType.SLASH),
+    ("%", TokenType.PERCENT),
     ("true", TokenType.TRUE),
     ("false", TokenType.FALSE),
     ("and", TokenType.AND),

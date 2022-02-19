@@ -163,3 +163,8 @@ class StringPush(Operation):
 @dataclass
 class SubString(Operation):
     ...
+
+
+@dataclass
+class Modulo(Operation):
+    ...

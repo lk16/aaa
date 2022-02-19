@@ -30,7 +30,7 @@ poetry shell
 
 ### Aaa features
 - types: integers and booleans
-- integers and integer operations (`+`, `-`, `*`, `/`)
+- integers and integer operations (`+`, `-`, `*`, `/`, `%`)
 - booleans and boolean operations (`and`, `or`, `not`)
 - stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
