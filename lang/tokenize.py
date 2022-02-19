@@ -39,6 +39,7 @@ class TokenType(IntEnum):
     INTEGER = auto()
     UNHANDLED = auto()  # For testing purposes
     STRING = auto()
+    SUBSTRING = auto()
 
 
 simple_tokens: List[Tuple[str, TokenType]] = [
@@ -68,6 +69,7 @@ simple_tokens: List[Tuple[str, TokenType]] = [
     ("else", TokenType.ELSE),
     ("end", TokenType.END),
     ("while", TokenType.WHILE),
+    ("substr", TokenType.SUBSTRING),
 ]
 
 

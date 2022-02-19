@@ -17,8 +17,8 @@ from lang.operations import (
     Dup,
     Else,
     End,
+    Equals,
     If,
-    IntEquals,
     IntGreaterEquals,
     IntGreaterThan,
     IntLessEquals,
@@ -35,6 +35,7 @@ from lang.operations import (
     Print,
     Rot,
     StringPush,
+    SubString,
     Swap,
     While,
     WhileEnd,
@@ -69,14 +70,20 @@ class Program:
         except IndexError as e:
             raise StackUnderflow from e
 
+    def check_type(self, item: StackItem, expected_types: List[type]) -> None:
+        # TODO: remove type checking here once we have static type checking
+        if type(item) not in expected_types:
+            raise UnexpectedType(
+                "expected "
+                + " or ".join(
+                    expected_type.__name__ for expected_type in expected_types
+                )
+                + f" on top of stack, but found {type(item).__name__}"
+            )
+
     def pop(self, expected_type: type) -> StackItem:
         item = self.pop_untyped()
-
-        # TODO: remove type checking here once we have static type checking
-        if type(item) != expected_type:
-            raise UnexpectedType(
-                f"expected {expected_type.__name__} on top of stack, but found {type(item).__name__}"
-            )
+        self.check_type(item, [expected_type])
 
         return item
 
@@ -106,23 +113,27 @@ class Program:
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Plus):
-                z, y = self.pop_two(int)
-                self.push(z + y)  # type: ignore
+                x = self.pop_untyped()
+                y = self.pop_untyped()
+                self.check_type(x, [int, str])
+                self.check_type(y, [type(x)])
+
+                self.push(y + x)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Minus):
-                z, y = self.pop_two(int)
-                self.push(y - z)  # type: ignore
+                x, y = self.pop_two(int)
+                self.push(y - x)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Multiply):
-                z, y = self.pop_two(int)
-                self.push(z * y)  # type: ignore
+                x, y = self.pop_two(int)
+                self.push(x * y)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Divide):
-                z, y = self.pop_two(int)
-                self.push(y // z)  # type: ignore
+                x, y = self.pop_two(int)
+                self.push(y // x)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, BoolPush):
@@ -130,48 +141,52 @@ class Program:
                 self.instruction_pointer += 1
 
             elif isinstance(operation, And):
-                z, y = self.pop_two(bool)
-                self.push(z and y)
+                x, y = self.pop_two(bool)
+                self.push(x and y)
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Or):
-                z, y = self.pop_two(bool)
-                self.push(z or y)
+                x, y = self.pop_two(bool)
+                self.push(x or y)
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Not):
-                z = self.pop(bool)
-                self.push(not z)
+                x = self.pop(bool)
+                self.push(not x)
                 self.instruction_pointer += 1
 
-            elif isinstance(operation, IntEquals):
-                z, y = self.pop_two(int)
-                self.push(z == y)
+            elif isinstance(operation, Equals):
+                x = self.pop_untyped()
+                y = self.pop_untyped()
+                self.check_type(x, [int, str])
+                self.check_type(y, [type(x)])
+
+                self.push(x == y)
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntLessThan):
-                z, y = self.pop_two(int)
-                self.push(y < z)  # type: ignore
+                x, y = self.pop_two(int)
+                self.push(y < x)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntLessEquals):
-                z, y = self.pop_two(int)
-                self.push(y <= z)  # type: ignore
+                x, y = self.pop_two(int)
+                self.push(y <= x)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntGreaterThan):
-                z, y = self.pop_two(int)
-                self.push(y > z)  # type: ignore
+                x, y = self.pop_two(int)
+                self.push(y > x)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntGreaterEquals):
-                z, y = self.pop_two(int)
-                self.push(y >= z)  # type: ignore
+                x, y = self.pop_two(int)
+                self.push(y >= x)  # type: ignore
                 self.instruction_pointer += 1
 
             elif isinstance(operation, IntNotEqual):
-                z, y = self.pop_two(int)
-                self.push(y != z)
+                x, y = self.pop_two(int)
+                self.push(y != x)
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Drop):
@@ -179,21 +194,21 @@ class Program:
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Dup):
-                z = self.top_untyped()
-                self.push(z)
+                x = self.top_untyped()
+                self.push(x)
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Swap):
-                z = self.pop_untyped()
+                x = self.pop_untyped()
                 y = self.pop_untyped()
-                self.push(z)
+                self.push(x)
                 self.push(y)
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Over):
-                z = self.pop_untyped()
+                x = self.pop_untyped()
                 y = self.top_untyped()
-                self.push(z)
+                self.push(x)
                 self.push(y)
                 self.instruction_pointer += 1
 
@@ -263,6 +278,18 @@ class Program:
 
             elif isinstance(operation, StringPush):
                 self.push(operation.value)
+                self.instruction_pointer += 1
+
+            elif isinstance(operation, SubString):
+                end: int = self.pop(int)  # type: ignore
+                start: int = self.pop(int)  # type: ignore
+                string: str = self.pop(str)  # type: ignore
+
+                if start >= end or start > len(string):
+                    self.push("")
+                else:
+                    self.push(string[start:end])
+
                 self.instruction_pointer += 1
 
             else:

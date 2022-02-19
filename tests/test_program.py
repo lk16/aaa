@@ -53,6 +53,14 @@ from lang.tokenize import tokenize
         ('"\\\\" .', "\\"),
         ('"\\n" .', "\n"),
         ('"\\"" .', '"'),
+        ('"a" "b" + .', "ab"),
+        ('"aaa" "aaa" = .', "true"),
+        ('"aaa" "bbb" = .', "false"),
+        ('"abc" 0 2 substr .', "ab"),
+        ('"abc" 0 5 substr .', "abc"),
+        ('"abc" 1 2 substr .', "b"),
+        ('"abc" 3 2 substr .', ""),
+        ('"abc" 7 8 substr .', ""),
     ],
 )
 def test_run_program_ok(

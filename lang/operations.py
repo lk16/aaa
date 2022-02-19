@@ -60,7 +60,7 @@ class Not(Operation):
 
 
 @dataclass
-class IntEquals(Operation):
+class Equals(Operation):
     ...
 
 
@@ -158,3 +158,8 @@ class WhileEnd(Operation):
 @dataclass
 class StringPush(Operation):
     value: str
+
+
+@dataclass
+class SubString(Operation):
+    ...

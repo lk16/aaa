@@ -30,18 +30,19 @@ poetry shell
 
 ### Aaa features
 - types: integers and booleans
-- integers and integer operations
-- booleans and boolean operations
+- integers and integer operations (`+`, `-`, `*`, `/`)
+- booleans and boolean operations (`and`, `or`, `not`)
 - stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)
-- strings
+- strings and string operations (`+`, `=`, `substr`)
 
 ### Upcoming aaa features
-- string operations (`str_concat`, `str_sub`, `str_eq`)
 - functions (`fn`)
 - comments (`//`)
 - loops (`break`, `continue`)
+- assertions (`assert`)
+- debug tools (`breakpoint`)
 - static type checking
 - clear syntax errors
 - structs / classes ?

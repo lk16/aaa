@@ -15,8 +15,8 @@ from lang.operations import (
     Dup,
     Else,
     End,
+    Equals,
     If,
-    IntEquals,
     IntGreaterEquals,
     IntGreaterThan,
     IntLessEquals,
@@ -33,6 +33,7 @@ from lang.operations import (
     Print,
     Rot,
     StringPush,
+    SubString,
     Swap,
     While,
     WhileEnd,
@@ -59,7 +60,7 @@ def parse(tokens: List[Token]) -> List[Operation]:
             TokenType.AND: And(),
             TokenType.OR: Or(),
             TokenType.NOT: Not(),
-            TokenType.EQUAL: IntEquals(),
+            TokenType.EQUAL: Equals(),
             TokenType.GREATER_THAN: IntGreaterThan(),
             TokenType.GREATER_EQUAL: IntGreaterEquals(),
             TokenType.LESS_THAN: IntLessThan(),
@@ -72,6 +73,7 @@ def parse(tokens: List[Token]) -> List[Operation]:
             TokenType.ROTATE: Rot(),
             TokenType.PRINT_NEWLINE: CharNewLinePrint(),
             TokenType.PRINT: Print(),
+            TokenType.SUBSTRING: SubString(),
         }
 
         if token.type in simple_tokens:
