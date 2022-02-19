@@ -49,3 +49,11 @@ class UnexpectedOperation(RunTimeError):
 
 class StackNotEmptyAtExit(RunTimeError):
     ...
+
+
+class TokenizeError(Exception):
+    def __init__(self, filename: str, line_number: int, offset: int, line: str) -> None:
+        msg = f"Tokenize error on {filename}:{line_number}:{offset}:\n{line}\n"
+        msg += " " * offset
+        msg += "^"
+        super().__init__(msg)
