@@ -1,13 +1,15 @@
-from typing import Dict, List
+from itertools import count
+from typing import Dict, List, Tuple
 
 from lang.exceptions import (
-    BlockStackNotEmpty,
     InvalidBlockStackValue,
     InvalidJump,
+    UnexpectedEndOfFile,
     UnexpectedToken,
     UnhandledTokenType,
 )
-from lang.operations import (
+from lang.tokenize import Token, TokenType
+from lang.types import (
     And,
     BoolPush,
     CharNewLinePrint,
@@ -17,6 +19,7 @@ from lang.operations import (
     Else,
     End,
     Equals,
+    Function,
     If,
     IntGreaterEquals,
     IntGreaterThan,
@@ -41,16 +44,73 @@ from lang.operations import (
     While,
     WhileEnd,
 )
-from lang.tokenize import Token, TokenType
 
 
-def parse(tokens: List[Token]) -> List[Operation]:  # noqa: C901 # Allow high complexity
+def parse(tokens: List[Token]) -> Dict[str, Function]:
+    functions: Dict[str, Function] = {}
+
+    token_offset = 0
+    while token_offset < len(tokens):
+        token = tokens[token_offset]
+
+        if token.type == TokenType.FUNCTION:
+            function, consumed_tokens = parse_function(tokens[token_offset + 1 :])
+            functions[function.name] = function
+            token_offset += consumed_tokens
+
+        elif token.type == TokenType.COMMENT:
+            token_offset += 1
+
+        else:
+            raise UnexpectedToken(token)
+
+    return functions
+
+
+def parse_function(
+    tokens: List[Token],
+) -> Tuple[Function, int]:  # noqa: C901  # Allow high complexity
+
+    # TODO IndexErrors can happen anywhere in this function
+
+    if tokens[0].type != TokenType.IDENTIFIER:
+        raise UnexpectedToken(tokens[0])
+
+    name = tokens[0].value
+    # TODO check that the name of the function is not taken already
+
+    arg_names: List[str] = []
+
+    for arg_offset in count():
+        arg_token = tokens[1 + arg_offset]
+
+        if arg_token.type == TokenType.IDENTIFIER:
+            # TODO check that the argument does not overlap with other args or function names
+            arg_names.append(arg_token.value)
+        elif arg_token.type == TokenType.FUNCTION_BEGIN:
+            break
+        else:
+            raise UnexpectedToken(arg_token)
+
+    arg_count = len(arg_names)
+
+    operations, consumed_body_tokens = parse_function_body(tokens[1 + arg_count + 1 :])
+
+    function = Function(name, arg_count, operations)
+    consumed_tokens = 1 + arg_count + 1 + consumed_body_tokens + 1
+
+    return function, consumed_tokens
+
+
+def parse_function_body(  # noqa: C901  # Allow high complexity
+    tokens: List[Token],
+) -> Tuple[List[Operation], int]:  # noqa: C901 # Allow high complexity
     operations: List[Operation] = []
 
     # Stack of indexes in block start operations (such as If) in the operations list
     block_operations_offset_stack: List[int] = []
 
-    for token in tokens:
+    for consumed_tokens, token in enumerate(tokens):
         operation: Operation
 
         simple_tokens: Dict[TokenType, Operation] = {
@@ -112,9 +172,22 @@ def parse(tokens: List[Token]) -> List[Operation]:  # noqa: C901 # Allow high co
 
             try:
                 block_start_offset = block_operations_offset_stack.pop()
-            except IndexError as e:
-                # end without matching start block
-                raise UnexpectedToken(token) from e
+            except IndexError:
+                # This is the end of the function
+
+                # The block operations stack is empty so all jumps should be initialized to some "address" integer value.
+                for operation in operations:
+                    if any(
+                        [
+                            isinstance(operation, If)
+                            and operation.jump_if_false is None,
+                            isinstance(operation, Else) and operation.jump_end is None,
+                            isinstance(operation, While) and operation.jump_end is None,
+                        ]
+                    ):
+                        raise InvalidJump  # pragma: nocover
+
+                return operations, consumed_tokens
 
             block_start = operations[block_start_offset]
 
@@ -162,18 +235,4 @@ def parse(tokens: List[Token]) -> List[Operation]:  # noqa: C901 # Allow high co
 
         operations.append(operation)
 
-    if block_operations_offset_stack:
-        raise BlockStackNotEmpty
-
-    # If the block operations stack is empty, all jumps should be initialized to some "address" integer value.
-    for operation in operations:
-        if any(
-            [
-                isinstance(operation, If) and operation.jump_if_false is None,
-                isinstance(operation, Else) and operation.jump_end is None,
-                isinstance(operation, While) and operation.jump_end is None,
-            ]
-        ):
-            raise InvalidJump  # pragma: nocover
-
-    return operations
+    raise UnexpectedEndOfFile

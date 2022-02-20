@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 
 @dataclass
@@ -166,3 +166,10 @@ class Modulo(Operation):
 @dataclass
 class StringLength(Operation):
     ...
+
+
+@dataclass
+class Function:
+    name: str
+    arg_count: int
+    operations: List[Operation]

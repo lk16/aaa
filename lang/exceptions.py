@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from lang.operations import Operation
+from lang.types import Operation
 
 if TYPE_CHECKING:  # pragma: nocover
     from lang.tokenize import Token
@@ -30,6 +30,10 @@ class UnexpectedToken(ParseError):
 
 
 class BlockStackNotEmpty(ParseError):
+    ...
+
+
+class UnexpectedEndOfFile(ParseError):
     ...
 
 

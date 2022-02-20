@@ -5,7 +5,7 @@ import subprocess
 import click
 
 from lang.parse import parse
-from lang.run import run_program
+from lang.run import run
 from lang.tokenize import tokenize
 
 
@@ -14,16 +14,16 @@ def cli() -> None:
     pass
 
 
-@cli.command()
+@cli.command(name="run")
 @click.argument("filename", type=click.Path(exists=True))
 @click.option("--verbose/--no-verbose", "-v", type=bool)
-def run(filename: str, verbose: bool) -> None:
+def run_command(filename: str, verbose: bool) -> None:
     with open(filename, "r") as f:
         code = f.read()
 
     tokens = tokenize(code, filename)
     program = parse(tokens)
-    run_program(program, verbose=verbose)
+    run(program, verbose=verbose)
 
 
 @cli.command()
@@ -32,7 +32,7 @@ def run(filename: str, verbose: bool) -> None:
 def cmd(code: str, verbose: bool) -> None:
     tokens = tokenize(code, "<stdin>")
     program = parse(tokens)
-    run_program(program, verbose=verbose)
+    run(program, verbose=verbose)
 
     if verbose:
         print()

@@ -2,7 +2,7 @@ import pytest
 from pytest import CaptureFixture
 
 from lang.parse import parse
-from lang.run import run_program
+from lang.run import run
 from lang.tokenize import tokenize
 
 
@@ -75,7 +75,7 @@ def test_run_program_ok(
 ) -> None:
     tokens = tokenize(code, "<stdin>")
     operations = parse(tokens)
-    run_program(operations)
+    run(operations)
 
     stdout, stderr = capfd.readouterr()
     assert expected_output == stdout
