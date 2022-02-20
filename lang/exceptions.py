@@ -25,7 +25,7 @@ class InvalidBlockStackValue(ParseError):
 class UnexpectedToken(ParseError):
     def __init__(self, token: "Token") -> None:
         super().__init__(
-            f"Unexpected token {token} on {token.filename}:{token.line_number}:{token.offset}"
+            f"Unexpected token {token} on {token.filename}:{token.line_number}:{token.offset + 1}"
         )
 
 
@@ -65,7 +65,7 @@ class StackNotEmptyAtExit(RunTimeError):
 class TokenizeError(Exception):
     def __init__(self, filename: str, line_number: int, offset: int, line: str) -> None:
         super().__init__(
-            f"Tokenize error on {filename}:{line_number}:{offset}:\n"
+            f"Tokenize error on {filename}:{line_number}:{offset + 1}:\n"
             + f"{line}\n"
             + " " * offset
             + "^"
