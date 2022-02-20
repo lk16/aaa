@@ -40,7 +40,15 @@ def cmd(code: str, verbose: bool) -> None:
 
 @cli.command()
 def runtests() -> None:
-    subprocess.run("pytest --cov=lang --cov-report=term-missing --pdb -x".split())
+    commands = [
+        "pre-commit run --all-files",
+        "pytest --cov=lang --cov-report=term-missing --pdb -x",
+    ]
+
+    for command in commands:
+        proc = subprocess.run(command.split())
+        if proc.returncode != 0:
+            exit(1)
 
 
 if __name__ == "__main__":
