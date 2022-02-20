@@ -8,6 +8,7 @@ from lang.exceptions import (
     UnexpectedToken,
     UnhandledTokenType,
 )
+from lang.program import Program
 from lang.tokenize import Token, TokenType
 from lang.types import (
     And,
@@ -46,7 +47,7 @@ from lang.types import (
 )
 
 
-def parse(tokens: List[Token]) -> Dict[str, Function]:
+def parse(tokens: List[Token]) -> Program:
     functions: Dict[str, Function] = {}
 
     token_offset = 0
@@ -54,7 +55,7 @@ def parse(tokens: List[Token]) -> Dict[str, Function]:
         token = tokens[token_offset]
 
         if token.type == TokenType.FUNCTION:
-            function, consumed_tokens = parse_function(tokens[token_offset + 1 :])
+            function, consumed_tokens = parse_function(tokens[token_offset:])
             functions[function.name] = function
             token_offset += consumed_tokens
 
@@ -64,7 +65,7 @@ def parse(tokens: List[Token]) -> Dict[str, Function]:
         else:
             raise UnexpectedToken(token)
 
-    return functions
+    return Program(functions)
 
 
 def parse_function(
@@ -73,10 +74,10 @@ def parse_function(
 
     # TODO IndexErrors can happen anywhere in this function
 
-    if tokens[0].type != TokenType.IDENTIFIER:
-        raise UnexpectedToken(tokens[0])
+    if tokens[1].type != TokenType.IDENTIFIER:
+        raise UnexpectedToken(tokens[1])
 
-    name = tokens[0].value
+    name = tokens[1].value
     # TODO check that the name of the function is not taken already
 
     arg_names: List[str] = []
@@ -94,10 +95,10 @@ def parse_function(
 
     arg_count = len(arg_names)
 
-    operations, consumed_body_tokens = parse_function_body(tokens[1 + arg_count + 1 :])
+    operations, consumed_body_tokens = parse_function_body(tokens[2 + arg_count + 1 :])
 
     function = Function(name, arg_count, operations)
-    consumed_tokens = 1 + arg_count + 1 + consumed_body_tokens + 1
+    consumed_tokens = 2 + arg_count + 1 + consumed_body_tokens + 1
 
     return function, consumed_tokens
 

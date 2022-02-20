@@ -46,9 +46,7 @@ def runtests() -> None:
     ]
 
     for command in commands:
-        proc = subprocess.run(command.split())
-        if proc.returncode != 0:
-            exit(1)
+        subprocess.run(command.split())
 
 
 if __name__ == "__main__":

@@ -2,24 +2,73 @@ from typing import List, Type
 
 import pytest
 
-from lang.exceptions import BlockStackNotEmpty, UnexpectedToken, UnhandledTokenType
+from lang.exceptions import UnexpectedEndOfFile, UnhandledTokenType
 from lang.parse import parse
 from lang.tokenize import Token, TokenType
 
 
-def token(token_type: TokenType, value: str = "") -> Token:
-    return Token("<stdin>", 0, 0, value, token_type)
+def token(token_type: TokenType) -> Token:
+    return Token("<stdin>", 0, 0, "", token_type)
 
 
 @pytest.mark.parametrize(
     ["tokens", "expected_exception"],
     [
-        ([token(TokenType.ELSE)], UnexpectedToken),
-        ([token(TokenType.END)], UnexpectedToken),
-        ([token(TokenType.UNHANDLED)], UnhandledTokenType),
-        ([token(TokenType.IF)], BlockStackNotEmpty),
-        ([token(TokenType.IF), token(TokenType.ELSE)], BlockStackNotEmpty),
-        ([token(TokenType.WHILE)], BlockStackNotEmpty),
+        (
+            [
+                token(TokenType.FUNCTION),
+                token(TokenType.IDENTIFIER),
+                token(TokenType.FUNCTION_BEGIN),
+                token(TokenType.ELSE),
+            ],
+            UnexpectedEndOfFile,
+        ),
+        (
+            [
+                token(TokenType.FUNCTION),
+                token(TokenType.IDENTIFIER),
+                token(TokenType.FUNCTION_BEGIN),
+                token(TokenType.END),
+            ],
+            UnexpectedEndOfFile,
+        ),
+        (
+            [
+                token(TokenType.FUNCTION),
+                token(TokenType.IDENTIFIER),
+                token(TokenType.FUNCTION_BEGIN),
+                token(TokenType.UNHANDLED),
+            ],
+            UnhandledTokenType,
+        ),
+        (
+            [
+                token(TokenType.FUNCTION),
+                token(TokenType.IDENTIFIER),
+                token(TokenType.FUNCTION_BEGIN),
+                token(TokenType.IF),
+            ],
+            UnexpectedEndOfFile,
+        ),
+        (
+            [
+                token(TokenType.FUNCTION),
+                token(TokenType.IDENTIFIER),
+                token(TokenType.FUNCTION_BEGIN),
+                token(TokenType.IF),
+                token(TokenType.ELSE),
+            ],
+            UnexpectedEndOfFile,
+        ),
+        (
+            [
+                token(TokenType.FUNCTION),
+                token(TokenType.IDENTIFIER),
+                token(TokenType.FUNCTION_BEGIN),
+                token(TokenType.WHILE),
+            ],
+            UnexpectedEndOfFile,
+        ),
     ],
 )
 def test_parse_fail(tokens: List[Token], expected_exception: Type[Exception]) -> None:

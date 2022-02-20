@@ -9,7 +9,7 @@ from lang.exceptions import (
     UnexpectedType,
     UnhandledOperationError,
 )
-from lang.run import run
+from lang.run import run_as_main
 from lang.types import (
     And,
     BoolPush,
@@ -52,14 +52,14 @@ def test_run_program_fails(
     operations: List[Operation], expected_exception: Type[Exception]
 ) -> None:
     with pytest.raises(expected_exception):
-        run(operations)
+        run_as_main(operations)
 
 
 def test_run_program_unexpected_type() -> None:
     operations: List[Operation] = [BoolPush(True), IntPush(3), Plus()]
 
     with pytest.raises(UnexpectedType):
-        run(operations)
+        run_as_main(operations)
 
 
 @pytest.mark.parametrize(
@@ -104,4 +104,4 @@ def test_run_program_unexpected_type() -> None:
 )
 def test_run_program_stack_underflow(operations: List[Operation]) -> None:
     with pytest.raises(StackUnderflow):
-        run(operations)
+        run_as_main(operations)

@@ -87,16 +87,17 @@ class Program:
         return self.pop(expected_type), self.pop(expected_type)
 
     def run(self, verbose: bool) -> None:
-        self.run_function(self, "main", verbose)
+        self.run_function("main", verbose)
 
     def run_function(  # noqa: C901  # allow high complexity of this function
         self, func_name: str, verbose: bool
     ) -> None:
-        # TODO check if function by name exists, load instructions
-        raise NotImplementedError
+        operations = self.functions[func_name].operations
+
+        # TODO deal with function arguments
 
         if verbose:  # pragma: nocover
-            for ip, operation in enumerate(self.operations):
+            for ip, operation in enumerate(operations):
                 print(f"DEBUG | IP: {ip:>2} | {operation.__repr__()}", file=sys.stderr)
 
             print(
@@ -105,9 +106,11 @@ class Program:
                 file=sys.stderr,
             )
 
-        while self.instruction_pointer < len(self.operations):
+        while self.instruction_pointer < len(operations):
 
-            operation = self.operations[self.instruction_pointer]
+            operation = operations[self.instruction_pointer]
+
+            # TODO rewrite this entire if-else chain as dictionary
 
             if isinstance(operation, IntPush):
                 self.push(operation.value)

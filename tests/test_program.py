@@ -70,12 +70,12 @@ from lang.tokenize import tokenize
         ('"abc" strlen .', "3"),
     ],
 )
-def test_run_program_ok(
+def test_run_program_as_main_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
-    tokens = tokenize(code, "<stdin>")
-    operations = parse(tokens)
-    run(operations)
+    tokens = tokenize("fn main begin " + code + " end", "<stdin>")
+    program = parse(tokens)
+    run(program)
 
     stdout, stderr = capfd.readouterr()
     assert expected_output == stdout

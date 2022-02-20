@@ -3,7 +3,7 @@ from typing import List, Optional
 
 
 @dataclass
-class Operation:
+class Operation:  # TODO rename to Instruction
     ...
 
 
