@@ -83,7 +83,7 @@ def parse_function(
     arg_names: List[str] = []
 
     for arg_offset in count():
-        arg_token = tokens[1 + arg_offset]
+        arg_token = tokens[2 + arg_offset]
 
         if arg_token.type == TokenType.IDENTIFIER:
             # TODO check that the argument does not overlap with other args or function names

@@ -4,23 +4,25 @@
 // numbers divisible by 5 should be replaced by "buzz".
 // If a number is divisible by both 3 and 5 it should be replaced by "fizzbuzz".
 
-0
-true while
-    1 +
-    dup 3 % 0 = if
-        "fizz" .
-        dup 5 % 0 = if
-            "buzz" .
-        end
-    else
-        dup 5 % 0 = if
-            "buzz" .
+fn main begin
+    0
+    true while
+        1 +
+        dup 3 % 0 = if
+            "fizz" .
+            dup 5 % 0 = if
+                "buzz" .
+            end
         else
-            dup .
+            dup 5 % 0 = if
+                "buzz" .
+            else
+                dup .
+            end
         end
+        \n
+        dup
+        100 <
     end
-    \n
-    dup
-    100 <
+    drop
 end
-drop

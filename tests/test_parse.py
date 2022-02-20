@@ -2,7 +2,7 @@ from typing import List, Type
 
 import pytest
 
-from lang.exceptions import UnexpectedEndOfFile, UnhandledTokenType
+from lang.exceptions import UnexpectedEndOfFile, UnexpectedToken, UnhandledTokenType
 from lang.parse import parse
 from lang.tokenize import Token, TokenType
 
@@ -21,16 +21,7 @@ def token(token_type: TokenType) -> Token:
                 token(TokenType.FUNCTION_BEGIN),
                 token(TokenType.ELSE),
             ],
-            UnexpectedEndOfFile,
-        ),
-        (
-            [
-                token(TokenType.FUNCTION),
-                token(TokenType.IDENTIFIER),
-                token(TokenType.FUNCTION_BEGIN),
-                token(TokenType.END),
-            ],
-            UnexpectedEndOfFile,
+            UnexpectedToken,
         ),
         (
             [
