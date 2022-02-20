@@ -8,13 +8,6 @@ class Operation:
 
 
 @dataclass
-class UnhandledOperation(Operation):
-    # TODO: move to tests folder
-    # This exists for testing purposes
-    ...
-
-
-@dataclass
 class IntPush(Operation):
     value: int
 

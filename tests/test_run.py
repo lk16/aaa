@@ -1,9 +1,9 @@
+from dataclasses import dataclass
 from typing import List, Type
 
 import pytest
 
 from lang.exceptions import (
-    InvalidJump,
     StackNotEmptyAtExit,
     StackUnderflow,
     UnexpectedType,
@@ -15,9 +15,7 @@ from lang.operations import (
     Divide,
     Drop,
     Dup,
-    Else,
     Equals,
-    If,
     IntGreaterEquals,
     IntGreaterThan,
     IntLessEquals,
@@ -34,21 +32,19 @@ from lang.operations import (
     Print,
     Rot,
     Swap,
-    UnhandledOperation,
-    While,
 )
 from lang.run import run_program
+
+
+@dataclass
+class UnhandledOperation(Operation):
+    ...
 
 
 @pytest.mark.parametrize(
     ["operations", "expected_exception"],
     [
         ([UnhandledOperation()], UnhandledOperationError),
-        ([BoolPush(True), If(None)], InvalidJump),
-        ([BoolPush(False), If(None)], InvalidJump),
-        ([Else(None)], InvalidJump),
-        ([BoolPush(True), While(None)], InvalidJump),
-        ([BoolPush(False), While(None)], InvalidJump),
         ([IntPush(3)], StackNotEmptyAtExit),
     ],
 )

@@ -7,8 +7,8 @@ from lang.parse import parse
 from lang.tokenize import Token, TokenType
 
 
-def token(token_type: TokenType) -> Token:
-    return Token("<stdin>", 0, 0, "", token_type)
+def token(token_type: TokenType, value: str = "") -> Token:
+    return Token("<stdin>", 0, 0, value, token_type)
 
 
 @pytest.mark.parametrize(

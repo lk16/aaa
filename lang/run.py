@@ -2,7 +2,6 @@ import sys
 from typing import List, Tuple, Union
 
 from lang.exceptions import (
-    InvalidJump,
     StackNotEmptyAtExit,
     StackUnderflow,
     UnexpectedType,
@@ -231,11 +230,10 @@ class Program:
             elif isinstance(operation, If):
                 x = self.pop(bool)
 
-                # TODO move this check to parse
-                if operation.jump_if_false is None:
-                    raise InvalidJump
-
                 if not x:
+                    assert (
+                        operation.jump_if_false is not None
+                    )  # nosec  # This is checked while parsing
                     self.instruction_pointer = operation.jump_if_false
 
                 self.instruction_pointer += 1
@@ -245,9 +243,9 @@ class Program:
                 self.instruction_pointer += 1
 
             elif isinstance(operation, Else):
-                # TODO move this check to parse
-                if operation.jump_end is None:
-                    raise InvalidJump
+                assert (
+                    operation.jump_end is not None
+                )  # nosec  # This is checked while parsing
 
                 # Jump beyond the else instruction
                 self.instruction_pointer = operation.jump_end + 1
@@ -271,11 +269,10 @@ class Program:
             elif isinstance(operation, While):
                 x = self.pop(bool)
 
-                # TODO move this check to parse
-                if operation.jump_end is None:
-                    raise InvalidJump
-
                 if not x:
+                    assert (
+                        operation.jump_end is not None
+                    )  # nosec  # This is checked while parsing
                     self.instruction_pointer = operation.jump_end
 
                 self.instruction_pointer += 1

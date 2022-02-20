@@ -3,6 +3,7 @@ from typing import Dict, List
 from lang.exceptions import (
     BlockStackNotEmpty,
     InvalidBlockStackValue,
+    InvalidJump,
     UnexpectedToken,
     UnhandledTokenType,
 )
@@ -157,5 +158,16 @@ def parse(tokens: List[Token]) -> List[Operation]:  # noqa: C901 # Allow high co
 
     if block_operations_offset_stack:
         raise BlockStackNotEmpty
+
+    # If the block operations stack is empty, all jumps should be initialized to some "address" integer value.
+    for operation in operations:
+        if any(
+            [
+                isinstance(operation, If) and operation.jump_if_false is None,
+                isinstance(operation, Else) and operation.jump_end is None,
+                isinstance(operation, While) and operation.jump_end is None,
+            ]
+        ):
+            raise InvalidJump  # pragma: nocover
 
     return operations
