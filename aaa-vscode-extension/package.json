@@ -1,0 +1,25 @@
+{
+    "name": "aaa-lang",
+    "displayName": "Aaa lang",
+    "description": "Syntax highlighting for the aaa language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.64.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "aaa",
+            "aliases": ["Aaa", "aaa"],
+            "extensions": [".aaa"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "aaa",
+            "scopeName": "source.aaa",
+            "path": "./syntaxes/aaa.tmLanguage.json"
+        }]
+    }
+}
