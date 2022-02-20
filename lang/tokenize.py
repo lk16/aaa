@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto
-from typing import List, Optional, Tuple
+from typing import Final, List, Optional, Set, Tuple
 
 from lang.exceptions import (
     InvalidStringEscapeSequence,
@@ -45,7 +45,7 @@ class TokenType(IntEnum):
     STRING_LENGTH = auto()
 
 
-simple_tokens: List[Tuple[str, TokenType]] = [
+SIMPLE_TOKENS: Final[List[Tuple[str, TokenType]]] = [
     ("+", TokenType.PLUS),
     ("-", TokenType.MINUS),
     ("*", TokenType.STAR),
@@ -77,6 +77,11 @@ simple_tokens: List[Tuple[str, TokenType]] = [
     ("strlen", TokenType.STRING_LENGTH),
 ]
 
+SIMPLE_TOKEN_TYPES: Final[Set[TokenType]] = {item[1] for item in SIMPLE_TOKENS}
+NON_SIMPLE_TOKEN_TYPES: Final[Set[TokenType]] = (
+    set(TokenType) - SIMPLE_TOKEN_TYPES - {TokenType.UNHANDLED}
+)
+
 
 @dataclass
 class Token:
@@ -101,7 +106,7 @@ class Tokenizer:
     def try_tokenize_simple(self) -> Optional[Token]:
         line_part = self.line[self.offset :]
 
-        for token_str, token_type in simple_tokens:
+        for token_str, token_type in SIMPLE_TOKENS:
             # Force a space after the matched simple token
             # This rules out problems like mismatching <= with LESS_THAN instead of LESS_EQUAL
             if (line_part + " ").startswith(token_str + " "):
