@@ -109,7 +109,7 @@ def parse_function(
 
 def parse_function_body(  # noqa: C901  # Allow high complexity
     tokens: List[Token],
-) -> Tuple[List[Operation], int]:  # noqa: C901 # Allow high complexity
+) -> Tuple[List[Operation], int]:
     operations: List[Operation] = []
 
     # Stack of indexes in block start operations (such as If) in the operations list

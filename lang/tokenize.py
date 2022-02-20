@@ -72,7 +72,7 @@ SIMPLE_TOKENS: Final[List[Tuple[str, TokenType]]] = [
     ("swap", TokenType.SWAP),
     ("over", TokenType.OVER),
     ("rot", TokenType.ROTATE),
-    ("\\n", TokenType.PRINT_NEWLINE),
+    ("\\n", TokenType.PRINT_NEWLINE),  # TODO: remove
     (".", TokenType.PRINT),
     ("if", TokenType.IF),
     ("else", TokenType.ELSE),
