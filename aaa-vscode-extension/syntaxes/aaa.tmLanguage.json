@@ -34,13 +34,17 @@
 		{
 			"name": "keyword.operator.comparison.aaa",
 			"match": "<|<\\=|\\=|>|>\\=|!\\="
+		},
+		{
+			"name": "variable.other.aaa",
+			"match": "\\b([a-z_]+)\\b"
 		}
 	],
 	"repository": {
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.aaa",
-				"match": "\\b(if|else|end|while)\\b"
+				"match": "\\b(if|else|end|while|fn|begin)\\b"
 			}]
 		},
 		"strings": {

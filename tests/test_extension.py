@@ -43,6 +43,12 @@ def non_simple_token_test_values() -> Dict[TokenType, List[str]]:
         TokenType.COMMENT: ["//", "// abc"],
         TokenType.INTEGER: ["0", "123", "123456789"],
         TokenType.STRING: [],  # TODO test elsewhere. This is complicated due to escape sequences
+        TokenType.IDENTIFIER: [
+            "a",
+            "aaaa",
+            "abcde",
+            "the_quick_brown_fox_jumps_over_the_lazy_dog",
+        ],
     }
 
 

@@ -43,8 +43,12 @@ class TokenType(IntEnum):
     SUBSTRING = auto()
     COMMENT = auto()
     STRING_LENGTH = auto()
+    FUNCTION = auto()
+    FUNCTION_BEGIN = auto()
+    IDENTIFIER = auto()
 
 
+# TODO change in to dict again and lookup directly in Tokenizer.try_tokenize_simple()
 SIMPLE_TOKENS: Final[List[Tuple[str, TokenType]]] = [
     ("+", TokenType.PLUS),
     ("-", TokenType.MINUS),
@@ -75,6 +79,8 @@ SIMPLE_TOKENS: Final[List[Tuple[str, TokenType]]] = [
     ("while", TokenType.WHILE),
     ("substr", TokenType.SUBSTRING),
     ("strlen", TokenType.STRING_LENGTH),
+    ("fn", TokenType.FUNCTION),
+    ("begin", TokenType.FUNCTION_BEGIN),
 ]
 
 SIMPLE_TOKEN_TYPES: Final[Set[TokenType]] = {item[1] for item in SIMPLE_TOKENS}
@@ -172,6 +178,22 @@ class Tokenizer:
             self.filename, self.line_number, self.offset, self.line
         )
 
+    def try_tokenize_identifier(self) -> Optional[Token]:
+        space_offset = (self.line[self.offset :] + " ").find(" ")
+        identifier = self.line[self.offset : self.offset + space_offset]
+        identifier_chars = set(identifier)
+
+        if not identifier_chars.issubset("abcdefghijklmnopqrstuvwxyz_"):
+            return None
+
+        return Token(
+            self.filename,
+            self.line_number,
+            self.offset,
+            identifier,
+            TokenType.IDENTIFIER,
+        )
+
     def tokenize_line(self) -> List[Token]:
         self.offset = 0
         tokens = []
@@ -199,21 +221,28 @@ class Tokenizer:
             if token:
                 tokens.append(token)
                 self.offset += len(token.value)
+                continue
 
-            elif self.line[self.offset] == '"':
+            if self.line[self.offset] == '"':
                 token = self.tokenize_string()
                 tokens.append(token)
                 self.offset += len(token.value)
+                continue
 
-            elif self.line[self.offset].isdigit():
+            if self.line[self.offset].isdigit():
                 token = self.tokenize_integer()
                 tokens.append(token)
                 self.offset += len(token.value)
+                continue
 
-            else:
-                raise TokenizeError(
-                    self.filename, self.line_number, self.offset, self.line
-                )
+            if self.line[self.offset].isalpha():
+                token = self.try_tokenize_identifier()
+                if token:
+                    tokens.append(token)
+                    self.offset += len(token.value)
+                    continue
+
+            raise TokenizeError(self.filename, self.line_number, self.offset, self.line)
 
         return tokens
 

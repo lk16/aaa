@@ -151,6 +151,12 @@ def parse(tokens: List[Token]) -> List[Operation]:  # noqa: C901 # Allow high co
         elif token.type == TokenType.COMMENT:
             continue  # Comments obviously don't do anything
 
+        elif token.type == TokenType.FUNCTION:
+            raise NotImplementedError
+
+        elif token.type == TokenType.FUNCTION_BEGIN:
+            raise NotImplementedError  # This probably doesn't have to do anything
+
         else:
             raise UnhandledTokenType(token)
 

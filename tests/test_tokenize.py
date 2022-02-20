@@ -2,46 +2,21 @@ from typing import List, Type
 
 import pytest
 
-from lang.exceptions import (
-    InvalidStringEscapeSequence,
-    TokenizeError,
-    UnterminatedStringError,
-)
-from lang.tokenize import TokenType, tokenize
+from lang.exceptions import InvalidStringEscapeSequence, UnterminatedStringError
+from lang.tokenize import SIMPLE_TOKENS, TokenType, tokenize
 
 
 @pytest.mark.parametrize(
     ["code", "expected_token_types"],
-    [
-        ("", []),
-        ("+", [TokenType.PLUS]),
-        ("-", [TokenType.MINUS]),
-        ("*", [TokenType.STAR]),
-        ("/", [TokenType.SLASH]),
-        ("true", [TokenType.TRUE]),
-        ("false", [TokenType.FALSE]),
-        ("and", [TokenType.AND]),
-        ("or", [TokenType.OR]),
-        ("not", [TokenType.NOT]),
-        ("=", [TokenType.EQUAL]),
-        (">", [TokenType.GREATER_THAN]),
-        (">=", [TokenType.GREATER_EQUAL]),
-        ("<", [TokenType.LESS_THAN]),
-        ("<=", [TokenType.LESS_EQUAL]),
-        ("!=", [TokenType.NOT_EQUAL]),
-        ("drop", [TokenType.DROP]),
-        ("dup", [TokenType.DUPLICATE]),
-        ("swap", [TokenType.SWAP]),
-        ("over", [TokenType.OVER]),
-        ("rot", [TokenType.ROTATE]),
-        ("\\n", [TokenType.PRINT_NEWLINE]),
-        (".", [TokenType.PRINT]),
-        ("if", [TokenType.IF]),
-        ("else", [TokenType.ELSE]),
-        ("end", [TokenType.END]),
-        ("while", [TokenType.WHILE]),
+    [(token_str, [token_type]) for (token_str, token_type) in SIMPLE_TOKENS]
+    + [
         ("1", [TokenType.INTEGER]),
         ("1234567", [TokenType.INTEGER]),
+        ("//", [TokenType.COMMENT]),
+        ("// adsfasdf", [TokenType.COMMENT]),
+        ("a", [TokenType.IDENTIFIER]),
+        ("aaaaa", [TokenType.IDENTIFIER]),
+        ("the_quick_brown_fox_jumps_over_the_lazy_dog", [TokenType.IDENTIFIER]),
     ],
 )
 def test_tokenize_ok(code: str, expected_token_types: List[TokenType]) -> None:
@@ -53,7 +28,6 @@ def test_tokenize_ok(code: str, expected_token_types: List[TokenType]) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_exception"],
     [
-        ("adsfasdf", TokenizeError),
         ('"', UnterminatedStringError),
         ('"\\"', UnterminatedStringError),
         ('"\\', UnterminatedStringError),
