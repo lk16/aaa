@@ -40,7 +40,7 @@ def cmd(code: str, verbose: bool) -> None:
 
 @cli.command()
 def runtests() -> None:
-    subprocess.run("pytest --cov=lang --cov-report=term-missing --pdb".split())
+    subprocess.run("pytest --cov=lang --cov-report=term-missing --pdb -x".split())
 
 
 if __name__ == "__main__":
