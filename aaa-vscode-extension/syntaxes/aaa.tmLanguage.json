@@ -9,6 +9,13 @@
 			"include": "#strings"
 		},
 		{
+			"include": "#builtin_functions"
+		},
+		{
+			"name": "comment.line.double-slash.aaa",
+			"match": "(//.*)"
+		},
+		{
 			"name": "keyword.operator.arithmetic.aaa",
 			"match": "\\+|\\-|\\*|/|%"
 		},
@@ -19,6 +26,14 @@
 		{
 			"name": "constant.numeric.aaa",
 			"match": "\\b([0-9]+)\\b"
+		},
+		{
+			"name": "constant.language.aaa",
+			"match": "\\b(true|false)\\b"
+		},
+		{
+			"name": "keyword.operator.comparison.aaa",
+			"match": "<|<\\=|\\=|>|>\\=|!\\="
 		}
 	],
 	"repository": {
@@ -38,6 +53,10 @@
 					"match": "\\\\(n|\\\\|\")"
 				}
 			]
+		},
+		"builtin_functions": {
+			"match": "(?x)\\b(drop|dup|swap|over|rot|substr|strlen)\\b|\\.|\\\\n",
+			"name": "support.function.builtin.aaa"
 		}
 	},
 	"scopeName": "source.aaa"
