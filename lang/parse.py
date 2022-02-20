@@ -70,7 +70,7 @@ def parse(tokens: List[Token]) -> Program:
 
 def parse_function(
     tokens: List[Token],
-) -> Tuple[Function, int]:  # noqa: C901  # Allow high complexity
+) -> Tuple[Function, int]:
 
     # TODO IndexErrors can happen anywhere in this function
 

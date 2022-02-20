@@ -90,9 +90,7 @@ class Program:
     def run(self, verbose: bool) -> None:
         self.run_function("main", verbose)
 
-    def run_function(  # noqa: C901  # allow high complexity of this function
-        self, func_name: str, verbose: bool
-    ) -> None:
+    def run_function(self, func_name: str, verbose: bool) -> None:
         operations = self.functions[func_name].operations
 
         # TODO deal with function arguments

@@ -109,23 +109,25 @@ class Tokenizer:
         self.offset = 0
         self.line = ""
 
-    def try_tokenize_simple(self) -> Optional[Token]:
+    def try_tokenize_simple(self) -> Tuple[Optional[Token], int]:
         line_part = self.line[self.offset :]
 
         for token_str, token_type in SIMPLE_TOKENS:
             # Force a space after the matched simple token
             # This rules out problems like mismatching <= with LESS_THAN instead of LESS_EQUAL
             if (line_part + " ").startswith(token_str + " "):
-                return Token(
+                token = Token(
                     self.filename,
                     self.line_number,
                     self.offset,
                     token_str,
                     token_type,
                 )
-        return None
+                return token, len(token.value)
 
-    def tokenize_integer(self) -> Token:
+        return None, 0
+
+    def try_tokenize_integer(self) -> Tuple[Optional[Token], int]:
         length = 0
         for i in range(self.offset, len(self.line)):
             if self.line[i].isdigit():
@@ -133,28 +135,30 @@ class Tokenizer:
             else:
                 break
 
-        return Token(
+        token = Token(
             self.filename,
             self.line_number,
             self.offset,
             self.line[self.offset : self.offset + length],
             TokenType.INTEGER,
         )
+        return token, len(token.value)
 
-    def tokenize_string(self) -> Token:
+    def try_tokenize_string(self) -> Tuple[Optional[Token], int]:
 
         i = self.offset + 1
         while i < len(self.line):
             char = self.line[i]
 
             if char == '"':
-                return Token(
+                token = Token(
                     self.filename,
                     self.line_number,
                     self.offset,
                     self.line[self.offset : i + 1],
                     TokenType.STRING,
                 )
+                return token, len(token.value)
 
             if char == "\\":
                 try:
@@ -178,69 +182,69 @@ class Tokenizer:
             self.filename, self.line_number, self.offset, self.line
         )
 
-    def try_tokenize_identifier(self) -> Optional[Token]:
+    def try_tokenize_identifier(self) -> Tuple[Optional[Token], int]:
         space_offset = (self.line[self.offset :] + " ").find(" ")
         identifier = self.line[self.offset : self.offset + space_offset]
         identifier_chars = set(identifier)
 
-        if not identifier_chars.issubset("abcdefghijklmnopqrstuvwxyz_"):
-            return None
+        if identifier_chars.issubset("abcdefghijklmnopqrstuvwxyz_"):
+            token = Token(
+                self.filename,
+                self.line_number,
+                self.offset,
+                identifier,
+                TokenType.IDENTIFIER,
+            )
+            return token, len(token.value)
 
-        return Token(
-            self.filename,
-            self.line_number,
-            self.offset,
-            identifier,
-            TokenType.IDENTIFIER,
-        )
+        return None, 0
+
+    def try_tokenize_whitespace(self) -> Tuple[Optional[Token], int]:
+        # NOTE this just follows naming convention
+        # There is no such thing as TokenType.WHITESPACE
+
+        # TODO try to find more than one whitespace at the time
+        if self.line[self.offset] == " ":
+            return None, 1
+
+        return None, 0
+
+    def try_tokenize_comment(self) -> Tuple[Optional[Token], int]:
+        if self.line[self.offset : self.offset + 2] == "//":
+            token = Token(
+                self.filename,
+                self.line_number,
+                self.offset,
+                self.line[self.offset :],
+                TokenType.COMMENT,
+            )
+            return token, len(token.value)
+        return None, 0
 
     def tokenize_line(self) -> List[Token]:
         self.offset = 0
         tokens = []
 
+        try_tokenize_funcs = [
+            self.try_tokenize_whitespace,
+            self.try_tokenize_comment,
+            self.try_tokenize_simple,
+            self.try_tokenize_string,
+            self.try_tokenize_integer,
+            self.try_tokenize_identifier,
+        ]
+
         while self.offset < len(self.line):
-            if self.line[self.offset] == " ":
-                self.offset += 1
-                continue
 
-            token: Optional[Token]
+            for try_tokenize_func in try_tokenize_funcs:
+                token, consumed_chars = try_tokenize_func()
 
-            if self.line[self.offset : self.offset + 2] == "//":
-                token = Token(
-                    self.filename,
-                    self.line_number,
-                    self.offset,
-                    self.line[self.offset :],
-                    TokenType.COMMENT,
-                )
-                tokens.append(token)
-                self.offset += len(token.value)
-                continue
+                if token is not None or consumed_chars is not None:
+                    if token:
+                        tokens.append(token)
+                    self.offset += consumed_chars
 
-            token = self.try_tokenize_simple()
-            if token:
-                tokens.append(token)
-                self.offset += len(token.value)
-                continue
-
-            if self.line[self.offset] == '"':
-                token = self.tokenize_string()
-                tokens.append(token)
-                self.offset += len(token.value)
-                continue
-
-            if self.line[self.offset].isdigit():
-                token = self.tokenize_integer()
-                tokens.append(token)
-                self.offset += len(token.value)
-                continue
-
-            if self.line[self.offset].isalpha():
-                token = self.try_tokenize_identifier()
-                if token:
-                    tokens.append(token)
-                    self.offset += len(token.value)
-                    continue
+                    break
 
             raise TokenizeError(self.filename, self.line_number, self.offset, self.line)
 
