@@ -9,6 +9,7 @@ from lang.exceptions import (
 )
 
 
+# TODO reduce number of TokenTypes by grouping operators, built-in functions and so on
 class TokenType(IntEnum):
     PLUS = auto()
     MINUS = auto()

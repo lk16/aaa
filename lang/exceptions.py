@@ -37,6 +37,10 @@ class UnexpectedEndOfFile(ParseError):
     ...
 
 
+class NoMainFunctionFound(ParseError):
+    ...
+
+
 class RunTimeError(Exception):
     ...
 

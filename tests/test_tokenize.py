@@ -2,7 +2,11 @@ from typing import List, Type
 
 import pytest
 
-from lang.exceptions import InvalidStringEscapeSequence, UnterminatedStringError
+from lang.exceptions import (
+    InvalidStringEscapeSequence,
+    TokenizeError,
+    UnterminatedStringError,
+)
 from lang.tokenize import SIMPLE_TOKENS, TokenType, tokenize
 
 
@@ -32,6 +36,8 @@ def test_tokenize_ok(code: str, expected_token_types: List[TokenType]) -> None:
         ('"\\"', UnterminatedStringError),
         ('"\\', UnterminatedStringError),
         ('"\\x"', InvalidStringEscapeSequence),
+        ('"\\x"', InvalidStringEscapeSequence),
+        ("digits_not_allowed_in_token_1337", TokenizeError),
     ],
 )
 def test_tokenize_fail(code: str, expected_exception: Type[Exception]) -> None:

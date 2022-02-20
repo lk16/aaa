@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 from lang.exceptions import (
     InvalidBlockStackValue,
     InvalidJump,
+    NoMainFunctionFound,
     UnexpectedEndOfFile,
     UnexpectedToken,
     UnhandledTokenType,
@@ -64,6 +65,9 @@ def parse(tokens: List[Token]) -> Program:
 
         else:
             raise UnexpectedToken(token)
+
+    if "main" not in functions:
+        raise NoMainFunctionFound
 
     return Program(functions)
 
@@ -225,11 +229,11 @@ def parse_function_body(  # noqa: C901  # Allow high complexity
         elif token.type == TokenType.COMMENT:
             continue  # Comments obviously don't do anything
 
-        elif token.type == TokenType.FUNCTION:
+        elif token.type == TokenType.IDENTIFIER:
+            # If this is a function, we are calling it.
+            # If this is an argument of this function, we are pushing it on the stack.
+            # If anything else
             raise NotImplementedError
-
-        elif token.type == TokenType.FUNCTION_BEGIN:
-            raise NotImplementedError  # This probably doesn't have to do anything
 
         else:
             raise UnhandledTokenType(token)
