@@ -2,7 +2,6 @@
 Stack-based language, like forth.
 
 ### Contents
-This repo contains:
 * An interpreter for the Aaa language
 * A [VS Code extension](./aaa-vscode-extension/README.md) for the Aaa language.
 * A lot of tests for the interpreter and the language
@@ -12,16 +11,17 @@ The name of this language is just the first letter of the latin alphabet [repeat
 
 ### Setup
 All these commands should be run from the root of this repository.
+
 ```sh
 # Install dependencies
 poetry install
 
 # Enter poetry environment
 poetry shell
-
-# Install VS Code extension
-ln -st ~/.vscode/extensions/ $(pwd)/aaa-vscode-extension/
 ```
+
+To enable syntax highlighting for vs code, enable the [Aaa language extension](./aaa-vscode-extension/README.md)
+
 
 ### Examples
 ```sh
