@@ -3,7 +3,17 @@ from typing import Dict
 
 import pytest
 
-from lang.new_tokenizer import Parser, SymbolType, cat, eof, lit, new_parse_generic, sym
+from lang.new_tokenizer import (
+    Parser,
+    SymbolType,
+    cat,
+    eof,
+    lit,
+    new_parse_generic,
+    opt,
+    rep,
+    sym,
+)
 
 
 @pytest.mark.parametrize("code", ["", "A", "B", "C", "D", "AA", "DA", "AD"])
@@ -74,3 +84,53 @@ def test_new_tokenizer_concatenate_three_symbols(code: str) -> None:
     expected_ok = re.compile("foobarbaz").fullmatch(code)
     result = new_parse_generic(rewrite_rules, SymbolType.PROGRAM, code)
     assert bool(result) == bool(expected_ok)
+
+
+@pytest.mark.parametrize("code", ["", "A", "B", "AB", "AAB", "AAAB", "BB", "ABB"])
+def test_new_tokenizer_repeat_symbols(code: str) -> None:
+    rewrite_rules = {
+        SymbolType.PROGRAM: cat(rep(sym("A")), sym("B"), eof()),
+        SymbolType.A: lit("A"),
+        SymbolType.B: lit("B"),
+    }
+
+    expected_ok = re.compile("A*B").fullmatch(code)
+    result = new_parse_generic(rewrite_rules, SymbolType.PROGRAM, code)
+    assert bool(result) == bool(expected_ok)
+
+
+@pytest.mark.parametrize("code", ["", "A", "B", "AB", "AAB", "AAAB", "BB", "ABB"])
+def test_new_tokenizer_repeat_symbols_with_at_least_one(code: str) -> None:
+    rewrite_rules = {
+        SymbolType.PROGRAM: cat(rep(sym("A"), m=1), sym("B"), eof()),
+        SymbolType.A: lit("A"),
+        SymbolType.B: lit("B"),
+    }
+
+    expected_ok = re.compile("A+B").fullmatch(code)
+    result = new_parse_generic(rewrite_rules, SymbolType.PROGRAM, code)
+    assert bool(result) == bool(expected_ok)
+
+
+@pytest.mark.parametrize("code", ["", "AC", "ABC", "ABB", "CCB", "AAA"])
+def test_new_tokenizer_optional_symbol(code: str) -> None:
+    rewrite_rules = {
+        SymbolType.PROGRAM: cat(sym("A"), opt(sym("B")), sym("C"), eof()),
+        SymbolType.A: lit("A"),
+        SymbolType.B: lit("B"),
+        SymbolType.C: lit("C"),
+    }
+
+    expected_ok = re.compile("AB?C").fullmatch(code)
+    result = new_parse_generic(rewrite_rules, SymbolType.PROGRAM, code)
+    assert bool(result) == bool(expected_ok)
+
+
+def test_flat_concatenation_expression() -> None:
+    expr = cat(sym("A"), sym("B"), sym("C"))
+    assert len(expr.children) == 3
+
+
+def test_flat_option_expression() -> None:
+    expr = sym("A") | sym("B") | sym("C")
+    assert len(expr.children) == 3

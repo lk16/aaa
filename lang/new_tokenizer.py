@@ -53,42 +53,101 @@ class EndOfFileExpression(Parser):
 
 class OrExpression(Parser):
     def __init__(self, *args: "Parser") -> None:
-        self.options = list(args)
+        self.children = list(args)
 
     def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
-        for option in self.options:
-            option.set_rewrite_rules(rewrite_rules)
+        for child in self.children:
+            child.set_rewrite_rules(rewrite_rules)
 
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
-        for option in self.options:
-            parsed = option.parse(code, offset)
+        for child in self.children:
+            parsed = child.parse(code, offset)
             if parsed:
                 return parsed
         return None
 
+    def __or__(self, other: Any) -> "OrExpression":
+        if not isinstance(other, Parser):
+            raise TypeError  # pragma: nocover
+
+        return OrExpression(*self.children, other)
+
+
+class RepeatExpression(Parser):
+    def __init__(self, child: Parser, min_repeats: int = 0) -> None:
+        self.child = child
+        self.min_repeats = min_repeats
+
+    def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
+        self.child.set_rewrite_rules(rewrite_rules)
+
+    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+        sub_trees: List[ParseTree] = []
+        child_offset = offset
+
+        while True:
+            parsed = self.child.parse(code, child_offset)
+            if parsed:
+                sub_trees.append(parsed)
+                child_offset += parsed.symbol_length
+            else:
+                break
+
+        if len(sub_trees) < self.min_repeats:
+            return None
+
+        return ParseTree(
+            offset,
+            child_offset - offset,
+            self.symbol_type,
+            sub_trees,
+        )
+
+
+class OptionalExpression(Parser):
+    def __init__(self, child: Parser) -> None:
+        self.child = child
+
+    def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
+        self.child.set_rewrite_rules(rewrite_rules)
+
+    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+        parsed = self.child.parse(code, offset)
+        if parsed:
+            return parsed
+
+        return ParseTree(
+            offset,
+            0,
+            self.symbol_type,
+            [],
+        )
+
 
 class ConcatenationExpression(Parser):
     def __init__(self, *args: "Parser") -> None:
-        self.values = list(args)
+        self.children = list(args)
 
     def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
-        for value in self.values:
-            value.set_rewrite_rules(rewrite_rules)
+        for child in self.children:
+            child.set_rewrite_rules(rewrite_rules)
 
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
         sub_trees: List[ParseTree] = []
 
-        for value in self.values:
-            parsed = value.parse(code, offset)
+        child_offset = offset
+
+        for child in self.children:
+            parsed = child.parse(code, child_offset)
             if parsed:
                 sub_trees.append(parsed)
-                offset += parsed.symbol_length
+                child_offset += parsed.symbol_length
             else:
                 return None
 
         return ParseTree(
-            sub_trees[0].symbol_offset,
-            sum(sub_tree.symbol_length for sub_tree in sub_trees),
+            offset,
+            child_offset - offset,
             self.symbol_type,
             sub_trees,
         )
@@ -135,6 +194,14 @@ def eof() -> EndOfFileExpression:
 
 def lit(literal: str) -> LiteralExpression:
     return LiteralExpression(literal)
+
+
+def rep(parser: Parser, m: int = 0) -> RepeatExpression:
+    return RepeatExpression(parser, m)
+
+
+def opt(parser: Parser) -> OptionalExpression:
+    return OptionalExpression(parser)
 
 
 # NOTE this facilitates testing
