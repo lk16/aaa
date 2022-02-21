@@ -4,6 +4,7 @@ import subprocess
 
 import click
 
+from lang.new_tokenizer import new_parse
 from lang.parse import parse
 from lang.run import run
 from lang.tokenize import tokenize
@@ -48,6 +49,15 @@ def runtests() -> None:
 
     for command in commands:
         subprocess.run(command.split())
+
+
+@cli.command()
+def try_new_tokenizer() -> None:
+    while True:
+        code = input("> ")
+        result = new_parse(code)
+        print(f"Parse result: {result}")
+        print()
 
 
 if __name__ == "__main__":
