@@ -26,7 +26,7 @@ class ParseTree:
 class Parser:
     symbol_type: Optional[SymbolType] = None
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+    def parse(self, code: str, offset: int) -> Optional[ParseTree]:  # pragma: nocover
         raise NotImplementedError
 
     def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
@@ -35,7 +35,7 @@ class Parser:
 
     def __or__(self, other: Any) -> "OrExpression":
         if not isinstance(other, Parser):
-            raise TypeError
+            raise TypeError  # pragma: nocover
 
         return OrExpression(self, other)
 
@@ -137,6 +137,7 @@ def lit(literal: str) -> LiteralExpression:
     return LiteralExpression(literal)
 
 
+# NOTE this facilitates testing
 def new_parse_generic(
     rewrite_rules: Dict[SymbolType, Parser], root_symbol: SymbolType, code: str
 ) -> Optional[ParseTree]:
@@ -155,5 +156,6 @@ REWRITE_RULES = {
 ROOT_SYMBOL = SymbolType.PROGRAM
 
 
-def new_parse(code: str) -> Optional[ParseTree]:
+def new_parse(code: str) -> Optional[ParseTree]:  # pragma: nocover
+    # NOTE Tests call new_parse_generic() directly
     return new_parse_generic(REWRITE_RULES, ROOT_SYMBOL, code)

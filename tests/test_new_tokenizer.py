@@ -1,8 +1,9 @@
 import re
+from typing import Dict
 
 import pytest
 
-from lang.new_tokenizer import SymbolType, cat, eof, lit, new_parse_generic, sym
+from lang.new_tokenizer import Parser, SymbolType, cat, eof, lit, new_parse_generic, sym
 
 
 @pytest.mark.parametrize("code", ["", "A", "B", "C", "D", "AA", "DA", "AD"])
@@ -19,10 +20,57 @@ def test_new_tokenizer_three_options(code: str) -> None:
     assert bool(result) == bool(expected_ok)
 
 
-# TODO test A | "foo"
+@pytest.mark.parametrize("code", ["", "A", "foo", "f", "B", " foo", "foo ", " foo "])
+def test_new_tokenizer_option_of_literal_and_symbol(code: str) -> None:
+    rewrite_rules = {
+        SymbolType.PROGRAM: cat((sym("A") | lit("foo")), eof()),
+        SymbolType.A: lit("A"),
+    }
 
-# TODO test A B C
+    expected_ok = re.compile("A|foo").fullmatch(code)
+    result = new_parse_generic(rewrite_rules, SymbolType.PROGRAM, code)
+    assert bool(result) == bool(expected_ok)
 
-# TODO test (A | B) (C | D)
 
-# TODO test "foo" "bar" "baz"
+@pytest.mark.parametrize("code", ["", "A", "AB", "ABC", " ABC", "ABC "])
+def test_new_tokenizer_three_literals(code: str) -> None:
+    rewrite_rules: Dict[SymbolType, Parser] = {
+        SymbolType.PROGRAM: cat(lit("A"), lit("B"), lit("C"), eof()),
+    }
+
+    expected_ok = re.compile("ABC").fullmatch(code)
+    result = new_parse_generic(rewrite_rules, SymbolType.PROGRAM, code)
+    assert bool(result) == bool(expected_ok)
+
+
+@pytest.mark.parametrize(
+    "code", ["A", "B", "C", "D", "AB", "AB ", "AC", "BC", "BD", "AA"]
+)
+def test_new_tokenizer_optionals_with_concatenation(code: str) -> None:
+    rewrite_rules = {
+        SymbolType.PROGRAM: cat((sym("A") | sym("B")), (sym("C") | sym("D")), eof()),
+        SymbolType.A: lit("A"),
+        SymbolType.B: lit("B"),
+        SymbolType.C: lit("C"),
+        SymbolType.D: lit("D"),
+    }
+
+    expected_ok = re.compile("(A|B)(C|D)").fullmatch(code)
+    result = new_parse_generic(rewrite_rules, SymbolType.PROGRAM, code)
+    assert bool(result) == bool(expected_ok)
+
+
+@pytest.mark.parametrize(
+    "code", ["", "foo", "foobar", "foobarbaz", "-foobarbaz", "foobarbazquux"]
+)
+def test_new_tokenizer_concatenate_three_symbols(code: str) -> None:
+    rewrite_rules = {
+        SymbolType.PROGRAM: cat(sym("A"), sym("B"), sym("C"), eof()),
+        SymbolType.A: lit("foo"),
+        SymbolType.B: lit("bar"),
+        SymbolType.C: lit("baz"),
+    }
+
+    expected_ok = re.compile("foobarbaz").fullmatch(code)
+    result = new_parse_generic(rewrite_rules, SymbolType.PROGRAM, code)
+    assert bool(result) == bool(expected_ok)
