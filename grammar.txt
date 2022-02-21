@@ -1,0 +1,75 @@
+SPACE = " "
+NEWLINE = "\n"
+
+WHITESPACE_CHAR = SPACE | NEWLINE
+
+IDENTIFIER_CHAR = "a" | "b" | ... | "y" | "z" | "_"
+
+DIGIT = "0" | "1" | ... | "8" | "9"
+
+REGULAR_STRING_CHAR = any char except "\\" and "\n"
+
+COMMENT_CHAR = any char except "\n"
+
+STRING_ESCAPE_SEQUENCE = "\\\\" | "\\n" | "\\\""
+
+COMMENT_PREFIX = "//"
+
+DOUBLE_QUOTE = "\""
+
+FN = "fn"
+BEGIN = "begin"
+END = "end"
+WHILE = "while"
+IF = "if"
+ELSE = "else"
+
+WHITESPACE = WHITESPACE_CHAR*
+
+IDENTIFIER = IDENTIFIER_CHAR*
+
+BOOLEAN_LITERAL = "true" | "false"
+
+INTEGER_LITERAL = DIGIT*
+
+STRING_LITERAL = DOUBLE_QUOTE (REGULAR_STRING_CHAR | STRING_ESCAPE_SEQUENCE)* DOUBLE_QUOTE
+
+COMMENT = COMMENT_PREFIX (COMMENT_CHAR)*
+
+LITERAL = BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL
+
+OPERATION = (
+    "-" |
+    "!=" |
+    "." |
+    "*" |
+    "/" |
+    "\\n" |
+    "%" |
+    "+" |
+    "<" |
+    "<=" |
+    "=" |
+    ">" |
+    ">=" |
+    "and" |
+    "drop" |
+    "dup" |
+    "not" |
+    "or" |
+    "over" |
+    "rot" |
+    "strlen |
+    "substr |
+    "swap"
+)
+
+LOOP = WHILE FUNCTION_BODY END
+
+BRANCH = IF FUNCTION_BODY (END | ELSE FUNCTION_BODY END)
+
+FUNCTION_BODY = WHITESPACE ((OPERATION | IDENTIFIER | LITERAL | LOOP | BRANCH ) WHITESPACE )*
+
+FUNCTION = FN WHITESPACE ( IDENTIFIER WHITESPACE )+ BEGIN FUNCTION_BODY END
+
+PROGRAM = ( WHITESPACE FUNCTION )* WHITESPACE
