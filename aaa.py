@@ -17,7 +17,7 @@ def cli() -> None:
 @cli.command(name="run")
 @click.argument("filename", type=click.Path(exists=True))
 @click.option("--verbose/--no-verbose", "-v", type=bool)
-def run_command(filename: str, verbose: bool) -> None:
+def run_(filename: str, verbose: bool) -> None:
     with open(filename, "r") as f:
         code = f.read()
 
@@ -30,6 +30,7 @@ def run_command(filename: str, verbose: bool) -> None:
 @click.argument("code", type=str)
 @click.option("--verbose/--no-verbose", "-v", type=bool)
 def cmd(code: str, verbose: bool) -> None:
+    code = "fn main begin\n" + code + "\nend"
     tokens = tokenize(code, "<stdin>")
     program = parse(tokens)
     run(program, verbose=verbose)

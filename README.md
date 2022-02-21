@@ -25,10 +25,7 @@ To enable syntax highlighting for vs code, enable the [Aaa language extension](.
 
 ### Examples
 ```sh
-# Run code form a shell argument. This prints "9001\n".
-./aaa.py cmd '3 5 + 8 = if 9001 . end \n'
-
-# Show off some features. This prints "aaa\n"
+# Run code form a shell argument. This prints "aaa\n".
 ./aaa.py cmd '"a" 0 true while over . 1 + dup 3 < end drop drop \n'
 
 # Run code from a file. Implements the famous fizzbuzz interview question.
@@ -50,14 +47,17 @@ To enable syntax highlighting for vs code, enable the [Aaa language extension](.
 
 ### Upcoming aaa features
 - functions (`fn`)
+- support shebang (`#!`)
+- write a proper grammar
+- userfriendly syntax errors
 - loops (`break`, `continue`)
 - assertions (`assert`)
 - debug tools (`breakpoint`)
+- support
 - static type checking
-- clear syntax errors
 - structs / classes ?
 - compile to native executable
 - compile itself
 
 ### Aaa and porth
-Making a forth-like language was strongly inspired by [porth](https://gitlab.com/tsoding/porth), but all code in this repo is written by me.
+After watching part of the [Youtube series](https://www.youtube.com/playlist?list=PLpM-Dvs8t0VbMZA7wW9aR3EtBqe2kinu4) on [porth](https://gitlab.com/tsoding/porth), I wanted to make my own stack-based language. Aaa and porth have some similarities, but obviously are not compatible with each other. No code was copied over from the porth repo.
