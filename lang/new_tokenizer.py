@@ -9,6 +9,8 @@ class SymbolType(IntEnum):
     PROGRAM = auto()
     A = auto()
     B = auto()
+    C = auto()
+    D = auto()
     END_OF_FILE = auto()
 
 
@@ -26,6 +28,10 @@ class Parser:
 
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
         raise NotImplementedError
+
+    def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
+        # This facilitates testing
+        pass
 
     def __or__(self, other: Any) -> "OrExpression":
         if not isinstance(other, Parser):
@@ -49,6 +55,10 @@ class OrExpression(Parser):
     def __init__(self, *args: "Parser") -> None:
         self.options = list(args)
 
+    def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
+        for option in self.options:
+            option.set_rewrite_rules(rewrite_rules)
+
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
         for option in self.options:
             parsed = option.parse(code, offset)
@@ -60,6 +70,10 @@ class OrExpression(Parser):
 class ConcatenationExpression(Parser):
     def __init__(self, *args: "Parser") -> None:
         self.values = list(args)
+
+    def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
+        for value in self.values:
+            value.set_rewrite_rules(rewrite_rules)
 
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
         sub_trees: List[ParseTree] = []
@@ -80,17 +94,19 @@ class ConcatenationExpression(Parser):
         )
 
 
-def cat(*args: Parser) -> ConcatenationExpression:
-    return ConcatenationExpression(*args)
-
-
 class SymbolExpression(Parser):
     def __init__(self, symbol_type: SymbolType):
         self.symbol_type = symbol_type
+        self.rewrite_rules: Optional[Dict[SymbolType, "Parser"]] = None
+
+    def set_rewrite_rules(self, rewrite_rules: Dict[SymbolType, "Parser"]) -> None:
+        self.rewrite_rules = rewrite_rules
 
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
         assert self.symbol_type  # nosec
-        rewritten_expression = REWRITE_RULES[self.symbol_type]
+        assert self.rewrite_rules  # no sec
+
+        rewritten_expression = self.rewrite_rules[self.symbol_type]
         rewritten_expression.symbol_type = self.symbol_type
         return rewritten_expression.parse(code, offset)
 
@@ -105,6 +121,10 @@ class LiteralExpression(Parser):
         return None
 
 
+def cat(*args: Parser) -> ConcatenationExpression:
+    return ConcatenationExpression(*args)
+
+
 def sym(symbol_name: str) -> SymbolExpression:
     return SymbolExpression(SymbolType[symbol_name])
 
@@ -113,17 +133,27 @@ def eof() -> EndOfFileExpression:
     return EndOfFileExpression(SymbolType.END_OF_FILE)
 
 
+def lit(literal: str) -> LiteralExpression:
+    return LiteralExpression(literal)
+
+
+def new_parse_generic(
+    rewrite_rules: Dict[SymbolType, Parser], root_symbol: SymbolType, code: str
+) -> Optional[ParseTree]:
+    tree = rewrite_rules[root_symbol]
+    tree.set_rewrite_rules(rewrite_rules)
+    tree.symbol_type = root_symbol
+    return tree.parse(code, 0)
+
+
 REWRITE_RULES = {
     SymbolType.PROGRAM: cat((sym("A") | sym("B")), eof()),
     SymbolType.A: LiteralExpression("A"),
     SymbolType.B: LiteralExpression("B"),
 }
 
-
 ROOT_SYMBOL = SymbolType.PROGRAM
 
 
 def new_parse(code: str) -> Optional[ParseTree]:
-    tree = REWRITE_RULES[ROOT_SYMBOL]
-    tree.symbol_type = ROOT_SYMBOL
-    return tree.parse(code, 0)
+    return new_parse_generic(REWRITE_RULES, ROOT_SYMBOL, code)
