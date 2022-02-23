@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+from enum import IntEnum
+from typing import TYPE_CHECKING, Set
 
 from lang.types import Operation
 
@@ -86,3 +87,16 @@ class UnterminatedStringError(TokenizeError):
 
 class InvalidStringEscapeSequence(StringTokenizeError):
     ...
+
+
+class UnhandledSymbolType(Exception):
+    def __init__(self, symbol_type: IntEnum) -> None:
+        super().__init__(f"Unhandled symbol type {symbol_type.name}")
+
+
+class UnexpectedSymbols(Exception):
+    def __init__(self, unexpected_keys: Set[IntEnum]) -> None:
+        super().__init__(
+            f"Rewrite rules contain {len(unexpected_keys)} items, with keys: "
+            + ", ".join(key.__repr__() for key in unexpected_keys)
+        )

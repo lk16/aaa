@@ -4,10 +4,10 @@ import subprocess
 
 import click
 
-from lang.new_tokenizer import new_parse
 from lang.parse import parse
 from lang.run import run
 from lang.tokenize import tokenize
+from lang.tokenizer.aaa import new_tokenize
 
 
 @click.group()
@@ -43,7 +43,7 @@ def cmd(code: str, verbose: bool) -> None:
 @cli.command()
 def runtests() -> None:
     commands = [
-        "pre-commit run --all-files",
+        "pre-commit run --all-files mypy",
         "pytest --cov=lang --cov-report=term-missing --pdb -x",
     ]
 
@@ -55,7 +55,7 @@ def runtests() -> None:
 def try_new_tokenizer() -> None:
     while True:
         code = input("> ")
-        result = new_parse(code)
+        result = new_tokenize(code)
         print(f"Parse result: {result}")
         print()
 
