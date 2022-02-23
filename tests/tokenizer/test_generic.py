@@ -4,7 +4,16 @@ from typing import Dict
 
 import pytest
 
-from lang.tokenizer.generic import Parser, cat, lit, new_tokenize_generic, opt, rep, sym
+from lang.tokenizer.generic import (
+    Parser,
+    RegexBasedParser,
+    cat,
+    lit,
+    new_tokenize_generic,
+    opt,
+    rep,
+    sym,
+)
 
 
 class TestSymbolType(IntEnum):
@@ -167,3 +176,22 @@ def test_flat_concatenation_expression() -> None:
 def test_flat_option_expression() -> None:
     expr = sym(T.A) | sym(T.B) | sym(T.C)
     assert len(expr.children) == 3
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_match"],
+    [
+        ("", False),
+        ("acd", True),
+        ("bcd", True),
+        ("acccd", True),
+        ("bd", True),
+        ("xacd", False),
+        ("acdx", True),
+    ],
+)
+def test_regex_parser(code: str, expected_match: bool) -> None:
+    parser = RegexBasedParser("^(a|b)c*d")
+    parsed = parser.parse(code, 0)
+
+    assert bool(parsed) == expected_match

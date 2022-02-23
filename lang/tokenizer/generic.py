@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import re
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any, Dict, List, Optional, Type
@@ -26,14 +27,14 @@ class Parser:
         # This facilitates testing
         pass
 
-    def __or__(self, other: Any) -> "OrExpression":
+    def __or__(self, other: Any) -> "OrParser":
         if not isinstance(other, Parser):
             raise TypeError  # pragma: nocover
 
-        return OrExpression(self, other)
+        return OrParser(self, other)
 
 
-class OrExpression(Parser):
+class OrParser(Parser):
     def __init__(self, *args: "Parser") -> None:
         self.children = list(args)
 
@@ -48,14 +49,27 @@ class OrExpression(Parser):
                 return parsed
         return None
 
-    def __or__(self, other: Any) -> "OrExpression":
+    def __or__(self, other: Any) -> "OrParser":
         if not isinstance(other, Parser):
             raise TypeError  # pragma: nocover
 
-        return OrExpression(*self.children, other)
+        return OrParser(*self.children, other)
 
 
-class RepeatExpression(Parser):
+class RegexBasedParser(Parser):
+    def __init__(self, regex: str):
+        self.regex = re.compile(regex)
+
+    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+        match = self.regex.match(code)
+
+        if not match:
+            return None
+
+        return ParseTree(offset, len(match.group(0)), self.symbol_type, [])
+
+
+class RepeatParser(Parser):
     def __init__(self, child: Parser, min_repeats: int = 0) -> None:
         self.child = child
         self.min_repeats = min_repeats
@@ -86,7 +100,7 @@ class RepeatExpression(Parser):
         )
 
 
-class OptionalExpression(Parser):
+class OpionalParser(Parser):
     def __init__(self, child: Parser) -> None:
         self.child = child
 
@@ -106,7 +120,7 @@ class OptionalExpression(Parser):
         )
 
 
-class ConcatenationExpression(Parser):
+class ConcatenationParser(Parser):
     def __init__(self, *args: "Parser") -> None:
         self.children = list(args)
 
@@ -135,7 +149,7 @@ class ConcatenationExpression(Parser):
         )
 
 
-class SymbolExpression(Parser):
+class SymbolParser(Parser):
     def __init__(self, symbol_type: IntEnum):
         self.symbol_type = symbol_type
         self.rewrite_rules: Optional[Dict[IntEnum, "Parser"]] = None
@@ -144,15 +158,15 @@ class SymbolExpression(Parser):
         self.rewrite_rules = rewrite_rules
 
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
-        assert self.symbol_type  # nosec
-        assert self.rewrite_rules  # no sec
+        assert self.symbol_type
+        assert self.rewrite_rules
 
         rewritten_expression = self.rewrite_rules[self.symbol_type]
         rewritten_expression.symbol_type = self.symbol_type
         return rewritten_expression.parse(code, offset)
 
 
-class LiteralExpression(Parser):
+class LiteralParser(Parser):
     def __init__(self, literal: str):
         self.literal = literal
 
@@ -162,25 +176,25 @@ class LiteralExpression(Parser):
         return None
 
 
-def cat(*args: Parser) -> ConcatenationExpression:
-    return ConcatenationExpression(*args)
+def cat(*args: Parser) -> ConcatenationParser:
+    return ConcatenationParser(*args)
 
 
-def sym(symbol_type: IntEnum) -> SymbolExpression:
+def sym(symbol_type: IntEnum) -> SymbolParser:
     # TODO consider using partial
-    return SymbolExpression(symbol_type)
+    return SymbolParser(symbol_type)
 
 
-def lit(literal: str) -> LiteralExpression:
-    return LiteralExpression(literal)
+def lit(literal: str) -> LiteralParser:
+    return LiteralParser(literal)
 
 
-def rep(parser: Parser, m: int = 0) -> RepeatExpression:
-    return RepeatExpression(parser, m)
+def rep(parser: Parser, m: int = 0) -> RepeatParser:
+    return RepeatParser(parser, m)
 
 
-def opt(parser: Parser) -> OptionalExpression:
-    return OptionalExpression(parser)
+def opt(parser: Parser) -> OpionalParser:
+    return OpionalParser(parser)
 
 
 def new_tokenize_generic(
@@ -200,8 +214,10 @@ def new_tokenize_generic(
         unexpected_keys = set(rewrite_rules.keys()) - set(symbols_enum)
         raise UnexpectedSymbols(unexpected_keys)
 
+    for parser in rewrite_rules.values():
+        parser.set_rewrite_rules(rewrite_rules)
+
     tree = rewrite_rules[root_symbol]
-    tree.set_rewrite_rules(rewrite_rules)
     tree.symbol_type = root_symbol
     parsed = tree.parse(code, 0)
 
