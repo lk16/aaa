@@ -143,7 +143,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
     ),
 }
 
-ROOT_SYMBOL = S.BRANCH
+ROOT_SYMBOL = S.FILE
 
 
 def new_parse(code: str) -> Optional[ParseTree]:  # pragma: nocover

@@ -267,7 +267,50 @@ def test_parse_function_body(code: str, expected_ok: bool) -> None:
         assert expected_ok
 
 
-# TODO def test_parse_function()
-# TODO def test_parse_program()
+@pytest.mark.parametrize(
+    ["code", "expected_ok"],
+    [
+        ("", False),
+        ("fn a begin end", True),
+        ("fn a b begin end", True),
+        ("fn a b c d e f begin end", True),
+        ("fn true begin end", False),
+        ("fn a true begin end", False),
+        ("fn a begin 3 5 < true and end", True),
+        ("fn a b c begin if while end else while end end end", True),
+    ],
+)
+def test_parse_function(code: str, expected_ok: bool) -> None:
+    try:
+        new_parse_generic(
+            REWRITE_RULES, SymbolType.FUNCTION_DEFINITION, code, SymbolType
+        )
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_ok"],
+    [
+        ("", False),
+        ("fn a begin end", True),
+        (" fn a begin end", True),
+        ("fn a begin end ", True),
+        (" fn a begin end ", True),
+        ("fn a begin end fn b begin end", True),
+        (" fn a begin end fn b begin end ", True),
+        ("fn a b c begin while end end fn d e f begin if else end end", True),
+    ],
+)
+def test_parse_file(code: str, expected_ok: bool) -> None:
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.FILE, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
+
 
 # TODO test comments in every possible place
