@@ -142,8 +142,38 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
     assert bool(tree) == expected_ok
 
 
-# TODO def test_parse_branch()
-# TODO def test_parse_loop()
+@pytest.mark.parametrize(
+    ["code", "expected_ok"],
+    [
+        ("", False),
+        ("if end", True),
+        ("if\nend", True),
+        ("if\n end", True),
+        ("if a end", True),
+        ("if\na\nend", True),
+        ("if \na \nend", True),
+        ('if \n123 true and <= "\\\\  \\n  \\" " \nend', True),
+        ("if else end", True),
+        ("if\nelse\nend", True),
+        ("if\n else\n end", True),
+        ("if a else a end", True),
+        ("if\na\nelse\na\nend", True),
+        ("if \na \nelse \na \nend", True),
+        (
+            'if \n123 true and <= "\\\\  \\n  \\" " \nelse \n123 true and <= "\\\\  \\n  \\" " \nend',
+            True,
+        ),
+        ("if if end end", True),
+        ("if if if if end end end end", True),
+        ("if if else end else if else end end", True),
+        # TODO more cases
+    ],
+)
+def test_parse_branch(code: str, expected_ok: bool) -> None:
+    tree = new_tokenize_generic(REWRITE_RULES, SymbolType.BRANCH, code, SymbolType)
+    assert bool(tree) == expected_ok
+
+
 # TODO def test_parse_function_body()
 # TODO def test_parse_function()
 # TODO def test_parse_program()

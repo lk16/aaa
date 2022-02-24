@@ -67,7 +67,7 @@ class RegexBasedParser(Parser):
         self.regex = re.compile(regex)
 
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
-        match = self.regex.match(code)
+        match = self.regex.match(code[offset:])
 
         if not match:
             return None
