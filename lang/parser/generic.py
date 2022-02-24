@@ -48,10 +48,6 @@ class Parser:
     def parse(self, code: str, offset: int) -> ParseTree:  # pragma: nocover
         raise NotImplementedError
 
-    def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
-        # This facilitates testing
-        pass
-
     def __or__(self, other: Any) -> "OrParser":
         if not isinstance(other, Parser):
             raise TypeError  # pragma: nocover
@@ -62,10 +58,6 @@ class Parser:
 class OrParser(Parser):
     def __init__(self, *args: "Parser") -> None:
         self.children = list(args)
-
-    def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
-        for child in self.children:
-            child.set_rewrite_rules(rewrite_rules)
 
     def parse(self, code: str, offset: int) -> ParseTree:
         if PARSER_VERBOSE_MODE:
@@ -127,9 +119,6 @@ class RepeatParser(Parser):
         self.child = child
         self.min_repeats = min_repeats
 
-    def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
-        self.child.set_rewrite_rules(rewrite_rules)
-
     def parse(self, code: str, offset: int) -> ParseTree:
         if PARSER_VERBOSE_MODE:
             print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
@@ -164,9 +153,6 @@ class OptionalParser(Parser):
     def __init__(self, child: Parser) -> None:
         self.child = child
 
-    def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
-        self.child.set_rewrite_rules(rewrite_rules)
-
     def parse(self, code: str, offset: int) -> ParseTree:
         if PARSER_VERBOSE_MODE:
             print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
@@ -190,10 +176,6 @@ class OptionalParser(Parser):
 class ConcatenationParser(Parser):
     def __init__(self, *args: "Parser") -> None:
         self.children = list(args)
-
-    def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
-        for child in self.children:
-            child.set_rewrite_rules(rewrite_rules)
 
     def parse(self, code: str, offset: int) -> ParseTree:
         if PARSER_VERBOSE_MODE:
@@ -223,9 +205,6 @@ class SymbolParser(Parser):
     def __init__(self, symbol_type: IntEnum):
         self.symbol_type = symbol_type
         self.rewrite_rules: Optional[Dict[IntEnum, "Parser"]] = None
-
-    def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
-        self.rewrite_rules = rewrite_rules
 
     def parse(self, code: str, offset: int) -> ParseTree:
         if PARSER_VERBOSE_MODE:
@@ -259,6 +238,25 @@ class LiteralParser(Parser):
             print("SUCCESS")
 
         return ParseTree(0, len(self.literal), self.symbol_type, [])
+
+
+def set_rewrite_rules(parser: Parser, rewrite_rules: Dict[IntEnum, Parser]) -> None:
+
+    if isinstance(parser, SymbolParser):
+        parser.rewrite_rules = rewrite_rules
+
+    elif isinstance(parser, (ConcatenationParser, OrParser)):
+        for child in parser.children:
+            set_rewrite_rules(child, rewrite_rules)
+
+    elif isinstance(parser, (OptionalParser, RepeatParser)):
+        set_rewrite_rules(parser.child, rewrite_rules)
+
+    elif isinstance(parser, (RegexBasedParser, LiteralParser)):
+        pass
+
+    else:  # pragma: nocover
+        raise NotImplementedError
 
 
 def humanize_parse_error(code: str, e: InternalParseError) -> ParseError:
@@ -297,7 +295,7 @@ def new_parse_generic(
         raise UnexpectedSymbols(unexpected_keys)
 
     for parser in rewrite_rules.values():
-        parser.set_rewrite_rules(rewrite_rules)
+        set_rewrite_rules(parser, rewrite_rules)
 
     tree = rewrite_rules[root_symbol]
     tree.symbol_type = root_symbol
