@@ -8,6 +8,9 @@ Next development steps.
 - implement function arguments
 - implement calling functions
 
+### Be more self-contained
+- remove `click` dependency
+
 ### Later
 - support shebang (`#!`)
 - userfriendly syntax errors

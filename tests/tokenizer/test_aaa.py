@@ -1,6 +1,6 @@
 import pytest
 
-from lang.tokenizer.aaa import REWRITE_RULES, SymbolType
+from lang.tokenizer.aaa import OPERATION_LITERALS, REWRITE_RULES, SymbolType
 from lang.tokenizer.generic import new_tokenize_generic
 
 
@@ -109,7 +109,39 @@ def test_parse_identifier(code: str, expected_ok: bool) -> None:
     assert bool(tree) == expected_ok
 
 
-# TODO def test_parse_operation()
+@pytest.mark.parametrize(
+    ["code", "expected_ok"],
+    [
+        ("", False),
+        ("foo", False),
+        ("<=>", False),
+    ]
+    + [(op, True) for op in OPERATION_LITERALS],
+)
+def test_parse_operation(code: str, expected_ok: bool) -> None:
+    tree = new_tokenize_generic(REWRITE_RULES, SymbolType.OPERATION, code, SymbolType)
+    assert bool(tree) == expected_ok
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_ok"],
+    [
+        ("", False),
+        ("abc", False),
+        (" ", True),
+        ("\n", True),
+        ("  ", True),
+        ("\n\n", True),
+        (" \n \n", True),
+        ("\n \n ", True),
+        (" \na", False),
+    ],
+)
+def test_parse_whitespace(code: str, expected_ok: bool) -> None:
+    tree = new_tokenize_generic(REWRITE_RULES, SymbolType.WHITESPACE, code, SymbolType)
+    assert bool(tree) == expected_ok
+
+
 # TODO def test_parse_branch()
 # TODO def test_parse_loop()
 # TODO def test_parse_function_body()

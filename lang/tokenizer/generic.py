@@ -43,11 +43,17 @@ class OrParser(Parser):
             child.set_rewrite_rules(rewrite_rules)
 
     def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+        longest_parsed: Optional[ParseTree] = None
+
         for child in self.children:
             parsed = child.parse(code, offset)
             if parsed:
-                return parsed
-        return None
+                if (
+                    not longest_parsed
+                ) or parsed.symbol_length > longest_parsed.symbol_length:
+                    longest_parsed = parsed
+
+        return longest_parsed
 
     def __or__(self, other: Any) -> "OrParser":
         if not isinstance(other, Parser):
