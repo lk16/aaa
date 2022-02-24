@@ -168,6 +168,9 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
     ["code", "expected_ok"],
     [
         ("", False),
+        ("else end", False),
+        ("end", False),
+        ("foo", False),
         ("if end", True),
         ("if\nend", True),
         ("if\n end", True),
@@ -188,7 +191,17 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
         ("if if end end", True),
         ("if if if if end end end end", True),
         ("if if else end else if else end end", True),
-        # TODO add more cases
+        ("if while else end", False),
+        ("if else while end", False),
+        ("if fn else end", False),
+        ("if else fn end", False),
+        ("if begin else end", False),
+        ("if else begin end", False),
+        ("if while end end", True),
+        ("if while end else end", True),
+        ("if else while end end", True),
+        ("if substr else end", True),
+        ("if else substr end", True),
     ],
 )
 def test_parse_branch(code: str, expected_ok: bool) -> None:
@@ -200,9 +213,9 @@ def test_parse_branch(code: str, expected_ok: bool) -> None:
         assert expected_ok
 
 
+# TODO def test_parse_loop()
 # TODO def test_parse_function_body()
 # TODO def test_parse_function()
 # TODO def test_parse_program()
 
 # TODO test comments in every possible place
-# TODO test whitespace in every possible place

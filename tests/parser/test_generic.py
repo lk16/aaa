@@ -31,7 +31,7 @@ T = TestSymbolType
 
 
 @pytest.mark.parametrize("code", ["", "A", "B", "C", "D", "AA", "DA", "AD"])
-def test_new_tokenizer_three_options(code: str) -> None:
+def test_parser_three_options(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
         TestSymbolType.PROGRAM: sym(T.A) | sym(T.B) | sym(T.C),
         TestSymbolType.A: lit("A"),
@@ -51,7 +51,7 @@ def test_new_tokenizer_three_options(code: str) -> None:
 
 
 @pytest.mark.parametrize("code", ["", "A", "foo", "f", "B", " foo", "foo ", " foo "])
-def test_new_tokenizer_option_of_literal_and_symbol(code: str) -> None:
+def test_parser_option_of_literal_and_symbol(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
         TestSymbolType.PROGRAM: (sym(T.A) | lit("foo")),
         TestSymbolType.A: lit("A"),
@@ -71,7 +71,7 @@ def test_new_tokenizer_option_of_literal_and_symbol(code: str) -> None:
 
 
 @pytest.mark.parametrize("code", ["", "A", "AB", "ABC", " ABC", "ABC "])
-def test_new_tokenizer_three_literals(code: str) -> None:
+def test_parser_three_literals(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
         TestSymbolType.PROGRAM: cat(lit("A"), lit("B"), lit("C")),
         TestSymbolType.A: lit("A"),
@@ -93,7 +93,7 @@ def test_new_tokenizer_three_literals(code: str) -> None:
 @pytest.mark.parametrize(
     "code", ["A", "B", "C", "D", "AB", "AB ", "AC", "BC", "BD", "AA"]
 )
-def test_new_tokenizer_optionals_with_concatenation(code: str) -> None:
+def test_parser_optionals_with_concatenation(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
         TestSymbolType.PROGRAM: cat((sym(T.A) | sym(T.B)), (sym(T.C) | sym(T.D))),
         TestSymbolType.A: lit("A"),
@@ -115,7 +115,7 @@ def test_new_tokenizer_optionals_with_concatenation(code: str) -> None:
 @pytest.mark.parametrize(
     "code", ["", "foo", "foobar", "foobarbaz", "-foobarbaz", "foobarbazquux"]
 )
-def test_new_tokenizer_concatenate_three_symbols(code: str) -> None:
+def test_parser_concatenate_three_symbols(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
         TestSymbolType.PROGRAM: cat(sym(T.A), sym(T.B), sym(T.C)),
         TestSymbolType.A: lit("foo"),
@@ -135,7 +135,7 @@ def test_new_tokenizer_concatenate_three_symbols(code: str) -> None:
 
 
 @pytest.mark.parametrize("code", ["", "A", "B", "AB", "AAB", "AAAB", "BB", "ABB"])
-def test_new_tokenizer_repeat_symbols(code: str) -> None:
+def test_parser_repeat_symbols(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
         TestSymbolType.PROGRAM: cat(rep(sym(T.A)), sym(T.B)),
         TestSymbolType.A: lit("A"),
@@ -155,7 +155,7 @@ def test_new_tokenizer_repeat_symbols(code: str) -> None:
 
 
 @pytest.mark.parametrize("code", ["", "A", "B", "AB", "AAB", "AAAB", "BB", "ABB"])
-def test_new_tokenizer_repeat_symbols_with_at_least_one(code: str) -> None:
+def test_parser_repeat_symbols_with_at_least_one(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
         TestSymbolType.PROGRAM: cat(rep(sym(T.A), m=1), sym(T.B)),
         TestSymbolType.A: lit("A"),
@@ -175,7 +175,7 @@ def test_new_tokenizer_repeat_symbols_with_at_least_one(code: str) -> None:
 
 
 @pytest.mark.parametrize("code", ["", "AC", "ABC", "ABB", "CCB", "AAA"])
-def test_new_tokenizer_optional_symbol(code: str) -> None:
+def test_parser_optional_symbol(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
         TestSymbolType.PROGRAM: cat(sym(T.A), opt(sym(T.B)), sym(T.C)),
         TestSymbolType.A: lit("A"),

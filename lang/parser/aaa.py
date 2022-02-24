@@ -81,27 +81,50 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
     S.WHITESPACE: RegexBasedParser("^[ \\n]+"),
     S.BRANCH: cat(
         lit("if"),
-        sym(S.FUNCTION_BODY),
-        opt(cat(lit("else"), sym(S.FUNCTION_BODY))),
+        opt(
+            cat(
+                sym(S.WHITESPACE),
+                sym(S.FUNCTION_BODY),
+            )
+        ),
+        sym(S.WHITESPACE),
+        opt(
+            cat(
+                lit("else"),
+                opt(cat(sym(S.WHITESPACE), sym(S.FUNCTION_BODY))),
+                sym(S.WHITESPACE),
+            )
+        ),
         lit("end"),
     ),
-    S.LOOP: cat(lit("while"), sym(S.FUNCTION_BODY), lit("end")),
-    S.FUNCTION_BODY: cat(
+    S.LOOP: cat(
+        lit("while"),
         sym(S.WHITESPACE),
+        opt(cat(sym(S.FUNCTION_BODY), sym(S.WHITESPACE))),
+        lit("end"),
+    ),
+    S.FUNCTION_BODY: cat(
+        cat(
+            sym(S.BRANCH)
+            | sym(S.LOOP)
+            | sym(S.OPERATION)
+            | sym(S.IDENTIFIER)
+            | sym(S.LITERAL),
+        ),
         rep(
             cat(
+                sym(S.WHITESPACE),
                 sym(S.BRANCH)
                 | sym(S.LOOP)
                 | sym(S.OPERATION)
                 | sym(S.IDENTIFIER)
                 | sym(S.LITERAL),
-                sym(S.WHITESPACE),
             ),
         ),
     ),
 }
 
-ROOT_SYMBOL = S.FUNCTION_BODY
+ROOT_SYMBOL = S.BRANCH
 
 
 def new_parse(code: str) -> Optional[ParseTree]:  # pragma: nocover
