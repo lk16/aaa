@@ -5,9 +5,9 @@ import subprocess
 import click
 
 from lang.parse import parse
+from lang.parser.aaa import new_parse
 from lang.run import run
 from lang.tokenize import tokenize
-from lang.tokenizer.aaa import new_tokenize
 
 
 @click.group()
@@ -55,7 +55,7 @@ def runtests() -> None:
 def try_new_tokenizer() -> None:
     while True:
         code = input("> ")
-        result = new_tokenize(code)
+        result = new_parse(code)
         print(f"Parse result: {result}")
         print()
 

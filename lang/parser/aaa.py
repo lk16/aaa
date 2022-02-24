@@ -1,14 +1,14 @@
 from enum import IntEnum, auto
 from typing import Dict, Optional
 
-from lang.tokenizer.generic import (
+from lang.parser.generic import (
     OrParser,
     Parser,
     ParseTree,
     RegexBasedParser,
     cat,
     lit,
-    new_tokenize_generic,
+    new_parse_generic,
     opt,
     rep,
     sym,
@@ -54,6 +54,19 @@ OPERATION_LITERALS = [
     "swap",
 ]
 
+RESERVED_KEYWORDS = [
+    "begin",
+    "else",
+    "end",
+    "false",
+    "fn",
+    "if",
+    "true",
+    "while",
+]
+
+FORBIDDEN_IDENTIFIERS = RESERVED_KEYWORDS + OPERATION_LITERALS
+
 
 # Shorthand to keep REWRITE_RULES readable
 S = SymbolType
@@ -62,7 +75,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
     S.BOOLEAN_LITERAL: lit("true") | lit("false"),
     S.INTEGER_LITERAL: RegexBasedParser("^[0-9]+"),
     S.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*"'),
-    S.IDENTIFIER: RegexBasedParser("^[a-z_]+"),
+    S.IDENTIFIER: RegexBasedParser("^[a-z_]+", forbidden=FORBIDDEN_IDENTIFIERS),
     S.LITERAL: sym(S.BOOLEAN_LITERAL) | sym(S.INTEGER_LITERAL) | sym(S.STRING_LITERAL),
     S.OPERATION: OrParser(*[lit(op) for op in OPERATION_LITERALS]),
     S.WHITESPACE: RegexBasedParser("^[ \\n]+"),
@@ -77,13 +90,13 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
         sym(S.WHITESPACE),
         rep(
             cat(
-                sym(S.OPERATION)
-                | sym(S.IDENTIFIER)
-                | sym(S.LITERAL)
+                sym(S.BRANCH)
                 | sym(S.LOOP)
-                | sym(S.BRANCH),
+                | sym(S.OPERATION)
+                | sym(S.IDENTIFIER)
+                | sym(S.LITERAL),
                 sym(S.WHITESPACE),
-            )
+            ),
         ),
     ),
 }
@@ -91,6 +104,6 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
 ROOT_SYMBOL = S.FUNCTION_BODY
 
 
-def new_tokenize(code: str) -> Optional[ParseTree]:  # pragma: nocover
+def new_parse(code: str) -> Optional[ParseTree]:  # pragma: nocover
     # NOTE Tests call new_tokenize_generic() directly
-    return new_tokenize_generic(REWRITE_RULES, ROOT_SYMBOL, code, SymbolType)
+    return new_parse_generic(REWRITE_RULES, ROOT_SYMBOL, code, SymbolType)

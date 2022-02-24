@@ -8,6 +8,28 @@ from typing import Any, Dict, List, Optional, Type
 from lang.exceptions import UnexpectedSymbols, UnhandledSymbolType
 
 
+class InternalParseError(Exception):
+    def __init__(self, offset: int, symbol_type: Optional[IntEnum]) -> None:
+        self.offset = offset
+        self.symbol_type = symbol_type
+        super().__init__()
+
+
+class ParseError(Exception):
+    def __init__(
+        self,
+        line_number: int,
+        column_number: int,
+        line: str,
+        expected_symbol_types: List[IntEnum],
+    ) -> None:
+        self.line_number = line_number
+        self.column_number = column_number
+        self.line = line
+        self.expected_symbol_types = expected_symbol_types
+        super().__init__()
+
+
 @dataclass
 class ParseTree:
     symbol_offset: int
@@ -20,7 +42,7 @@ class ParseTree:
 class Parser:
     symbol_type: Optional[IntEnum] = None
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:  # pragma: nocover
+    def parse(self, code: str, offset: int) -> ParseTree:  # pragma: nocover
         raise NotImplementedError
 
     def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
@@ -42,16 +64,22 @@ class OrParser(Parser):
         for child in self.children:
             child.set_rewrite_rules(rewrite_rules)
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+    def parse(self, code: str, offset: int) -> ParseTree:
         longest_parsed: Optional[ParseTree] = None
 
         for child in self.children:
-            parsed = child.parse(code, offset)
-            if parsed:
-                if (
-                    not longest_parsed
-                ) or parsed.symbol_length > longest_parsed.symbol_length:
-                    longest_parsed = parsed
+            try:
+                parsed = child.parse(code, offset)
+            except InternalParseError:
+                continue
+
+            if not longest_parsed:
+                longest_parsed = parsed
+            elif parsed.symbol_length > longest_parsed.symbol_length:
+                longest_parsed = parsed
+
+        if not longest_parsed:
+            raise InternalParseError(offset, self.symbol_type)
 
         return longest_parsed
 
@@ -63,14 +91,18 @@ class OrParser(Parser):
 
 
 class RegexBasedParser(Parser):
-    def __init__(self, regex: str):
+    def __init__(self, regex: str, forbidden: List[str] = []):
         self.regex = re.compile(regex)
+        self.forbidden_matches = set(forbidden)
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+    def parse(self, code: str, offset: int) -> ParseTree:
         match = self.regex.match(code[offset:])
 
         if not match:
-            return None
+            raise InternalParseError(offset, self.symbol_type)
+
+        if match.group(0) in self.forbidden_matches:
+            raise InternalParseError(offset, self.symbol_type)
 
         return ParseTree(offset, len(match.group(0)), self.symbol_type, [])
 
@@ -83,20 +115,21 @@ class RepeatParser(Parser):
     def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
         self.child.set_rewrite_rules(rewrite_rules)
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+    def parse(self, code: str, offset: int) -> ParseTree:
         sub_trees: List[ParseTree] = []
         child_offset = offset
 
         while True:
-            parsed = self.child.parse(code, child_offset)
-            if parsed:
+            try:
+                parsed = self.child.parse(code, child_offset)
+            except InternalParseError:
+                break
+            else:
                 sub_trees.append(parsed)
                 child_offset += parsed.symbol_length
-            else:
-                break
 
         if len(sub_trees) < self.min_repeats:
-            return None
+            raise InternalParseError(offset, self.child.symbol_type)
 
         return ParseTree(
             offset,
@@ -113,17 +146,18 @@ class OpionalParser(Parser):
     def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
         self.child.set_rewrite_rules(rewrite_rules)
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
-        parsed = self.child.parse(code, offset)
-        if parsed:
+    def parse(self, code: str, offset: int) -> ParseTree:
+        try:
+            parsed = self.child.parse(code, offset)
+        except InternalParseError:
+            return ParseTree(
+                offset,
+                0,
+                self.symbol_type,
+                [],
+            )
+        else:
             return parsed
-
-        return ParseTree(
-            offset,
-            0,
-            self.symbol_type,
-            [],
-        )
 
 
 class ConcatenationParser(Parser):
@@ -134,18 +168,15 @@ class ConcatenationParser(Parser):
         for child in self.children:
             child.set_rewrite_rules(rewrite_rules)
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+    def parse(self, code: str, offset: int) -> ParseTree:
         sub_trees: List[ParseTree] = []
 
         child_offset = offset
 
         for child in self.children:
             parsed = child.parse(code, child_offset)
-            if parsed:
-                sub_trees.append(parsed)
-                child_offset += parsed.symbol_length
-            else:
-                return None
+            sub_trees.append(parsed)
+            child_offset += parsed.symbol_length
 
         return ParseTree(
             offset,
@@ -163,7 +194,7 @@ class SymbolParser(Parser):
     def set_rewrite_rules(self, rewrite_rules: Dict[IntEnum, "Parser"]) -> None:
         self.rewrite_rules = rewrite_rules
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
+    def parse(self, code: str, offset: int) -> ParseTree:
         assert self.symbol_type
         assert self.rewrite_rules
 
@@ -176,10 +207,11 @@ class LiteralParser(Parser):
     def __init__(self, literal: str):
         self.literal = literal
 
-    def parse(self, code: str, offset: int) -> Optional[ParseTree]:
-        if code[offset:].startswith(self.literal):
-            return ParseTree(0, len(self.literal), self.symbol_type, [])
-        return None
+    def parse(self, code: str, offset: int) -> ParseTree:
+        if not code[offset:].startswith(self.literal):
+            raise InternalParseError(offset, self.symbol_type)
+
+        return ParseTree(0, len(self.literal), self.symbol_type, [])
 
 
 def cat(*args: Parser) -> ConcatenationParser:
@@ -203,12 +235,30 @@ def opt(parser: Parser) -> OpionalParser:
     return OpionalParser(parser)
 
 
-def new_tokenize_generic(
+def humanize_parse_error(code: str, e: InternalParseError) -> ParseError:
+    before_offset = code[e.offset :]
+    line_number = 1 + before_offset.count("\n")
+
+    if line_number == 1:
+        column_number = e.offset
+        line = before_offset
+    else:
+        prev_newline = before_offset.rfind("\n")
+        column_number = e.offset - prev_newline
+        line = code[prev_newline + 1 : e.offset]
+
+    # TODO use e.symbol_type to set this value
+    expected_symbol_types: List[IntEnum] = []
+
+    return ParseError(line_number, column_number, line, expected_symbol_types)
+
+
+def new_parse_generic(
     rewrite_rules: Dict[IntEnum, Parser],
     root_symbol: IntEnum,
     code: str,
     symbols_enum: Type[IntEnum],
-) -> Optional[ParseTree]:
+) -> ParseTree:
 
     for enum_value in symbols_enum:
         try:
@@ -225,9 +275,14 @@ def new_tokenize_generic(
 
     tree = rewrite_rules[root_symbol]
     tree.symbol_type = root_symbol
-    parsed = tree.parse(code, 0)
 
-    if parsed is not None and parsed.symbol_length == len(code):
-        return parsed
+    try:
+        parsed = tree.parse(code, 0)
 
-    return None
+        if parsed.symbol_length != len(code):
+            raise InternalParseError(len(code), None)
+
+    except InternalParseError as e:
+        raise humanize_parse_error(code, e) from e
+
+    return parsed

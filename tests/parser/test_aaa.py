@@ -1,7 +1,7 @@
 import pytest
 
-from lang.tokenizer.aaa import OPERATION_LITERALS, REWRITE_RULES, SymbolType
-from lang.tokenizer.generic import new_tokenize_generic
+from lang.parser.aaa import OPERATION_LITERALS, REWRITE_RULES, SymbolType
+from lang.parser.generic import ParseError, new_parse_generic
 
 
 @pytest.mark.parametrize(
@@ -16,10 +16,12 @@ from lang.tokenizer.generic import new_tokenize_generic
     ],
 )
 def test_parse_boolean_literal(code: str, expected_ok: bool) -> None:
-    tree = new_tokenize_generic(
-        REWRITE_RULES, SymbolType.BOOLEAN_LITERAL, code, SymbolType
-    )
-    assert bool(tree) == expected_ok
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.BOOLEAN_LITERAL, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -38,10 +40,12 @@ def test_parse_boolean_literal(code: str, expected_ok: bool) -> None:
     ],
 )
 def test_parse_integer_literal(code: str, expected_ok: bool) -> None:
-    tree = new_tokenize_generic(
-        REWRITE_RULES, SymbolType.INTEGER_LITERAL, code, SymbolType
-    )
-    assert bool(tree) == expected_ok
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.INTEGER_LITERAL, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -58,10 +62,12 @@ def test_parse_integer_literal(code: str, expected_ok: bool) -> None:
     ],
 )
 def test_parse_string_literal(code: str, expected_ok: bool) -> None:
-    tree = new_tokenize_generic(
-        REWRITE_RULES, SymbolType.STRING_LITERAL, code, SymbolType
-    )
-    assert bool(tree) == expected_ok
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.STRING_LITERAL, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -85,8 +91,12 @@ def test_parse_string_literal(code: str, expected_ok: bool) -> None:
     ],
 )
 def test_parse_literal(code: str, expected_ok: bool) -> None:
-    tree = new_tokenize_generic(REWRITE_RULES, SymbolType.LITERAL, code, SymbolType)
-    assert bool(tree) == expected_ok
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.LITERAL, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -105,8 +115,12 @@ def test_parse_literal(code: str, expected_ok: bool) -> None:
     ],
 )
 def test_parse_identifier(code: str, expected_ok: bool) -> None:
-    tree = new_tokenize_generic(REWRITE_RULES, SymbolType.IDENTIFIER, code, SymbolType)
-    assert bool(tree) == expected_ok
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.IDENTIFIER, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -119,8 +133,12 @@ def test_parse_identifier(code: str, expected_ok: bool) -> None:
     + [(op, True) for op in OPERATION_LITERALS],
 )
 def test_parse_operation(code: str, expected_ok: bool) -> None:
-    tree = new_tokenize_generic(REWRITE_RULES, SymbolType.OPERATION, code, SymbolType)
-    assert bool(tree) == expected_ok
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.OPERATION, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -138,8 +156,12 @@ def test_parse_operation(code: str, expected_ok: bool) -> None:
     ],
 )
 def test_parse_whitespace(code: str, expected_ok: bool) -> None:
-    tree = new_tokenize_generic(REWRITE_RULES, SymbolType.WHITESPACE, code, SymbolType)
-    assert bool(tree) == expected_ok
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.WHITESPACE, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -166,12 +188,16 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
         ("if if end end", True),
         ("if if if if end end end end", True),
         ("if if else end else if else end end", True),
-        # TODO more cases
+        # TODO add more cases
     ],
 )
 def test_parse_branch(code: str, expected_ok: bool) -> None:
-    tree = new_tokenize_generic(REWRITE_RULES, SymbolType.BRANCH, code, SymbolType)
-    assert bool(tree) == expected_ok
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.BRANCH, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 # TODO def test_parse_function_body()

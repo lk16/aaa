@@ -4,12 +4,14 @@ from typing import Dict
 
 import pytest
 
-from lang.tokenizer.generic import (
+from lang.parser.generic import (
+    InternalParseError,
+    ParseError,
     Parser,
     RegexBasedParser,
     cat,
     lit,
-    new_tokenize_generic,
+    new_parse_generic,
     opt,
     rep,
     sym,
@@ -39,10 +41,13 @@ def test_new_tokenizer_three_options(code: str) -> None:
     }
 
     expected_ok = re.compile("A|B|C").fullmatch(code)
-    result = new_tokenize_generic(
-        rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType
-    )
-    assert bool(result) == bool(expected_ok)
+
+    try:
+        new_parse_generic(rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize("code", ["", "A", "foo", "f", "B", " foo", "foo ", " foo "])
@@ -56,10 +61,13 @@ def test_new_tokenizer_option_of_literal_and_symbol(code: str) -> None:
     }
 
     expected_ok = re.compile("A|foo").fullmatch(code)
-    result = new_tokenize_generic(
-        rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType
-    )
-    assert bool(result) == bool(expected_ok)
+
+    try:
+        new_parse_generic(rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize("code", ["", "A", "AB", "ABC", " ABC", "ABC "])
@@ -73,10 +81,13 @@ def test_new_tokenizer_three_literals(code: str) -> None:
     }
 
     expected_ok = re.compile("ABC").fullmatch(code)
-    result = new_tokenize_generic(
-        rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType
-    )
-    assert bool(result) == bool(expected_ok)
+
+    try:
+        new_parse_generic(rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -92,10 +103,13 @@ def test_new_tokenizer_optionals_with_concatenation(code: str) -> None:
     }
 
     expected_ok = re.compile("(A|B)(C|D)").fullmatch(code)
-    result = new_tokenize_generic(
-        rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType
-    )
-    assert bool(result) == bool(expected_ok)
+
+    try:
+        new_parse_generic(rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize(
@@ -111,10 +125,13 @@ def test_new_tokenizer_concatenate_three_symbols(code: str) -> None:
     }
 
     expected_ok = re.compile("foobarbaz").fullmatch(code)
-    result = new_tokenize_generic(
-        rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType
-    )
-    assert bool(result) == bool(expected_ok)
+
+    try:
+        new_parse_generic(rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize("code", ["", "A", "B", "AB", "AAB", "AAAB", "BB", "ABB"])
@@ -128,10 +145,13 @@ def test_new_tokenizer_repeat_symbols(code: str) -> None:
     }
 
     expected_ok = re.compile("A*B").fullmatch(code)
-    result = new_tokenize_generic(
-        rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType
-    )
-    assert bool(result) == bool(expected_ok)
+
+    try:
+        new_parse_generic(rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize("code", ["", "A", "B", "AB", "AAB", "AAAB", "BB", "ABB"])
@@ -145,10 +165,13 @@ def test_new_tokenizer_repeat_symbols_with_at_least_one(code: str) -> None:
     }
 
     expected_ok = re.compile("A+B").fullmatch(code)
-    result = new_tokenize_generic(
-        rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType
-    )
-    assert bool(result) == bool(expected_ok)
+
+    try:
+        new_parse_generic(rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 @pytest.mark.parametrize("code", ["", "AC", "ABC", "ABB", "CCB", "AAA"])
@@ -162,10 +185,13 @@ def test_new_tokenizer_optional_symbol(code: str) -> None:
     }
 
     expected_ok = re.compile("AB?C").fullmatch(code)
-    result = new_tokenize_generic(
-        rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType
-    )
-    assert bool(result) == bool(expected_ok)
+
+    try:
+        new_parse_generic(rewrite_rules, TestSymbolType.PROGRAM, code, TestSymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
 
 
 def test_flat_concatenation_expression() -> None:
@@ -192,6 +218,10 @@ def test_flat_option_expression() -> None:
 )
 def test_regex_parser(code: str, expected_match: bool) -> None:
     parser = RegexBasedParser("^(a|b)c*d")
-    parsed = parser.parse(code, 0)
 
-    assert bool(parsed) == expected_match
+    try:
+        parser.parse(code, 0)
+    except InternalParseError:
+        assert not expected_match
+    else:
+        assert expected_match
