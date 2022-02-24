@@ -9,8 +9,6 @@ from lang.exceptions import UnexpectedSymbols, UnhandledSymbolType
 from lang.parser.exceptions import InternalParseError, ParseError
 from lang.parser.tree import ParseTree
 
-PARSER_VERBOSE_MODE = True
-
 
 @dataclass
 class Parser:
@@ -31,9 +29,6 @@ class OrParser(Parser):
         self.children = list(args)
 
     def parse(self, code: str, offset: int) -> ParseTree:
-        if PARSER_VERBOSE_MODE:
-            print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
-
         longest_parsed: Optional[ParseTree] = None
 
         for child in self.children:
@@ -50,9 +45,6 @@ class OrParser(Parser):
         if not longest_parsed:
             raise InternalParseError(offset, self.symbol_type)
 
-        if PARSER_VERBOSE_MODE:
-            print("SUCCESS")
-
         return longest_parsed
 
     def __or__(self, other: Any) -> "OrParser":
@@ -68,9 +60,6 @@ class RegexBasedParser(Parser):
         self.forbidden_matches = set(forbidden)
 
     def parse(self, code: str, offset: int) -> ParseTree:
-        if PARSER_VERBOSE_MODE:
-            print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
-
         match = self.regex.match(code[offset:])
 
         if not match:
@@ -78,9 +67,6 @@ class RegexBasedParser(Parser):
 
         if match.group(0) in self.forbidden_matches:
             raise InternalParseError(offset, self.symbol_type)
-
-        if PARSER_VERBOSE_MODE:
-            print("SUCCESS")
 
         return ParseTree(offset, len(match.group(0)), self.symbol_type, [])
 
@@ -91,9 +77,6 @@ class RepeatParser(Parser):
         self.min_repeats = min_repeats
 
     def parse(self, code: str, offset: int) -> ParseTree:
-        if PARSER_VERBOSE_MODE:
-            print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
-
         sub_trees: List[ParseTree] = []
         child_offset = offset
 
@@ -109,9 +92,6 @@ class RepeatParser(Parser):
         if len(sub_trees) < self.min_repeats:
             raise InternalParseError(offset, self.child.symbol_type)
 
-        if PARSER_VERBOSE_MODE:
-            print("SUCCESS")
-
         return ParseTree(
             offset,
             child_offset - offset,
@@ -125,9 +105,6 @@ class OptionalParser(Parser):
         self.child = child
 
     def parse(self, code: str, offset: int) -> ParseTree:
-        if PARSER_VERBOSE_MODE:
-            print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
-
         try:
             parsed = self.child.parse(code, offset)
         except InternalParseError:
@@ -138,9 +115,6 @@ class OptionalParser(Parser):
                 [],
             )
         else:
-            if PARSER_VERBOSE_MODE:
-                print("SUCCESS")
-
             return parsed
 
 
@@ -149,9 +123,6 @@ class ConcatenationParser(Parser):
         self.children = list(args)
 
     def parse(self, code: str, offset: int) -> ParseTree:
-        if PARSER_VERBOSE_MODE:
-            print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
-
         sub_trees: List[ParseTree] = []
 
         child_offset = offset
@@ -160,9 +131,6 @@ class ConcatenationParser(Parser):
             parsed = child.parse(code, child_offset)
             sub_trees.append(parsed)
             child_offset += parsed.symbol_length
-
-        if PARSER_VERBOSE_MODE:
-            print("SUCCESS")
 
         return ParseTree(
             offset,
@@ -178,20 +146,12 @@ class SymbolParser(Parser):
         self.rewrite_rules: Optional[Dict[IntEnum, "Parser"]] = None
 
     def parse(self, code: str, offset: int) -> ParseTree:
-        if PARSER_VERBOSE_MODE:
-            print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
-
         assert self.symbol_type
         assert self.rewrite_rules
 
         rewritten_expression = self.rewrite_rules[self.symbol_type]
         rewritten_expression.symbol_type = self.symbol_type
-        tree = rewritten_expression.parse(code, offset)
-
-        if PARSER_VERBOSE_MODE:
-            print("SUCCESS")
-
-        return tree
+        return rewritten_expression.parse(code, offset)
 
 
 class LiteralParser(Parser):
@@ -199,14 +159,8 @@ class LiteralParser(Parser):
         self.literal = literal
 
     def parse(self, code: str, offset: int) -> ParseTree:
-        if PARSER_VERBOSE_MODE:
-            print(f'Attempting to parse "{code[offset:]}" with ({repr(self)}).')
-
         if not code[offset:].startswith(self.literal):
             raise InternalParseError(offset, self.symbol_type)
-
-        if PARSER_VERBOSE_MODE:
-            print("SUCCESS")
 
         return ParseTree(0, len(self.literal), self.symbol_type, [])
 
