@@ -2,16 +2,16 @@ from enum import IntEnum, auto
 from typing import Dict, Optional
 
 from lang.parser.generic import (
+    ConcatenationParser,
+    LiteralParser,
+    OptionalParser,
     OrParser,
     Parser,
     ParseTree,
     RegexBasedParser,
-    cat,
-    lit,
+    RepeatParser,
+    SymbolParser,
     new_parse_generic,
-    opt,
-    rep,
-    sym,
 )
 
 
@@ -70,80 +70,107 @@ RESERVED_KEYWORDS = [
 FORBIDDEN_IDENTIFIERS = RESERVED_KEYWORDS + OPERATION_LITERALS
 
 
-# Shorthand to keep REWRITE_RULES readable
-S = SymbolType
-
 REWRITE_RULES: Dict[IntEnum, Parser] = {
-    S.BOOLEAN_LITERAL: lit("true") | lit("false"),
-    S.INTEGER_LITERAL: RegexBasedParser("^[0-9]+"),
-    S.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*"'),
-    S.IDENTIFIER: RegexBasedParser("^[a-z_]+", forbidden=FORBIDDEN_IDENTIFIERS),
-    S.LITERAL: sym(S.BOOLEAN_LITERAL) | sym(S.INTEGER_LITERAL) | sym(S.STRING_LITERAL),
-    S.OPERATION: OrParser(*[lit(op) for op in OPERATION_LITERALS]),
-    S.WHITESPACE: RegexBasedParser("^[ \\n]+"),
-    S.BRANCH: cat(
-        lit("if"),
-        opt(
-            cat(
-                sym(S.WHITESPACE),
-                sym(S.FUNCTION_BODY),
+    SymbolType.BOOLEAN_LITERAL: LiteralParser("true") | LiteralParser("false"),
+    SymbolType.INTEGER_LITERAL: RegexBasedParser("^[0-9]+"),
+    SymbolType.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*"'),
+    SymbolType.IDENTIFIER: RegexBasedParser(
+        "^[a-z_]+", forbidden=FORBIDDEN_IDENTIFIERS
+    ),
+    SymbolType.LITERAL: SymbolParser(SymbolType.BOOLEAN_LITERAL)
+    | SymbolParser(SymbolType.INTEGER_LITERAL)
+    | SymbolParser(SymbolType.STRING_LITERAL),
+    SymbolType.OPERATION: OrParser(*[LiteralParser(op) for op in OPERATION_LITERALS]),
+    SymbolType.WHITESPACE: RegexBasedParser("^[ \\n]+"),
+    SymbolType.BRANCH: ConcatenationParser(
+        LiteralParser("if"),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.WHITESPACE),
+                SymbolParser(SymbolType.FUNCTION_BODY),
             )
         ),
-        sym(S.WHITESPACE),
-        opt(
-            cat(
-                lit("else"),
-                opt(cat(sym(S.WHITESPACE), sym(S.FUNCTION_BODY))),
-                sym(S.WHITESPACE),
+        SymbolParser(SymbolType.WHITESPACE),
+        OptionalParser(
+            ConcatenationParser(
+                LiteralParser("else"),
+                OptionalParser(
+                    ConcatenationParser(
+                        SymbolParser(SymbolType.WHITESPACE),
+                        SymbolParser(SymbolType.FUNCTION_BODY),
+                    )
+                ),
+                SymbolParser(SymbolType.WHITESPACE),
             )
         ),
-        lit("end"),
+        LiteralParser("end"),
     ),
-    S.LOOP: cat(
-        lit("while"),
-        sym(S.WHITESPACE),
-        opt(cat(sym(S.FUNCTION_BODY), sym(S.WHITESPACE))),
-        lit("end"),
-    ),
-    S.FUNCTION_BODY: cat(
-        cat(
-            sym(S.BRANCH)
-            | sym(S.LOOP)
-            | sym(S.OPERATION)
-            | sym(S.IDENTIFIER)
-            | sym(S.LITERAL),
+    SymbolType.LOOP: ConcatenationParser(
+        LiteralParser("while"),
+        SymbolParser(SymbolType.WHITESPACE),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.FUNCTION_BODY),
+                SymbolParser(SymbolType.WHITESPACE),
+            )
         ),
-        rep(
-            cat(
-                sym(S.WHITESPACE),
-                sym(S.BRANCH)
-                | sym(S.LOOP)
-                | sym(S.OPERATION)
-                | sym(S.IDENTIFIER)
-                | sym(S.LITERAL),
+        LiteralParser("end"),
+    ),
+    SymbolType.FUNCTION_BODY: ConcatenationParser(
+        ConcatenationParser(
+            SymbolParser(SymbolType.BRANCH)
+            | SymbolParser(SymbolType.LOOP)
+            | SymbolParser(SymbolType.OPERATION)
+            | SymbolParser(SymbolType.IDENTIFIER)
+            | SymbolParser(SymbolType.LITERAL),
+        ),
+        RepeatParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.WHITESPACE),
+                (
+                    SymbolParser(SymbolType.BRANCH)
+                    | SymbolParser(SymbolType.LOOP)
+                    | SymbolParser(SymbolType.OPERATION)
+                    | SymbolParser(SymbolType.IDENTIFIER)
+                    | SymbolParser(SymbolType.LITERAL)
+                ),
             ),
         ),
     ),
-    S.FUNCTION_DEFINITION: cat(
-        lit("fn"),
-        sym(S.WHITESPACE),
-        sym(S.IDENTIFIER),
-        sym(S.WHITESPACE),
-        rep(cat(sym(S.IDENTIFIER), sym(S.WHITESPACE))),
-        lit("begin"),
-        sym(S.WHITESPACE),
-        opt(cat(sym(S.FUNCTION_BODY), sym(S.WHITESPACE))),
-        lit("end"),
+    SymbolType.FUNCTION_DEFINITION: ConcatenationParser(
+        LiteralParser("fn"),
+        SymbolParser(SymbolType.WHITESPACE),
+        SymbolParser(SymbolType.IDENTIFIER),
+        SymbolParser(SymbolType.WHITESPACE),
+        RepeatParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.IDENTIFIER), SymbolParser(SymbolType.WHITESPACE)
+            )
+        ),
+        LiteralParser("begin"),
+        SymbolParser(SymbolType.WHITESPACE),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.FUNCTION_BODY),
+                SymbolParser(SymbolType.WHITESPACE),
+            )
+        ),
+        LiteralParser("end"),
     ),
-    S.FILE: cat(
-        opt(sym(S.WHITESPACE)),
-        sym(S.FUNCTION_DEFINITION),
-        rep(cat(sym(S.WHITESPACE), sym(S.FUNCTION_DEFINITION))),
-        opt(sym(S.WHITESPACE)),
+    SymbolType.FILE: ConcatenationParser(
+        OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
+        SymbolParser(SymbolType.FUNCTION_DEFINITION),
+        RepeatParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.WHITESPACE),
+                SymbolParser(SymbolType.FUNCTION_DEFINITION),
+            )
+        ),
+        OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
     ),
 }
 
-ROOT_SYMBOL = S.FILE
+ROOT_SYMBOL = SymbolType.FILE
 
 
 def new_parse(code: str) -> Optional[ParseTree]:  # pragma: nocover

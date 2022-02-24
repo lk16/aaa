@@ -5,16 +5,16 @@ from typing import Dict
 import pytest
 
 from lang.parser.generic import (
+    ConcatenationParser,
     InternalParseError,
+    LiteralParser,
+    OptionalParser,
     ParseError,
     Parser,
     RegexBasedParser,
-    cat,
-    lit,
+    RepeatParser,
+    SymbolParser,
     new_parse_generic,
-    opt,
-    rep,
-    sym,
 )
 
 
@@ -26,18 +26,16 @@ class TestSymbolType(IntEnum):
     D = auto()
 
 
-# shorthand to keep tests readable
-T = TestSymbolType
-
-
 @pytest.mark.parametrize("code", ["", "A", "B", "C", "D", "AA", "DA", "AD"])
 def test_parser_three_options(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
-        TestSymbolType.PROGRAM: sym(T.A) | sym(T.B) | sym(T.C),
-        TestSymbolType.A: lit("A"),
-        TestSymbolType.B: lit("B"),
-        TestSymbolType.C: lit("C"),
-        TestSymbolType.D: lit("D"),
+        TestSymbolType.PROGRAM: SymbolParser(TestSymbolType.A)
+        | SymbolParser(TestSymbolType.B)
+        | SymbolParser(TestSymbolType.C),
+        TestSymbolType.A: LiteralParser("A"),
+        TestSymbolType.B: LiteralParser("B"),
+        TestSymbolType.C: LiteralParser("C"),
+        TestSymbolType.D: LiteralParser("D"),
     }
 
     expected_ok = re.compile("A|B|C").fullmatch(code)
@@ -53,11 +51,11 @@ def test_parser_three_options(code: str) -> None:
 @pytest.mark.parametrize("code", ["", "A", "foo", "f", "B", " foo", "foo ", " foo "])
 def test_parser_option_of_literal_and_symbol(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
-        TestSymbolType.PROGRAM: (sym(T.A) | lit("foo")),
-        TestSymbolType.A: lit("A"),
-        TestSymbolType.B: lit("B"),
-        TestSymbolType.C: lit("C"),
-        TestSymbolType.D: lit("D"),
+        TestSymbolType.PROGRAM: (SymbolParser(TestSymbolType.A) | LiteralParser("foo")),
+        TestSymbolType.A: LiteralParser("A"),
+        TestSymbolType.B: LiteralParser("B"),
+        TestSymbolType.C: LiteralParser("C"),
+        TestSymbolType.D: LiteralParser("D"),
     }
 
     expected_ok = re.compile("A|foo").fullmatch(code)
@@ -73,11 +71,13 @@ def test_parser_option_of_literal_and_symbol(code: str) -> None:
 @pytest.mark.parametrize("code", ["", "A", "AB", "ABC", " ABC", "ABC "])
 def test_parser_three_literals(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
-        TestSymbolType.PROGRAM: cat(lit("A"), lit("B"), lit("C")),
-        TestSymbolType.A: lit("A"),
-        TestSymbolType.B: lit("B"),
-        TestSymbolType.C: lit("C"),
-        TestSymbolType.D: lit("D"),
+        TestSymbolType.PROGRAM: ConcatenationParser(
+            LiteralParser("A"), LiteralParser("B"), LiteralParser("C")
+        ),
+        TestSymbolType.A: LiteralParser("A"),
+        TestSymbolType.B: LiteralParser("B"),
+        TestSymbolType.C: LiteralParser("C"),
+        TestSymbolType.D: LiteralParser("D"),
     }
 
     expected_ok = re.compile("ABC").fullmatch(code)
@@ -95,11 +95,14 @@ def test_parser_three_literals(code: str) -> None:
 )
 def test_parser_optionals_with_concatenation(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
-        TestSymbolType.PROGRAM: cat((sym(T.A) | sym(T.B)), (sym(T.C) | sym(T.D))),
-        TestSymbolType.A: lit("A"),
-        TestSymbolType.B: lit("B"),
-        TestSymbolType.C: lit("C"),
-        TestSymbolType.D: lit("D"),
+        TestSymbolType.PROGRAM: ConcatenationParser(
+            (SymbolParser(TestSymbolType.A) | SymbolParser(TestSymbolType.B)),
+            (SymbolParser(TestSymbolType.C) | SymbolParser(TestSymbolType.D)),
+        ),
+        TestSymbolType.A: LiteralParser("A"),
+        TestSymbolType.B: LiteralParser("B"),
+        TestSymbolType.C: LiteralParser("C"),
+        TestSymbolType.D: LiteralParser("D"),
     }
 
     expected_ok = re.compile("(A|B)(C|D)").fullmatch(code)
@@ -117,11 +120,15 @@ def test_parser_optionals_with_concatenation(code: str) -> None:
 )
 def test_parser_concatenate_three_symbols(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
-        TestSymbolType.PROGRAM: cat(sym(T.A), sym(T.B), sym(T.C)),
-        TestSymbolType.A: lit("foo"),
-        TestSymbolType.B: lit("bar"),
-        TestSymbolType.C: lit("baz"),
-        TestSymbolType.D: lit("D"),
+        TestSymbolType.PROGRAM: ConcatenationParser(
+            SymbolParser(TestSymbolType.A),
+            SymbolParser(TestSymbolType.B),
+            SymbolParser(TestSymbolType.C),
+        ),
+        TestSymbolType.A: LiteralParser("foo"),
+        TestSymbolType.B: LiteralParser("bar"),
+        TestSymbolType.C: LiteralParser("baz"),
+        TestSymbolType.D: LiteralParser("D"),
     }
 
     expected_ok = re.compile("foobarbaz").fullmatch(code)
@@ -137,11 +144,13 @@ def test_parser_concatenate_three_symbols(code: str) -> None:
 @pytest.mark.parametrize("code", ["", "A", "B", "AB", "AAB", "AAAB", "BB", "ABB"])
 def test_parser_repeat_symbols(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
-        TestSymbolType.PROGRAM: cat(rep(sym(T.A)), sym(T.B)),
-        TestSymbolType.A: lit("A"),
-        TestSymbolType.B: lit("B"),
-        TestSymbolType.C: lit("C"),
-        TestSymbolType.D: lit("D"),
+        TestSymbolType.PROGRAM: ConcatenationParser(
+            RepeatParser(SymbolParser(TestSymbolType.A)), SymbolParser(TestSymbolType.B)
+        ),
+        TestSymbolType.A: LiteralParser("A"),
+        TestSymbolType.B: LiteralParser("B"),
+        TestSymbolType.C: LiteralParser("C"),
+        TestSymbolType.D: LiteralParser("D"),
     }
 
     expected_ok = re.compile("A*B").fullmatch(code)
@@ -157,11 +166,14 @@ def test_parser_repeat_symbols(code: str) -> None:
 @pytest.mark.parametrize("code", ["", "A", "B", "AB", "AAB", "AAAB", "BB", "ABB"])
 def test_parser_repeat_symbols_with_at_least_one(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
-        TestSymbolType.PROGRAM: cat(rep(sym(T.A), m=1), sym(T.B)),
-        TestSymbolType.A: lit("A"),
-        TestSymbolType.B: lit("B"),
-        TestSymbolType.C: lit("C"),
-        TestSymbolType.D: lit("D"),
+        TestSymbolType.PROGRAM: ConcatenationParser(
+            RepeatParser(SymbolParser(TestSymbolType.A), min_repeats=1),
+            SymbolParser(TestSymbolType.B),
+        ),
+        TestSymbolType.A: LiteralParser("A"),
+        TestSymbolType.B: LiteralParser("B"),
+        TestSymbolType.C: LiteralParser("C"),
+        TestSymbolType.D: LiteralParser("D"),
     }
 
     expected_ok = re.compile("A+B").fullmatch(code)
@@ -177,11 +189,15 @@ def test_parser_repeat_symbols_with_at_least_one(code: str) -> None:
 @pytest.mark.parametrize("code", ["", "AC", "ABC", "ABB", "CCB", "AAA"])
 def test_parser_optional_symbol(code: str) -> None:
     rewrite_rules: Dict[IntEnum, Parser] = {
-        TestSymbolType.PROGRAM: cat(sym(T.A), opt(sym(T.B)), sym(T.C)),
-        TestSymbolType.A: lit("A"),
-        TestSymbolType.B: lit("B"),
-        TestSymbolType.C: lit("C"),
-        TestSymbolType.D: lit("D"),
+        TestSymbolType.PROGRAM: ConcatenationParser(
+            SymbolParser(TestSymbolType.A),
+            OptionalParser(SymbolParser(TestSymbolType.B)),
+            SymbolParser(TestSymbolType.C),
+        ),
+        TestSymbolType.A: LiteralParser("A"),
+        TestSymbolType.B: LiteralParser("B"),
+        TestSymbolType.C: LiteralParser("C"),
+        TestSymbolType.D: LiteralParser("D"),
     }
 
     expected_ok = re.compile("AB?C").fullmatch(code)
@@ -195,12 +211,20 @@ def test_parser_optional_symbol(code: str) -> None:
 
 
 def test_flat_concatenation_expression() -> None:
-    expr = cat(sym(T.A), sym(T.B), sym(T.C))
+    expr = ConcatenationParser(
+        SymbolParser(TestSymbolType.A),
+        SymbolParser(TestSymbolType.B),
+        SymbolParser(TestSymbolType.C),
+    )
     assert len(expr.children) == 3
 
 
 def test_flat_option_expression() -> None:
-    expr = sym(T.A) | sym(T.B) | sym(T.C)
+    expr = (
+        SymbolParser(TestSymbolType.A)
+        | SymbolParser(TestSymbolType.B)
+        | SymbolParser(TestSymbolType.C)
+    )
     assert len(expr.children) == 3
 
 

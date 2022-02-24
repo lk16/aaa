@@ -160,7 +160,7 @@ class RepeatParser(Parser):
         )
 
 
-class OpionalParser(Parser):
+class OptionalParser(Parser):
     def __init__(self, child: Parser) -> None:
         self.child = child
 
@@ -259,27 +259,6 @@ class LiteralParser(Parser):
             print("SUCCESS")
 
         return ParseTree(0, len(self.literal), self.symbol_type, [])
-
-
-def cat(*args: Parser) -> ConcatenationParser:
-    return ConcatenationParser(*args)
-
-
-def sym(symbol_type: IntEnum) -> SymbolParser:
-    # TODO consider using partial
-    return SymbolParser(symbol_type)
-
-
-def lit(literal: str) -> LiteralParser:
-    return LiteralParser(literal)
-
-
-def rep(parser: Parser, m: int = 0) -> RepeatParser:
-    return RepeatParser(parser, m)
-
-
-def opt(parser: Parser) -> OpionalParser:
-    return OpionalParser(parser)
 
 
 def humanize_parse_error(code: str, e: InternalParseError) -> ParseError:
