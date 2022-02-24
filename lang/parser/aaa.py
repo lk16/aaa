@@ -26,6 +26,8 @@ class SymbolType(IntEnum):
     STRING_LITERAL = auto()
     INTEGER_LITERAL = auto()
     BOOLEAN_LITERAL = auto()
+    FUNCTION_DEFINITION = auto()
+    FILE = auto()
 
 
 OPERATION_LITERALS = [
@@ -121,6 +123,23 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
                 | sym(S.LITERAL),
             ),
         ),
+    ),
+    S.FUNCTION_DEFINITION: cat(
+        lit("fn"),
+        sym(S.WHITESPACE),
+        sym(S.IDENTIFIER),
+        sym(S.WHITESPACE),
+        rep(cat(sym(S.IDENTIFIER), sym(S.WHITESPACE))),
+        lit("begin"),
+        sym(S.WHITESPACE),
+        opt(cat(sym(S.FUNCTION_BODY), sym(S.WHITESPACE))),
+        lit("end"),
+    ),
+    S.FILE: cat(
+        opt(sym(S.WHITESPACE)),
+        sym(S.FUNCTION_DEFINITION),
+        rep(cat(sym(S.WHITESPACE), sym(S.FUNCTION_DEFINITION))),
+        opt(sym(S.WHITESPACE)),
     ),
 }
 

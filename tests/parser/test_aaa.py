@@ -1,6 +1,11 @@
 import pytest
 
-from lang.parser.aaa import OPERATION_LITERALS, REWRITE_RULES, SymbolType
+from lang.parser.aaa import (
+    FORBIDDEN_IDENTIFIERS,
+    OPERATION_LITERALS,
+    REWRITE_RULES,
+    SymbolType,
+)
 from lang.parser.generic import ParseError, new_parse_generic
 
 
@@ -112,7 +117,8 @@ def test_parse_literal(code: str, expected_ok: bool) -> None:
         ("Z", False),
         ("abcd_xyz", True),
         ("abcd_xyz/", False),
-    ],
+    ]
+    + [(identifier, False) for identifier in FORBIDDEN_IDENTIFIERS],
 )
 def test_parse_identifier(code: str, expected_ok: bool) -> None:
     try:
@@ -213,8 +219,54 @@ def test_parse_branch(code: str, expected_ok: bool) -> None:
         assert expected_ok
 
 
-# TODO def test_parse_loop()
-# TODO def test_parse_function_body()
+@pytest.mark.parametrize(
+    ["code", "expected_ok"],
+    [
+        ("", False),
+        ("end", False),
+        ("while end", True),
+        ("while a end", True),
+        ("while <= end", True),
+        ("while true end", True),
+        ("while 123 end", True),
+        ("while if end end", True),
+        ("while if else end end", True),
+        ("while if while end else while end end end", True),
+        ("while endd end", True),
+    ],
+)
+def test_parse_loop(code: str, expected_ok: bool) -> None:
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.LOOP, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_ok"],
+    [
+        ("", False),
+        ("end", False),
+        ("while end", True),
+        ("while a end", True),
+        ("if end", True),
+        ("if else end", True),
+        ("if a else a end", True),
+        ("3 5 + < 8 true >= subst substr substr", True),
+        ("if while if while if while end end end end end end", True),
+    ],
+)
+def test_parse_function_body(code: str, expected_ok: bool) -> None:
+    try:
+        new_parse_generic(REWRITE_RULES, SymbolType.FUNCTION_BODY, code, SymbolType)
+    except ParseError:
+        assert not expected_ok
+    else:
+        assert expected_ok
+
+
 # TODO def test_parse_function()
 # TODO def test_parse_program()
 
