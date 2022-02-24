@@ -6,37 +6,8 @@ from enum import IntEnum
 from typing import Any, Dict, List, Optional, Type
 
 from lang.exceptions import UnexpectedSymbols, UnhandledSymbolType
-
-
-class InternalParseError(Exception):
-    def __init__(self, offset: int, symbol_type: Optional[IntEnum]) -> None:
-        self.offset = offset
-        self.symbol_type = symbol_type
-        super().__init__()
-
-
-class ParseError(Exception):
-    def __init__(
-        self,
-        line_number: int,
-        column_number: int,
-        line: str,
-        expected_symbol_types: List[IntEnum],
-    ) -> None:
-        self.line_number = line_number
-        self.column_number = column_number
-        self.line = line
-        self.expected_symbol_types = expected_symbol_types
-        super().__init__()
-
-
-@dataclass
-class ParseTree:
-    symbol_offset: int
-    symbol_length: int
-    symbol_type: Optional[IntEnum]
-    children: List["ParseTree"]
-
+from lang.parser.exceptions import InternalParseError, ParseError
+from lang.parser.tree import ParseTree
 
 PARSER_VERBOSE_MODE = True
 
