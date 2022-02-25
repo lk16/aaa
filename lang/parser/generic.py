@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from enum import IntEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple, Type
 
 from lang.exceptions import UnexpectedSymbols, UnhandledSymbolType
 from lang.parser.exceptions import InternalParseError, ParseError
@@ -17,13 +17,6 @@ class Parser:
 
     def parse(self, code: str, offset: int) -> ParseTree:  # pragma: nocover
         raise NotImplementedError
-
-    # TODO remove this
-    def __or__(self, other: Any) -> "OrParser":
-        if not isinstance(other, Parser):
-            raise TypeError  # pragma: nocover
-
-        return OrParser(self, other)
 
 
 class OrParser(Parser):
@@ -48,13 +41,6 @@ class OrParser(Parser):
             raise InternalParseError(offset, self.symbol_type)
 
         return longest_parsed
-
-    # TODO remove this
-    def __or__(self, other: Any) -> "OrParser":
-        if not isinstance(other, Parser):
-            raise TypeError  # pragma: nocover
-
-        return OrParser(*self.children, other)
 
 
 # TODO refactor such that regex doesn't start with '^'

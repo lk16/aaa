@@ -72,13 +72,15 @@ KEYWORDS = CONTROL_FLOW_KEYWORDS + OPERATOR_KEYWORDS
 
 
 REWRITE_RULES: Dict[IntEnum, Parser] = {
-    SymbolType.BOOLEAN_LITERAL: LiteralParser("true") | LiteralParser("false"),
+    SymbolType.BOOLEAN_LITERAL: OrParser(LiteralParser("true"), LiteralParser("false")),
     SymbolType.INTEGER_LITERAL: RegexBasedParser("^[0-9]+"),
     SymbolType.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*"'),
     SymbolType.IDENTIFIER: RegexBasedParser("^[a-z_]+", forbidden=KEYWORDS),
-    SymbolType.LITERAL: SymbolParser(SymbolType.BOOLEAN_LITERAL)
-    | SymbolParser(SymbolType.INTEGER_LITERAL)
-    | SymbolParser(SymbolType.STRING_LITERAL),
+    SymbolType.LITERAL: OrParser(
+        SymbolParser(SymbolType.BOOLEAN_LITERAL),
+        SymbolParser(SymbolType.INTEGER_LITERAL),
+        SymbolParser(SymbolType.STRING_LITERAL),
+    ),
     SymbolType.OPERATION: OrParser(*[LiteralParser(op) for op in OPERATOR_KEYWORDS]),
     SymbolType.WHITESPACE: RegexBasedParser("^[ \\n]+"),
     SymbolType.BRANCH: ConcatenationParser(
@@ -115,12 +117,12 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
         ),
         LiteralParser("end"),
     ),
-    SymbolType.FUNCTION_BODY_ITEM: (
-        SymbolParser(SymbolType.BRANCH)
-        | SymbolParser(SymbolType.LOOP)
-        | SymbolParser(SymbolType.OPERATION)
-        | SymbolParser(SymbolType.IDENTIFIER)
-        | SymbolParser(SymbolType.LITERAL)
+    SymbolType.FUNCTION_BODY_ITEM: OrParser(
+        SymbolParser(SymbolType.BRANCH),
+        SymbolParser(SymbolType.LOOP),
+        SymbolParser(SymbolType.OPERATION),
+        SymbolParser(SymbolType.IDENTIFIER),
+        SymbolParser(SymbolType.LITERAL),
     ),
     SymbolType.FUNCTION_BODY: ConcatenationParser(
         SymbolParser(SymbolType.FUNCTION_BODY_ITEM),
