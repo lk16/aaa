@@ -7,7 +7,7 @@ import click
 
 from lang.parse import parse
 from lang.parser.aaa import REWRITE_RULES, new_parse
-from lang.parser.generic import check_grammar_file_staleness
+from lang.parser.grammar_generator import check_grammar_file_staleness
 from lang.run import run
 from lang.tokenize import tokenize
 

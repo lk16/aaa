@@ -3,7 +3,6 @@
 Next development steps.
 
 ### Proper Parsing
-- add command for regenerating bnf grammar (and add link to readme)
 - add tests for parse tree functions
 - check human error output
 - check test coverage
@@ -12,7 +11,7 @@ Next development steps.
 - move generic parser files to separate repo
 
 ### In parser repo
-- generate parser from
+- generate parser from grammar file
 
 ### Functions
 - implement function arguments

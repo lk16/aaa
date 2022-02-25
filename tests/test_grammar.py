@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from lang.parser.aaa import REWRITE_RULES
-from lang.parser.generic import check_grammar_file_staleness
+from lang.parser.grammar_generator import check_grammar_file_staleness
 
 
 def test_grammar_up_to_date() -> None:
