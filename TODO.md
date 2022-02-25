@@ -23,13 +23,13 @@ Next development steps.
 
 ### Brag in readme
 - minimal dependencies
-- custom simple parser
+- custom simple parser, link to grammar.txt
 - tests
 - ci
 - expressiveness
 
 ### Be more consistent
-- change `while ... end` to `do ... while ... end`
+- change `while ... end` to `while ... begin ... end`
 - change `if ... else ... end` to `if ... begin ... else ... end`
 
 ### Later
