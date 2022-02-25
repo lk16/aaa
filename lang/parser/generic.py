@@ -43,9 +43,9 @@ class OrParser(Parser):
         return longest_parsed
 
 
-# TODO refactor such that regex doesn't start with '^'
 class RegexBasedParser(Parser):
     def __init__(self, regex: str, forbidden: List[str] = []):
+        assert regex.startswith("^")
         self.regex = re.compile(regex)
         self.forbidden_matches = set(forbidden)
 
@@ -257,7 +257,7 @@ def bnf_like_expression(parser: Parser) -> str:
             return expr + f"{parser.min_repeats,...}"
 
     elif isinstance(parser, RegexBasedParser):
-        return "regex(" + parser.regex.pattern + ")"
+        return "regex(" + parser.regex.pattern[1:] + ")"
 
     elif isinstance(parser, LiteralParser):
         return f'"{parser.literal}"'

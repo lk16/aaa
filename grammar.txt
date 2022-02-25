@@ -14,9 +14,9 @@ FUNCTION_BODY_ITEM = (BRANCH | LOOP | OPERATION | IDENTIFIER | LITERAL)
 
 FUNCTION_DEFINITION = "fn" WHITESPACE (IDENTIFIER WHITESPACE)+ "begin" WHITESPACE (FUNCTION_BODY WHITESPACE)? "end"
 
-IDENTIFIER = regex(^[a-z_]+)
+IDENTIFIER = regex([a-z_]+)
 
-INTEGER_LITERAL = regex(^[0-9]+)
+INTEGER_LITERAL = regex([0-9]+)
 
 LITERAL = (BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL)
 
@@ -24,6 +24,6 @@ LOOP = "while" WHITESPACE (FUNCTION_BODY WHITESPACE)? "end"
 
 OPERATION = ("-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">=" | "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap")
 
-STRING_LITERAL = regex(^"([^\\]|\\("|n|\\))*")
+STRING_LITERAL = regex("([^\\]|\\("|n|\\))*")
 
-WHITESPACE = regex(^[ \n]+)
+WHITESPACE = regex([ \n]+)
