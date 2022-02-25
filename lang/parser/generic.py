@@ -173,19 +173,22 @@ def set_rewrite_rules(parser: Parser, rewrite_rules: Dict[IntEnum, Parser]) -> N
 
 
 def humanize_parse_error(code: str, e: InternalParseError) -> ParseError:
-    before_offset = code[e.offset :]
+    before_offset = code[: e.offset]
     line_number = 1 + before_offset.count("\n")
+    prev_newline = before_offset.rfind("\n")
 
-    if line_number == 1:
-        column_number = e.offset
-        line = before_offset
-    else:
-        prev_newline = before_offset.rfind("\n")
-        column_number = e.offset - prev_newline
-        line = code[prev_newline + 1 : e.offset]
+    next_newline = code.find("\n", e.offset)
+    if next_newline == -1:
+        next_newline = len(code)
 
-    # TODO use e.symbol_type to set this value
+    column_number = e.offset - prev_newline
+    line = code[prev_newline + 1 : next_newline]
+
     expected_symbol_types: List[IntEnum] = []
+
+    if e.symbol_type:
+        # TODO this may be wrong or unhelpful to the programmer
+        expected_symbol_types.append(e.symbol_type)
 
     return ParseError(line_number, column_number, line, expected_symbol_types)
 

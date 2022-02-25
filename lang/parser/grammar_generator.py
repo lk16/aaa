@@ -18,9 +18,8 @@ def bnf_like_expression(parser: Parser) -> str:
     if parser.symbol_type is not None:
         return parser.symbol_type.name
 
-    if isinstance(parser, SymbolParser):
-        assert parser.symbol_type
-        return parser.symbol_type.name
+    if isinstance(parser, SymbolParser):  # pragma: nocover
+        raise NotImplementedError  # unreachable
 
     elif isinstance(parser, ConcatenationParser):
         return " ".join(bnf_like_expression(child) for child in parser.children)

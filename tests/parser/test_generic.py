@@ -15,6 +15,7 @@ from lang.parser.generic import (
     RegexBasedParser,
     RepeatParser,
     SymbolParser,
+    humanize_parse_error,
     new_parse_generic,
 )
 
@@ -258,3 +259,31 @@ def test_regex_parser(code: str, expected_match: bool) -> None:
         assert not expected_match
     else:
         assert expected_match
+
+
+@pytest.mark.parametrize(
+    ["offset", "expected_line_number", "expected_column_number", "expected_line"],
+    [
+        (0, 1, 1, "abc"),
+        (2, 1, 3, "abc"),
+        (3, 1, 4, "abc"),
+        (4, 2, 1, "def"),
+        (6, 2, 3, "def"),
+        (7, 2, 4, "def"),
+        (8, 3, 1, "ghi"),
+        (10, 3, 3, "ghi"),
+    ],
+)
+def test_humanize_parse_error(
+    offset: int,
+    expected_line_number: int,
+    expected_column_number: int,
+    expected_line: str,
+) -> None:
+    code = "abc\ndef\nghi"
+    e = InternalParseError(offset, None)
+
+    pe = humanize_parse_error(code, e)
+    assert pe.line_number == expected_line_number
+    assert pe.column_number == expected_column_number
+    assert pe.line == expected_line
