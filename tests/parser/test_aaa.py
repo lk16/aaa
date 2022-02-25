@@ -308,4 +308,9 @@ def test_parse_file(code: str, expected_ok: bool) -> None:
         assert expected_ok
 
 
-# TODO test comments in every possible place
+# TODO test parsetree of file/function_definition
+# TODO test parsetree of branch
+# TODO test parsetree of identifier
+# TODO test parsetree of 3 literal types
+# TODO test parsetree of loop
+# TODO test parsetree of operations

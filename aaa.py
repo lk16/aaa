@@ -7,7 +7,8 @@ from typing import Optional
 import click
 
 from lang.parse import parse
-from lang.parser.aaa import REWRITE_RULES, ROOT_SYMBOL, new_parse
+from lang.parser.aaa import REWRITE_RULES, ROOT_SYMBOL
+from lang.parser.aaa import parse as new_parse  # TODO remove alias
 from lang.parser.grammar_generator import check_grammar_file_staleness
 from lang.parser.tree import ParseTree
 from lang.run import run

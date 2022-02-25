@@ -13,6 +13,7 @@ from lang.parser.generic import (
     SymbolParser,
     new_parse_generic,
 )
+from lang.parser.tree import prune_by_symbol_types, prune_parse_tree_zero_length
 
 
 class SymbolType(IntEnum):
@@ -35,6 +36,7 @@ class SymbolType(IntEnum):
     FN = auto()
     IF = auto()
     WHILE = auto()
+    # TODO add comments
 
 
 OPERATOR_KEYWORDS = [
@@ -181,6 +183,28 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
 ROOT_SYMBOL = SymbolType.FILE
 
 
-def new_parse(code: str) -> Optional[ParseTree]:  # pragma: nocover
+class EmptyParseTreeError(Exception):
+    ...
+
+
+def parse(code: str) -> ParseTree:
+
     # NOTE Tests call new_tokenize_generic() directly
-    return new_parse_generic(REWRITE_RULES, ROOT_SYMBOL, code, SymbolType)
+    tree: Optional[ParseTree] = new_parse_generic(
+        REWRITE_RULES, ROOT_SYMBOL, code, SymbolType
+    )
+
+    if not tree:
+        raise EmptyParseTreeError
+
+    tree = prune_parse_tree_zero_length(tree)
+
+    if not tree:
+        raise EmptyParseTreeError
+
+    tree = prune_by_symbol_types(tree, {SymbolType.WHITESPACE})
+
+    if not tree:
+        raise EmptyParseTreeError
+
+    return tree
