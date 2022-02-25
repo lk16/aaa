@@ -55,14 +55,14 @@ def bnf_like_expression(parser: Parser) -> str:
 
 
 def check_grammar_file_staleness(
-    grammar_file: Path, rewrite_rules: Dict[IntEnum, Parser]
+    grammar_file: Path, rewrite_rules: Dict[IntEnum, Parser], root_symbol: IntEnum
 ) -> Tuple[bool, str]:
     if grammar_file.exists():
         old_grammar = grammar_file.read_text()
     else:
         old_grammar = ""
 
-    new_grammar = regenerate_bnf_like_grammar_file(rewrite_rules)
+    new_grammar = regenerate_bnf_like_grammar_file(rewrite_rules, root_symbol)
 
     stale = old_grammar != new_grammar
     return stale, new_grammar
@@ -70,12 +70,14 @@ def check_grammar_file_staleness(
 
 def regenerate_bnf_like_grammar_file(
     rewrite_rules: Dict[IntEnum, Parser],
+    root_symbol: IntEnum,
 ) -> str:
 
     output = (
         "// Human readable grammar. Easier to understand than actual rewrite rules.\n"
         '// This file was generated using "./aaa.py generate-grammar-file".\n'
         "// A unit test should make sure this file is up to date with its source.\n\n"
+        f"// The root symbol is {root_symbol.name}.\n\n"
     )
 
     symbols = sorted(rewrite_rules.keys(), key=lambda x: x.name)

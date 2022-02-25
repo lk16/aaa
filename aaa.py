@@ -7,7 +7,7 @@ from typing import Optional
 import click
 
 from lang.parse import parse
-from lang.parser.aaa import REWRITE_RULES, new_parse
+from lang.parser.aaa import REWRITE_RULES, ROOT_SYMBOL, new_parse
 from lang.parser.grammar_generator import check_grammar_file_staleness
 from lang.parser.tree import ParseTree
 from lang.run import run
@@ -73,7 +73,9 @@ def try_new_tokenizer() -> None:
 
 @cli.command()
 def generate_grammar_file() -> None:
-    stale, new_grammar = check_grammar_file_staleness(GRAMMAR_FILE_PATH, REWRITE_RULES)
+    stale, new_grammar = check_grammar_file_staleness(
+        GRAMMAR_FILE_PATH, REWRITE_RULES, ROOT_SYMBOL
+    )
 
     if stale:
         GRAMMAR_FILE_PATH.write_text(new_grammar)
