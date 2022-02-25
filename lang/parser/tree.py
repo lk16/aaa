@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import IntEnum
 from typing import Callable, List, Optional, Set
 
@@ -10,23 +10,38 @@ class ParseTree:
     symbol_type: Optional[IntEnum]
     children: List["ParseTree"]
 
-    def count_nodes(self) -> int:
-        return 1 + sum(child.count_nodes() for child in self.children)
+    def size(self) -> int:
+        return 1 + sum(child.size() for child in self.children)
 
-    def prune(self, condition: Callable[["ParseTree"], bool]) -> "ParseTree":
-        pruned_children = list(filter(condition, self.children))
 
-        for i, child in enumerate(pruned_children):
-            pruned_children[i] = child.prune(condition)
+def prune_parse_tree_zero_length(tree: ParseTree) -> Optional[ParseTree]:
+    def condition(tree: ParseTree) -> bool:
+        return tree.symbol_length > 0
 
-        return ParseTree(
-            self.symbol_offset, self.symbol_length, self.symbol_type, pruned_children
-        )
+    return prune_parse_tree(tree, condition)
 
-    def prune_zero_length_symbols(self) -> "ParseTree":
-        return self.prune(lambda pt: pt.symbol_length > 0)
 
-    def prune_by_symbol_types(self, symbol_types: Set[IntEnum]) -> "ParseTree":
-        return self.prune(
-            lambda pt: pt.symbol_type is None or pt.symbol_type not in symbol_types
-        )
+def prune_by_symbol_types(
+    tree: ParseTree, symbol_types: Set[IntEnum]
+) -> Optional[ParseTree]:
+    def condition(tree: ParseTree) -> bool:
+        return tree.symbol_type is None or tree.symbol_type not in symbol_types
+
+    return prune_parse_tree(tree, condition)
+
+
+def prune_parse_tree(
+    tree: ParseTree, condition: Callable[[ParseTree], bool]
+) -> Optional[ParseTree]:
+    if not condition(tree):
+        return None
+
+    pruned_children: List[ParseTree] = []
+
+    for child in pruned_children:
+        child_tree = prune_parse_tree(child, condition)
+        if child_tree:
+            pruned_children.append(child_tree)
+
+    new_tree = replace(tree, children=pruned_children)
+    return new_tree

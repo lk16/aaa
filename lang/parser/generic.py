@@ -17,6 +17,7 @@ class Parser:
     def parse(self, code: str, offset: int) -> ParseTree:  # pragma: nocover
         raise NotImplementedError
 
+    # TODO remove this
     def __or__(self, other: Any) -> "OrParser":
         if not isinstance(other, Parser):
             raise TypeError  # pragma: nocover
@@ -25,7 +26,7 @@ class Parser:
 
 
 class OrParser(Parser):
-    def __init__(self, *args: "Parser") -> None:
+    def __init__(self, *args: Parser) -> None:
         self.children = list(args)
 
     def parse(self, code: str, offset: int) -> ParseTree:
@@ -47,6 +48,7 @@ class OrParser(Parser):
 
         return longest_parsed
 
+    # TODO remove this
     def __or__(self, other: Any) -> "OrParser":
         if not isinstance(other, Parser):
             raise TypeError  # pragma: nocover
@@ -54,6 +56,7 @@ class OrParser(Parser):
         return OrParser(*self.children, other)
 
 
+# TODO refactor such that regex doesn't start with '^'
 class RegexBasedParser(Parser):
     def __init__(self, regex: str, forbidden: List[str] = []):
         self.regex = re.compile(regex)
@@ -119,7 +122,7 @@ class OptionalParser(Parser):
 
 
 class ConcatenationParser(Parser):
-    def __init__(self, *args: "Parser") -> None:
+    def __init__(self, *args: Parser) -> None:
         self.children = list(args)
 
     def parse(self, code: str, offset: int) -> ParseTree:
@@ -143,7 +146,7 @@ class ConcatenationParser(Parser):
 class SymbolParser(Parser):
     def __init__(self, symbol_type: IntEnum):
         self.symbol_type = symbol_type
-        self.rewrite_rules: Optional[Dict[IntEnum, "Parser"]] = None
+        self.rewrite_rules: Optional[Dict[IntEnum, Parser]] = None
 
     def parse(self, code: str, offset: int) -> ParseTree:
         assert self.symbol_type
@@ -166,7 +169,6 @@ class LiteralParser(Parser):
 
 
 def set_rewrite_rules(parser: Parser, rewrite_rules: Dict[IntEnum, Parser]) -> None:
-
     if isinstance(parser, SymbolParser):
         parser.rewrite_rules = rewrite_rules
 
@@ -235,3 +237,52 @@ def new_parse_generic(
         raise humanize_parse_error(code, e) from e
 
     return parsed
+
+
+def bnf_like_expression(parser: Parser) -> str:
+    if parser.symbol_type is not None:
+        return parser.symbol_type.name
+
+    if isinstance(parser, SymbolParser):
+        assert parser.symbol_type
+        return parser.symbol_type.name
+
+    elif isinstance(parser, ConcatenationParser):
+        return " ".join(bnf_like_expression(child) for child in parser.children)
+
+    elif isinstance(parser, OrParser):
+        return " | ".join(bnf_like_expression(child) for child in parser.children)
+
+    elif isinstance(parser, OptionalParser):
+        return "(" + bnf_like_expression(parser.child) + ")?"
+
+    elif isinstance(parser, RepeatParser):
+        expr = "(" + bnf_like_expression(parser.child) + ")"
+        if parser.min_repeats == 0:
+            return expr + "*"
+        elif parser.min_repeats == 1:
+            return expr + "+"
+        else:
+            return expr + f"{parser.min_repeats,...}"
+
+    elif isinstance(parser, RegexBasedParser):
+        return "regex(" + parser.regex.pattern + ")"
+
+    elif isinstance(parser, LiteralParser):
+        return f'"{parser.literal}"'
+
+    else:  # pragma: nocover
+        raise NotImplementedError
+
+
+def regenerate_bnf_like_grammar_file(
+    rewrite_rules: Dict[IntEnum, Parser],
+) -> str:
+
+    output = ""
+
+    for symbol, parser in rewrite_rules.items():
+        output += f"{symbol.name} = " + bnf_like_expression(parser) + "\n\n"
+
+    # TODO command and run from pre-commit
+    return output

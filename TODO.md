@@ -2,14 +2,31 @@
 
 Next development steps.
 
+### Proper Parsing
+- add command for regenerating bnf grammar (and add link to readme)
+- add tests for parse tree functions
+- check human error output
+- check test coverage
+- check naming consistency
+- check for remaining TODO comments
+- move generic parser files to separate repo
+
+### In parser repo
+- generate parser from
+
 ### Functions
-- write a proper grammar
-- use grammar to parse files
 - implement function arguments
 - implement calling functions
 
 ### Be more self-contained
 - remove `click` dependency
+
+### Brag in readme
+- minimal dependencies
+- custom simple parser
+- tests
+- ci
+- expressiveness
 
 ### Be more consistent
 - change `while ... end` to `do ... while ... end`
@@ -21,7 +38,6 @@ Next development steps.
 - loops (`break`, `continue`)
 - assertions (`assert`)
 - debug tools (`breakpoint`)
-- support
 - static type checking
 - structs / classes ?
 - compile to native executable

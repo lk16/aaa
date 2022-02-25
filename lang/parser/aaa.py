@@ -30,7 +30,7 @@ class SymbolType(IntEnum):
     FILE = auto()
 
 
-OPERATION_LITERALS = [
+OPERATOR_KEYWORDS = [
     "-",
     "!=",
     ".",
@@ -56,7 +56,7 @@ OPERATION_LITERALS = [
     "swap",
 ]
 
-RESERVED_KEYWORDS = [
+CONTROL_FLOW_KEYWORDS = [
     "begin",
     "else",
     "end",
@@ -67,20 +67,18 @@ RESERVED_KEYWORDS = [
     "while",
 ]
 
-FORBIDDEN_IDENTIFIERS = RESERVED_KEYWORDS + OPERATION_LITERALS
+KEYWORDS = CONTROL_FLOW_KEYWORDS + OPERATOR_KEYWORDS
 
 
 REWRITE_RULES: Dict[IntEnum, Parser] = {
     SymbolType.BOOLEAN_LITERAL: LiteralParser("true") | LiteralParser("false"),
     SymbolType.INTEGER_LITERAL: RegexBasedParser("^[0-9]+"),
     SymbolType.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*"'),
-    SymbolType.IDENTIFIER: RegexBasedParser(
-        "^[a-z_]+", forbidden=FORBIDDEN_IDENTIFIERS
-    ),
+    SymbolType.IDENTIFIER: RegexBasedParser("^[a-z_]+", forbidden=KEYWORDS),
     SymbolType.LITERAL: SymbolParser(SymbolType.BOOLEAN_LITERAL)
     | SymbolParser(SymbolType.INTEGER_LITERAL)
     | SymbolParser(SymbolType.STRING_LITERAL),
-    SymbolType.OPERATION: OrParser(*[LiteralParser(op) for op in OPERATION_LITERALS]),
+    SymbolType.OPERATION: OrParser(*[LiteralParser(op) for op in OPERATOR_KEYWORDS]),
     SymbolType.WHITESPACE: RegexBasedParser("^[ \\n]+"),
     SymbolType.BRANCH: ConcatenationParser(
         LiteralParser("if"),

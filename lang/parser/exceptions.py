@@ -21,4 +21,6 @@ class ParseError(Exception):
         self.column_number = column_number
         self.line = line
         self.expected_symbol_types = expected_symbol_types
+
+        # TODO make this show some human readable parse error message
         super().__init__()

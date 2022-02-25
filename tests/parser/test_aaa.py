@@ -1,11 +1,6 @@
 import pytest
 
-from lang.parser.aaa import (
-    FORBIDDEN_IDENTIFIERS,
-    OPERATION_LITERALS,
-    REWRITE_RULES,
-    SymbolType,
-)
+from lang.parser.aaa import KEYWORDS, OPERATOR_KEYWORDS, REWRITE_RULES, SymbolType
 from lang.parser.generic import ParseError, new_parse_generic
 
 
@@ -118,7 +113,7 @@ def test_parse_literal(code: str, expected_ok: bool) -> None:
         ("abcd_xyz", True),
         ("abcd_xyz/", False),
     ]
-    + [(identifier, False) for identifier in FORBIDDEN_IDENTIFIERS],
+    + [(identifier, False) for identifier in KEYWORDS],
 )
 def test_parse_identifier(code: str, expected_ok: bool) -> None:
     try:
@@ -136,7 +131,7 @@ def test_parse_identifier(code: str, expected_ok: bool) -> None:
         ("foo", False),
         ("<=>", False),
     ]
-    + [(op, True) for op in OPERATION_LITERALS],
+    + [(op, True) for op in OPERATOR_KEYWORDS],
 )
 def test_parse_operation(code: str, expected_ok: bool) -> None:
     try:
