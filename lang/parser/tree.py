@@ -29,7 +29,7 @@ class ParseTree:
         return code[self.symbol_offset : self.symbol_offset + self.symbol_length]
 
 
-def prune_parse_tree_zero_length(tree: ParseTree) -> Optional[ParseTree]:
+def prune_zero_length(tree: ParseTree) -> Optional[ParseTree]:
     def condition(tree: ParseTree) -> bool:
         return tree.symbol_length > 0
 
@@ -47,13 +47,9 @@ def prune_by_symbol_types(
 
 def prune_useless(tree: ParseTree) -> Optional[ParseTree]:
     def condition(tree: ParseTree) -> bool:
-        return tree.symbol_type is None and len(tree.children) == 0
+        return not (tree.symbol_type is None and len(tree.children) == 0)
 
     return prune_parse_tree(tree, condition)
-
-
-# TODO need pruner that removes parents without symboltype with one child with symboltype
-# make the child, direct decendant of grandparent
 
 
 def prune_parse_tree(

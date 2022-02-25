@@ -13,11 +13,7 @@ from lang.parser.generic import (
     SymbolParser,
     new_parse_generic,
 )
-from lang.parser.tree import (
-    prune_by_symbol_types,
-    prune_parse_tree_zero_length,
-    prune_useless,
-)
+from lang.parser.tree import prune_by_symbol_types, prune_useless, prune_zero_length
 
 
 class SymbolType(IntEnum):
@@ -199,7 +195,7 @@ def parse(code: str) -> ParseTree:
     )
 
     if tree:
-        tree = prune_parse_tree_zero_length(tree)
+        tree = prune_zero_length(tree)
 
     if tree:
         tree = prune_by_symbol_types(tree, {SymbolType.WHITESPACE})

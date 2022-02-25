@@ -314,65 +314,74 @@ def test_parse_file(code: str, expected_ok: bool) -> None:
         assert expected_ok
 
 
-@pytest.mark.skip()
-def test_file_parse_tree() -> None:
+def test_parse_tree_func_with_args() -> None:
     code = " fn main a b c begin end "
 
     file = parse(code)
     assert file.symbol_type == SymbolType.FILE
-    assert file.value(code) == " fn main a b c begin end "
-    assert len(file.children) == 1
 
+    assert len(file.children) == 1
     func_def = file.children[0]
-    assert func_def.symbol_type == SymbolType.FUNCTION_DEFINITION
-    assert func_def.value(code) == "fn main a b c begin end"
 
     assert len(func_def.children) == 4
+    fn, name_and_args, begin, end = func_def.children
 
-    expected_symbol_types = [
-        SymbolType.FN,
-        None,
-        SymbolType.BEGIN,
-        SymbolType.END,
-    ]
-    expected_values = [
-        "fn",
-        "main a b c ",
-        "begin",
-        "end",
-    ]  # TODO remove trailing whitespace from arg list
-    expected_child_counts = [0, 4, 0, 0]
+    assert len(name_and_args.children) == 4
+    main, a, b, c = name_and_args.children
 
-    for (
-        func_def_child,
-        expected_symbol_type,
-        expected_value,
-        expected_child_count,
-    ) in zip(
-        func_def.children,
-        expected_symbol_types,
-        expected_values,
-        expected_child_counts,
-    ):
-        assert func_def_child.symbol_type == expected_symbol_type
-        assert func_def_child.value(code) == expected_value
-        assert len(func_def_child.children) == expected_child_count
+    assert fn.value(code) == "fn"
+    assert fn.symbol_type == SymbolType.FN
 
-    fun_name_and_args = func_def.children[1]
+    assert main.children[0].value(code) == "main"
+    assert main.children[0].symbol_type == SymbolType.IDENTIFIER
 
-    for child in fun_name_and_args.children:
-        assert child.symbol_type == SymbolType.IDENTIFIER
-        assert len(child.children) == 0
+    assert a.children[0].value(code) == "a"
+    assert a.children[0].symbol_type == SymbolType.IDENTIFIER
 
-    expected_values = ["main", "a", "b", "c"]
-    assert [
-        child.value(code) for child in fun_name_and_args.children
-    ] == expected_values
+    assert b.children[0].value(code) == "b"
+    assert b.children[0].symbol_type == SymbolType.IDENTIFIER
+
+    assert c.children[0].value(code) == "c"
+    assert c.children[0].symbol_type == SymbolType.IDENTIFIER
+
+    assert begin.value(code) == "begin"
+    assert begin.symbol_type == SymbolType.BEGIN
+
+    assert end.value(code) == "end"
+    assert end.symbol_type == SymbolType.END
 
 
-# TODO test parsetree of function with arguments
+def test_parse_tree_func_without_args() -> None:
+    code = " fn main begin end "
+
+    file = parse(code)
+    assert file.symbol_type == SymbolType.FILE
+
+    assert len(file.children) == 1
+    func_def = file.children[0]
+
+    assert len(func_def.children) == 4
+    fn, name_and_args, begin, end = func_def.children
+
+    assert len(name_and_args.children) == 1
+    main = name_and_args.children[0]
+
+    assert fn.value(code) == "fn"
+    assert fn.symbol_type == SymbolType.FN
+
+    assert main.children[0].value(code) == "main"
+    assert main.children[0].symbol_type == SymbolType.IDENTIFIER
+
+    assert begin.value(code) == "begin"
+    assert begin.symbol_type == SymbolType.BEGIN
+
+    assert end.value(code) == "end"
+    assert end.symbol_type == SymbolType.END
+
+
 # TODO test parsetree of branch
 # TODO test parsetree of identifier
 # TODO test parsetree of 3 literal types
 # TODO test parsetree of loop
 # TODO test parsetree of operations
+# TODO test parsetree of compilcated example
