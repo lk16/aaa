@@ -10,4 +10,4 @@ def test_grammar_up_to_date() -> None:
 
     assert (
         not stale
-    ), 'Grammar is out of date, pleaes run "./aaa.py generate-grammar-file" to generate.'
+    ), 'Grammar is out of date, please run "./aaa.py generate-grammar-file".'

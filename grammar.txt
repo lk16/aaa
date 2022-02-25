@@ -1,5 +1,6 @@
-// This file was generated using "./aaa.py generate-grammar-file"
-// A unit test will make sure this file is up to date with its source
+// Human readable grammar. Easier to understand than actual rewrite rules.
+// This file was generated using "./aaa.py generate-grammar-file".
+// A unit test should make sure this file is up to date with its source.
 
 BOOLEAN_LITERAL = ("true" | "false")
 
@@ -7,9 +8,11 @@ BRANCH = "if" (WHITESPACE FUNCTION_BODY)? WHITESPACE ("else" (WHITESPACE FUNCTIO
 
 FILE = (WHITESPACE)? FUNCTION_DEFINITION (WHITESPACE FUNCTION_DEFINITION)* (WHITESPACE)?
 
-FUNCTION_BODY = (BRANCH | LOOP | OPERATION | IDENTIFIER | LITERAL) (WHITESPACE (BRANCH | LOOP | OPERATION | IDENTIFIER | LITERAL))*
+FUNCTION_BODY = FUNCTION_BODY_ITEM (WHITESPACE FUNCTION_BODY_ITEM)*
 
-FUNCTION_DEFINITION = "fn" WHITESPACE IDENTIFIER WHITESPACE (IDENTIFIER WHITESPACE)* "begin" WHITESPACE (FUNCTION_BODY WHITESPACE)? "end"
+FUNCTION_BODY_ITEM = (BRANCH | LOOP | OPERATION | IDENTIFIER | LITERAL)
+
+FUNCTION_DEFINITION = "fn" WHITESPACE (IDENTIFIER WHITESPACE)+ "begin" WHITESPACE (FUNCTION_BODY WHITESPACE)? "end"
 
 IDENTIFIER = regex(^[a-z_]+)
 

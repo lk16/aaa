@@ -290,7 +290,7 @@ def check_grammar_file_staleness(
 
     new_grammar = regenerate_bnf_like_grammar_file(rewrite_rules)
 
-    stale = old_grammar == new_grammar
+    stale = old_grammar != new_grammar
     return stale, new_grammar
 
 
@@ -299,8 +299,9 @@ def regenerate_bnf_like_grammar_file(
 ) -> str:
 
     output = (
-        '// This file was generated using "./aaa.py generate-grammar-file"\n'
-        "// A unit test should make sure this file is up to date with its source\n\n"
+        "// Human readable grammar. Easier to understand than actual rewrite rules.\n"
+        '// This file was generated using "./aaa.py generate-grammar-file".\n'
+        "// A unit test should make sure this file is up to date with its source.\n\n"
     )
 
     symbols = sorted(rewrite_rules.keys(), key=lambda x: x.name)

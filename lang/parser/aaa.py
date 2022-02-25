@@ -16,18 +16,19 @@ from lang.parser.generic import (
 
 
 class SymbolType(IntEnum):
+    BOOLEAN_LITERAL = auto()
+    BRANCH = auto()
+    FILE = auto()
     FUNCTION_BODY = auto()
-    WHITESPACE = auto()
-    OPERATION = auto()
+    FUNCTION_BODY_ITEM = auto()
+    FUNCTION_DEFINITION = auto()
     IDENTIFIER = auto()
+    INTEGER_LITERAL = auto()
     LITERAL = auto()
     LOOP = auto()
-    BRANCH = auto()
+    OPERATION = auto()
     STRING_LITERAL = auto()
-    INTEGER_LITERAL = auto()
-    BOOLEAN_LITERAL = auto()
-    FUNCTION_DEFINITION = auto()
-    FILE = auto()
+    WHITESPACE = auto()
 
 
 OPERATOR_KEYWORDS = [
@@ -114,36 +115,30 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
         ),
         LiteralParser("end"),
     ),
+    SymbolType.FUNCTION_BODY_ITEM: (
+        SymbolParser(SymbolType.BRANCH)
+        | SymbolParser(SymbolType.LOOP)
+        | SymbolParser(SymbolType.OPERATION)
+        | SymbolParser(SymbolType.IDENTIFIER)
+        | SymbolParser(SymbolType.LITERAL)
+    ),
     SymbolType.FUNCTION_BODY: ConcatenationParser(
-        ConcatenationParser(
-            SymbolParser(SymbolType.BRANCH)
-            | SymbolParser(SymbolType.LOOP)
-            | SymbolParser(SymbolType.OPERATION)
-            | SymbolParser(SymbolType.IDENTIFIER)
-            | SymbolParser(SymbolType.LITERAL),
-        ),
+        SymbolParser(SymbolType.FUNCTION_BODY_ITEM),
         RepeatParser(
             ConcatenationParser(
                 SymbolParser(SymbolType.WHITESPACE),
-                (
-                    SymbolParser(SymbolType.BRANCH)
-                    | SymbolParser(SymbolType.LOOP)
-                    | SymbolParser(SymbolType.OPERATION)
-                    | SymbolParser(SymbolType.IDENTIFIER)
-                    | SymbolParser(SymbolType.LITERAL)
-                ),
+                SymbolParser(SymbolType.FUNCTION_BODY_ITEM),
             ),
         ),
     ),
     SymbolType.FUNCTION_DEFINITION: ConcatenationParser(
         LiteralParser("fn"),
         SymbolParser(SymbolType.WHITESPACE),
-        SymbolParser(SymbolType.IDENTIFIER),
-        SymbolParser(SymbolType.WHITESPACE),
         RepeatParser(
             ConcatenationParser(
                 SymbolParser(SymbolType.IDENTIFIER), SymbolParser(SymbolType.WHITESPACE)
-            )
+            ),
+            min_repeats=1,
         ),
         LiteralParser("begin"),
         SymbolParser(SymbolType.WHITESPACE),
