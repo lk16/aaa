@@ -2,12 +2,14 @@
 
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 import click
 
 from lang.parse import parse
 from lang.parser.aaa import REWRITE_RULES, new_parse
 from lang.parser.grammar_generator import check_grammar_file_staleness
+from lang.parser.tree import ParseTree
 from lang.run import run
 from lang.tokenize import tokenize
 
@@ -59,8 +61,13 @@ def runtests() -> None:
 def try_new_tokenizer() -> None:
     while True:
         code = input("> ")
-        result = new_parse(code)
-        print(f"Parse result: {result}")
+        try:
+            result: Optional[ParseTree] = new_parse(code)
+        except Exception:
+            print("Parse failed")
+            continue
+
+        print(result)
         print()
 
 
@@ -70,7 +77,7 @@ def generate_grammar_file() -> None:
 
     if stale:
         GRAMMAR_FILE_PATH.write_text(new_grammar)
-        print(f"Created/updated {GRAMMAR_FILE_PATH.name}")
+        print(f"{GRAMMAR_FILE_PATH.name} was created or updated.")
     else:
         print(f"{GRAMMAR_FILE_PATH.name} was up-to-date.")
 

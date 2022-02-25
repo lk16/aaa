@@ -151,7 +151,7 @@ class LiteralParser(Parser):
         if not code[offset:].startswith(self.literal):
             raise InternalParseError(offset, self.symbol_type)
 
-        return ParseTree(0, len(self.literal), self.symbol_type, [])
+        return ParseTree(offset, len(self.literal), self.symbol_type, [])
 
 
 def set_rewrite_rules(parser: Parser, rewrite_rules: Dict[IntEnum, Parser]) -> None:

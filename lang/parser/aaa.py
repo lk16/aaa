@@ -29,6 +29,12 @@ class SymbolType(IntEnum):
     OPERATION = auto()
     STRING_LITERAL = auto()
     WHITESPACE = auto()
+    BEGIN = auto()
+    ELSE = auto()
+    END = auto()
+    FN = auto()
+    IF = auto()
+    WHILE = auto()
 
 
 OPERATOR_KEYWORDS = [
@@ -48,6 +54,7 @@ OPERATOR_KEYWORDS = [
     "and",
     "drop",
     "dup",
+    "false",
     "not",
     "or",
     "over",
@@ -55,23 +62,29 @@ OPERATOR_KEYWORDS = [
     "strlen",
     "substr",
     "swap",
+    "true",
 ]
 
 CONTROL_FLOW_KEYWORDS = [
     "begin",
     "else",
     "end",
-    "false",
     "fn",
     "if",
-    "true",
     "while",
 ]
 
 KEYWORDS = CONTROL_FLOW_KEYWORDS + OPERATOR_KEYWORDS
 
 
+# NOTE A more readable grammar can be found in grammar.txt in the repo root.
 REWRITE_RULES: Dict[IntEnum, Parser] = {
+    SymbolType.BEGIN: LiteralParser("begin"),
+    SymbolType.ELSE: LiteralParser("else"),
+    SymbolType.END: LiteralParser("end"),
+    SymbolType.FN: LiteralParser("fn"),
+    SymbolType.IF: LiteralParser("if"),
+    SymbolType.WHILE: LiteralParser("while"),
     SymbolType.BOOLEAN_LITERAL: OrParser(LiteralParser("true"), LiteralParser("false")),
     SymbolType.INTEGER_LITERAL: RegexBasedParser("^[0-9]+"),
     SymbolType.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*"'),
@@ -84,7 +97,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
     SymbolType.OPERATION: OrParser(*[LiteralParser(op) for op in OPERATOR_KEYWORDS]),
     SymbolType.WHITESPACE: RegexBasedParser("^[ \\n]+"),
     SymbolType.BRANCH: ConcatenationParser(
-        LiteralParser("if"),
+        SymbolParser(SymbolType.IF),
         OptionalParser(
             ConcatenationParser(
                 SymbolParser(SymbolType.WHITESPACE),
@@ -94,7 +107,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
         SymbolParser(SymbolType.WHITESPACE),
         OptionalParser(
             ConcatenationParser(
-                LiteralParser("else"),
+                SymbolParser(SymbolType.ELSE),
                 OptionalParser(
                     ConcatenationParser(
                         SymbolParser(SymbolType.WHITESPACE),
@@ -104,10 +117,10 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
                 SymbolParser(SymbolType.WHITESPACE),
             )
         ),
-        LiteralParser("end"),
+        SymbolParser(SymbolType.END),
     ),
     SymbolType.LOOP: ConcatenationParser(
-        LiteralParser("while"),
+        SymbolParser(SymbolType.WHILE),
         SymbolParser(SymbolType.WHITESPACE),
         OptionalParser(
             ConcatenationParser(
@@ -115,7 +128,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
                 SymbolParser(SymbolType.WHITESPACE),
             )
         ),
-        LiteralParser("end"),
+        SymbolParser(SymbolType.END),
     ),
     SymbolType.FUNCTION_BODY_ITEM: OrParser(
         SymbolParser(SymbolType.BRANCH),
@@ -134,7 +147,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
         ),
     ),
     SymbolType.FUNCTION_DEFINITION: ConcatenationParser(
-        LiteralParser("fn"),
+        SymbolParser(SymbolType.FN),
         SymbolParser(SymbolType.WHITESPACE),
         RepeatParser(
             ConcatenationParser(
@@ -142,7 +155,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
             ),
             min_repeats=1,
         ),
-        LiteralParser("begin"),
+        SymbolParser(SymbolType.BEGIN),
         SymbolParser(SymbolType.WHITESPACE),
         OptionalParser(
             ConcatenationParser(
@@ -150,7 +163,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
                 SymbolParser(SymbolType.WHITESPACE),
             )
         ),
-        LiteralParser("end"),
+        SymbolParser(SymbolType.END),
     ),
     SymbolType.FILE: ConcatenationParser(
         OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
