@@ -1,75 +1,26 @@
-SPACE = " "
-NEWLINE = "\n"
+// This file was generated using "./aaa.py generate-grammar-file"
+// A unit test will make sure this file is up to date with its source
 
-WHITESPACE_CHAR = SPACE | NEWLINE
+BOOLEAN_LITERAL = ("true" | "false")
 
-IDENTIFIER_CHAR = "a" | "b" | ... | "y" | "z" | "_"
+BRANCH = "if" (WHITESPACE FUNCTION_BODY)? WHITESPACE ("else" (WHITESPACE FUNCTION_BODY)? WHITESPACE)? "end"
 
-DIGIT = "0" | "1" | ... | "8" | "9"
+FILE = (WHITESPACE)? FUNCTION_DEFINITION (WHITESPACE FUNCTION_DEFINITION)* (WHITESPACE)?
 
-REGULAR_STRING_CHAR = any char except "\\" and "\n"
+FUNCTION_BODY = (BRANCH | LOOP | OPERATION | IDENTIFIER | LITERAL) (WHITESPACE (BRANCH | LOOP | OPERATION | IDENTIFIER | LITERAL))*
 
-COMMENT_CHAR = any char except "\n"
+FUNCTION_DEFINITION = "fn" WHITESPACE IDENTIFIER WHITESPACE (IDENTIFIER WHITESPACE)* "begin" WHITESPACE (FUNCTION_BODY WHITESPACE)? "end"
 
-STRING_ESCAPE_SEQUENCE = "\\\\" | "\\n" | "\\\""
+IDENTIFIER = regex(^[a-z_]+)
 
-COMMENT_PREFIX = "//"
+INTEGER_LITERAL = regex(^[0-9]+)
 
-DOUBLE_QUOTE = "\""
+LITERAL = (BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL)
 
-FUNCTION = "fn"
-BEGIN = "begin"
-END = "end"
-WHILE = "while"
-IF = "if"
-ELSE = "else"
+LOOP = "while" WHITESPACE (FUNCTION_BODY WHITESPACE)? "end"
 
-WHITESPACE = WHITESPACE_CHAR+
+OPERATION = ("-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">=" | "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap")
 
-IDENTIFIER = IDENTIFIER_CHAR+
+STRING_LITERAL = regex(^"([^\\]|\\("|n|\\))*")
 
-BOOLEAN_LITERAL = "true" | "false"
-
-INTEGER_LITERAL = DIGIT+
-
-STRING_LITERAL = DOUBLE_QUOTE (REGULAR_STRING_CHAR | STRING_ESCAPE_SEQUENCE)* DOUBLE_QUOTE
-
-COMMENT = COMMENT_PREFIX (COMMENT_CHAR)*
-
-LITERAL = BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL
-
-OPERATION = (
-    "-" |
-    "!=" |
-    "." |
-    "*" |
-    "/" |
-    "\\n" |
-    "%" |
-    "+" |
-    "<" |
-    "<=" |
-    "=" |
-    ">" |
-    ">=" |
-    "and" |
-    "drop" |
-    "dup" |
-    "not" |
-    "or" |
-    "over" |
-    "rot" |
-    "strlen |
-    "substr |
-    "swap"
-)
-
-LOOP = WHILE FUNCTION_BODY END
-
-BRANCH = IF FUNCTION_BODY (ELSE FUNCTION_BODY)? END
-
-FUNCTION_BODY = WHITESPACE ((OPERATION | IDENTIFIER | LITERAL | LOOP | BRANCH ) WHITESPACE )*
-
-FUNCTION_DEFINITION = FUNCTION WHITESPACE ( IDENTIFIER WHITESPACE )+ BEGIN FUNCTION_BODY END
-
-PROGRAM = ( WHITESPACE FUNCTION_DEFINITION )* WHITESPACE
+WHITESPACE = regex(^[ \n]+)

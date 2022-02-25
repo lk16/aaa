@@ -3,7 +3,8 @@
 import re
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, Dict, List, Optional, Type
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from lang.exceptions import UnexpectedSymbols, UnhandledSymbolType
 from lang.parser.exceptions import InternalParseError, ParseError
@@ -251,7 +252,11 @@ def bnf_like_expression(parser: Parser) -> str:
         return " ".join(bnf_like_expression(child) for child in parser.children)
 
     elif isinstance(parser, OrParser):
-        return " | ".join(bnf_like_expression(child) for child in parser.children)
+        return (
+            "("
+            + " | ".join(bnf_like_expression(child) for child in parser.children)
+            + ")"
+        )
 
     elif isinstance(parser, OptionalParser):
         return "(" + bnf_like_expression(parser.child) + ")?"
@@ -275,14 +280,38 @@ def bnf_like_expression(parser: Parser) -> str:
         raise NotImplementedError
 
 
+def check_grammar_file_staleness(
+    grammar_file: Path, rewrite_rules: Dict[IntEnum, Parser]
+) -> Tuple[bool, str]:
+    if grammar_file.exists():
+        old_grammar = grammar_file.read_text()
+    else:
+        old_grammar = ""
+
+    new_grammar = regenerate_bnf_like_grammar_file(rewrite_rules)
+
+    stale = old_grammar == new_grammar
+    return stale, new_grammar
+
+
 def regenerate_bnf_like_grammar_file(
     rewrite_rules: Dict[IntEnum, Parser],
 ) -> str:
 
-    output = ""
+    output = (
+        '// This file was generated using "./aaa.py generate-grammar-file"\n'
+        "// A unit test should make sure this file is up to date with its source\n\n"
+    )
 
-    for symbol, parser in rewrite_rules.items():
-        output += f"{symbol.name} = " + bnf_like_expression(parser) + "\n\n"
+    symbols = sorted(rewrite_rules.keys(), key=lambda x: x.name)
 
-    # TODO command and run from pre-commit
+    for i, symbol in enumerate(symbols):
+        parser = rewrite_rules[symbol]
+        output += f"{symbol.name} = " + bnf_like_expression(parser)
+
+        if i == len(symbols) - 1:
+            output += "\n"
+        else:
+            output += "\n\n"
+
     return output
