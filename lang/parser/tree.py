@@ -20,10 +20,13 @@ class ParseTree:
             type_str = self.symbol_type.name
 
         return {
-            "value": code[self.symbol_offset : self.symbol_offset + self.symbol_length],
+            "value": self.value(code),
             "type": type_str,
             "children": [child.dump(code) for child in self.children],
         }
+
+    def value(self, code: str) -> str:
+        return code[self.symbol_offset : self.symbol_offset + self.symbol_length]
 
 
 def prune_parse_tree_zero_length(tree: ParseTree) -> Optional[ParseTree]:
@@ -47,6 +50,10 @@ def prune_useless(tree: ParseTree) -> Optional[ParseTree]:
         return tree.symbol_type is None and len(tree.children) == 0
 
     return prune_parse_tree(tree, condition)
+
+
+# TODO need pruner that removes parents without symboltype with one child with symboltype
+# make the child, direct decendant of grandparent
 
 
 def prune_parse_tree(

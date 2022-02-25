@@ -1,6 +1,12 @@
 import pytest
 
-from lang.parser.aaa import KEYWORDS, OPERATOR_KEYWORDS, REWRITE_RULES, SymbolType
+from lang.parser.aaa import (
+    KEYWORDS,
+    OPERATOR_KEYWORDS,
+    REWRITE_RULES,
+    SymbolType,
+    parse,
+)
 from lang.parser.generic import ParseError, new_parse_generic
 
 
@@ -308,7 +314,63 @@ def test_parse_file(code: str, expected_ok: bool) -> None:
         assert expected_ok
 
 
-# TODO test parsetree of file/function_definition
+@pytest.mark.skip()
+def test_file_parse_tree() -> None:
+    code = " fn main a b c begin end "
+
+    file = parse(code)
+    assert file.symbol_type == SymbolType.FILE
+    assert file.value(code) == " fn main a b c begin end "
+    assert len(file.children) == 1
+
+    func_def = file.children[0]
+    assert func_def.symbol_type == SymbolType.FUNCTION_DEFINITION
+    assert func_def.value(code) == "fn main a b c begin end"
+
+    assert len(func_def.children) == 4
+
+    expected_symbol_types = [
+        SymbolType.FN,
+        None,
+        SymbolType.BEGIN,
+        SymbolType.END,
+    ]
+    expected_values = [
+        "fn",
+        "main a b c ",
+        "begin",
+        "end",
+    ]  # TODO remove trailing whitespace from arg list
+    expected_child_counts = [0, 4, 0, 0]
+
+    for (
+        func_def_child,
+        expected_symbol_type,
+        expected_value,
+        expected_child_count,
+    ) in zip(
+        func_def.children,
+        expected_symbol_types,
+        expected_values,
+        expected_child_counts,
+    ):
+        assert func_def_child.symbol_type == expected_symbol_type
+        assert func_def_child.value(code) == expected_value
+        assert len(func_def_child.children) == expected_child_count
+
+    fun_name_and_args = func_def.children[1]
+
+    for child in fun_name_and_args.children:
+        assert child.symbol_type == SymbolType.IDENTIFIER
+        assert len(child.children) == 0
+
+    expected_values = ["main", "a", "b", "c"]
+    assert [
+        child.value(code) for child in fun_name_and_args.children
+    ] == expected_values
+
+
+# TODO test parsetree of function with arguments
 # TODO test parsetree of branch
 # TODO test parsetree of identifier
 # TODO test parsetree of 3 literal types
