@@ -43,22 +43,8 @@ To enable syntax highlighting for vs code, enable the [Aaa language extension](.
 - branching (`if`, `else`, `end`)
 - loops (`while`)
 - strings and string operations (`+`, `=`, `strlen`, `substr`)
-- comments (`//`)
 
-### Upcoming aaa features
-- functions (`fn`)
-- support shebang (`#!`)
-- write a proper grammar
-- userfriendly syntax errors
-- loops (`break`, `continue`)
-- assertions (`assert`)
-- debug tools (`breakpoint`)
-- support
-- static type checking
-- structs / classes ?
-- compile to native executable
-- compile itself
-See also the [TODO](./TODO.md) file.
+For upcoming features, see the [TODO](./TODO.md) file.
 
 ### Aaa and porth
 After watching part of the [Youtube series](https://www.youtube.com/playlist?list=PLpM-Dvs8t0VbMZA7wW9aR3EtBqe2kinu4) on [porth](https://gitlab.com/tsoding/porth), I wanted to make my own stack-based language. Aaa and porth have some similarities, but obviously are not compatible with each other. No code was copied over from the porth repo.

@@ -2,14 +2,11 @@
 
 Next development steps.
 
-### Proper Parsing
+### Proper Parsing (in [parsing](https://github.com/lk16/parser) repo)
 - check human error output
-- check test coverage
+- improve test coverage
 - check naming consistency
 - check for remaining TODO comments
-- move generic parser files to separate repo
-
-### In parser repo
 - generate parser from grammar file
 
 ### Functions
@@ -28,6 +25,7 @@ Next development steps.
 - change `if ... else ... end` to `if ... begin ... else ... end`
 
 ### Later
+- support comments (`//`)
 - support shebang (`#!`)
 - userfriendly syntax errors
 - loops (`break`, `continue`)
