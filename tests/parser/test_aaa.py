@@ -9,7 +9,9 @@ from lang.parser.aaa import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,
+    Identifier,
     IntegerLiteral,
+    Loop,
     StringLiteral,
     SymbolType,
     parse,
@@ -392,11 +394,113 @@ def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None
     assert isinstance(identifier, expected_type)
 
 
-# TODO test values in parsetree of all 3 literal types
+@pytest.mark.parametrize(
+    ["code", "expected_value"],
+    [
+        ("fn main begin false end", False),
+        ("fn main begin true end", True),
+    ],
+)
+def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
+    file = parse(code)
+    assert len(file.functions) == 1
+    func_body = file.functions[0].body
+
+    assert len(func_body.items) == 1
+    bool_lit = func_body.items[0]
+
+    assert isinstance(bool_lit, BooleanLiteral)
+    assert bool_lit.value == expected_value
 
 
-# TODO test parsetree of identifier
-# TODO test parsetree of 3 literal types
-# TODO test parsetree of loop
+@pytest.mark.parametrize(
+    ["code", "expected_value"],
+    [
+        ("fn main begin 1 end", 1),
+        ("fn main begin 123456789 end", 123456789),
+        ("fn main begin 0 end", 0),
+        ("fn main begin 007 end", 7),
+        ("fn main begin 0017 end", 17),
+    ],
+)
+def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
+    file = parse(code)
+    assert len(file.functions) == 1
+    func_body = file.functions[0].body
+
+    assert len(func_body.items) == 1
+    int_lit = func_body.items[0]
+
+    assert isinstance(int_lit, IntegerLiteral)
+    assert int_lit.value == expected_value
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_value"],
+    [
+        ('fn main begin "" end', ""),
+        ('fn main begin "foo" end', "foo"),
+        ('fn main begin "foo bar" end', "foo bar"),
+        ('fn main begin " \\" \\\\ \\n " end', ' " \\ \n '),
+    ],
+)
+def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
+    file = parse(code)
+    assert len(file.functions) == 1
+    func_body = file.functions[0].body
+
+    assert len(func_body.items) == 1
+    str_lit = func_body.items[0]
+
+    assert isinstance(str_lit, StringLiteral)
+    assert str_lit.value == expected_value
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_name"],
+    [
+        ("fn main begin a end", "a"),
+        ("fn main begin z end", "z"),
+        ("fn main begin _ end", "_"),
+        ("fn main begin azabc end", "azabc"),
+        ("fn main begin foobar_asdfczc end", "foobar_asdfczc"),
+    ],
+)
+def test_identifier_parse_tree(code: str, expected_name: str) -> None:
+    file = parse(code)
+    assert len(file.functions) == 1
+    func_body = file.functions[0].body
+
+    assert len(func_body.items) == 1
+    identifier = func_body.items[0]
+
+    assert isinstance(identifier, Identifier)
+    assert identifier.name == expected_name
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_loop_func_body_items"],
+    [
+        ("fn main begin while end end", 0),
+        ("fn main begin while 1 end end", 1),
+        ("fn main begin while a end end", 1),
+        ("fn main begin while <= end end", 1),
+        ("fn main begin while <= drop end end", 2),
+        ("fn main begin while sub over drop end end", 3),
+        ("fn main begin while while end if end if end end end", 3),
+    ],
+)
+def test_loop_parse_tree(code: str, expected_loop_func_body_items: int) -> None:
+    file = parse(code)
+    assert len(file.functions) == 1
+    func_body = file.functions[0].body
+
+    assert len(func_body.items) == 1
+    loop = func_body.items[0]
+
+    assert isinstance(loop, Loop)
+    assert len(loop.body.items) == expected_loop_func_body_items
+
+
 # TODO test parsetree of operations
 # TODO test parsetree of compilcated example

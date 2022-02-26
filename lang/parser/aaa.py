@@ -197,7 +197,13 @@ class EmptyParseTreeError(Exception):
 
 
 FunctionBodyItem = Union[
-    "Branch", "Loop", "Operation", "BooleanLiteral", "IntegerLiteral", "StringLiteral"
+    "Branch",
+    "Loop",
+    "Operation",
+    "BooleanLiteral",
+    "IntegerLiteral",
+    "StringLiteral",
+    "Identifier",
 ]
 
 
@@ -259,11 +265,26 @@ class Operation(AaaTreeNode):
 
 @dataclass
 class Loop(AaaTreeNode):
-    loop_body: List[FunctionBodyItem]
+    body: "FunctionBody"
 
     @classmethod
     def from_symboltree(cls, tree: SymbolTree, code: str) -> "Loop":
-        raise NotImplementedError
+        loop_body = FunctionBody([])
+
+        if tree.children[1].symbol_type != SymbolType.END:
+            loop_body = FunctionBody.from_symboltree(tree.children[1].children[0], code)
+
+        return Loop(loop_body)
+
+
+@dataclass
+class Identifier(AaaTreeNode):
+    name: str
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "Identifier":
+        name = tree.value(code)
+        return Identifier(name)
 
 
 @dataclass
@@ -302,12 +323,13 @@ class FunctionBody(AaaTreeNode):
         assert tree.symbol_type == SymbolType.FUNCTION_BODY
 
         aaa_tree_nodes: Dict[Optional[IntEnum], Type[FunctionBodyItem]] = {
+            SymbolType.BOOLEAN_LITERAL: BooleanLiteral,
             SymbolType.BRANCH: Branch,
+            SymbolType.IDENTIFIER: Identifier,
+            SymbolType.INTEGER_LITERAL: IntegerLiteral,
             SymbolType.LOOP: Loop,
             SymbolType.OPERATION: Operation,
-            SymbolType.INTEGER_LITERAL: IntegerLiteral,
             SymbolType.STRING_LITERAL: StringLiteral,
-            SymbolType.BOOLEAN_LITERAL: BooleanLiteral,
         }
 
         flattened_children: List[SymbolTree] = []
