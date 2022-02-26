@@ -12,6 +12,7 @@ from lang.parser.aaa import (
     Identifier,
     IntegerLiteral,
     Loop,
+    Operation,
     StringLiteral,
     SymbolType,
     parse,
@@ -502,5 +503,22 @@ def test_loop_parse_tree(code: str, expected_loop_func_body_items: int) -> None:
     assert len(loop.body.items) == expected_loop_func_body_items
 
 
-# TODO test parsetree of operations
-# TODO test parsetree of compilcated example
+@pytest.mark.parametrize(
+    ["code", "expected_operator"],
+    [
+        ("fn main begin . end", "."),
+        ("fn main begin <= end", "<="),
+        ("fn main begin drop end", "drop"),
+        ("fn main begin over end", "over"),
+    ],
+)
+def test_operation_parse_tree(code: str, expected_operator: str) -> None:
+    file = parse(code)
+    assert len(file.functions) == 1
+    func_body = file.functions[0].body
+
+    assert len(func_body.items) == 1
+    operation = func_body.items[0]
+
+    assert isinstance(operation, Operation)
+    assert operation.operator == expected_operator
