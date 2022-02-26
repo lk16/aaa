@@ -122,7 +122,7 @@ pyparsing = ">=2.0.2,<3.0.5 || >3.0.5"
 
 [[package]]
 name = "parser"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 category = "main"
 optional = false
@@ -132,8 +132,8 @@ develop = false
 [package.source]
 type = "git"
 url = "https://github.com/lk16/parser.git"
-reference = "master"
-resolved_reference = "bdfeb76c9233f864bf52ccbd8e4909a64b57013b"
+reference = "v0.1.1"
+resolved_reference = "d29d8b577bb7cbfbf018d61d0ef2fa0242e9b55d"
 
 [[package]]
 name = "pdbpp"
@@ -332,7 +332,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "2e236adb0243f66c5e4cd28addea7476e30f2cb41cd9ac95efc642075d759900"
+content-hash = "dbf209e266f56c75f4112f822d42cc20b04f49d0be5a6632fc7b29e7d2dca014"
 
 [metadata.files]
 atomicwrites = [
