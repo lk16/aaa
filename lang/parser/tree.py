@@ -4,11 +4,11 @@ from typing import Any, Callable, Dict, List, Optional, Set
 
 
 @dataclass
-class ParseTree:
+class SymbolTree:
     symbol_offset: int
     symbol_length: int
     symbol_type: Optional[IntEnum]
-    children: List["ParseTree"]
+    children: List["SymbolTree"]
 
     def size(self) -> int:
         return 1 + sum(child.size() for child in self.children)
@@ -29,36 +29,36 @@ class ParseTree:
         return code[self.symbol_offset : self.symbol_offset + self.symbol_length]
 
 
-def prune_zero_length(tree: ParseTree) -> Optional[ParseTree]:
-    def condition(tree: ParseTree) -> bool:
+def prune_zero_length(tree: SymbolTree) -> Optional[SymbolTree]:
+    def condition(tree: SymbolTree) -> bool:
         return tree.symbol_length > 0
 
     return prune_parse_tree(tree, condition)
 
 
 def prune_by_symbol_types(
-    tree: ParseTree, symbol_types: Set[IntEnum]
-) -> Optional[ParseTree]:
-    def condition(tree: ParseTree) -> bool:
+    tree: SymbolTree, symbol_types: Set[IntEnum]
+) -> Optional[SymbolTree]:
+    def condition(tree: SymbolTree) -> bool:
         return tree.symbol_type not in symbol_types
 
     return prune_parse_tree(tree, condition)
 
 
-def prune_useless(tree: ParseTree) -> Optional[ParseTree]:
-    def condition(tree: ParseTree) -> bool:
+def prune_useless(tree: SymbolTree) -> Optional[SymbolTree]:
+    def condition(tree: SymbolTree) -> bool:
         return not (tree.symbol_type is None and len(tree.children) == 0)
 
     return prune_parse_tree(tree, condition)
 
 
 def prune_parse_tree(
-    tree: ParseTree, condition: Callable[[ParseTree], bool]
-) -> Optional[ParseTree]:
+    tree: SymbolTree, condition: Callable[[SymbolTree], bool]
+) -> Optional[SymbolTree]:
     if not condition(tree):
         return None
 
-    pruned_children: List[ParseTree] = []
+    pruned_children: List[SymbolTree] = []
 
     for child in tree.children:
         child_tree = prune_parse_tree(child, condition)

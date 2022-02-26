@@ -14,7 +14,7 @@ ELSE = "else"
 
 END = "end"
 
-FILE = (WHITESPACE)? FUNCTION_DEFINITION (WHITESPACE FUNCTION_DEFINITION)* (WHITESPACE)?
+FILE = (WHITESPACE)? (FUNCTION_DEFINITION WHITESPACE)+ (WHITESPACE)?
 
 FN = "fn"
 
@@ -40,4 +40,4 @@ STRING_LITERAL = regex("([^\\]|\\("|n|\\))*")
 
 WHILE = "while"
 
-WHITESPACE = regex([ \n]+)
+WHITESPACE = regex(([ \n]|$)+)

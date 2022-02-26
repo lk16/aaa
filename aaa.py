@@ -2,7 +2,6 @@
 
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -10,7 +9,6 @@ from lang.parse import parse
 from lang.parser.aaa import REWRITE_RULES, ROOT_SYMBOL
 from lang.parser.aaa import parse as new_parse  # TODO remove alias
 from lang.parser.grammar_generator import check_grammar_file_staleness
-from lang.parser.tree import ParseTree
 from lang.run import run
 from lang.tokenize import tokenize
 
@@ -63,12 +61,12 @@ def try_new_tokenizer() -> None:
     while True:
         code = input("> ")
         try:
-            result: Optional[ParseTree] = new_parse(code)
+            file = new_parse(code)
         except Exception:
             print("Parse failed")
             continue
 
-        print(result)
+        print(file)
         print()
 
 

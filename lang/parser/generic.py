@@ -7,14 +7,14 @@ from typing import Dict, List, Optional, Type
 
 from lang.exceptions import UnexpectedSymbols, UnhandledSymbolType
 from lang.parser.exceptions import InternalParseError, ParseError
-from lang.parser.tree import ParseTree
+from lang.parser.tree import SymbolTree
 
 
 @dataclass
 class Parser:
     symbol_type: Optional[IntEnum] = None
 
-    def parse(self, code: str, offset: int) -> ParseTree:  # pragma: nocover
+    def parse(self, code: str, offset: int) -> SymbolTree:  # pragma: nocover
         raise NotImplementedError
 
 
@@ -22,8 +22,8 @@ class OrParser(Parser):
     def __init__(self, *args: Parser) -> None:
         self.children = list(args)
 
-    def parse(self, code: str, offset: int) -> ParseTree:
-        longest_parsed: Optional[ParseTree] = None
+    def parse(self, code: str, offset: int) -> SymbolTree:
+        longest_parsed: Optional[SymbolTree] = None
 
         for child in self.children:
             try:
@@ -48,7 +48,7 @@ class RegexBasedParser(Parser):
         self.regex = re.compile(regex)
         self.forbidden_matches = set(forbidden)
 
-    def parse(self, code: str, offset: int) -> ParseTree:
+    def parse(self, code: str, offset: int) -> SymbolTree:
         match = self.regex.match(code[offset:])
 
         if not match:
@@ -57,7 +57,7 @@ class RegexBasedParser(Parser):
         if match.group(0) in self.forbidden_matches:
             raise InternalParseError(offset, self.symbol_type)
 
-        return ParseTree(offset, len(match.group(0)), self.symbol_type, [])
+        return SymbolTree(offset, len(match.group(0)), self.symbol_type, [])
 
 
 class RepeatParser(Parser):
@@ -65,8 +65,8 @@ class RepeatParser(Parser):
         self.child = child
         self.min_repeats = min_repeats
 
-    def parse(self, code: str, offset: int) -> ParseTree:
-        sub_trees: List[ParseTree] = []
+    def parse(self, code: str, offset: int) -> SymbolTree:
+        sub_trees: List[SymbolTree] = []
         child_offset = offset
 
         while True:
@@ -81,7 +81,7 @@ class RepeatParser(Parser):
         if len(sub_trees) < self.min_repeats:
             raise InternalParseError(offset, self.child.symbol_type)
 
-        return ParseTree(
+        return SymbolTree(
             offset,
             child_offset - offset,
             self.symbol_type,
@@ -93,11 +93,11 @@ class OptionalParser(Parser):
     def __init__(self, child: Parser) -> None:
         self.child = child
 
-    def parse(self, code: str, offset: int) -> ParseTree:
+    def parse(self, code: str, offset: int) -> SymbolTree:
         try:
             parsed = self.child.parse(code, offset)
         except InternalParseError:
-            return ParseTree(
+            return SymbolTree(
                 offset,
                 0,
                 self.symbol_type,
@@ -111,8 +111,8 @@ class ConcatenationParser(Parser):
     def __init__(self, *args: Parser) -> None:
         self.children = list(args)
 
-    def parse(self, code: str, offset: int) -> ParseTree:
-        sub_trees: List[ParseTree] = []
+    def parse(self, code: str, offset: int) -> SymbolTree:
+        sub_trees: List[SymbolTree] = []
 
         child_offset = offset
 
@@ -121,7 +121,7 @@ class ConcatenationParser(Parser):
             sub_trees.append(parsed)
             child_offset += parsed.symbol_length
 
-        return ParseTree(
+        return SymbolTree(
             offset,
             child_offset - offset,
             self.symbol_type,
@@ -134,7 +134,7 @@ class SymbolParser(Parser):
         self.symbol_type = symbol_type
         self.rewrite_rules: Optional[Dict[IntEnum, Parser]] = None
 
-    def parse(self, code: str, offset: int) -> ParseTree:
+    def parse(self, code: str, offset: int) -> SymbolTree:
         assert self.symbol_type
         assert self.rewrite_rules
 
@@ -147,11 +147,11 @@ class LiteralParser(Parser):
     def __init__(self, literal: str):
         self.literal = literal
 
-    def parse(self, code: str, offset: int) -> ParseTree:
+    def parse(self, code: str, offset: int) -> SymbolTree:
         if not code[offset:].startswith(self.literal):
             raise InternalParseError(offset, self.symbol_type)
 
-        return ParseTree(offset, len(self.literal), self.symbol_type, [])
+        return SymbolTree(offset, len(self.literal), self.symbol_type, [])
 
 
 def set_rewrite_rules(parser: Parser, rewrite_rules: Dict[IntEnum, Parser]) -> None:
@@ -198,7 +198,7 @@ def new_parse_generic(
     root_symbol: IntEnum,
     code: str,
     symbols_enum: Type[IntEnum],
-) -> ParseTree:
+) -> SymbolTree:
 
     for enum_value in symbols_enum:
         try:

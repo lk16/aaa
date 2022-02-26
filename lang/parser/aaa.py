@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from enum import IntEnum, auto
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Union
 
 from lang.parser.generic import (
     ConcatenationParser,
@@ -7,10 +8,10 @@ from lang.parser.generic import (
     OptionalParser,
     OrParser,
     Parser,
-    ParseTree,
     RegexBasedParser,
     RepeatParser,
     SymbolParser,
+    SymbolTree,
     new_parse_generic,
 )
 from lang.parser.tree import prune_by_symbol_types, prune_useless, prune_zero_length
@@ -97,7 +98,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
         SymbolParser(SymbolType.STRING_LITERAL),
     ),
     SymbolType.OPERATION: OrParser(*[LiteralParser(op) for op in OPERATOR_KEYWORDS]),
-    SymbolType.WHITESPACE: RegexBasedParser("^[ \\n]+"),
+    SymbolType.WHITESPACE: RegexBasedParser("^([ \\n]|$)+"),
     SymbolType.BRANCH: ConcatenationParser(
         SymbolParser(SymbolType.IF),
         OptionalParser(
@@ -169,12 +170,12 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
     ),
     SymbolType.FILE: ConcatenationParser(
         OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
-        SymbolParser(SymbolType.FUNCTION_DEFINITION),
         RepeatParser(
             ConcatenationParser(
-                SymbolParser(SymbolType.WHITESPACE),
                 SymbolParser(SymbolType.FUNCTION_DEFINITION),
-            )
+                SymbolParser(SymbolType.WHITESPACE),
+            ),
+            min_repeats=1,
         ),
         OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
     ),
@@ -187,10 +188,106 @@ class EmptyParseTreeError(Exception):
     ...
 
 
-def parse(code: str) -> ParseTree:
+FunctionBodyItem = Union[
+    "Branch", "Loop", "Operation", "BooleanLiteral", "IntegerLiteral", "StringLiteral"
+]
+
+
+@dataclass
+class IntegerLiteral:
+    value: int
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "IntegerLiteral":
+        raise NotImplementedError
+
+
+@dataclass
+class StringLiteral:
+    value: str
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "StringLiteral":
+        raise NotImplementedError
+
+
+@dataclass
+class BooleanLiteral:
+    value: bool
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "BooleanLiteral":
+        raise NotImplementedError
+
+
+@dataclass
+class Operation:
+    operator: str
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "Operation":
+        raise NotImplementedError
+
+
+@dataclass
+class Loop:
+    loop_body: List[FunctionBodyItem]
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "Loop":
+        raise NotImplementedError
+
+
+@dataclass
+class Branch:
+    if_body: List[FunctionBodyItem]
+    else_body: Optional[List[FunctionBodyItem]]
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "Branch":
+        raise NotImplementedError
+
+
+@dataclass
+class Function:
+    name: str
+    arguments: List[str]
+    body: List[FunctionBodyItem]
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "Function":
+        assert tree.symbol_type == SymbolType.FUNCTION_DEFINITION
+
+        name, *arguments = [
+            child.children[0].value(code) for child in tree.children[1].children
+        ]
+
+        body: List[FunctionBodyItem] = []
+        # TODO
+
+        return Function(name, arguments, body)
+
+
+@dataclass
+class File:
+    functions: List[Function]
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "File":
+        assert tree.symbol_type == SymbolType.FILE
+
+        functions: List[Function] = []
+
+        for child in tree.children[0].children:
+            functions.append(Function.from_symboltree(child.children[0], code))
+
+        return File(functions)
+
+
+def parse(code: str) -> File:
 
     # NOTE Tests call new_tokenize_generic() directly
-    tree: Optional[ParseTree] = new_parse_generic(
+    tree: Optional[SymbolTree] = new_parse_generic(
         REWRITE_RULES, ROOT_SYMBOL, code, SymbolType
     )
 
@@ -206,4 +303,4 @@ def parse(code: str) -> ParseTree:
     if not tree:
         raise EmptyParseTreeError
 
-    return tree
+    return File.from_symboltree(tree, code)
