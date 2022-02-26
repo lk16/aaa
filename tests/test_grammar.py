@@ -1,7 +1,7 @@
+from parser.grammar_generator import check_grammar_file_staleness
 from pathlib import Path
 
-from lang.parser.aaa import REWRITE_RULES, ROOT_SYMBOL
-from lang.parser.grammar_generator import check_grammar_file_staleness
+from lang.parse import REWRITE_RULES, ROOT_SYMBOL
 
 
 def test_grammar_up_to_date() -> None:

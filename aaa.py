@@ -2,15 +2,12 @@
 
 import subprocess
 import sys
+from parser.grammar_generator import check_grammar_file_staleness
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from lang.parse import parse
-from lang.parser.aaa import REWRITE_RULES, ROOT_SYMBOL
-from lang.parser.aaa import parse as new_parse  # TODO remove alias
-from lang.parser.grammar_generator import check_grammar_file_staleness
-from lang.run import run
-from lang.tokenize import tokenize
+from lang.parse import REWRITE_RULES, ROOT_SYMBOL
+from lang.parse import parse as new_parse  # TODO remove alias
 
 GRAMMAR_FILE_PATH = Path("grammar.txt")
 
@@ -28,9 +25,10 @@ def run_(filename: str, verbose_flag: Optional[str] = None) -> None:
     with open(filename, "r") as f:
         code = f.read()
 
-    tokens = tokenize(code, filename)
-    program = parse(tokens)
-    run(program, verbose=verbose)
+    # TODO
+    _ = code
+    _ = verbose
+    raise NotImplementedError
 
 
 def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
@@ -44,12 +42,10 @@ def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
             raise ArgParseError("Unexpected option for cmd.")
 
     code = "fn main begin\n" + code + "\nend"
-    tokens = tokenize(code, "<stdin>")
-    program = parse(tokens)
-    run(program, verbose=verbose)
 
-    if verbose:
-        print()
+    # TODO
+    _ = verbose
+    raise NotImplementedError
 
 
 def runtests(*args: Any) -> None:

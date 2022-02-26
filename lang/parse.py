@@ -1,243 +1,406 @@
-from itertools import count
-from typing import Dict, List, Tuple
-
-from lang.exceptions import (
-    InvalidBlockStackValue,
-    InvalidJump,
-    NoMainFunctionFound,
-    UnexpectedEndOfFile,
-    UnexpectedToken,
-    UnhandledTokenType,
+from abc import abstractclassmethod
+from dataclasses import dataclass
+from enum import IntEnum, auto
+from parser.generic import (
+    ConcatenationParser,
+    LiteralParser,
+    OptionalParser,
+    OrParser,
+    Parser,
+    RegexBasedParser,
+    RepeatParser,
+    SymbolParser,
+    Tree,
+    new_parse_generic,
 )
-from lang.program import Program
-from lang.tokenize import Token, TokenType
-from lang.types import (
-    And,
-    BoolPush,
-    CharNewLinePrint,
-    Divide,
-    Drop,
-    Dup,
-    Else,
-    End,
-    Equals,
-    Function,
-    If,
-    IntGreaterEquals,
-    IntGreaterThan,
-    IntLessEquals,
-    IntLessThan,
-    IntNotEqual,
-    IntPush,
-    Minus,
-    Modulo,
-    Multiply,
-    Not,
-    Operation,
-    Or,
-    Over,
-    Plus,
-    Print,
-    Rot,
-    StringLength,
-    StringPush,
-    SubString,
-    Swap,
-    While,
-    WhileEnd,
-)
+from parser.symbol_tree import prune_by_symbol_types, prune_useless, prune_zero_length
+from typing import Dict, List, Optional, Type, Union
 
 
-def parse(tokens: List[Token]) -> Program:
-    functions: Dict[str, Function] = {}
-
-    token_offset = 0
-    while token_offset < len(tokens):
-        token = tokens[token_offset]
-
-        if token.type == TokenType.FUNCTION:
-            function, consumed_tokens = parse_function(tokens[token_offset:])
-            functions[function.name] = function
-            token_offset += consumed_tokens
-
-        elif token.type == TokenType.COMMENT:
-            token_offset += 1
-
-        else:
-            raise UnexpectedToken(token)
-
-    if "main" not in functions:
-        raise NoMainFunctionFound
-
-    return Program(functions)
-
-
-def parse_function(
-    tokens: List[Token],
-) -> Tuple[Function, int]:
-
-    # TODO IndexErrors can happen anywhere in this function
-
-    if tokens[1].type != TokenType.IDENTIFIER:
-        raise UnexpectedToken(tokens[1])
-
-    name = tokens[1].value
-    # TODO check that the name of the function is not taken already
-
-    arg_names: List[str] = []
-
-    for arg_offset in count():
-        arg_token = tokens[2 + arg_offset]
-
-        if arg_token.type == TokenType.IDENTIFIER:
-            # TODO check that the argument does not overlap with other args or function names
-            arg_names.append(arg_token.value)
-        elif arg_token.type == TokenType.FUNCTION_BEGIN:
-            break
-        else:
-            raise UnexpectedToken(arg_token)
-
-    arg_count = len(arg_names)
-
-    operations, consumed_body_tokens = parse_function_body(tokens[2 + arg_count + 1 :])
-
-    function = Function(name, arg_count, operations)
-    consumed_tokens = 2 + arg_count + 1 + consumed_body_tokens + 1
-
-    return function, consumed_tokens
+class SymbolType(IntEnum):
+    BOOLEAN_LITERAL = auto()
+    BRANCH = auto()
+    FILE = auto()
+    FUNCTION_BODY = auto()
+    FUNCTION_BODY_ITEM = auto()
+    FUNCTION_DEFINITION = auto()
+    IDENTIFIER = auto()
+    INTEGER_LITERAL = auto()
+    LITERAL = auto()
+    LOOP = auto()
+    OPERATION = auto()
+    STRING_LITERAL = auto()
+    WHITESPACE = auto()
+    BEGIN = auto()
+    ELSE = auto()
+    END = auto()
+    FN = auto()
+    IF = auto()
+    WHILE = auto()
+    # TODO add comments
 
 
-def parse_function_body(  # noqa: C901  # Allow high complexity
-    tokens: List[Token],
-) -> Tuple[List[Operation], int]:
-    operations: List[Operation] = []
+OPERATOR_KEYWORDS = [
+    "-",
+    "!=",
+    ".",
+    "*",
+    "/",
+    "\\n",
+    "%",
+    "+",
+    "<",
+    "<=",
+    "=",
+    ">",
+    ">=",
+    "and",
+    "drop",
+    "dup",
+    "not",
+    "or",
+    "over",
+    "rot",
+    "strlen",
+    "substr",
+    "swap",
+]
 
-    # Stack of indexes in block start operations (such as If) in the operations list
-    block_operations_offset_stack: List[int] = []
+CONTROL_FLOW_KEYWORDS = [
+    "begin",
+    "else",
+    "end",
+    "fn",
+    "if",
+    "while",
+]
 
-    for consumed_tokens, token in enumerate(tokens):
-        operation: Operation
+LITERAL_KEYWORDS = [
+    "false",
+    "true",
+]
 
-        simple_tokens: Dict[TokenType, Operation] = {
-            TokenType.PLUS: Plus(),
-            TokenType.MINUS: Minus(),
-            TokenType.STAR: Multiply(),
-            TokenType.SLASH: Divide(),
-            TokenType.PERCENT: Modulo(),
-            TokenType.TRUE: BoolPush(True),
-            TokenType.FALSE: BoolPush(False),
-            TokenType.AND: And(),
-            TokenType.OR: Or(),
-            TokenType.NOT: Not(),
-            TokenType.EQUAL: Equals(),
-            TokenType.GREATER_THAN: IntGreaterThan(),
-            TokenType.GREATER_EQUAL: IntGreaterEquals(),
-            TokenType.LESS_THAN: IntLessThan(),
-            TokenType.LESS_EQUAL: IntLessEquals(),
-            TokenType.NOT_EQUAL: IntNotEqual(),
-            TokenType.DROP: Drop(),
-            TokenType.DUPLICATE: Dup(),
-            TokenType.SWAP: Swap(),
-            TokenType.OVER: Over(),
-            TokenType.ROTATE: Rot(),
-            TokenType.PRINT_NEWLINE: CharNewLinePrint(),
-            TokenType.PRINT: Print(),
-            TokenType.SUBSTRING: SubString(),
-            TokenType.STRING_LENGTH: StringLength(),
+KEYWORDS = CONTROL_FLOW_KEYWORDS + OPERATOR_KEYWORDS + LITERAL_KEYWORDS
+
+
+# NOTE A more readable grammar can be found in grammar.txt in the repo root.
+REWRITE_RULES: Dict[IntEnum, Parser] = {
+    SymbolType.BEGIN: LiteralParser("begin"),
+    SymbolType.ELSE: LiteralParser("else"),
+    SymbolType.END: LiteralParser("end"),
+    SymbolType.FN: LiteralParser("fn"),
+    SymbolType.IF: LiteralParser("if"),
+    SymbolType.WHILE: LiteralParser("while"),
+    SymbolType.BOOLEAN_LITERAL: OrParser(LiteralParser("true"), LiteralParser("false")),
+    SymbolType.INTEGER_LITERAL: RegexBasedParser("^[0-9]+"),
+    SymbolType.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*"'),
+    SymbolType.IDENTIFIER: RegexBasedParser("^[a-z_]+", forbidden=KEYWORDS),
+    SymbolType.LITERAL: OrParser(
+        SymbolParser(SymbolType.BOOLEAN_LITERAL),
+        SymbolParser(SymbolType.INTEGER_LITERAL),
+        SymbolParser(SymbolType.STRING_LITERAL),
+    ),
+    SymbolType.OPERATION: OrParser(*[LiteralParser(op) for op in OPERATOR_KEYWORDS]),
+    SymbolType.WHITESPACE: RegexBasedParser("^([ \\n]|$)+"),
+    SymbolType.BRANCH: ConcatenationParser(
+        SymbolParser(SymbolType.IF),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.WHITESPACE),
+                SymbolParser(SymbolType.FUNCTION_BODY),
+            )
+        ),
+        SymbolParser(SymbolType.WHITESPACE),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.ELSE),
+                OptionalParser(
+                    ConcatenationParser(
+                        SymbolParser(SymbolType.WHITESPACE),
+                        SymbolParser(SymbolType.FUNCTION_BODY),
+                    )
+                ),
+                SymbolParser(SymbolType.WHITESPACE),
+            )
+        ),
+        SymbolParser(SymbolType.END),
+    ),
+    SymbolType.LOOP: ConcatenationParser(
+        SymbolParser(SymbolType.WHILE),
+        SymbolParser(SymbolType.WHITESPACE),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.FUNCTION_BODY),
+                SymbolParser(SymbolType.WHITESPACE),
+            )
+        ),
+        SymbolParser(SymbolType.END),
+    ),
+    SymbolType.FUNCTION_BODY_ITEM: OrParser(
+        SymbolParser(SymbolType.BRANCH),
+        SymbolParser(SymbolType.LOOP),
+        SymbolParser(SymbolType.OPERATION),
+        SymbolParser(SymbolType.IDENTIFIER),
+        SymbolParser(SymbolType.LITERAL),
+    ),
+    SymbolType.FUNCTION_BODY: ConcatenationParser(
+        SymbolParser(SymbolType.FUNCTION_BODY_ITEM),
+        RepeatParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.WHITESPACE),
+                SymbolParser(SymbolType.FUNCTION_BODY_ITEM),
+            ),
+        ),
+    ),
+    SymbolType.FUNCTION_DEFINITION: ConcatenationParser(
+        SymbolParser(SymbolType.FN),
+        SymbolParser(SymbolType.WHITESPACE),
+        RepeatParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.IDENTIFIER), SymbolParser(SymbolType.WHITESPACE)
+            ),
+            min_repeats=1,
+        ),
+        SymbolParser(SymbolType.BEGIN),
+        SymbolParser(SymbolType.WHITESPACE),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.FUNCTION_BODY),
+                SymbolParser(SymbolType.WHITESPACE),
+            )
+        ),
+        SymbolParser(SymbolType.END),
+    ),
+    SymbolType.FILE: ConcatenationParser(
+        OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
+        RepeatParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.FUNCTION_DEFINITION),
+                SymbolParser(SymbolType.WHITESPACE),
+            ),
+            min_repeats=1,
+        ),
+        OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
+    ),
+}
+
+ROOT_SYMBOL = SymbolType.FILE
+
+
+class EmptyParseTreeError(Exception):
+    ...
+
+
+FunctionBodyItem = Union[
+    "Branch",
+    "Loop",
+    "Operation",
+    "BooleanLiteral",
+    "IntegerLiteral",
+    "StringLiteral",
+    "Identifier",
+]
+
+
+@dataclass
+class AaaTreeNode:
+    @abstractclassmethod
+    def from_tree(cls, tree: Tree, code: str) -> "AaaTreeNode":
+        ...
+
+
+@dataclass
+class IntegerLiteral(AaaTreeNode):
+    value: int
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "IntegerLiteral":
+        assert tree.symbol_type == SymbolType.INTEGER_LITERAL
+        value = int(tree.value(code))
+        return IntegerLiteral(value)
+
+
+@dataclass
+class StringLiteral(AaaTreeNode):
+    value: str
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "StringLiteral":
+        assert tree.symbol_type == SymbolType.STRING_LITERAL
+        value = (
+            tree.value(code)[1:-1]
+            .replace("\\n", "\n")
+            .replace('\\"', '"')
+            .replace("\\\\", "\\")
+        )
+        return StringLiteral(value)
+
+
+@dataclass
+class BooleanLiteral(AaaTreeNode):
+    value: bool
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "BooleanLiteral":
+        assert tree.symbol_type == SymbolType.BOOLEAN_LITERAL
+        value = tree.value(code) == "true"
+        return BooleanLiteral(value)
+
+
+@dataclass
+class Operation(AaaTreeNode):
+    operator: str
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "Operation":
+        assert tree.symbol_type == SymbolType.OPERATION
+        operator = tree.value(code)
+        return Operation(operator)
+
+
+@dataclass
+class Loop(AaaTreeNode):
+    body: "FunctionBody"
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "Loop":
+        loop_body = FunctionBody([])
+
+        if tree.children[1].symbol_type != SymbolType.END:
+            loop_body = FunctionBody.from_tree(tree.children[1].children[0], code)
+
+        return Loop(loop_body)
+
+
+@dataclass
+class Identifier(AaaTreeNode):
+    name: str
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "Identifier":
+        name = tree.value(code)
+        return Identifier(name)
+
+
+@dataclass
+class Branch(AaaTreeNode):
+    if_body: "FunctionBody"
+    else_body: "FunctionBody"
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "Branch":
+        if_body = FunctionBody([])
+        else_body = FunctionBody([])
+
+        for child in tree.children:
+            if child.symbol_type in [SymbolType.IF, SymbolType.END]:
+                continue
+            elif (
+                child.symbol_type is None
+                and child.children[0].symbol_type == SymbolType.ELSE
+            ):
+                if len(child.children) > 1:
+                    else_body = FunctionBody.from_tree(
+                        child.children[1].children[0], code
+                    )
+            else:
+                if_body = FunctionBody.from_tree(child.children[0], code)
+
+        return Branch(if_body, else_body)
+
+
+@dataclass
+class FunctionBody(AaaTreeNode):
+    items: List[FunctionBodyItem]
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "FunctionBody":
+        assert tree.symbol_type == SymbolType.FUNCTION_BODY
+
+        aaa_tree_nodes: Dict[Optional[IntEnum], Type[FunctionBodyItem]] = {
+            SymbolType.BOOLEAN_LITERAL: BooleanLiteral,
+            SymbolType.BRANCH: Branch,
+            SymbolType.IDENTIFIER: Identifier,
+            SymbolType.INTEGER_LITERAL: IntegerLiteral,
+            SymbolType.LOOP: Loop,
+            SymbolType.OPERATION: Operation,
+            SymbolType.STRING_LITERAL: StringLiteral,
         }
 
-        if token.type in simple_tokens:
-            operation = simple_tokens[token.type]
+        flattened_children: List[Tree] = []
 
-        elif token.type == TokenType.IF:
-            operation = If(None)
-            block_operations_offset_stack.append(len(operations))
+        if len(tree.children) > 0:
+            flattened_children = [tree.children[0]]
 
-        elif token.type == TokenType.ELSE:
-            operation = Else(None)
+        if len(tree.children) > 1:
+            flattened_children += [
+                child.children[0] for child in tree.children[1].children
+            ]
 
-            try:
-                block_start_offset = block_operations_offset_stack.pop()
-            except IndexError as e:
-                # end without matching start block
-                raise UnexpectedToken(token) from e
+        items: List[FunctionBodyItem] = []
 
-            block_start = operations[block_start_offset]
+        for child in flattened_children:
+            aaa_tree_node = aaa_tree_nodes[child.symbol_type]
+            items.append(aaa_tree_node.from_tree(child, code))
 
-            if isinstance(block_start, If):
-                block_start.jump_if_false = len(operations)
+        return FunctionBody(items)
 
-            else:  # pragma: nocover
-                raise InvalidBlockStackValue(block_start)
 
-            block_operations_offset_stack.append(len(operations))
+@dataclass
+class Function(AaaTreeNode):
+    name: str
+    arguments: List[str]
+    body: FunctionBody
 
-        elif token.type == TokenType.END:
-            operation = End()
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "Function":
+        assert tree.symbol_type == SymbolType.FUNCTION_DEFINITION
 
-            try:
-                block_start_offset = block_operations_offset_stack.pop()
-            except IndexError:
-                # This is the end of the function
+        name, *arguments = [
+            child.children[0].value(code) for child in tree.children[1].children
+        ]
 
-                # The block operations stack is empty so all jumps should be initialized to some "address" integer value.
-                for operation in operations:
-                    if any(
-                        [
-                            isinstance(operation, If)
-                            and operation.jump_if_false is None,
-                            isinstance(operation, Else) and operation.jump_end is None,
-                            isinstance(operation, While) and operation.jump_end is None,
-                        ]
-                    ):
-                        raise InvalidJump  # pragma: nocover
-
-                return operations, consumed_tokens
-
-            block_start = operations[block_start_offset]
-
-            if isinstance(block_start, If):
-                block_start.jump_if_false = len(operations)
-
-            elif isinstance(block_start, Else):
-                block_start.jump_end = len(operations)
-                pass
-
-            elif isinstance(block_start, While):
-                operation = WhileEnd(block_start_offset)
-                block_start.jump_end = len(operations)
-
-            else:  # pragma: nocover
-                raise InvalidBlockStackValue(block_start)
-
-        elif token.type == TokenType.WHILE:
-            operation = While(None)
-            block_operations_offset_stack.append(len(operations))
-
-        elif token.type == TokenType.INTEGER:
-            operation = IntPush(int(token.value))
-
-        elif token.type == TokenType.STRING:
-            string = (
-                token.value[1:-1]
-                .replace("\\n", "\n")
-                .replace('\\"', '"')
-                .replace("\\\\", "\\")
-            )
-            operation = StringPush(string)
-
-        elif token.type == TokenType.COMMENT:
-            continue  # Comments obviously don't do anything
-
-        elif token.type == TokenType.IDENTIFIER:
-            # If this is a function, we are calling it.
-            # If this is an argument of this function, we are pushing it on the stack.
-            # If anything else
-            raise NotImplementedError
-
+        if tree.children[3].symbol_type == SymbolType.END:
+            body = FunctionBody([])
         else:
-            raise UnhandledTokenType(token)
+            body = FunctionBody.from_tree(tree.children[3].children[0], code)
 
-        operations.append(operation)
+        return Function(name, arguments, body)
 
-    raise UnexpectedEndOfFile
+
+@dataclass
+class File(AaaTreeNode):
+    functions: List[Function]
+
+    @classmethod
+    def from_tree(cls, tree: Tree, code: str) -> "File":
+        assert tree.symbol_type == SymbolType.FILE
+
+        functions: List[Function] = []
+
+        for child in tree.children[0].children:
+            functions.append(Function.from_tree(child.children[0], code))
+
+        return File(functions)
+
+
+def parse(code: str) -> File:
+
+    # NOTE Tests call new_tokenize_generic() directly
+    tree: Optional[Tree] = new_parse_generic(
+        REWRITE_RULES, ROOT_SYMBOL, code, SymbolType
+    )
+
+    if tree:
+        tree = prune_zero_length(tree)
+
+    if tree:
+        tree = prune_by_symbol_types(tree, {SymbolType.WHITESPACE})
+
+    if tree:
+        tree = prune_useless(tree)
+
+    if not tree:
+        raise EmptyParseTreeError
+
+    return File.from_tree(tree, code)

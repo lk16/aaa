@@ -3,7 +3,6 @@
 Next development steps.
 
 ### Proper Parsing
-- add tests for parse tree functions
 - check human error output
 - check test coverage
 - check naming consistency
