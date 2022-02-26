@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import subprocess
+import sys
 from pathlib import Path
-
-import click
+from typing import Any, Callable, Dict, List, Optional
 
 from lang.parse import parse
 from lang.parser.aaa import REWRITE_RULES, ROOT_SYMBOL
@@ -15,15 +15,16 @@ from lang.tokenize import tokenize
 GRAMMAR_FILE_PATH = Path("grammar.txt")
 
 
-@click.group()
-def cli() -> None:
-    pass
+def run_(filename: str, verbose_flag: Optional[str] = None) -> None:
 
+    verbose = False
 
-@cli.command(name="run")
-@click.argument("filename", type=click.Path(exists=True))
-@click.option("--verbose/--no-verbose", "-v", type=bool)
-def run_(filename: str, verbose: bool) -> None:
+    if verbose_flag:
+        if verbose_flag == "-v":
+            verbose = True
+        else:
+            raise ArgParseError("Unexpected option for cmd.")
+
     with open(filename, "r") as f:
         code = f.read()
 
@@ -32,10 +33,16 @@ def run_(filename: str, verbose: bool) -> None:
     run(program, verbose=verbose)
 
 
-@cli.command()
-@click.argument("code", type=str)
-@click.option("--verbose/--no-verbose", "-v", type=bool)
-def cmd(code: str, verbose: bool) -> None:
+def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
+
+    verbose = False
+
+    if verbose_flag:
+        if verbose_flag == "-v":
+            verbose = True
+        else:
+            raise ArgParseError("Unexpected option for cmd.")
+
     code = "fn main begin\n" + code + "\nend"
     tokens = tokenize(code, "<stdin>")
     program = parse(tokens)
@@ -45,8 +52,10 @@ def cmd(code: str, verbose: bool) -> None:
         print()
 
 
-@cli.command()
-def runtests() -> None:
+def runtests(*args: Any) -> None:
+    if args:
+        raise ArgParseError("runtests expects no flags or arguments.")
+
     commands = [
         "pre-commit run --all-files mypy",
         "pytest --cov=lang --cov-report=term-missing --pdb -x",
@@ -58,8 +67,10 @@ def runtests() -> None:
             exit(1)
 
 
-@cli.command()
-def try_new_tokenizer() -> None:
+def try_new_tokenizer(*args: Any) -> None:
+    if args:
+        raise ArgParseError("try-new-tokenizer expects no flags or arguments.")
+
     while True:
         code = input("> ")
         try:
@@ -72,8 +83,10 @@ def try_new_tokenizer() -> None:
         print()
 
 
-@cli.command()
-def generate_grammar_file() -> None:
+def generate_grammar_file(*args: Any) -> None:
+    if args:
+        raise ArgParseError("generate-grammar-file expects no flags or arguments.")
+
     stale, new_grammar = check_grammar_file_staleness(
         GRAMMAR_FILE_PATH, REWRITE_RULES, ROOT_SYMBOL
     )
@@ -85,5 +98,55 @@ def generate_grammar_file() -> None:
         print(f"{GRAMMAR_FILE_PATH.name} was up-to-date.")
 
 
+COMMANDS: Dict[str, Callable[..., None]] = {
+    "cmd": cmd,
+    "generate-grammar-file": generate_grammar_file,
+    "run": run_,
+    "runtests": runtests,
+    "try-new-tokenizer": try_new_tokenizer,
+}
+
+
+class ArgParseError(Exception):
+    ...
+
+
+def show_usage(argv: List[str], error_message: str) -> None:
+    message = (
+        f"Argument parsing failed: {error_message}\n\n"
+        + "Available commands:\n"
+        + f"{argv[0]} cmd CODE <-v>\n"
+        + f"{argv[0]} run FILE <-v>\n"
+        + f"{argv[0]} generate-grammar-file\n"
+        + f"{argv[0]} runtests\n"
+        + f"{argv[0]} try-new-tokenizer\n"
+    )
+
+    print(message, file=sys.stderr)
+
+
+def main(argv: List[str]) -> int:
+    if len(argv) == 1:
+        show_usage(argv, "Missing command")
+        return 1
+
+    command_key = argv[1]
+    command_args = argv[2:]
+
+    try:
+        command = COMMANDS[command_key]
+    except KeyError:
+        show_usage(argv, f"No command {command_key}.")
+        return 1
+
+    try:
+        command(*command_args)
+    except ArgParseError as e:
+        show_usage(argv, e.args[0])
+        return 1
+
+    return 0
+
+
 if __name__ == "__main__":
-    cli()
+    exit(main(sys.argv))

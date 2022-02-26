@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from click.testing import CliRunner
+from pytest import CaptureFixture
 
-from aaa import cmd, run_
+from aaa import main
 
 
-def test_readme_command() -> None:
+def test_readme_command(capfd: CaptureFixture[str]) -> None:
     readme_commands: List[str] = []
 
     with open("README.md") as readme:
@@ -21,9 +21,10 @@ def test_readme_command() -> None:
     assert command in readme_commands[0]
     assert len(readme_commands) == 1
 
-    result = CliRunner().invoke(cmd, [command])
-    assert result.exit_code == 0
-    assert str(result.stdout) == "aaa\n"
+    main(["./aaa.py", "cmd", command])
+
+    stdout, _ = capfd.readouterr()
+    assert str(stdout) == "aaa\n"
 
 
 def expected_fizzbuzz_output() -> str:
@@ -59,8 +60,11 @@ EXPECTED_EXAMPLE_OUTPUT = {
         for example_file_path in Path("examples").glob("**/*.aaa")
     ],
 )
-def test_example_commands(example_file_path: Path, expected_output: str) -> None:
-    result = CliRunner().invoke(run_, [str(example_file_path)])
+def test_example_commands(
+    example_file_path: Path, expected_output: str, capfd: CaptureFixture[str]
+) -> None:
 
-    assert result.exit_code == 0
-    assert str(result.stdout) == expected_output
+    main(["./aaa.py", "run", str(example_file_path)])
+
+    stdout, _ = capfd.readouterr()
+    assert str(stdout) == expected_output

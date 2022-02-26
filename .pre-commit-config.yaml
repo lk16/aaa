@@ -54,7 +54,6 @@ repos:
       args: [--strict, --ignore-missing-imports, --implicit-reexport]
       additional_dependencies:
       - pytest
-      - click
 
   - repo: https://github.com/lk16/detect-missing-init
     rev: v0.1.1

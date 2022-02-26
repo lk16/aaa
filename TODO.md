@@ -17,9 +17,6 @@ Next development steps.
 - implement function arguments
 - implement calling functions
 
-### Be more self-contained
-- remove `click` dependency
-
 ### Brag in readme
 - minimal dependencies
 - custom simple parser, link to grammar.txt
