@@ -1,7 +1,7 @@
 from typing import List
 
+from lang.operations import Function, Operation
 from lang.program import Program
-from lang.types import Function, Operation
 
 
 def run(program: Program, verbose: bool = False) -> None:

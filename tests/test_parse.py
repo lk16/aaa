@@ -3,9 +3,8 @@ from typing import List, Type
 
 import pytest
 
+from lang.grammar import KEYWORDS, OPERATOR_KEYWORDS
 from lang.parse import (
-    KEYWORDS,
-    OPERATOR_KEYWORDS,
     REWRITE_RULES,
     AaaTreeNode,
     BooleanLiteral,

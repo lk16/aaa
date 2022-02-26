@@ -7,7 +7,7 @@ from lang.exceptions import (
     UnexpectedType,
     UnhandledOperationError,
 )
-from lang.types import (
+from lang.operations import (
     And,
     BoolPush,
     CharNewLinePrint,

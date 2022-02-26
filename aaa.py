@@ -6,7 +6,7 @@ from parser.grammar_generator import check_grammar_file_staleness
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from lang.parse import REWRITE_RULES, ROOT_SYMBOL
+from lang.grammar import REWRITE_RULES, ROOT_SYMBOL
 from lang.parse import parse as new_parse  # TODO remove alias
 
 GRAMMAR_FILE_PATH = Path("grammar.txt")

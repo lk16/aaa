@@ -1,32 +1,14 @@
-from enum import IntEnum
-from typing import TYPE_CHECKING, Set
-
-from lang.types import Operation
-
-if TYPE_CHECKING:  # pragma: nocover
-    from lang.tokenize import Token
+from lang.operations import Operation
 
 
 class ParseError(Exception):
     ...
 
 
-class UnhandledTokenType(Exception):
-    def __init__(self, token: "Token") -> None:
-        super().__init__(f"Unhandled token type: {type(token).__name__}'")
-
-
 class InvalidBlockStackValue(ParseError):
     def __init__(self, operation: Operation):  # pragma: nocover
         super().__init__(
             f"Invalid block stack value, it has type {type(operation).__name__}"
-        )
-
-
-class UnexpectedToken(ParseError):
-    def __init__(self, token: "Token") -> None:
-        super().__init__(
-            f"Unexpected token {token} on {token.filename}:{token.line_number}:{token.offset + 1}"
         )
 
 
@@ -67,36 +49,5 @@ class StackNotEmptyAtExit(RunTimeError):
     ...
 
 
-class TokenizeError(Exception):
-    def __init__(self, filename: str, line_number: int, offset: int, line: str) -> None:
-        super().__init__(
-            f"Tokenize error on {filename}:{line_number}:{offset + 1}:\n"
-            + f"{line}\n"
-            + " " * offset
-            + "^"
-        )
-
-
-class StringTokenizeError(TokenizeError):
+class EmptyParseTreeError(Exception):
     ...
-
-
-class UnterminatedStringError(TokenizeError):
-    ...
-
-
-class InvalidStringEscapeSequence(StringTokenizeError):
-    ...
-
-
-class UnhandledSymbolType(Exception):
-    def __init__(self, symbol_type: IntEnum) -> None:
-        super().__init__(f"Unhandled symbol type {symbol_type.name}")
-
-
-class UnexpectedSymbols(Exception):
-    def __init__(self, unexpected_keys: Set[IntEnum]) -> None:
-        super().__init__(
-            f"Rewrite rules contain {len(unexpected_keys)} items, with keys: "
-            + ", ".join(key.__repr__() for key in unexpected_keys)
-        )

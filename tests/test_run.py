@@ -10,8 +10,7 @@ from lang.exceptions import (
     UnexpectedType,
     UnhandledOperationError,
 )
-from lang.run import run_as_main
-from lang.types import (
+from lang.operations import (
     And,
     BoolPush,
     Divide,
@@ -35,6 +34,7 @@ from lang.types import (
     Rot,
     Swap,
 )
+from lang.run import run_as_main
 
 
 @dataclass
