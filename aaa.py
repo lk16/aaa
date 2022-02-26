@@ -53,7 +53,9 @@ def runtests() -> None:
     ]
 
     for command in commands:
-        subprocess.run(command.split())
+        proc = subprocess.run(command.split())
+        if proc.returncode != 0:
+            exit(1)
 
 
 @cli.command()

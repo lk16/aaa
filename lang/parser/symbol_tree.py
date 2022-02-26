@@ -30,38 +30,38 @@ class SymbolTree:
 
 
 def prune_zero_length(tree: SymbolTree) -> Optional[SymbolTree]:
-    def condition(tree: SymbolTree) -> bool:
-        return tree.symbol_length > 0
+    def prune_condition(tree: SymbolTree) -> bool:
+        return tree.symbol_length == 0
 
-    return prune_parse_tree(tree, condition)
+    return prune_parse_tree(tree, prune_condition)
 
 
 def prune_by_symbol_types(
     tree: SymbolTree, symbol_types: Set[IntEnum]
 ) -> Optional[SymbolTree]:
-    def condition(tree: SymbolTree) -> bool:
-        return tree.symbol_type not in symbol_types
+    def prune_condition(tree: SymbolTree) -> bool:
+        return tree.symbol_type in symbol_types
 
-    return prune_parse_tree(tree, condition)
+    return prune_parse_tree(tree, prune_condition)
 
 
 def prune_useless(tree: SymbolTree) -> Optional[SymbolTree]:
-    def condition(tree: SymbolTree) -> bool:
-        return not (tree.symbol_type is None and len(tree.children) == 0)
+    def prune_condition(tree: SymbolTree) -> bool:
+        return tree.symbol_type is None and len(tree.children) == 0
 
-    return prune_parse_tree(tree, condition)
+    return prune_parse_tree(tree, prune_condition)
 
 
 def prune_parse_tree(
-    tree: SymbolTree, condition: Callable[[SymbolTree], bool]
+    tree: SymbolTree, prune_condition: Callable[[SymbolTree], bool]
 ) -> Optional[SymbolTree]:
-    if not condition(tree):
+    if prune_condition(tree):
         return None
 
     pruned_children: List[SymbolTree] = []
 
     for child in tree.children:
-        child_tree = prune_parse_tree(child, condition)
+        child_tree = prune_parse_tree(child, prune_condition)
         if child_tree:
             pruned_children.append(child_tree)
 

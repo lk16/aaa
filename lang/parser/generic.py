@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Type
 
 from lang.exceptions import UnexpectedSymbols, UnhandledSymbolType
 from lang.parser.exceptions import InternalParseError, ParseError
-from lang.parser.tree import SymbolTree
+from lang.parser.symbol_tree import SymbolTree
 
 
 @dataclass

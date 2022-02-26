@@ -6,6 +6,7 @@ from lang.parser.aaa import (
     KEYWORDS,
     OPERATOR_KEYWORDS,
     REWRITE_RULES,
+    Branch,
     SymbolType,
     parse,
 )
@@ -319,10 +320,10 @@ def test_parse_file(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_function_names", "expected_arguments"],
     [
-        (" fn main begin end ", ["main"], [[]]),
-        (" fn main a b c begin end ", ["main"], [["a", "b", "c"]]),
+        ("fn main begin end", ["main"], [[]]),
+        ("fn main a b c begin end", ["main"], [["a", "b", "c"]]),
         (
-            " fn main a b c begin end fn foo d e f begin end fn bar g h i begin end ",
+            "fn main a b c begin end fn foo d e f begin end fn bar g h i begin end",
             ["main", "foo", "bar"],
             [["a", "b", "c"], ["d", "e", "f"], ["g", "h", "i"]],
         ),
@@ -341,7 +342,33 @@ def test_file_parse_tree(
         assert func.arguments == expected_args
 
 
-# TODO test parsetree of function
+@pytest.mark.parametrize(
+    ["code", "expected_if_body_children", "expected_else_body_children"],
+    [
+        ("fn main begin if end end", 0, 0),
+        ("fn main begin if 1 2 3 end end", 3, 0),
+        ("fn main begin if else end end", 0, 0),
+        ("fn main begin if else 1 2 3 end end", 0, 3),
+        ("fn main begin if 1 2 3 else 4 5 6 end end", 3, 3),
+    ],
+)
+def test_branch_parse_tree(
+    code: str,
+    expected_if_body_children: int,
+    expected_else_body_children: int,
+) -> None:
+    file = parse(code)
+    assert len(file.functions) == 1
+    func_body = file.functions[0].body
+
+    assert len(func_body.items) == 1
+    branch = func_body.items[0]
+
+    assert isinstance(branch, Branch)
+    assert len(branch.if_body.items) == expected_if_body_children
+    assert len(branch.else_body.items) == expected_else_body_children
+
+
 # TODO test parsetree of branch
 # TODO test parsetree of identifier
 # TODO test parsetree of 3 literal types

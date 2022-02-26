@@ -1,6 +1,7 @@
+from abc import abstractclassmethod
 from dataclasses import dataclass
 from enum import IntEnum, auto
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, Union
 
 from lang.parser.generic import (
     ConcatenationParser,
@@ -14,7 +15,11 @@ from lang.parser.generic import (
     SymbolTree,
     new_parse_generic,
 )
-from lang.parser.tree import prune_by_symbol_types, prune_useless, prune_zero_length
+from lang.parser.symbol_tree import (
+    prune_by_symbol_types,
+    prune_useless,
+    prune_zero_length,
+)
 
 
 class SymbolType(IntEnum):
@@ -194,16 +199,25 @@ FunctionBodyItem = Union[
 
 
 @dataclass
-class IntegerLiteral:
+class AaaTreeNode:
+    @abstractclassmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "AaaTreeNode":
+        ...
+
+
+@dataclass
+class IntegerLiteral(AaaTreeNode):
     value: int
 
     @classmethod
     def from_symboltree(cls, tree: SymbolTree, code: str) -> "IntegerLiteral":
-        raise NotImplementedError
+        assert tree.symbol_type == SymbolType.INTEGER_LITERAL
+        value = int(tree.value(code))
+        return IntegerLiteral(value)
 
 
 @dataclass
-class StringLiteral:
+class StringLiteral(AaaTreeNode):
     value: str
 
     @classmethod
@@ -212,25 +226,29 @@ class StringLiteral:
 
 
 @dataclass
-class BooleanLiteral:
+class BooleanLiteral(AaaTreeNode):
     value: bool
 
     @classmethod
     def from_symboltree(cls, tree: SymbolTree, code: str) -> "BooleanLiteral":
-        raise NotImplementedError
+        assert tree.symbol_type == SymbolType.BOOLEAN_LITERAL
+        value = tree.value(code) == "true"
+        return BooleanLiteral(value)
 
 
 @dataclass
-class Operation:
+class Operation(AaaTreeNode):
     operator: str
 
     @classmethod
     def from_symboltree(cls, tree: SymbolTree, code: str) -> "Operation":
-        raise NotImplementedError
+        assert tree.symbol_type == SymbolType.OPERATION
+        operator = tree.value(code)
+        return Operation(operator)
 
 
 @dataclass
-class Loop:
+class Loop(AaaTreeNode):
     loop_body: List[FunctionBodyItem]
 
     @classmethod
@@ -239,20 +257,73 @@ class Loop:
 
 
 @dataclass
-class Branch:
-    if_body: List[FunctionBodyItem]
-    else_body: Optional[List[FunctionBodyItem]]
+class Branch(AaaTreeNode):
+    if_body: "FunctionBody"
+    else_body: "FunctionBody"
 
     @classmethod
     def from_symboltree(cls, tree: SymbolTree, code: str) -> "Branch":
-        raise NotImplementedError
+        if_body = FunctionBody([])
+        else_body = FunctionBody([])
+
+        for child in tree.children:
+            if child.symbol_type in [SymbolType.IF, SymbolType.END]:
+                continue
+            elif (
+                child.symbol_type is None
+                and child.children[0].symbol_type == SymbolType.ELSE
+            ):
+                if len(child.children) > 1:
+                    else_body = FunctionBody.from_symboltree(
+                        child.children[1].children[0], code
+                    )
+            else:
+                if_body = FunctionBody.from_symboltree(child.children[0], code)
+
+        return Branch(if_body, else_body)
 
 
 @dataclass
-class Function:
+class FunctionBody(AaaTreeNode):
+    items: List[FunctionBodyItem]
+
+    @classmethod
+    def from_symboltree(cls, tree: SymbolTree, code: str) -> "FunctionBody":
+        assert tree.symbol_type == SymbolType.FUNCTION_BODY
+
+        aaa_tree_nodes: Dict[Optional[IntEnum], Type[FunctionBodyItem]] = {
+            SymbolType.BRANCH: Branch,
+            SymbolType.LOOP: Loop,
+            SymbolType.OPERATION: Operation,
+            SymbolType.INTEGER_LITERAL: IntegerLiteral,
+            SymbolType.STRING_LITERAL: StringLiteral,
+            SymbolType.BOOLEAN_LITERAL: BooleanLiteral,
+        }
+
+        flattened_children: List[SymbolTree] = []
+
+        if len(tree.children) > 0:
+            flattened_children = [tree.children[0]]
+
+        if len(tree.children) > 1:
+            flattened_children += [
+                child.children[0] for child in tree.children[1].children
+            ]
+
+        items: List[FunctionBodyItem] = []
+
+        for child in flattened_children:
+            aaa_tree_node = aaa_tree_nodes[child.symbol_type]
+            items.append(aaa_tree_node.from_symboltree(child, code))
+
+        return FunctionBody(items)
+
+
+@dataclass
+class Function(AaaTreeNode):
     name: str
     arguments: List[str]
-    body: List[FunctionBodyItem]
+    body: FunctionBody
 
     @classmethod
     def from_symboltree(cls, tree: SymbolTree, code: str) -> "Function":
@@ -262,14 +333,16 @@ class Function:
             child.children[0].value(code) for child in tree.children[1].children
         ]
 
-        body: List[FunctionBodyItem] = []
-        # TODO
+        if tree.children[3].symbol_type == SymbolType.END:
+            body = FunctionBody([])
+        else:
+            body = FunctionBody.from_symboltree(tree.children[3].children[0], code)
 
         return Function(name, arguments, body)
 
 
 @dataclass
-class File:
+class File(AaaTreeNode):
     functions: List[Function]
 
     @classmethod
