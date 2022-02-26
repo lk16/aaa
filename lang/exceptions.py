@@ -1,4 +1,4 @@
-from lang.operations import Operation
+from lang.instructions import Instruction
 
 
 class ParseError(Exception):
@@ -6,7 +6,7 @@ class ParseError(Exception):
 
 
 class InvalidBlockStackValue(ParseError):
-    def __init__(self, operation: Operation):  # pragma: nocover
+    def __init__(self, operation: Instruction):  # pragma: nocover
         super().__init__(
             f"Invalid block stack value, it has type {type(operation).__name__}"
         )
@@ -32,9 +32,9 @@ class UnexpectedType(Exception):
     ...
 
 
-class UnhandledOperationError(RunTimeError):
-    def __init__(self, operation: Operation) -> None:
-        super().__init__(f"Unhandled operation {type(operation)}")
+class UnhandledInstructionError(RunTimeError):
+    def __init__(self, instruction: Instruction) -> None:
+        super().__init__(f"Unhandled instruction {type(instruction)}")
 
 
 class StackUnderflow(RunTimeError):

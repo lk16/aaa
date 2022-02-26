@@ -5,9 +5,9 @@ from lang.exceptions import (
     StackNotEmptyAtExit,
     StackUnderflow,
     UnexpectedType,
-    UnhandledOperationError,
+    UnhandledInstructionError,
 )
-from lang.operations import (
+from lang.instructions import (
     And,
     BoolPush,
     CharNewLinePrint,
@@ -17,8 +17,8 @@ from lang.operations import (
     Else,
     End,
     Equals,
-    Function,
     If,
+    Instruction,
     IntGreaterEquals,
     IntGreaterThan,
     IntLessEquals,
@@ -29,7 +29,6 @@ from lang.operations import (
     Modulo,
     Multiply,
     Not,
-    Operation,
     Or,
     Over,
     Plus,
@@ -42,6 +41,7 @@ from lang.operations import (
     While,
     WhileEnd,
 )
+from lang.parse import Function
 
 StackItem = Union[int, bool, str]
 
@@ -91,13 +91,19 @@ class Program:
         self.run_function("main", verbose)
 
     def run_function(self, func_name: str, verbose: bool) -> None:
-        operations = self.functions[func_name].operations
+
+        # TODO can this cause a KeyError?
+        function = self.functions[func_name]
+
+        instructions = function.get_instructions()
 
         # TODO deal with function arguments
 
         if verbose:  # pragma: nocover
-            for ip, operation in enumerate(operations):
-                print(f"DEBUG | IP: {ip:>2} | {operation.__repr__()}", file=sys.stderr)
+            for ip, instruction in enumerate(instructions):
+                print(
+                    f"DEBUG | IP: {ip:>2} | {instruction.__repr__()}", file=sys.stderr
+                )
 
             print(
                 f"\nDEBUG | {'':>25} | IP: {self.instruction_pointer:>2} | Stack: "
@@ -105,56 +111,56 @@ class Program:
                 file=sys.stderr,
             )
 
-        operation_funcs: Dict[Type[Operation], Callable[[Operation], None]] = {
-            And: self.op_and,
-            BoolPush: self.op_boolPush,
-            CharNewLinePrint: self.op_char_newline_print,
-            Divide: self.op_divide,
-            Drop: self.op_drop,
-            Dup: self.op_dup,
-            Else: self.op_else,
-            End: self.op_end,
-            Equals: self.op_equals,
-            If: self.op_if,
-            IntGreaterEquals: self.op_int_greater_equals,
-            IntGreaterThan: self.op_int_greater_than,
-            IntLessEquals: self.op_int_less_equals,
-            IntLessThan: self.op_int_less_than,
-            IntNotEqual: self.op_int_not_equal,
-            IntPush: self.op_int_push,
-            Minus: self.op_minus,
-            Modulo: self.op_modulo,
-            Multiply: self.op_multiply,
-            Not: self.op_not,
-            Or: self.op_or,
-            Over: self.op_over,
-            Plus: self.op_plus,
-            Print: self.op_print,
-            Rot: self.op_rot,
-            StringLength: self.op_string_length,
-            StringPush: self.op_string_push,
-            SubString: self.op_substring,
-            Swap: self.op_swap,
-            While: self.op_while,
-            WhileEnd: self.op_while_end,
+        instruction_funcs: Dict[Type[Instruction], Callable[[Instruction], None]] = {
+            And: self.instruction_and,
+            BoolPush: self.instruction_boolPush,
+            CharNewLinePrint: self.instruction_char_newline_print,
+            Divide: self.instruction_divide,
+            Drop: self.instruction_drop,
+            Dup: self.instruction_dup,
+            Else: self.instruction_else,
+            End: self.instruction_end,
+            Equals: self.instruction_equals,
+            If: self.instruction_if,
+            IntGreaterEquals: self.instruction_int_greater_equals,
+            IntGreaterThan: self.instruction_int_greater_than,
+            IntLessEquals: self.instruction_int_less_equals,
+            IntLessThan: self.instruction_int_less_than,
+            IntNotEqual: self.instruction_int_not_equal,
+            IntPush: self.instruction_int_push,
+            Minus: self.instruction_minus,
+            Modulo: self.instruction_modulo,
+            Multiply: self.instruction_multiply,
+            Not: self.instruction_not,
+            Or: self.instruction_or,
+            Over: self.instruction_over,
+            Plus: self.instruction_plus,
+            Print: self.instruction_print,
+            Rot: self.instruction_rot,
+            StringLength: self.instruction_string_length,
+            StringPush: self.instruction_string_push,
+            SubString: self.instruction_substring,
+            Swap: self.instruction_swap,
+            While: self.instruction_while,
+            WhileEnd: self.instruction_while_end,
         }
 
-        while self.instruction_pointer < len(operations):
+        while self.instruction_pointer < len(instructions):
 
-            # Find out what the next operation is
-            operation = operations[self.instruction_pointer]
+            # Find out what the next instruction is
+            instruction = instructions[self.instruction_pointer]
 
-            # Excecute the operation
+            # Excecute the instruction
             try:
-                operation_func = operation_funcs[type(operation)]
+                instrunction_func = instruction_funcs[type(instruction)]
             except KeyError as e:
-                raise UnhandledOperationError(operation) from e
+                raise UnhandledInstructionError(instruction) from e
 
-            operation_func(operation)
+            instrunction_func(instruction)
 
             if verbose:  # pragma: nocover
                 print(
-                    f"DEBUG | {operation.__repr__():>25} | IP: {self.instruction_pointer:>2} | Stack: "
+                    f"DEBUG | {instruction.__repr__():>25} | IP: {self.instruction_pointer:>2} | Stack: "
                     + " ".join(str(item) for item in self.stack),
                     file=sys.stderr,
                 )
@@ -162,13 +168,13 @@ class Program:
         if self.stack:
             raise StackNotEmptyAtExit
 
-    def op_int_push(self, operation: Operation) -> None:
-        assert isinstance(operation, IntPush)
-        self.push(operation.value)
+    def instruction_int_push(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, IntPush)
+        self.push(instruction.value)
         self.instruction_pointer += 1
 
-    def op_plus(self, operation: Operation) -> None:
-        assert isinstance(operation, Plus)
+    def instruction_plus(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Plus)
         x = self.pop_untyped()
         y = self.pop_untyped()
         self.check_type(x, [int, str])
@@ -177,55 +183,55 @@ class Program:
         self.push(y + x)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_minus(self, operation: Operation) -> None:
-        assert isinstance(operation, Minus)
+    def instruction_minus(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Minus)
         x, y = self.pop_two(int)
         self.push(y - x)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_multiply(self, operation: Operation) -> None:
-        assert isinstance(operation, Multiply)
+    def instruction_multiply(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Multiply)
         x, y = self.pop_two(int)
         self.push(x * y)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_divide(self, operation: Operation) -> None:
-        assert isinstance(operation, Divide)
+    def instruction_divide(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Divide)
         x, y = self.pop_two(int)
         self.push(y // x)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_modulo(self, operation: Operation) -> None:
-        assert isinstance(operation, Modulo)
+    def instruction_modulo(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Modulo)
         x, y = self.pop_two(int)
         self.push(y % x)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_boolPush(self, operation: Operation) -> None:
-        assert isinstance(operation, BoolPush)
-        self.push(operation.value)
+    def instruction_boolPush(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, BoolPush)
+        self.push(instruction.value)
         self.instruction_pointer += 1
 
-    def op_and(self, operation: Operation) -> None:
-        assert isinstance(operation, And)
+    def instruction_and(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, And)
         x, y = self.pop_two(bool)
         self.push(x and y)
         self.instruction_pointer += 1
 
-    def op_or(self, operation: Operation) -> None:
-        assert isinstance(operation, Or)
+    def instruction_or(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Or)
         x, y = self.pop_two(bool)
         self.push(x or y)
         self.instruction_pointer += 1
 
-    def op_not(self, operation: Operation) -> None:
-        assert isinstance(operation, Not)
+    def instruction_not(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Not)
         x = self.pop(bool)
         self.push(not x)
         self.instruction_pointer += 1
 
-    def op_equals(self, operation: Operation) -> None:
-        assert isinstance(operation, Equals)
+    def instruction_equals(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Equals)
         x = self.pop_untyped()
         y = self.pop_untyped()
         self.check_type(x, [int, str])
@@ -234,65 +240,65 @@ class Program:
         self.push(x == y)
         self.instruction_pointer += 1
 
-    def op_int_less_than(self, operation: Operation) -> None:
-        assert isinstance(operation, IntLessThan)
+    def instruction_int_less_than(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, IntLessThan)
         x, y = self.pop_two(int)
         self.push(y < x)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_int_less_equals(self, operation: Operation) -> None:
-        assert isinstance(operation, IntLessEquals)
+    def instruction_int_less_equals(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, IntLessEquals)
         x, y = self.pop_two(int)
         self.push(y <= x)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_int_greater_than(self, operation: Operation) -> None:
-        assert isinstance(operation, IntGreaterThan)
+    def instruction_int_greater_than(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, IntGreaterThan)
         x, y = self.pop_two(int)
         self.push(y > x)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_int_greater_equals(self, operation: Operation) -> None:
-        assert isinstance(operation, IntGreaterEquals)
+    def instruction_int_greater_equals(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, IntGreaterEquals)
         x, y = self.pop_two(int)
         self.push(y >= x)  # type: ignore
         self.instruction_pointer += 1
 
-    def op_int_not_equal(self, operation: Operation) -> None:
-        assert isinstance(operation, IntNotEqual)
+    def instruction_int_not_equal(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, IntNotEqual)
         x, y = self.pop_two(int)
         self.push(y != x)
         self.instruction_pointer += 1
 
-    def op_drop(self, operation: Operation) -> None:
-        assert isinstance(operation, Drop)
+    def instruction_drop(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Drop)
         self.pop_untyped()
         self.instruction_pointer += 1
 
-    def op_dup(self, operation: Operation) -> None:
-        assert isinstance(operation, Dup)
+    def instruction_dup(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Dup)
         x = self.top_untyped()
         self.push(x)
         self.instruction_pointer += 1
 
-    def op_swap(self, operation: Operation) -> None:
-        assert isinstance(operation, Swap)
+    def instruction_swap(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Swap)
         x = self.pop_untyped()
         y = self.pop_untyped()
         self.push(x)
         self.push(y)
         self.instruction_pointer += 1
 
-    def op_over(self, operation: Operation) -> None:
-        assert isinstance(operation, Over)
+    def instruction_over(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Over)
         x = self.pop_untyped()
         y = self.top_untyped()
         self.push(x)
         self.push(y)
         self.instruction_pointer += 1
 
-    def op_rot(self, operation: Operation) -> None:
-        assert isinstance(operation, Rot)
+    def instruction_rot(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Rot)
         x = self.pop_untyped()
         y = self.pop_untyped()
         z = self.pop_untyped()
@@ -301,35 +307,37 @@ class Program:
         self.push(z)
         self.instruction_pointer += 1
 
-    def op_if(self, operation: Operation) -> None:
-        assert isinstance(operation, If)
+    def instruction_if(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, If)
         x = self.pop(bool)
 
         if not x:
-            assert operation.jump_if_false is not None  # This is checked while parsing
-            self.instruction_pointer = operation.jump_if_false
+            assert (
+                instruction.jump_if_false is not None
+            )  # This is checked while parsing
+            self.instruction_pointer = instruction.jump_if_false
 
         self.instruction_pointer += 1
 
-    def op_end(self, operation: Operation) -> None:
-        assert isinstance(operation, End)
+    def instruction_end(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, End)
         # End of block doesn't do anything
         self.instruction_pointer += 1
 
-    def op_else(self, operation: Operation) -> None:
-        assert isinstance(operation, Else)
-        assert operation.jump_end is not None  # This is checked while parsing
+    def instruction_else(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Else)
+        assert instruction.jump_end is not None  # This is checked while parsing
 
         # Jump beyond the else instruction
-        self.instruction_pointer = operation.jump_end + 1
+        self.instruction_pointer = instruction.jump_end + 1
 
-    def op_char_newline_print(self, operation: Operation) -> None:
-        assert isinstance(operation, CharNewLinePrint)
+    def instruction_char_newline_print(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, CharNewLinePrint)
         print()  # Just print a newline
         self.instruction_pointer += 1
 
-    def op_print(self, operation: Operation) -> None:
-        assert isinstance(operation, Print)
+    def instruction_print(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Print)
         x = self.pop_untyped()
         if type(x) == bool:
             if x:
@@ -341,27 +349,27 @@ class Program:
 
         self.instruction_pointer += 1
 
-    def op_while(self, operation: Operation) -> None:
-        assert isinstance(operation, While)
+    def instruction_while(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, While)
         x = self.pop(bool)
 
         if not x:
-            assert operation.jump_end is not None  # This is checked while parsing
-            self.instruction_pointer = operation.jump_end
+            assert instruction.jump_end is not None  # This is checked while parsing
+            self.instruction_pointer = instruction.jump_end
 
         self.instruction_pointer += 1
 
-    def op_while_end(self, operation: Operation) -> None:
-        assert isinstance(operation, WhileEnd)
-        self.instruction_pointer = operation.jump_start
+    def instruction_while_end(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, WhileEnd)
+        self.instruction_pointer = instruction.jump_start
 
-    def op_string_push(self, operation: Operation) -> None:
-        assert isinstance(operation, StringPush)
-        self.push(operation.value)
+    def instruction_string_push(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, StringPush)
+        self.push(instruction.value)
         self.instruction_pointer += 1
 
-    def op_substring(self, operation: Operation) -> None:
-        assert isinstance(operation, SubString)
+    def instruction_substring(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, SubString)
         end: int = self.pop(int)  # type: ignore
         start: int = self.pop(int)  # type: ignore
         string: str = self.pop(str)  # type: ignore
@@ -373,8 +381,8 @@ class Program:
 
         self.instruction_pointer += 1
 
-    def op_string_length(self, operation: Operation) -> None:
-        assert isinstance(operation, StringLength)
+    def instruction_string_length(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, StringLength)
         x = self.pop(str)
         self.push(len(x))  # type: ignore
         self.instruction_pointer += 1

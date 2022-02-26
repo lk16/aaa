@@ -1,175 +1,176 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
+
+if TYPE_CHECKING:
+    from lang.parse import Function
 
 
 @dataclass
-class Operation:  # TODO rename to Instruction
+class Instruction:
     ...
 
 
 @dataclass
-class IntPush(Operation):
+class IntPush(Instruction):
     value: int
 
 
 @dataclass
-class Plus(Operation):
+class Plus(Instruction):
     ...
 
 
 @dataclass
-class Minus(Operation):
+class Minus(Instruction):
     ...
 
 
 @dataclass
-class Multiply(Operation):
+class Multiply(Instruction):
     ...
 
 
 @dataclass
-class Divide(Operation):
+class Divide(Instruction):
     ...
 
 
 @dataclass
-class BoolPush(Operation):
+class BoolPush(Instruction):
     value: bool
 
 
 @dataclass
-class And(Operation):
+class And(Instruction):
     ...
 
 
 @dataclass
-class Or(Operation):
+class Or(Instruction):
     ...
 
 
 @dataclass
-class Not(Operation):
+class Not(Instruction):
     ...
 
 
 @dataclass
-class Equals(Operation):
+class Equals(Instruction):
     ...
 
 
 @dataclass
-class IntGreaterThan(Operation):
+class IntGreaterThan(Instruction):
     ...
 
 
 @dataclass
-class IntGreaterEquals(Operation):
+class IntGreaterEquals(Instruction):
     ...
 
 
 @dataclass
-class IntLessThan(Operation):
+class IntLessThan(Instruction):
     ...
 
 
 @dataclass
-class IntLessEquals(Operation):
+class IntLessEquals(Instruction):
     ...
 
 
 @dataclass
-class IntNotEqual(Operation):
+class IntNotEqual(Instruction):
     ...
 
 
 @dataclass
-class Drop(Operation):
+class Drop(Instruction):
     ...
 
 
 @dataclass
-class Dup(Operation):
+class Dup(Instruction):
     ...
 
 
 @dataclass
-class Swap(Operation):
+class Swap(Instruction):
     ...
 
 
 @dataclass
-class Over(Operation):
+class Over(Instruction):
     ...
 
 
 @dataclass
-class Rot(Operation):
+class Rot(Instruction):
     ...
 
 
 @dataclass
-class If(Operation):
+class If(Instruction):
     # Instruction to jump to if the condition is false.
     # Initialization is done when we find a corresponding operation ("else" or "end") while parsing.
     jump_if_false: Optional[int]
 
 
 @dataclass
-class Else(Operation):
+class Else(Instruction):
     # Instruction to jump to if the condition is false.
     # Initialization is done when we find corresponding "end" while parsing.
     jump_end: Optional[int]
 
 
 @dataclass
-class End(Operation):
+class End(Instruction):
     ...
 
 
 @dataclass
-class CharNewLinePrint(Operation):
+class CharNewLinePrint(Instruction):
     ...
 
 
 @dataclass
-class Print(Operation):
+class Print(Instruction):
     ...
 
 
 @dataclass
-class While(Operation):
+class While(Instruction):
     # Instruction to jump to if the condition is false.
     # Initialization is done when we find corresponding "end" while parsing.
     jump_end: Optional[int]
 
 
 @dataclass
-class WhileEnd(Operation):
+class WhileEnd(Instruction):
     jump_start: int
 
 
 @dataclass
-class StringPush(Operation):
+class StringPush(Instruction):
     value: str
 
 
 @dataclass
-class SubString(Operation):
+class SubString(Instruction):
     ...
 
 
 @dataclass
-class Modulo(Operation):
+class Modulo(Instruction):
     ...
 
 
 @dataclass
-class StringLength(Operation):
+class StringLength(Instruction):
     ...
 
 
-@dataclass
-class Function:
-    name: str
-    arg_count: int
-    operations: List[Operation]
+def get_function_instructions(function: "Function") -> List[Instruction]:
+    # TODO
+    raise NotImplementedError

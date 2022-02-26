@@ -37,12 +37,12 @@ To enable syntax highlighting for vs code, enable the [Aaa language extension](.
 
 ### Aaa features
 - types: integers and booleans
-- integers and integer operations (`+`, `-`, `*`, `/`, `%`)
-- booleans and boolean operations (`and`, `or`, `not`)
-- stack operations (`drop`, `dup`, `swap`, `over`, `rot`)
+- integers and integer instructions (`+`, `-`, `*`, `/`, `%`)
+- booleans and boolean instructions (`and`, `or`, `not`)
+- stack instructions (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)
-- strings and string operations (`+`, `=`, `strlen`, `substr`)
+- strings and string instructions (`+`, `=`, `strlen`, `substr`)
 
 For upcoming features, see the [TODO](./TODO.md) file.
 

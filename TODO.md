@@ -29,6 +29,7 @@ Next development steps.
 - support shebang (`#!`)
 - userfriendly syntax errors
 - loops (`break`, `continue`)
+- return early (`return`)
 - assertions (`assert`)
 - debug tools (`breakpoint`)
 - static type checking

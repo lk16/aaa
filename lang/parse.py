@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Type, Union
 
 from lang.exceptions import EmptyParseTreeError
 from lang.grammar import REWRITE_RULES, ROOT_SYMBOL, SymbolType
+from lang.instructions import Instruction, get_function_instructions
 
 FunctionBodyItem = Union[
     "Branch",
@@ -168,6 +169,7 @@ class Function(AaaTreeNode):
     name: str
     arguments: List[str]
     body: FunctionBody
+    _instructions: Optional[List[Instruction]] = None
 
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "Function":
@@ -184,9 +186,11 @@ class Function(AaaTreeNode):
 
         return Function(name, arguments, body)
 
-    def get_operations(self) -> List[Operation]:
-        # TODO
-        raise NotImplementedError
+    def get_instructions(self) -> List[Instruction]:
+        if self._instructions is None:
+            self._instructions = get_function_instructions(self)
+
+        return self._instructions
 
 
 @dataclass
@@ -206,8 +210,6 @@ class File(AaaTreeNode):
 
 
 def parse(code: str) -> File:
-
-    # NOTE Tests call new_tokenize_generic() directly
     tree: Optional[Tree] = new_parse_generic(
         REWRITE_RULES, ROOT_SYMBOL, code, SymbolType
     )
