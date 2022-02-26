@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Type
 
 import pytest
 
@@ -6,7 +6,11 @@ from lang.parser.aaa import (
     KEYWORDS,
     OPERATOR_KEYWORDS,
     REWRITE_RULES,
+    AaaTreeNode,
+    BooleanLiteral,
     Branch,
+    IntegerLiteral,
+    StringLiteral,
     SymbolType,
     parse,
 )
@@ -369,7 +373,30 @@ def test_branch_parse_tree(
     assert len(branch.else_body.items) == expected_else_body_children
 
 
-# TODO test parsetree of branch
+# TODO fix
+@pytest.mark.skip()
+@pytest.mark.parametrize(
+    ["code", "expected_type"],
+    [
+        ("fn main begin 1 end", IntegerLiteral),
+        ("fn main begin true end", BooleanLiteral),
+        ('fn main begin "foo bar" end', StringLiteral),
+    ],
+)
+def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None:
+    file = parse(code)
+    assert len(file.functions) == 1
+    func_body = file.functions[0].body
+
+    assert len(func_body.items) == 1
+    identifier = func_body.items[0]
+
+    assert isinstance(identifier, expected_type)
+
+
+# TODO test values in parsetree of all 3 literal types
+
+
 # TODO test parsetree of identifier
 # TODO test parsetree of 3 literal types
 # TODO test parsetree of loop

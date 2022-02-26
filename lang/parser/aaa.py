@@ -222,7 +222,14 @@ class StringLiteral(AaaTreeNode):
 
     @classmethod
     def from_symboltree(cls, tree: SymbolTree, code: str) -> "StringLiteral":
-        raise NotImplementedError
+        assert tree.symbol_type == SymbolType.STRING_LITERAL
+        value = (
+            tree.value(code)[1:-1]
+            .replace("\\n", "\n")
+            .replace('\\"', '"')
+            .replace("\\\\", "\\")
+        )
+        return StringLiteral(value)
 
 
 @dataclass
