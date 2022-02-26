@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import IntEnum
 from typing import Dict, List, Optional, Type
 
@@ -135,12 +135,18 @@ class SymbolParser(Parser):
         self.rewrite_rules: Optional[Dict[IntEnum, Parser]] = None
 
     def parse(self, code: str, offset: int) -> SymbolTree:
+
         assert self.symbol_type
         assert self.rewrite_rules
 
         rewritten_expression = self.rewrite_rules[self.symbol_type]
         rewritten_expression.symbol_type = self.symbol_type
-        return rewritten_expression.parse(code, offset)
+        tree = rewritten_expression.parse(code, offset)
+
+        if tree.symbol_type is None:
+            tree = replace(tree, symbol_type=self.symbol_type)
+
+        return tree
 
 
 class LiteralParser(Parser):

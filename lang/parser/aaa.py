@@ -62,7 +62,6 @@ OPERATOR_KEYWORDS = [
     "and",
     "drop",
     "dup",
-    "false",
     "not",
     "or",
     "over",
@@ -70,7 +69,6 @@ OPERATOR_KEYWORDS = [
     "strlen",
     "substr",
     "swap",
-    "true",
 ]
 
 CONTROL_FLOW_KEYWORDS = [
@@ -82,7 +80,12 @@ CONTROL_FLOW_KEYWORDS = [
     "while",
 ]
 
-KEYWORDS = CONTROL_FLOW_KEYWORDS + OPERATOR_KEYWORDS
+LITERAL_KEYWORDS = [
+    "false",
+    "true",
+]
+
+KEYWORDS = CONTROL_FLOW_KEYWORDS + OPERATOR_KEYWORDS + LITERAL_KEYWORDS
 
 
 # NOTE A more readable grammar can be found in grammar.txt in the repo root.

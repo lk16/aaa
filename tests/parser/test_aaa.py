@@ -373,8 +373,6 @@ def test_branch_parse_tree(
     assert len(branch.else_body.items) == expected_else_body_children
 
 
-# TODO fix
-@pytest.mark.skip()
 @pytest.mark.parametrize(
     ["code", "expected_type"],
     [
