@@ -203,8 +203,7 @@ class Program:
                     file=sys.stderr,
                 )
 
-        if self.stack:
-            raise StackNotEmptyAtExit
+        self.call_stack.pop()
 
     def instruction_int_push(self, instruction: Instruction) -> None:
         assert isinstance(instruction, IntPush)
@@ -424,6 +423,7 @@ class Program:
 
     def instruction_call_function(self, instruction: Instruction) -> None:
         assert isinstance(instruction, CallFunction)
+        self.advance_instruction_pointer()
         self.call_function(instruction.func_name)
 
     def instruction_push_function_argument(self, instruction: Instruction) -> None:
@@ -431,3 +431,4 @@ class Program:
 
         arg_value = self.get_function_argument(instruction.arg_name)
         self.push(arg_value)
+        self.advance_instruction_pointer()
