@@ -28,6 +28,9 @@ Next development steps.
 - change `while ... end` to `while ... begin ... end`
 - change `if ... else ... end` to `if ... begin ... else ... end`
 
+### Function Instructions
+- add command to show instructions of all functions with `Program.list_function_instructions()`
+
 ### Later
 - support comments (`//`)
 - support shebang (`#!`)

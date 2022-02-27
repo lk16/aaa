@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Tuple, Type, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 from lang.exceptions import (
     StackNotEmptyAtExit,
@@ -111,6 +111,83 @@ class Program:
     def jump(self, offset: int) -> None:
         self.call_stack[-1].instruction_pointer = offset
 
+    def current_function(self) -> Function:
+        func_name = self.call_stack[-1].func_name
+        return self.functions[func_name]
+
+    def format_stack_item(self, item: StackItem) -> str:
+        if isinstance(item, bool):
+            if item:
+                return "true"
+            return "false"
+
+        if isinstance(item, int):
+            return str(item)
+
+        if isinstance(item, str):
+            item = item.replace("\n", "\\n").replace('"', '\\"')
+            return f'"{item}"'
+
+        raise NotADirectoryError
+
+    def format_str(self, string: str, max_length: Optional[int] = None) -> str:
+        string = string.replace("\n", "\\n")
+
+        if max_length is not None and len(string) > max_length:
+            string = string[: max_length - 1] + "…"
+
+        return string
+
+    def print_debug_info(self) -> None:
+        if not self.verbose:  # pragma: nocover
+            return
+
+        ip = self.get_instruction_pointer()
+        func = self.current_function()
+        instructions = get_instructions(func)
+
+        try:
+            instruction = instructions[ip].__repr__()
+        except IndexError:
+            instruction = "<returning>"
+
+        # prevent breaking layout
+
+        instruction = self.format_str(instruction, max_length=30)
+        func_name = self.format_str(func.name, max_length=15)
+
+        stack_str = " ".join(self.format_stack_item(item) for item in self.stack)
+        stack_str = self.format_str(stack_str, max_length=60)
+
+        print(
+            f"DEBUG | {func_name:>15} | IP: {ip:>3} | {instruction:>30} | Stack: {stack_str}",
+            file=sys.stderr,
+        )
+
+    def print_all_function_instructions(self) -> None:
+        # TODO Add function that calls this. This is currently unused.
+
+        if not self.verbose:  # pragma: nocover
+            return
+
+        for func in self.functions.values():
+            instructions = get_instructions(func)
+
+            func_name = self.format_str(func.name, max_length=15)
+
+            for ip, instr in enumerate(instructions):
+
+                instruction = self.format_str(instr.__repr__(), max_length=30)
+
+                print(
+                    f"DEBUG | {func_name:>15} | IP: {ip:>3} | {instruction:>30}",
+                    file=sys.stderr,
+                )
+
+            print(file=sys.stderr)
+
+        print("---\n", file=sys.stderr)
+
     def run(self) -> None:
         self.call_function("main")
 
@@ -128,18 +205,6 @@ class Program:
         self.call_stack.append(CallStackItem(func_name, 0, argument_values))
 
         instructions = get_instructions(function)
-
-        if self.verbose:  # pragma: nocover  # TODO make separate function
-            for ip, instruction in enumerate(instructions):
-                print(
-                    f"DEBUG | IP: {ip:>2} | {instruction.__repr__()}", file=sys.stderr
-                )
-
-            print(
-                f"\nDEBUG | {'':>25} | IP: {self.get_instruction_pointer():>2} | Stack: "
-                + " ".join(str(item) for item in self.stack),
-                file=sys.stderr,
-            )
 
         instruction_funcs: Dict[
             Type[Instruction], Callable[[Instruction], None]
@@ -180,6 +245,8 @@ class Program:
         }
 
         while True:
+            self.print_debug_info()
+
             instruction_pointer = self.get_instruction_pointer()
 
             if instruction_pointer >= len(instructions):
@@ -195,13 +262,6 @@ class Program:
                 raise UnhandledInstructionError(instruction) from e
 
             instrunction_func(instruction)
-
-            if self.verbose:  # pragma: nocover  # TODO make separate function
-                print(
-                    f"DEBUG | {instruction.__repr__():>25} | IP: {self.get_instruction_pointer():>2} | Stack: "
-                    + " ".join(str(item) for item in self.stack),
-                    file=sys.stderr,
-                )
 
         self.call_stack.pop()
 
