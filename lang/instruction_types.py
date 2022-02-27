@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -109,20 +108,18 @@ class Rot(Instruction):
 
 @dataclass
 class If(Instruction):
-    # Instruction to jump to if the condition is false.
-    # Initialization is done when we find a corresponding operation ("else" or "end") while parsing.
-    jump_if_false: Optional[int]
+    # Instruction to jump to if the if-condition is false.
+    jump_if_false: int
 
 
 @dataclass
 class Else(Instruction):
-    # Instruction to jump to if the condition is false.
-    # Initialization is done when we find corresponding "end" while parsing.
-    jump_end: Optional[int]
+    # Instruction to jump to if the if-condition was true (after executing the if-body).
+    jump_end: int
 
 
 @dataclass
-class End(Instruction):
+class End(Instruction):  # TODO rename to IfEnd?
     ...
 
 
@@ -139,8 +136,7 @@ class Print(Instruction):
 @dataclass
 class While(Instruction):
     # Instruction to jump to if the condition is false.
-    # Initialization is done when we find corresponding "end" while parsing.
-    jump_end: Optional[int]
+    jump_end: int
 
 
 @dataclass

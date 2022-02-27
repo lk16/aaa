@@ -105,9 +105,11 @@ def _get_instructions(  # TODO refactor into small handler functions
 
         body_instructions = _get_instructions(node.body, func_args, offset + 1)
 
+        end_offset = offset + 1 + len(body_instructions)
+
         loop_instructions: List[Instruction] = []
 
-        loop_instructions += [While(offset + len(body_instructions))]
+        loop_instructions += [While(end_offset)]
         loop_instructions += body_instructions
         loop_instructions += [WhileEnd(offset)]
 
@@ -149,7 +151,7 @@ def _get_instructions(  # TODO refactor into small handler functions
 
         for child in node.items:
             child_offset = offset + len(instructions)
-            instructions = _get_instructions(child, func_args, child_offset)
+            instructions += _get_instructions(child, func_args, child_offset)
 
         return instructions
 
