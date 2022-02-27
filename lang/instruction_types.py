@@ -166,3 +166,13 @@ class Modulo(Instruction):
 @dataclass
 class StringLength(Instruction):
     ...
+
+
+@dataclass
+class CallFunction(Instruction):
+    func_name: str
+
+
+@dataclass
+class PushFunctionArgument(Instruction):
+    arg_name: str

@@ -198,6 +198,13 @@ class File(AaaTreeNode):
 
         for child in tree.children[0].children:
             function = Function.from_tree(child.children[0], code)
+
+            # TODO check if arg names collide with name of this function or with eachother
+
+            if function.name in functions:
+                # TODO function name collision
+                raise NotImplementedError
+
             functions[function.name] = function
 
         return File(functions)
