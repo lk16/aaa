@@ -1,4 +1,4 @@
-from abc import abstractclassmethod
+from abc import abstractclassmethod, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
 from parser.generic import Tree, new_parse_generic
@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Type, Union
 
 from lang.exceptions import EmptyParseTreeError
 from lang.grammar import REWRITE_RULES, ROOT_SYMBOL, SymbolType
-from lang.instructions import Instruction, get_function_instructions
+from lang.instructions import Instruction
 
 FunctionBodyItem = Union[
     "Branch",
@@ -20,10 +20,13 @@ FunctionBodyItem = Union[
 ]
 
 
-@dataclass
 class AaaTreeNode:
     @abstractclassmethod
     def from_tree(cls, tree: Tree, code: str) -> "AaaTreeNode":
+        ...
+
+    @abstractmethod
+    def get_instructions(self) -> List[Instruction]:
         ...
 
 
@@ -36,6 +39,9 @@ class IntegerLiteral(AaaTreeNode):
         assert tree.symbol_type == SymbolType.INTEGER_LITERAL
         value = int(tree.value(code))
         return IntegerLiteral(value)
+
+    def get_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
 
 
 @dataclass
@@ -53,6 +59,9 @@ class StringLiteral(AaaTreeNode):
         )
         return StringLiteral(value)
 
+    def get_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
+
 
 @dataclass
 class BooleanLiteral(AaaTreeNode):
@@ -64,6 +73,9 @@ class BooleanLiteral(AaaTreeNode):
         value = tree.value(code) == "true"
         return BooleanLiteral(value)
 
+    def get_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
+
 
 @dataclass
 class Operation(AaaTreeNode):
@@ -74,6 +86,9 @@ class Operation(AaaTreeNode):
         assert tree.symbol_type == SymbolType.OPERATION
         operator = tree.value(code)
         return Operation(operator)
+
+    def get_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
 
 
 @dataclass
@@ -89,6 +104,9 @@ class Loop(AaaTreeNode):
 
         return Loop(loop_body)
 
+    def get_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
+
 
 @dataclass
 class Identifier(AaaTreeNode):
@@ -98,6 +116,9 @@ class Identifier(AaaTreeNode):
     def from_tree(cls, tree: Tree, code: str) -> "Identifier":
         name = tree.value(code)
         return Identifier(name)
+
+    def get_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
 
 
 @dataclass
@@ -125,6 +146,9 @@ class Branch(AaaTreeNode):
                 if_body = FunctionBody.from_tree(child.children[0], code)
 
         return Branch(if_body, else_body)
+
+    def get_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
 
 
 @dataclass
@@ -163,6 +187,9 @@ class FunctionBody(AaaTreeNode):
 
         return FunctionBody(items)
 
+    def get_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
+
 
 @dataclass
 class Function(AaaTreeNode):
@@ -188,25 +215,32 @@ class Function(AaaTreeNode):
 
     def get_instructions(self) -> List[Instruction]:
         if self._instructions is None:
-            self._instructions = get_function_instructions(self)
+            self._instructions = self._generate_instructions()
 
         return self._instructions
+
+    def _generate_instructions(self) -> List[Instruction]:
+        raise NotImplementedError
 
 
 @dataclass
 class File(AaaTreeNode):
-    functions: List[Function]
+    functions: Dict[str, Function]
 
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "File":
         assert tree.symbol_type == SymbolType.FILE
 
-        functions: List[Function] = []
+        functions: Dict[str, Function] = {}
 
         for child in tree.children[0].children:
-            functions.append(Function.from_tree(child.children[0], code))
+            function = Function.from_tree(child.children[0], code)
+            functions[function.name] = function
 
         return File(functions)
+
+    def get_instructions(self) -> List[Instruction]:  # pragma: nocover
+        raise NotImplementedError
 
 
 def parse(code: str) -> File:

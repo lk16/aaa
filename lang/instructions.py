@@ -1,8 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Optional
-
-if TYPE_CHECKING:
-    from lang.parse import Function
+from typing import Optional
 
 
 @dataclass
@@ -169,8 +166,3 @@ class Modulo(Instruction):
 @dataclass
 class StringLength(Instruction):
     ...
-
-
-def get_function_instructions(function: "Function") -> List[Instruction]:
-    # TODO
-    raise NotImplementedError

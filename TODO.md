@@ -28,6 +28,7 @@ Next development steps.
 - support comments (`//`)
 - support shebang (`#!`)
 - userfriendly syntax errors
+- multi-file programs (`import`)
 - loops (`break`, `continue`)
 - return early (`return`)
 - assertions (`assert`)

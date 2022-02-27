@@ -324,7 +324,7 @@ def test_parse_file(code: str, expected_ok: bool) -> None:
 
 
 @pytest.mark.parametrize(
-    ["code", "expected_function_names", "expected_arguments"],
+    ["code", "func_names", "expected_arguments"],
     [
         ("fn main begin end", ["main"], [[]]),
         ("fn main a b c begin end", ["main"], [["a", "b", "c"]]),
@@ -336,15 +336,14 @@ def test_parse_file(code: str, expected_ok: bool) -> None:
     ],
 )
 def test_file_parse_tree(
-    code: str, expected_function_names: List[str], expected_arguments: List[List[str]]
+    code: str, func_names: List[str], expected_arguments: List[List[str]]
 ) -> None:
     file = parse(code)
 
-    assert len(file.functions) == len(expected_function_names)
-    for func, expected_name, expected_args in zip(
-        file.functions, expected_function_names, expected_arguments
-    ):
-        assert func.name == expected_name
+    assert len(file.functions) == len(func_names)
+    for func_name, expected_args in zip(func_names, expected_arguments):
+        func = file.functions[func_name]
+        assert func.name == func_name
         assert func.arguments == expected_args
 
 
@@ -365,7 +364,7 @@ def test_branch_parse_tree(
 ) -> None:
     file = parse(code)
     assert len(file.functions) == 1
-    func_body = file.functions[0].body
+    func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
     branch = func_body.items[0]
@@ -386,7 +385,7 @@ def test_branch_parse_tree(
 def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None:
     file = parse(code)
     assert len(file.functions) == 1
-    func_body = file.functions[0].body
+    func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
     identifier = func_body.items[0]
@@ -404,7 +403,7 @@ def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None
 def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
     file = parse(code)
     assert len(file.functions) == 1
-    func_body = file.functions[0].body
+    func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
     bool_lit = func_body.items[0]
@@ -426,7 +425,7 @@ def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
 def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
     file = parse(code)
     assert len(file.functions) == 1
-    func_body = file.functions[0].body
+    func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
     int_lit = func_body.items[0]
@@ -447,7 +446,7 @@ def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
 def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
     file = parse(code)
     assert len(file.functions) == 1
-    func_body = file.functions[0].body
+    func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
     str_lit = func_body.items[0]
@@ -469,7 +468,7 @@ def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
 def test_identifier_parse_tree(code: str, expected_name: str) -> None:
     file = parse(code)
     assert len(file.functions) == 1
-    func_body = file.functions[0].body
+    func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
     identifier = func_body.items[0]
@@ -493,7 +492,7 @@ def test_identifier_parse_tree(code: str, expected_name: str) -> None:
 def test_loop_parse_tree(code: str, expected_loop_func_body_items: int) -> None:
     file = parse(code)
     assert len(file.functions) == 1
-    func_body = file.functions[0].body
+    func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
     loop = func_body.items[0]
@@ -514,7 +513,7 @@ def test_loop_parse_tree(code: str, expected_loop_func_body_items: int) -> None:
 def test_operation_parse_tree(code: str, expected_operator: str) -> None:
     file = parse(code)
     assert len(file.functions) == 1
-    func_body = file.functions[0].body
+    func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
     operation = func_body.items[0]
