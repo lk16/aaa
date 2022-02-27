@@ -88,7 +88,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
     SymbolType.WHILE: LiteralParser("while"),
     SymbolType.BOOLEAN_LITERAL: OrParser(LiteralParser("true"), LiteralParser("false")),
     SymbolType.INTEGER_LITERAL: RegexBasedParser("^[0-9]+"),
-    SymbolType.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*"'),
+    SymbolType.STRING_LITERAL: RegexBasedParser('^"([^\\\\]|\\\\("|n|\\\\))*?"'),
     SymbolType.IDENTIFIER: RegexBasedParser("^[a-z_]+", forbidden=KEYWORDS),
     SymbolType.LITERAL: OrParser(
         SymbolParser(SymbolType.BOOLEAN_LITERAL),

@@ -85,6 +85,24 @@ def test_parse_string_literal(code: str, expected_ok: bool) -> None:
         assert expected_ok
 
 
+def test_parse_string_non_greedy() -> None:
+    code = '"a" "b"'
+    tree = new_parse_generic(REWRITE_RULES, SymbolType.FUNCTION_BODY, code, SymbolType)
+    assert len(tree.children) == 2
+
+    assert tree.children[0].value(code) == '"a"'
+    assert tree.children[0].symbol_type == SymbolType.STRING_LITERAL
+
+    assert tree.children[1].children[0].children[0].value(code) == " "
+    assert tree.children[1].children[0].children[0].symbol_type == SymbolType.WHITESPACE
+
+    assert tree.children[1].children[0].children[1].value(code) == '"b"'
+    assert (
+        tree.children[1].children[0].children[1].symbol_type
+        == SymbolType.STRING_LITERAL
+    )
+
+
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [

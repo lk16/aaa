@@ -36,7 +36,7 @@ LOOP = WHILE WHITESPACE (FUNCTION_BODY WHITESPACE)? END
 
 OPERATOR = ("-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">=" | "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap")
 
-STRING_LITERAL = regex("([^\\]|\\("|n|\\))*")
+STRING_LITERAL = regex("([^\\]|\\("|n|\\))*?")
 
 WHILE = "while"
 
