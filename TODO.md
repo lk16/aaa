@@ -20,8 +20,9 @@ Next development steps.
 - ci
 - expressiveness
 
-### Jump instructions
-- `Jump` and `JumpIf`
+### Jumps
+- new instructions `Jump` and `JumpIf` which replace `If`, `Else`, `End`, `While` and `EndWhile`
+- loop jump keywords (`break`, `continue`)
 
 ### Be more consistent
 - change `while ... end` to `while ... begin ... end`
@@ -32,7 +33,6 @@ Next development steps.
 - support shebang (`#!`)
 - userfriendly syntax errors
 - multi-file programs (`import`)
-- loops (`break`, `continue`)
 - return early (`return`)
 - assertions (`assert`)
 - debug tools (`breakpoint`)

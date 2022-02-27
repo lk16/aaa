@@ -1,0 +1,7 @@
+fn main begin
+    "hello!\n" print_twice
+end
+
+fn print_twice begin
+    dup . .
+end

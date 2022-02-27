@@ -136,7 +136,7 @@ class Program:
                 )
 
             print(
-                f"\nDEBUG | {'':>25} | IP: {self.get_instruction_pointer:>2} | Stack: "
+                f"\nDEBUG | {'':>25} | IP: {self.get_instruction_pointer():>2} | Stack: "
                 + " ".join(str(item) for item in self.stack),
                 file=sys.stderr,
             )
@@ -198,7 +198,7 @@ class Program:
 
             if self.verbose:  # pragma: nocover  # TODO make separate function
                 print(
-                    f"DEBUG | {instruction.__repr__():>25} | IP: {self.get_instruction_pointer:>2} | Stack: "
+                    f"DEBUG | {instruction.__repr__():>25} | IP: {self.get_instruction_pointer():>2} | Stack: "
                     + " ".join(str(item) for item in self.stack),
                     file=sys.stderr,
                 )

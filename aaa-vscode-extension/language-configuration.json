@@ -10,6 +10,7 @@
     "autoClosingPairs": [
         ["if", " end"],
         ["while", " end"],
+        ["begin", " end"],
         ["\"", "\""],
     ],
     // symbols that can be used to surround a selection
