@@ -1,4 +1,4 @@
-from abc import abstractclassmethod, abstractmethod
+from abc import abstractclassmethod
 from dataclasses import dataclass
 from enum import IntEnum
 from parser.generic import Tree, new_parse_generic
@@ -7,12 +7,12 @@ from typing import Dict, List, Optional, Type, Union
 
 from lang.exceptions import EmptyParseTreeError
 from lang.grammar import REWRITE_RULES, ROOT_SYMBOL, SymbolType
-from lang.instructions import Instruction
+from lang.instruction_types import Instruction
 
 FunctionBodyItem = Union[
     "Branch",
     "Loop",
-    "Operation",
+    "Operator",
     "BooleanLiteral",
     "IntegerLiteral",
     "StringLiteral",
@@ -25,10 +25,6 @@ class AaaTreeNode:
     def from_tree(cls, tree: Tree, code: str) -> "AaaTreeNode":
         ...
 
-    @abstractmethod
-    def get_instructions(self) -> List[Instruction]:
-        ...
-
 
 @dataclass
 class IntegerLiteral(AaaTreeNode):
@@ -39,9 +35,6 @@ class IntegerLiteral(AaaTreeNode):
         assert tree.symbol_type == SymbolType.INTEGER_LITERAL
         value = int(tree.value(code))
         return IntegerLiteral(value)
-
-    def get_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
 
 
 @dataclass
@@ -59,9 +52,6 @@ class StringLiteral(AaaTreeNode):
         )
         return StringLiteral(value)
 
-    def get_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
-
 
 @dataclass
 class BooleanLiteral(AaaTreeNode):
@@ -73,22 +63,16 @@ class BooleanLiteral(AaaTreeNode):
         value = tree.value(code) == "true"
         return BooleanLiteral(value)
 
-    def get_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
-
 
 @dataclass
-class Operation(AaaTreeNode):
-    operator: str
+class Operator(AaaTreeNode):
+    value: str
 
     @classmethod
-    def from_tree(cls, tree: Tree, code: str) -> "Operation":
-        assert tree.symbol_type == SymbolType.OPERATION
+    def from_tree(cls, tree: Tree, code: str) -> "Operator":
+        assert tree.symbol_type == SymbolType.OPERATOR
         operator = tree.value(code)
-        return Operation(operator)
-
-    def get_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
+        return Operator(operator)
 
 
 @dataclass
@@ -104,9 +88,6 @@ class Loop(AaaTreeNode):
 
         return Loop(loop_body)
 
-    def get_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
-
 
 @dataclass
 class Identifier(AaaTreeNode):
@@ -116,9 +97,6 @@ class Identifier(AaaTreeNode):
     def from_tree(cls, tree: Tree, code: str) -> "Identifier":
         name = tree.value(code)
         return Identifier(name)
-
-    def get_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
 
 
 @dataclass
@@ -147,9 +125,6 @@ class Branch(AaaTreeNode):
 
         return Branch(if_body, else_body)
 
-    def get_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
-
 
 @dataclass
 class FunctionBody(AaaTreeNode):
@@ -165,7 +140,7 @@ class FunctionBody(AaaTreeNode):
             SymbolType.IDENTIFIER: Identifier,
             SymbolType.INTEGER_LITERAL: IntegerLiteral,
             SymbolType.LOOP: Loop,
-            SymbolType.OPERATION: Operation,
+            SymbolType.OPERATOR: Operator,
             SymbolType.STRING_LITERAL: StringLiteral,
         }
 
@@ -186,9 +161,6 @@ class FunctionBody(AaaTreeNode):
             items.append(aaa_tree_node.from_tree(child, code))
 
         return FunctionBody(items)
-
-    def get_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
 
 
 @dataclass
@@ -213,15 +185,6 @@ class Function(AaaTreeNode):
 
         return Function(name, arguments, body)
 
-    def get_instructions(self) -> List[Instruction]:
-        if self._instructions is None:
-            self._instructions = self._generate_instructions()
-
-        return self._instructions
-
-    def _generate_instructions(self) -> List[Instruction]:
-        raise NotImplementedError
-
 
 @dataclass
 class File(AaaTreeNode):
@@ -238,9 +201,6 @@ class File(AaaTreeNode):
             functions[function.name] = function
 
         return File(functions)
-
-    def get_instructions(self) -> List[Instruction]:  # pragma: nocover
-        raise NotImplementedError
 
 
 def parse(code: str) -> File:

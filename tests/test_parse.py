@@ -12,7 +12,7 @@ from lang.parse import (
     Identifier,
     IntegerLiteral,
     Loop,
-    Operation,
+    Operator,
     StringLiteral,
     SymbolType,
     parse,
@@ -148,9 +148,9 @@ def test_parse_identifier(code: str, expected_ok: bool) -> None:
     ]
     + [(op, True) for op in OPERATOR_KEYWORDS],
 )
-def test_parse_operation(code: str, expected_ok: bool) -> None:
+def test_parse_operator(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.OPERATION, code, SymbolType)
+        new_parse_generic(REWRITE_RULES, SymbolType.OPERATOR, code, SymbolType)
     except ParseError:
         assert not expected_ok
     else:
@@ -510,13 +510,13 @@ def test_loop_parse_tree(code: str, expected_loop_func_body_items: int) -> None:
         ("fn main begin over end", "over"),
     ],
 )
-def test_operation_parse_tree(code: str, expected_operator: str) -> None:
+def test_operator_parse_tree(code: str, expected_operator: str) -> None:
     file = parse(code)
     assert len(file.functions) == 1
     func_body = file.functions["main"].body
 
     assert len(func_body.items) == 1
-    operation = func_body.items[0]
+    operator = func_body.items[0]
 
-    assert isinstance(operation, Operation)
-    assert operation.operator == expected_operator
+    assert isinstance(operator, Operator)
+    assert operator.value == expected_operator

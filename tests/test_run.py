@@ -10,7 +10,7 @@ from lang.exceptions import (
     UnexpectedType,
     UnhandledInstructionError,
 )
-from lang.instructions import (
+from lang.instruction_types import (
     And,
     BoolPush,
     Divide,

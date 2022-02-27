@@ -7,7 +7,7 @@ from lang.exceptions import (
     UnexpectedType,
     UnhandledInstructionError,
 )
-from lang.instructions import (
+from lang.instruction_types import (
     And,
     BoolPush,
     CharNewLinePrint,
@@ -41,6 +41,7 @@ from lang.instructions import (
     While,
     WhileEnd,
 )
+from lang.instructions import get_instructions
 from lang.parse import Function
 
 StackItem = Union[int, bool, str]
@@ -95,7 +96,7 @@ class Program:
         # TODO can this cause a KeyError?
         function = self.functions[func_name]
 
-        instructions = function.get_instructions()
+        instructions = get_instructions(function)
 
         # TODO deal with function arguments
 

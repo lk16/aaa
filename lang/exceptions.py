@@ -1,4 +1,4 @@
-from lang.instructions import Instruction
+from lang.instruction_types import Instruction
 
 
 class ParseError(Exception):
@@ -6,9 +6,9 @@ class ParseError(Exception):
 
 
 class InvalidBlockStackValue(ParseError):
-    def __init__(self, operation: Instruction):  # pragma: nocover
+    def __init__(self, instruction: Instruction):  # pragma: nocover
         super().__init__(
-            f"Invalid block stack value, it has type {type(operation).__name__}"
+            f"Invalid block stack value, it has type {type(instruction).__name__}"
         )
 
 

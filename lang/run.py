@@ -1,6 +1,6 @@
 from typing import List
 
-from lang.instructions import Instruction
+from lang.instruction_types import Instruction
 from lang.program import Program
 
 

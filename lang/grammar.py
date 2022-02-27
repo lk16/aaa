@@ -23,7 +23,7 @@ class SymbolType(IntEnum):
     INTEGER_LITERAL = auto()
     LITERAL = auto()
     LOOP = auto()
-    OPERATION = auto()
+    OPERATOR = auto()
     STRING_LITERAL = auto()
     WHITESPACE = auto()
     BEGIN = auto()
@@ -95,7 +95,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
         SymbolParser(SymbolType.INTEGER_LITERAL),
         SymbolParser(SymbolType.STRING_LITERAL),
     ),
-    SymbolType.OPERATION: OrParser(*[LiteralParser(op) for op in OPERATOR_KEYWORDS]),
+    SymbolType.OPERATOR: OrParser(*[LiteralParser(op) for op in OPERATOR_KEYWORDS]),
     SymbolType.WHITESPACE: RegexBasedParser("^([ \\n]|$)+"),
     SymbolType.BRANCH: ConcatenationParser(
         SymbolParser(SymbolType.IF),
@@ -134,7 +134,7 @@ REWRITE_RULES: Dict[IntEnum, Parser] = {
     SymbolType.FUNCTION_BODY_ITEM: OrParser(
         SymbolParser(SymbolType.BRANCH),
         SymbolParser(SymbolType.LOOP),
-        SymbolParser(SymbolType.OPERATION),
+        SymbolParser(SymbolType.OPERATOR),
         SymbolParser(SymbolType.IDENTIFIER),
         SymbolParser(SymbolType.LITERAL),
     ),
