@@ -114,6 +114,9 @@ class Program:
     def run(self) -> None:
         self.call_function("main")
 
+        if self.stack:
+            raise StackNotEmptyAtExit
+
     def call_function(self, func_name: str) -> None:
         # TODO deal with KeyError here
         function = self.functions[func_name]
