@@ -20,6 +20,9 @@ Next development steps.
 - ci
 - expressiveness
 
+### Jump instructions
+- `Jump` and `JumpIf`
+
 ### Be more consistent
 - change `while ... end` to `while ... begin ... end`
 - change `if ... else ... end` to `if ... begin ... else ... end`

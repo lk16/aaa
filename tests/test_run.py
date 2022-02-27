@@ -52,7 +52,7 @@ def run_instructions(instructions: List[Instruction]) -> None:
     main_function = Function("main", [], FunctionBody([]), instructions)
     functions = {"main": main_function}
     program = Program(functions)
-    program.run(verbose=False)
+    program.run()
 
 
 @pytest.mark.parametrize(

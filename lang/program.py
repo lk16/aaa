@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from typing import Callable, Dict, List, Tuple, Type, Union
 
 from lang.exceptions import (
@@ -10,6 +11,7 @@ from lang.exceptions import (
 from lang.instruction_types import (
     And,
     BoolPush,
+    CallFunction,
     CharNewLinePrint,
     Divide,
     Drop,
@@ -33,6 +35,7 @@ from lang.instruction_types import (
     Over,
     Plus,
     Print,
+    PushFunctionArgument,
     Rot,
     StringLength,
     StringPush,
@@ -47,11 +50,19 @@ from lang.parse import Function
 StackItem = Union[int, bool, str]
 
 
+@dataclass
+class CallStackItem:
+    func_name: str
+    instruction_pointer: int
+    argument_values: Dict[str, StackItem]
+
+
 class Program:
-    def __init__(self, functions: Dict[str, Function]) -> None:
+    def __init__(self, functions: Dict[str, Function], verbose: bool = False) -> None:
         self.functions = functions
         self.stack: List[StackItem] = []
-        self.instruction_pointer = 0
+        self.call_stack: List[CallStackItem] = []
+        self.verbose = verbose
 
     def top_untyped(self) -> StackItem:
         try:
@@ -88,34 +99,52 @@ class Program:
     def pop_two(self, expected_type: type) -> Tuple[StackItem, StackItem]:
         return self.pop(expected_type), self.pop(expected_type)
 
-    def run(self, verbose: bool) -> None:
-        self.run_function("main", verbose)
+    def get_function_argument(self, arg_name: str) -> StackItem:
+        return self.call_stack[-1].argument_values[arg_name]
 
-    def run_function(self, func_name: str, verbose: bool) -> None:
+    def get_instruction_pointer(self) -> int:
+        return self.call_stack[-1].instruction_pointer
 
-        # TODO can this cause a KeyError?
+    def advance_instruction_pointer(self) -> None:
+        self.call_stack[-1].instruction_pointer += 1
+
+    def jump(self, offset: int) -> None:
+        self.call_stack[-1].instruction_pointer = offset
+
+    def run(self) -> None:
+        self.call_function("main")
+
+    def call_function(self, func_name: str) -> None:
+        # TODO deal with KeyError here
         function = self.functions[func_name]
+
+        argument_values: Dict[str, StackItem] = {
+            arg_name: self.top_untyped() for arg_name in reversed(function.arguments)
+        }
+
+        self.call_stack.append(CallStackItem(func_name, 0, argument_values))
 
         instructions = get_instructions(function)
 
-        # TODO deal with function arguments
-
-        if verbose:  # pragma: nocover
+        if self.verbose:  # pragma: nocover  # TODO make separate function
             for ip, instruction in enumerate(instructions):
                 print(
                     f"DEBUG | IP: {ip:>2} | {instruction.__repr__()}", file=sys.stderr
                 )
 
             print(
-                f"\nDEBUG | {'':>25} | IP: {self.instruction_pointer:>2} | Stack: "
+                f"\nDEBUG | {'':>25} | IP: {self.get_instruction_pointer:>2} | Stack: "
                 + " ".join(str(item) for item in self.stack),
                 file=sys.stderr,
             )
 
-        instruction_funcs: Dict[Type[Instruction], Callable[[Instruction], None]] = {
+        instruction_funcs: Dict[
+            Type[Instruction], Callable[[Instruction], None]
+        ] = {  # TODO move out of this function
             And: self.instruction_and,
             BoolPush: self.instruction_boolPush,
             CharNewLinePrint: self.instruction_char_newline_print,
+            CallFunction: self.instruction_call_function,
             Divide: self.instruction_divide,
             Drop: self.instruction_drop,
             Dup: self.instruction_dup,
@@ -135,6 +164,7 @@ class Program:
             Not: self.instruction_not,
             Or: self.instruction_or,
             Over: self.instruction_over,
+            PushFunctionArgument: self.instruction_push_function_argument,
             Plus: self.instruction_plus,
             Print: self.instruction_print,
             Rot: self.instruction_rot,
@@ -146,10 +176,14 @@ class Program:
             WhileEnd: self.instruction_while_end,
         }
 
-        while self.instruction_pointer < len(instructions):
+        while True:
+            instruction_pointer = self.get_instruction_pointer()
+
+            if instruction_pointer >= len(instructions):
+                break
 
             # Find out what the next instruction is
-            instruction = instructions[self.instruction_pointer]
+            instruction = instructions[instruction_pointer]
 
             # Excecute the instruction
             try:
@@ -159,9 +193,9 @@ class Program:
 
             instrunction_func(instruction)
 
-            if verbose:  # pragma: nocover
+            if self.verbose:  # pragma: nocover  # TODO make separate function
                 print(
-                    f"DEBUG | {instruction.__repr__():>25} | IP: {self.instruction_pointer:>2} | Stack: "
+                    f"DEBUG | {instruction.__repr__():>25} | IP: {self.get_instruction_pointer:>2} | Stack: "
                     + " ".join(str(item) for item in self.stack),
                     file=sys.stderr,
                 )
@@ -172,7 +206,7 @@ class Program:
     def instruction_int_push(self, instruction: Instruction) -> None:
         assert isinstance(instruction, IntPush)
         self.push(instruction.value)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_plus(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Plus)
@@ -182,54 +216,54 @@ class Program:
         self.check_type(y, [type(x)])
 
         self.push(y + x)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_minus(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Minus)
         x, y = self.pop_two(int)
         self.push(y - x)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_multiply(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Multiply)
         x, y = self.pop_two(int)
         self.push(x * y)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_divide(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Divide)
         x, y = self.pop_two(int)
         self.push(y // x)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_modulo(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Modulo)
         x, y = self.pop_two(int)
         self.push(y % x)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_boolPush(self, instruction: Instruction) -> None:
         assert isinstance(instruction, BoolPush)
         self.push(instruction.value)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_and(self, instruction: Instruction) -> None:
         assert isinstance(instruction, And)
         x, y = self.pop_two(bool)
         self.push(x and y)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_or(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Or)
         x, y = self.pop_two(bool)
         self.push(x or y)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_not(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Not)
         x = self.pop(bool)
         self.push(not x)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_equals(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Equals)
@@ -239,48 +273,48 @@ class Program:
         self.check_type(y, [type(x)])
 
         self.push(x == y)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_int_less_than(self, instruction: Instruction) -> None:
         assert isinstance(instruction, IntLessThan)
         x, y = self.pop_two(int)
         self.push(y < x)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_int_less_equals(self, instruction: Instruction) -> None:
         assert isinstance(instruction, IntLessEquals)
         x, y = self.pop_two(int)
         self.push(y <= x)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_int_greater_than(self, instruction: Instruction) -> None:
         assert isinstance(instruction, IntGreaterThan)
         x, y = self.pop_two(int)
         self.push(y > x)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_int_greater_equals(self, instruction: Instruction) -> None:
         assert isinstance(instruction, IntGreaterEquals)
         x, y = self.pop_two(int)
         self.push(y >= x)  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_int_not_equal(self, instruction: Instruction) -> None:
         assert isinstance(instruction, IntNotEqual)
         x, y = self.pop_two(int)
         self.push(y != x)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_drop(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Drop)
         self.pop_untyped()
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_dup(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Dup)
         x = self.top_untyped()
         self.push(x)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_swap(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Swap)
@@ -288,7 +322,7 @@ class Program:
         y = self.pop_untyped()
         self.push(x)
         self.push(y)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_over(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Over)
@@ -296,7 +330,7 @@ class Program:
         y = self.top_untyped()
         self.push(x)
         self.push(y)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_rot(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Rot)
@@ -306,36 +340,34 @@ class Program:
         self.push(y)
         self.push(x)
         self.push(z)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_if(self, instruction: Instruction) -> None:
         assert isinstance(instruction, If)
         x = self.pop(bool)
 
         if not x:
-            assert (
-                instruction.jump_if_false is not None
-            )  # This is checked while parsing
-            self.instruction_pointer = instruction.jump_if_false
+            self.jump(instruction.jump_if_false)
 
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_end(self, instruction: Instruction) -> None:
         assert isinstance(instruction, End)
         # End of block doesn't do anything
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_else(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Else)
-        assert instruction.jump_end is not None  # This is checked while parsing
 
         # Jump beyond the else instruction
-        self.instruction_pointer = instruction.jump_end + 1
+        self.jump(
+            instruction.jump_end + 1
+        )  # TODO move +1 part to instruction generator
 
     def instruction_char_newline_print(self, instruction: Instruction) -> None:
         assert isinstance(instruction, CharNewLinePrint)
         print()  # Just print a newline
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_print(self, instruction: Instruction) -> None:
         assert isinstance(instruction, Print)
@@ -348,26 +380,25 @@ class Program:
         else:
             print(x, end="")
 
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_while(self, instruction: Instruction) -> None:
         assert isinstance(instruction, While)
         x = self.pop(bool)
 
         if not x:
-            assert instruction.jump_end is not None  # This is checked while parsing
-            self.instruction_pointer = instruction.jump_end
+            self.jump(instruction.jump_end)
 
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_while_end(self, instruction: Instruction) -> None:
         assert isinstance(instruction, WhileEnd)
-        self.instruction_pointer = instruction.jump_start
+        self.jump(instruction.jump_start)
 
     def instruction_string_push(self, instruction: Instruction) -> None:
         assert isinstance(instruction, StringPush)
         self.push(instruction.value)
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_substring(self, instruction: Instruction) -> None:
         assert isinstance(instruction, SubString)
@@ -380,10 +411,20 @@ class Program:
         else:
             self.push(string[start:end])
 
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
 
     def instruction_string_length(self, instruction: Instruction) -> None:
         assert isinstance(instruction, StringLength)
         x = self.pop(str)
         self.push(len(x))  # type: ignore
-        self.instruction_pointer += 1
+        self.advance_instruction_pointer()
+
+    def instruction_call_function(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, CallFunction)
+        self.call_function(instruction.func_name)
+
+    def instruction_push_function_argument(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, PushFunctionArgument)
+
+        arg_value = self.get_function_argument(instruction.arg_name)
+        self.push(arg_value)

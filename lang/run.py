@@ -14,8 +14,8 @@ def run_code(file_path: str, code: str, verbose: bool = False) -> None:
     _ = file_path
 
     parsed_file = parse(code)
-    program = Program(parsed_file.functions)
-    program.run(verbose=verbose)
+    program = Program(parsed_file.functions, verbose)
+    program.run()
 
 
 def run_code_as_main(main_body_code: str, verbose: bool = False) -> None:
