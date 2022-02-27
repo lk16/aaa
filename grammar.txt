@@ -6,7 +6,7 @@
 
 BEGIN = "begin"
 
-BOOLEAN_LITERAL = ("true" | "false")
+BOOLEAN_LITERAL = "true" | "false"
 
 BRANCH = IF (WHITESPACE FUNCTION_BODY)? WHITESPACE (ELSE (WHITESPACE FUNCTION_BODY)? WHITESPACE)? END
 
@@ -20,7 +20,7 @@ FN = "fn"
 
 FUNCTION_BODY = FUNCTION_BODY_ITEM (WHITESPACE FUNCTION_BODY_ITEM)*
 
-FUNCTION_BODY_ITEM = (BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL)
+FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL
 
 FUNCTION_DEFINITION = FN WHITESPACE (IDENTIFIER WHITESPACE)+ BEGIN WHITESPACE (FUNCTION_BODY WHITESPACE)? END
 
@@ -30,11 +30,11 @@ IF = "if"
 
 INTEGER_LITERAL = regex([0-9]+)
 
-LITERAL = (BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL)
+LITERAL = BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL
 
 LOOP = WHILE WHITESPACE (FUNCTION_BODY WHITESPACE)? END
 
-OPERATOR = ("-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">=" | "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap")
+OPERATOR = "-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">=" | "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap"
 
 STRING_LITERAL = regex("([^\\]|\\("|n|\\))*?")
 
