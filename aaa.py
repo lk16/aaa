@@ -8,45 +8,40 @@ from typing import Any, Callable, Dict, List, Optional
 
 from lang.grammar import REWRITE_RULES, ROOT_SYMBOL
 from lang.instructions import get_instructions
-from lang.parse import parse as new_parse  # TODO remove alias
+from lang.parse import parse as new_parse
+from lang.run import run_code_as_main, run_file  # TODO remove alias
 
 GRAMMAR_FILE_PATH = Path("grammar.txt")
 
 
-def run_(filename: str, verbose_flag: Optional[str] = None) -> None:
+def run(file_path: str, verbose_flag: Optional[str] = None) -> None:
 
     verbose = False
 
-    if verbose_flag:
+    if verbose_flag:  # TODO allow any order of flags and commands
         if verbose_flag == "-v":
             verbose = True
         else:
-            raise ArgParseError("Unexpected option for cmd.")
+            raise ArgParseError("Unexpected option for run.")
 
-    with open(filename, "r") as f:
-        code = f.read()
-
-    # TODO
-    _ = code
-    _ = verbose
-    raise NotImplementedError
+    try:
+        run_file(file_path, verbose)
+    except OSError:
+        print(f'Could not open or read "{file_path}"', file=sys.stderr)
+        exit(1)
 
 
 def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
 
     verbose = False
 
-    if verbose_flag:
+    if verbose_flag:  # TODO allow any order of flags and commands
         if verbose_flag == "-v":
             verbose = True
         else:
             raise ArgParseError("Unexpected option for cmd.")
 
-    code = "fn main begin\n" + code + "\nend"
-
-    # TODO
-    _ = verbose
-    raise NotImplementedError
+    run_code_as_main(code, verbose)
 
 
 def runtests(*args: Any) -> None:
@@ -106,9 +101,10 @@ def generate_grammar_file(*args: Any) -> None:
 COMMANDS: Dict[str, Callable[..., None]] = {
     "cmd": cmd,
     "generate-grammar-file": generate_grammar_file,
-    "run": run_,
+    "run": run,
     "runtests": runtests,
     "try-instruction-generator": try_instruction_generator,
+    # TODO add repl() command
 }
 
 
@@ -121,7 +117,7 @@ def show_usage(argv: List[str], error_message: str) -> None:
         f"Argument parsing failed: {error_message}\n\n"
         + "Available commands:\n"
         + f"{argv[0]} cmd CODE <-v>\n"
-        + f"{argv[0]} run FILE <-v>\n"
+        + f"{argv[0]} run FILE_PATH <-v>\n"
         + f"{argv[0]} generate-grammar-file\n"
         + f"{argv[0]} runtests\n"
         + f"{argv[0]} try-instruction-generator\n"

@@ -59,7 +59,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "and": And(),
     "or": Or(),
     "not": Not(),
-    "equals": Equals(),
+    "=": Equals(),
     ">": IntGreaterThan(),
     ">=": IntGreaterEquals(),
     "<": IntLessThan(),
@@ -156,7 +156,10 @@ def _get_instructions(  # TODO refactor into small handler functions
         return instructions
 
     elif isinstance(node, Function):
-        return _get_instructions(node.body, func_args, offset)
+        if node._instructions is None:
+            node._instructions = _get_instructions(node.body, func_args, offset)
+
+        return node._instructions
 
     elif isinstance(node, File):  # pragma: nocover
         # A file has no instructions.

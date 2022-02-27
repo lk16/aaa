@@ -34,7 +34,9 @@ from lang.instruction_types import (
     Rot,
     Swap,
 )
-from lang.run import run_as_main
+from lang.parse import Function, FunctionBody
+from lang.program import Program
+from lang.run import run_code_as_main
 
 
 @dataclass
@@ -42,7 +44,17 @@ class UnhandledInstruction(Instruction):
     ...
 
 
-@pytest.mark.skip  # TODO fix
+def run_instructions(instructions: List[Instruction]) -> None:
+    """
+    This is a helper function for tests.
+    """
+
+    main_function = Function("main", [], FunctionBody([]), instructions)
+    functions = {"main": main_function}
+    program = Program(functions)
+    program.run(verbose=False)
+
+
 @pytest.mark.parametrize(
     ["instructions", "expected_exception"],
     [
@@ -54,18 +66,16 @@ def test_run_program_fails(
     instructions: List[Instruction], expected_exception: Type[Exception]
 ) -> None:
     with pytest.raises(expected_exception):
-        run_as_main(instructions)
+        run_instructions(instructions)
 
 
-@pytest.mark.skip  # TODO fix
 def test_run_program_unexpected_type() -> None:
     instructions: List[Instruction] = [BoolPush(True), IntPush(3), Plus()]
 
     with pytest.raises(UnexpectedType):
-        run_as_main(instructions)
+        run_instructions(instructions)
 
 
-@pytest.mark.skip  # TODO fix
 @pytest.mark.parametrize(
     ["instructions"],
     [
@@ -108,10 +118,9 @@ def test_run_program_unexpected_type() -> None:
 )
 def test_run_program_stack_underflow(instructions: List[Instruction]) -> None:
     with pytest.raises(StackUnderflow):
-        run_as_main(instructions)
+        run_instructions(instructions)
 
 
-@pytest.mark.skip  # TODO fix
 @pytest.mark.parametrize(
     ["code", "expected_output"],
     [
@@ -180,7 +189,7 @@ def test_run_program_as_main_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
 
-    # TODO run code as main
+    run_code_as_main(code)
 
     stdout, stderr = capfd.readouterr()
     assert expected_output == stdout
