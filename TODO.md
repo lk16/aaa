@@ -2,7 +2,7 @@
 
 Next development steps.
 
-### Proper Parsing (in [parsing](https://github.com/lk16/parser) repo)
+### Proper Parsing (in [parser](https://github.com/lk16/parser) repo)
 - check human error output
 - improve test coverage
 - check naming consistency

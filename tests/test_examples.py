@@ -64,11 +64,6 @@ EXPECTED_EXAMPLE_OUTPUT = {
 def test_example_commands(
     example_file_path: Path, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
-
-    if str(example_file_path) == "examples/fizzbuzz.aaa":
-        # TODO we don't handle comments in this file right now
-        pytest.skip()
-
     main(["./aaa.py", "run", str(example_file_path)])
 
     stdout, _ = capfd.readouterr()
