@@ -20,8 +20,7 @@ Next development steps.
 - ci
 - expressiveness
 
-### Jumps
-- new instructions `Jump` and `JumpIf` which replace `If`, `Else`, `End`, `While` and `EndWhile`
+### More umps
 - loop jump keywords (`break`, `continue`)
 
 ### Be more consistent

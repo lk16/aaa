@@ -11,7 +11,7 @@ class IntPush(Instruction):
     value: int
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}('{self.value}')"
+        return f"{type(self).__name__}({self.value})"
 
 
 @dataclass
@@ -39,7 +39,8 @@ class BoolPush(Instruction):
     value: bool
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}('{self.value}')"
+        value = "true" if self.value else "false"
+        return f"{type(self).__name__}({value})"
 
 
 @dataclass
@@ -113,29 +114,6 @@ class Rot(Instruction):
 
 
 @dataclass
-class If(Instruction):
-    # Instruction to jump to if the if-condition is false.
-    jump_if_false: int
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}('{self.jump_if_false}')"
-
-
-@dataclass
-class Else(Instruction):
-    # Instruction to jump to if the if-condition was true (after executing the if-body).
-    jump_end: int
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}('{self.jump_end}')"
-
-
-@dataclass
-class End(Instruction):  # TODO rename to IfEnd?
-    ...
-
-
-@dataclass
 class CharNewLinePrint(Instruction):
     ...
 
@@ -146,28 +124,11 @@ class Print(Instruction):
 
 
 @dataclass
-class While(Instruction):
-    # Instruction to jump to if the condition is false.
-    jump_end: int
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}('{self.jump_end}')"
-
-
-@dataclass
-class WhileEnd(Instruction):
-    jump_start: int
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}('{self.jump_start}')"
-
-
-@dataclass
 class StringPush(Instruction):
     value: str
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}('{self.value}')"
+        return f'{type(self).__name__}("{self.value}")'
 
 
 @dataclass
@@ -196,3 +157,27 @@ class CallFunction(Instruction):
 @dataclass
 class PushFunctionArgument(Instruction):
     arg_name: str
+
+
+@dataclass
+class Jump(Instruction):
+    instruction_offset: int
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.instruction_offset})"
+
+
+@dataclass
+class JumpIf(Instruction):
+    instruction_offset: int
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.instruction_offset})"
+
+
+@dataclass
+class JumpIfNot(Instruction):
+    instruction_offset: int
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.instruction_offset})"

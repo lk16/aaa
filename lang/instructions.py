@@ -8,10 +8,7 @@ from lang.instruction_types import (
     Divide,
     Drop,
     Dup,
-    Else,
-    End,
     Equals,
-    If,
     Instruction,
     IntGreaterEquals,
     IntGreaterThan,
@@ -19,6 +16,9 @@ from lang.instruction_types import (
     IntLessThan,
     IntNotEqual,
     IntPush,
+    Jump,
+    JumpIf,
+    JumpIfNot,
     Minus,
     Modulo,
     Multiply,
@@ -33,8 +33,6 @@ from lang.instruction_types import (
     StringPush,
     SubString,
     Swap,
-    While,
-    WhileEnd,
 )
 from lang.parse import (
     AaaTreeNode,
@@ -146,13 +144,13 @@ class InstructionGenerator:
 
         body_instructions = self._generate_instructions(node.body, offset + 1)
 
-        end_offset = offset + 1 + len(body_instructions)
+        beyond_loop_end = offset + 2 + len(body_instructions)
 
         loop_instructions: List[Instruction] = []
 
-        loop_instructions += [While(end_offset)]
+        loop_instructions += [JumpIfNot(beyond_loop_end)]
         loop_instructions += body_instructions
-        loop_instructions += [WhileEnd(offset)]
+        loop_instructions += [JumpIf(offset + 1)]
 
         return loop_instructions
 
@@ -175,23 +173,50 @@ class InstructionGenerator:
     ) -> List[Instruction]:
         assert isinstance(node, Branch)
 
-        # TODO do something smarter when if_body or else_body are empty
-
-        if_instructions = self._generate_instructions(node.if_body, offset + 1)
-
-        else_offset = offset + 1 + len(if_instructions)
-        else_instructions = self._generate_instructions(node.else_body, else_offset + 1)
-        end_offset = else_offset + 1 + len(else_instructions)
-
         branch_instructions: List[Instruction] = []
 
-        branch_instructions += [If(else_offset)]
-        branch_instructions += if_instructions
-        branch_instructions += [Else(end_offset)]
-        branch_instructions += else_instructions
-        branch_instructions += [End()]
+        if len(node.if_body.items) != 0:
+            if len(node.else_body.items) == 0:
+                # Non-empty if, empty else: we only need one jump
+                if_instructions = self._generate_instructions(node.if_body, offset + 1)
+                if_fail_jump = offset + 1 + len(if_instructions)
 
-        return branch_instructions
+                branch_instructions = [JumpIfNot(if_fail_jump)]
+                branch_instructions += if_instructions
+                return branch_instructions
+
+            else:
+                if_instructions = self._generate_instructions(node.if_body, offset + 1)
+                if_fail_jump = offset + 2 + len(if_instructions)
+                else_instructions = self._generate_instructions(
+                    node.else_body, offset + len(if_instructions) + 2
+                )
+                if_end_jump = if_fail_jump + len(else_instructions)
+
+                branch_instructions = [JumpIfNot(if_fail_jump)]
+                branch_instructions += if_instructions
+                branch_instructions += [Jump(if_end_jump)]
+                branch_instructions += else_instructions
+                return branch_instructions
+
+        else:
+            if len(node.else_body.items) == 0:
+                # Empty if-else: consume Jump boolean
+                return [Drop()]
+
+            else:
+                # Empty if, non-empty else: we only need one jump
+                else_instructions = self._generate_instructions(
+                    node.else_body, offset + 1
+                )
+                else_fail_jump = offset + 1 + len(else_instructions)
+
+                branch_instructions = [JumpIf(else_fail_jump)]
+                branch_instructions += else_instructions
+                return branch_instructions
+
+        # Unreachable
+        raise NotImplementedError
 
     def instructions_for_function_body(
         self, node: AaaTreeNode, offset: int

@@ -16,10 +16,7 @@ from lang.instruction_types import (
     Divide,
     Drop,
     Dup,
-    Else,
-    End,
     Equals,
-    If,
     Instruction,
     IntGreaterEquals,
     IntGreaterThan,
@@ -27,6 +24,9 @@ from lang.instruction_types import (
     IntLessThan,
     IntNotEqual,
     IntPush,
+    Jump,
+    JumpIf,
+    JumpIfNot,
     Minus,
     Modulo,
     Multiply,
@@ -41,8 +41,6 @@ from lang.instruction_types import (
     StringPush,
     SubString,
     Swap,
-    While,
-    WhileEnd,
 )
 from lang.instructions import get_instructions
 from lang.parse import Function
@@ -69,37 +67,35 @@ class Program:
         ] = {
             And: self.instruction_and,
             BoolPush: self.instruction_boolPush,
-            CharNewLinePrint: self.instruction_char_newline_print,
             CallFunction: self.instruction_call_function,
+            CharNewLinePrint: self.instruction_char_newline_print,
             Divide: self.instruction_divide,
             Drop: self.instruction_drop,
             Dup: self.instruction_dup,
-            Else: self.instruction_else,
-            End: self.instruction_end,
             Equals: self.instruction_equals,
-            If: self.instruction_if,
             IntGreaterEquals: self.instruction_int_greater_equals,
             IntGreaterThan: self.instruction_int_greater_than,
             IntLessEquals: self.instruction_int_less_equals,
             IntLessThan: self.instruction_int_less_than,
             IntNotEqual: self.instruction_int_not_equal,
             IntPush: self.instruction_int_push,
+            Jump: self.instruction_jump,
+            JumpIf: self.instruction_jump_if,
+            JumpIfNot: self.instruction_jump_if_not,
             Minus: self.instruction_minus,
             Modulo: self.instruction_modulo,
             Multiply: self.instruction_multiply,
             Not: self.instruction_not,
             Or: self.instruction_or,
             Over: self.instruction_over,
-            PushFunctionArgument: self.instruction_push_function_argument,
             Plus: self.instruction_plus,
             Print: self.instruction_print,
+            PushFunctionArgument: self.instruction_push_function_argument,
             Rot: self.instruction_rot,
             StringLength: self.instruction_string_length,
             StringPush: self.instruction_string_push,
             SubString: self.instruction_substring,
             Swap: self.instruction_swap,
-            While: self.instruction_while,
-            WhileEnd: self.instruction_while_end,
         }
 
     def top_untyped(self) -> StackItem:
@@ -227,6 +223,9 @@ class Program:
         print("---\n", file=sys.stderr)
 
     def run(self) -> None:
+        if self.verbose:
+            self.print_all_function_instructions()
+
         self.call_function("main")
 
         if self.stack:
@@ -405,28 +404,6 @@ class Program:
         self.push(z)
         self.advance_instruction_pointer()
 
-    def instruction_if(self, instruction: Instruction) -> None:
-        assert isinstance(instruction, If)
-        x = self.pop(bool)
-
-        if not x:
-            self.jump(instruction.jump_if_false)
-
-        self.advance_instruction_pointer()
-
-    def instruction_end(self, instruction: Instruction) -> None:
-        assert isinstance(instruction, End)
-        # End of block doesn't do anything
-        self.advance_instruction_pointer()
-
-    def instruction_else(self, instruction: Instruction) -> None:
-        assert isinstance(instruction, Else)
-
-        # Jump beyond the else instruction
-        self.jump(
-            instruction.jump_end + 1
-        )  # TODO move +1 part to instruction generator
-
     def instruction_char_newline_print(self, instruction: Instruction) -> None:
         assert isinstance(instruction, CharNewLinePrint)
         print()  # Just print a newline
@@ -444,19 +421,6 @@ class Program:
             print(x, end="")
 
         self.advance_instruction_pointer()
-
-    def instruction_while(self, instruction: Instruction) -> None:
-        assert isinstance(instruction, While)
-        x = self.pop(bool)
-
-        if not x:
-            self.jump(instruction.jump_end)
-
-        self.advance_instruction_pointer()
-
-    def instruction_while_end(self, instruction: Instruction) -> None:
-        assert isinstance(instruction, WhileEnd)
-        self.jump(instruction.jump_start)
 
     def instruction_string_push(self, instruction: Instruction) -> None:
         assert isinstance(instruction, StringPush)
@@ -493,3 +457,27 @@ class Program:
         arg_value = self.get_function_argument(instruction.arg_name)
         self.push(arg_value)
         self.advance_instruction_pointer()
+
+    def instruction_jump_if(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, JumpIf)
+
+        x = self.pop(bool)
+
+        if x:
+            self.jump(instruction.instruction_offset)
+        else:
+            self.advance_instruction_pointer()
+
+    def instruction_jump_if_not(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, JumpIfNot)
+
+        x = self.pop(bool)
+        if x:
+            self.advance_instruction_pointer()
+        else:
+            self.jump(instruction.instruction_offset)
+
+    def instruction_jump(self, instruction: Instruction) -> None:
+        assert isinstance(instruction, Jump)
+
+        self.jump(instruction.instruction_offset)
