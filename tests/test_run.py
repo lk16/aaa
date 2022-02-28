@@ -210,7 +210,25 @@ def test_run_code_as_main_ok(
     ["code", "expected_output"],
     [
         ("fn main begin 1 print end fn print a begin a . end", "1"),
-        ("fn main begin 1 2 3 print end fn print a b c begin a . b . c . end", "123"),
+        (
+            "fn main begin 1 2 3 print end fn print a b c begin a . b . c . end",
+            "123",
+        ),
+        ("fn main begin foo end\n" + "fn foo begin 1 . end", "1"),
+        (
+            "fn main begin foo end\n"
+            + "fn foo begin bar end\n"
+            + "fn bar begin baz end\n"
+            + "fn baz begin 1 . end",
+            "1",
+        ),
+        (
+            "fn main begin 1 2 3 foo end\n"
+            + "fn foo a b c begin a b c bar end\n"
+            + "fn bar a b c begin a b c baz end\n"
+            + "fn baz a b c begin a . b . c . end",
+            "123",
+        ),
     ],
 )
 def test_run_code_ok(
