@@ -51,6 +51,7 @@ EXPECTED_EXAMPLE_OUTPUT = {
     "examples/print_number.aaa": "42\n",
     "examples/fizzbuzz.aaa": expected_fizzbuzz_output(),
     "examples/print_twice.aaa": "hello!\nhello!\n",
+    "examples/function_demo.aaa": "a=1\nb=2\nc=3\n",
 }
 
 

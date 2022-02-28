@@ -36,7 +36,7 @@ from lang.instruction_types import (
 )
 from lang.parse import Function, FunctionBody
 from lang.program import Program
-from lang.run import run_code_as_main
+from lang.run import run_code, run_code_as_main
 
 
 @dataclass
@@ -116,7 +116,7 @@ def test_run_program_unexpected_type() -> None:
         ([IntPush(1), IntPush(1), Rot()],),
     ],
 )
-def test_run_program_stack_underflow(instructions: List[Instruction]) -> None:
+def test_run_instructions_stack_underflow(instructions: List[Instruction]) -> None:
     with pytest.raises(StackUnderflow):
         run_instructions(instructions)
 
@@ -195,11 +195,29 @@ def test_run_program_stack_underflow(instructions: List[Instruction]) -> None:
         ("false while end 3 .", "3"),
     ],
 )
-def test_run_program_as_main_ok(
+def test_run_code_as_main_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
 
     run_code_as_main(code)
+
+    stdout, stderr = capfd.readouterr()
+    assert expected_output == stdout
+    assert "" == stderr
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_output"],
+    [
+        ("fn main begin 1 print end fn print a begin a . end", "1"),
+        ("fn main begin 1 2 3 print end fn print a b c begin a . b . c . end", "123"),
+    ],
+)
+def test_run_code_ok(
+    code: str, expected_output: str, capfd: CaptureFixture[str]
+) -> None:
+
+    run_code("<stdin>", code)
 
     stdout, stderr = capfd.readouterr()
     assert expected_output == stdout

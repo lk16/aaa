@@ -20,7 +20,7 @@ Next development steps.
 - ci
 - expressiveness
 
-### More umps
+### More jumps
 - loop jump keywords (`break`, `continue`)
 
 ### Be more consistent
