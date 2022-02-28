@@ -87,14 +87,7 @@ class InstructionGenerator:
     def __init__(self, function: Function) -> None:
         self.function = function
 
-    def generate_instructions(self) -> List[Instruction]:
-        return self._generate_instructions(self.function.body, 0)
-
-    def _generate_instructions(
-        self, node: AaaTreeNode, offset: int
-    ) -> List[Instruction]:
-
-        funcs: Dict[
+        self.instruction_funcs: Dict[
             Type[AaaTreeNode], Callable[[AaaTreeNode, int], List[Instruction]]
         ] = {
             IntegerLiteral: self.integer_liter_instructions,
@@ -107,7 +100,13 @@ class InstructionGenerator:
             FunctionBody: self.instructions_for_function_body,
         }
 
-        return funcs[type(node)](node, offset)
+    def generate_instructions(self) -> List[Instruction]:
+        return self._generate_instructions(self.function.body, 0)
+
+    def _generate_instructions(
+        self, node: AaaTreeNode, offset: int
+    ) -> List[Instruction]:
+        return self.instruction_funcs[type(node)](node, offset)
 
     def integer_liter_instructions(
         self, node: AaaTreeNode, offset: int

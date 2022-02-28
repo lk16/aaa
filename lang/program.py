@@ -64,6 +64,44 @@ class Program:
         self.call_stack: List[CallStackItem] = []
         self.verbose = verbose
 
+        self.instruction_funcs: Dict[
+            Type[Instruction], Callable[[Instruction], None]
+        ] = {
+            And: self.instruction_and,
+            BoolPush: self.instruction_boolPush,
+            CharNewLinePrint: self.instruction_char_newline_print,
+            CallFunction: self.instruction_call_function,
+            Divide: self.instruction_divide,
+            Drop: self.instruction_drop,
+            Dup: self.instruction_dup,
+            Else: self.instruction_else,
+            End: self.instruction_end,
+            Equals: self.instruction_equals,
+            If: self.instruction_if,
+            IntGreaterEquals: self.instruction_int_greater_equals,
+            IntGreaterThan: self.instruction_int_greater_than,
+            IntLessEquals: self.instruction_int_less_equals,
+            IntLessThan: self.instruction_int_less_than,
+            IntNotEqual: self.instruction_int_not_equal,
+            IntPush: self.instruction_int_push,
+            Minus: self.instruction_minus,
+            Modulo: self.instruction_modulo,
+            Multiply: self.instruction_multiply,
+            Not: self.instruction_not,
+            Or: self.instruction_or,
+            Over: self.instruction_over,
+            PushFunctionArgument: self.instruction_push_function_argument,
+            Plus: self.instruction_plus,
+            Print: self.instruction_print,
+            Rot: self.instruction_rot,
+            StringLength: self.instruction_string_length,
+            StringPush: self.instruction_string_push,
+            SubString: self.instruction_substring,
+            Swap: self.instruction_swap,
+            While: self.instruction_while,
+            WhileEnd: self.instruction_while_end,
+        }
+
     def top_untyped(self) -> StackItem:
         try:
             return self.stack[-1]
@@ -206,59 +244,22 @@ class Program:
 
         instructions = get_instructions(function)
 
-        instruction_funcs: Dict[
-            Type[Instruction], Callable[[Instruction], None]
-        ] = {  # TODO move out of this function
-            And: self.instruction_and,
-            BoolPush: self.instruction_boolPush,
-            CharNewLinePrint: self.instruction_char_newline_print,
-            CallFunction: self.instruction_call_function,
-            Divide: self.instruction_divide,
-            Drop: self.instruction_drop,
-            Dup: self.instruction_dup,
-            Else: self.instruction_else,
-            End: self.instruction_end,
-            Equals: self.instruction_equals,
-            If: self.instruction_if,
-            IntGreaterEquals: self.instruction_int_greater_equals,
-            IntGreaterThan: self.instruction_int_greater_than,
-            IntLessEquals: self.instruction_int_less_equals,
-            IntLessThan: self.instruction_int_less_than,
-            IntNotEqual: self.instruction_int_not_equal,
-            IntPush: self.instruction_int_push,
-            Minus: self.instruction_minus,
-            Modulo: self.instruction_modulo,
-            Multiply: self.instruction_multiply,
-            Not: self.instruction_not,
-            Or: self.instruction_or,
-            Over: self.instruction_over,
-            PushFunctionArgument: self.instruction_push_function_argument,
-            Plus: self.instruction_plus,
-            Print: self.instruction_print,
-            Rot: self.instruction_rot,
-            StringLength: self.instruction_string_length,
-            StringPush: self.instruction_string_push,
-            SubString: self.instruction_substring,
-            Swap: self.instruction_swap,
-            While: self.instruction_while,
-            WhileEnd: self.instruction_while_end,
-        }
-
         while True:
             self.print_debug_info()
-
             instruction_pointer = self.get_instruction_pointer()
 
-            if instruction_pointer >= len(instructions):
+            try:
+                instruction = instructions[instruction_pointer]
+            except IndexError:
+                # We hit the end of the function
                 break
-
-            # Find out what the next instruction is
-            instruction = instructions[instruction_pointer]
 
             # Excecute the instruction
             try:
-                instrunction_func = instruction_funcs[type(instruction)]
+                instrunction_func = self.instruction_funcs[type(instruction)]
             except KeyError as e:
+                # TODO write test that counts items in self.instruction_funcs
+                # so we don't need this check here
                 raise UnhandledInstructionError(instruction) from e
 
             instrunction_func(instruction)
