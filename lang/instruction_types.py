@@ -10,7 +10,7 @@ class Instruction:
 class IntPush(Instruction):
     value: int
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         return f"{type(self).__name__}({self.value})"
 
 
@@ -38,7 +38,7 @@ class Divide(Instruction):
 class BoolPush(Instruction):
     value: bool
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         value = "true" if self.value else "false"
         return f"{type(self).__name__}({value})"
 
@@ -127,7 +127,7 @@ class Print(Instruction):
 class StringPush(Instruction):
     value: str
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         return f'{type(self).__name__}("{self.value}")'
 
 
@@ -150,7 +150,7 @@ class StringLength(Instruction):
 class CallFunction(Instruction):
     func_name: str
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         return f"{type(self).__name__}('{self.func_name}')"
 
 
@@ -163,7 +163,7 @@ class PushFunctionArgument(Instruction):
 class Jump(Instruction):
     instruction_offset: int
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         return f"{type(self).__name__}({self.instruction_offset})"
 
 
@@ -171,7 +171,7 @@ class Jump(Instruction):
 class JumpIf(Instruction):
     instruction_offset: int
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         return f"{type(self).__name__}({self.instruction_offset})"
 
 
@@ -179,5 +179,5 @@ class JumpIf(Instruction):
 class JumpIfNot(Instruction):
     instruction_offset: int
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         return f"{type(self).__name__}({self.instruction_offset})"

@@ -22,7 +22,7 @@ FunctionBodyItem = Union[
 
 class AaaTreeNode:
     @abstractclassmethod
-    def from_tree(cls, tree: Tree, code: str) -> "AaaTreeNode":
+    def from_tree(cls, tree: Tree, code: str) -> "AaaTreeNode":  # pragma: nocover
         ...
 
 

@@ -149,7 +149,7 @@ class Program:
         func_name = self.call_stack[-1].func_name
         return self.functions[func_name]
 
-    def format_stack_item(self, item: StackItem) -> str:
+    def format_stack_item(self, item: StackItem) -> str:  # pragma: nocover
         if isinstance(item, bool):
             if item:
                 return "true"
@@ -164,7 +164,9 @@ class Program:
 
         raise NotADirectoryError
 
-    def format_str(self, string: str, max_length: Optional[int] = None) -> str:
+    def format_str(
+        self, string: str, max_length: Optional[int] = None
+    ) -> str:  # pragma: nocover
         string = string.replace("\n", "\\n")
 
         if max_length is not None and len(string) > max_length:
@@ -172,8 +174,8 @@ class Program:
 
         return string
 
-    def print_debug_info(self) -> None:
-        if not self.verbose:  # pragma: nocover
+    def print_debug_info(self) -> None:  # pragma: nocover
+        if not self.verbose:
             return
 
         ip = self.get_instruction_pointer()
@@ -198,7 +200,7 @@ class Program:
             file=sys.stderr,
         )
 
-    def print_all_function_instructions(self) -> None:
+    def print_all_function_instructions(self) -> None:  # pragma: nocover
         # TODO Add function that calls this. This is currently unused.
 
         if not self.verbose:  # pragma: nocover
@@ -223,7 +225,7 @@ class Program:
         print("---\n", file=sys.stderr)
 
     def run(self) -> None:
-        if self.verbose:
+        if self.verbose:  # pragma: nocover
             self.print_all_function_instructions()
 
         self.call_function("main")
