@@ -43,6 +43,7 @@ To enable syntax highlighting for vs code, enable the [Aaa language extension](.
 - branching (`if`, `else`, `end`)
 - loops (`while`)
 - strings and string instructions (`+`, `=`, `strlen`, `substr`)
+- functions (`fn`)
 
 For upcoming features, see the [TODO](./TODO.md) file.
 
