@@ -5,7 +5,11 @@ from parser.generic import Tree, new_parse_generic
 from parser.tree import prune_by_symbol_types, prune_useless, prune_zero_length
 from typing import Dict, List, Optional, Type, Union
 
-from lang.exceptions import EmptyParseTreeError
+from lang.exceptions import (
+    EmptyParseTreeError,
+    FunctionNameCollission,
+    InvalidFunctionArgumentList,
+)
 from lang.grammar import REWRITE_RULES, ROOT_SYMBOL, SymbolType
 from lang.instruction_types import Instruction
 
@@ -178,6 +182,9 @@ class Function(AaaTreeNode):
             child.children[0].value(code) for child in tree.children[1].children
         ]
 
+        if len([name] + arguments) != len({name} | {*arguments}):
+            raise InvalidFunctionArgumentList(name, arguments)
+
         if tree.children[3].symbol_type == SymbolType.END:
             body = FunctionBody([])
         else:
@@ -199,11 +206,8 @@ class File(AaaTreeNode):
         for child in tree.children[0].children:
             function = Function.from_tree(child.children[0], code)
 
-            # TODO check if arg names collide with name of this function or with eachother
-
             if function.name in functions:
-                # TODO function name collision
-                raise NotImplementedError
+                raise FunctionNameCollission(function.name)
 
             functions[function.name] = function
 

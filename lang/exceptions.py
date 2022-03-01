@@ -1,3 +1,5 @@
+from typing import List
+
 from lang.instruction_types import Instruction
 
 
@@ -22,6 +24,19 @@ class UnexpectedEndOfFile(ParseError):
 
 class NoMainFunctionFound(ParseError):
     ...
+
+
+class FunctionNameCollission(ParseError):
+    def __init__(self, func_name: str) -> None:
+        super().__init__(f"Function with name {func_name} was already defined earlier.")
+
+
+class InvalidFunctionArgumentList(ParseError):
+    def __init__(self, func_name: str, arguments: List[str]) -> None:
+        super().__init__(
+            f"Function name and/or arguments overlap: {func_name} "
+            + " ".join(arguments)
+        )
 
 
 class RunTimeError(Exception):
