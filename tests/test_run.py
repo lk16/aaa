@@ -4,12 +4,7 @@ from typing import List, Type
 import pytest
 from pytest import CaptureFixture
 
-from lang.exceptions import (
-    StackNotEmptyAtExit,
-    StackUnderflow,
-    UnexpectedType,
-    UnhandledInstructionError,
-)
+from lang.exceptions import StackNotEmptyAtExit, StackUnderflow, UnexpectedType
 from lang.instruction_types import (
     And,
     BoolPush,
@@ -58,7 +53,6 @@ def run_instructions(instructions: List[Instruction]) -> None:
 @pytest.mark.parametrize(
     ["instructions", "expected_exception"],
     [
-        ([UnhandledInstruction()], UnhandledInstructionError),
         ([IntPush(3)], StackNotEmptyAtExit),
     ],
 )

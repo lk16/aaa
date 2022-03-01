@@ -140,8 +140,6 @@ class InstructionGenerator:
     ) -> List[Instruction]:
         assert isinstance(node, Loop)
 
-        # TODO do something smarter when loop_body is empty
-
         body_instructions = self._generate_instructions(node.body, offset + 1)
 
         beyond_loop_end = offset + 2 + len(body_instructions)
@@ -164,8 +162,8 @@ class InstructionGenerator:
         if identifier in self.function.arguments:
             return [PushFunctionArgument(identifier)]
 
-        # TODO confirm that function by this name actually exists
-        # so we don't crash at runtime
+        # If it's not an arugment, we must be calling a function
+        # Whether a function by that name exists will be checked in Program.
         return [CallFunction(identifier)]
 
     def instructions_for_branch(

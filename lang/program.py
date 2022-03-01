@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 from lang.exceptions import (
+    InvalidFunctionCall,
     StackNotEmptyAtExit,
     StackUnderflow,
     UnexpectedType,
-    UnhandledInstructionError,
 )
 from lang.instruction_types import (
     And,
@@ -97,6 +97,22 @@ class Program:
             SubString: self.instruction_substring,
             Swap: self.instruction_swap,
         }
+
+    def validate_function_calls(self) -> None:
+        """
+        Confirm that all potentially called functions exist.
+        """
+
+        if "main" not in self.functions:
+            raise InvalidFunctionCall("<entrypoint>", 0, "main")
+
+        for func_name, function in self.functions.items():
+            for offset, instruction in enumerate(get_instructions(function)):
+                if (
+                    isinstance(instruction, CallFunction)
+                    and instruction.func_name not in self.functions
+                ):
+                    raise InvalidFunctionCall(func_name, offset, instruction.func_name)
 
     def top_untyped(self) -> StackItem:
         try:
@@ -201,8 +217,6 @@ class Program:
         )
 
     def print_all_function_instructions(self) -> None:  # pragma: nocover
-        # TODO Add function that calls this. This is currently unused.
-
         if not self.verbose:  # pragma: nocover
             return
 
@@ -228,13 +242,14 @@ class Program:
         if self.verbose:  # pragma: nocover
             self.print_all_function_instructions()
 
+        self.validate_function_calls()
+
         self.call_function("main")
 
         if self.stack:
             raise StackNotEmptyAtExit
 
     def call_function(self, func_name: str) -> None:
-        # TODO deal with KeyError here
         function = self.functions[func_name]
 
         argument_values: Dict[str, StackItem] = {
@@ -256,12 +271,7 @@ class Program:
                 break
 
             # Excecute the instruction
-            try:
-                instrunction_func = self.instruction_funcs[type(instruction)]
-            except KeyError as e:
-                # TODO write test that counts items in self.instruction_funcs
-                # so we don't need this check here
-                raise UnhandledInstructionError(instruction) from e
+            instrunction_func = self.instruction_funcs[type(instruction)]
 
             # TODO make instruction_func return instruction pointer
             # so we can debug print the instruction we just executed along with the updated stack on the same line
@@ -467,7 +477,6 @@ class Program:
         assert isinstance(instruction, JumpIf)
 
         x = self.pop(bool)
-
         if x:
             self.jump(instruction.instruction_offset)
         else:

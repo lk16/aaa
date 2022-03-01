@@ -9,10 +9,6 @@ Next development steps.
 - check for remaining TODO comments
 - generate parser from grammar file
 
-### Functions
-- implement function arguments
-- implement calling functions
-
 ### Brag in readme
 - minimal dependencies
 - custom simple parser, link to grammar.txt
