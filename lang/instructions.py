@@ -169,9 +169,10 @@ class InstructionGenerator:
         branch_instructions: List[Instruction] = []
 
         if len(node.if_body.items) != 0:
+            if_instructions = self._generate_instructions(node.if_body, offset + 1)
+
             if len(node.else_body.items) == 0:
                 # Non-empty if, empty else: we only need one jump
-                if_instructions = self._generate_instructions(node.if_body, offset + 1)
                 if_fail_jump = offset + 1 + len(if_instructions)
 
                 branch_instructions = [JumpIfNot(if_fail_jump)]
@@ -179,7 +180,6 @@ class InstructionGenerator:
                 return branch_instructions
 
             else:
-                if_instructions = self._generate_instructions(node.if_body, offset + 1)
                 if_fail_jump = offset + 2 + len(if_instructions)
                 else_instructions = self._generate_instructions(
                     node.else_body, offset + len(if_instructions) + 2
@@ -207,9 +207,6 @@ class InstructionGenerator:
                 branch_instructions = [JumpIf(else_fail_jump)]
                 branch_instructions += else_instructions
                 return branch_instructions
-
-        # Unreachable
-        raise NotImplementedError
 
     def instructions_for_function_body(
         self, node: AaaTreeNode, offset: int
