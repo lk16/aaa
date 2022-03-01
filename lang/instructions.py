@@ -162,7 +162,7 @@ class InstructionGenerator:
         if identifier in self.function.arguments:
             return [PushFunctionArgument(identifier)]
 
-        # If it's not an arugment, we must be calling a function
+        # If it's not an arugment, we must be calling a function.
         # Whether a function by that name exists will be checked in Program.
         return [CallFunction(identifier)]
 
