@@ -128,11 +128,6 @@ class InstructionGenerator:
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, Operator)
-
-        if node.value not in OPERATOR_INSTRUCTIONS:
-            # TODO unhandled operator
-            raise NotImplementedError
-
         return [OPERATOR_INSTRUCTIONS[node.value]]
 
     def instructions_for_loop(
