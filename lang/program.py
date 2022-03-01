@@ -263,6 +263,9 @@ class Program:
                 # so we don't need this check here
                 raise UnhandledInstructionError(instruction) from e
 
+            # TODO make instruction_func return instruction pointer
+            # so we can debug print the instruction we just executed along with the updated stack on the same line
+            # update instruction pointer in self after the debug print
             instrunction_func(instruction)
 
         self.call_stack.pop()
