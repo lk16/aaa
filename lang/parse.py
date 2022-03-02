@@ -1,7 +1,7 @@
 from abc import abstractclassmethod
 from dataclasses import dataclass
 from enum import IntEnum
-from parser.generic import Tree, new_parse_generic
+from parser.parser import Tree, new_parse_generic
 from parser.tree import prune_by_symbol_types, prune_useless, prune_zero_length
 from typing import Dict, List, Optional, Type, Union
 

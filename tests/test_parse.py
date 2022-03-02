@@ -1,4 +1,4 @@
-from parser.generic import ParseError, new_parse_generic
+from parser.parser import ParseError, new_parse_generic
 from typing import List, Type
 
 import pytest

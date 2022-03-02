@@ -1,5 +1,5 @@
 from enum import IntEnum, auto
-from parser.generic import (
+from parser.parser import (
     ConcatenationParser,
     LiteralParser,
     OptionalParser,
