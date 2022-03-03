@@ -2,7 +2,12 @@ from abc import abstractclassmethod
 from dataclasses import dataclass
 from enum import IntEnum
 from parser.parser import Tree, new_parse_generic
-from parser.tree import prune_by_symbol_types, prune_useless, prune_zero_length
+from parser.tree import (
+    prune_by_symbol_types,
+    prune_no_symbol,
+    prune_useless,
+    prune_zero_length,
+)
 from typing import Dict, List, Optional, Type, Union
 
 from lang.exceptions import (
@@ -227,6 +232,9 @@ def parse(code: str) -> File:
 
     if tree:
         tree = prune_useless(tree)
+
+    if tree:
+        tree = prune_no_symbol(tree)
 
     if not tree:
         raise EmptyParseTreeError
