@@ -162,7 +162,7 @@ pyparsing = ">=2.0.2,<3.0.5 || >3.0.5"
 
 [[package]]
 name = "parser"
-version = "0.2.2"
+version = "0.2.3"
 description = ""
 category = "main"
 optional = false
@@ -175,8 +175,8 @@ black = "^22.1.0"
 [package.source]
 type = "git"
 url = "ssh://git@github.com/lk16/parser.git"
-reference = "v0.2.2"
-resolved_reference = "1b1a5b70c8b4d1c216a55853c9b2f7b3c1ef81bd"
+reference = "v0.2.3"
+resolved_reference = "780949eaae0efd149a0840e26cdeaf81dedfa169"
 
 [[package]]
 name = "pathspec"
@@ -383,7 +383,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "4a8e446c405eb865a9181eded3d24438386393c761e655bcc5c39ae1791e4fc6"
+content-hash = "542687390ef8ea82a44cb8860bcbdf4ad4d13227e694262292c38bc2d6b1e25a"
 
 [metadata.files]
 atomicwrites = [

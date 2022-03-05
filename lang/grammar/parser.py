@@ -24,7 +24,6 @@ from typing import Dict, Final, Optional, Set
 class SymbolType(IntEnum):
     BOOLEAN_LITERAL = auto()
     BRANCH = auto()
-    FILE = auto()
     FUNCTION_BODY = auto()
     FUNCTION_BODY_ITEM = auto()
     FUNCTION_DEFINITION = auto()
@@ -33,6 +32,7 @@ class SymbolType(IntEnum):
     LITERAL = auto()
     LOOP = auto()
     OPERATOR = auto()
+    ROOT = auto()
     STRING_LITERAL = auto()
     WHITESPACE = auto()
 
@@ -48,7 +48,6 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
             )
         ),
     ),
-    SymbolType.FILE: OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
     SymbolType.FUNCTION_BODY: ConcatenationParser(
         SymbolParser(SymbolType.FUNCTION_BODY_ITEM),
         RepeatParser(
@@ -75,8 +74,24 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
             min_repeats=1,
         ),
     ),
-    SymbolType.IDENTIFIER: RegexBasedParser("[a-z_]+"),
-    SymbolType.INTEGER_LITERAL: RegexBasedParser("[0-9]+"),
+    SymbolType.IDENTIFIER: RegexBasedParser(
+        "[a-z_]+",
+        forbidden=[
+            "and",
+            "drop",
+            "dup",
+            "false",
+            "not",
+            "or",
+            "over",
+            "rot",
+            "strlen",
+            "true",
+            "substr",
+            "swap",
+        ],
+    ),
+    SymbolType.INTEGER_LITERAL: RegexBasedParser("[0-9]+", forbidden=[]),
     SymbolType.LITERAL: OrParser(
         SymbolParser(SymbolType.BOOLEAN_LITERAL),
         SymbolParser(SymbolType.INTEGER_LITERAL),
@@ -117,8 +132,9 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         LiteralParser("substr"),
         LiteralParser("swap"),
     ),
-    SymbolType.STRING_LITERAL: RegexBasedParser('"([^\\]|\\("|n|\\))*?"'),
-    SymbolType.WHITESPACE: RegexBasedParser("([ \n]|$)+"),
+    SymbolType.ROOT: OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
+    SymbolType.STRING_LITERAL: RegexBasedParser('"([^\\]|\\("|n|\\))*?"', forbidden=[]),
+    SymbolType.WHITESPACE: RegexBasedParser("([ \n]|$)+", forbidden=[]),
 }
 
 
