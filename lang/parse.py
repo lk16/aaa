@@ -1,21 +1,12 @@
 from abc import abstractclassmethod
 from dataclasses import dataclass
 from enum import IntEnum
-from parser.parser import Tree, new_parse_generic
-from parser.tree import (
-    prune_by_symbol_types,
-    prune_no_symbol,
-    prune_useless,
-    prune_zero_length,
-)
+from parser.parser import Tree
 from typing import Dict, List, Optional, Type, Union
 
-from lang.exceptions import (
-    EmptyParseTreeError,
-    FunctionNameCollission,
-    InvalidFunctionArgumentList,
-)
-from lang.grammar import REWRITE_RULES, ROOT_SYMBOL, SymbolType
+from lang.exceptions import FunctionNameCollission, InvalidFunctionArgumentList
+from lang.grammar.parser import SymbolType
+from lang.grammar.parser import parse as parse_aaa
 from lang.instruction_types import Instruction
 
 FunctionBodyItem = Union[
@@ -220,23 +211,5 @@ class File(AaaTreeNode):
 
 
 def parse(code: str) -> File:
-    tree: Optional[Tree] = new_parse_generic(
-        REWRITE_RULES, ROOT_SYMBOL, code, SymbolType
-    )
-
-    if tree:
-        tree = prune_zero_length(tree)
-
-    if tree:
-        tree = prune_by_symbol_types(tree, {SymbolType.WHITESPACE})
-
-    if tree:
-        tree = prune_useless(tree)
-
-    if tree:
-        tree = prune_no_symbol(tree)
-
-    if not tree:
-        raise EmptyParseTreeError
-
+    tree: Optional[Tree] = parse_aaa(code)
     return File.from_tree(tree, code)
