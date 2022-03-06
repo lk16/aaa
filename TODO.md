@@ -2,13 +2,6 @@
 
 Next development steps.
 
-### Proper Parsing (in [parser](https://github.com/lk16/parser) repo)
-- check human error output
-- improve test coverage
-- check naming consistency
-- check for remaining TODO comments
-- generate parser from grammar file
-
 ### Brag in readme
 - minimal dependencies
 - custom simple parser, link to grammar.txt
