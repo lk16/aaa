@@ -299,7 +299,7 @@ def test_parse_loop(code: str, expected_ok: bool) -> None:
         ("if end", True),
         ("if else end", True),
         ("if a else a end", True),
-        ("3 5 + < 8 true >= subst substr substr", True),
+        ("3 5 + < 8 true >= substr substr substr", True),
         ("if while if while if while end end end end end end", True),
     ],
 )
