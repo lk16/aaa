@@ -33,6 +33,7 @@ class SymbolType(IntEnum):
     FUNCTION_BODY = auto()
     FUNCTION_BODY_ITEM = auto()
     FUNCTION_DEFINITION = auto()
+    FUNCTION_NAME_AND_ARGS = auto()
     IDENTIFIER = auto()
     IF = auto()
     INTEGER_LITERAL = auto()
@@ -104,12 +105,8 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
     SymbolType.FUNCTION_DEFINITION: ConcatenationParser(
         SymbolParser(SymbolType.FN),
         SymbolParser(SymbolType.WHITESPACE),
-        RepeatParser(
-            ConcatenationParser(
-                SymbolParser(SymbolType.IDENTIFIER), SymbolParser(SymbolType.WHITESPACE)
-            ),
-            min_repeats=1,
-        ),
+        SymbolParser(SymbolType.FUNCTION_NAME_AND_ARGS),
+        SymbolParser(SymbolType.WHITESPACE),
         SymbolParser(SymbolType.BEGIN),
         SymbolParser(SymbolType.WHITESPACE),
         OptionalParser(
@@ -119,6 +116,14 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
             )
         ),
         SymbolParser(SymbolType.END),
+    ),
+    SymbolType.FUNCTION_NAME_AND_ARGS: ConcatenationParser(
+        SymbolParser(SymbolType.IDENTIFIER),
+        RepeatParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.WHITESPACE), SymbolParser(SymbolType.IDENTIFIER)
+            )
+        ),
     ),
     SymbolType.IDENTIFIER: RegexBasedParser(
         "[a-z_]+", forbidden=SymbolParser(SymbolType.KEYWORD)

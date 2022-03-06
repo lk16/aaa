@@ -109,19 +109,33 @@ class Branch(AaaTreeNode):
         if_body = FunctionBody([])
         else_body = FunctionBody([])
 
-        for child in tree.children:
-            if child.symbol_type in [SymbolType.IF, SymbolType.END]:
-                continue
-            elif (
-                child.symbol_type is None
-                and child.children[0].symbol_type == SymbolType.ELSE
-            ):
-                if len(child.children) > 1:
-                    else_body = FunctionBody.from_tree(
-                        child.children[1].children[0], code
-                    )
-            else:
-                if_body = FunctionBody.from_tree(child.children[0], code)
+        if tree[1].symbol_type == SymbolType.END:  # if end
+            pass
+        elif tree[2].symbol_type == SymbolType.END:  # if ... end
+            if_body = FunctionBody.from_tree(tree[1], code)
+        elif (
+            tree[1].symbol_type == SymbolType.ELSE
+            and tree[2].symbol_type == SymbolType.END
+        ):  # if else end
+            pass
+        elif (
+            tree[1].symbol_type == SymbolType.ELSE
+            and tree[3].symbol_type == SymbolType.END
+        ):  # if else ... end
+            else_body = FunctionBody.from_tree(tree[2], code)
+        elif (
+            tree[2].symbol_type == SymbolType.ELSE
+            and tree[3].symbol_type == SymbolType.END
+        ):  # if ... else end
+            if_body = FunctionBody.from_tree(tree[1], code)
+        elif (
+            tree[2].symbol_type == SymbolType.ELSE
+            and tree[4].symbol_type == SymbolType.END
+        ):  # if ... else ... end
+            if_body = FunctionBody.from_tree(tree[1], code)
+            else_body = FunctionBody.from_tree(tree[3], code)
+        else:  # pragma: nocover
+            raise NotImplementedError
 
         return Branch(if_body, else_body)
 
@@ -144,19 +158,9 @@ class FunctionBody(AaaTreeNode):
             SymbolType.STRING_LITERAL: StringLiteral,
         }
 
-        flattened_children: List[Tree] = []
-
-        if len(tree.children) > 0:
-            flattened_children = [tree.children[0]]
-
-        if len(tree.children) > 1:
-            flattened_children += [
-                child.children[0] for child in tree.children[1].children
-            ]
-
         items: List[FunctionBodyItem] = []
 
-        for child in flattened_children:
+        for child in tree.children:
             aaa_tree_node = aaa_tree_nodes[child.symbol_type]
             items.append(aaa_tree_node.from_tree(child, code))
 
@@ -174,9 +178,7 @@ class Function(AaaTreeNode):
     def from_tree(cls, tree: Tree, code: str) -> "Function":
         assert tree.symbol_type == SymbolType.FUNCTION_DEFINITION
 
-        name, *arguments = [
-            child.children[0].value(code) for child in tree.children[1].children
-        ]
+        name, *arguments = [identifier.value(code) for identifier in tree[1].children]
 
         if len([name] + arguments) != len({name} | {*arguments}):
             raise InvalidFunctionArgumentList(name, arguments)
@@ -184,7 +186,7 @@ class Function(AaaTreeNode):
         if tree.children[3].symbol_type == SymbolType.END:
             body = FunctionBody([])
         else:
-            body = FunctionBody.from_tree(tree.children[3].children[0], code)
+            body = FunctionBody.from_tree(tree.children[3], code)
 
         return Function(name, arguments, body)
 
@@ -199,8 +201,8 @@ class File(AaaTreeNode):
 
         functions: Dict[str, Function] = {}
 
-        for child in tree.children[0].children:
-            function = Function.from_tree(child.children[0], code)
+        for child in tree.children:
+            function = Function.from_tree(child, code)
 
             if function.name in functions:
                 raise FunctionNameCollission(function.name)
