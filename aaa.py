@@ -2,11 +2,9 @@
 
 import subprocess
 import sys
-from parser.grammar_generator import check_grammar_file_staleness
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from lang.grammar import REWRITE_RULES, ROOT_SYMBOL
 from lang.instructions import get_instructions
 from lang.parse import parse as new_parse
 from lang.run import run_code_as_main, run_file  # TODO remove alias
@@ -83,24 +81,8 @@ def try_instruction_generator(*args: Any) -> None:
         print()
 
 
-def generate_grammar_file(*args: Any) -> None:
-    if args:
-        raise ArgParseError("generate-grammar-file expects no flags or arguments.")
-
-    stale, new_grammar = check_grammar_file_staleness(
-        GRAMMAR_FILE_PATH, REWRITE_RULES, ROOT_SYMBOL
-    )
-
-    if stale:
-        GRAMMAR_FILE_PATH.write_text(new_grammar)
-        print(f"{GRAMMAR_FILE_PATH.name} was created or updated.")
-    else:
-        print(f"{GRAMMAR_FILE_PATH.name} was up-to-date.")
-
-
 COMMANDS: Dict[str, Callable[..., None]] = {
     "cmd": cmd,
-    "generate-grammar-file": generate_grammar_file,
     "run": run,
     "runtests": runtests,
     "try-instruction-generator": try_instruction_generator,
@@ -118,7 +100,6 @@ def show_usage(argv: List[str], error_message: str) -> None:
         + "Available commands:\n"
         + f"{argv[0]} cmd CODE <-v>\n"
         + f"{argv[0]} run FILE_PATH <-v>\n"
-        + f"{argv[0]} generate-grammar-file\n"
         + f"{argv[0]} runtests\n"
         + f"{argv[0]} try-instruction-generator\n"
     )

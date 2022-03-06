@@ -195,7 +195,7 @@ class File(AaaTreeNode):
 
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "File":
-        assert tree.symbol_type == SymbolType.FILE
+        assert tree.symbol_type == SymbolType.ROOT
 
         functions: Dict[str, Function] = {}
 

@@ -2,7 +2,7 @@
 
 BOOLEAN_LITERAL = "true" | "false"
 
-BRANCH = "if" (WHITESPACE FUNCTION_BODY)? WHITESPACE ("else" (WHITESPACE FUNCTION_BODY)? WHITESPACE)? "end"
+BRANCH = IF (WHITESPACE FUNCTION_BODY)? WHITESPACE (ELSE (WHITESPACE FUNCTION_BODY)? WHITESPACE)? END
 
 ROOT = (WHITESPACE)? (FUNCTION_DEFINITION WHITESPACE)+ (WHITESPACE)?
 
@@ -11,8 +11,9 @@ FUNCTION_BODY = FUNCTION_BODY_ITEM (WHITESPACE FUNCTION_BODY_ITEM)*
 @ prune soft
 FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL
 
-FUNCTION_DEFINITION = "fn" WHITESPACE (IDENTIFIER WHITESPACE)+ "begin" WHITESPACE (FUNCTION_BODY WHITESPACE)? "end"
+FUNCTION_DEFINITION = FN WHITESPACE (IDENTIFIER WHITESPACE)+ BEGIN WHITESPACE (FUNCTION_BODY WHITESPACE)? END
 
+// TODO replace with @ banned values KEYWORD once supported by parser lib
 @ banned values "and" "drop" "dup" "else" "end" "false" "fn" "if" "not" "or" "over" "rot" "strlen" "true" "substr" "swap" "while"
 IDENTIFIER = regex("[a-z_]+")
 
@@ -21,11 +22,35 @@ INTEGER_LITERAL = regex("[0-9]+")
 @ prune soft
 LITERAL = BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL
 
-LOOP = "while" WHITESPACE (FUNCTION_BODY WHITESPACE)? "end"
+LOOP = WHILE WHITESPACE (FUNCTION_BODY WHITESPACE)? END
 
-OPERATOR = "-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">=" | "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap"
+OPERATOR = OPERATOR_NON_ALPHABETICAL | OPERATOR_KEYWORD
 
-STRING_LITERAL = regex("\"([^\\]|\\(\"|n|\\))*?\"")
+@ prune soft
+OPERATOR_KEYWORD = "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap"
+
+@ prune soft
+OPERATOR_NON_ALPHABETICAL = "-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">="
+
+STRING_LITERAL = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"")
 
 @ prune hard
 WHITESPACE = regex("([ \n]|$)+")
+
+IF = "if"
+
+ELSE = "else"
+
+BEGIN = "begin"
+
+END = "end"
+
+WHILE = "while"
+
+FN = "fn"
+
+@ prune soft
+CONTROL_FLOW_KEYWORD = IF | ELSE | BEGIN | END | WHILE | FN
+
+@ prune soft
+KEYWORD = BOOLEAN_LITERAL | CONTROL_FLOW_KEYWORD | OPERATOR_KEYWORD

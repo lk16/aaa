@@ -1,5 +1,3 @@
-from parser.grammar.parser import REWRITE_RULES
-from parser.parser import parse_generic
 from parser.parser_generator import check_parser_staleness, generate_parser
 from pathlib import Path
 
