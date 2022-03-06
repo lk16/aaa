@@ -70,7 +70,10 @@ class Operator(AaaTreeNode):
 
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "Operator":
-        assert tree.symbol_type == SymbolType.OPERATOR
+        assert tree.symbol_type in [
+            SymbolType.OPERATOR_NON_ALPHABETICAL,
+            SymbolType.OPERATOR_KEYWORD,
+        ]
         operator = tree.value(code)
         return Operator(operator)
 
@@ -84,7 +87,7 @@ class Loop(AaaTreeNode):
         loop_body = FunctionBody([])
 
         if tree.children[1].symbol_type != SymbolType.END:
-            loop_body = FunctionBody.from_tree(tree.children[1].children[0], code)
+            loop_body = FunctionBody.from_tree(tree.children[1], code)
 
         return Loop(loop_body)
 
@@ -111,13 +114,13 @@ class Branch(AaaTreeNode):
 
         if tree[1].symbol_type == SymbolType.END:  # if end
             pass
-        elif tree[2].symbol_type == SymbolType.END:  # if ... end
-            if_body = FunctionBody.from_tree(tree[1], code)
         elif (
             tree[1].symbol_type == SymbolType.ELSE
             and tree[2].symbol_type == SymbolType.END
         ):  # if else end
             pass
+        elif tree[2].symbol_type == SymbolType.END:  # if ... end
+            if_body = FunctionBody.from_tree(tree[1], code)
         elif (
             tree[1].symbol_type == SymbolType.ELSE
             and tree[3].symbol_type == SymbolType.END
@@ -154,7 +157,8 @@ class FunctionBody(AaaTreeNode):
             SymbolType.IDENTIFIER: Identifier,
             SymbolType.INTEGER_LITERAL: IntegerLiteral,
             SymbolType.LOOP: Loop,
-            SymbolType.OPERATOR: Operator,
+            SymbolType.OPERATOR_KEYWORD: Operator,
+            SymbolType.OPERATOR_NON_ALPHABETICAL: Operator,
             SymbolType.STRING_LITERAL: StringLiteral,
         }
 
