@@ -1,7 +1,5 @@
-# type: ignore
-
-# TODO re-enable type checking ^^^
-
+from parser.exceptions import ParseError
+from parser.parser import parse_generic
 from typing import List, Type
 
 import pytest
@@ -20,9 +18,6 @@ from lang.parse import (
     parse,
 )
 
-# TODO re-enable tests vvv
-pytest.skip(allow_module_level=True)
-
 
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
@@ -37,7 +32,7 @@ pytest.skip(allow_module_level=True)
 )
 def test_parse_boolean_literal(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.BOOLEAN_LITERAL, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "BOOLEAN_LITERAL")
     except ParseError:
         assert not expected_ok
     else:
@@ -61,7 +56,7 @@ def test_parse_boolean_literal(code: str, expected_ok: bool) -> None:
 )
 def test_parse_integer_literal(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.INTEGER_LITERAL, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "INTEGER_LITERAL")
     except ParseError:
         assert not expected_ok
     else:
@@ -83,7 +78,7 @@ def test_parse_integer_literal(code: str, expected_ok: bool) -> None:
 )
 def test_parse_string_literal(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.STRING_LITERAL, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "STRING_LITERAL")
     except ParseError:
         assert not expected_ok
     else:
@@ -92,7 +87,7 @@ def test_parse_string_literal(code: str, expected_ok: bool) -> None:
 
 def test_parse_string_non_greedy() -> None:
     code = '"a" "b"'
-    tree = new_parse_generic(REWRITE_RULES, SymbolType.FUNCTION_BODY, code, SymbolType)
+    tree = parse_generic(REWRITE_RULES, code, "FUNCTION_BODY")
     assert len(tree.children) == 2
 
     assert tree.children[0].value(code) == '"a"'
@@ -130,7 +125,7 @@ def test_parse_string_non_greedy() -> None:
 )
 def test_parse_literal(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.LITERAL, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "LITERAL")
     except ParseError:
         assert not expected_ok
     else:
@@ -160,7 +155,7 @@ OPERATOR_KEYWORDS: List[str] = []
 )
 def test_parse_identifier(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.IDENTIFIER, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "IDENTIFIER")
     except ParseError:
         assert not expected_ok
     else:
@@ -179,7 +174,7 @@ def test_parse_identifier(code: str, expected_ok: bool) -> None:
 )
 def test_parse_operator(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.OPERATOR, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "OPERATOR")
     except ParseError:
         assert not expected_ok
     else:
@@ -202,7 +197,7 @@ def test_parse_operator(code: str, expected_ok: bool) -> None:
 )
 def test_parse_whitespace(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.WHITESPACE, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "WHITESPACE")
     except ParseError:
         assert not expected_ok
     else:
@@ -251,7 +246,7 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
 )
 def test_parse_branch(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.BRANCH, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "BRANCH")
     except ParseError:
         assert not expected_ok
     else:
@@ -276,7 +271,7 @@ def test_parse_branch(code: str, expected_ok: bool) -> None:
 )
 def test_parse_loop(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.LOOP, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "LOOP")
     except ParseError:
         assert not expected_ok
     else:
@@ -299,7 +294,7 @@ def test_parse_loop(code: str, expected_ok: bool) -> None:
 )
 def test_parse_function_body(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.FUNCTION_BODY, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "FUNCTION_BODY")
     except ParseError:
         assert not expected_ok
     else:
@@ -321,9 +316,7 @@ def test_parse_function_body(code: str, expected_ok: bool) -> None:
 )
 def test_parse_function(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(
-            REWRITE_RULES, SymbolType.FUNCTION_DEFINITION, code, SymbolType
-        )
+        parse_generic(REWRITE_RULES, code, "FUNCTION_DEFINITION")
     except ParseError:
         assert not expected_ok
     else:
@@ -345,7 +338,7 @@ def test_parse_function(code: str, expected_ok: bool) -> None:
 )
 def test_parse_file(code: str, expected_ok: bool) -> None:
     try:
-        new_parse_generic(REWRITE_RULES, SymbolType.FILE, code, SymbolType)
+        parse_generic(REWRITE_RULES, code, "FILE")
     except ParseError:
         assert not expected_ok
     else:

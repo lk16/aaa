@@ -13,8 +13,7 @@ FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL
 
 FUNCTION_DEFINITION = FN WHITESPACE (IDENTIFIER WHITESPACE)+ BEGIN WHITESPACE (FUNCTION_BODY WHITESPACE)? END
 
-// TODO replace with @ banned values KEYWORD once supported by parser lib
-@ banned values "and" "drop" "dup" "else" "end" "false" "fn" "if" "not" "or" "over" "rot" "strlen" "true" "substr" "swap" "while"
+@ forbidden KEYWORD
 IDENTIFIER = regex("[a-z_]+")
 
 INTEGER_LITERAL = regex("[0-9]+")

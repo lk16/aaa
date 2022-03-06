@@ -97,29 +97,10 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         ),
     ),
     SymbolType.IDENTIFIER: RegexBasedParser(
-        "[a-z_]+",
-        forbidden=[
-            "and",
-            "drop",
-            "dup",
-            "else",
-            "end",
-            "false",
-            "fn",
-            "if",
-            "not",
-            "or",
-            "over",
-            "rot",
-            "strlen",
-            "true",
-            "substr",
-            "swap",
-            "while",
-        ],
+        "[a-z_]+", forbidden=SymbolParser(SymbolType.KEYWORD)
     ),
     SymbolType.IF: LiteralParser("if"),
-    SymbolType.INTEGER_LITERAL: RegexBasedParser("[0-9]+", forbidden=[]),
+    SymbolType.INTEGER_LITERAL: RegexBasedParser("[0-9]+"),
     SymbolType.KEYWORD: OrParser(
         SymbolParser(SymbolType.BOOLEAN_LITERAL),
         SymbolParser(SymbolType.CONTROL_FLOW_KEYWORD),
@@ -172,11 +153,9 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         LiteralParser(">="),
     ),
     SymbolType.ROOT: OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
-    SymbolType.STRING_LITERAL: RegexBasedParser(
-        '"([^\\\\]|\\\\("|n|\\\\))*?"', forbidden=[]
-    ),
+    SymbolType.STRING_LITERAL: RegexBasedParser('"([^\\\\]|\\\\("|n|\\\\))*?"'),
     SymbolType.WHILE: LiteralParser("while"),
-    SymbolType.WHITESPACE: RegexBasedParser("([ \n]|$)+", forbidden=[]),
+    SymbolType.WHITESPACE: RegexBasedParser("([ \n]|$)+"),
 }
 
 
@@ -198,10 +177,10 @@ SOFT_PRUNED_SYMBOL_TYPES: Set[IntEnum] = {
 def parse(code: str) -> Tree:
     tree: Optional[Tree] = parse_generic(REWRITE_RULES, code)
 
-    tree = prune_by_symbol_types(tree, HARD_PRUNED_SYMBOL_TYPES, prune_subtree=True)
+    tree = prune_by_symbol_types(tree, HARD_PRUNED_SYMBOL_TYPES, prune_hard=True)
     assert tree
 
-    tree = prune_by_symbol_types(tree, SOFT_PRUNED_SYMBOL_TYPES, prune_subtree=False)
+    tree = prune_by_symbol_types(tree, SOFT_PRUNED_SYMBOL_TYPES, prune_hard=False)
     assert tree
 
     return tree
