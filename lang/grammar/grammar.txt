@@ -23,12 +23,11 @@ LITERAL = BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL
 
 LOOP = WHILE WHITESPACE (FUNCTION_BODY WHITESPACE)? END
 
+@ prune soft
 OPERATOR = OPERATOR_NON_ALPHABETICAL | OPERATOR_KEYWORD
 
-@ prune soft
 OPERATOR_KEYWORD = "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap"
 
-@ prune soft
 OPERATOR_NON_ALPHABETICAL = "-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">="
 
 STRING_LITERAL = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"")

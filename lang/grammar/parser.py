@@ -4,6 +4,7 @@
 
 # flake8: noqa
 # fmt: off
+# nopycln: file
 
 from enum import IntEnum, auto
 from parser.parser import (
@@ -58,6 +59,20 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
                 SymbolParser(SymbolType.FUNCTION_BODY),
             )
         ),
+        SymbolParser(SymbolType.WHITESPACE),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.ELSE),
+                OptionalParser(
+                    ConcatenationParser(
+                        SymbolParser(SymbolType.WHITESPACE),
+                        SymbolParser(SymbolType.FUNCTION_BODY),
+                    )
+                ),
+                SymbolParser(SymbolType.WHITESPACE),
+            )
+        ),
+        SymbolParser(SymbolType.END),
     ),
     SymbolType.CONTROL_FLOW_KEYWORD: OrParser(
         SymbolParser(SymbolType.IF),
@@ -95,6 +110,15 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
             ),
             min_repeats=1,
         ),
+        SymbolParser(SymbolType.BEGIN),
+        SymbolParser(SymbolType.WHITESPACE),
+        OptionalParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.FUNCTION_BODY),
+                SymbolParser(SymbolType.WHITESPACE),
+            )
+        ),
+        SymbolParser(SymbolType.END),
     ),
     SymbolType.IDENTIFIER: RegexBasedParser(
         "[a-z_]+", forbidden=SymbolParser(SymbolType.KEYWORD)
@@ -120,6 +144,7 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
                 SymbolParser(SymbolType.WHITESPACE),
             )
         ),
+        SymbolParser(SymbolType.END),
     ),
     SymbolType.OPERATOR: OrParser(
         SymbolParser(SymbolType.OPERATOR_NON_ALPHABETICAL),
@@ -152,7 +177,17 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         LiteralParser(">"),
         LiteralParser(">="),
     ),
-    SymbolType.ROOT: OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
+    SymbolType.ROOT: ConcatenationParser(
+        OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
+        RepeatParser(
+            ConcatenationParser(
+                SymbolParser(SymbolType.FUNCTION_DEFINITION),
+                SymbolParser(SymbolType.WHITESPACE),
+            ),
+            min_repeats=1,
+        ),
+        OptionalParser(SymbolParser(SymbolType.WHITESPACE)),
+    ),
     SymbolType.STRING_LITERAL: RegexBasedParser('"([^\\\\]|\\\\("|n|\\\\))*?"'),
     SymbolType.WHILE: LiteralParser("while"),
     SymbolType.WHITESPACE: RegexBasedParser("([ \n]|$)+"),
@@ -169,18 +204,11 @@ SOFT_PRUNED_SYMBOL_TYPES: Set[IntEnum] = {
     SymbolType.FUNCTION_BODY_ITEM,
     SymbolType.KEYWORD,
     SymbolType.LITERAL,
-    SymbolType.OPERATOR_KEYWORD,
-    SymbolType.OPERATOR_NON_ALPHABETICAL,
+    SymbolType.OPERATOR,
 }
 
 
 def parse(code: str) -> Tree:
-    tree: Optional[Tree] = parse_generic(REWRITE_RULES, code)
-
-    tree = prune_by_symbol_types(tree, HARD_PRUNED_SYMBOL_TYPES, prune_hard=True)
-    assert tree
-
-    tree = prune_by_symbol_types(tree, SOFT_PRUNED_SYMBOL_TYPES, prune_hard=False)
-    assert tree
-
-    return tree
+    return parse_generic(
+        REWRITE_RULES, code, HARD_PRUNED_SYMBOL_TYPES, SOFT_PRUNED_SYMBOL_TYPES
+    )
