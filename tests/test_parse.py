@@ -22,7 +22,6 @@ from lang.parse import (
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("true", True),
         ("false", True),
         ("truea", False),
@@ -42,7 +41,6 @@ def test_parse_boolean_literal(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("1", True),
         ("0", True),
         ("00", True),
@@ -66,7 +64,6 @@ def test_parse_integer_literal(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ('"', False),
         ('""', True),
         ('"aasdfasdf"', True),
@@ -106,7 +103,6 @@ def test_parse_string_non_greedy() -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ('"', False),
         ('""', True),
         ('"aasdfasdf"', True),
@@ -140,7 +136,6 @@ OPERATOR_KEYWORDS: List[str] = []
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("a", True),
         ("0", False),
         ("/", False),
@@ -166,7 +161,6 @@ def test_parse_identifier(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("foo", False),
         ("<=>", False),
     ]
@@ -184,7 +178,6 @@ def test_parse_operator(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", True),
         ("abc", False),
         (" ", True),
         ("\n", True),
@@ -207,7 +200,6 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("else end", False),
         ("end", False),
         ("foo", False),
@@ -256,7 +248,6 @@ def test_parse_branch(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("end", False),
         ("while end", True),
         ("while a end", True),
@@ -281,7 +272,6 @@ def test_parse_loop(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("end", False),
         ("while end", True),
         ("while a end", True),
@@ -304,7 +294,6 @@ def test_parse_function_body(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("fn a begin end", True),
         ("fn a b begin end", True),
         ("fn a b c d e f begin end", True),
@@ -326,7 +315,6 @@ def test_parse_function(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("", False),
         ("fn a begin end", True),
         (" fn a begin end", True),
         ("fn a begin end ", True),
