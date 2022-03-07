@@ -30,6 +30,7 @@ class SymbolType(IntEnum):
     ELSE = auto()
     END = auto()
     FN = auto()
+    FORBIDDEN_IDENTIFIER = auto()
     FUNCTION_BODY = auto()
     FUNCTION_BODY_ITEM = auto()
     FUNCTION_DEFINITION = auto()
@@ -37,7 +38,6 @@ class SymbolType(IntEnum):
     IDENTIFIER = auto()
     IF = auto()
     INTEGER_LITERAL = auto()
-    KEYWORD = auto()
     LITERAL = auto()
     LOOP = auto()
     OPERATOR = auto()
@@ -86,6 +86,11 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
     SymbolType.ELSE: LiteralParser("else"),
     SymbolType.END: LiteralParser("end"),
     SymbolType.FN: LiteralParser("fn"),
+    SymbolType.FORBIDDEN_IDENTIFIER: OrParser(
+        SymbolParser(SymbolType.BOOLEAN_LITERAL),
+        SymbolParser(SymbolType.CONTROL_FLOW_KEYWORD),
+        SymbolParser(SymbolType.OPERATOR_KEYWORD),
+    ),
     SymbolType.FUNCTION_BODY: ConcatenationParser(
         SymbolParser(SymbolType.FUNCTION_BODY_ITEM),
         RepeatParser(
@@ -126,15 +131,10 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         ),
     ),
     SymbolType.IDENTIFIER: RegexBasedParser(
-        "[a-z_]+", forbidden=SymbolParser(SymbolType.KEYWORD)
+        "[a-z_]+", forbidden=SymbolParser(SymbolType.FORBIDDEN_IDENTIFIER)
     ),
     SymbolType.IF: LiteralParser("if"),
     SymbolType.INTEGER_LITERAL: RegexBasedParser("[0-9]+"),
-    SymbolType.KEYWORD: OrParser(
-        SymbolParser(SymbolType.BOOLEAN_LITERAL),
-        SymbolParser(SymbolType.CONTROL_FLOW_KEYWORD),
-        SymbolParser(SymbolType.OPERATOR_KEYWORD),
-    ),
     SymbolType.LITERAL: OrParser(
         SymbolParser(SymbolType.BOOLEAN_LITERAL),
         SymbolParser(SymbolType.INTEGER_LITERAL),
@@ -207,7 +207,6 @@ HARD_PRUNED_SYMBOL_TYPES: Set[IntEnum] = {
 SOFT_PRUNED_SYMBOL_TYPES: Set[IntEnum] = {
     SymbolType.CONTROL_FLOW_KEYWORD,
     SymbolType.FUNCTION_BODY_ITEM,
-    SymbolType.KEYWORD,
     SymbolType.LITERAL,
     SymbolType.OPERATOR,
 }
