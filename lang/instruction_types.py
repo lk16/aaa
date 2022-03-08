@@ -181,3 +181,8 @@ class JumpIfNot(Instruction):
 
     def __repr__(self) -> str:  # pragma: nocover
         return f"{type(self).__name__}({self.instruction_offset})"
+
+
+@dataclass
+class Nop(Instruction):
+    ...

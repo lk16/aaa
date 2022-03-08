@@ -30,6 +30,7 @@ from lang.instruction_types import (
     Minus,
     Modulo,
     Multiply,
+    Nop,
     Not,
     Or,
     Over,
@@ -86,6 +87,7 @@ class Program:
             Modulo: self.instruction_modulo,
             Multiply: self.instruction_multiply,
             Not: self.instruction_not,
+            Nop: self.instruction_nop,
             Or: self.instruction_or,
             Over: self.instruction_over,
             Plus: self.instruction_plus,
@@ -486,5 +488,8 @@ class Program:
 
     def instruction_jump(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Jump)
-
         return instruction.instruction_offset
+
+    def instruction_nop(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, Nop)
+        return self.get_instruction_pointer() + 1

@@ -160,6 +160,7 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         LiteralParser("drop"),
         LiteralParser("dup"),
         LiteralParser("not"),
+        LiteralParser("nop"),
         LiteralParser("or"),
         LiteralParser("over"),
         LiteralParser("rot"),
