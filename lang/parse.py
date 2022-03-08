@@ -84,6 +84,11 @@ class Loop(AaaTreeNode):
 
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "Loop":
+
+        if len(tree.children) == 1 and tree[0].symbol_type == SymbolType.LOOP:
+            # TODO this is an ugly hack to bypass bugs likely in parser lib
+            tree = tree[0]
+
         loop_body = FunctionBody([])
 
         if tree.children[1].symbol_type != SymbolType.END:
@@ -109,6 +114,11 @@ class Branch(AaaTreeNode):
 
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "Branch":
+
+        if len(tree.children) == 1 and tree[0].symbol_type == SymbolType.BRANCH:
+            # TODO this is an ugly hack to bypass bugs likely in parser lib
+            tree = tree[0]
+
         if_body = FunctionBody([])
         else_body = FunctionBody([])
 
@@ -151,6 +161,10 @@ class FunctionBody(AaaTreeNode):
     def from_tree(cls, tree: Tree, code: str) -> "FunctionBody":
         assert tree.symbol_type == SymbolType.FUNCTION_BODY
 
+        if len(tree.children) == 1 and tree[0].symbol_type == SymbolType.FUNCTION_BODY:
+            # TODO this is an ugly hack to bypass bugs likely in parser lib
+            tree = tree[0]
+
         aaa_tree_nodes: Dict[Optional[IntEnum], Type[FunctionBodyItem]] = {
             SymbolType.BOOLEAN_LITERAL: BooleanLiteral,
             SymbolType.BRANCH: Branch,
@@ -181,6 +195,13 @@ class Function(AaaTreeNode):
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "Function":
         assert tree.symbol_type == SymbolType.FUNCTION_DEFINITION
+
+        if (
+            len(tree.children) == 1
+            and tree[0].symbol_type == SymbolType.FUNCTION_DEFINITION
+        ):
+            # TODO this is an ugly hack to bypass bugs likely in parser lib
+            tree = tree[0]
 
         name, *arguments = [identifier.value(code) for identifier in tree[1].children]
 

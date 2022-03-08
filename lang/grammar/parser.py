@@ -173,7 +173,7 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         LiteralParser("."),
         LiteralParser("*"),
         LiteralParser("/"),
-        LiteralParser("\n"),
+        LiteralParser("\\n"),
         LiteralParser("%"),
         LiteralParser("+"),
         LiteralParser("<"),

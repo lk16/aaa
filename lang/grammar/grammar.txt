@@ -30,7 +30,7 @@ OPERATOR = OPERATOR_NON_ALPHABETICAL | OPERATOR_KEYWORD
 
 OPERATOR_KEYWORD = "and" | "drop" | "dup" | "not" | "or" | "over" | "rot" | "strlen" | "substr" | "swap"
 
-OPERATOR_NON_ALPHABETICAL = "-" | "!=" | "." | "*" | "/" | "\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">="
+OPERATOR_NON_ALPHABETICAL = "-" | "!=" | "." | "*" | "/" | "\\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">="
 
 STRING_LITERAL = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"")
 
