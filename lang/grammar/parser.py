@@ -54,21 +54,23 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
     SymbolType.BOOLEAN_LITERAL: OrParser(LiteralParser("true"), LiteralParser("false")),
     SymbolType.BRANCH: ConcatenationParser(
         SymbolParser(SymbolType.IF),
-        OptionalParser(
+        RepeatParser(
             ConcatenationParser(
                 SymbolParser(SymbolType.WHITESPACE),
                 SymbolParser(SymbolType.FUNCTION_BODY),
-            )
+            ),
+            min_repeats=1,
         ),
         SymbolParser(SymbolType.WHITESPACE),
         OptionalParser(
             ConcatenationParser(
                 SymbolParser(SymbolType.ELSE),
-                OptionalParser(
+                RepeatParser(
                     ConcatenationParser(
                         SymbolParser(SymbolType.WHITESPACE),
                         SymbolParser(SymbolType.FUNCTION_BODY),
-                    )
+                    ),
+                    min_repeats=1,
                 ),
                 SymbolParser(SymbolType.WHITESPACE),
             )
@@ -114,11 +116,12 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         SymbolParser(SymbolType.WHITESPACE),
         SymbolParser(SymbolType.BEGIN),
         SymbolParser(SymbolType.WHITESPACE),
-        OptionalParser(
+        RepeatParser(
             ConcatenationParser(
                 SymbolParser(SymbolType.FUNCTION_BODY),
                 SymbolParser(SymbolType.WHITESPACE),
-            )
+            ),
+            min_repeats=1,
         ),
         SymbolParser(SymbolType.END),
     ),
@@ -143,11 +146,12 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
     SymbolType.LOOP: ConcatenationParser(
         SymbolParser(SymbolType.WHILE),
         SymbolParser(SymbolType.WHITESPACE),
-        OptionalParser(
+        RepeatParser(
             ConcatenationParser(
                 SymbolParser(SymbolType.FUNCTION_BODY),
                 SymbolParser(SymbolType.WHITESPACE),
-            )
+            ),
+            min_repeats=1,
         ),
         SymbolParser(SymbolType.END),
     ),

@@ -10,7 +10,6 @@ Next development steps.
 - expressiveness
 
 ### Forbid empty body of loop/branch/function
-- introduce `nop` instruction
 - ban empty bodies
 - prune if/else/begin/end/while
 

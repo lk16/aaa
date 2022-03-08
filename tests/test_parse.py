@@ -209,19 +209,19 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("else end", False),
+        ("else nop end", False),
         ("end", False),
         ("foo", False),
-        ("if end", True),
-        ("if\nend", True),
-        ("if\n end", True),
+        ("if nop end", True),
+        ("if\nnop\nend", True),
+        ("if\n nop\n end", True),
         ("if a end", True),
         ("if\na\nend", True),
         ("if \na \nend", True),
         ('if \n123 true and <= "\\\\  \\n  \\" " \nend', True),
-        ("if else end", True),
-        ("if\nelse\nend", True),
-        ("if\n else\n end", True),
+        ("if nop else nop end", True),
+        ("if\nnop\nelse\nnop\nend", True),
+        ("if\n nop\n else\n nop\n end", True),
         ("if a else a end", True),
         ("if\na\nelse\na\nend", True),
         ("if \na \nelse \na \nend", True),
@@ -229,20 +229,20 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
             'if \n123 true and <= "\\\\  \\n  \\" " \nelse \n123 true and <= "\\\\  \\n  \\" " \nend',
             True,
         ),
-        ("if if end end", True),
-        ("if if if if end end end end", True),
-        ("if if else end else if else end end", True),
-        ("if while else end", False),
-        ("if else while end", False),
-        ("if fn else end", False),
-        ("if else fn end", False),
-        ("if begin else end", False),
-        ("if else begin end", False),
-        ("if while end end", True),
-        ("if while end else end", True),
-        ("if else while end end", True),
-        ("if substr else end", True),
-        ("if else substr end", True),
+        ("if if nop end end", True),
+        ("if if if if nop end end end end", True),
+        ("if if nop else nop end else if nop else nop end end", True),
+        ("if while else nop end", False),
+        ("if nop else while nop end", False),
+        ("if fn else nop end", False),
+        ("if nop else fn end", False),
+        ("if begin else nop end", False),
+        ("if nop else begin nop end", False),
+        ("if while nop end end", True),
+        ("if while nop end else nop end", True),
+        ("if nop else while nop end end", True),
+        ("if substr else nop end", True),
+        ("if nop else substr end", True),
     ],
 )
 def test_parse_branch(code: str, expected_ok: bool) -> None:
@@ -264,15 +264,15 @@ def test_parse_branch(code: str, expected_ok: bool) -> None:
     ["code", "expected_ok"],
     [
         ("end", False),
-        ("while end", True),
+        ("while nop end", True),
         ("while a end", True),
         ("while <= end", True),
         ("while true end", True),
         ("while 123 end", True),
-        ("while if end end", True),
-        ("while if else end end", True),
-        ("while if while end else while end end end", True),
-        ("while endd end", True),
+        ("while if nop end end", True),
+        ("while if nop else nop end end", True),
+        ("while if while nop end else while nop end end end", True),
+        ("while nop endd end", True),
     ],
 )
 def test_parse_loop(code: str, expected_ok: bool) -> None:
@@ -294,13 +294,13 @@ def test_parse_loop(code: str, expected_ok: bool) -> None:
     ["code", "expected_ok"],
     [
         ("end", False),
-        ("while end", True),
+        ("while nop end", True),
         ("while a end", True),
-        ("if end", True),
-        ("if else end", True),
+        ("if nop end", True),
+        ("if nop else nop end", True),
         ("if a else a end", True),
         ("3 5 + < 8 true >= substr substr substr", True),
-        ("if while if while if while end end end end end end", True),
+        ("if while if while if while nop end end end end end end", True),
     ],
 )
 def test_parse_function_body(code: str, expected_ok: bool) -> None:
@@ -321,13 +321,13 @@ def test_parse_function_body(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("fn a begin end", True),
-        ("fn a b begin end", True),
-        ("fn a b c d e f begin end", True),
-        ("fn true begin end", False),
-        ("fn a true begin end", False),
+        ("fn a begin nop end", True),
+        ("fn a b begin nop end", True),
+        ("fn a b c d e f begin nop end", True),
+        ("fn true begin nop end", False),
+        ("fn a true begin nop end", False),
         ("fn a begin 3 5 < true and end", True),
-        ("fn a b c begin if while end else while end end end", True),
+        ("fn a b c begin if while nop end else while nop end end end", True),
     ],
 )
 def test_parse_function(code: str, expected_ok: bool) -> None:
@@ -348,13 +348,16 @@ def test_parse_function(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_ok"],
     [
-        ("fn a begin end", True),
-        (" fn a begin end", True),
-        ("fn a begin end ", True),
-        (" fn a begin end ", True),
-        ("fn a begin end fn b begin end", True),
-        (" fn a begin end fn b begin end ", True),
-        ("fn a b c begin while end end fn d e f begin if else end end", True),
+        ("fn a begin nop end", True),
+        (" fn a begin nop end", True),
+        ("fn a begin nop end ", True),
+        (" fn a begin nop end ", True),
+        ("fn a begin nop end fn b begin nop end", True),
+        (" fn a begin nop end fn b begin nop end ", True),
+        (
+            "fn a b c begin while nop end end fn d e f begin if nop else nop end end",
+            True,
+        ),
     ],
 )
 def test_parse_file(code: str, expected_ok: bool) -> None:
@@ -375,10 +378,10 @@ def test_parse_file(code: str, expected_ok: bool) -> None:
 @pytest.mark.parametrize(
     ["code", "func_names", "expected_arguments"],
     [
-        ("fn main begin end", ["main"], [[]]),
-        ("fn main a b c begin end", ["main"], [["a", "b", "c"]]),
+        ("fn main begin nop end", ["main"], [[]]),
+        ("fn main a b c begin nop end", ["main"], [["a", "b", "c"]]),
         (
-            "fn main a b c begin end fn foo d e f begin end fn bar g h i begin end",
+            "fn main a b c begin nop end fn foo d e f begin nop end fn bar g h i begin nop end",
             ["main", "foo", "bar"],
             [["a", "b", "c"], ["d", "e", "f"], ["g", "h", "i"]],
         ),
@@ -399,10 +402,10 @@ def test_file_parse_tree(
 @pytest.mark.parametrize(
     ["code", "expected_if_body_children", "expected_else_body_children"],
     [
-        ("fn main begin if end end", 0, 0),
+        ("fn main begin if nop end end", 1, 0),
         ("fn main begin if 1 2 3 end end", 3, 0),
-        ("fn main begin if else end end", 0, 0),
-        ("fn main begin if else 1 2 3 end end", 0, 3),
+        ("fn main begin if nop else nop end end", 1, 1),
+        ("fn main begin if nop else 1 2 3 end end", 1, 3),
         ("fn main begin if 1 2 3 else 4 5 6 end end", 3, 3),
     ],
 )
@@ -529,13 +532,13 @@ def test_identifier_parse_tree(code: str, expected_name: str) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_loop_func_body_items"],
     [
-        ("fn main begin while end end", 0),
+        ("fn main begin while nop end end", 1),
         ("fn main begin while 1 end end", 1),
         ("fn main begin while a end end", 1),
         ("fn main begin while <= end end", 1),
         ("fn main begin while <= drop end end", 2),
         ("fn main begin while sub over drop end end", 3),
-        ("fn main begin while while end if end if end end end", 3),
+        ("fn main begin while while nop end if nop end if nop end end end", 3),
     ],
 )
 def test_loop_parse_tree(code: str, expected_loop_func_body_items: int) -> None:

@@ -84,16 +84,16 @@ class Loop(AaaTreeNode):
 
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "Loop":
+        assert tree.symbol_type == SymbolType.LOOP
 
         if len(tree.children) == 1 and tree[0].symbol_type == SymbolType.LOOP:
             # TODO this is an ugly hack to bypass bugs likely in parser lib
             tree = tree[0]
 
-        loop_body = FunctionBody([])
+        assert tree[0].symbol_type == SymbolType.WHILE
+        assert tree[2].symbol_type == SymbolType.END
 
-        if tree.children[1].symbol_type != SymbolType.END:
-            loop_body = FunctionBody.from_tree(tree.children[1], code)
-
+        loop_body = FunctionBody.from_tree(tree.children[1], code)
         return Loop(loop_body)
 
 
@@ -114,41 +114,28 @@ class Branch(AaaTreeNode):
 
     @classmethod
     def from_tree(cls, tree: Tree, code: str) -> "Branch":
+        assert tree.symbol_type == SymbolType.BRANCH
 
         if len(tree.children) == 1 and tree[0].symbol_type == SymbolType.BRANCH:
             # TODO this is an ugly hack to bypass bugs likely in parser lib
             tree = tree[0]
 
-        if_body = FunctionBody([])
-        else_body = FunctionBody([])
+        assert tree[0].symbol_type == SymbolType.IF
+        if len(tree.children) == 3:
+            assert tree[2].symbol_type == SymbolType.END
+        else:
+            assert (
+                len(tree.children) == 5
+                and tree[2].symbol_type == SymbolType.ELSE
+                and tree[4].symbol_type == SymbolType.END
+            )
 
-        if tree[1].symbol_type == SymbolType.END:  # if end
-            pass
-        elif (
-            tree[1].symbol_type == SymbolType.ELSE
-            and tree[2].symbol_type == SymbolType.END
-        ):  # if else end
-            pass
-        elif tree[2].symbol_type == SymbolType.END:  # if ... end
-            if_body = FunctionBody.from_tree(tree[1], code)
-        elif (
-            tree[1].symbol_type == SymbolType.ELSE
-            and tree[3].symbol_type == SymbolType.END
-        ):  # if else ... end
-            else_body = FunctionBody.from_tree(tree[2], code)
-        elif (
-            tree[2].symbol_type == SymbolType.ELSE
-            and tree[3].symbol_type == SymbolType.END
-        ):  # if ... else end
-            if_body = FunctionBody.from_tree(tree[1], code)
-        elif (
-            tree[2].symbol_type == SymbolType.ELSE
-            and tree[4].symbol_type == SymbolType.END
-        ):  # if ... else ... end
-            if_body = FunctionBody.from_tree(tree[1], code)
+        if_body = FunctionBody.from_tree(tree[1], code)
+
+        if len(tree.children) == 5:
             else_body = FunctionBody.from_tree(tree[3], code)
-        else:  # pragma: nocover
-            raise NotImplementedError
+        else:
+            else_body = FunctionBody([])
 
         return Branch(if_body, else_body)
 
@@ -203,15 +190,16 @@ class Function(AaaTreeNode):
             # TODO this is an ugly hack to bypass bugs likely in parser lib
             tree = tree[0]
 
+        assert tree[0].symbol_type == SymbolType.FN
+        assert tree[2].symbol_type == SymbolType.BEGIN
+        assert tree[4].symbol_type == SymbolType.END
+
         name, *arguments = [identifier.value(code) for identifier in tree[1].children]
 
         if len([name] + arguments) != len({name} | {*arguments}):
             raise InvalidFunctionArgumentList(name, arguments)
 
-        if tree.children[3].symbol_type == SymbolType.END:
-            body = FunctionBody([])
-        else:
-            body = FunctionBody.from_tree(tree.children[3], code)
+        body = FunctionBody.from_tree(tree.children[3], code)
 
         return Function(name, arguments, body)
 
