@@ -37,16 +37,22 @@ STRING_LITERAL = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"")
 @ prune hard
 WHITESPACE = regex("([ \n]|$)+")
 
+@ prune hard
 IF = "if"
 
+@ prune hard
 ELSE = "else"
 
+@ prune hard
 BEGIN = "begin"
 
+@ prune hard
 END = "end"
 
+@ prune hard
 WHILE = "while"
 
+@ prune hard
 FN = "fn"
 
 @ prune soft

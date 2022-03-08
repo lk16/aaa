@@ -90,10 +90,7 @@ class Loop(AaaTreeNode):
             # TODO this is an ugly hack to bypass bugs likely in parser lib
             tree = tree[0]
 
-        assert tree[0].symbol_type == SymbolType.WHILE
-        assert tree[2].symbol_type == SymbolType.END
-
-        loop_body = FunctionBody.from_tree(tree.children[1], code)
+        loop_body = FunctionBody.from_tree(tree.children[0], code)
         return Loop(loop_body)
 
 
@@ -120,20 +117,10 @@ class Branch(AaaTreeNode):
             # TODO this is an ugly hack to bypass bugs likely in parser lib
             tree = tree[0]
 
-        assert tree[0].symbol_type == SymbolType.IF
-        if len(tree.children) == 3:
-            assert tree[2].symbol_type == SymbolType.END
-        else:
-            assert (
-                len(tree.children) == 5
-                and tree[2].symbol_type == SymbolType.ELSE
-                and tree[4].symbol_type == SymbolType.END
-            )
+        if_body = FunctionBody.from_tree(tree[0], code)
 
-        if_body = FunctionBody.from_tree(tree[1], code)
-
-        if len(tree.children) == 5:
-            else_body = FunctionBody.from_tree(tree[3], code)
+        if len(tree.children) == 2:
+            else_body = FunctionBody.from_tree(tree[1], code)
         else:
             else_body = FunctionBody([])
 
@@ -190,16 +177,12 @@ class Function(AaaTreeNode):
             # TODO this is an ugly hack to bypass bugs likely in parser lib
             tree = tree[0]
 
-        assert tree[0].symbol_type == SymbolType.FN
-        assert tree[2].symbol_type == SymbolType.BEGIN
-        assert tree[4].symbol_type == SymbolType.END
-
-        name, *arguments = [identifier.value(code) for identifier in tree[1].children]
+        name, *arguments = [identifier.value(code) for identifier in tree[0].children]
 
         if len([name] + arguments) != len({name} | {*arguments}):
             raise InvalidFunctionArgumentList(name, arguments)
 
-        body = FunctionBody.from_tree(tree.children[3], code)
+        body = FunctionBody.from_tree(tree[1], code)
 
         return Function(name, arguments, body)
 

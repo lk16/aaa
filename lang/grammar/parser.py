@@ -205,6 +205,12 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
 
 
 HARD_PRUNED_SYMBOL_TYPES: Set[IntEnum] = {
+    SymbolType.BEGIN,
+    SymbolType.ELSE,
+    SymbolType.END,
+    SymbolType.FN,
+    SymbolType.IF,
+    SymbolType.WHILE,
     SymbolType.WHITESPACE,
 }
 

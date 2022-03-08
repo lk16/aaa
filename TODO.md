@@ -9,10 +9,6 @@ Next development steps.
 - ci
 - expressiveness
 
-### Forbid empty body of loop/branch/function
-- ban empty bodies
-- prune if/else/begin/end/while
-
 ### More jumps
 - loop jump keywords (`break`, `continue`)
 
