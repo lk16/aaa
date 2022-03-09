@@ -1,10 +1,11 @@
 fn main begin
-    0 true
-    while
+    0
+    if
+        dup 10 <
+    begin
         1 +
         dup .
         \n
-        dup 10 <
     end
     drop
 end

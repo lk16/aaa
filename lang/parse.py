@@ -80,6 +80,7 @@ class Operator(AaaTreeNode):
 
 @dataclass
 class Loop(AaaTreeNode):
+    condition: "FunctionBody"
     body: "FunctionBody"
 
     @classmethod
@@ -90,8 +91,9 @@ class Loop(AaaTreeNode):
             # TODO this is an ugly hack to bypass bugs likely in parser lib
             tree = tree[0]
 
-        loop_body = FunctionBody.from_tree(tree.children[0], code)
-        return Loop(loop_body)
+        condition = FunctionBody.from_tree(tree.children[0], code)
+        loop_body = FunctionBody.from_tree(tree.children[1], code)
+        return Loop(condition, loop_body)
 
 
 @dataclass
@@ -106,6 +108,7 @@ class Identifier(AaaTreeNode):
 
 @dataclass
 class Branch(AaaTreeNode):
+    condition: "FunctionBody"
     if_body: "FunctionBody"
     else_body: "FunctionBody"
 
@@ -117,14 +120,16 @@ class Branch(AaaTreeNode):
             # TODO this is an ugly hack to bypass bugs likely in parser lib
             tree = tree[0]
 
-        if_body = FunctionBody.from_tree(tree[0], code)
+        condition = FunctionBody.from_tree(tree[0], code)
 
-        if len(tree.children) == 2:
-            else_body = FunctionBody.from_tree(tree[1], code)
+        if_body = FunctionBody.from_tree(tree[1], code)
+
+        if len(tree.children) == 3:
+            else_body = FunctionBody.from_tree(tree[2], code)
         else:
             else_body = FunctionBody([])
 
-        return Branch(if_body, else_body)
+        return Branch(condition, if_body, else_body)
 
 
 @dataclass

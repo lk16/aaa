@@ -15,7 +15,7 @@ def test_readme_command(capfd: CaptureFixture[str]) -> None:
             if "aaa.py cmd" in line:
                 readme_commands.append(line)
 
-    command = '"a" 0 true while over . 1 + dup 3 < end drop drop \\n'
+    command = '"a" 0 while dup 3 < begin over . 1 + end drop drop \\n'
 
     # README hasn't changed command and no commands were added
     assert command in readme_commands[0]

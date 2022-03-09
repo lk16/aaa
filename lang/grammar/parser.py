@@ -57,6 +57,10 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
         SymbolParser(SymbolType.WHITESPACE),
         SymbolParser(SymbolType.FUNCTION_BODY),
         SymbolParser(SymbolType.WHITESPACE),
+        SymbolParser(SymbolType.BEGIN),
+        SymbolParser(SymbolType.WHITESPACE),
+        SymbolParser(SymbolType.FUNCTION_BODY),
+        SymbolParser(SymbolType.WHITESPACE),
         OptionalParser(
             ConcatenationParser(
                 SymbolParser(SymbolType.ELSE),
@@ -130,6 +134,10 @@ REWRITE_RULES: Final[Dict[IntEnum, Parser]] = {
     ),
     SymbolType.LOOP: ConcatenationParser(
         SymbolParser(SymbolType.WHILE),
+        SymbolParser(SymbolType.WHITESPACE),
+        SymbolParser(SymbolType.FUNCTION_BODY),
+        SymbolParser(SymbolType.WHITESPACE),
+        SymbolParser(SymbolType.BEGIN),
         SymbolParser(SymbolType.WHITESPACE),
         SymbolParser(SymbolType.FUNCTION_BODY),
         SymbolParser(SymbolType.WHITESPACE),
