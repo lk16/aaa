@@ -9,9 +9,6 @@ Next development steps.
 - ci
 - expressiveness
 
-### More jumps
-- loop jump keywords (`break`, `continue`)
-
 ### Be more consistent
 - change `while ... end` to `while ... begin ... end`
 - change `if ... else ... end` to `if ... begin ... else ... end`
