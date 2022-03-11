@@ -1,6 +1,6 @@
 fn main begin
     0
-    if
+    while
         dup 10 <
     begin
         1 +

@@ -1,15 +1,21 @@
 fn fizzbuzz n remainder begin
-    remainder 0 = if
+    if
+        remainder 0 =
+    begin
         "fizzbuzz"
     else
-        remainder 5 =
-        remainder 10 = or if
+        if
+            remainder 5 =
+            remainder 10 = or
+        begin
             "buzz"
         else
+            if
             remainder 3 =
             remainder 6 = or
             remainder 9 = or
-            remainder 12 = or if
+            remainder 12 = or
+            begin
                 "fizz"
             else
                 n
@@ -22,10 +28,11 @@ end
 
 fn main begin
     0
-    true while
+    while
+        dup 100 <
+    begin
         1 +
         dup dup 15 % fizzbuzz
-        dup 100 <
     end
     drop
 end

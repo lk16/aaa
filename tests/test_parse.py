@@ -16,7 +16,6 @@ from lang.parse import (
     Branch,
     Identifier,
     IntegerLiteral,
-    Loop,
     Operator,
     StringLiteral,
     SymbolType,
@@ -212,37 +211,45 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
         ("else nop end", False),
         ("end", False),
         ("foo", False),
-        ("if nop end", True),
-        ("if\nnop\nend", True),
-        ("if\n nop\n end", True),
-        ("if a end", True),
-        ("if\na\nend", True),
-        ("if \na \nend", True),
-        ('if \n123 true and <= "\\\\  \\n  \\" " \nend', True),
-        ("if nop else nop end", True),
-        ("if\nnop\nelse\nnop\nend", True),
-        ("if\n nop\n else\n nop\n end", True),
-        ("if a else a end", True),
-        ("if\na\nelse\na\nend", True),
-        ("if \na \nelse \na \nend", True),
+        ("if true begin nop end", True),
+        ("if\ntrue\nbegin\nnop\nend", True),
+        ("if\n true\n begin\n nop\n end", True),
+        ("if true begin a end", True),
+        ("if true begin\na\nend", True),
+        ("if \ntrue \nbegin \na \nend", True),
+        ('if \ntrue begin 123 true and <= "\\\\  \\n  \\" " \nend', True),
+        ("if nop begin nop else nop end", True),
+        ("if\nnop\nbegin\nnop\nelse\nnop\nend", True),
+        ("if\n nop\n begin\n nop\n else\n nop\n end", True),
+        ("if a begin a else a end", True),
+        ("if\na\nbegin\na\nelse\na\nend", True),
+        ("if \na \nbegin \nnop \nelse \na \nend", True),
         (
-            'if \n123 true and <= "\\\\  \\n  \\" " \nelse \n123 true and <= "\\\\  \\n  \\" " \nend',
+            'if \nnop begin 123 true and <= "\\\\  \\n  \\" " \nelse \n123 true and <= "\\\\  \\n  \\" " \nend',
             True,
         ),
-        ("if if nop end end", True),
-        ("if if if if nop end end end end", True),
-        ("if if nop else nop end else if nop else nop end end", True),
-        ("if while else nop end", False),
-        ("if nop else while nop end", False),
+        ("if nop begin if nop begin nop end end", True),
+        (
+            "if nop begin if nop begin if nop begin if nop begin nop end end end end",
+            True,
+        ),
+        (
+            "if nop begin if nop begin nop else nop end else if nop begin nop else nop end end",
+            True,
+        ),
+        ("if nop begin while nop begin else nop end", False),
+        ("if nop begin nop else while nop end", False),
         ("if fn else nop end", False),
         ("if nop else fn end", False),
-        ("if begin else nop end", False),
-        ("if nop else begin nop end", False),
-        ("if while nop end end", True),
-        ("if while nop end else nop end", True),
-        ("if nop else while nop end end", True),
-        ("if substr else nop end", True),
-        ("if nop else substr end", True),
+        ("if nop begin nop else nop end", True),
+        ("if begin nop else nop end", False),
+        ("if nop begin else nop end", False),
+        ("if nop begin nop else end", False),
+        ("if nop begin nop else begin nop end", False),
+        ("if nop begin while nop begin nop end end", True),
+        ("if nop begin while nop begin nop end else nop end", True),
+        ("if substr begin nop else nop end", True),
+        ("if nop begin nop else substr end", True),
     ],
 )
 def test_parse_branch(code: str, expected_ok: bool) -> None:
@@ -264,15 +271,18 @@ def test_parse_branch(code: str, expected_ok: bool) -> None:
     ["code", "expected_ok"],
     [
         ("end", False),
-        ("while nop end", True),
-        ("while a end", True),
-        ("while <= end", True),
-        ("while true end", True),
-        ("while 123 end", True),
-        ("while if nop end end", True),
-        ("while if nop else nop end end", True),
-        ("while if while nop end else while nop end end end", True),
-        ("while nop endd end", True),
+        ("while nop begin nop end", True),
+        ("while nop begin a end", True),
+        ("while <= begin nop end", True),
+        ("while true begin nop end", True),
+        ("while 123 begin nop end", True),
+        ("while nop begin if nop begin nop end end", True),
+        ("while nop begin if nop begin nop else nop end end", True),
+        (
+            "while nop begin if nop begin while nop begin nop end else while nop begin nop end end end",
+            True,
+        ),
+        ("while nop begin nop endd end", True),
     ],
 )
 def test_parse_loop(code: str, expected_ok: bool) -> None:
@@ -294,13 +304,16 @@ def test_parse_loop(code: str, expected_ok: bool) -> None:
     ["code", "expected_ok"],
     [
         ("end", False),
-        ("while nop end", True),
-        ("while a end", True),
-        ("if nop end", True),
-        ("if nop else nop end", True),
-        ("if a else a end", True),
+        ("while nop begin nop end", True),
+        ("while nop begin a end", True),
+        ("if nop begin nop end", True),
+        ("if nop begin nop else nop end", True),
+        ("if nop begin a else a end", True),
         ("3 5 + < 8 true >= substr substr substr", True),
-        ("if while if while if while nop end end end end end end", True),
+        (
+            "if nop begin while nop begin if nop begin while nop begin if nop begin while nop begin nop end end end end end end",
+            True,
+        ),
     ],
 )
 def test_parse_function_body(code: str, expected_ok: bool) -> None:
@@ -327,7 +340,10 @@ def test_parse_function_body(code: str, expected_ok: bool) -> None:
         ("fn true begin nop end", False),
         ("fn a true begin nop end", False),
         ("fn a begin 3 5 < true and end", True),
-        ("fn a b c begin if while nop end else while nop end end end", True),
+        (
+            "fn a b c begin if nop begin while nop begin nop end else while nop begin nop end end end",
+            True,
+        ),
     ],
 )
 def test_parse_function(code: str, expected_ok: bool) -> None:
@@ -355,7 +371,7 @@ def test_parse_function(code: str, expected_ok: bool) -> None:
         ("fn a begin nop end fn b begin nop end", True),
         (" fn a begin nop end fn b begin nop end ", True),
         (
-            "fn a b c begin while nop end end fn d e f begin if nop else nop end end",
+            "fn a b c begin while nop begin nop end end fn d e f begin if nop begin nop else nop end end",
             True,
         ),
     ],
@@ -402,11 +418,11 @@ def test_file_parse_tree(
 @pytest.mark.parametrize(
     ["code", "expected_if_body_children", "expected_else_body_children"],
     [
-        ("fn main begin if nop end end", 1, 0),
-        ("fn main begin if 1 2 3 end end", 3, 0),
-        ("fn main begin if nop else nop end end", 1, 1),
-        ("fn main begin if nop else 1 2 3 end end", 1, 3),
-        ("fn main begin if 1 2 3 else 4 5 6 end end", 3, 3),
+        ("fn main begin if nop begin nop end end", 1, 0),
+        ("fn main begin if nop begin 1 2 3 end end", 3, 0),
+        ("fn main begin if nop begin nop else nop end end", 1, 1),
+        ("fn main begin if nop begin nop else 1 2 3 end end", 1, 3),
+        ("fn main begin if nop begin 1 2 3 else 4 5 6 end end", 3, 3),
     ],
 )
 def test_branch_parse_tree(
@@ -527,30 +543,6 @@ def test_identifier_parse_tree(code: str, expected_name: str) -> None:
 
     assert isinstance(identifier, Identifier)
     assert identifier.name == expected_name
-
-
-@pytest.mark.parametrize(
-    ["code", "expected_loop_func_body_items"],
-    [
-        ("fn main begin while nop end end", 1),
-        ("fn main begin while 1 end end", 1),
-        ("fn main begin while a end end", 1),
-        ("fn main begin while <= end end", 1),
-        ("fn main begin while <= drop end end", 2),
-        ("fn main begin while sub over drop end end", 3),
-        ("fn main begin while while nop end if nop end if nop end end end", 3),
-    ],
-)
-def test_loop_parse_tree(code: str, expected_loop_func_body_items: int) -> None:
-    file = parse(code)
-    assert len(file.functions) == 1
-    func_body = file.functions["main"].body
-
-    assert len(func_body.items) == 1
-    loop = func_body.items[0]
-
-    assert isinstance(loop, Loop)
-    assert len(loop.body.items) == expected_loop_func_body_items
 
 
 @pytest.mark.parametrize(
