@@ -74,11 +74,6 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Literal(Terminal.FN, "fn"),
     Literal(Terminal.IF, "if"),
     Literal(Terminal.WHILE, "while"),
-    Literal(Terminal.FALSE, "false"),
-    Regex(Terminal.IDENTIFIER, "[a-z_]+"),
-    Regex(Terminal.INTEGER, "[0-9]+"),
-    Regex(Terminal.STRING, '"([^\\\\]|\\\\("|n|\\\\))*?"'),
-    Literal(Terminal.TRUE, "true"),
     Literal(Terminal.AND, "and"),
     Literal(Terminal.ASTERISK, "*"),
     Literal(Terminal.BACKSLASH_N, "\\n"),
@@ -103,6 +98,11 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Literal(Terminal.STRLEN, "strlen"),
     Literal(Terminal.SUBSTR, "substr"),
     Literal(Terminal.SWAP, "swap"),
+    Literal(Terminal.FALSE, "false"),
+    Regex(Terminal.IDENTIFIER, "[a-z_]+"),
+    Regex(Terminal.INTEGER, "[0-9]+"),
+    Regex(Terminal.STRING, '"([^\\\\]|\\\\("|n|\\\\))*?"'),
+    Literal(Terminal.TRUE, "true"),
     Regex(Terminal.WHITESPACE, "([ \n]|$)+"),
 ]
 

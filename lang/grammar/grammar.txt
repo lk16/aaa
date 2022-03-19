@@ -17,14 +17,6 @@
 @ token IF    = "if"    .
 @ token WHILE = "while" .
 
-// --- literal tokens ---
-
-@ token FALSE      = "false"                                  .
-@ token IDENTIFIER = regex("[a-z_]+")                         .
-@ token INTEGER    = regex("[0-9]+")                          .
-@ token STRING     = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"") .
-@ token TRUE       = "true"                                   .
-
 // --- operator tokens ---
 
 @ token AND            = "and"    .
@@ -51,6 +43,14 @@
 @ token STRLEN         = "strlen" .
 @ token SUBSTR         = "substr" .
 @ token SWAP           = "swap"   .
+
+// --- literal tokens ---
+
+@ token FALSE      = "false"                                  .
+@ token IDENTIFIER = regex("[a-z_]+")                         .
+@ token INTEGER    = regex("[0-9]+")                          .
+@ token STRING     = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"") .
+@ token TRUE       = "true"                                   .
 
 // --- pruned tokens ---
 
