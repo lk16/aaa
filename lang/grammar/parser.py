@@ -110,11 +110,10 @@ TERMINAL_RULES: List[TokenDescriptor] = [
 class NonTerminal(IntEnum):
     BOOLEAN = next(next_offset)
     BRANCH = next(next_offset)
-    FUNCTION_ARGS = next(next_offset)
     FUNCTION_BODY = next(next_offset)
     FUNCTION_BODY_ITEM = next(next_offset)
     FUNCTION_DEFINITION = next(next_offset)
-    FUNCTION_NAME = next(next_offset)
+    FUNCTION_NAME_AND_ARGS = next(next_offset)
     LITERAL = next(next_offset)
     LOOP = next(next_offset)
     OPERATOR = next(next_offset)
@@ -138,9 +137,6 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         ),
         TerminalExpression(Terminal.END),
     ),
-    NonTerminal.FUNCTION_ARGS: RepeatExpression(
-        TerminalExpression(Terminal.IDENTIFIER)
-    ),
     NonTerminal.FUNCTION_BODY: ConcatenationExpression(
         NonTerminalExpression(NonTerminal.FUNCTION_BODY_ITEM),
         RepeatExpression(NonTerminalExpression(NonTerminal.FUNCTION_BODY_ITEM)),
@@ -154,13 +150,15 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     ),
     NonTerminal.FUNCTION_DEFINITION: ConcatenationExpression(
         TerminalExpression(Terminal.FN),
-        NonTerminalExpression(NonTerminal.FUNCTION_NAME),
-        NonTerminalExpression(NonTerminal.FUNCTION_ARGS),
+        NonTerminalExpression(NonTerminal.FUNCTION_NAME_AND_ARGS),
         TerminalExpression(Terminal.BEGIN),
         NonTerminalExpression(NonTerminal.FUNCTION_BODY),
         TerminalExpression(Terminal.END),
     ),
-    NonTerminal.FUNCTION_NAME: TerminalExpression(Terminal.IDENTIFIER),
+    NonTerminal.FUNCTION_NAME_AND_ARGS: ConcatenationExpression(
+        TerminalExpression(Terminal.IDENTIFIER),
+        RepeatExpression(TerminalExpression(Terminal.IDENTIFIER)),
+    ),
     NonTerminal.LITERAL: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.BOOLEAN),
         TerminalExpression(Terminal.INTEGER),
@@ -211,9 +209,9 @@ PRUNED_TERMINALS: Set[IntEnum] = {
 
 
 PRUNED_NON_TERMINALS: Set[IntEnum] = {
+    NonTerminal.BOOLEAN,
     NonTerminal.FUNCTION_BODY_ITEM,
     NonTerminal.LITERAL,
-    NonTerminal.OPERATOR,
 }
 
 

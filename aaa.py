@@ -5,8 +5,6 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from lang.instructions import get_instructions
-from lang.parse import parse as new_parse
 from lang.run import run_code_as_main, run_file  # TODO remove alias
 
 GRAMMAR_FILE_PATH = Path("grammar.txt")
@@ -57,35 +55,10 @@ def runtests(*args: Any) -> None:
             exit(1)
 
 
-def try_instruction_generator(*args: Any) -> None:
-    if args:
-        raise ArgParseError("try-instruction-generator expects no flags or arguments.")
-
-    while True:
-        code = input("> ")
-        code = f"fn main begin\n{code}\nend"
-        try:
-            file = new_parse(code)
-        except Exception:
-            print("Parse failed")
-            continue
-
-        main = file.functions["main"]
-        instructions = get_instructions(main)
-
-        print()
-
-        for ip, instruction in enumerate(instructions):
-            print(f"{ip:>5} |", instruction.__repr__())
-
-        print()
-
-
 COMMANDS: Dict[str, Callable[..., None]] = {
     "cmd": cmd,
     "run": run,
     "runtests": runtests,
-    "try-instruction-generator": try_instruction_generator,
     # TODO add repl() command
 }
 
@@ -101,7 +74,6 @@ def show_usage(argv: List[str], error_message: str) -> None:
         + f"{argv[0]} cmd CODE <-v>\n"
         + f"{argv[0]} run FILE_PATH <-v>\n"
         + f"{argv[0]} runtests\n"
-        + f"{argv[0]} try-instruction-generator\n"
     )
 
     print(message, file=sys.stderr)

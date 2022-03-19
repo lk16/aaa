@@ -4,7 +4,6 @@ from typing import List, Type
 
 import pytest
 
-from lang.grammar.keywords import get_operator_keywords
 from lang.grammar.parser import (
     HARD_PRUNED_SYMBOL_TYPES,
     REWRITE_RULES,
@@ -117,10 +116,10 @@ def test_parse_string_non_greedy() -> None:
     a, b = tree.children
 
     assert a.value(code) == '"a"'
-    assert a.symbol_type == SymbolType.STRING_LITERAL
+    assert a.token_type == SymbolType.STRING_LITERAL
 
     assert b.value(code) == '"b"'
-    assert b.symbol_type == SymbolType.STRING_LITERAL
+    assert b.token_type == SymbolType.STRING_LITERAL
 
 
 @pytest.mark.parametrize(
