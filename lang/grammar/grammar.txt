@@ -1,61 +1,111 @@
-// Grammar of the aaa language
+// Grammar for the
+//
+//    mm
+//    ##    mmm    mmm
+//   #  #  "   #  "   #
+//   #mm#  m"""#  m"""#
+//  #    # "mm"#  "mm"#
+//
+// language.
 
-BOOLEAN_LITERAL = "true" | "false"
+// --- control flow tokens ---
 
-BRANCH = IF WHITESPACE FUNCTION_BODY WHITESPACE BEGIN WHITESPACE FUNCTION_BODY WHITESPACE (ELSE WHITESPACE FUNCTION_BODY WHITESPACE)? END
+@ token BEGIN = "begin" .
+@ token ELSE  = "else"  .
+@ token END   = "end"   .
+@ token FN    = "fn"    .
+@ token IF    = "if"    .
+@ token WHILE = "while" .
 
-ROOT = (WHITESPACE)? (FUNCTION_DEFINITION WHITESPACE)+ (WHITESPACE)?
+// --- literal tokens ---
 
-FUNCTION_BODY = FUNCTION_BODY_ITEM (WHITESPACE FUNCTION_BODY_ITEM)*
+@ token FALSE      = "false"                                  .
+@ token IDENTIFIER = regex("[a-z_]+")                         .
+@ token INTEGER    = regex("[0-9]+")                          .
+@ token STRING     = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"") .
+@ token TRUE       = "true"                                   .
 
-@ prune soft
-FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL
+// --- operator tokens ---
 
-FUNCTION_DEFINITION = FN WHITESPACE FUNCTION_NAME_AND_ARGS WHITESPACE BEGIN WHITESPACE FUNCTION_BODY WHITESPACE END
+@ token AND            = "and"    .
+@ token ASTERISK       = "*"      .
+@ token BACKSLASH_N    = "\\n"    .
+@ token DROP           = "drop"   .
+@ token DUP            = "dup"    .
+@ token EQUALS         = "="      .
+@ token GREATER_EQUALS = ">="     .
+@ token GREATER_THAN   = ">"      .
+@ token LESS_EQUALS    = "<="     .
+@ token LESS_THAN      = "<"      .
+@ token MINUS          = "-"      .
+@ token NOP            = "nop"    .
+@ token NOT            = "not"    .
+@ token NOT_EQUALS     = "!="     .
+@ token OR             = "or"     .
+@ token OVER           = "over"   .
+@ token PERCENT        = "%"      .
+@ token PERIOD         = "."      .
+@ token PLUS           = "+"      .
+@ token ROT            = "rot"    .
+@ token SLASH          = "/"      .
+@ token STRLEN         = "strlen" .
+@ token SUBSTR         = "substr" .
+@ token SWAP           = "swap"   .
 
-FUNCTION_NAME_AND_ARGS = IDENTIFIER (WHITESPACE IDENTIFIER)*
+// --- pruned tokens ---
 
-@ forbidden FORBIDDEN_IDENTIFIER
-IDENTIFIER = regex("[a-z_]+")
+@ token
+@ prune
+WHITESPACE = regex("([ \n]|$)+") .
 
-INTEGER_LITERAL = regex("[0-9]+")
+// ---
 
-@ prune soft
-LITERAL = BOOLEAN_LITERAL | INTEGER_LITERAL | STRING_LITERAL
+BOOLEAN = TRUE | FALSE .
 
-LOOP = WHILE WHITESPACE FUNCTION_BODY WHITESPACE BEGIN WHITESPACE FUNCTION_BODY WHITESPACE END
+BRANCH = IF FUNCTION_BODY BEGIN FUNCTION_BODY (ELSE FUNCTION_BODY)? END .
 
-@ prune soft
-OPERATOR = OPERATOR_NON_ALPHABETICAL | OPERATOR_KEYWORD
+ROOT = (FUNCTION_DEFINITION)* .
 
-OPERATOR_KEYWORD = "and" | "drop" | "dup" | "not" | "nop" | "or" | "over" | "rot" | "strlen" | "substr" | "swap"
+FUNCTION_BODY = (FUNCTION_BODY_ITEM)+ .
 
-OPERATOR_NON_ALPHABETICAL = "-" | "!=" | "." | "*" | "/" | "\\n" | "%" | "+" | "<" | "<=" | "=" | ">" | ">="
+@ prune
+FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL .
 
-STRING_LITERAL = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"")
+FUNCTION_DEFINITION = FN FUNCTION_NAME FUNCTION_ARGS BEGIN FUNCTION_BODY END .
 
-@ prune hard
-WHITESPACE = regex("([ \n]|$)+")
+FUNCTION_NAME = IDENTIFIER .
 
-@ prune hard
-IF = "if"
+FUNCTION_ARGS = (IDENTIFIER)* .
 
-@ prune hard
-ELSE = "else"
+@ prune
+LITERAL = BOOLEAN | INTEGER | STRING .
 
-@ prune hard
-BEGIN = "begin"
+LOOP = WHILE FUNCTION_BODY BEGIN FUNCTION_BODY END .
 
-@ prune hard
-END = "end"
-
-@ prune hard
-WHILE = "while"
-
-@ prune hard
-FN = "fn"
-
-@ prune soft
-CONTROL_FLOW_KEYWORD = IF | ELSE | BEGIN | END | WHILE | FN
-
-FORBIDDEN_IDENTIFIER = BOOLEAN_LITERAL | CONTROL_FLOW_KEYWORD | OPERATOR_KEYWORD
+@ prune
+OPERATOR = (
+      AND
+    | ASTERISK
+    | BACKSLASH_N
+    | DROP
+    | DUP
+    | EQUALS
+    | GREATER_EQUALS
+    | GREATER_THAN
+    | LESS_EQUALS
+    | LESS_THAN
+    | MINUS
+    | NOP
+    | NOT
+    | NOT_EQUALS
+    | OR
+    | OVER
+    | PERCENT
+    | PERIOD
+    | PLUS
+    | ROT
+    | SLASH
+    | STRLEN
+    | SUBSTR
+    | SWAP
+) .
