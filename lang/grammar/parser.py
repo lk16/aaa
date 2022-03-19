@@ -98,11 +98,11 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Literal(Terminal.STRLEN, "strlen"),
     Literal(Terminal.SUBSTR, "substr"),
     Literal(Terminal.SWAP, "swap"),
+    Literal(Terminal.TRUE, "true"),
     Literal(Terminal.FALSE, "false"),
     Regex(Terminal.IDENTIFIER, "[a-z_]+"),
     Regex(Terminal.INTEGER, "[0-9]+"),
     Regex(Terminal.STRING, '"([^\\\\]|\\\\("|n|\\\\))*?"'),
-    Literal(Terminal.TRUE, "true"),
     Regex(Terminal.WHITESPACE, "([ \n]|$)+"),
 ]
 
@@ -209,7 +209,6 @@ PRUNED_TERMINALS: Set[IntEnum] = {
 
 
 PRUNED_NON_TERMINALS: Set[IntEnum] = {
-    NonTerminal.BOOLEAN,
     NonTerminal.FUNCTION_BODY_ITEM,
     NonTerminal.LITERAL,
 }

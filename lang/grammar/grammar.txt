@@ -46,11 +46,14 @@
 
 // --- literal tokens ---
 
+@ token TRUE       = "true"                                   .
 @ token FALSE      = "false"                                  .
+
+// --- regex based literal tokens ---
+
 @ token IDENTIFIER = regex("[a-z_]+")                         .
 @ token INTEGER    = regex("[0-9]+")                          .
 @ token STRING     = regex("\"([^\\\\]|\\\\(\"|n|\\\\))*?\"") .
-@ token TRUE       = "true"                                   .
 
 // --- pruned tokens ---
 
@@ -76,7 +79,6 @@ LOOP = WHILE FUNCTION_BODY BEGIN FUNCTION_BODY END .
 @ prune
 LITERAL = BOOLEAN | INTEGER | STRING .
 
-@ prune
 BOOLEAN = TRUE | FALSE .
 
 OPERATOR = (
