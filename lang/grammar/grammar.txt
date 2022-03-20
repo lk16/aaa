@@ -10,46 +10,46 @@
 
 // --- control flow tokens ---
 
-@ token BEGIN = "begin" .
-@ token ELSE  = "else"  .
-@ token END   = "end"   .
-@ token FN    = "fn"    .
-@ token IF    = "if"    .
-@ token WHILE = "while" .
+@ token BEGIN = regex("begin(?=\s|$)") .
+@ token ELSE  = regex("else(?=\s|$)")  .
+@ token END   = regex("end(?=\s|$)")   .
+@ token FN    = regex("fn(?=\s|$)")    .
+@ token IF    = regex("if(?=\s|$)")    .
+@ token WHILE = regex("while(?=\s|$)") .
 
 // --- operator tokens ---
 
-@ token AND            = "and"    .
-@ token ASTERISK       = "*"      .
-@ token BACKSLASH_N    = "\\n"    .
-@ token DROP           = "drop"   .
-@ token DUP            = "dup"    .
-@ token EQUALS         = "="      .
-@ token GREATER_EQUALS = ">="     .
-@ token GREATER_THAN   = ">"      .
-@ token LESS_EQUALS    = "<="     .
-@ token LESS_THAN      = "<"      .
-@ token MINUS          = "-"      .
-@ token NOP            = "nop"    .
-@ token NOT            = "not"    .
-@ token NOT_EQUALS     = "!="     .
-@ token OR             = "or"     .
-@ token OVER           = "over"   .
-@ token PERCENT        = "%"      .
-@ token PERIOD         = "."      .
-@ token PLUS           = "+"      .
-@ token ROT            = "rot"    .
-@ token SLASH          = "/"      .
-@ token STRLEN         = "strlen" .
-@ token SUBSTR         = "substr" .
-@ token SWAP           = "swap"   .
+@ token AND            = regex("and(?=\s|$)")    .
+@ token ASTERISK       = regex("\\*(?=\s|$)")    .
+@ token BACKSLASH_N    = regex("\\\\n(?=\s|$)")  .
+@ token DROP           = regex("drop(?=\s|$)")   .
+@ token DUP            = regex("dup(?=\s|$)")    .
+@ token EQUALS         = regex("=(?=\s|$)")      .
+@ token GREATER_EQUALS = regex(">=(?=\s|$)")     .
+@ token GREATER_THAN   = regex(">(?=\s|$)")      .
+@ token LESS_EQUALS    = regex("<=(?=\s|$)")     .
+@ token LESS_THAN      = regex("<(?=\s|$)")      .
+@ token MINUS          = regex("-(?=\s|$)")      .
+@ token NOP            = regex("nop(?=\s|$)")    .
+@ token NOT            = regex("not(?=\s|$)")    .
+@ token NOT_EQUALS     = regex("!=(?=\s|$)")     .
+@ token OR             = regex("or(?=\s|$)")     .
+@ token OVER           = regex("over(?=\s|$)")   .
+@ token PERCENT        = regex("%(?=\s|$)")      .
+@ token PERIOD         = regex("\\.(?=\s|$)")    .
+@ token PLUS           = regex("\\+(?=\s|$)")    .
+@ token ROT            = regex("rot(?=\s|$)")    .
+@ token SLASH          = regex("/(?=\s|$)")      .
+@ token STRLEN         = regex("strlen(?=\s|$)") .
+@ token SUBSTR         = regex("substr(?=\s|$)") .
+@ token SWAP           = regex("swap(?=\s|$)")   .
 
 // --- literal tokens ---
 
-@ token TRUE       = "true"                                   .
-@ token FALSE      = "false"                                  .
+@ token TRUE       = regex("true(?=\s|$)")  .
+@ token FALSE      = regex("false(?=\s|$)") .
 
-// --- regex based literal tokens ---
+// --- more generic literal tokens ---
 
 @ token IDENTIFIER = regex("[a-z_]+")                         .
 @ token INTEGER    = regex("[0-9]+")                          .
