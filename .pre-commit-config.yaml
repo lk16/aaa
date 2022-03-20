@@ -47,7 +47,7 @@ repos:
     - id: mypy
       name: run mypy
       language: system
-      entry: mypy --strict --ignore-missing-imports .
+      entry: mypy --strict
       types: [python]
 
 
