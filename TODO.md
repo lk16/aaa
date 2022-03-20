@@ -1,25 +1,8 @@
 # TODO
 
-Next development steps.
-
-### Brag in readme
-- minimal dependencies
-- custom simple parser, link to grammar.txt
-- tests
-- ci
-- expressiveness
-
-### Be more consistent
-- change `while ... end` to `while ... begin ... end`
-- change `if ... else ... end` to `if ... begin ... else ... end`
-
-### Function Instructions
-- add command to show instructions of all functions with `Program.list_function_instructions()`
-
-### Later
+### Language features
 - support comments (`//`)
 - support shebang (`#!`)
-- userfriendly syntax errors
 - multi-file programs (`import`)
 - return early (`return`)
 - assertions (`assert`)
@@ -28,3 +11,14 @@ Next development steps.
 - structs / classes ?
 - compile to native executable
 - compile itself
+
+### Language tools
+- add command to show instructions of all functions with `Program.list_function_instructions()`
+- userfriendly syntax errors
+
+### Brag in readme
+- minimal dependencies
+- custom simple parser, link to grammar.txt
+- tests
+- ci
+- expressiveness
