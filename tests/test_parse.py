@@ -1,13 +1,18 @@
-from parser.exceptions import ParseError
-from parser.parser import parse_generic
-from typing import List, Type
+from parser.parser.exceptions import ParseError
+from parser.parser.models import Tree
+from parser.parser.parser import Parser
+from parser.tokenizer.models import Token
+from parser.tokenizer.tokenizer import Tokenizer
+from typing import List, Tuple, Type
 
 import pytest
 
 from lang.grammar.parser import (
-    HARD_PRUNED_SYMBOL_TYPES,
-    REWRITE_RULES,
-    SOFT_PRUNED_SYMBOL_TYPES,
+    NON_TERMINAL_RULES,
+    PRUNED_NON_TERMINALS,
+    PRUNED_TERMINALS,
+    TERMINAL_RULES,
+    Terminal,
 )
 from lang.parse import (
     AaaTreeNode,
@@ -17,9 +22,30 @@ from lang.parse import (
     IntegerLiteral,
     Operator,
     StringLiteral,
-    SymbolType,
     parse,
 )
+
+
+def parse_as(code: str, non_terminal_name: str) -> Tuple[List[Token], Tree]:
+    filename = "foo.txt"
+
+    tokens = Tokenizer(
+        filename=filename,
+        code=code,
+        terminal_rules=TERMINAL_RULES,
+        pruned_terminals=PRUNED_TERMINALS,
+    ).tokenize()
+
+    tree = Parser(
+        filename=filename,
+        tokens=tokens,
+        code=code,
+        non_terminal_rules=NON_TERMINAL_RULES,
+        pruned_non_terminals=PRUNED_NON_TERMINALS,
+        root_token=non_terminal_name,
+    ).parse()
+
+    return tokens, tree
 
 
 @pytest.mark.parametrize(
@@ -34,69 +60,7 @@ from lang.parse import (
 )
 def test_parse_boolean_literal(code: str, expected_ok: bool) -> None:
     try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "BOOLEAN_LITERAL",
-        )
-    except ParseError:
-        assert not expected_ok
-    else:
-        assert expected_ok
-
-
-@pytest.mark.parametrize(
-    ["code", "expected_ok"],
-    [
-        ("1", True),
-        ("0", True),
-        ("00", True),
-        ("1", True),
-        ("9", True),
-        ("123", True),
-        ("-1", False),
-        ("a1", False),
-        ("1a", False),
-    ],
-)
-def test_parse_integer_literal(code: str, expected_ok: bool) -> None:
-    try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "INTEGER_LITERAL",
-        )
-    except ParseError:
-        assert not expected_ok
-    else:
-        assert expected_ok
-
-
-@pytest.mark.parametrize(
-    ["code", "expected_ok"],
-    [
-        ('"', False),
-        ('""', True),
-        ('"aasdfasdf"', True),
-        ('"\\\\"', True),
-        ('"\\n"', True),
-        ('"\\""', True),
-        ('"asdf \\\\ asdf \\n asdf \\""', True),
-    ],
-)
-def test_parse_string_literal(code: str, expected_ok: bool) -> None:
-    try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "STRING_LITERAL",
-        )
+        parse_as(code, "BOOLEAN")
     except ParseError:
         assert not expected_ok
     else:
@@ -105,103 +69,15 @@ def test_parse_string_literal(code: str, expected_ok: bool) -> None:
 
 def test_parse_string_non_greedy() -> None:
     code = '"a" "b"'
-    tree = parse_generic(
-        REWRITE_RULES,
-        code,
-        HARD_PRUNED_SYMBOL_TYPES,
-        SOFT_PRUNED_SYMBOL_TYPES,
-        "FUNCTION_BODY",
-    )
+    tokens, tree = parse_as(code, "FUNCTION_BODY")
     assert len(tree.children) == 2
     a, b = tree.children
 
-    assert a.value(code) == '"a"'
-    assert a.token_type == SymbolType.STRING_LITERAL
+    assert a.value(tokens, code) == '"a"'
+    assert a.token_type == Terminal.STRING
 
-    assert b.value(code) == '"b"'
-    assert b.token_type == SymbolType.STRING_LITERAL
-
-
-@pytest.mark.parametrize(
-    ["code", "expected_ok"],
-    [
-        ("a", True),
-        ("0", False),
-        ("/", False),
-        ("z", True),
-        ("_", True),
-        ("A", False),
-        ("Z", False),
-        ("abcd_xyz", True),
-        ("abcd_xyz/", False),
-    ]
-    + [(identifier, False) for identifier in get_operator_keywords()],
-)
-def test_parse_identifier(code: str, expected_ok: bool) -> None:
-    try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "IDENTIFIER",
-        )
-    except ParseError:
-        assert not expected_ok
-    else:
-        assert expected_ok
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_ok"],
-    [
-        ("foo", False),
-        ("<=>", False),
-    ]
-    + [(op, True) for op in get_operator_keywords()],
-)
-def test_parse_operator(code: str, expected_ok: bool) -> None:
-    try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "OPERATOR",
-        )
-    except ParseError:
-        assert not expected_ok
-    else:
-        assert expected_ok
-
-
-@pytest.mark.parametrize(
-    ["code", "expected_ok"],
-    [
-        ("abc", False),
-        (" ", True),
-        ("\n", True),
-        ("  ", True),
-        ("\n\n", True),
-        (" \n \n", True),
-        ("\n \n ", True),
-        (" \na", False),
-    ],
-)
-def test_parse_whitespace(code: str, expected_ok: bool) -> None:
-    try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES - {SymbolType.WHITESPACE},
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "WHITESPACE",
-        )
-    except ParseError:
-        assert not expected_ok
-    else:
-        assert expected_ok
+    assert b.value(tokens, code) == '"b"'
+    assert b.token_type == Terminal.STRING
 
 
 @pytest.mark.parametrize(
@@ -253,13 +129,7 @@ def test_parse_whitespace(code: str, expected_ok: bool) -> None:
 )
 def test_parse_branch(code: str, expected_ok: bool) -> None:
     try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "BRANCH",
-        )
+        parse_as(code, "BRANCH")
     except ParseError:
         assert not expected_ok
     else:
@@ -286,13 +156,7 @@ def test_parse_branch(code: str, expected_ok: bool) -> None:
 )
 def test_parse_loop(code: str, expected_ok: bool) -> None:
     try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "LOOP",
-        )
+        parse_as(code, "LOOP")
     except ParseError:
         assert not expected_ok
     else:
@@ -317,13 +181,7 @@ def test_parse_loop(code: str, expected_ok: bool) -> None:
 )
 def test_parse_function_body(code: str, expected_ok: bool) -> None:
     try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "FUNCTION_BODY",
-        )
+        parse_as(code, "FUNCTION_BODY")
     except ParseError:
         assert not expected_ok
     else:
@@ -347,13 +205,7 @@ def test_parse_function_body(code: str, expected_ok: bool) -> None:
 )
 def test_parse_function(code: str, expected_ok: bool) -> None:
     try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "FUNCTION_DEFINITION",
-        )
+        parse_as(code, "FUNCTION_DEFINITION")
     except ParseError:
         assert not expected_ok
     else:
@@ -377,13 +229,7 @@ def test_parse_function(code: str, expected_ok: bool) -> None:
 )
 def test_parse_file(code: str, expected_ok: bool) -> None:
     try:
-        parse_generic(
-            REWRITE_RULES,
-            code,
-            HARD_PRUNED_SYMBOL_TYPES,
-            SOFT_PRUNED_SYMBOL_TYPES,
-            "ROOT",
-        )
+        parse_as(code, "ROOT")
     except ParseError:
         assert not expected_ok
     else:
@@ -405,7 +251,7 @@ def test_parse_file(code: str, expected_ok: bool) -> None:
 def test_file_parse_tree(
     code: str, func_names: List[str], expected_arguments: List[List[str]]
 ) -> None:
-    file = parse(code)
+    file = parse("foo.txt", code)
 
     assert len(file.functions) == len(func_names)
     for func_name, expected_args in zip(func_names, expected_arguments):
@@ -429,7 +275,7 @@ def test_branch_parse_tree(
     expected_if_body_children: int,
     expected_else_body_children: int,
 ) -> None:
-    file = parse(code)
+    file = parse("foo.txt", code)
     assert len(file.functions) == 1
     func_body = file.functions["main"].body
 
@@ -450,7 +296,7 @@ def test_branch_parse_tree(
     ],
 )
 def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None:
-    file = parse(code)
+    file = parse("foo.txt", code)
     assert len(file.functions) == 1
     func_body = file.functions["main"].body
 
@@ -468,7 +314,7 @@ def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None
     ],
 )
 def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
-    file = parse(code)
+    file = parse("foo.txt", code)
     assert len(file.functions) == 1
     func_body = file.functions["main"].body
 
@@ -490,7 +336,7 @@ def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
     ],
 )
 def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
-    file = parse(code)
+    file = parse("foo.txt", code)
     assert len(file.functions) == 1
     func_body = file.functions["main"].body
 
@@ -511,7 +357,7 @@ def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
     ],
 )
 def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
-    file = parse(code)
+    file = parse("foo.txt", code)
     assert len(file.functions) == 1
     func_body = file.functions["main"].body
 
@@ -533,7 +379,7 @@ def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
     ],
 )
 def test_identifier_parse_tree(code: str, expected_name: str) -> None:
-    file = parse(code)
+    file = parse("foo.txt", code)
     assert len(file.functions) == 1
     func_body = file.functions["main"].body
 
@@ -554,7 +400,7 @@ def test_identifier_parse_tree(code: str, expected_name: str) -> None:
     ],
 )
 def test_operator_parse_tree(code: str, expected_operator: str) -> None:
-    file = parse(code)
+    file = parse("foo.txt", code)
     assert len(file.functions) == 1
     func_body = file.functions["main"].body
 
