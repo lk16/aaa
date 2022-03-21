@@ -25,7 +25,6 @@ from lang.instruction_types import (
     IntNotEqual,
     IntPush,
     Jump,
-    JumpIf,
     JumpIfNot,
     Minus,
     Modulo,
@@ -81,7 +80,6 @@ class Program:
             IntNotEqual: self.instruction_int_not_equal,
             IntPush: self.instruction_int_push,
             Jump: self.instruction_jump,
-            JumpIf: self.instruction_jump_if,
             JumpIfNot: self.instruction_jump_if_not,
             Minus: self.instruction_minus,
             Modulo: self.instruction_modulo,
@@ -160,7 +158,7 @@ class Program:
     def set_instruction_pointer(self, offset: int) -> None:
         self.call_stack[-1].instruction_pointer = offset
 
-    def current_function(self) -> Function:
+    def current_function(self) -> Function:  # pragma: nocover
         func_name = self.call_stack[-1].func_name
         return self.functions[func_name]
 
@@ -467,15 +465,6 @@ class Program:
         arg_value = self.get_function_argument(instruction.arg_name)
         self.push(arg_value)
         return self.get_instruction_pointer() + 1
-
-    def instruction_jump_if(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, JumpIf)
-
-        x = self.pop(bool)
-        if x:
-            return instruction.instruction_offset
-        else:
-            return self.get_instruction_pointer() + 1
 
     def instruction_jump_if_not(self, instruction: Instruction) -> int:
         assert isinstance(instruction, JumpIfNot)

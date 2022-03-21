@@ -168,14 +168,6 @@ class Jump(Instruction):
 
 
 @dataclass
-class JumpIf(Instruction):
-    instruction_offset: int
-
-    def __repr__(self) -> str:  # pragma: nocover
-        return f"{type(self).__name__}({self.instruction_offset})"
-
-
-@dataclass
 class JumpIfNot(Instruction):
     instruction_offset: int
 

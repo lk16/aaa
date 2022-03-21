@@ -87,10 +87,6 @@ class Loop(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Loop":
         assert tree.token_type == NonTerminal.LOOP
 
-        if len(tree.children) == 1 and tree[0].token_type == NonTerminal.LOOP:
-            # TODO this is an ugly hack to bypass bugs likely in parser lib
-            tree = tree[0]
-
         condition = FunctionBody.from_tree(tree.children[1], tokens, code)
         loop_body = FunctionBody.from_tree(tree.children[3], tokens, code)
         return Loop(condition, loop_body)
@@ -116,12 +112,7 @@ class Branch(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Branch":
         assert tree.token_type == NonTerminal.BRANCH
 
-        if len(tree.children) == 1 and tree[0].token_type == NonTerminal.BRANCH:
-            # TODO this is an ugly hack to bypass bugs likely in parser lib
-            tree = tree[0]
-
         condition = FunctionBody.from_tree(tree[1], tokens, code)
-
         if_body = FunctionBody.from_tree(tree[3], tokens, code)
 
         if len(tree.children) == 7:
@@ -139,10 +130,6 @@ class FunctionBody(AaaTreeNode):
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "FunctionBody":
         assert tree.token_type == NonTerminal.FUNCTION_BODY
-
-        if len(tree.children) == 1 and tree[0].token_type == NonTerminal.FUNCTION_BODY:
-            # TODO this is an ugly hack to bypass bugs likely in parser lib
-            tree = tree[0]
 
         aaa_tree_nodes: Dict[Optional[IntEnum], Type[FunctionBodyItem]] = {
             NonTerminal.BOOLEAN: BooleanLiteral,
@@ -173,13 +160,6 @@ class Function(AaaTreeNode):
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Function":
         assert tree.token_type == NonTerminal.FUNCTION_DEFINITION
-
-        if (
-            len(tree.children) == 1
-            and tree[0].token_type == NonTerminal.FUNCTION_DEFINITION
-        ):
-            # TODO this is an ugly hack to bypass bugs likely in parser lib
-            tree = tree[0]
 
         name, *arguments = [
             identifier.value(tokens, code) for identifier in tree[1].children
