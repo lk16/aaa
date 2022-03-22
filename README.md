@@ -44,6 +44,7 @@ To enable syntax highlighting for vs code, enable the [Aaa language extension](.
 - branching (`if`, `else`, `end`)
 - loops (`while`)
 - functions (`fn`)
+- comments (`//`)
 - [upcoming](./TODO.md)
 
 ### Aaa and porth

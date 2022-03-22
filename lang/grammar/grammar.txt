@@ -58,6 +58,7 @@
 // --- pruned tokens ---
 
 @ token @ prune WHITESPACE = regex("([ \n]|$)+") .
+@ token @ prune COMMENT    = regex("//[^\n]*")   .
 
 // ---
 

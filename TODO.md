@@ -1,7 +1,6 @@
 # TODO
 
 ### Language features
-- support comments (`//`)
 - support shebang (`#!`)
 - multi-file programs (`import`)
 - return early (`return`)

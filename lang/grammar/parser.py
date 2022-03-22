@@ -33,6 +33,7 @@ class Terminal(IntEnum):
     ASTERISK = next(next_offset)
     BACKSLASH_N = next(next_offset)
     BEGIN = next(next_offset)
+    COMMENT = next(next_offset)
     DROP = next(next_offset)
     DUP = next(next_offset)
     ELSE = next(next_offset)
@@ -104,6 +105,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.INTEGER, "[0-9]+"),
     Regex(Terminal.STRING, '"([^\\\\]|\\\\("|n|\\\\))*?"'),
     Regex(Terminal.WHITESPACE, "([ \n]|$)+"),
+    Regex(Terminal.COMMENT, "//[^\n]*"),
 ]
 
 
@@ -204,6 +206,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
 
 
 PRUNED_TERMINALS: Set[IntEnum] = {
+    Terminal.COMMENT,
     Terminal.WHITESPACE,
 }
 

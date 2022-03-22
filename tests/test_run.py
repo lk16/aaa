@@ -185,6 +185,11 @@ def test_run_instructions_stack_underflow(instructions: List[Instruction]) -> No
         ("if false begin 1 . else 2 . end 3 .", "23"),
         ("while false begin nop end 3 .", "3"),
         ("nop", ""),
+        ("nop // hi", ""),
+        ("// hi\nnop", ""),
+        ("//\nnop", ""),
+        ("nop //\n", ""),
+        ("if //\ntrue begin 3 . end", "3"),
     ],
 )
 def test_run_code_as_main_ok(
