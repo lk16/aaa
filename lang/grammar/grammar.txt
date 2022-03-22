@@ -59,6 +59,7 @@
 
 @ token @ prune WHITESPACE = regex("([ \n]|$)+") .
 @ token @ prune COMMENT    = regex("//[^\n]*")   .
+@ token @ prune SHEBANG    = regex("#![^\n]*")   .
 
 // ---
 

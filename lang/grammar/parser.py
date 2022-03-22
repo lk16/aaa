@@ -58,6 +58,7 @@ class Terminal(IntEnum):
     PERIOD = next(next_offset)
     PLUS = next(next_offset)
     ROT = next(next_offset)
+    SHEBANG = next(next_offset)
     SLASH = next(next_offset)
     STRING = next(next_offset)
     STRLEN = next(next_offset)
@@ -106,6 +107,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.STRING, '"([^\\\\]|\\\\("|n|\\\\))*?"'),
     Regex(Terminal.WHITESPACE, "([ \n]|$)+"),
     Regex(Terminal.COMMENT, "//[^\n]*"),
+    Regex(Terminal.SHEBANG, "#![^\n]*"),
 ]
 
 
@@ -207,6 +209,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
 
 PRUNED_TERMINALS: Set[IntEnum] = {
     Terminal.COMMENT,
+    Terminal.SHEBANG,
     Terminal.WHITESPACE,
 }
 

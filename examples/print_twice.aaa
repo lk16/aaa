@@ -1,3 +1,5 @@
+#!/usr/bin/env aaa
+
 fn main begin
     "hello!\n" print_twice
 end

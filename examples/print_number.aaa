@@ -1,3 +1,5 @@
+#!/usr/bin/env aaa
+
 fn main begin
     42 . \n
 end

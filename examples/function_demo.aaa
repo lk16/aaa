@@ -1,3 +1,5 @@
+#!/usr/bin/env aaa
+
 fn print_values a b c begin
     "a=" . a . "\n" .
     "b=" . b . "\n" .

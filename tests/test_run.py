@@ -226,6 +226,7 @@ def test_run_code_as_main_ok(
             + "fn baz a b c begin a . b . c . end",
             "123",
         ),
+        ("#!/usr/bin/env aaa\nfn main begin nop end", ""),
     ],
 )
 def test_run_code_ok(
