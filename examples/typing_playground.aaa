@@ -1,0 +1,8 @@
+
+
+fn main
+    args foo as int, bar as int, * a, * b
+    return int, * a, * b
+begin
+    nop
+end

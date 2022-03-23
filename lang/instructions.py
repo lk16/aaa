@@ -46,6 +46,7 @@ from lang.parse import (
     Operator,
     StringLiteral,
 )
+from lang.type_checker import check_types
 
 OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "+": Plus(),
@@ -77,7 +78,9 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
 
 def get_instructions(function: Function) -> List[Instruction]:
     if function._instructions is None:
-        function._instructions = InstructionGenerator(function).generate_instructions()
+        instructions = InstructionGenerator(function).generate_instructions()
+        check_types(instructions)
+        function._instructions = instructions
 
     return function._instructions
 

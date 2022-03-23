@@ -20,8 +20,11 @@
 // --- operator tokens ---
 
 @ token AND            = regex("and(?=\\s|$)")    .
+@ token ARGS           = regex("args(?=\\s|$)")   .
+@ token AS             = regex("as(?=\\s|$)")     .
 @ token ASTERISK       = regex("\\*(?=\\s|$)")    .
 @ token BACKSLASH_N    = regex("\\\\n(?=\\s|$)")  .
+@ token COMMA          = regex(",(?=\\s|$)")      .
 @ token DROP           = regex("drop(?=\\s|$)")   .
 @ token DUP            = regex("dup(?=\\s|$)")    .
 @ token EQUALS         = regex("=(?=\\s|$)")      .
@@ -37,6 +40,7 @@
 @ token OVER           = regex("over(?=\\s|$)")   .
 @ token PERCENT        = regex("%(?=\\s|$)")      .
 @ token PERIOD         = regex("\\.(?=\\s|$)")    .
+@ token RETURN         = regex("return(?=\\s|$)") .
 @ token PLUS           = regex("\\+(?=\\s|$)")    .
 @ token ROT            = regex("rot(?=\\s|$)")    .
 @ token SLASH          = regex("/(?=\\s|$)")      .
@@ -65,9 +69,21 @@
 
 ROOT = (FUNCTION_DEFINITION)* .
 
-FUNCTION_DEFINITION = FN FUNCTION_NAME_AND_ARGS BEGIN FUNCTION_BODY END .
+FUNCTION_DEFINITION = FN IDENTIFIER (ARGS ARGUMENT_LIST)? (RETURN RETURN_TYPES)? BEGIN FUNCTION_BODY END .
 
-FUNCTION_NAME_AND_ARGS = (IDENTIFIER)+ .
+@ prune
+TYPE_PLACEHOLDER = ASTERISK IDENTIFIER .
+
+@ prune
+TYPED_ARGUMENT = IDENTIFIER AS IDENTIFIER .
+
+ARGUMENT = TYPE_PLACEHOLDER | TYPED_ARGUMENT .
+
+ARGUMENT_LIST = ARGUMENT (COMMA ARGUMENT)* .
+
+RETURN_TYPE = IDENTIFIER | TYPE_PLACEHOLDER .
+
+RETURN_TYPES = RETURN_TYPE (COMMA RETURN_TYPE)* .
 
 FUNCTION_BODY = (FUNCTION_BODY_ITEM)+ .
 

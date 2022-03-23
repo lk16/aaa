@@ -9,6 +9,7 @@ from lang.exceptions import FunctionNameCollission, InvalidFunctionArgumentList
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
 from lang.instruction_types import Instruction
+from lang.types import IDENTIFIER_TO_TYPE, ArbitraryType, BaseType
 
 FunctionBodyItem = Union[
     "Branch",
@@ -151,9 +152,60 @@ class FunctionBody(AaaTreeNode):
 
 
 @dataclass
+class Argument(AaaTreeNode):
+    name: str
+    type: BaseType
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Argument":
+        assert tree.token_type == NonTerminal.ARGUMENT
+
+        if tree[0].token_type == Terminal.IDENTIFIER:
+            type_identifier = tree[2].value(tokens, code)
+            type = IDENTIFIER_TO_TYPE[type_identifier]
+
+            return Argument(
+                name=tree[0].value(tokens, code),
+                type=type,
+            )
+
+        elif tree[0].token_type == Terminal.ASTERISK:
+            type_placeholder = tree[1].value(tokens, code)
+
+            return Argument(
+                name=tree[1].value(tokens, code),
+                type=ArbitraryType(type_placeholder),
+            )
+
+        else:  # pragma: nocover
+            breakpoint()
+            raise NotImplementedError
+
+
+@dataclass
+class ReturnType(AaaTreeNode):
+    type: BaseType
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ReturnType":
+        assert tree.token_type == NonTerminal.RETURN_TYPE
+
+        if tree[0].token_type == Terminal.IDENTIFIER:
+            type_identifier = tree[0].value(tokens, code)
+            type = IDENTIFIER_TO_TYPE[type_identifier]
+
+        elif tree[0].token_type == Terminal.ASTERISK:
+            type_placeholder = tree[1].value(tokens, code)
+            type = ArbitraryType(type_placeholder)
+
+        return ReturnType(type)
+
+
+@dataclass
 class Function(AaaTreeNode):
     name: str
-    arguments: List[str]
+    arguments: List[Argument]
+    return_types: List[ReturnType]
     body: FunctionBody
     _instructions: Optional[List[Instruction]] = None
 
@@ -161,16 +213,39 @@ class Function(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Function":
         assert tree.token_type == NonTerminal.FUNCTION_DEFINITION
 
-        name, *arguments = [
-            identifier.value(tokens, code) for identifier in tree[1].children
-        ]
+        func_name = tree[1].value(tokens, code)
+        arguments: List[Argument] = []
+        return_types: List[ReturnType] = []
 
-        if len([name] + arguments) != len({name} | {*arguments}):
-            raise InvalidFunctionArgumentList(name, arguments)
+        index = 2
 
-        body = FunctionBody.from_tree(tree[3], tokens, code)
+        while True:
+            token_type = tree[index].token_type
 
-        return Function(name, arguments, body)
+            if token_type == Terminal.ARGS:
+                arguments = [
+                    Argument.from_tree(child, tokens, code)
+                    for child in tree[index+1].children
+                    if child.token_type != Terminal.COMMA
+                ]
+
+                # TODO check InvalidFunctionArgumentList
+
+            elif token_type == Terminal.RETURN:
+                return_types = [
+                    ReturnType.from_tree(child, tokens, code)
+                    for child in tree[index+1].children
+                    if child.token_type != Terminal.COMMA
+                ]
+
+            elif token_type == Terminal.BEGIN:
+                body = FunctionBody.from_tree(tree[index+1], tokens, code)
+                break
+
+            index += 2
+
+        breakpoint()
+        return Function(func_name, arguments, return_types, body)
 
 
 @dataclass
