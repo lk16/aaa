@@ -79,8 +79,8 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
 def get_instructions(function: Function) -> List[Instruction]:
     if function._instructions is None:
         instructions = InstructionGenerator(function).generate_instructions()
-        check_types(instructions)
         function._instructions = instructions
+        check_types(function)
 
     return function._instructions
 

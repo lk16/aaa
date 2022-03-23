@@ -1,5 +1,3 @@
-
-
 from dataclasses import dataclass
 from typing import Dict, Type
 
@@ -25,6 +23,7 @@ IDENTIFIER_TO_TYPE: Dict[str, Type[BaseType]] = {
     "int": Integer,
     "str": String,
 }
+
 
 @dataclass
 class ArbitraryType(BaseType):

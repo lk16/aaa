@@ -5,7 +5,7 @@ from parser.parser.models import Tree
 from parser.tokenizer.models import Token
 from typing import Dict, List, Optional, Type, Union
 
-from lang.exceptions import FunctionNameCollission, InvalidFunctionArgumentList
+from lang.exceptions import FunctionNameCollission
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
 from lang.instruction_types import Instruction
@@ -162,7 +162,7 @@ class Argument(AaaTreeNode):
 
         if tree[0].token_type == Terminal.IDENTIFIER:
             type_identifier = tree[2].value(tokens, code)
-            type = IDENTIFIER_TO_TYPE[type_identifier]
+            type = IDENTIFIER_TO_TYPE[type_identifier]()
 
             return Argument(
                 name=tree[0].value(tokens, code),
@@ -178,7 +178,6 @@ class Argument(AaaTreeNode):
             )
 
         else:  # pragma: nocover
-            breakpoint()
             raise NotImplementedError
 
 
@@ -192,7 +191,7 @@ class ReturnType(AaaTreeNode):
 
         if tree[0].token_type == Terminal.IDENTIFIER:
             type_identifier = tree[0].value(tokens, code)
-            type = IDENTIFIER_TO_TYPE[type_identifier]
+            type = IDENTIFIER_TO_TYPE[type_identifier]()
 
         elif tree[0].token_type == Terminal.ASTERISK:
             type_placeholder = tree[1].value(tokens, code)
@@ -225,7 +224,7 @@ class Function(AaaTreeNode):
             if token_type == Terminal.ARGS:
                 arguments = [
                     Argument.from_tree(child, tokens, code)
-                    for child in tree[index+1].children
+                    for child in tree[index + 1].children
                     if child.token_type != Terminal.COMMA
                 ]
 
@@ -234,17 +233,16 @@ class Function(AaaTreeNode):
             elif token_type == Terminal.RETURN:
                 return_types = [
                     ReturnType.from_tree(child, tokens, code)
-                    for child in tree[index+1].children
+                    for child in tree[index + 1].children
                     if child.token_type != Terminal.COMMA
                 ]
 
             elif token_type == Terminal.BEGIN:
-                body = FunctionBody.from_tree(tree[index+1], tokens, code)
+                body = FunctionBody.from_tree(tree[index + 1], tokens, code)
                 break
 
             index += 2
 
-        breakpoint()
         return Function(func_name, arguments, return_types, body)
 
 

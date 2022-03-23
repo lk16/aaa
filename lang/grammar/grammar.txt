@@ -22,7 +22,7 @@
 @ token AND            = regex("and(?=\\s|$)")    .
 @ token ARGS           = regex("args(?=\\s|$)")   .
 @ token AS             = regex("as(?=\\s|$)")     .
-@ token ASTERISK       = regex("\\*(?=\\s|$)")    .
+@ token ASTERISK       = "*" .
 @ token BACKSLASH_N    = regex("\\\\n(?=\\s|$)")  .
 @ token COMMA          = regex(",(?=\\s|$)")      .
 @ token DROP           = regex("drop(?=\\s|$)")   .
