@@ -250,7 +250,7 @@ class Program:
         function = self.functions[func_name]
 
         argument_values: Dict[str, StackItem] = {
-            arg_name: self.pop_untyped() for arg_name in reversed(function.arguments)
+            arg.name: self.pop_untyped() for arg in reversed(function.arguments)
         }
 
         self.call_stack.append(CallStackItem(func_name, 0, argument_values))

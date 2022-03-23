@@ -257,7 +257,7 @@ def test_file_parse_tree(
     for func_name, expected_args in zip(func_names, expected_arguments):
         func = file.functions[func_name]
         assert func.name == func_name
-        assert func.arguments == expected_args
+        assert [arg.name for arg in func.arguments] == expected_args
 
 
 @pytest.mark.parametrize(

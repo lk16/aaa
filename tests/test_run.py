@@ -44,7 +44,7 @@ def run_instructions(instructions: List[Instruction]) -> None:
     This is a helper function for tests.
     """
 
-    main_function = Function("main", [], FunctionBody([]), instructions)
+    main_function = Function("main", [], [], FunctionBody([]), instructions)
     functions = {"main": main_function}
     program = Program(functions)
     program.run()

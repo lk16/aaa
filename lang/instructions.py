@@ -159,7 +159,7 @@ class InstructionGenerator:
 
         identifier = node.name
 
-        if identifier in self.function.arguments:
+        if identifier in {arg.name for arg in self.function.arguments}:
             return [PushFunctionArgument(identifier)]
 
         # If it's not an arugment, we must be calling a function.
