@@ -16,6 +16,10 @@
 			"match": "(//.*)"
 		},
 		{
+			"name": "comment.line.shebang.aaa",
+			"match": "(#!.*)"
+		},
+		{
 			"name": "keyword.operator.arithmetic.aaa",
 			"match": "\\+|\\-|\\*|/|%"
 		},
@@ -44,7 +48,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.aaa",
-				"match": "\\b(if|else|end|while|fn|begin)\\b"
+				"match": "\\b(if|else|end|while|fn|begin|as|args|return)\\b"
 			}]
 		},
 		"strings": {

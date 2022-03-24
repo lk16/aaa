@@ -5,11 +5,10 @@
     },
     // symbols used as brackets
     "brackets": [
+        ["begin", "end"]
     ],
     // symbols that are auto closed when typing
     "autoClosingPairs": [
-        ["if", " end"],
-        ["while", " end"],
         ["begin", " end"],
         ["\"", "\""],
     ],
