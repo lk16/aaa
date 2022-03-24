@@ -10,18 +10,19 @@
 
 // --- control flow tokens ---
 
-@ token BEGIN = regex("begin(?=\\s|$)") .
-@ token ELSE  = regex("else(?=\\s|$)")  .
-@ token END   = regex("end(?=\\s|$)")   .
-@ token FN    = regex("fn(?=\\s|$)")    .
-@ token IF    = regex("if(?=\\s|$)")    .
-@ token WHILE = regex("while(?=\\s|$)") .
+@ token BEGIN  = regex("begin(?=\\s|$)")  .
+@ token ELSE   = regex("else(?=\\s|$)")   .
+@ token END    = regex("end(?=\\s|$)")    .
+@ token FN     = regex("fn(?=\\s|$)")     .
+@ token IF     = regex("if(?=\\s|$)")     .
+@ token WHILE  = regex("while(?=\\s|$)")  .
+@ token ARGS   = regex("args(?=\\s|$)")   .
+@ token AS     = regex("as(?=\\s|$)")     .
+@ token RETURN = regex("return(?=\\s|$)") .
 
 // --- operator tokens ---
 
 @ token AND            = regex("and(?=\\s|$)")    .
-@ token ARGS           = regex("args(?=\\s|$)")   .
-@ token AS             = regex("as(?=\\s|$)")     .
 @ token ASTERISK       = "*" .
 @ token BACKSLASH_N    = regex("\\\\n(?=\\s|$)")  .
 @ token COMMA          = regex(",(?=\\s|$)")      .
@@ -40,7 +41,6 @@
 @ token OVER           = regex("over(?=\\s|$)")   .
 @ token PERCENT        = regex("%(?=\\s|$)")      .
 @ token PERIOD         = regex("\\.(?=\\s|$)")    .
-@ token RETURN         = regex("return(?=\\s|$)") .
 @ token PLUS           = regex("\\+(?=\\s|$)")    .
 @ token ROT            = regex("rot(?=\\s|$)")    .
 @ token SLASH          = regex("/(?=\\s|$)")      .

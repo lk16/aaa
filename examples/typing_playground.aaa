@@ -1,8 +1,63 @@
-
+#!/usr/bin/env aaa
 
 fn main
-    args foo as int, bar as int, *a, *b
-    return int, *a, *b
 begin
-    nop
+    "five = " .
+    five . \n
+
+    "3 5 max = " .
+    3 5 max . \n
+
+    "4 fib = " .
+    4 fib . \n
+
+    "7 dup_twice = " .
+    7 dup_twice . . . \n
+end
+
+
+fn five
+    return int
+begin
+    5
+end
+
+
+fn max
+    args a as int, b as int
+    return int
+begin
+    if a b > begin
+        a
+    else
+        b
+    end
+end
+
+
+fn dup_twice
+    args *a
+    return *a, *a, *a
+begin
+    a dup dup
+end
+
+
+fn fib
+    args n as int
+    return int
+begin
+    if n 0 < begin
+        0 // language doens't any error handling yet
+    else
+        if
+            n 1 =
+            n 0 = or
+        begin
+            1
+        else
+            n 1 - fib
+            n *
+        end
+    end
 end

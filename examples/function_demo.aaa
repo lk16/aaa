@@ -1,10 +1,14 @@
 #!/usr/bin/env aaa
 
-fn print_values a b c begin
+
+fn print_values
+    args a as str, b as str, c as str
+begin
     "a=" . a . "\n" .
     "b=" . b . "\n" .
     "c=" . c . "\n" .
 end
+
 
 fn main begin
     1 2 3 print_values

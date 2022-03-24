@@ -1,7 +1,10 @@
 #!/usr/bin/env aaa
 // Fizzbuzz is a famous interview question
 
-fn fizzbuzz n remainder begin
+
+fn fizzbuzz
+    args n as int, remainder as int
+begin
     if
         remainder 0 =
     begin

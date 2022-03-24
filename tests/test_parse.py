@@ -192,13 +192,16 @@ def test_parse_function_body(code: str, expected_ok: bool) -> None:
     ["code", "expected_ok"],
     [
         ("fn a begin nop end", True),
-        ("fn a b begin nop end", True),
-        ("fn a b c d e f begin nop end", True),
-        ("fn true begin nop end", False),
-        ("fn a true begin nop end", False),
-        ("fn a begin 3 5 < true and end", True),
+        ("fn a args begin nop end", False),
+        ("fn a return begin nop end", False),
+        ("fn a args return begin nop end", False),
+        ("fn a args b as int begin nop end", True),
+        ("fn a args b as int, c as int begin nop end", True),
+        ("fn a return int begin nop end", True),
+        ("fn a return int, int begin nop end", True),
+        ("fn a args b as int, c as int return int, int begin nop end", True),
         (
-            "fn a b c begin if nop begin while nop begin nop end else while nop begin nop end end end",
+            "fn a args b as int, c as int return int, int begin if true begin nop end end",
             True,
         ),
     ],
@@ -210,54 +213,6 @@ def test_parse_function(code: str, expected_ok: bool) -> None:
         assert not expected_ok
     else:
         assert expected_ok
-
-
-@pytest.mark.parametrize(
-    ["code", "expected_ok"],
-    [
-        ("fn a begin nop end", True),
-        (" fn a begin nop end", True),
-        ("fn a begin nop end ", True),
-        (" fn a begin nop end ", True),
-        ("fn a begin nop end fn b begin nop end", True),
-        (" fn a begin nop end fn b begin nop end ", True),
-        (
-            "fn a b c begin while nop begin nop end end fn d e f begin if nop begin nop else nop end end",
-            True,
-        ),
-    ],
-)
-def test_parse_file(code: str, expected_ok: bool) -> None:
-    try:
-        parse_as(code, "ROOT")
-    except ParseError:
-        assert not expected_ok
-    else:
-        assert expected_ok
-
-
-@pytest.mark.parametrize(
-    ["code", "func_names", "expected_arguments"],
-    [
-        ("fn main begin nop end", ["main"], [[]]),
-        ("fn main a b c begin nop end", ["main"], [["a", "b", "c"]]),
-        (
-            "fn main a b c begin nop end fn foo d e f begin nop end fn bar g h i begin nop end",
-            ["main", "foo", "bar"],
-            [["a", "b", "c"], ["d", "e", "f"], ["g", "h", "i"]],
-        ),
-    ],
-)
-def test_file_parse_tree(
-    code: str, func_names: List[str], expected_arguments: List[List[str]]
-) -> None:
-    file = parse("foo.txt", code)
-
-    assert len(file.functions) == len(func_names)
-    for func_name, expected_args in zip(func_names, expected_arguments):
-        func = file.functions[func_name]
-        assert func.name == func_name
-        assert [arg.name for arg in func.arguments] == expected_args
 
 
 @pytest.mark.parametrize(

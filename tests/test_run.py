@@ -206,9 +206,9 @@ def test_run_code_as_main_ok(
 @pytest.mark.parametrize(
     ["code", "expected_output"],
     [
-        ("fn main begin 1 print end fn print a begin a . end", "1"),
+        ("fn main begin 1 print end fn print args a as int begin a . end", "1"),
         (
-            "fn main begin 1 2 3 print end fn print a b c begin a . b . c . end",
+            "fn main begin 1 2 3 print end fn print args a as int, b as int, c as int begin a . b . c . end",
             "123",
         ),
         ("fn main begin foo end\n" + "fn foo begin 1 . end", "1"),
@@ -221,9 +221,9 @@ def test_run_code_as_main_ok(
         ),
         (
             "fn main begin 1 2 3 foo end\n"
-            + "fn foo a b c begin a b c bar end\n"
-            + "fn bar a b c begin a b c baz end\n"
-            + "fn baz a b c begin a . b . c . end",
+            + "fn foo args a as int, b as int, c as int begin a b c bar end\n"
+            + "fn bar args a as int, b as int, c as int begin a b c baz end\n"
+            + "fn baz args a as int, b as int, c as int begin a . b . c . end",
             "123",
         ),
         ("#!/usr/bin/env aaa\nfn main begin nop end", ""),
