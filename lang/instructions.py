@@ -46,7 +46,7 @@ from lang.parse import (
     Operator,
     StringLiteral,
 )
-from lang.type_checker import check_types
+from lang.type_checker import TypeChecker
 
 OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "+": Plus(),
@@ -78,9 +78,8 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
 
 def get_instructions(function: Function) -> List[Instruction]:
     if function._instructions is None:
-        instructions = InstructionGenerator(function).generate_instructions()
-        function._instructions = instructions
-        check_types(function)
+        TypeChecker(function).check_types()
+        function._instructions = InstructionGenerator(function).generate_instructions()
 
     return function._instructions
 
@@ -92,7 +91,7 @@ class InstructionGenerator:
         self.instruction_funcs: Dict[
             Type[AaaTreeNode], Callable[[AaaTreeNode, int], List[Instruction]]
         ] = {
-            IntegerLiteral: self.integer_liter_instructions,
+            IntegerLiteral: self.instructions_for_integer_literal,
             StringLiteral: self.instructions_for_string_literal,
             BooleanLiteral: self.instructions_for_boolean_literal,
             Operator: self.instructions_for_operator,
@@ -110,7 +109,7 @@ class InstructionGenerator:
     ) -> List[Instruction]:
         return self.instruction_funcs[type(node)](node, offset)
 
-    def integer_liter_instructions(
+    def instructions_for_integer_literal(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, IntegerLiteral)
