@@ -1,5 +1,6 @@
 from copy import copy
-from typing import Callable, Dict, List, Tuple, Type
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Type
 
 from lang.parse import (
     AaaTreeNode,
@@ -13,64 +14,86 @@ from lang.parse import (
     Operator,
     StringLiteral,
 )
-from lang.types import ArbitraryType, BaseType, Boolean, Integer, String
+
+StackItem = int | bool | str
+
+TypeStack = List[Type[StackItem]]
+
+IDENTIFIER_TO_TYPE: Dict[str, Type[StackItem]] = {
+    "bool": bool,
+    "int": int,
+    "str": str,
+}
+
+
+@dataclass
+class SomeType:
+    name: str
+
+
+SignatureItem = Type[StackItem] | SomeType
+
+
+@dataclass
+class Signature:
+    arg_types: List[SignatureItem]
+    return_types: List[SignatureItem]
+
 
 # TODO test that keys match instructions.py and grammar
-# TODO use dataclass instead of tuple
-# TODO use python types (and StackItem) instead of these classes
-OPERATOR_SIGNATURES: Dict[str, List[Tuple[List[BaseType], List[BaseType]]]] = {
+OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
     "+": [
-        ([Integer(), Integer()], [Boolean()]),
-        ([String(), String()], [Boolean()]),
+        Signature([int, int], [bool]),
+        Signature([str, str], [bool]),
     ],
-    "-": [([Integer(), Integer()], [Integer()])],
-    "*": [([Integer(), Integer()], [Integer()])],
-    "/": [([Integer(), Integer()], [Integer()])],
-    "%": [([Integer(), Integer()], [Integer()])],
-    "and": [([Boolean(), Boolean()], [Boolean()])],
-    "or": [([Boolean(), Boolean()], [Boolean()])],
-    "not": [([Boolean()], [Boolean()])],
-    "nop": [([], [])],
+    "-": [Signature([int, int], [int])],
+    "*": [Signature([int, int], [int])],
+    "/": [Signature([int, int], [int])],
+    "%": [Signature([int, int], [int])],
+    "and": [Signature([bool, bool], [bool])],
+    "or": [Signature([bool, bool], [bool])],
+    "not": [Signature([bool], [bool])],
+    "nop": [Signature([], [])],
     "=": [
-        ([Integer(), Integer()], [Boolean()]),
-        ([String(), String()], [Boolean()]),
+        Signature([int, int], [bool]),
+        Signature([str, str], [str]),
     ],
-    ">": [([Integer(), Integer()], [Boolean()])],
-    ">=": [([Integer(), Integer()], [Boolean()])],
-    "<": [([Integer(), Integer()], [Boolean()])],
-    "<=": [([Integer(), Integer()], [Boolean()])],
+    ">": [Signature([int, int], [int])],
+    ">=": [Signature([int, int], [int])],
+    "<": [Signature([int, int], [int])],
+    "<=": [Signature([int, int], [int])],
     "!=": [
-        ([Integer(), Integer()], [Boolean()]),
-        ([String(), String()], [Boolean()]),
+        Signature([int, int], [bool]),
+        Signature([str, str], [bool]),
     ],
-    "drop": [([ArbitraryType("a")], [])],
-    "dup": [([ArbitraryType("a")], [ArbitraryType("a"), ArbitraryType("a")])],
+    "drop": [Signature([SomeType("a")], [])],
+    "dup": [Signature([SomeType("a")], [SomeType("a"), SomeType("a")])],
     "swap": [
-        (
-            [ArbitraryType("a"), ArbitraryType("b")],
-            [ArbitraryType("b"), ArbitraryType("a")],
+        Signature(
+            [SomeType("a"), SomeType("b")],
+            [SomeType("b"), SomeType("a")],
         )
     ],
     "over": [
-        (
-            [ArbitraryType("a"), ArbitraryType("b")],
-            [ArbitraryType("a"), ArbitraryType("b"), ArbitraryType("a")],
+        Signature(
+            [SomeType("a"), SomeType("b")],
+            [SomeType("a"), SomeType("b"), SomeType("a")],
         )
     ],
     "rot": [
-        (
-            [ArbitraryType("a"), ArbitraryType("b"), ArbitraryType("c")],
-            [ArbitraryType("b"), ArbitraryType("c"), ArbitraryType("a")],
+        Signature(
+            [SomeType("a"), SomeType("b"), SomeType("c")],
+            [SomeType("b"), SomeType("c"), SomeType("a")],
         )
     ],
-    "\\n": [([], [])],
+    "\\n": [Signature([], [])],
     ".": [
-        ([Boolean()], []),
-        ([Integer()], []),
-        ([String()], []),
+        Signature([bool], []),
+        Signature([int], []),
+        Signature([str], []),
     ],
-    "substr": [([String(), Integer(), Integer()], [String()])],
-    "strlen": [([String()], [Integer()])],
+    "substr": [Signature([str, int, int], [str])],
+    "strlen": [Signature([str], [int])],
 }
 
 
@@ -79,7 +102,8 @@ class TypeChecker:
         self.function = function
 
         self.type_check_funcs: Dict[
-            Type[AaaTreeNode], Callable[[AaaTreeNode, List[BaseType]], List[BaseType]]
+            Type[AaaTreeNode],
+            Callable[[AaaTreeNode, TypeStack], TypeStack],
         ] = {
             IntegerLiteral: self.integer_literal_type_check,
             StringLiteral: self.string_literal_type_check,
@@ -92,7 +116,12 @@ class TypeChecker:
         }
 
     def check_types(self) -> None:
-        type_stack = [arg.type for arg in self.function.arguments]
+        type_stack: TypeStack = []
+
+        for arg in self.function.arguments:
+            assert not isinstance(arg.type, SomeType)
+            type_stack.append(arg.type)
+
         return_types = self.function_body_type_check(self.function, type_stack)
 
         _ = return_types
@@ -100,45 +129,45 @@ class TypeChecker:
         raise NotImplementedError
 
     def check_and_apply_signature(
-        self,
-        type_stack: List[BaseType],
-        arg_types: List[BaseType],
-        return_types: List[BaseType],
-    ) -> List[BaseType]:
-        arg_count = len(arg_types)
+        self, type_stack: TypeStack, signature: Signature
+    ) -> TypeStack:
+        arg_count = len(signature.arg_types)
 
         if len(type_stack) < arg_count:
-            raise NotImplementedError  # TODO
+            raise NotImplementedError
 
         type_stack_under_args = type_stack[:-arg_count]
         type_stack_args = type_stack[-arg_count:]
 
-        for arg_type, type_stack_arg in zip(arg_types, type_stack_args):
+        for arg_type, type_stack_arg in zip(signature.arg_types, type_stack_args):
             if type(arg_type) != type(type_stack_arg) and not isinstance(
-                arg_type, ArbitraryType
+                arg_type, SomeType
             ):
-                raise NotImplementedError  # TODO
+                raise NotImplementedError
 
-        return copy(type_stack_under_args) + return_types
+        # TODO we should replace SomeArg by concrete types here
+        returned_types: TypeStack = signature.return_types  # type: ignore
+
+        return copy(type_stack_under_args) + returned_types
 
     def integer_literal_type_check(
-        self, node: AaaTreeNode, type_stack: List[BaseType]
-    ) -> List[BaseType]:
-        return type_stack + [Integer()]
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
+        return type_stack + [int]
 
     def string_literal_type_check(
-        self, node: AaaTreeNode, type_stack: List[BaseType]
-    ) -> List[BaseType]:
-        return type_stack + [String()]
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
+        return type_stack + [str]
 
     def boolean_literal_type_check(
-        self, node: AaaTreeNode, type_stack: List[BaseType]
-    ) -> List[BaseType]:
-        return type_stack + [Boolean()]
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
+        return type_stack + [bool]
 
     def operator_type_check(
-        self, node: AaaTreeNode, type_stack: List[BaseType]
-    ) -> List[BaseType]:
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
         assert isinstance(node, Operator)
         signatures = OPERATOR_SIGNATURES[node.value]
 
@@ -146,28 +175,24 @@ class TypeChecker:
         assert len(signatures) == 1
         signature = signatures[0]
 
-        return self.check_and_apply_signature(type_stack, signature[0], signature[1])
+        return self.check_and_apply_signature(type_stack, signature)
 
-    def loop_type_check(
-        self, node: AaaTreeNode, type_stack: List[BaseType]
-    ) -> List[BaseType]:
+    def loop_type_check(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         # TODO use copy on type_stack before checking children
-        ...
+        raise NotImplementedError
 
     def identifier_type_check(
-        self, node: AaaTreeNode, type_stack: List[BaseType]
-    ) -> List[BaseType]:
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
         # TODO use copy on type_stack before checking children
-        ...
+        raise NotImplementedError
 
-    def branch_type_check(
-        self, node: AaaTreeNode, type_stack: List[BaseType]
-    ) -> List[BaseType]:
+    def branch_type_check(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         # TODO use copy on type_stack before checking children
-        ...
+        raise NotImplementedError
 
     def function_body_type_check(
-        self, node: AaaTreeNode, type_stack: List[BaseType]
-    ) -> List[BaseType]:
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
         # TODO use copy on type_stack before checking children
-        ...
+        raise NotImplementedError

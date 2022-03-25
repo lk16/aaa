@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type
 
 from lang.exceptions import (
     InvalidFunctionCall,
@@ -44,8 +44,7 @@ from lang.instruction_types import (
 )
 from lang.instructions import get_instructions
 from lang.parse import Function
-
-StackItem = Union[int, bool, str]
+from lang.type_checker import StackItem
 
 
 @dataclass

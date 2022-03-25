@@ -9,7 +9,7 @@ from lang.exceptions import FunctionNameCollission
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
 from lang.instruction_types import Instruction
-from lang.types import IDENTIFIER_TO_TYPE, ArbitraryType, BaseType
+from lang.type_checker import IDENTIFIER_TO_TYPE, SignatureItem, SomeType
 
 FunctionBodyItem = Union[
     "Branch",
@@ -154,7 +154,7 @@ class FunctionBody(AaaTreeNode):
 @dataclass
 class Argument(AaaTreeNode):
     name: str
-    type: BaseType
+    type: SignatureItem
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Argument":
@@ -162,7 +162,10 @@ class Argument(AaaTreeNode):
 
         if tree[0].token_type == Terminal.IDENTIFIER:
             type_identifier = tree[2].value(tokens, code)
-            type = IDENTIFIER_TO_TYPE[type_identifier]()
+            try:
+                type = IDENTIFIER_TO_TYPE[type_identifier]
+            except KeyError:
+                raise NotImplementedError
 
             return Argument(
                 name=tree[0].value(tokens, code),
@@ -174,16 +177,16 @@ class Argument(AaaTreeNode):
 
             return Argument(
                 name=tree[1].value(tokens, code),
-                type=ArbitraryType(type_placeholder),
+                type=SomeType(type_placeholder),
             )
 
         else:  # pragma: nocover
-            raise NotImplementedError
+            assert False
 
 
 @dataclass
 class ReturnType(AaaTreeNode):
-    type: BaseType
+    type: SignatureItem
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ReturnType":
@@ -191,13 +194,20 @@ class ReturnType(AaaTreeNode):
 
         if tree[0].token_type == Terminal.IDENTIFIER:
             type_identifier = tree[0].value(tokens, code)
-            type = IDENTIFIER_TO_TYPE[type_identifier]()
+            try:
+                type = IDENTIFIER_TO_TYPE[type_identifier]
+            except KeyError:
+                raise NotImplementedError
+
+            return ReturnType(type)
 
         elif tree[0].token_type == Terminal.ASTERISK:
             type_placeholder = tree[1].value(tokens, code)
-            type = ArbitraryType(type_placeholder)
+            some_type = SomeType(type_placeholder)
 
-        return ReturnType(type)
+            return ReturnType(some_type)
+        else:  # pragma: nocover
+            assert False
 
 
 @dataclass
