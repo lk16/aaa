@@ -46,7 +46,7 @@ from lang.parse import (
     Operator,
     StringLiteral,
 )
-from lang.type_checker import TypeChecker
+from lang.typing.checker import TypeChecker
 
 OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "+": Plus(),

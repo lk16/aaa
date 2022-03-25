@@ -1,6 +1,5 @@
 from copy import copy
-from dataclasses import dataclass
-from typing import Callable, Dict, List, Type
+from typing import Callable, Dict, Type
 
 from lang.parse import (
     AaaTreeNode,
@@ -14,87 +13,7 @@ from lang.parse import (
     Operator,
     StringLiteral,
 )
-
-StackItem = int | bool | str
-
-TypeStack = List[Type[StackItem]]
-
-IDENTIFIER_TO_TYPE: Dict[str, Type[StackItem]] = {
-    "bool": bool,
-    "int": int,
-    "str": str,
-}
-
-
-@dataclass
-class SomeType:
-    name: str
-
-
-SignatureItem = Type[StackItem] | SomeType
-
-
-@dataclass
-class Signature:
-    arg_types: List[SignatureItem]
-    return_types: List[SignatureItem]
-
-
-# TODO test that keys match instructions.py and grammar
-OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
-    "+": [
-        Signature([int, int], [bool]),
-        Signature([str, str], [bool]),
-    ],
-    "-": [Signature([int, int], [int])],
-    "*": [Signature([int, int], [int])],
-    "/": [Signature([int, int], [int])],
-    "%": [Signature([int, int], [int])],
-    "and": [Signature([bool, bool], [bool])],
-    "or": [Signature([bool, bool], [bool])],
-    "not": [Signature([bool], [bool])],
-    "nop": [Signature([], [])],
-    "=": [
-        Signature([int, int], [bool]),
-        Signature([str, str], [str]),
-    ],
-    ">": [Signature([int, int], [int])],
-    ">=": [Signature([int, int], [int])],
-    "<": [Signature([int, int], [int])],
-    "<=": [Signature([int, int], [int])],
-    "!=": [
-        Signature([int, int], [bool]),
-        Signature([str, str], [bool]),
-    ],
-    "drop": [Signature([SomeType("a")], [])],
-    "dup": [Signature([SomeType("a")], [SomeType("a"), SomeType("a")])],
-    "swap": [
-        Signature(
-            [SomeType("a"), SomeType("b")],
-            [SomeType("b"), SomeType("a")],
-        )
-    ],
-    "over": [
-        Signature(
-            [SomeType("a"), SomeType("b")],
-            [SomeType("a"), SomeType("b"), SomeType("a")],
-        )
-    ],
-    "rot": [
-        Signature(
-            [SomeType("a"), SomeType("b"), SomeType("c")],
-            [SomeType("b"), SomeType("c"), SomeType("a")],
-        )
-    ],
-    "\\n": [Signature([], [])],
-    ".": [
-        Signature([bool], []),
-        Signature([int], []),
-        Signature([str], []),
-    ],
-    "substr": [Signature([str, int, int], [str])],
-    "strlen": [Signature([str], [int])],
-}
+from lang.typing.signatures import OPERATOR_SIGNATURES, Signature, SomeType, TypeStack
 
 
 class TypeChecker:
@@ -116,17 +35,15 @@ class TypeChecker:
         }
 
     def check_types(self) -> None:
-        type_stack: TypeStack = []
+        type_stack = [arg.type for arg in self.function.arguments]
 
-        for arg in self.function.arguments:
-            assert not isinstance(arg.type, SomeType)
-            type_stack.append(arg.type)
+        computed_return_types = self.function_body_type_check(self.function, type_stack)
+        expected_return_types = [
+            return_type.type for return_type in self.function.return_types
+        ]
 
-        return_types = self.function_body_type_check(self.function, type_stack)
-
-        _ = return_types
-        # TODO check if return_types match what self.function specifies
-        raise NotImplementedError
+        if computed_return_types != expected_return_types:
+            raise NotImplementedError
 
     def check_and_apply_signature(
         self, type_stack: TypeStack, signature: Signature
@@ -146,7 +63,8 @@ class TypeChecker:
                 raise NotImplementedError
 
         # TODO we should replace SomeArg by concrete types here
-        returned_types: TypeStack = signature.return_types  # type: ignore
+
+        returned_types: TypeStack = signature.return_types
 
         return copy(type_stack_under_args) + returned_types
 

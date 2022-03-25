@@ -9,7 +9,7 @@ from lang.exceptions import FunctionNameCollission
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
 from lang.instruction_types import Instruction
-from lang.type_checker import IDENTIFIER_TO_TYPE, SignatureItem, SomeType
+from lang.typing.signatures import IDENTIFIER_TO_TYPE, SignatureItem, SomeType
 
 FunctionBodyItem = Union[
     "Branch",

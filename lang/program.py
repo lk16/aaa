@@ -44,7 +44,7 @@ from lang.instruction_types import (
 )
 from lang.instructions import get_instructions
 from lang.parse import Function
-from lang.type_checker import StackItem
+from lang.typing.signatures import StackItem
 
 
 @dataclass
