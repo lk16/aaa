@@ -8,13 +8,13 @@ begin
     if
         remainder 0 =
     begin
-        "fizzbuzz"
+        "fizzbuzz" .
     else
         if
             remainder 5 =
             remainder 10 = or
         begin
-            "buzz"
+            "buzz" .
         else
             if
             remainder 3 =
@@ -22,13 +22,13 @@ begin
             remainder 9 = or
             remainder 12 = or
             begin
-                "fizz"
+                "fizz" .
             else
-                n
+                n .
             end
         end
     end
-    . \n
+    \n
 end
 
 

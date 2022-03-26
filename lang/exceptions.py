@@ -61,10 +61,3 @@ class StackNotEmptyAtExit(RunTimeError):
 
 class EmptyParseTreeError(Exception):
     ...
-
-
-class InvalidFunctionCall(RunTimeError):
-    def __init__(self, func_name: str, offset: int, invalid_func: str):
-        super().__init__(
-            f"Call to non-existent function {invalid_func} in {func_name} at offset {offset}"
-        )

@@ -30,8 +30,8 @@ class Signature:
 # TODO test that keys match instructions.py and grammar
 OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
     "+": [
-        Signature([int, int], [bool]),
-        Signature([str, str], [bool]),
+        Signature([int, int], [int]),
+        Signature([str, str], [str]),
     ],
     "-": [Signature([int, int], [int])],
     "*": [Signature([int, int], [int])],

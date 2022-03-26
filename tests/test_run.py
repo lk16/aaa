@@ -1,118 +1,8 @@
-from dataclasses import dataclass
-from typing import List, Type
-
 import pytest
 from pytest import CaptureFixture
 
-from lang.exceptions import StackNotEmptyAtExit, StackUnderflow, UnexpectedType
-from lang.instruction_types import (
-    And,
-    BoolPush,
-    Divide,
-    Drop,
-    Dup,
-    Equals,
-    Instruction,
-    IntGreaterEquals,
-    IntGreaterThan,
-    IntLessEquals,
-    IntLessThan,
-    IntNotEqual,
-    IntPush,
-    Minus,
-    Multiply,
-    Not,
-    Or,
-    Over,
-    Plus,
-    Print,
-    Rot,
-    Swap,
-)
-from lang.parse import Function, FunctionBody
-from lang.run import run_code, run_code_as_main
+from lang.program import Program
 from lang.simulator import Simulator
-
-
-@dataclass
-class UnhandledInstruction(Instruction):
-    ...
-
-
-def run_instructions(instructions: List[Instruction]) -> None:
-    """
-    This is a helper function for tests.
-    """
-
-    main_function = Function("main", [], [], FunctionBody([]), instructions)
-    functions = {"main": main_function}
-    simulator = Simulator(functions)
-    simulator.run()
-
-
-@pytest.mark.parametrize(
-    ["instructions", "expected_exception"],
-    [
-        ([IntPush(3)], StackNotEmptyAtExit),
-    ],
-)
-def test_run_instructions_fails(
-    instructions: List[Instruction], expected_exception: Type[Exception]
-) -> None:
-    with pytest.raises(expected_exception):
-        run_instructions(instructions)
-
-
-def test_run_instructions_unexpected_type() -> None:
-    instructions: List[Instruction] = [BoolPush(True), IntPush(3), Plus()]
-
-    with pytest.raises(UnexpectedType):
-        run_instructions(instructions)
-
-
-@pytest.mark.parametrize(
-    ["instructions"],
-    [
-        ([Print()],),
-        ([Plus()],),
-        ([IntPush(1), Plus()],),
-        ([Minus()],),
-        ([IntPush(1), Minus()],),
-        ([Multiply()],),
-        ([IntPush(1), Multiply()],),
-        ([Divide()],),
-        ([IntPush(1), Divide()],),
-        ([And()],),
-        ([BoolPush(True), And()],),
-        ([Or()],),
-        ([BoolPush(True), Or()],),
-        ([Not()],),
-        ([Equals()],),
-        ([IntPush(1), Equals()],),
-        ([IntLessThan()],),
-        ([IntPush(1), IntLessThan()],),
-        ([IntLessEquals()],),
-        ([IntPush(1), IntLessEquals()],),
-        ([IntGreaterThan()],),
-        ([IntPush(1), IntGreaterThan()],),
-        ([IntGreaterEquals()],),
-        ([IntPush(1), IntGreaterEquals()],),
-        ([IntNotEqual()],),
-        ([IntPush(1), IntNotEqual()],),
-        ([Drop()],),
-        ([Dup()],),
-        ([Swap()],),
-        ([IntPush(1), Swap()],),
-        ([Over()],),
-        ([IntPush(1), Over()],),
-        ([Rot()],),
-        ([IntPush(1), Rot()],),
-        ([IntPush(1), IntPush(1), Rot()],),
-    ],
-)
-def test_run_instructions_stack_underflow(instructions: List[Instruction]) -> None:
-    with pytest.raises(StackUnderflow):
-        run_instructions(instructions)
 
 
 @pytest.mark.parametrize(
@@ -196,7 +86,9 @@ def test_run_code_as_main_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
 
-    run_code_as_main(code)
+    code = f"fn main begin {code}\nend"
+    program = Program.without_file(code)
+    Simulator(program).run()
 
     stdout, stderr = capfd.readouterr()
     assert expected_output == stdout
@@ -232,8 +124,8 @@ def test_run_code_as_main_ok(
 def test_run_code_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
-
-    run_code("<stdin>", code)
+    program = Program.without_file(code)
+    Simulator(program).run()
 
     stdout, stderr = capfd.readouterr()
     assert expected_output == stdout

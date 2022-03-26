@@ -2,7 +2,7 @@
 
 
 fn print_values
-    args a as str, b as str, c as str
+    args a as int, b as int, c as int
 begin
     "a=" . a . "\n" .
     "b=" . b . "\n" .

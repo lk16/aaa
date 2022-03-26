@@ -4,6 +4,6 @@ fn main begin
     "hello!\n" print_twice
 end
 
-fn print_twice begin
-    dup . .
+fn print_twice args s as str begin
+    s dup . .
 end

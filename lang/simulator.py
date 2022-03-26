@@ -2,12 +2,7 @@ import sys
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple, Type
 
-from lang.exceptions import (
-    InvalidFunctionCall,
-    StackNotEmptyAtExit,
-    StackUnderflow,
-    UnexpectedType,
-)
+from lang.exceptions import StackNotEmptyAtExit, StackUnderflow, UnexpectedType
 from lang.instruction_types import (
     And,
     BoolPush,
@@ -44,6 +39,7 @@ from lang.instruction_types import (
 )
 from lang.instructions import get_instructions
 from lang.parse import Function
+from lang.program import Program
 from lang.typing.signatures import StackItem
 
 
@@ -55,8 +51,8 @@ class CallStackItem:
 
 
 class Simulator:
-    def __init__(self, functions: Dict[str, Function], verbose: bool = False) -> None:
-        self.functions = functions
+    def __init__(self, program: Program, verbose: bool = False) -> None:
+        self.program = program
         self.stack: List[StackItem] = []
         self.call_stack: List[CallStackItem] = []
         self.verbose = verbose
@@ -96,22 +92,6 @@ class Simulator:
             SubString: self.instruction_substring,
             Swap: self.instruction_swap,
         }
-
-    def validate_function_calls(self) -> None:
-        """
-        Confirm that all potentially called functions exist.
-        """
-
-        if "main" not in self.functions:
-            raise InvalidFunctionCall("<entrypoint>", 0, "main")
-
-        for func_name, function in self.functions.items():
-            for offset, instruction in enumerate(get_instructions(function)):
-                if (
-                    isinstance(instruction, CallFunction)
-                    and instruction.func_name not in self.functions
-                ):
-                    raise InvalidFunctionCall(func_name, offset, instruction.func_name)
 
     def top_untyped(self) -> StackItem:
         try:
@@ -159,7 +139,7 @@ class Simulator:
 
     def current_function(self) -> Function:  # pragma: nocover
         func_name = self.call_stack[-1].func_name
-        return self.functions[func_name]
+        return self.program.get_function(func_name)
 
     def format_stack_item(self, item: StackItem) -> str:  # pragma: nocover
         if isinstance(item, bool):
@@ -216,7 +196,10 @@ class Simulator:
         if not self.verbose:  # pragma: nocover
             return
 
-        for func in self.functions.values():
+        # TODO this won't be correct when imports are present
+        functions = self.program.parsed_files[self.program.entry_point_file].functions
+
+        for func in functions.values():
             instructions = get_instructions(func)
 
             func_name = self.format_str(func.name, max_length=15)
@@ -238,15 +221,13 @@ class Simulator:
         if self.verbose:  # pragma: nocover
             self.print_all_function_instructions()
 
-        self.validate_function_calls()
-
         self.call_function("main")
 
         if self.stack:
             raise StackNotEmptyAtExit
 
     def call_function(self, func_name: str) -> None:
-        function = self.functions[func_name]
+        function = self.program.get_function(func_name)
 
         argument_values: Dict[str, StackItem] = {
             arg.name: self.pop_untyped() for arg in reversed(function.arguments)

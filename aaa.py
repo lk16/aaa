@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from lang.run import run_code_as_main, run_file  # TODO remove alias
+from lang.program import Program
+from lang.simulator import Simulator
 
 GRAMMAR_FILE_PATH = Path("grammar.txt")
 
@@ -20,11 +21,9 @@ def run(file_path: str, verbose_flag: Optional[str] = None) -> None:
         else:
             raise ArgParseError("Unexpected option for run.")
 
-    try:
-        run_file(file_path, verbose)
-    except OSError:
-        print(f'Could not open or read "{file_path}"', file=sys.stderr)
-        exit(1)
+    program = Program(Path(file_path))
+    simulator = Simulator(program, verbose)
+    simulator.run()
 
 
 def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
@@ -37,7 +36,10 @@ def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
         else:
             raise ArgParseError("Unexpected option for cmd.")
 
-    run_code_as_main(code, verbose)
+    code = f"fn main begin {code}\n end"
+    program = Program.without_file(code)
+    simulator = Simulator(program, verbose)
+    simulator.run()
 
 
 def runtests(*args: Any) -> None:
@@ -45,13 +47,15 @@ def runtests(*args: Any) -> None:
         raise ArgParseError("runtests expects no flags or arguments.")
 
     commands = [
+        "check_parser_staleness lang/grammar/grammar.txt lang/grammar/parser.py",
         "pre-commit run --all-files mypy",
-        "pytest --cov=lang --cov-report=term-missing --pdb -x",
+        "pytest --cov=lang --cov-report=term-missing --pdb -x -vv",
     ]
 
     for command in commands:
         proc = subprocess.run(command.split())
         if proc.returncode != 0:
+            print(f'Command "{command}" failed.', file=sys.stderr)
             exit(1)
 
 
@@ -59,7 +63,6 @@ COMMANDS: Dict[str, Callable[..., None]] = {
     "cmd": cmd,
     "run": run,
     "runtests": runtests,
-    # TODO add repl() command
 }
 
 
