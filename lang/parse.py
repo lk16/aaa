@@ -9,7 +9,12 @@ from lang.exceptions import FunctionNameCollission
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
 from lang.instruction_types import Instruction
-from lang.typing.signatures import IDENTIFIER_TO_TYPE, PlaceholderType, SignatureItem
+from lang.typing.signatures import (
+    IDENTIFIER_TO_TYPE,
+    PlaceholderType,
+    Signature,
+    SignatureItem,
+)
 
 FunctionBodyItem = Union[
     "Branch",
@@ -254,6 +259,12 @@ class Function(AaaTreeNode):
             index += 2
 
         return Function(func_name, arguments, return_types, body)
+
+    def get_signature(self) -> Signature:
+        return Signature(
+            arg_types=[arg.type for arg in self.arguments],
+            return_types=[return_type.type for return_type in self.return_types],
+        )
 
 
 @dataclass

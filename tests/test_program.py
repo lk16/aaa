@@ -4,8 +4,7 @@ from typing import Optional, Type
 import pytest
 from _pytest.python_api import RaisesContext
 
-from lang.parse import parse
-from lang.typing.checker import TypeChecker
+from lang.program import Program
 from lang.typing.exceptions import (
     FunctionTypeError,
     StackTypesError,
@@ -56,14 +55,13 @@ from lang.typing.exceptions import (
         ("fn foo args *a begin nop end", None),
         ("fn foo args *a return *a, *a begin a a end", None),
         ("fn foo args *a return *b begin a end", UnknownPlaceholderTypes),
+        ("fn five return int begin 5 end fn foo return int begin five end", None),
+        ("fn foo return int begin foo end", None),
         # TODO arguments
         # TODO function calls
     ],
 )
 def test_type_checker(code: str, expected_exception: Optional[Type[Exception]]) -> None:
-    root = parse("foo.txt", code)
-    function = root.functions["foo"]
-
     expectation: does_not_raise[None] | RaisesContext[Exception]
     if expected_exception:
         expectation = pytest.raises(expected_exception)
@@ -71,4 +69,4 @@ def test_type_checker(code: str, expected_exception: Optional[Type[Exception]]) 
         expectation = does_not_raise()
 
     with expectation:
-        TypeChecker(function).check()
+        Program.without_file(code)

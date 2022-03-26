@@ -1,15 +1,11 @@
 # TODO
 
 ### WIP: static type checking
-- rename `Program` to `Simulator`
-- create `Program` class that:
-    - parses file
-    - loads type signatures of all functions
-    - type checks all functions
 - Use `Program` in `Simulator`
 - show errors with line/col number
 - remove runtime typechecks in `Simulator`
 - remove runtime typechecks related exceptions and tests
+- save instructions of `Function` inside `Program`
 
 
 ### Language features

@@ -1,10 +1,12 @@
 from copy import copy
-from typing import Callable, Dict, Optional, Set, Type
+from pathlib import Path
+from typing import TYPE_CHECKING, Callable, Dict, Optional, Set, Type
 
 from lang.parse import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,
+    File,
     Function,
     FunctionBody,
     Identifier,
@@ -13,6 +15,10 @@ from lang.parse import (
     Operator,
     StringLiteral,
 )
+
+if TYPE_CHECKING:
+    from lang.program import Program
+
 from lang.typing.exceptions import (
     FunctionTypeError,
     StackTypesError,
@@ -29,12 +35,14 @@ from lang.typing.signatures import (
 
 
 class TypeChecker:
-    def __init__(self, function: Function) -> None:
-        self.function = function
+    def __init__(self, file: Path, parsed_file: File, program: "Program") -> None:
+        self.parsed_file = parsed_file
+        self.program = program
+        self.file = file
 
         self.type_check_funcs: Dict[
             Type[AaaTreeNode],
-            Callable[[AaaTreeNode, TypeStack], TypeStack],
+            Callable[[AaaTreeNode, Function, TypeStack], TypeStack],
         ] = {
             IntegerLiteral: self._check_integer_literal,
             StringLiteral: self.check_string_literal,
@@ -48,22 +56,25 @@ class TypeChecker:
         }
 
     def check(self) -> None:
-        computed_return_types = self._check(self.function, [])
-        expected_return_types = [
-            return_type.type for return_type in self.function.return_types
-        ]
+        for func_name, function in self.parsed_file.functions.items():
+            computed_return_types = self._check(function, function, [])
+            expected_return_types = function.get_signature().return_types
 
-        if computed_return_types != expected_return_types:
-            raise FunctionTypeError
+            if computed_return_types != expected_return_types:
+                raise FunctionTypeError
 
-    def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
-        for arg in self.function.arguments:
+    def _get_func_arg_type(
+        self, function: Function, name: str
+    ) -> Optional[SignatureItem]:
+        for arg in function.arguments:
             if arg.name == name:
                 return arg.type
         return None
 
-    def _check(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
-        return self.type_check_funcs[type(node)](node, type_stack)
+    def _check(
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
+    ) -> TypeStack:
+        return self.type_check_funcs[type(node)](node, function, type_stack)
 
     def _check_and_apply_signature(
         self, type_stack: TypeStack, signature: Signature
@@ -103,24 +114,26 @@ class TypeChecker:
         return stack
 
     def _check_integer_literal(
-        self, node: AaaTreeNode, type_stack: TypeStack
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, IntegerLiteral)
         return type_stack + [int]
 
     def check_string_literal(
-        self, node: AaaTreeNode, type_stack: TypeStack
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, StringLiteral)
         return type_stack + [str]
 
     def _check_boolean_literal(
-        self, node: AaaTreeNode, type_stack: TypeStack
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, BooleanLiteral)
         return type_stack + [bool]
 
-    def _check_operator(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_operator(
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
+    ) -> TypeStack:
         assert isinstance(node, Operator)
         signatures = OPERATOR_SIGNATURES[node.value]
 
@@ -138,10 +151,12 @@ class TypeChecker:
 
         return stack
 
-    def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_branch(
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
+    ) -> TypeStack:
         assert isinstance(node, Branch)
         # Condition should push exactly one boolean and nothing else.
-        condition_stack = self._check(node.condition, copy(type_stack))
+        condition_stack = self._check(node.condition, function, copy(type_stack))
 
         if not all(
             [
@@ -154,8 +169,8 @@ class TypeChecker:
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
-        if_stack = self._check(node.if_body, copy(type_stack))
-        else_stack = self._check(node.else_body, copy(type_stack))
+        if_stack = self._check(node.if_body, function, copy(type_stack))
+        else_stack = self._check(node.else_body, function, copy(type_stack))
 
         # Regardless whether the if- or else- branch is taken,
         # afterwards the stack should be the same.
@@ -165,10 +180,12 @@ class TypeChecker:
         # we can return either one, since they are the same
         return if_stack
 
-    def _check_loop(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_loop(
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
+    ) -> TypeStack:
         assert isinstance(node, Loop)
         # Condition should push exactly one boolean and nothing else.
-        condition_stack = self._check(node.condition, copy(type_stack))
+        condition_stack = self._check(node.condition, function, copy(type_stack))
 
         if not all(
             [
@@ -181,7 +198,7 @@ class TypeChecker:
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
-        loop_stack = self._check(node.body, copy(type_stack))
+        loop_stack = self._check(node.body, function, copy(type_stack))
 
         if loop_stack != type_stack:
             raise StackTypesError
@@ -189,39 +206,54 @@ class TypeChecker:
         # we can return either one, since they are the same
         return loop_stack
 
-    def _check_identifier(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_identifier(
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
+    ) -> TypeStack:
         assert isinstance(node, Identifier)
         # If it's a function argument, just push the type.
-        arg_type = self._get_func_arg_type(node.name)
+        arg_type = self._get_func_arg_type(function, node.name)
 
         if arg_type is not None:
             return copy(type_stack) + [arg_type]
 
-        # Otherwise we are calling a function, which is more complicated.
+        # If it's not a function argument, we are calling a function.
+
+        try:
+            func = self.parsed_file.functions[node.name]
+        except KeyError:
+            pass
+        else:
+            signature = func.get_signature()
+            return self._check_and_apply_signature(copy(type_stack), signature)
+
+        # Either the called function exists in a different file
+        # or it doesn't exist at all. This is not implemented yet.
         raise NotImplementedError
 
     def _check_function_body(
-        self, node: AaaTreeNode, type_stack: TypeStack
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, FunctionBody)
 
         stack = copy(type_stack)
         for function_body_item in node.items:
-            stack = self._check(function_body_item, copy(stack))
+            stack = self._check(function_body_item, function, copy(stack))
 
         return stack
 
-    def _check_function(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_function(
+        self, node: AaaTreeNode, function: Function, type_stack: TypeStack
+    ) -> TypeStack:
         assert isinstance(node, Function)
 
         placeholder_arg_types: Set[str] = set()
         placeholder_return_types: Set[str] = set()
 
-        for arg in self.function.arguments:
+        for arg in function.arguments:
             if isinstance(arg.type, PlaceholderType):
                 placeholder_arg_types.add(arg.type.name)
 
-        for return_arg in self.function.return_types:
+        for return_arg in function.return_types:
             if isinstance(return_arg.type, PlaceholderType):
                 placeholder_return_types.add(return_arg.type.name)
 
@@ -232,4 +264,4 @@ class TypeChecker:
 
         # TODO put special type rules if name == main
 
-        return self._check(node.body, type_stack)
+        return self._check(node.body, function, type_stack)
