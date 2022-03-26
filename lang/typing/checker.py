@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Callable, Dict, Type
+from typing import Callable, Dict, Optional, Type
 
 from lang.parse import (
     AaaTreeNode,
@@ -98,38 +98,78 @@ class TypeChecker:
     def _check_integer_literal(
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
+        assert isinstance(node, IntegerLiteral)
         return type_stack + [int]
 
     def check_string_literal(
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
+        assert isinstance(node, StringLiteral)
         return type_stack + [str]
 
     def _check_boolean_literal(
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
+        assert isinstance(node, BooleanLiteral)
         return type_stack + [bool]
 
     def _check_operator(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Operator)
         signatures = OPERATOR_SIGNATURES[node.value]
 
-        # TODO write loop
-        assert len(signatures) == 1
-        signature = signatures[0]
+        stack: Optional[TypeStack] = None
 
-        return self._check_and_apply_signature(type_stack, signature)
+        for signature in signatures:
+            try:
+                stack = self._check_and_apply_signature(copy(type_stack), signature)
+                break
+            except StackTypesError:
+                pass
+
+        if stack is None:
+            raise StackTypesError
+
+        return stack
+
+    def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+        assert isinstance(node, Branch)
+        # condition should push exactly one boolean and nothing else
+        condition_stack = self._check(node.condition, copy(type_stack))
+
+        if not all(
+            [
+                len(condition_stack) == len(type_stack) + 1,
+                condition_stack[:-1] == type_stack,
+                condition_stack[-1] == bool,
+            ]
+        ):
+            raise StackTypesError
+
+        # The bool pushed by the condition is removed when evaluated,
+        # so we can use type_stack as the stack for if- and else- body.
+
+        # Regardless whether the if- or else- branch is taken,
+        # afterwards the stack should be the same.
+
+        if_stack = self._check(node.if_body, copy(type_stack))
+        else_stack = self._check(node.else_body, copy(type_stack))
+
+        if if_stack != else_stack:
+            raise StackTypesError
+
+        # we can return either one, since they are the same
+        return if_stack
 
     def _check_loop(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
-        # TODO use copy on type_stack before checking children
+        assert isinstance(node, Loop)
+        # condition should push exactly one boolean and nothing else
+        # type_stack should be the same after each loop operation
         raise NotImplementedError
 
     def _check_identifier(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
-        # TODO use copy on type_stack before checking children
-        raise NotImplementedError
-
-    def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
-        # TODO use copy on type_stack before checking children
+        assert isinstance(node, Identifier)
+        # if it's a function argument, just push the type
+        # otherwise we are calling a function, which is more complicated
         raise NotImplementedError
 
     def _check_function_body(
