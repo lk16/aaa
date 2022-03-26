@@ -1,3 +1,6 @@
+from typing import Set
+
+
 class TypeException(Exception):
     ...
 
@@ -12,3 +15,9 @@ class FunctionTypeError(TypeException):
 
 class StackTypesError(TypeException):
     ...
+
+
+class UnknownPlaceholderTypes(TypeException):
+    def __init__(self, names: Set[str]):
+        self.names = names
+        # TODO put some message here

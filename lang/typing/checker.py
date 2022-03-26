@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Callable, Dict, Optional, Type
+from typing import Callable, Dict, Optional, Set, Type
 
 from lang.parse import (
     AaaTreeNode,
@@ -17,6 +17,7 @@ from lang.typing.exceptions import (
     FunctionTypeError,
     StackTypesError,
     StackUnderflowError,
+    UnknownPlaceholderTypes,
 )
 from lang.typing.signatures import (
     OPERATOR_SIGNATURES,
@@ -54,6 +55,12 @@ class TypeChecker:
 
         if computed_return_types != expected_return_types:
             raise FunctionTypeError
+
+    def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
+        for arg in self.function.arguments:
+            if arg.name == name:
+                return arg.type
+        return None
 
     def _check(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         return self.type_check_funcs[type(node)](node, type_stack)
@@ -133,7 +140,7 @@ class TypeChecker:
 
     def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Branch)
-        # condition should push exactly one boolean and nothing else
+        # Condition should push exactly one boolean and nothing else.
         condition_stack = self._check(node.condition, copy(type_stack))
 
         if not all(
@@ -146,14 +153,12 @@ class TypeChecker:
             raise StackTypesError
 
         # The bool pushed by the condition is removed when evaluated,
-        # so we can use type_stack as the stack for if- and else- body.
-
-        # Regardless whether the if- or else- branch is taken,
-        # afterwards the stack should be the same.
-
+        # so we can use type_stack as the stack for both the if- and else- bodies.
         if_stack = self._check(node.if_body, copy(type_stack))
         else_stack = self._check(node.else_body, copy(type_stack))
 
+        # Regardless whether the if- or else- branch is taken,
+        # afterwards the stack should be the same.
         if if_stack != else_stack:
             raise StackTypesError
 
@@ -162,14 +167,37 @@ class TypeChecker:
 
     def _check_loop(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Loop)
-        # condition should push exactly one boolean and nothing else
-        # type_stack should be the same after each loop operation
-        raise NotImplementedError
+        # Condition should push exactly one boolean and nothing else.
+        condition_stack = self._check(node.condition, copy(type_stack))
+
+        if not all(
+            [
+                len(condition_stack) == len(type_stack) + 1,
+                condition_stack[:-1] == type_stack,
+                condition_stack[-1] == bool,
+            ]
+        ):
+            raise StackTypesError
+
+        # The bool pushed by the condition is removed when evaluated,
+        # so we can use type_stack as the stack for the loop body.
+        loop_stack = self._check(node.body, copy(type_stack))
+
+        if loop_stack != type_stack:
+            raise StackTypesError
+
+        # we can return either one, since they are the same
+        return loop_stack
 
     def _check_identifier(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Identifier)
-        # if it's a function argument, just push the type
-        # otherwise we are calling a function, which is more complicated
+        # If it's a function argument, just push the type.
+        arg_type = self._get_func_arg_type(node.name)
+
+        if arg_type is not None:
+            return copy(type_stack) + [arg_type]
+
+        # Otherwise we are calling a function, which is more complicated.
         raise NotImplementedError
 
     def _check_function_body(
@@ -185,6 +213,23 @@ class TypeChecker:
 
     def _check_function(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Function)
+
+        placeholder_arg_types: Set[str] = set()
+        placeholder_return_types: Set[str] = set()
+
+        for arg in self.function.arguments:
+            if isinstance(arg.type, PlaceholderType):
+                placeholder_arg_types.add(arg.type.name)
+
+        for return_arg in self.function.return_types:
+            if isinstance(return_arg.type, PlaceholderType):
+                placeholder_return_types.add(return_arg.type.name)
+
+        unknown_return_types = placeholder_return_types - placeholder_arg_types
+
+        if unknown_return_types:
+            raise UnknownPlaceholderTypes(unknown_return_types)
+
         # TODO put special type rules if name == main
 
         return self._check(node.body, type_stack)

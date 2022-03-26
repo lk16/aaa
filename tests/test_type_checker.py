@@ -10,6 +10,7 @@ from lang.typing.exceptions import (
     FunctionTypeError,
     StackTypesError,
     StackUnderflowError,
+    UnknownPlaceholderTypes,
 )
 
 
@@ -43,9 +44,20 @@ from lang.typing.exceptions import (
         ("fn foo begin true if dup begin nop end drop end", None),
         ("fn foo begin 3 if drop 2 true begin nop end drop end", None),
         ('fn foo begin 3 if drop "" true begin nop end drop end', StackTypesError),
-        # TODO loop
-        # TODO identifier
+        ("fn foo begin while true begin nop end end", None),
+        ("fn foo begin while true true begin nop end end", StackTypesError),
+        ("fn foo begin while 3 2 < begin nop end end", None),
+        ("fn foo begin 3 2 while < begin nop end end", StackTypesError),
+        ("fn foo begin 3 2 while over over < begin nop end drop drop end", None),
+        ("fn foo begin while true begin 3 end end", StackTypesError),
+        ("fn foo begin while true begin 3 drop end end", None),
+        ("fn foo args a as int begin a a - . end", None),
+        ("fn foo args a as int begin a a + . end", None),
+        ("fn foo args *a begin nop end", None),
+        ("fn foo args *a return *a, *a begin a a end", None),
+        ("fn foo args *a return *b begin a end", UnknownPlaceholderTypes),
         # TODO arguments
+        # TODO function calls
     ],
 )
 def test_type_checker(code: str, expected_exception: Optional[Type[Exception]]) -> None:
