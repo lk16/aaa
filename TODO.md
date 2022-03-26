@@ -6,6 +6,7 @@
 - remove runtime typechecks in `Simulator`
 - remove runtime typechecks related exceptions and tests
 - save instructions of `Function` inside `Program`
+- make `int`, `str` and `bool` reserved tokens in grammar
 
 
 ### Language features
