@@ -2,7 +2,7 @@ import inspect
 import sys
 
 from lang.instruction_types import Instruction
-from lang.program import Program
+from lang.simulator import Simulator
 
 
 def test_program_implements_all_instructions() -> None:
@@ -12,5 +12,5 @@ def test_program_implements_all_instructions() -> None:
         if inspect.isclass(obj) and obj is not Instruction
     }
 
-    implemented_instructions = set(Program({}).instruction_funcs.keys())
+    implemented_instructions = set(Simulator({}).instruction_funcs.keys())
     assert instruction_types == implemented_instructions

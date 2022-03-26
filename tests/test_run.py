@@ -30,8 +30,8 @@ from lang.instruction_types import (
     Swap,
 )
 from lang.parse import Function, FunctionBody
-from lang.program import Program
 from lang.run import run_code, run_code_as_main
+from lang.simulator import Simulator
 
 
 @dataclass
@@ -46,8 +46,8 @@ def run_instructions(instructions: List[Instruction]) -> None:
 
     main_function = Function("main", [], [], FunctionBody([]), instructions)
     functions = {"main": main_function}
-    program = Program(functions)
-    program.run()
+    simulator = Simulator(functions)
+    simulator.run()
 
 
 @pytest.mark.parametrize(
@@ -56,14 +56,14 @@ def run_instructions(instructions: List[Instruction]) -> None:
         ([IntPush(3)], StackNotEmptyAtExit),
     ],
 )
-def test_run_program_fails(
+def test_run_instructions_fails(
     instructions: List[Instruction], expected_exception: Type[Exception]
 ) -> None:
     with pytest.raises(expected_exception):
         run_instructions(instructions)
 
 
-def test_run_program_unexpected_type() -> None:
+def test_run_instructions_unexpected_type() -> None:
     instructions: List[Instruction] = [BoolPush(True), IntPush(3), Plus()]
 
     with pytest.raises(UnexpectedType):

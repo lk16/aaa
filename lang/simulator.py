@@ -54,7 +54,7 @@ class CallStackItem:
     argument_values: Dict[str, StackItem]
 
 
-class Program:
+class Simulator:
     def __init__(self, functions: Dict[str, Function], verbose: bool = False) -> None:
         self.functions = functions
         self.stack: List[StackItem] = []

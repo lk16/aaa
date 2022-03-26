@@ -8,6 +8,8 @@
     - type checks all functions
 - Use `Program` in `Simulator`
 - show errors with line/col number
+- remove runtime typechecks in `Simulator`
+- remove runtime typechecks related exceptions and tests
 
 
 ### Language features

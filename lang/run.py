@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from lang.parse import parse
-from lang.program import Program
+from lang.simulator import Simulator
 
 
 def run_file(filename: str, verbose: bool = False) -> None:
@@ -12,8 +12,8 @@ def run_file(filename: str, verbose: bool = False) -> None:
 def run_code(filename: str, code: str, verbose: bool = False) -> None:
 
     parsed_file = parse(filename, code)
-    program = Program(parsed_file.functions, verbose)
-    program.run()
+    simulator = Simulator(parsed_file.functions, verbose)
+    simulator.run()
 
 
 def run_code_as_main(main_body_code: str, verbose: bool = False) -> None:
