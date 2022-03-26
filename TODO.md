@@ -1,11 +1,20 @@
 # TODO
 
+### WIP: static type checking
+- rename `Program` to `Simulator`
+- create `Program` class that:
+    - parses file
+    - loads type signatures of all functions
+    - type checks all functions
+- Use `Program` in `Simulator`
+- show errors with line/col number
+
+
 ### Language features
 - multi-file programs (`import`)
 - return early (`return`)
 - assertions (`assert`)
 - debug tools (`breakpoint`)
-- static type checking
 - structs / classes ?
 - compile to native executable
 - compile itself
