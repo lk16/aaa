@@ -9,7 +9,7 @@ from lang.exceptions import FunctionNameCollission
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
 from lang.instruction_types import Instruction
-from lang.typing.signatures import IDENTIFIER_TO_TYPE, SignatureItem, SomeType
+from lang.typing.signatures import IDENTIFIER_TO_TYPE, PlaceholderType, SignatureItem
 
 FunctionBodyItem = Union[
     "Branch",
@@ -177,7 +177,7 @@ class Argument(AaaTreeNode):
 
             return Argument(
                 name=tree[1].value(tokens, code),
-                type=SomeType(type_placeholder),
+                type=PlaceholderType(type_placeholder),
             )
 
         else:  # pragma: nocover
@@ -203,7 +203,7 @@ class ReturnType(AaaTreeNode):
 
         elif tree[0].token_type == Terminal.ASTERISK:
             type_placeholder = tree[1].value(tokens, code)
-            some_type = SomeType(type_placeholder)
+            some_type = PlaceholderType(type_placeholder)
 
             return ReturnType(some_type)
         else:  # pragma: nocover

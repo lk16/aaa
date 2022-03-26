@@ -12,11 +12,11 @@ IDENTIFIER_TO_TYPE: Dict[str, Type[StackItem]] = {
 
 
 @dataclass
-class SomeType:
+class PlaceholderType:
     name: str
 
 
-SignatureItem = Type[StackItem] | SomeType
+SignatureItem = Type[StackItem] | PlaceholderType
 
 TypeStack = List[SignatureItem]
 
@@ -53,24 +53,26 @@ OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
         Signature([int, int], [bool]),
         Signature([str, str], [bool]),
     ],
-    "drop": [Signature([SomeType("a")], [])],
-    "dup": [Signature([SomeType("a")], [SomeType("a"), SomeType("a")])],
+    "drop": [Signature([PlaceholderType("a")], [])],
+    "dup": [
+        Signature([PlaceholderType("a")], [PlaceholderType("a"), PlaceholderType("a")])
+    ],
     "swap": [
         Signature(
-            [SomeType("a"), SomeType("b")],
-            [SomeType("b"), SomeType("a")],
+            [PlaceholderType("a"), PlaceholderType("b")],
+            [PlaceholderType("b"), PlaceholderType("a")],
         )
     ],
     "over": [
         Signature(
-            [SomeType("a"), SomeType("b")],
-            [SomeType("a"), SomeType("b"), SomeType("a")],
+            [PlaceholderType("a"), PlaceholderType("b")],
+            [PlaceholderType("a"), PlaceholderType("b"), PlaceholderType("a")],
         )
     ],
     "rot": [
         Signature(
-            [SomeType("a"), SomeType("b"), SomeType("c")],
-            [SomeType("b"), SomeType("c"), SomeType("a")],
+            [PlaceholderType("a"), PlaceholderType("b"), PlaceholderType("c")],
+            [PlaceholderType("b"), PlaceholderType("c"), PlaceholderType("a")],
         )
     ],
     "\\n": [Signature([], [])],
