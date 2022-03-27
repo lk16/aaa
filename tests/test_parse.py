@@ -232,7 +232,7 @@ def test_branch_parse_tree(
 ) -> None:
     file = parse("foo.txt", code)
     assert len(file.functions) == 1
-    func_body = file.functions["main"].body
+    func_body = file.functions[0].body
 
     assert len(func_body.items) == 1
     branch = func_body.items[0]
@@ -253,7 +253,7 @@ def test_branch_parse_tree(
 def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None:
     file = parse("foo.txt", code)
     assert len(file.functions) == 1
-    func_body = file.functions["main"].body
+    func_body = file.functions[0].body
 
     assert len(func_body.items) == 1
     identifier = func_body.items[0]
@@ -271,7 +271,7 @@ def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None
 def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
     file = parse("foo.txt", code)
     assert len(file.functions) == 1
-    func_body = file.functions["main"].body
+    func_body = file.functions[0].body
 
     assert len(func_body.items) == 1
     bool_lit = func_body.items[0]
@@ -293,7 +293,7 @@ def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
 def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
     file = parse("foo.txt", code)
     assert len(file.functions) == 1
-    func_body = file.functions["main"].body
+    func_body = file.functions[0].body
 
     assert len(func_body.items) == 1
     int_lit = func_body.items[0]
@@ -314,7 +314,7 @@ def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
 def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
     file = parse("foo.txt", code)
     assert len(file.functions) == 1
-    func_body = file.functions["main"].body
+    func_body = file.functions[0].body
 
     assert len(func_body.items) == 1
     str_lit = func_body.items[0]
@@ -336,7 +336,7 @@ def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
 def test_identifier_parse_tree(code: str, expected_name: str) -> None:
     file = parse("foo.txt", code)
     assert len(file.functions) == 1
-    func_body = file.functions["main"].body
+    func_body = file.functions[0].body
 
     assert len(func_body.items) == 1
     identifier = func_body.items[0]
@@ -357,7 +357,7 @@ def test_identifier_parse_tree(code: str, expected_name: str) -> None:
 def test_operator_parse_tree(code: str, expected_operator: str) -> None:
     file = parse("foo.txt", code)
     assert len(file.functions) == 1
-    func_body = file.functions["main"].body
+    func_body = file.functions[0].body
 
     assert len(func_body.items) == 1
     operator = func_body.items[0]

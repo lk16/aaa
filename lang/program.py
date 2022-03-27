@@ -1,12 +1,19 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict
+from typing import Dict, List
 
-from lang.parse import File, Function, parse
+from lang.parse import Function, parse
 from lang.typing.checker import TypeChecker
+
+IdentifyType = Function
 
 
 class Program:
+    def __init__(self, file: Path) -> None:
+        self.entry_point_file = file.resolve()
+        self.identifiers: Dict[str, IdentifyType] = {}
+        self._load_identifiers()
+
     @classmethod
     def without_file(cls, code: str) -> "Program":
         with NamedTemporaryFile() as file:
@@ -14,23 +21,35 @@ class Program:
             saved_file.write_text(code)
             return cls(file=saved_file)
 
-    def __init__(self, file: Path) -> None:
-        self.entry_point_file = file.resolve()
-        self.parsed_files: Dict[Path, File] = {}
-        self._load_file(self.entry_point_file)
+    def _load_identifiers(self) -> None:
+        file = self.entry_point_file
 
-    def _load_file(self, file: Path) -> None:
-        if file.resolve() in self.parsed_files:
-            return
-
-        filename = str(file.resolve())
+        filename = str(file)
         code = file.read_text()
         parsed_file = parse(filename, code)
 
-        # TODO when import is implemented: load imported files here
-        TypeChecker(file.resolve(), parsed_file, self).check()
+        identifiers: Dict[str, Function] = {}
+        for function in parsed_file.functions:
+            if function.name in identifiers:
+                raise NotImplementedError
 
-        self.parsed_files[file.resolve()] = parsed_file
+            identifiers[function.name] = function
+
+        self.identifiers = identifiers
+        TypeChecker(file, parsed_file, self).check()
 
     def get_function(self, name: str) -> Function:
-        return self.parsed_files[self.entry_point_file].functions[name]
+        # TODO check for both KeyError
+        identified = self.identifiers[name]
+
+        if not isinstance(identified, Function):
+            raise NotImplementedError
+
+        return identified
+
+    def get_functions(self) -> List[Function]:
+        return [
+            identified
+            for identified in self.identifiers.values()
+            if isinstance(identified, Function)
+        ]

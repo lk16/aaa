@@ -56,7 +56,7 @@ class TypeChecker:
         }
 
     def check(self) -> None:
-        for func_name, function in self.parsed_file.functions.items():
+        for function in self.parsed_file.functions:
             computed_return_types = self._check(function, function, [])
             expected_return_types = function.get_signature().return_types
 
@@ -219,7 +219,7 @@ class TypeChecker:
         # If it's not a function argument, we are calling a function.
 
         try:
-            func = self.parsed_file.functions[node.name]
+            func = self.program.get_function(node.name)
         except KeyError:
             pass
         else:

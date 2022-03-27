@@ -19,7 +19,7 @@ Stack-based language, like forth.
 ```
 
 ### Aaa features
-- types: integers, strings and booleans
+- types and static type checking: (`int`, `bool`, `str`)
 - integers and integer instructions (`+`, `-`, `*`, `/`, `%`)
 - booleans and boolean instructions (`and`, `or`, `not`)
 - strings and string instructions (`+`, `=`, `strlen`, `substr`)
@@ -38,15 +38,9 @@ This only works under the following conditions:
 * `yourfile.aaa` is executable
 * `aaa` is in your PATH
 
-Use `chmod +x yourfile.aaa` to make your source file executable. To add `aaa` to path, I provided a [simple script](./run_aaa.sh) that we can just symlink from any folder that's in your PATH, for example `ln -s -T $(pwd)/run_aaa.sh ~/.local/bin/aaa`.
+Use `chmod +x yourfile.aaa` to make your source file executable. To add `aaa` to path, a [simple script](./run_aaa.sh) is provided we can just symlink from any folder that's in your PATH, for example `ln -s -T $(pwd)/run_aaa.sh ~/.local/bin/aaa`.
 
 If running files using the shebang feels sluggish, it's because `poetry run` is [slow](https://github.com/python-poetry/poetry/issues/3502).
-
-
-
-
-
-
 
 ### Name
 The name of this language is just the first letter of the Latin alphabet [repeated](#Examples) three times. When code in this language doesn't work, its meaning becomes an [abbreviation](https://en.uncyclopedia.co/wiki/AAAAAAAAA!).

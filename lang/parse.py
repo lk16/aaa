@@ -5,7 +5,6 @@ from parser.parser.models import Tree
 from parser.tokenizer.models import Token
 from typing import Dict, List, Optional, Type, Union
 
-from lang.exceptions import FunctionNameCollission
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
 from lang.instruction_types import Instruction
@@ -269,21 +268,17 @@ class Function(AaaTreeNode):
 
 @dataclass
 class File(AaaTreeNode):
-    functions: Dict[str, Function]
+    functions: List[Function]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "File":
         assert tree.token_type == NonTerminal.ROOT
 
-        functions: Dict[str, Function] = {}
+        functions: List[Function] = []
 
         for child in tree.children:
             function = Function.from_tree(child, tokens, code)
-
-            if function.name in functions:
-                raise FunctionNameCollission(function.name)
-
-            functions[function.name] = function
+            functions.append(function)
 
         return File(functions)
 

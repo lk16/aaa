@@ -1,8 +1,7 @@
 import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Tuple, Type
+from typing import Callable, Dict, List, Optional, Type
 
-from lang.exceptions import StackNotEmptyAtExit, StackUnderflow, UnexpectedType
 from lang.instruction_types import (
     And,
     BoolPush,
@@ -93,40 +92,14 @@ class Simulator:
             Swap: self.instruction_swap,
         }
 
-    def top_untyped(self) -> StackItem:
-        try:
-            return self.stack[-1]
-        except IndexError as e:
-            raise StackUnderflow from e
+    def top(self) -> StackItem:
+        return self.stack[-1]
 
     def push(self, item: StackItem) -> None:
         self.stack.append(item)
 
-    def pop_untyped(self) -> StackItem:
-        try:
-            return self.stack.pop()
-        except IndexError as e:
-            raise StackUnderflow from e
-
-    def check_type(self, item: StackItem, expected_types: List[type]) -> None:
-        # TODO: remove type checking here once we have static type checking
-        if type(item) not in expected_types:
-            raise UnexpectedType(
-                "expected "
-                + " or ".join(
-                    expected_type.__name__ for expected_type in expected_types
-                )
-                + f" on top of stack, but found {type(item).__name__}"
-            )
-
-    def pop(self, expected_type: type) -> StackItem:
-        item = self.pop_untyped()
-        self.check_type(item, [expected_type])
-
-        return item
-
-    def pop_two(self, expected_type: type) -> Tuple[StackItem, StackItem]:
-        return self.pop(expected_type), self.pop(expected_type)
+    def pop(self) -> StackItem:
+        return self.stack.pop()
 
     def get_function_argument(self, arg_name: str) -> StackItem:
         return self.call_stack[-1].argument_values[arg_name]
@@ -197,9 +170,9 @@ class Simulator:
             return
 
         # TODO this won't be correct when imports are present
-        functions = self.program.parsed_files[self.program.entry_point_file].functions
+        functions = self.program.get_functions()
 
-        for func in functions.values():
+        for func in functions:
             instructions = get_instructions(func)
 
             func_name = self.format_str(func.name, max_length=15)
@@ -223,14 +196,11 @@ class Simulator:
 
         self.call_function("main")
 
-        if self.stack:
-            raise StackNotEmptyAtExit
-
     def call_function(self, func_name: str) -> None:
         function = self.program.get_function(func_name)
 
         argument_values: Dict[str, StackItem] = {
-            arg.name: self.pop_untyped() for arg in reversed(function.arguments)
+            arg.name: self.pop() for arg in reversed(function.arguments)
         }
 
         self.call_stack.append(CallStackItem(func_name, 0, argument_values))
@@ -260,36 +230,38 @@ class Simulator:
 
     def instruction_plus(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Plus)
-        x = self.pop_untyped()
-        y = self.pop_untyped()
-        self.check_type(x, [int, str])
-        self.check_type(y, [type(x)])
+        x: int | str = self.pop()
+        y: int | str = self.pop()
 
         self.push(y + x)  # type: ignore
         return self.get_instruction_pointer() + 1
 
     def instruction_minus(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Minus)
-        x, y = self.pop_two(int)
-        self.push(y - x)  # type: ignore
+        x: int = self.pop()  # type: ignore
+        y: int = self.pop()  # type: ignore
+        self.push(y - x)
         return self.get_instruction_pointer() + 1
 
     def instruction_multiply(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Multiply)
-        x, y = self.pop_two(int)
-        self.push(x * y)  # type: ignore
+        x: int = self.pop()  # type: ignore
+        y: int = self.pop()  # type: ignore
+        self.push(x * y)
         return self.get_instruction_pointer() + 1
 
     def instruction_divide(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Divide)
-        x, y = self.pop_two(int)
-        self.push(y // x)  # type: ignore
+        x: int = self.pop()  # type: ignore
+        y: int = self.pop()  # type: ignore
+        self.push(y // x)
         return self.get_instruction_pointer() + 1
 
     def instruction_modulo(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Modulo)
-        x, y = self.pop_two(int)
-        self.push(y % x)  # type: ignore
+        x: int = self.pop()  # type: ignore
+        y: int = self.pop()  # type: ignore
+        self.push(y % x)
         return self.get_instruction_pointer() + 1
 
     def instruction_boolPush(self, instruction: Instruction) -> int:
@@ -299,94 +271,98 @@ class Simulator:
 
     def instruction_and(self, instruction: Instruction) -> int:
         assert isinstance(instruction, And)
-        x, y = self.pop_two(bool)
+        x: bool = self.pop()  # type: ignore
+        y: bool = self.pop()  # type: ignore
         self.push(x and y)
         return self.get_instruction_pointer() + 1
 
     def instruction_or(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Or)
-        x, y = self.pop_two(bool)
+        x: bool = self.pop()  # type: ignore
+        y: bool = self.pop()  # type: ignore
         self.push(x or y)
         return self.get_instruction_pointer() + 1
 
     def instruction_not(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Not)
-        x = self.pop(bool)
+        x: bool = self.pop()  # type: ignore
         self.push(not x)
         return self.get_instruction_pointer() + 1
 
     def instruction_equals(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Equals)
-        x = self.pop_untyped()
-        y = self.pop_untyped()
-        self.check_type(x, [int, str])
-        self.check_type(y, [type(x)])
-
+        x = self.pop()
+        y = self.pop()
         self.push(x == y)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_less_than(self, instruction: Instruction) -> int:
         assert isinstance(instruction, IntLessThan)
-        x, y = self.pop_two(int)
-        self.push(y < x)  # type: ignore
+        x: int = self.pop()  # type: ignore
+        y: int = self.pop()  # type: ignore
+        self.push(y < x)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_less_equals(self, instruction: Instruction) -> int:
         assert isinstance(instruction, IntLessEquals)
-        x, y = self.pop_two(int)
-        self.push(y <= x)  # type: ignore
+        x: int = self.pop()  # type: ignore
+        y: int = self.pop()  # type: ignore
+        self.push(y <= x)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_greater_than(self, instruction: Instruction) -> int:
         assert isinstance(instruction, IntGreaterThan)
-        x, y = self.pop_two(int)
-        self.push(y > x)  # type: ignore
+        x: int = self.pop()  # type: ignore
+        y: int = self.pop()  # type: ignore
+        self.push(y > x)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_greater_equals(self, instruction: Instruction) -> int:
         assert isinstance(instruction, IntGreaterEquals)
-        x, y = self.pop_two(int)
-        self.push(y >= x)  # type: ignore
+        x: int = self.pop()  # type: ignore
+        y: int = self.pop()  # type: ignore
+        self.push(y >= x)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_not_equal(self, instruction: Instruction) -> int:
         assert isinstance(instruction, IntNotEqual)
-        x, y = self.pop_two(int)
+        x = self.pop()
+        y = self.pop()
         self.push(y != x)
         return self.get_instruction_pointer() + 1
 
     def instruction_drop(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Drop)
-        self.pop_untyped()
+        self.pop()
         return self.get_instruction_pointer() + 1
 
     def instruction_dup(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Dup)
-        x = self.top_untyped()
+        x = self.top()
         self.push(x)
         return self.get_instruction_pointer() + 1
 
     def instruction_swap(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Swap)
-        x = self.pop_untyped()
-        y = self.pop_untyped()
+        x = self.pop()
+        y = self.pop()
         self.push(x)
         self.push(y)
         return self.get_instruction_pointer() + 1
 
     def instruction_over(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Over)
-        x = self.pop_untyped()
-        y = self.top_untyped()
+        x = self.pop()
+        y = self.top()
         self.push(x)
         self.push(y)
         return self.get_instruction_pointer() + 1
 
     def instruction_rot(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Rot)
-        x = self.pop_untyped()
-        y = self.pop_untyped()
-        z = self.pop_untyped()
+        x = self.pop()
+        y = self.pop()
+        z = self.pop()
         self.push(y)
         self.push(x)
         self.push(z)
@@ -399,7 +375,7 @@ class Simulator:
 
     def instruction_print(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Print)
-        x = self.pop_untyped()
+        x = self.pop()
         if type(x) == bool:
             if x:
                 print("true", end="")
@@ -417,9 +393,9 @@ class Simulator:
 
     def instruction_substring(self, instruction: Instruction) -> int:
         assert isinstance(instruction, SubString)
-        end: int = self.pop(int)  # type: ignore
-        start: int = self.pop(int)  # type: ignore
-        string: str = self.pop(str)  # type: ignore
+        end: int = self.pop()  # type: ignore
+        start: int = self.pop()  # type: ignore
+        string: str = self.pop()  # type: ignore
 
         if start >= end or start > len(string):
             self.push("")
@@ -430,8 +406,8 @@ class Simulator:
 
     def instruction_string_length(self, instruction: Instruction) -> int:
         assert isinstance(instruction, StringLength)
-        x = self.pop(str)
-        self.push(len(x))  # type: ignore
+        x: str = self.pop()  # type: ignore
+        self.push(len(x))
         return self.get_instruction_pointer() + 1
 
     def instruction_call_function(self, instruction: Instruction) -> int:
@@ -449,7 +425,7 @@ class Simulator:
     def instruction_jump_if_not(self, instruction: Instruction) -> int:
         assert isinstance(instruction, JumpIfNot)
 
-        x = self.pop(bool)
+        x: bool = self.pop()  # type: ignore
         if x:
             return self.get_instruction_pointer() + 1
         else:

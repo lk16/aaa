@@ -1,10 +1,10 @@
 # TODO
 
 ### WIP: static type checking
-- Use `Program` in `Simulator`
+- move most debug/verbose stuff from `Simulator` to `Program`
+- check that function name and args don't overlap in `Program`
+- check that function with same name hasn't been defined already in `Program`
 - show errors with line/col number
-- remove runtime typechecks in `Simulator`
-- remove runtime typechecks related exceptions and tests
 - save instructions of `Function` inside `Program`
 - make `int`, `str` and `bool` reserved tokens in grammar
 
