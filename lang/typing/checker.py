@@ -16,7 +16,7 @@ from lang.parse import (
     StringLiteral,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from lang.program import Program
 
 from lang.typing.exceptions import (
@@ -217,19 +217,10 @@ class TypeChecker:
         if arg_type is not None:
             return copy(type_stack) + [arg_type]
 
-        # If it's not a function argument, we are calling a function.
-
-        try:
-            func = self.program.get_function(node.name)
-        except KeyError:
-            pass
-        else:
-            signature = func.get_signature()
-            return self._check_and_apply_signature(copy(type_stack), signature)
-
-        # Either the called function exists in a different file
-        # or it doesn't exist at all. This is not implemented yet.
-        raise NotImplementedError
+        # If it's not a function argument, we must be calling a function.
+        func = self.program.get_function(node.name)
+        signature = func.get_signature()
+        return self._check_and_apply_signature(copy(type_stack), signature)
 
     def _check_function_body(
         self, node: AaaTreeNode, function: Function, type_stack: TypeStack

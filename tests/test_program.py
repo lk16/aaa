@@ -6,6 +6,7 @@ from _pytest.python_api import RaisesContext
 
 from lang.program import Program
 from lang.typing.exceptions import (
+    ArgumentNameCollision,
     FunctionNameCollision,
     FunctionTypeError,
     StackTypesError,
@@ -61,6 +62,8 @@ from lang.typing.exceptions import (
         ("fn foo return int begin foo end", None),
         ("fn foo begin nop end fn foo begin nop end", FunctionNameCollision),
         ("fn foo begin bar end", UnknownFunction),
+        ("fn foo args a as int, a as int begin nop end", ArgumentNameCollision),
+        ("fn foo args foo as int begin nop end", ArgumentNameCollision),
         # TODO arguments
         # TODO function calls
     ],
