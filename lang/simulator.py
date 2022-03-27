@@ -1,6 +1,5 @@
-import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Type
+from typing import Callable, Dict, List, Type
 
 from lang.instructions.generator import get_instructions
 from lang.instructions.types import (
@@ -37,7 +36,6 @@ from lang.instructions.types import (
     SubString,
     Swap,
 )
-from lang.parse import Function
 from lang.program import Program
 from lang.typing.signatures import StackItem
 
@@ -110,90 +108,7 @@ class Simulator:
     def set_instruction_pointer(self, offset: int) -> None:
         self.call_stack[-1].instruction_pointer = offset
 
-    def current_function(self) -> Function:  # pragma: nocover
-        func_name = self.call_stack[-1].func_name
-        return self.program.get_function(func_name)
-
-    def format_stack_item(self, item: StackItem) -> str:  # pragma: nocover
-        if isinstance(item, bool):
-            if item:
-                return "true"
-            return "false"
-
-        if isinstance(item, int):
-            return str(item)
-
-        if isinstance(item, str):
-            item = item.replace("\n", "\\n").replace('"', '\\"')
-            return f'"{item}"'
-
-        raise NotADirectoryError
-
-    def format_str(
-        self, string: str, max_length: Optional[int] = None
-    ) -> str:  # pragma: nocover
-        string = string.replace("\n", "\\n")
-
-        if max_length is not None and len(string) > max_length:
-            string = string[: max_length - 1] + "…"
-
-        return string
-
-    def print_debug_info(self) -> None:  # pragma: nocover
-        if not self.verbose:
-            return
-
-        ip = self.get_instruction_pointer()
-        func = self.current_function()
-        instructions = get_instructions(func)
-
-        try:
-            instruction = instructions[ip].__repr__()
-        except IndexError:
-            instruction = "<returning>"
-
-        # prevent breaking layout
-
-        instruction = self.format_str(instruction, max_length=30)
-        func_name = self.format_str(func.name, max_length=15)
-
-        stack_str = " ".join(self.format_stack_item(item) for item in self.stack)
-        stack_str = self.format_str(stack_str, max_length=60)
-
-        print(
-            f"DEBUG | {func_name:>15} | IP: {ip:>3} | {instruction:>30} | Stack: {stack_str}",
-            file=sys.stderr,
-        )
-
-    def print_all_function_instructions(self) -> None:  # pragma: nocover
-        if not self.verbose:  # pragma: nocover
-            return
-
-        # TODO this won't be correct when imports are present
-        functions = self.program.get_functions()
-
-        for func in functions:
-            instructions = get_instructions(func)
-
-            func_name = self.format_str(func.name, max_length=15)
-
-            for ip, instr in enumerate(instructions):
-
-                instruction = self.format_str(instr.__repr__(), max_length=30)
-
-                print(
-                    f"DEBUG | {func_name:>15} | IP: {ip:>3} | {instruction:>30}",
-                    file=sys.stderr,
-                )
-
-            print(file=sys.stderr)
-
-        print("---\n", file=sys.stderr)
-
     def run(self) -> None:
-        if self.verbose:  # pragma: nocover
-            self.print_all_function_instructions()
-
         self.call_function("main")
 
     def call_function(self, func_name: str) -> None:
@@ -218,7 +133,6 @@ class Simulator:
 
             # Excecute the instruction and get value for next instruction ointer
             next_instruction = self.instruction_funcs[type(instruction)](instruction)
-            self.print_debug_info()
             self.set_instruction_pointer(next_instruction)
 
         self.call_stack.pop()

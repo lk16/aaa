@@ -242,8 +242,6 @@ class Function(AaaTreeNode):
                     if child.token_type != Terminal.COMMA
                 ]
 
-                # TODO check InvalidFunctionArgumentList
-
             elif token_type == Terminal.RETURN:
                 return_types = [
                     ReturnType.from_tree(child, tokens, code)

@@ -6,9 +6,11 @@ from _pytest.python_api import RaisesContext
 
 from lang.program import Program
 from lang.typing.exceptions import (
+    FunctionNameCollision,
     FunctionTypeError,
     StackTypesError,
     StackUnderflowError,
+    UnknownFunction,
     UnknownPlaceholderTypes,
 )
 
@@ -57,6 +59,8 @@ from lang.typing.exceptions import (
         ("fn foo args *a return *b begin a end", UnknownPlaceholderTypes),
         ("fn five return int begin 5 end fn foo return int begin five end", None),
         ("fn foo return int begin foo end", None),
+        ("fn foo begin nop end fn foo begin nop end", FunctionNameCollision),
+        ("fn foo begin bar end", UnknownFunction),
         # TODO arguments
         # TODO function calls
     ],

@@ -25,6 +25,10 @@ class ArgumentNameCollision(TypeException):
     ...
 
 
+class UnknownFunction(TypeException):
+    ...
+
+
 class UnknownPlaceholderTypes(TypeException):
     def __init__(self, names: Set[str]):
         self.names = names

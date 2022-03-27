@@ -1,10 +1,10 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict, List
+from typing import Dict
 
 from lang.parse import Function, parse
 from lang.typing.checker import TypeChecker
-from lang.typing.exceptions import FunctionNameCollision
+from lang.typing.exceptions import FunctionNameCollision, UnknownFunction
 
 IdentifyType = Function
 
@@ -41,16 +41,11 @@ class Program:
 
     def get_function(self, name: str) -> Function:
         # TODO check for both KeyError
-        identified = self.identifiers[name]
+        try:
+            identified = self.identifiers[name]
+        except KeyError as e:
+            raise UnknownFunction from e
 
-        if not isinstance(identified, Function):
-            raise NotImplementedError
+        # TODO check that identified is a Function when multiple IdentifyType becomes a union
 
         return identified
-
-    def get_functions(self) -> List[Function]:
-        return [
-            identified
-            for identified in self.identifiers.values()
-            if isinstance(identified, Function)
-        ]
