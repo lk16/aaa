@@ -6,13 +6,13 @@
 - move most debug/verbose stuff from `Simulator` to `Program`
 - make `int`, `str` and `bool` reserved tokens in grammar
 
-
 ### Language features
 - multi-file programs (`import`)
 - return early (`return`)
 - assertions (`assert`)
 - debug tools (`breakpoint`)
-- structs / classes ?
+- structs
+- rust-like enums
 - compile to native executable
 - compile itself
 

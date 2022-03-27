@@ -47,6 +47,7 @@ class TypeChecker:
         self.parsed_file = parsed_file
         self.program = program
         self.file = file
+        self.tokens = tokens
 
         self.type_check_funcs: Dict[
             Type[AaaTreeNode],
