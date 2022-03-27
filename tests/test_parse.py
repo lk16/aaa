@@ -14,6 +14,7 @@ from lang.grammar.parser import (
     TERMINAL_RULES,
     Terminal,
 )
+from lang.grammar.parser import parse as parse_aaa
 from lang.parse import (
     AaaTreeNode,
     BooleanLiteral,
@@ -21,23 +22,21 @@ from lang.parse import (
     Identifier,
     IntegerLiteral,
     Operator,
+    ParsedFile,
     StringLiteral,
-    parse,
 )
 
 
 def parse_as(code: str, non_terminal_name: str) -> Tuple[List[Token], Tree]:
-    filename = "foo.txt"
-
     tokens = Tokenizer(
-        filename=filename,
+        filename="foo.txt",
         code=code,
         terminal_rules=TERMINAL_RULES,
         pruned_terminals=PRUNED_TERMINALS,
     ).tokenize()
 
     tree = Parser(
-        filename=filename,
+        filename="foo.txt",
         tokens=tokens,
         code=code,
         non_terminal_rules=NON_TERMINAL_RULES,
@@ -46,6 +45,11 @@ def parse_as(code: str, non_terminal_name: str) -> Tuple[List[Token], Tree]:
     ).parse()
 
     return tokens, tree
+
+
+def code_to_parsed_file(code: str) -> ParsedFile:
+    tokens, tree = parse_aaa("foo.txt", code)
+    return ParsedFile.from_tree(tree, tokens, code)
 
 
 @pytest.mark.parametrize(
@@ -230,7 +234,7 @@ def test_branch_parse_tree(
     expected_if_body_children: int,
     expected_else_body_children: int,
 ) -> None:
-    file = parse("foo.txt", code)
+    file = code_to_parsed_file(code)
     assert len(file.functions) == 1
     func_body = file.functions[0].body
 
@@ -251,7 +255,7 @@ def test_branch_parse_tree(
     ],
 )
 def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None:
-    file = parse("foo.txt", code)
+    file = code_to_parsed_file(code)
     assert len(file.functions) == 1
     func_body = file.functions[0].body
 
@@ -269,7 +273,8 @@ def test_literal_parse_tree(code: str, expected_type: Type[AaaTreeNode]) -> None
     ],
 )
 def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
-    file = parse("foo.txt", code)
+    file = code_to_parsed_file(code)
+
     assert len(file.functions) == 1
     func_body = file.functions[0].body
 
@@ -291,7 +296,8 @@ def test_boolean_literal_parse_tree(code: str, expected_value: bool) -> None:
     ],
 )
 def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
-    file = parse("foo.txt", code)
+    file = code_to_parsed_file(code)
+
     assert len(file.functions) == 1
     func_body = file.functions[0].body
 
@@ -312,7 +318,7 @@ def test_integer_literal_parse_tree(code: str, expected_value: int) -> None:
     ],
 )
 def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
-    file = parse("foo.txt", code)
+    file = code_to_parsed_file(code)
     assert len(file.functions) == 1
     func_body = file.functions[0].body
 
@@ -334,7 +340,8 @@ def test_string_literal_parse_tree(code: str, expected_value: str) -> None:
     ],
 )
 def test_identifier_parse_tree(code: str, expected_name: str) -> None:
-    file = parse("foo.txt", code)
+    file = code_to_parsed_file(code)
+
     assert len(file.functions) == 1
     func_body = file.functions[0].body
 
@@ -355,7 +362,8 @@ def test_identifier_parse_tree(code: str, expected_name: str) -> None:
     ],
 )
 def test_operator_parse_tree(code: str, expected_operator: str) -> None:
-    file = parse("foo.txt", code)
+    file = code_to_parsed_file(code)
+
     assert len(file.functions) == 1
     func_body = file.functions[0].body
 

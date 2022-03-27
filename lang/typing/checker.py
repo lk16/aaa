@@ -1,18 +1,19 @@
 from copy import copy
+from parser.tokenizer.models import Token
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Set, Type
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Set, Type
 
 from lang.parse import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,
-    File,
     Function,
     FunctionBody,
     Identifier,
     IntegerLiteral,
     Loop,
     Operator,
+    ParsedFile,
     StringLiteral,
 )
 
@@ -36,7 +37,13 @@ from lang.typing.signatures import (
 
 
 class TypeChecker:
-    def __init__(self, file: Path, parsed_file: File, program: "Program") -> None:
+    def __init__(
+        self,
+        file: Path,
+        parsed_file: ParsedFile,
+        tokens: List[Token],
+        program: "Program",
+    ) -> None:
         self.parsed_file = parsed_file
         self.program = program
         self.file = file

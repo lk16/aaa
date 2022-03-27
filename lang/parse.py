@@ -6,7 +6,6 @@ from parser.tokenizer.models import Token
 from typing import Dict, List, Optional, Set, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
-from lang.grammar.parser import parse as parse_aaa
 from lang.instructions.types import Instruction
 from lang.typing.exceptions import UnknownPlaceholderTypes, UnkonwnType
 from lang.typing.signatures import (
@@ -276,11 +275,11 @@ class Function(AaaTreeNode):
 
 
 @dataclass
-class File(AaaTreeNode):
+class ParsedFile(AaaTreeNode):
     functions: List[Function]
 
     @classmethod
-    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "File":
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ParsedFile":
         assert tree.token_type == NonTerminal.ROOT
 
         functions: List[Function] = []
@@ -289,9 +288,4 @@ class File(AaaTreeNode):
             function = Function.from_tree(child, tokens, code)
             functions.append(function)
 
-        return File(functions)
-
-
-def parse(filename: str, code: str) -> File:
-    tokens, tree = parse_aaa(filename, code)
-    return File.from_tree(tree, tokens, code)
+        return ParsedFile(functions)
