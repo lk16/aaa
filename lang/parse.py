@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
-from lang.instruction_types import Instruction
+from lang.instructions.types import Instruction
 from lang.typing.signatures import (
     IDENTIFIER_TO_TYPE,
     PlaceholderType,

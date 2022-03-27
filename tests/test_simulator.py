@@ -1,7 +1,7 @@
 import inspect
 import sys
 
-from lang.instruction_types import Instruction
+from lang.instructions.types import Instruction
 from lang.program import Program
 from lang.simulator import Simulator
 
@@ -9,7 +9,7 @@ from lang.simulator import Simulator
 def test_program_implements_all_instructions() -> None:
     instruction_types = {
         obj
-        for _, obj in inspect.getmembers(sys.modules["lang.instruction_types"])
+        for _, obj in inspect.getmembers(sys.modules["lang.instructions.types"])
         if inspect.isclass(obj) and obj is not Instruction
     }
 

@@ -1,6 +1,9 @@
 # TODO
 
 ### WIP: static type checking
+- move instruction behavior to instruction_types.py
+- move instruction signatures to instruction_types.py
+
 - move most debug/verbose stuff from `Simulator` to `Program`
 - check that function name and args don't overlap in `Program`
 - check that function with same name hasn't been defined already in `Program`

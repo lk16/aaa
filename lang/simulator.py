@@ -2,7 +2,8 @@ import sys
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Type
 
-from lang.instruction_types import (
+from lang.instructions.generator import get_instructions
+from lang.instructions.types import (
     And,
     BoolPush,
     CallFunction,
@@ -36,7 +37,6 @@ from lang.instruction_types import (
     SubString,
     Swap,
 )
-from lang.instructions import get_instructions
 from lang.parse import Function
 from lang.program import Program
 from lang.typing.signatures import StackItem

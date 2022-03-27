@@ -1,6 +1,6 @@
 from typing import Callable, Dict, List, Type
 
-from lang.instruction_types import (
+from lang.instructions.types import (
     And,
     BoolPush,
     CallFunction,
@@ -77,7 +77,6 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
 
 def get_instructions(function: Function) -> List[Instruction]:
     if function._instructions is None:
-        # TODO call type checker (maybe not here)
         function._instructions = InstructionGenerator(function).generate_instructions()
 
     return function._instructions
