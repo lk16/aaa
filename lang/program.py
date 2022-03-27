@@ -4,6 +4,7 @@ from typing import Dict, List
 
 from lang.parse import Function, parse
 from lang.typing.checker import TypeChecker
+from lang.typing.exceptions import FunctionNameCollision
 
 IdentifyType = Function
 
@@ -31,7 +32,7 @@ class Program:
         identifiers: Dict[str, Function] = {}
         for function in parsed_file.functions:
             if function.name in identifiers:
-                raise NotImplementedError
+                raise FunctionNameCollision
 
             identifiers[function.name] = function
 

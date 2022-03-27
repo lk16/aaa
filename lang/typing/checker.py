@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from lang.program import Program
 
 from lang.typing.exceptions import (
+    ArgumentNameCollision,
     FunctionTypeError,
     StackTypesError,
     StackUnderflowError,
@@ -245,6 +246,16 @@ class TypeChecker:
         self, node: AaaTreeNode, function: Function, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, Function)
+
+        argument_and_names: Set[str] = set()
+
+        for arg in function.arguments:
+            if arg.name in argument_and_names:
+                raise ArgumentNameCollision
+            argument_and_names.add(arg.name)
+
+        if node.name in argument_and_names:
+            raise ArgumentNameCollision
 
         placeholder_arg_types: Set[str] = set()
         placeholder_return_types: Set[str] = set()
