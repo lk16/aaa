@@ -3,11 +3,12 @@ from dataclasses import dataclass
 from enum import IntEnum
 from parser.parser.models import Tree
 from parser.tokenizer.models import Token
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, List, Optional, Set, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.grammar.parser import parse as parse_aaa
 from lang.instructions.types import Instruction
+from lang.typing.exceptions import UnknownPlaceholderTypes, UnkonwnType
 from lang.typing.signatures import (
     IDENTIFIER_TO_TYPE,
     PlaceholderType,
@@ -158,30 +159,22 @@ class FunctionBody(AaaTreeNode):
 @dataclass
 class Argument(AaaTreeNode):
     name: str
-    type: SignatureItem
+    type: str
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Argument":
         assert tree.token_type == NonTerminal.ARGUMENT
 
         if tree[0].token_type == Terminal.IDENTIFIER:
-            type_identifier = tree[2].value(tokens, code)
-            try:
-                type = IDENTIFIER_TO_TYPE[type_identifier]
-            except KeyError:
-                raise NotImplementedError
-
             return Argument(
                 name=tree[0].value(tokens, code),
-                type=type,
+                type=tree[2].value(tokens, code),
             )
 
         elif tree[0].token_type == Terminal.ASTERISK:
-            type_placeholder = tree[1].value(tokens, code)
-
             return Argument(
                 name=tree[1].value(tokens, code),
-                type=PlaceholderType(type_placeholder),
+                type="*" + tree[1].value(tokens, code),
             )
 
         else:  # pragma: nocover
@@ -190,26 +183,18 @@ class Argument(AaaTreeNode):
 
 @dataclass
 class ReturnType(AaaTreeNode):
-    type: SignatureItem
+    type: str
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ReturnType":
         assert tree.token_type == NonTerminal.RETURN_TYPE
 
         if tree[0].token_type == Terminal.IDENTIFIER:
-            type_identifier = tree[0].value(tokens, code)
-            try:
-                type = IDENTIFIER_TO_TYPE[type_identifier]
-            except KeyError:
-                raise NotImplementedError
-
-            return ReturnType(type)
+            return ReturnType(type=tree[0].value(tokens, code))
 
         elif tree[0].token_type == Terminal.ASTERISK:
-            type_placeholder = tree[1].value(tokens, code)
-            some_type = PlaceholderType(type_placeholder)
+            return ReturnType(type="*" + tree[1].value(tokens, code))
 
-            return ReturnType(some_type)
         else:  # pragma: nocover
             assert False
 
@@ -258,10 +243,36 @@ class Function(AaaTreeNode):
         return Function(func_name, arguments, return_types, body)
 
     def get_signature(self) -> Signature:
-        return Signature(
-            arg_types=[arg.type for arg in self.arguments],
-            return_types=[return_type.type for return_type in self.return_types],
-        )
+        # TODO move to Program and refactor this function
+
+        placeholder_args: Set[str] = set()
+
+        arg_types: List[SignatureItem] = []
+        for arg_type in self.arguments:
+            if arg_type.type.startswith("*"):
+                arg_types.append(PlaceholderType(arg_type.name))
+                placeholder_args.add(arg_type.type)
+            else:
+                try:
+                    type = IDENTIFIER_TO_TYPE[arg_type.type]
+                except KeyError as e:
+                    raise UnkonwnType from e
+                arg_types.append(type)
+
+        return_types: List[SignatureItem] = []
+        for return_type in self.return_types:
+            if return_type.type.startswith("*"):
+                if return_type.type not in placeholder_args:
+                    raise UnknownPlaceholderTypes
+                return_types.append(PlaceholderType(return_type.type[1:]))
+            else:
+                try:
+                    type = IDENTIFIER_TO_TYPE[return_type.type]
+                except KeyError as e:
+                    raise UnkonwnType from e
+                return_types.append(type)
+
+        return Signature(arg_types, return_types)
 
 
 @dataclass

@@ -1,6 +1,3 @@
-from typing import Set
-
-
 class TypeException(Exception):
     ...
 
@@ -29,7 +26,9 @@ class UnknownFunction(TypeException):
     ...
 
 
+class UnkonwnType(TypeException):
+    ...
+
+
 class UnknownPlaceholderTypes(TypeException):
-    def __init__(self, names: Set[str]):
-        self.names = names
-        # TODO put some message here
+    ...

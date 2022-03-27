@@ -24,9 +24,9 @@ from lang.typing.exceptions import (
     FunctionTypeError,
     StackTypesError,
     StackUnderflowError,
-    UnknownPlaceholderTypes,
 )
 from lang.typing.signatures import (
+    IDENTIFIER_TO_TYPE,
     OPERATOR_SIGNATURES,
     PlaceholderType,
     Signature,
@@ -69,7 +69,9 @@ class TypeChecker:
     ) -> Optional[SignatureItem]:
         for arg in function.arguments:
             if arg.name == name:
-                return arg.type
+                if arg.type.startswith("*"):
+                    return PlaceholderType(arg.name)
+                return IDENTIFIER_TO_TYPE[arg.type]
         return None
 
     def _check(
@@ -248,21 +250,7 @@ class TypeChecker:
         if node.name in argument_and_names:
             raise ArgumentNameCollision
 
-        placeholder_arg_types: Set[str] = set()
-        placeholder_return_types: Set[str] = set()
-
-        for arg in function.arguments:
-            if isinstance(arg.type, PlaceholderType):
-                placeholder_arg_types.add(arg.type.name)
-
-        for return_arg in function.return_types:
-            if isinstance(return_arg.type, PlaceholderType):
-                placeholder_return_types.add(return_arg.type.name)
-
-        unknown_return_types = placeholder_return_types - placeholder_arg_types
-
-        if unknown_return_types:
-            raise UnknownPlaceholderTypes(unknown_return_types)
+        # TODO check placeholders in return types but not in arg types here again in the future?
 
         # TODO put special type rules if name == main
 
