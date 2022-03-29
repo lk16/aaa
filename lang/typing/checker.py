@@ -21,7 +21,10 @@ if TYPE_CHECKING:  # pragma: nocover
 
 from lang.typing.exceptions import (
     ArgumentNameCollision,
+    BranchTypeError,
+    ConditionTypeError,
     FunctionTypeError,
+    LoopTypeError,
     StackTypesError,
     StackUnderflowError,
 )
@@ -69,11 +72,11 @@ class TypeChecker:
 
         if computed_return_types != expected_return_types:
             raise FunctionTypeError(
+                self.file,
                 self.function,
+                self.tokens,
                 expected_return_types,
                 computed_return_types,
-                self.tokens,
-                self.file,
             )
 
     def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
@@ -88,14 +91,14 @@ class TypeChecker:
         return self.type_check_funcs[type(node)](node, type_stack)
 
     def _check_and_apply_signature(
-        self, type_stack: TypeStack, signature: Signature
+        self, type_stack: TypeStack, signature: Signature, node: AaaTreeNode
     ) -> TypeStack:
         stack = copy(type_stack)
 
         arg_count = len(signature.arg_types)
 
         if len(stack) < arg_count:
-            raise StackUnderflowError
+            raise StackUnderflowError(self.file, self.function, self.tokens, node)
 
         if arg_count == 0:
             type_stack_under_args = stack
@@ -112,7 +115,9 @@ class TypeChecker:
             if isinstance(signature_arg_type, PlaceholderType):
                 placeholder_types[signature_arg_type.name] = type_stack_arg
             elif signature_arg_type != type_stack_arg:
-                raise StackTypesError
+                raise StackTypesError(
+                    self.file, self.function, self.tokens, node, signature, type_stack
+                )
 
         stack = type_stack_under_args
 
@@ -147,16 +152,20 @@ class TypeChecker:
         signatures = OPERATOR_SIGNATURES[node.value]
 
         stack: Optional[TypeStack] = None
+        last_stack_type_error: Optional[StackTypesError] = None
 
         for signature in signatures:
             try:
-                stack = self._check_and_apply_signature(copy(type_stack), signature)
+                stack = self._check_and_apply_signature(
+                    copy(type_stack), signature, node
+                )
                 break
-            except StackTypesError:
-                pass
+            except StackTypesError as e:
+                last_stack_type_error = e
 
         if stack is None:
-            raise StackTypesError
+            assert last_stack_type_error
+            raise last_stack_type_error
 
         return stack
 
@@ -172,7 +181,7 @@ class TypeChecker:
                 condition_stack[-1] == bool,
             ]
         ):
-            raise StackTypesError
+            raise ConditionTypeError
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
@@ -182,7 +191,7 @@ class TypeChecker:
         # Regardless whether the if- or else- branch is taken,
         # afterwards the stack should be the same.
         if if_stack != else_stack:
-            raise StackTypesError
+            raise BranchTypeError
 
         # we can return either one, since they are the same
         return if_stack
@@ -199,14 +208,14 @@ class TypeChecker:
                 condition_stack[-1] == bool,
             ]
         ):
-            raise StackTypesError
+            raise ConditionTypeError
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
         loop_stack = self._check(node.body, copy(type_stack))
 
         if loop_stack != type_stack:
-            raise StackTypesError
+            raise LoopTypeError
 
         # we can return either one, since they are the same
         return loop_stack
@@ -222,7 +231,7 @@ class TypeChecker:
         # If it's not a function argument, we must be calling a function.
         func = self.program.get_function(node.name)
         signature = func.get_signature()
-        return self._check_and_apply_signature(copy(type_stack), signature)
+        return self._check_and_apply_signature(copy(type_stack), signature, node)
 
     def _check_function_body(
         self, node: AaaTreeNode, type_stack: TypeStack

@@ -1,17 +1,22 @@
 from parser.tokenizer.models import Token
 from pathlib import Path
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
-from lang.parse import AaaTreeNode, Function
-from lang.typing.signatures import PlaceholderType, TypeStack
+if TYPE_CHECKING:
+    from lang.parse import AaaTreeNode, Function
+
+from lang.typing.signatures import PlaceholderType, Signature, TypeStack
 
 
 class TypeException(Exception):
-    def __init__(self, file: Path, tokens: List[Token], node: AaaTreeNode) -> None:
-        self.code = file.read_text()
-        self.node = node
-        self.tokens = tokens
+    def __init__(
+        self, file: Path, function: Function, tokens: List[Token], node: "AaaTreeNode"
+    ) -> None:
         self.file = file
+        self.function = function
+        self.tokens = tokens
+        self.node = node
+        self.code = file.read_text()
         return super().__init__(self.what())
 
     def what(self) -> str:
@@ -56,19 +61,20 @@ class TypeException(Exception):
 class FunctionTypeError(TypeException):
     def __init__(
         self,
-        function: Function,
+        file: Path,
+        function: "Function",
+        tokens: List[Token],
         expected_return_types: TypeStack,
         computed_return_types: TypeStack,
-        tokens: List[Token],
-        file: Path,
     ) -> None:
-        super().__init__(file, tokens, function)
+        super().__init__(file, function, tokens, function)
         self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
 
     def what(self) -> str:
         return (
-            self.get_error_header()
+            f"Function type error for {self.function.name}\n"
+            + self.get_error_header()
             + "expected return types: "
             + self.format_typestack(self.expected_return_types)
             + "\n"
@@ -79,10 +85,46 @@ class FunctionTypeError(TypeException):
 
 
 class StackUnderflowError(TypeException):
-    ...
+    def what(self) -> str:
+        return (
+            f"Stack underflow inside {self.function.name}\n" + self.get_error_header()
+        )
 
 
 class StackTypesError(TypeException):
+    def __init__(
+        self,
+        file: Path,
+        function: "Function",
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        signature: Signature,
+        type_stack: TypeStack,
+    ) -> None:
+        super().__init__(file, function, tokens, node)
+        self.signature = signature
+        self.type_stack = type_stack
+
+    def what(self) -> str:
+        return (
+            f"Stack type error inside {self.function.name}\n"
+            + self.get_error_header()
+            + "  Type stack: "
+            + self.format_typestack(self.type_stack)
+            + "\n"
+            "Expected top: " + self.format_typestack(self.signature.arg_types) + "\n"
+        )
+
+
+class ConditionTypeError(TypeException):
+    ...
+
+
+class BranchTypeError(TypeException):
+    ...
+
+
+class LoopTypeError(TypeException):
     ...
 
 
@@ -98,7 +140,7 @@ class UnknownFunction(TypeException):
     ...
 
 
-class UnkonwnType(TypeException):
+class UnknownType(TypeException):
     ...
 
 

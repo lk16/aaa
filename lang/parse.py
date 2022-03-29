@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Set, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.instructions.types import Instruction
-from lang.typing.exceptions import UnknownPlaceholderTypes, UnkonwnType
+from lang.typing.exceptions import UnknownPlaceholderTypes, UnknownType
 from lang.typing.signatures import (
     IDENTIFIER_TO_TYPE,
     PlaceholderType,
@@ -303,7 +303,7 @@ class Function(AaaTreeNode):
                 try:
                     type = IDENTIFIER_TO_TYPE[arg_type.type]
                 except KeyError as e:
-                    raise UnkonwnType from e
+                    raise UnknownType from e
                 arg_types.append(type)
 
         return_types: List[SignatureItem] = []
@@ -316,7 +316,7 @@ class Function(AaaTreeNode):
                 try:
                     type = IDENTIFIER_TO_TYPE[return_type.type]
                 except KeyError as e:
-                    raise UnkonwnType from e
+                    raise UnknownType from e
                 return_types.append(type)
 
         return Signature(arg_types, return_types)

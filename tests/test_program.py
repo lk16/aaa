@@ -13,7 +13,7 @@ from lang.typing.exceptions import (
     StackUnderflowError,
     UnknownFunction,
     UnknownPlaceholderTypes,
-    UnkonwnType,
+    UnknownType,
 )
 
 
@@ -65,8 +65,8 @@ from lang.typing.exceptions import (
         ("fn foo begin bar end", UnknownFunction),
         ("fn foo args a as int, a as int begin nop end", ArgumentNameCollision),
         ("fn foo args foo as int begin nop end", ArgumentNameCollision),
-        ("fn foo args a as bar begin nop end", UnkonwnType),
-        ("fn foo return bar begin nop end", UnkonwnType),
+        ("fn foo args a as bar begin nop end", UnknownType),
+        ("fn foo return bar begin nop end", UnknownType),
     ],
 )
 def test_type_checker(code: str, expected_exception: Optional[Type[Exception]]) -> None:
