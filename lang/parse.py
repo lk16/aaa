@@ -26,6 +26,7 @@ FunctionBodyItem = Union[
 ]
 
 
+@dataclass(kw_only=True)
 class AaaTreeNode:
     @abstractclassmethod
     def from_tree(
@@ -34,7 +35,7 @@ class AaaTreeNode:
         ...
 
 
-@dataclass
+@dataclass(kw_only=True)
 class IntegerLiteral(AaaTreeNode):
     value: int
 
@@ -42,10 +43,10 @@ class IntegerLiteral(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "IntegerLiteral":
         assert tree.token_type == Terminal.INTEGER
         value = int(tree.value(tokens, code))
-        return IntegerLiteral(value)
+        return IntegerLiteral(value=value)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class StringLiteral(AaaTreeNode):
     value: str
 
@@ -58,10 +59,10 @@ class StringLiteral(AaaTreeNode):
             .replace('\\"', '"')
             .replace("\\\\", "\\")
         )
-        return StringLiteral(value)
+        return StringLiteral(value=value)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BooleanLiteral(AaaTreeNode):
     value: bool
 
@@ -69,10 +70,10 @@ class BooleanLiteral(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "BooleanLiteral":
         assert tree.token_type == NonTerminal.BOOLEAN
         value = tree.value(tokens, code) == "true"
-        return BooleanLiteral(value)
+        return BooleanLiteral(value=value)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Operator(AaaTreeNode):
     value: str
 
@@ -80,10 +81,10 @@ class Operator(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Operator":
         assert tree.token_type == NonTerminal.OPERATOR
         operator = tree.value(tokens, code)
-        return Operator(operator)
+        return Operator(value=operator)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Loop(AaaTreeNode):
     condition: "FunctionBody"
     body: "FunctionBody"
@@ -94,20 +95,20 @@ class Loop(AaaTreeNode):
 
         condition = FunctionBody.from_tree(tree.children[1], tokens, code)
         loop_body = FunctionBody.from_tree(tree.children[3], tokens, code)
-        return Loop(condition, loop_body)
+        return Loop(condition=condition, body=loop_body)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Identifier(AaaTreeNode):
     name: str
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Identifier":
         name = tree.value(tokens, code)
-        return Identifier(name)
+        return Identifier(name=name)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Branch(AaaTreeNode):
     condition: "FunctionBody"
     if_body: "FunctionBody"
@@ -123,12 +124,12 @@ class Branch(AaaTreeNode):
         if len(tree.children) == 7:
             else_body = FunctionBody.from_tree(tree[5], tokens, code)
         else:
-            else_body = FunctionBody([])
+            else_body = FunctionBody(items=[])
 
-        return Branch(condition, if_body, else_body)
+        return Branch(condition=condition, if_body=if_body, else_body=else_body)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class FunctionBody(AaaTreeNode):
     items: List[FunctionBodyItem]
 
@@ -152,10 +153,10 @@ class FunctionBody(AaaTreeNode):
             aaa_tree_node = aaa_tree_nodes[child.token_type]
             items.append(aaa_tree_node.from_tree(child, tokens, code))
 
-        return FunctionBody(items)
+        return FunctionBody(items=items)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Argument(AaaTreeNode):
     name: str
     type: str
@@ -180,7 +181,7 @@ class Argument(AaaTreeNode):
             assert False
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ReturnType(AaaTreeNode):
     type: str
 
@@ -198,7 +199,7 @@ class ReturnType(AaaTreeNode):
             assert False
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Function(AaaTreeNode):
     name: str
     arguments: List[Argument]
@@ -210,7 +211,7 @@ class Function(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Function":
         assert tree.token_type == NonTerminal.FUNCTION_DEFINITION
 
-        func_name = tree[1].value(tokens, code)
+        name = tree[1].value(tokens, code)
         arguments: List[Argument] = []
         return_types: List[ReturnType] = []
 
@@ -239,7 +240,9 @@ class Function(AaaTreeNode):
 
             index += 2
 
-        return Function(func_name, arguments, return_types, body)
+        return Function(
+            name=name, arguments=arguments, return_types=return_types, body=body
+        )
 
     def get_signature(self) -> Signature:
         # TODO move to Program and refactor this function
@@ -274,7 +277,7 @@ class Function(AaaTreeNode):
         return Signature(arg_types, return_types)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ParsedFile(AaaTreeNode):
     functions: List[Function]
 
@@ -288,4 +291,4 @@ class ParsedFile(AaaTreeNode):
             function = Function.from_tree(child, tokens, code)
             functions.append(function)
 
-        return ParsedFile(functions)
+        return ParsedFile(functions=functions)
