@@ -68,7 +68,13 @@ class TypeChecker:
         expected_return_types = self.function.get_signature().return_types
 
         if computed_return_types != expected_return_types:
-            raise FunctionTypeError
+            raise FunctionTypeError(
+                self.function,
+                expected_return_types,
+                computed_return_types,
+                self.tokens,
+                self.file,
+            )
 
     def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
         for arg in self.function.arguments:
