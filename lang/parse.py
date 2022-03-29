@@ -28,6 +28,9 @@ FunctionBodyItem = Union[
 
 @dataclass(kw_only=True)
 class AaaTreeNode:
+    token_offset: int
+    token_count: int
+
     @abstractclassmethod
     def from_tree(
         cls, tree: Tree, tokens: List[Token], code: str
@@ -43,7 +46,9 @@ class IntegerLiteral(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "IntegerLiteral":
         assert tree.token_type == Terminal.INTEGER
         value = int(tree.value(tokens, code))
-        return IntegerLiteral(value=value)
+        return IntegerLiteral(
+            value=value, token_count=tree.token_count, token_offset=tree.token_offset
+        )
 
 
 @dataclass(kw_only=True)
@@ -59,7 +64,9 @@ class StringLiteral(AaaTreeNode):
             .replace('\\"', '"')
             .replace("\\\\", "\\")
         )
-        return StringLiteral(value=value)
+        return StringLiteral(
+            value=value, token_count=tree.token_count, token_offset=tree.token_offset
+        )
 
 
 @dataclass(kw_only=True)
@@ -70,7 +77,9 @@ class BooleanLiteral(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "BooleanLiteral":
         assert tree.token_type == NonTerminal.BOOLEAN
         value = tree.value(tokens, code) == "true"
-        return BooleanLiteral(value=value)
+        return BooleanLiteral(
+            value=value, token_count=tree.token_count, token_offset=tree.token_offset
+        )
 
 
 @dataclass(kw_only=True)
@@ -81,7 +90,9 @@ class Operator(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Operator":
         assert tree.token_type == NonTerminal.OPERATOR
         operator = tree.value(tokens, code)
-        return Operator(value=operator)
+        return Operator(
+            value=operator, token_count=tree.token_count, token_offset=tree.token_offset
+        )
 
 
 @dataclass(kw_only=True)
@@ -95,7 +106,12 @@ class Loop(AaaTreeNode):
 
         condition = FunctionBody.from_tree(tree.children[1], tokens, code)
         loop_body = FunctionBody.from_tree(tree.children[3], tokens, code)
-        return Loop(condition=condition, body=loop_body)
+        return Loop(
+            condition=condition,
+            body=loop_body,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
 
 
 @dataclass(kw_only=True)
@@ -105,7 +121,9 @@ class Identifier(AaaTreeNode):
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Identifier":
         name = tree.value(tokens, code)
-        return Identifier(name=name)
+        return Identifier(
+            name=name, token_count=tree.token_count, token_offset=tree.token_offset
+        )
 
 
 @dataclass(kw_only=True)
@@ -124,9 +142,17 @@ class Branch(AaaTreeNode):
         if len(tree.children) == 7:
             else_body = FunctionBody.from_tree(tree[5], tokens, code)
         else:
-            else_body = FunctionBody(items=[])
+            else_body = FunctionBody(
+                items=[], token_count=tree.token_count, token_offset=tree.token_offset
+            )
 
-        return Branch(condition=condition, if_body=if_body, else_body=else_body)
+        return Branch(
+            condition=condition,
+            if_body=if_body,
+            else_body=else_body,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
 
 
 @dataclass(kw_only=True)
@@ -153,7 +179,9 @@ class FunctionBody(AaaTreeNode):
             aaa_tree_node = aaa_tree_nodes[child.token_type]
             items.append(aaa_tree_node.from_tree(child, tokens, code))
 
-        return FunctionBody(items=items)
+        return FunctionBody(
+            items=items, token_count=tree.token_count, token_offset=tree.token_offset
+        )
 
 
 @dataclass(kw_only=True)
@@ -169,12 +197,16 @@ class Argument(AaaTreeNode):
             return Argument(
                 name=tree[0].value(tokens, code),
                 type=tree[2].value(tokens, code),
+                token_count=tree.token_count,
+                token_offset=tree.token_offset,
             )
 
         elif tree[0].token_type == Terminal.ASTERISK:
             return Argument(
                 name=tree[1].value(tokens, code),
                 type="*" + tree[1].value(tokens, code),
+                token_count=tree.token_count,
+                token_offset=tree.token_offset,
             )
 
         else:  # pragma: nocover
@@ -190,10 +222,18 @@ class ReturnType(AaaTreeNode):
         assert tree.token_type == NonTerminal.RETURN_TYPE
 
         if tree[0].token_type == Terminal.IDENTIFIER:
-            return ReturnType(type=tree[0].value(tokens, code))
+            return ReturnType(
+                type=tree[0].value(tokens, code),
+                token_count=tree.token_count,
+                token_offset=tree.token_offset,
+            )
 
         elif tree[0].token_type == Terminal.ASTERISK:
-            return ReturnType(type="*" + tree[1].value(tokens, code))
+            return ReturnType(
+                type="*" + tree[1].value(tokens, code),
+                token_count=tree.token_count,
+                token_offset=tree.token_offset,
+            )
 
         else:  # pragma: nocover
             assert False
@@ -241,7 +281,12 @@ class Function(AaaTreeNode):
             index += 2
 
         return Function(
-            name=name, arguments=arguments, return_types=return_types, body=body
+            name=name,
+            arguments=arguments,
+            return_types=return_types,
+            body=body,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
         )
 
     def get_signature(self) -> Signature:
@@ -284,6 +329,7 @@ class ParsedFile(AaaTreeNode):
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ParsedFile":
         assert tree.token_type == NonTerminal.ROOT
+        assert tree.token_count == len(tokens)
 
         functions: List[Function] = []
 
@@ -291,4 +337,8 @@ class ParsedFile(AaaTreeNode):
             function = Function.from_tree(child, tokens, code)
             functions.append(function)
 
-        return ParsedFile(functions=functions)
+        return ParsedFile(
+            functions=functions,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
