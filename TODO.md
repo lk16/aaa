@@ -1,6 +1,7 @@
 # TODO
 
 ### WIP: static type checking
+- give each `AaaTreeNode` a `token_offset` and `token_length`
 - show errors with line/col number
 - save instructions of `Function` inside `Program`
 - move most debug/verbose stuff from `Simulator` to `Program`

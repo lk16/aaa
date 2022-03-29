@@ -16,10 +16,6 @@ class Program:
     def __init__(self, file: Path) -> None:
         self.entry_point_file = file.resolve()
         self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
-
-        # TODO do we actually need to cache tokens for each file?
-        self.tokens: Dict[Path, List[Token]] = {}
-
         self._load_file(self.entry_point_file)
 
     @classmethod
@@ -31,12 +27,8 @@ class Program:
 
     def _load_file(self, file: Path) -> None:
         tokens, parsed_file = self._parse_file(file)
-
-        self.tokens[file] = tokens
         self.identifiers[file] = self._load_file_identifiers(parsed_file)
-
-        # Run type checker
-        TypeChecker(file, parsed_file, tokens, self).check()
+        self._type_check_file(file, parsed_file, tokens)
 
     def _parse_file(self, file: Path) -> Tuple[List[Token], ParsedFile]:
         code = file.read_text()
@@ -55,6 +47,12 @@ class Program:
             identifiers[function.name] = function
 
         return identifiers
+
+    def _type_check_file(
+        self, file: Path, parsed_file: ParsedFile, tokens: List[Token]
+    ) -> None:
+        for function in parsed_file.functions:
+            TypeChecker(file, function, tokens, self).check()
 
     def get_function(self, name: str) -> Function:
         try:
