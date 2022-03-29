@@ -181,7 +181,9 @@ class TypeChecker:
                 condition_stack[-1] == bool,
             ]
         ):
-            raise ConditionTypeError
+            raise ConditionTypeError(
+                self.file, self.function, self.tokens, node, type_stack, condition_stack
+            )
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
@@ -191,7 +193,15 @@ class TypeChecker:
         # Regardless whether the if- or else- branch is taken,
         # afterwards the stack should be the same.
         if if_stack != else_stack:
-            raise BranchTypeError
+            raise BranchTypeError(
+                self.file,
+                self.function,
+                self.tokens,
+                node,
+                type_stack,
+                if_stack,
+                else_stack,
+            )
 
         # we can return either one, since they are the same
         return if_stack
@@ -208,14 +218,18 @@ class TypeChecker:
                 condition_stack[-1] == bool,
             ]
         ):
-            raise ConditionTypeError
+            raise ConditionTypeError(
+                self.file, self.function, self.tokens, node, type_stack, condition_stack
+            )
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
         loop_stack = self._check(node.body, copy(type_stack))
 
         if loop_stack != type_stack:
-            raise LoopTypeError
+            raise LoopTypeError(
+                self.file, self.function, self.tokens, node, type_stack, loop_stack
+            )
 
         # we can return either one, since they are the same
         return loop_stack

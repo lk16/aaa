@@ -117,15 +117,89 @@ class StackTypesError(TypeException):
 
 
 class ConditionTypeError(TypeException):
-    ...
+    def __init__(
+        self,
+        file: Path,
+        function: "Function",
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        type_stack: TypeStack,
+        condition_stack: TypeStack,
+    ) -> None:
+        super().__init__(file, function, tokens, node)
+        self.type_stack = type_stack
+        self.condition_stack = condition_stack
+
+    def what(self) -> str:
+        return (
+            f"Condition Stack type error inside {self.function.name}\n"
+            + self.get_error_header()
+            + "stack before: "
+            + self.format_typestack(self.type_stack)
+            + "\n"
+            + " stack after: "
+            + self.format_typestack(self.condition_stack)
+            + "\n"
+        )
 
 
 class BranchTypeError(TypeException):
-    ...
+    def __init__(
+        self,
+        file: Path,
+        function: "Function",
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        type_stack: TypeStack,
+        if_stack: TypeStack,
+        else_stack: TypeStack,
+    ) -> None:
+        super().__init__(file, function, tokens, node)
+        self.type_stack = type_stack
+        self.if_stack = if_stack
+        self.else_stack = else_stack
+
+    def what(self) -> str:
+        return (
+            f"Condition Stack type error inside {self.function.name}\n"
+            + self.get_error_header()
+            + "           before: "
+            + self.format_typestack(self.type_stack)
+            + "\n"
+            + "  after if-branch: "
+            + self.format_typestack(self.if_stack)
+            + "\n"
+            + "after else-branch: "
+            + self.format_typestack(self.else_stack)
+            + "\n"
+        )
 
 
 class LoopTypeError(TypeException):
-    ...
+    def __init__(
+        self,
+        file: Path,
+        function: "Function",
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        type_stack: TypeStack,
+        loop_stack: TypeStack,
+    ) -> None:
+        super().__init__(file, function, tokens, node)
+        self.type_stack = type_stack
+        self.loop_stack = loop_stack
+
+    def what(self) -> str:
+        return (
+            f"Condition Stack type error inside {self.function.name}\n"
+            + self.get_error_header()
+            + "before loop: "
+            + self.format_typestack(self.type_stack)
+            + "\n"
+            + " after loop: "
+            + self.format_typestack(self.loop_stack)
+            + "\n"
+        )
 
 
 class FunctionNameCollision(TypeException):
