@@ -80,9 +80,10 @@ from lang.simulator import Simulator
         ("//\nnop", ""),
         ("nop //\n", ""),
         ("if //\ntrue begin 3 . end", "3"),
+        ("true assert", ""),
     ],
 )
-def test_run_code_as_main_ok(
+def test_program_run_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
 
@@ -93,6 +94,13 @@ def test_run_code_as_main_ok(
     stdout, stderr = capfd.readouterr()
     assert expected_output == stdout
     assert "" == stderr
+
+
+def test_program_run_assertion_failure() -> None:
+    code = "fn main begin false assert end"
+    program = Program.without_file(code)
+    with pytest.raises(SystemExit):
+        Simulator(program).run()
 
 
 @pytest.mark.parametrize(
@@ -121,7 +129,7 @@ def test_run_code_as_main_ok(
         ("#!/usr/bin/env aaa\nfn main begin nop end", ""),
     ],
 )
-def test_run_code_ok(
+def test_prgram_full_source_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
     program = Program.without_file(code)

@@ -1,15 +1,14 @@
 # TODO
 
-### WIP: static type checking
-- show errors with line/col number
+### static type checking
 - save instructions of `Function` inside `Program`
 - move most debug/verbose stuff from `Simulator` to `Program`
 - make `int`, `str` and `bool` reserved tokens in grammar
 
 ### Language features
+- assertions (`assert`)
 - multi-file programs (`import`)
 - return early (`return`)
-- assertions (`assert`)
 - debug tools (`breakpoint`)
 - structs
 - rust-like enums

@@ -1,9 +1,11 @@
+import sys
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Type
 
 from lang.instructions.generator import get_instructions
 from lang.instructions.types import (
     And,
+    Assert,
     BoolPush,
     CallFunction,
     CharNewLinePrint,
@@ -58,6 +60,7 @@ class Simulator:
             Type[Instruction], Callable[[Instruction], int]
         ] = {
             And: self.instruction_and,
+            Assert: self.instruction_assert,
             BoolPush: self.instruction_boolPush,
             CallFunction: self.instruction_call_function,
             CharNewLinePrint: self.instruction_char_newline_print,
@@ -353,4 +356,15 @@ class Simulator:
 
     def instruction_nop(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Nop)
+        return self.get_instruction_pointer() + 1
+
+    def instruction_assert(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, Assert)
+        x: bool = self.pop()  # type: ignore
+
+        if not x:
+            print("Assertion failure", file=sys.stderr)
+            # TODO print Aaa stack trace
+            exit(1)
+
         return self.get_instruction_pointer() + 1

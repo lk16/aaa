@@ -178,3 +178,8 @@ class JumpIfNot(Instruction):
 @dataclass
 class Nop(Instruction):
     ...
+
+
+@dataclass
+class Assert(Instruction):
+    ...

@@ -23,6 +23,7 @@
 // --- operator tokens ---
 
 @ token AND            = regex("and(?=\\s|$)")    .
+@ token ASSERT         = regex("assert(?=\\s|$)") .
 @ token ASTERISK       = "*" .
 @ token BACKSLASH_N    = regex("\\\\n(?=\\s|$)")  .
 @ token COMMA          = regex(",(?=\\s|$)")      .
@@ -101,6 +102,7 @@ BOOLEAN = TRUE | FALSE .
 
 OPERATOR = (
       AND
+    | ASSERT
     | ASTERISK
     | BACKSLASH_N
     | DROP

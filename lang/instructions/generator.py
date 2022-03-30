@@ -2,6 +2,7 @@ from typing import Callable, Dict, List, Type
 
 from lang.instructions.types import (
     And,
+    Assert,
     BoolPush,
     CallFunction,
     CharNewLinePrint,
@@ -48,30 +49,31 @@ from lang.parse import (
 )
 
 OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
-    "+": Plus(),
     "-": Minus(),
+    "!=": IntNotEqual(),
+    ".": Print(),
     "*": Multiply(),
     "/": Divide(),
+    "\\n": CharNewLinePrint(),
     "%": Modulo(),
-    "and": And(),
-    "or": Or(),
-    "not": Not(),
-    "nop": Nop(),
+    "+": Plus(),
+    "<": IntLessThan(),
+    "<=": IntLessEquals(),
     "=": Equals(),
     ">": IntGreaterThan(),
     ">=": IntGreaterEquals(),
-    "<": IntLessThan(),
-    "<=": IntLessEquals(),
-    "!=": IntNotEqual(),
+    "and": And(),
+    "assert": Assert(),
     "drop": Drop(),
     "dup": Dup(),
-    "swap": Swap(),
+    "nop": Nop(),
+    "not": Not(),
+    "or": Or(),
     "over": Over(),
     "rot": Rot(),
-    "\\n": CharNewLinePrint(),
-    ".": Print(),
-    "substr": SubString(),
     "strlen": StringLength(),
+    "substr": SubString(),
+    "swap": Swap(),
 }
 
 

@@ -32,6 +32,7 @@ class Terminal(IntEnum):
     AND = next(next_offset)
     ARGS = next(next_offset)
     AS = next(next_offset)
+    ASSERT = next(next_offset)
     ASTERISK = next(next_offset)
     BACKSLASH_N = next(next_offset)
     BEGIN = next(next_offset)
@@ -84,6 +85,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.AS, "as(?=\\s|$)"),
     Regex(Terminal.RETURN, "return(?=\\s|$)"),
     Regex(Terminal.AND, "and(?=\\s|$)"),
+    Regex(Terminal.ASSERT, "assert(?=\\s|$)"),
     Literal(Terminal.ASTERISK, "*"),
     Regex(Terminal.BACKSLASH_N, "\\\\n(?=\\s|$)"),
     Regex(Terminal.COMMA, ",(?=\\s|$)"),
@@ -211,6 +213,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     ),
     NonTerminal.OPERATOR: ConjunctionExpression(
         TerminalExpression(Terminal.AND),
+        TerminalExpression(Terminal.ASSERT),
         TerminalExpression(Terminal.ASTERISK),
         TerminalExpression(Terminal.BACKSLASH_N),
         TerminalExpression(Terminal.DROP),
