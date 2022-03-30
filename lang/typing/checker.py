@@ -71,7 +71,7 @@ class TypeChecker:
 
     def check(self) -> None:
         computed_return_types = self._check(self.function, [])
-        expected_return_types = self._get_function_signature().return_types
+        expected_return_types = self._get_function_signature(self.function).return_types
 
         if computed_return_types != expected_return_types:
             raise FunctionTypeError(
@@ -82,12 +82,12 @@ class TypeChecker:
                 computed_return_types,
             )
 
-    def _get_function_signature(self) -> Signature:
+    def _get_function_signature(self, function: Function) -> Signature:
         # TODO refactor this
         placeholder_args: Set[str] = set()
 
         arg_types: List[SignatureItem] = []
-        for arg_type in self.function.arguments:
+        for arg_type in function.arguments:
             if arg_type.type.startswith("*"):
                 arg_types.append(PlaceholderType(arg_type.name))
                 placeholder_args.add(arg_type.type)
@@ -102,7 +102,7 @@ class TypeChecker:
                 arg_types.append(type)
 
         return_types: List[SignatureItem] = []
-        for return_type in self.function.return_types:
+        for return_type in function.return_types:
             if return_type.type.startswith("*"):
                 if return_type.type not in placeholder_args:
                     raise UnknownPlaceholderTypes(
@@ -289,7 +289,7 @@ class TypeChecker:
         if not func:
             raise UnknownFunction(self.file, self.function, self.tokens, node)
 
-        signature = self._get_function_signature()
+        signature = self._get_function_signature(func)
         return self._check_and_apply_signature(copy(type_stack), signature, node)
 
     def _check_function_body(

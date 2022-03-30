@@ -14,17 +14,18 @@ Identifiable = Function
 
 
 class Program:
-    def __init__(self, file: Path) -> None:
+    def __init__(self, file: Path, exit_on_error: bool = True) -> None:
+        self.exit_on_error = exit_on_error
         self.entry_point_file = file.resolve()
         self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
         self._load_file(self.entry_point_file)
 
     @classmethod
-    def without_file(cls, code: str) -> "Program":
+    def without_file(cls, code: str, exit_on_error: bool = True) -> "Program":
         with NamedTemporaryFile(delete=False) as file:
             saved_file = Path(file.name)
             saved_file.write_text(code)
-            return cls(file=saved_file)
+            return cls(file=saved_file, exit_on_error=exit_on_error)
 
     def _load_file(self, file: Path) -> None:
         tokens, parsed_file = self._parse_file(file)
@@ -35,8 +36,10 @@ class Program:
             )
             self._type_check_file(file, parsed_file, tokens)
         except TypeException as e:
-            print(e.what(), file=sys.stderr, end="")
-            exit(1)  # TODO handle more gracefully
+            if self.exit_on_error:
+                print(e.what(), file=sys.stderr, end="")
+                exit(1)  # TODO handle more gracefully
+            raise e
 
     def _parse_file(self, file: Path) -> Tuple[List[Token], ParsedFile]:
         code = file.read_text()
