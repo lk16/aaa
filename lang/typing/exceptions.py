@@ -2,7 +2,7 @@ from parser.tokenizer.models import Token
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Tuple
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from lang.parse import AaaTreeNode, Function
 
 from lang.typing.signatures import PlaceholderType, Signature, TypeStack
@@ -19,7 +19,7 @@ class TypeException(Exception):
         self.code = file.read_text()
         return super().__init__(self.what())
 
-    def what(self) -> str:
+    def what(self) -> str:  # pragma: nocover
         return "TypeErrorException message, override me!"
 
     def get_line_column_numbers(self) -> Tuple[int, int]:
@@ -50,7 +50,7 @@ class TypeException(Exception):
             + "^\n"
         )
 
-    def format_typestack(self, type_stack: TypeStack) -> str:
+    def format_typestack(self, type_stack: TypeStack) -> str:  # pragma: nocover
         formatted: List[str] = []
         for item in type_stack:
             if isinstance(item, PlaceholderType):
