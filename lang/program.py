@@ -36,7 +36,7 @@ class Program:
             )
             self._type_check_file(file, parsed_file, tokens)
         except TypeException as e:
-            if self.exit_on_error:
+            if self.exit_on_error:  # pragma: nocover
                 print(e.what(), file=sys.stderr, end="")
                 exit(1)  # TODO handle more gracefully
             raise e

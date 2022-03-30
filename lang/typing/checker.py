@@ -28,7 +28,7 @@ from lang.typing.exceptions import (
     StackTypesError,
     StackUnderflowError,
     UnknownFunction,
-    UnknownPlaceholderTypes,
+    UnknownPlaceholderType,
     UnknownType,
 )
 from lang.typing.signatures import (
@@ -82,41 +82,49 @@ class TypeChecker:
                 computed_return_types,
             )
 
+    # TODO move this function to Program
+    def _string_to_signature_item(
+        self, placeholder_name: str, type: str, node: AaaTreeNode
+    ) -> SignatureItem:
+        if type.startswith("*"):
+            return PlaceholderType(placeholder_name)
+
+        try:
+            return IDENTIFIER_TO_TYPE[type]
+        except KeyError as e:
+            # TODO change grammar so we can point the error to token of type rather than name of the arg
+            raise UnknownType(self.file, self.function, self.tokens, node) from e
+
     def _get_function_signature(self, function: Function) -> Signature:
-        # TODO refactor this
-        placeholder_args: Set[str] = set()
+        placeholder_args: Set[str] = {
+            arg_type.type
+            for arg_type in function.arguments
+            if arg_type.type.startswith("*")
+        }
+
+        for return_type in function.return_types:
+            if (
+                return_type.type.startswith("*")
+                and return_type.type not in placeholder_args
+            ):
+                raise UnknownPlaceholderType(
+                    self.file, self.function, self.tokens, return_type
+                )
 
         arg_types: List[SignatureItem] = []
         for arg_type in function.arguments:
-            if arg_type.type.startswith("*"):
-                arg_types.append(PlaceholderType(arg_type.name))
-                placeholder_args.add(arg_type.type)
-            else:
-                try:
-                    type = IDENTIFIER_TO_TYPE[arg_type.type]
-                except KeyError as e:
-                    # TODO change grammar so we can point the error to token of type rather than name of the arg
-                    raise UnknownType(
-                        self.file, self.function, self.tokens, arg_type
-                    ) from e
-                arg_types.append(type)
+            sig_item = self._string_to_signature_item(
+                arg_type.name, arg_type.type, arg_type
+            )
+            arg_types.append(sig_item)
 
         return_types: List[SignatureItem] = []
         for return_type in function.return_types:
-            if return_type.type.startswith("*"):
-                if return_type.type not in placeholder_args:
-                    raise UnknownPlaceholderTypes(
-                        self.file, self.function, self.tokens, return_type
-                    )
-                return_types.append(PlaceholderType(return_type.type[1:]))
-            else:
-                try:
-                    type = IDENTIFIER_TO_TYPE[return_type.type]
-                except KeyError as e:
-                    raise UnknownType(
-                        self.file, self.function, self.tokens, return_type
-                    ) from e
-                return_types.append(type)
+            placeholder_name = return_type.type[1:]
+            sig_item = self._string_to_signature_item(
+                placeholder_name, return_type.type, return_type
+            )
+            return_types.append(sig_item)
 
         return Signature(arg_types, return_types)
 

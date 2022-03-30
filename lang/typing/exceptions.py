@@ -236,7 +236,7 @@ class UnknownType(TypeException):
         )
 
 
-class UnknownPlaceholderTypes(TypeException):
+class UnknownPlaceholderType(TypeException):
     def what(self) -> str:
         return (
             f"Usage of unknown placeholder type in {self.function.name}\n"

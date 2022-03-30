@@ -15,7 +15,7 @@ from lang.typing.exceptions import (
     StackTypesError,
     StackUnderflowError,
     UnknownFunction,
-    UnknownPlaceholderTypes,
+    UnknownPlaceholderType,
     UnknownType,
 )
 
@@ -64,7 +64,7 @@ from lang.typing.exceptions import (
         ("fn foo args a as int begin a a + . end", None),
         ("fn foo args *a begin nop end", None),
         ("fn foo args *a return *a, *a begin a a end", None),
-        ("fn foo args *a return *b begin a end", UnknownPlaceholderTypes),
+        ("fn foo args *a return *b begin a end", UnknownPlaceholderType),
         ("fn five return int begin 5 end fn foo return int begin five end", None),
         ("fn foo return int begin foo end", None),
         ("fn foo begin nop end fn foo begin nop end", FunctionNameCollision),
