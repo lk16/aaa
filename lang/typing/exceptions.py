@@ -76,7 +76,7 @@ class FunctionTypeError(TypeException):
 
     def what(self) -> str:
         return (
-            f"Function type error for {self.function.name}\n"
+            f"Function {self.function.name} returns wrong type(s)\n"
             + self.get_error_header()
             + "expected return types: "
             + self.format_typestack(self.expected_return_types)
@@ -110,7 +110,7 @@ class StackTypesError(TypeException):
 
     def what(self) -> str:
         return (
-            f"Stack type error inside {self.function.name}\n"
+            f"Invalid stack types inside {self.function.name}\n"
             + self.get_error_header()
             + "  Type stack: "
             + self.format_typestack(self.type_stack)
@@ -135,7 +135,7 @@ class ConditionTypeError(TypeException):
 
     def what(self) -> str:
         return (
-            f"Condition Stack type error inside {self.function.name}\n"
+            f"Invalid stack modification in condition inside {self.function.name}\n"
             + self.get_error_header()
             + "stack before: "
             + self.format_typestack(self.type_stack)
@@ -164,7 +164,7 @@ class BranchTypeError(TypeException):
 
     def what(self) -> str:
         return (
-            f"Branch Stack type error inside {self.function.name}\n"
+            f"Inconsistent stack modification in if (else)-block {self.function.name}\n"
             + self.get_error_header()
             + "           before: "
             + self.format_typestack(self.type_stack)
@@ -194,7 +194,7 @@ class LoopTypeError(TypeException):
 
     def what(self) -> str:
         return (
-            f"Loop Stack type error inside {self.function.name}\n"
+            f"Stack modification inside loop body inside {self.function.name}\n"
             + self.get_error_header()
             + "before loop: "
             + self.format_typestack(self.type_stack)
@@ -216,7 +216,7 @@ class FunctionNameCollision(TypeException):
 class ArgumentNameCollision(TypeException):
     def what(self) -> str:
         return (
-            f"Argument collides with other argument or function name in {self.function.name}\n"
+            f"Argument name already used by other argument or function name in {self.function.name}\n"
             + self.get_error_header()
         )
 
@@ -224,16 +224,14 @@ class ArgumentNameCollision(TypeException):
 class UnknownFunction(TypeException):
     def what(self) -> str:
         return (
-            f"Usage of unknown function or identifier in {self.function.name}\n"
+            f"Unknown function or identifier in {self.function.name}\n"
             + self.get_error_header()
         )
 
 
 class UnknownType(TypeException):
     def what(self) -> str:
-        return (
-            f"Usage of unknown type in {self.function.name}\n" + self.get_error_header()
-        )
+        return f"Unknown type in {self.function.name}\n" + self.get_error_header()
 
 
 class UnknownPlaceholderType(TypeException):

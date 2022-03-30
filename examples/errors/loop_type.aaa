@@ -1,0 +1,9 @@
+fn
+    main
+begin
+    while
+        true
+    begin
+        0
+    end
+end
