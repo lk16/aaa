@@ -36,6 +36,7 @@ Stack-based language, like forth.
 Starting an aaa source file with `#!/usr/bin/env aaa` allows it to be run just like this `./yourfile.aaa`.
 This only works under the following conditions:
 * `yourfile.aaa` is executable
+* `yourfile.aaa` has a function named `main` that takes no arguments and returns nothing
 * `aaa` is in your PATH
 
 Use `chmod +x yourfile.aaa` to make your source file executable. To add `aaa` to path, a [simple script](./run_aaa.sh) is provided we can just symlink from any folder that's in your PATH, for example `ln -s -T $(pwd)/run_aaa.sh ~/.local/bin/aaa`.

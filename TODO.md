@@ -1,6 +1,7 @@
 # TODO
 
 ### static type checking
+- check that `main` exists in entrypoint file and has the right signature
 - save instructions of `Function` inside `Program`
 - move most debug/verbose stuff from `Simulator` to `Program`
 - make `int`, `str` and `bool` reserved tokens in grammar
@@ -16,7 +17,9 @@
 - compile itself
 
 ### Language tools
-- add command to show instructions of all functions with `Program.list_function_instructions()`
+- add command to show instructions per file/function
+- add command to typecheck files
+- add command to reformat files
 - userfriendly syntax errors
 
 ### Brag in readme
