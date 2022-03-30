@@ -1,0 +1,7 @@
+fn foo begin
+    nop
+end
+
+fn foo begin
+    nop
+end

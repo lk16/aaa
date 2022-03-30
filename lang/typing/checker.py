@@ -27,6 +27,9 @@ from lang.typing.exceptions import (
     LoopTypeError,
     StackTypesError,
     StackUnderflowError,
+    UnknownFunction,
+    UnknownPlaceholderTypes,
+    UnknownType,
 )
 from lang.typing.signatures import (
     IDENTIFIER_TO_TYPE,
@@ -68,7 +71,7 @@ class TypeChecker:
 
     def check(self) -> None:
         computed_return_types = self._check(self.function, [])
-        expected_return_types = self.function.get_signature().return_types
+        expected_return_types = self._get_function_signature().return_types
 
         if computed_return_types != expected_return_types:
             raise FunctionTypeError(
@@ -78,6 +81,44 @@ class TypeChecker:
                 expected_return_types,
                 computed_return_types,
             )
+
+    def _get_function_signature(self) -> Signature:
+        # TODO refactor this
+        placeholder_args: Set[str] = set()
+
+        arg_types: List[SignatureItem] = []
+        for arg_type in self.function.arguments:
+            if arg_type.type.startswith("*"):
+                arg_types.append(PlaceholderType(arg_type.name))
+                placeholder_args.add(arg_type.type)
+            else:
+                try:
+                    type = IDENTIFIER_TO_TYPE[arg_type.type]
+                except KeyError as e:
+                    # TODO change grammar so we can point the error to token of type rather than name of the arg
+                    raise UnknownType(
+                        self.file, self.function, self.tokens, arg_type
+                    ) from e
+                arg_types.append(type)
+
+        return_types: List[SignatureItem] = []
+        for return_type in self.function.return_types:
+            if return_type.type.startswith("*"):
+                if return_type.type not in placeholder_args:
+                    raise UnknownPlaceholderTypes(
+                        self.file, self.function, self.tokens, return_type
+                    )
+                return_types.append(PlaceholderType(return_type.type[1:]))
+            else:
+                try:
+                    type = IDENTIFIER_TO_TYPE[return_type.type]
+                except KeyError as e:
+                    raise UnknownType(
+                        self.file, self.function, self.tokens, return_type
+                    ) from e
+                return_types.append(type)
+
+        return Signature(arg_types, return_types)
 
     def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
         for arg in self.function.arguments:
@@ -244,7 +285,11 @@ class TypeChecker:
 
         # If it's not a function argument, we must be calling a function.
         func = self.program.get_function(node.name)
-        signature = func.get_signature()
+
+        if not func:
+            raise UnknownFunction(self.file, self.function, self.tokens, node)
+
+        signature = self._get_function_signature()
         return self._check_and_apply_signature(copy(type_stack), signature, node)
 
     def _check_function_body(
@@ -264,12 +309,9 @@ class TypeChecker:
         argument_and_names: Set[str] = set()
 
         for arg in self.function.arguments:
-            if arg.name in argument_and_names:
-                raise ArgumentNameCollision
+            if arg.name in argument_and_names or node.name == arg.name:
+                raise ArgumentNameCollision(self.file, self.function, self.tokens, arg)
             argument_and_names.add(arg.name)
-
-        if node.name in argument_and_names:
-            raise ArgumentNameCollision
 
         # TODO check placeholders in return types but not in arg types here again in the future?
 

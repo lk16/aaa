@@ -114,6 +114,8 @@ class Simulator:
     def call_function(self, func_name: str) -> None:
         function = self.program.get_function(func_name)
 
+        assert function  # If this assertion breaks, then Aaa's type checking is broken
+
         argument_values: Dict[str, StackItem] = {
             arg.name: self.pop() for arg in reversed(function.arguments)
         }

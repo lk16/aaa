@@ -1,0 +1,3 @@
+fn foo begin
+    bar
+end

@@ -1,0 +1,6 @@
+fn main begin
+    while 3 true begin
+        nop
+    end
+    drop
+end

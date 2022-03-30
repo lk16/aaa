@@ -1,0 +1,8 @@
+fn
+    foo
+args
+    bar as int,
+    bar as int
+begin
+    nop
+end

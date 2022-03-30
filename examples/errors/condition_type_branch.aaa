@@ -1,0 +1,6 @@
+fn main begin
+    if 3 true begin
+        nop
+    end
+    drop
+end

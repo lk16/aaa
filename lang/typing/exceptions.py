@@ -10,7 +10,7 @@ from lang.typing.signatures import PlaceholderType, Signature, TypeStack
 
 class TypeException(Exception):
     def __init__(
-        self, file: Path, function: Function, tokens: List[Token], node: "AaaTreeNode"
+        self, file: Path, function: "Function", tokens: List[Token], node: "AaaTreeNode"
     ) -> None:
         self.file = file
         self.function = function
@@ -44,7 +44,10 @@ class TypeException(Exception):
         line_no, col_no = self.get_line_column_numbers()
         line = self.get_line()
         return (
-            f"{self.file}:{line_no}:{col_no}" + f"{line}\n" + " " * (col_no - 1) + "^\n"
+            f"{self.file}:{line_no}:{col_no}\n"
+            + f"{line}\n"
+            + " " * (col_no - 1)
+            + "^\n"
         )
 
     def format_typestack(self, type_stack: TypeStack) -> str:
@@ -67,9 +70,9 @@ class FunctionTypeError(TypeException):
         expected_return_types: TypeStack,
         computed_return_types: TypeStack,
     ) -> None:
-        super().__init__(file, function, tokens, function)
         self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
+        super().__init__(file, function, tokens, function)
 
     def what(self) -> str:
         return (
@@ -101,9 +104,9 @@ class StackTypesError(TypeException):
         signature: Signature,
         type_stack: TypeStack,
     ) -> None:
-        super().__init__(file, function, tokens, node)
         self.signature = signature
         self.type_stack = type_stack
+        super().__init__(file, function, tokens, node)
 
     def what(self) -> str:
         return (
@@ -126,9 +129,9 @@ class ConditionTypeError(TypeException):
         type_stack: TypeStack,
         condition_stack: TypeStack,
     ) -> None:
-        super().__init__(file, function, tokens, node)
         self.type_stack = type_stack
         self.condition_stack = condition_stack
+        super().__init__(file, function, tokens, node)
 
     def what(self) -> str:
         return (
@@ -154,14 +157,14 @@ class BranchTypeError(TypeException):
         if_stack: TypeStack,
         else_stack: TypeStack,
     ) -> None:
-        super().__init__(file, function, tokens, node)
         self.type_stack = type_stack
         self.if_stack = if_stack
         self.else_stack = else_stack
+        super().__init__(file, function, tokens, node)
 
     def what(self) -> str:
         return (
-            f"Condition Stack type error inside {self.function.name}\n"
+            f"Branch Stack type error inside {self.function.name}\n"
             + self.get_error_header()
             + "           before: "
             + self.format_typestack(self.type_stack)
@@ -185,13 +188,13 @@ class LoopTypeError(TypeException):
         type_stack: TypeStack,
         loop_stack: TypeStack,
     ) -> None:
-        super().__init__(file, function, tokens, node)
         self.type_stack = type_stack
         self.loop_stack = loop_stack
+        super().__init__(file, function, tokens, node)
 
     def what(self) -> str:
         return (
-            f"Condition Stack type error inside {self.function.name}\n"
+            f"Loop Stack type error inside {self.function.name}\n"
             + self.get_error_header()
             + "before loop: "
             + self.format_typestack(self.type_stack)
@@ -203,20 +206,39 @@ class LoopTypeError(TypeException):
 
 
 class FunctionNameCollision(TypeException):
-    ...
+    def what(self) -> str:
+        return (
+            f"Function {self.function.name} was already defined.\n"
+            + self.get_error_header()
+        )
 
 
 class ArgumentNameCollision(TypeException):
-    ...
+    def what(self) -> str:
+        return (
+            f"Argument collides with other argument or function name in {self.function.name}\n"
+            + self.get_error_header()
+        )
 
 
 class UnknownFunction(TypeException):
-    ...
+    def what(self) -> str:
+        return (
+            f"Usage of unknown function or identifier in {self.function.name}\n"
+            + self.get_error_header()
+        )
 
 
 class UnknownType(TypeException):
-    ...
+    def what(self) -> str:
+        return (
+            f"Usage of unknown type in {self.function.name}\n" + self.get_error_header()
+        )
 
 
 class UnknownPlaceholderTypes(TypeException):
-    ...
+    def what(self) -> str:
+        return (
+            f"Usage of unknown placeholder type in {self.function.name}\n"
+            + self.get_error_header()
+        )

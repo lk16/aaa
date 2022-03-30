@@ -61,6 +61,7 @@ EXPECTED_EXAMPLE_OUTPUT = {
     [
         (example_file_path, EXPECTED_EXAMPLE_OUTPUT[str(example_file_path)])
         for example_file_path in Path("examples").glob("**/*.aaa")
+        if "examples/errors" not in str(example_file_path)
     ],
 )
 def test_example_commands(

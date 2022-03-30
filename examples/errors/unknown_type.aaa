@@ -1,0 +1,7 @@
+fn
+    foo
+args
+    bar as baz
+begin
+    nop
+end

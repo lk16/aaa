@@ -3,17 +3,10 @@ from dataclasses import dataclass
 from enum import IntEnum
 from parser.parser.models import Tree
 from parser.tokenizer.models import Token
-from typing import Dict, List, Optional, Set, Type, Union
+from typing import Dict, List, Optional, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
 from lang.instructions.types import Instruction
-from lang.typing.exceptions import UnknownPlaceholderTypes, UnknownType
-from lang.typing.signatures import (
-    IDENTIFIER_TO_TYPE,
-    PlaceholderType,
-    Signature,
-    SignatureItem,
-)
 
 FunctionBodyItem = Union[
     "Branch",
@@ -288,38 +281,6 @@ class Function(AaaTreeNode):
             token_count=tree.token_count,
             token_offset=tree.token_offset,
         )
-
-    def get_signature(self) -> Signature:
-        # TODO move to Program and refactor this function
-
-        placeholder_args: Set[str] = set()
-
-        arg_types: List[SignatureItem] = []
-        for arg_type in self.arguments:
-            if arg_type.type.startswith("*"):
-                arg_types.append(PlaceholderType(arg_type.name))
-                placeholder_args.add(arg_type.type)
-            else:
-                try:
-                    type = IDENTIFIER_TO_TYPE[arg_type.type]
-                except KeyError as e:
-                    raise UnknownType from e
-                arg_types.append(type)
-
-        return_types: List[SignatureItem] = []
-        for return_type in self.return_types:
-            if return_type.type.startswith("*"):
-                if return_type.type not in placeholder_args:
-                    raise UnknownPlaceholderTypes
-                return_types.append(PlaceholderType(return_type.type[1:]))
-            else:
-                try:
-                    type = IDENTIFIER_TO_TYPE[return_type.type]
-                except KeyError as e:
-                    raise UnknownType from e
-                return_types.append(type)
-
-        return Signature(arg_types, return_types)
 
 
 @dataclass(kw_only=True)
