@@ -12,6 +12,7 @@ from lang.typing.exceptions import (
     ConditionTypeError,
     FunctionNameCollision,
     FunctionTypeError,
+    InvalidMainSignuture,
     LoopTypeError,
     StackTypesError,
     StackUnderflowError,
@@ -40,6 +41,7 @@ from lang.typing.exceptions import (
         ("multiple_errors.aaa", [FunctionTypeError, FunctionTypeError]),
         ("tokenize_error.aaa", [TokenizerError]),
         ("parse_error.aaa", [ParseError]),
+        ("invalid_main_signature.aaa", [InvalidMainSignuture]),
     ],
 )
 def test_exceptions(

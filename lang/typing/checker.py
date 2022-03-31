@@ -24,6 +24,7 @@ from lang.typing.exceptions import (
     BranchTypeError,
     ConditionTypeError,
     FunctionTypeError,
+    InvalidMainSignuture,
     LoopTypeError,
     StackTypesError,
     StackUnderflowError,
@@ -314,14 +315,21 @@ class TypeChecker:
     def _check_function(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Function)
 
+        if node.name == "main":
+            if not all(
+                [
+                    len(node.arguments) == 0,
+                    len(node.return_types) == 0,
+                ]
+            ):
+                raise InvalidMainSignuture(self.file, self.function, self.tokens, node)
+
         argument_and_names: Set[str] = set()
 
-        for arg in self.function.arguments:
+        for arg in node.arguments:
             if arg.name in argument_and_names or node.name == arg.name:
                 raise ArgumentNameCollision(self.file, self.function, self.tokens, arg)
             argument_and_names.add(arg.name)
-
-        # TODO check placeholders in return types but not in arg types here again in the future?
 
         # TODO put special type rules if name == main
 

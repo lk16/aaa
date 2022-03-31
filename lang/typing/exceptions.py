@@ -240,3 +240,8 @@ class UnknownPlaceholderType(TypeException):
             f"Usage of unknown placeholder type in {self.function.name}\n"
             + self.get_error_header()
         )
+
+
+class InvalidMainSignuture(TypeException):
+    def what(self) -> str:
+        return f"Invalid signature for main function\n" + self.get_error_header()
