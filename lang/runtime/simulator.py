@@ -363,8 +363,20 @@ class Simulator:
         x: bool = self.pop()  # type: ignore
 
         if not x:
-            print("Assertion failure", file=sys.stderr)
-            # TODO print Aaa stack trace
+            print("Assertion failure, stacktrace:", file=sys.stderr)
+            for call_stack_item in self.call_stack:
+                name = call_stack_item.func_name
+
+                args = ""
+                if call_stack_item.argument_values:
+                    args = ", arguments: " + ", ".join(
+                        f"{name}={value.__repr__()}"
+                        for name, value in call_stack_item.argument_values.items()
+                    )
+
+                print(f"- {name}{args}", file=sys.stderr)
+
+            # TODO add filename and line number to stacktrace
             exit(1)
 
         return self.get_instruction_pointer() + 1

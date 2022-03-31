@@ -15,7 +15,7 @@ def run(file_path: str, verbose_flag: Optional[str] = None) -> None:
 
     verbose = False
 
-    if verbose_flag:  # TODO allow any order of flags and commands
+    if verbose_flag:
         if verbose_flag == "-v":
             verbose = True
         else:
@@ -31,7 +31,7 @@ def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
 
     verbose = False
 
-    if verbose_flag:  # TODO allow any order of flags and commands
+    if verbose_flag:
         if verbose_flag == "-v":
             verbose = True
         else:
