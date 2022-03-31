@@ -38,7 +38,7 @@ from lang.instructions.types import (
     SubString,
     Swap,
 )
-from lang.program import Program
+from lang.runtime.program import Program
 from lang.typing.signatures import StackItem
 
 

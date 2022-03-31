@@ -3,7 +3,7 @@ from typing import Type
 
 import pytest
 
-from lang.program import Program
+from lang.runtime.program import Program
 from lang.typing.exceptions import (
     ArgumentNameCollision,
     BranchTypeError,
@@ -41,5 +41,6 @@ from lang.typing.exceptions import (
 def test_exceptions(filename: str, type_exception: Type[TypeException]) -> None:
     file = Path(f"examples/errors/{filename}")
 
-    with pytest.raises(type_exception):
-        Program(file, exit_on_error=False)
+    program = Program(file)
+    assert len(program.file_load_errors) == 1
+    assert type(program.file_load_errors[0]) == type_exception

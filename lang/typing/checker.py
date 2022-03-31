@@ -3,7 +3,7 @@ from parser.tokenizer.models import Token
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Set, Type
 
-from lang.parse import (
+from lang.runtime.parse import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,
@@ -17,7 +17,7 @@ from lang.parse import (
 )
 
 if TYPE_CHECKING:  # pragma: nocover
-    from lang.program import Program
+    from lang.runtime.program import Program
 
 from lang.typing.exceptions import (
     ArgumentNameCollision,

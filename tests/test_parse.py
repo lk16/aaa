@@ -15,7 +15,7 @@ from lang.grammar.parser import (
     Terminal,
 )
 from lang.grammar.parser import parse as parse_aaa
-from lang.parse import (
+from lang.runtime.parse import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,

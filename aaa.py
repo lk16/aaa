@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from lang.program import Program
-from lang.simulator import Simulator
+from lang.runtime.program import Program
+from lang.runtime.simulator import Simulator
 
 GRAMMAR_FILE_PATH = Path("grammar.txt")
 
@@ -22,6 +22,7 @@ def run(file_path: str, verbose_flag: Optional[str] = None) -> None:
             raise ArgParseError("Unexpected option for run.")
 
     program = Program(Path(file_path))
+    program.exit_on_error()
     simulator = Simulator(program, verbose)
     simulator.run()
 
@@ -38,6 +39,7 @@ def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
 
     code = f"fn main begin {code}\n end"
     program = Program.without_file(code)
+    program.exit_on_error()
     simulator = Simulator(program, verbose)
     simulator.run()
 

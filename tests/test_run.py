@@ -1,8 +1,8 @@
 import pytest
 from pytest import CaptureFixture
 
-from lang.program import Program
-from lang.simulator import Simulator
+from lang.runtime.program import Program
+from lang.runtime.simulator import Simulator
 
 
 @pytest.mark.parametrize(

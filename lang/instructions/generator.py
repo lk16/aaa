@@ -35,7 +35,7 @@ from lang.instructions.types import (
     SubString,
     Swap,
 )
-from lang.parse import (
+from lang.runtime.parse import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,

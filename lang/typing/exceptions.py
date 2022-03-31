@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Tuple
 
 if TYPE_CHECKING:  # pragma: nocover
-    from lang.parse import AaaTreeNode, Function
+    from lang.runtime.parse import AaaTreeNode, Function
 
 from lang.typing.signatures import PlaceholderType, Signature, TypeStack
 

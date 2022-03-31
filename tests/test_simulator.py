@@ -2,8 +2,8 @@ import inspect
 import sys
 
 from lang.instructions.types import Instruction
-from lang.program import Program
-from lang.simulator import Simulator
+from lang.runtime.program import Program
+from lang.runtime.simulator import Simulator
 
 
 def test_program_implements_all_instructions() -> None:

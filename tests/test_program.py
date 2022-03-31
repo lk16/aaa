@@ -1,10 +1,8 @@
-from contextlib import nullcontext as does_not_raise
 from typing import Optional, Type
 
 import pytest
-from _pytest.python_api import RaisesContext
 
-from lang.program import Program
+from lang.runtime.program import Program
 from lang.typing.exceptions import (
     ArgumentNameCollision,
     BranchTypeError,
@@ -76,11 +74,10 @@ from lang.typing.exceptions import (
     ],
 )
 def test_type_checker(code: str, expected_exception: Optional[Type[Exception]]) -> None:
-    expectation: does_not_raise[None] | RaisesContext[Exception]
-    if expected_exception:
-        expectation = pytest.raises(expected_exception)
-    else:
-        expectation = does_not_raise()
+    program = Program.without_file(code)
 
-    with expectation:
-        Program.without_file(code, exit_on_error=False)
+    if expected_exception:
+        assert len(program.file_load_errors) == 1
+        assert type(program.file_load_errors[0]) == expected_exception
+    else:
+        assert not program.file_load_errors
