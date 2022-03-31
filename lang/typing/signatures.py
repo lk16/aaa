@@ -27,7 +27,6 @@ class Signature:
     return_types: List[SignatureItem]
 
 
-# TODO test that keys match instructions.py and grammar
 OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
     "+": [
         Signature([int, int], [int]),

@@ -331,6 +331,4 @@ class TypeChecker:
                 raise ArgumentNameCollision(self.file, self.function, self.tokens, arg)
             argument_and_names.add(arg.name)
 
-        # TODO put special type rules if name == main
-
         return self._check(node.body, type_stack)
