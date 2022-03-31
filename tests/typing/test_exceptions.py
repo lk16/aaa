@@ -1,9 +1,11 @@
+from parser.parser.exceptions import ParseError
+from parser.tokenizer.exceptions import TokenizerError
 from pathlib import Path
-from typing import Type
+from typing import List, Type
 
 import pytest
 
-from lang.runtime.program import Program
+from lang.runtime.program import FileLoadException, Program
 from lang.typing.exceptions import (
     ArgumentNameCollision,
     BranchTypeError,
@@ -13,7 +15,6 @@ from lang.typing.exceptions import (
     LoopTypeError,
     StackTypesError,
     StackUnderflowError,
-    TypeException,
     UnknownFunction,
     UnknownPlaceholderType,
     UnknownType,
@@ -21,26 +22,30 @@ from lang.typing.exceptions import (
 
 
 @pytest.mark.parametrize(
-    ["filename", "type_exception"],
+    ["filename", "exception_types"],
     [
-        ("argument_argument_collision.aaa", ArgumentNameCollision),
-        ("argument_function_collision.aaa", ArgumentNameCollision),
-        ("branch_type.aaa", BranchTypeError),
-        ("condition_type_branch.aaa", ConditionTypeError),
-        ("condition_type_loop.aaa", ConditionTypeError),
-        ("function_function_collision.aaa", FunctionNameCollision),
-        ("function_type.aaa", FunctionTypeError),
-        ("loop_type.aaa", LoopTypeError),
-        ("stack_type.aaa", StackTypesError),
-        ("stack_underflow.aaa", StackUnderflowError),
-        ("unknown_function.aaa", UnknownFunction),
-        ("unknown_placeholder.aaa", UnknownPlaceholderType),
-        ("unknown_type.aaa", UnknownType),
+        ("argument_argument_collision.aaa", [ArgumentNameCollision]),
+        ("argument_function_collision.aaa", [ArgumentNameCollision]),
+        ("branch_type.aaa", [BranchTypeError]),
+        ("condition_type_branch.aaa", [ConditionTypeError]),
+        ("condition_type_loop.aaa", [ConditionTypeError]),
+        ("function_function_collision.aaa", [FunctionNameCollision]),
+        ("function_type.aaa", [FunctionTypeError]),
+        ("loop_type.aaa", [LoopTypeError]),
+        ("stack_type.aaa", [StackTypesError]),
+        ("stack_underflow.aaa", [StackUnderflowError]),
+        ("unknown_function.aaa", [UnknownFunction]),
+        ("unknown_placeholder.aaa", [UnknownPlaceholderType]),
+        ("unknown_type.aaa", [UnknownType]),
+        ("multiple_errors.aaa", [FunctionTypeError, FunctionTypeError]),
+        ("tokenize_error.aaa", [TokenizerError]),
+        ("parse_error.aaa", [ParseError]),
     ],
 )
-def test_exceptions(filename: str, type_exception: Type[TypeException]) -> None:
+def test_exceptions(
+    filename: str, exception_types: List[Type[FileLoadException]]
+) -> None:
     file = Path(f"examples/errors/{filename}")
 
     program = Program(file)
-    assert len(program.file_load_errors) == 1
-    assert type(program.file_load_errors[0]) == type_exception
+    assert list(map(type, program.file_load_errors)) == exception_types
