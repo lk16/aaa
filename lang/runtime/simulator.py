@@ -2,7 +2,6 @@ import sys
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Type
 
-from lang.instructions.generator import get_instructions
 from lang.instructions.types import (
     And,
     Assert,
@@ -125,7 +124,7 @@ class Simulator:
 
         self.call_stack.append(CallStackItem(func_name, 0, argument_values))
 
-        instructions = get_instructions(function)
+        instructions = self.program.get_instructions(function.name)
 
         while True:
             instruction_pointer = self.get_instruction_pointer()

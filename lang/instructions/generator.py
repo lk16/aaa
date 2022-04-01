@@ -77,13 +77,6 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
 }
 
 
-def get_instructions(function: Function) -> List[Instruction]:
-    if function._instructions is None:
-        function._instructions = InstructionGenerator(function).generate_instructions()
-
-    return function._instructions
-
-
 class InstructionGenerator:
     def __init__(self, function: Function) -> None:
         self.function = function

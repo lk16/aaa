@@ -6,7 +6,6 @@ from parser.tokenizer.models import Token
 from typing import Dict, List, Optional, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
-from lang.instructions.types import Instruction
 
 FunctionBodyItem = Union[
     "Branch",
@@ -238,7 +237,6 @@ class Function(AaaTreeNode):
     arguments: List[Argument]
     return_types: List[ReturnType]
     body: FunctionBody
-    _instructions: Optional[List[Instruction]] = None
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Function":

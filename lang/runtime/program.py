@@ -7,6 +7,8 @@ from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
 
 from lang.grammar.parser import parse as parse_aaa
+from lang.instructions.generator import InstructionGenerator
+from lang.instructions.types import Instruction
 from lang.runtime.parse import Function, ParsedFile
 from lang.typing.checker import TypeChecker
 from lang.typing.exceptions import FunctionNameCollision, TypeException
@@ -21,6 +23,7 @@ class Program:
     def __init__(self, file: Path) -> None:
         self.entry_point_file = file.resolve()
         self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
+        self.function_instructions: Dict[Path, Dict[str, List[Instruction]]] = {}
         self.file_load_errors = self._load_file(self.entry_point_file)
 
     @classmethod
@@ -56,7 +59,14 @@ class Program:
         except TypeException as e:
             return [e]
 
-        return self._type_check_file(file, parsed_file, tokens)
+        load_file_exceptions = self._type_check_file(file, parsed_file, tokens)
+        if load_file_exceptions:
+            return load_file_exceptions
+
+        self.function_instructions[file] = self._generate_file_instructions(
+            file, parsed_file
+        )
+        return []
 
     def _parse_file(self, file: Path) -> Tuple[List[Token], ParsedFile]:
         code = file.read_text()
@@ -75,6 +85,16 @@ class Program:
             identifiers[function.name] = function
 
         return identifiers
+
+    def _generate_file_instructions(
+        self, file: Path, parsed_file: ParsedFile
+    ) -> Dict[str, List[Instruction]]:
+        file_instructions: Dict[str, List[Instruction]] = {}
+        for function in parsed_file.functions:
+            file_instructions[function.name] = InstructionGenerator(
+                function
+            ).generate_instructions()
+        return file_instructions
 
     def _type_check_file(
         self, file: Path, parsed_file: ParsedFile, tokens: List[Token]
@@ -98,3 +118,7 @@ class Program:
         # TODO check that identified is a Function when Identifiable becomes a union
 
         return identified
+
+    def get_instructions(self, name: str) -> List[Instruction]:
+        # TODO this won't always work when we support multiple files
+        return self.function_instructions[self.entry_point_file][name]
