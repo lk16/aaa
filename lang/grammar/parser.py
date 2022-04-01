@@ -36,6 +36,7 @@ class Terminal(IntEnum):
     ASTERISK = next(next_offset)
     BACKSLASH_N = next(next_offset)
     BEGIN = next(next_offset)
+    BOOL = next(next_offset)
     COMMA = next(next_offset)
     COMMENT = next(next_offset)
     DROP = next(next_offset)
@@ -49,6 +50,7 @@ class Terminal(IntEnum):
     GREATER_THAN = next(next_offset)
     IDENTIFIER = next(next_offset)
     IF = next(next_offset)
+    INT = next(next_offset)
     INTEGER = next(next_offset)
     LESS_EQUALS = next(next_offset)
     LESS_THAN = next(next_offset)
@@ -65,6 +67,7 @@ class Terminal(IntEnum):
     ROT = next(next_offset)
     SHEBANG = next(next_offset)
     SLASH = next(next_offset)
+    STR = next(next_offset)
     STRING = next(next_offset)
     STRLEN = next(next_offset)
     SUBSTR = next(next_offset)
@@ -112,6 +115,9 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.SWAP, "swap(?=\\s|$)"),
     Regex(Terminal.TRUE, "true(?=\\s|$)"),
     Regex(Terminal.FALSE, "false(?=\\s|$)"),
+    Regex(Terminal.INT, "int(?=\\s|$)"),
+    Regex(Terminal.STR, "str(?=\\s|$)"),
+    Regex(Terminal.BOOL, "bool(?=\\s|$)"),
     Regex(Terminal.IDENTIFIER, "[a-z_]+"),
     Regex(Terminal.INTEGER, "[0-9]+"),
     Regex(Terminal.STRING, '"([^\\\\]|\\\\("|n|\\\\))*?"'),
@@ -136,6 +142,7 @@ class NonTerminal(IntEnum):
     RETURN_TYPES = next(next_offset)
     ROOT = next(next_offset)
     TYPED_ARGUMENT = next(next_offset)
+    TYPE_LITERAL = next(next_offset)
     TYPE_PLACEHOLDER = next(next_offset)
 
 
@@ -239,6 +246,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         TerminalExpression(Terminal.SWAP),
     ),
     NonTerminal.RETURN_TYPE: ConjunctionExpression(
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
         TerminalExpression(Terminal.IDENTIFIER),
         NonTerminalExpression(NonTerminal.TYPE_PLACEHOLDER),
     ),
@@ -257,7 +265,15 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     NonTerminal.TYPED_ARGUMENT: ConcatenationExpression(
         TerminalExpression(Terminal.IDENTIFIER),
         TerminalExpression(Terminal.AS),
-        TerminalExpression(Terminal.IDENTIFIER),
+        ConjunctionExpression(
+            TerminalExpression(Terminal.IDENTIFIER),
+            NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        ),
+    ),
+    NonTerminal.TYPE_LITERAL: ConjunctionExpression(
+        TerminalExpression(Terminal.INT),
+        TerminalExpression(Terminal.STR),
+        TerminalExpression(Terminal.BOOL),
     ),
     NonTerminal.TYPE_PLACEHOLDER: ConcatenationExpression(
         TerminalExpression(Terminal.ASTERISK), TerminalExpression(Terminal.IDENTIFIER)

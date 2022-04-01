@@ -185,7 +185,7 @@ class Argument(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Argument":
         assert tree.token_type == NonTerminal.ARGUMENT
 
-        if tree[0].token_type == Terminal.IDENTIFIER:
+        if tree[0].token_type in [Terminal.IDENTIFIER, NonTerminal.TYPE_LITERAL]:
             return Argument(
                 name=tree[0].value(tokens, code),
                 type=tree[2].value(tokens, code),
@@ -213,7 +213,7 @@ class ReturnType(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ReturnType":
         assert tree.token_type == NonTerminal.RETURN_TYPE
 
-        if tree[0].token_type == Terminal.IDENTIFIER:
+        if tree[0].token_type in [Terminal.IDENTIFIER, NonTerminal.TYPE_LITERAL]:
             return ReturnType(
                 type=tree[0].value(tokens, code),
                 token_count=tree.token_count,

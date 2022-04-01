@@ -1,8 +1,5 @@
 # TODO
 
-### static type checking
-- make `int`, `str` and `bool` reserved tokens in grammar
-
 ### Language features
 - multi-file programs (`import`)
 - return early (`return`)

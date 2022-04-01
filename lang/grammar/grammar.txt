@@ -24,7 +24,7 @@
 
 @ token AND            = regex("and(?=\\s|$)")    .
 @ token ASSERT         = regex("assert(?=\\s|$)") .
-@ token ASTERISK       = "*" .
+@ token ASTERISK       = "*"                      .
 @ token BACKSLASH_N    = regex("\\\\n(?=\\s|$)")  .
 @ token COMMA          = regex(",(?=\\s|$)")      .
 @ token DROP           = regex("drop(?=\\s|$)")   .
@@ -54,6 +54,12 @@
 @ token TRUE       = regex("true(?=\\s|$)")  .
 @ token FALSE      = regex("false(?=\\s|$)") .
 
+// --- builtin types ---
+
+@ token INT  =  regex("int(?=\\s|$)")  .
+@ token STR  =  regex("str(?=\\s|$)")  .
+@ token BOOL =  regex("bool(?=\\s|$)") .
+
 // --- more generic literal tokens ---
 
 @ token IDENTIFIER = regex("[a-z_]+")                         .
@@ -72,17 +78,19 @@ ROOT = (FUNCTION_DEFINITION)* .
 
 FUNCTION_DEFINITION = FN IDENTIFIER (ARGS ARGUMENT_LIST)? (RETURN RETURN_TYPES)? BEGIN FUNCTION_BODY END .
 
+TYPE_LITERAL = INT | STR | BOOL .
+
 @ prune
 TYPE_PLACEHOLDER = ASTERISK IDENTIFIER .
 
 @ prune
-TYPED_ARGUMENT = IDENTIFIER AS IDENTIFIER .
+TYPED_ARGUMENT = IDENTIFIER AS (IDENTIFIER | TYPE_LITERAL) .
 
 ARGUMENT = TYPE_PLACEHOLDER | TYPED_ARGUMENT .
 
 ARGUMENT_LIST = ARGUMENT (COMMA ARGUMENT)* .
 
-RETURN_TYPE = IDENTIFIER | TYPE_PLACEHOLDER .
+RETURN_TYPE = TYPE_LITERAL | IDENTIFIER | TYPE_PLACEHOLDER .
 
 RETURN_TYPES = RETURN_TYPE (COMMA RETURN_TYPE)* .
 

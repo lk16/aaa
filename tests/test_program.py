@@ -1,3 +1,4 @@
+from parser.parser.exceptions import ParseError
 from typing import Optional, Type
 
 import pytest
@@ -71,6 +72,9 @@ from lang.typing.exceptions import (
         ("fn foo args foo as int begin nop end", ArgumentNameCollision),
         ("fn foo args a as bar begin nop end", UnknownType),
         ("fn foo return bar begin nop end", UnknownType),
+        ("fn foo args a as bool begin nop end", None),
+        ("fn foo args int as bool begin nop end", ParseError),
+        ("fn int args begin nop end", ParseError),
     ],
 )
 def test_type_checker(code: str, expected_exception: Optional[Type[Exception]]) -> None:
