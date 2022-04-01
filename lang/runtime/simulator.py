@@ -37,6 +37,7 @@ from lang.instructions.types import (
     SubString,
     Swap,
 )
+from lang.runtime.debug import format_stack_item, format_str
 from lang.runtime.program import Program
 from lang.typing.signatures import StackItem
 
@@ -110,7 +111,36 @@ class Simulator:
     def set_instruction_pointer(self, offset: int) -> None:
         self.call_stack[-1].instruction_pointer = offset
 
+    def print_debug_info(self) -> None:  # pragma: nocover
+        if not self.verbose:
+            return
+
+        ip = self.get_instruction_pointer()
+        func_name = self.call_stack[-1].func_name
+        instructions = self.program.get_instructions(func_name)
+
+        try:
+            instruction = instructions[ip].__repr__()
+        except IndexError:
+            instruction = "<returning>"
+
+        # prevent breaking layout
+
+        instruction = format_str(instruction, max_length=30)
+        func_name = format_str(func_name, max_length=15)
+
+        stack_str = " ".join(format_stack_item(item) for item in self.stack)
+        stack_str = format_str(stack_str, max_length=60)
+
+        print(
+            f"DEBUG | {func_name:>15} | IP: {ip:>3} | {instruction:>30} | Stack: {stack_str}",
+            file=sys.stderr,
+        )
+
     def run(self) -> None:
+        if self.verbose:  # pragma: nocover
+            self.program.print_all_instructions()
+
         self.call_function("main")
 
     def call_function(self, func_name: str) -> None:
@@ -137,6 +167,7 @@ class Simulator:
 
             # Excecute the instruction and get value for next instruction ointer
             next_instruction = self.instruction_funcs[type(instruction)](instruction)
+            self.print_debug_info()
             self.set_instruction_pointer(next_instruction)
 
         self.call_stack.pop()

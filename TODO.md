@@ -1,8 +1,6 @@
 # TODO
 
 ### static type checking
-- fix `-v` flags
-- move most debug/verbose stuff from `Simulator` to `Program`
 - make `int`, `str` and `bool` reserved tokens in grammar
 
 ### Language features

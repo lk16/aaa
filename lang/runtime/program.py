@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple
 from lang.grammar.parser import parse as parse_aaa
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
+from lang.runtime.debug import format_str
 from lang.runtime.parse import Function, ParsedFile
 from lang.typing.checker import TypeChecker
 from lang.typing.exceptions import FunctionNameCollision, TypeException
@@ -122,3 +123,21 @@ class Program:
     def get_instructions(self, name: str) -> List[Instruction]:
         # TODO this won't always work when we support multiple files
         return self.function_instructions[self.entry_point_file][name]
+
+    def print_all_instructions(self) -> None:  # pragma: nocover
+        for functions in self.function_instructions.values():
+            for name, instructions in functions.items():
+
+                func_name = format_str(name, max_length=15)
+
+                for ip, instr in enumerate(instructions):
+                    instruction = format_str(instr.__repr__(), max_length=30)
+
+                    print(
+                        f"DEBUG | {func_name:>15} | IP: {ip:>3} | {instruction:>30}",
+                        file=sys.stderr,
+                    )
+
+                print(file=sys.stderr)
+
+        print("---", file=sys.stderr)
