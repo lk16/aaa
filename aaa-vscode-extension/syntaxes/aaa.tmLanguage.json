@@ -12,6 +12,9 @@
 			"include": "#builtin_functions"
 		},
 		{
+			"include": "#builtin_types"
+		},
+		{
 			"name": "comment.line.double-slash.aaa",
 			"match": "(//.*)"
 		},
@@ -48,7 +51,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.aaa",
-				"match": "\\b(if|else|end|while|fn|begin|as|args|return)\\b"
+				"match": "\\b(if|else|end|while|fn|begin|as|args|return|import)\\b"
 			}]
 		},
 		"strings": {
@@ -65,6 +68,10 @@
 		"builtin_functions": {
 			"match": "(?x)\\b(assert|drop|dup|swap|over|nop|rot|substr|strlen)\\b|\\.|\\\\n",
 			"name": "support.function.builtin.aaa"
+		},
+		"builtin_types": {
+			"name": "support.type.aaa",
+			"match": "\\b(bool|int|str)\\b"
 		}
 	},
 	"scopeName": "source.aaa"
