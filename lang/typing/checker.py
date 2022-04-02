@@ -295,6 +295,7 @@ class TypeChecker:
         # If it's not a function argument, we must be calling a function.
         func = self.program.get_function(node.name)
 
+        breakpoint()
         if not func:
             raise UnknownFunction(self.file, self.function, self.tokens, node)
 

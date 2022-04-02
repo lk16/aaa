@@ -53,10 +53,14 @@ class Program:
         except (TokenizerError, ParseError) as e:
             return [e]
 
+        self.identifiers[file] = {}
+        import_errors = self._load_imported_files(file, parsed_file)
+
+        if import_errors:
+            return import_errors
+
         try:
-            self.identifiers[file] = self._load_file_identifiers(
-                file, parsed_file, tokens
-            )
+            self._load_file_identifiers(file, parsed_file, tokens)
         except TypeException as e:
             return [e]
 
@@ -77,15 +81,12 @@ class Program:
 
     def _load_file_identifiers(
         self, file: Path, parsed_file: ParsedFile, tokens: List[Token]
-    ) -> Dict[str, Identifiable]:
-        identifiers: Dict[str, Identifiable] = {}
-
+    ) -> None:
         for function in parsed_file.functions:
-            if function.name in identifiers:
+            if function.name in self.identifiers[file]:
                 raise FunctionNameCollision(file, function, tokens, function)
-            identifiers[function.name] = function
 
-        return identifiers
+            self.identifiers[file][function.name] = function
 
     def _generate_file_instructions(
         self, file: Path, parsed_file: ParsedFile
@@ -108,6 +109,39 @@ class Program:
                 type_exceptions.append(e)
 
         return type_exceptions
+
+    def _load_imported_files(
+        self, file: Path, parsed_file: ParsedFile
+    ) -> List[FileLoadException]:
+        errors: List[FileLoadException] = []
+
+        for import_ in parsed_file.imports:
+            if import_.source.startswith("/"):
+                # TODO append new exception and continue
+                raise NotImplementedError
+
+            import_path = (file.parent / f"{import_.source}.aaa").resolve()
+
+            import_errors = self._load_file(import_path)
+            if import_errors:
+                errors += import_errors
+                continue
+
+            loaded_identifiers = self.identifiers[import_path]
+
+            for imported_item in import_.imported:
+                if imported_item not in loaded_identifiers:
+                    # TODO append new exception and continue
+                    raise NotImplementedError
+
+                self.identifiers[file][imported_item] = loaded_identifiers[
+                    imported_item
+                ]
+
+        breakpoint()
+        ...
+
+        return errors
 
     def get_function(self, name: str) -> Optional[Function]:
         try:
