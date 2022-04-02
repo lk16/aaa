@@ -1,7 +1,12 @@
 # TODO
 
+### Multi file programs
+- implement `Import` as `AaaTreeNode`
+- implement import in `Program`
+- add import with alternative name using `as`
+- support optional trailing comma for `import`, `args`, `return`
+
 ### Language features
-- multi-file programs (`import`)
 - return early (`return`)
 - debug tools (`breakpoint`)
 - structs

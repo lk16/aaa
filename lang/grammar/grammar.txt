@@ -8,7 +8,7 @@
 //
 // language.
 
-// --- control flow tokens ---
+// --- control flow keyword tokens ---
 
 @ token BEGIN  = regex("begin(?=\\s|$)")  .
 @ token ELSE   = regex("else(?=\\s|$)")   .
@@ -19,6 +19,8 @@
 @ token ARGS   = regex("args(?=\\s|$)")   .
 @ token AS     = regex("as(?=\\s|$)")     .
 @ token RETURN = regex("return(?=\\s|$)") .
+@ token FROM   = regex("from(?=\\s|$)")   .
+@ token IMPORT = regex("import(?=\\s|$)") .
 
 // --- operator tokens ---
 
@@ -74,7 +76,11 @@
 
 // ---
 
-ROOT = (FUNCTION_DEFINITION)* .
+ROOT = (FUNCTION_DEFINITION | IMPORT_STATEMENT)* .
+
+IMPORT_STATEMENT = FROM STRING IMPORT IMPORTED_ITEMS .
+
+IMPORTED_ITEMS = IDENTIFIER (COMMA IDENTIFIER)* .
 
 FUNCTION_DEFINITION = FN IDENTIFIER (ARGS ARGUMENT_LIST)? (RETURN RETURN_TYPES)? BEGIN FUNCTION_BODY END .
 

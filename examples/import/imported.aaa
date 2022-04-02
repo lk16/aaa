@@ -1,0 +1,10 @@
+fn
+    max
+args
+    x as int,
+    y as int
+return
+    int
+begin
+    if x y > begin x else y end
+end

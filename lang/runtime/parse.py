@@ -282,8 +282,31 @@ class Function(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class Import(AaaTreeNode):
+    source: str
+    imported: List[str]
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Import":
+        assert tree.token_type == NonTerminal.IMPORT_STATEMENT
+
+        source = tree[1].value(tokens, code)[1:-1]
+        imported = [
+            imported_item.value(tokens, code) for imported_item in tree[3].children
+        ]
+
+        return Import(
+            source=source,
+            imported=imported,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class ParsedFile(AaaTreeNode):
     functions: List[Function]
+    imports: List[Import]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ParsedFile":
@@ -291,13 +314,23 @@ class ParsedFile(AaaTreeNode):
         assert tree.token_count == len(tokens)
 
         functions: List[Function] = []
+        imports: List[Import] = []
 
         for child in tree.children:
-            function = Function.from_tree(child, tokens, code)
-            functions.append(function)
+            if child.token_type == NonTerminal.FUNCTION_DEFINITION:
+                function = Function.from_tree(child, tokens, code)
+                functions.append(function)
+
+            elif child.token_type == NonTerminal.IMPORT_STATEMENT:
+                import_ = Import.from_tree(child, tokens, code)
+                imports.append(import_)
+
+            else:  # pragma: nocover
+                assert False
 
         return ParsedFile(
             functions=functions,
+            imports=imports,
             token_count=tree.token_count,
             token_offset=tree.token_offset,
         )

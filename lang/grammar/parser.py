@@ -46,10 +46,12 @@ class Terminal(IntEnum):
     EQUALS = next(next_offset)
     FALSE = next(next_offset)
     FN = next(next_offset)
+    FROM = next(next_offset)
     GREATER_EQUALS = next(next_offset)
     GREATER_THAN = next(next_offset)
     IDENTIFIER = next(next_offset)
     IF = next(next_offset)
+    IMPORT = next(next_offset)
     INT = next(next_offset)
     INTEGER = next(next_offset)
     LESS_EQUALS = next(next_offset)
@@ -87,6 +89,8 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.ARGS, "args(?=\\s|$)"),
     Regex(Terminal.AS, "as(?=\\s|$)"),
     Regex(Terminal.RETURN, "return(?=\\s|$)"),
+    Regex(Terminal.FROM, "from(?=\\s|$)"),
+    Regex(Terminal.IMPORT, "import(?=\\s|$)"),
     Regex(Terminal.AND, "and(?=\\s|$)"),
     Regex(Terminal.ASSERT, "assert(?=\\s|$)"),
     Literal(Terminal.ASTERISK, "*"),
@@ -135,6 +139,8 @@ class NonTerminal(IntEnum):
     FUNCTION_BODY = next(next_offset)
     FUNCTION_BODY_ITEM = next(next_offset)
     FUNCTION_DEFINITION = next(next_offset)
+    IMPORTED_ITEMS = next(next_offset)
+    IMPORT_STATEMENT = next(next_offset)
     LITERAL = next(next_offset)
     LOOP = next(next_offset)
     OPERATOR = next(next_offset)
@@ -206,6 +212,21 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         NonTerminalExpression(NonTerminal.FUNCTION_BODY),
         TerminalExpression(Terminal.END),
     ),
+    NonTerminal.IMPORTED_ITEMS: ConcatenationExpression(
+        TerminalExpression(Terminal.IDENTIFIER),
+        RepeatExpression(
+            ConcatenationExpression(
+                TerminalExpression(Terminal.COMMA),
+                TerminalExpression(Terminal.IDENTIFIER),
+            )
+        ),
+    ),
+    NonTerminal.IMPORT_STATEMENT: ConcatenationExpression(
+        TerminalExpression(Terminal.FROM),
+        TerminalExpression(Terminal.STRING),
+        TerminalExpression(Terminal.IMPORT),
+        NonTerminalExpression(NonTerminal.IMPORTED_ITEMS),
+    ),
     NonTerminal.LITERAL: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.BOOLEAN),
         TerminalExpression(Terminal.INTEGER),
@@ -260,7 +281,10 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         ),
     ),
     NonTerminal.ROOT: RepeatExpression(
-        NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION)
+        ConjunctionExpression(
+            NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION),
+            NonTerminalExpression(NonTerminal.IMPORT_STATEMENT),
+        )
     ),
     NonTerminal.TYPED_ARGUMENT: ConcatenationExpression(
         TerminalExpression(Terminal.IDENTIFIER),
