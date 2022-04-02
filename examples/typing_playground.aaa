@@ -8,8 +8,8 @@ begin
     "3 5 max = " .
     3 5 max . \n
 
-    "4 fib = " .
-    4 fib . \n
+    "4 factorial = " .
+    4 factorial . \n
 
     "7 dup_twice = " .
     7 dup_twice . . . \n
@@ -43,7 +43,7 @@ begin
 end
 
 
-fn fib
+fn factorial
     args n as int
     return int
 begin
@@ -56,7 +56,7 @@ begin
         begin
             1
         else
-            n 1 - fib
+            n 1 - factorial
             n *
         end
     end

@@ -52,7 +52,7 @@ EXPECTED_EXAMPLE_OUTPUT = {
     "examples/fizzbuzz.aaa": expected_fizzbuzz_output(),
     "examples/print_twice.aaa": "hello!\nhello!\n",
     "examples/function_demo.aaa": "a=1\nb=2\nc=3\n",
-    "examples/typing_playground.aaa": "five = 5\n3 5 max = 5\n4 fib = 24\n7 dup_twice = 777\n",
+    "examples/typing_playground.aaa": "five = 5\n3 5 max = 5\n4 factorial = 24\n7 dup_twice = 777\n",
 }
 
 
