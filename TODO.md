@@ -1,7 +1,6 @@
 # TODO
 
 ### Multi file programs
-- check for cyclic import dependencies
 - add import with alternative name using `as`
 - support optional trailing comma for `import`, `args`, `return`
 - better tests for exact error messages

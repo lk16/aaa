@@ -11,6 +11,8 @@ from lang.typing.exceptions import (
     ArgumentNameCollision,
     BranchTypeError,
     ConditionTypeError,
+    CyclicImportError,
+    FileReadError,
     FunctionNameCollision,
     FunctionTypeError,
     ImportedItemNotFound,
@@ -46,6 +48,8 @@ from lang.typing.exceptions import (
         ("invalid_main_signature.aaa", [InvalidMainSignuture]),
         ("absolute_import.aaa", [AbsoluteImportError]),
         ("imported_item_not_found.aaa", [ImportedItemNotFound]),
+        ("non_existent.aaa", [FileReadError]),
+        ("cyclic_imports/main.aaa", [CyclicImportError]),
     ],
 )
 def test_exceptions(

@@ -14,9 +14,9 @@ class TypeException(Exception):
         self.tokens = tokens
         self.node = node
         self.code = file.read_text()
-        return super().__init__(self.what())
+        return super().__init__()
 
-    def what(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:  # pragma: nocover
         return "TypeErrorException message, override me!"
 
     def get_line_column_numbers(self) -> Tuple[int, int]:
@@ -73,7 +73,7 @@ class FunctionTypeError(TypeException):
         self.computed_return_types = computed_return_types
         super().__init__(file=file, tokens=tokens, node=function)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Function {self.function.name} returns wrong type(s)\n"
             + self.get_error_header()
@@ -98,7 +98,7 @@ class StackUnderflowError(TypeException):
         self.function = function
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Stack underflow inside {self.function.name}\n" + self.get_error_header()
         )
@@ -120,7 +120,7 @@ class StackTypesError(TypeException):
         self.type_stack = type_stack
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Invalid stack types inside {self.function.name}\n"
             + self.get_error_header()
@@ -147,7 +147,7 @@ class ConditionTypeError(TypeException):
         self.condition_stack = condition_stack
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Invalid stack modification in condition inside {self.function.name}\n"
             + self.get_error_header()
@@ -178,7 +178,7 @@ class BranchTypeError(TypeException):
         self.else_stack = else_stack
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Inconsistent stack modification in if (else)-block {self.function.name}\n"
             + self.get_error_header()
@@ -210,7 +210,7 @@ class LoopTypeError(TypeException):
         self.loop_stack = loop_stack
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Stack modification inside loop body inside {self.function.name}\n"
             + self.get_error_header()
@@ -234,7 +234,7 @@ class FunctionNameCollision(TypeException):
         self.function = function
         super().__init__(file=file, tokens=tokens, node=function)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Function {self.function.name} was already defined.\n"
             + self.get_error_header()
@@ -253,7 +253,7 @@ class ArgumentNameCollision(TypeException):
         self.function = function
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Argument name already used by other argument or function name in {self.function.name}\n"
             + self.get_error_header()
@@ -272,7 +272,7 @@ class UnknownFunction(TypeException):
         self.function = function
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Unknown function or identifier in {self.function.name}\n"
             + self.get_error_header()
@@ -291,7 +291,7 @@ class UnknownType(TypeException):
         self.function = function
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return f"Unknown type in {self.function.name}\n" + self.get_error_header()
 
 
@@ -307,7 +307,7 @@ class UnknownPlaceholderType(TypeException):
         self.function = function
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f"Usage of unknown placeholder type in {self.function.name}\n"
             + self.get_error_header()
@@ -326,13 +326,13 @@ class InvalidMainSignuture(TypeException):
         self.function = function
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return f"Invalid signature for main function\n" + self.get_error_header()
 
 
 # TODO this is not really a type exception
 class AbsoluteImportError(TypeException):
-    def what(self) -> str:
+    def __str__(self) -> str:
         return f"Absolute imports are not allowed\n" + self.get_error_header()
 
 
@@ -349,8 +349,38 @@ class ImportedItemNotFound(TypeException):
         self.imported_item = imported_item
         super().__init__(file=file, tokens=tokens, node=node)
 
-    def what(self) -> str:
+    def __str__(self) -> str:
         return (
             f'Imported item "{self.imported_item}" was not found\n'
             + self.get_error_header()
         )
+
+
+# TODO needs better baseclass
+class FileReadError(Exception):
+    def __init__(self, file: Path) -> None:
+        self.file = file
+
+    def __str__(self) -> str:
+        return f'Failed to open or read "{self.file}". Maybe it doesn\'t exist?\n'
+
+
+# TODO needs better baseclass
+class CyclicImportError(Exception):
+    def __init__(self, *, dependencies: List[Path], failed_import: Path) -> None:
+        self.dependencies = dependencies
+        self.failed_import = failed_import
+
+    def __str__(self) -> str:
+        msg = "Cyclic import dependency was detected:\n"
+        _ = msg
+
+        msg += f"           {self.failed_import}\n"
+
+        cycle_start = self.dependencies.index(self.failed_import)
+        for cycle_item in reversed(self.dependencies[cycle_start + 1 :]):
+            msg += f"depends on {cycle_item}\n"
+
+        msg += f"depends on {self.failed_import}\n"
+
+        return msg

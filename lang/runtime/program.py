@@ -15,6 +15,8 @@ from lang.runtime.parse import Function, ParsedFile
 from lang.typing.checker import TypeChecker
 from lang.typing.exceptions import (
     AbsoluteImportError,
+    CyclicImportError,
+    FileReadError,
     FunctionNameCollision,
     ImportedItemNotFound,
     TypeException,
@@ -30,7 +32,10 @@ class ProgramImport:
 # Identifiable are things identified uniquely by a filepath and name
 Identifiable = Function | ProgramImport
 
-FileLoadException = TokenizerError | ParseError | TypeException
+# TODO clean this union up once we have better baseclasses for exceptions
+FileLoadException = (
+    TokenizerError | ParseError | TypeException | FileReadError | CyclicImportError
+)
 
 
 class Program:
@@ -38,6 +43,10 @@ class Program:
         self.entry_point_file = file.resolve()
         self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
         self.function_instructions: Dict[Path, Dict[str, List[Instruction]]] = {}
+
+        # Used to detect cyclic import loops
+        self.file_load_stack: List[Path] = []
+
         self.file_load_errors = self._load_file(self.entry_point_file)
 
     @classmethod
@@ -63,30 +72,45 @@ class Program:
     def _load_file(self, file: Path) -> List[FileLoadException]:
         # TODO make sure the file wasn't loaded already
 
+        if file in self.file_load_stack:
+            return [
+                CyclicImportError(dependencies=self.file_load_stack, failed_import=file)
+            ]
+
+        self.file_load_stack.append(file)
+
         try:
             tokens, parsed_file = self._parse_file(file)
         except (TokenizerError, ParseError) as e:
+            self.file_load_stack.pop()
             return [e]
+        except OSError:
+            self.file_load_stack.pop()
+            return [FileReadError(file)]
         # TODO handle case of non-existing file
 
         self.identifiers[file] = {}
         import_errors = self._load_imported_files(file, parsed_file, tokens)
 
         if import_errors:
+            self.file_load_stack.pop()
             return import_errors
 
         try:
             self._load_file_identifiers(file, parsed_file, tokens)
         except TypeException as e:
+            self.file_load_stack.pop()
             return [e]
 
         load_file_exceptions = self._type_check_file(file, parsed_file, tokens)
         if load_file_exceptions:
+            self.file_load_stack.pop()
             return load_file_exceptions
 
         self.function_instructions[file] = self._generate_file_instructions(
             file, parsed_file
         )
+        self.file_load_stack.pop()
         return []
 
     def _parse_file(self, file: Path) -> Tuple[List[Token], ParsedFile]:

@@ -1,0 +1,3 @@
+from "main" import main
+
+fn foo begin nop end
