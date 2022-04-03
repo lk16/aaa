@@ -7,11 +7,13 @@ import pytest
 
 from lang.runtime.program import FileLoadException, Program
 from lang.typing.exceptions import (
+    AbsoluteImportError,
     ArgumentNameCollision,
     BranchTypeError,
     ConditionTypeError,
     FunctionNameCollision,
     FunctionTypeError,
+    ImportedItemNotFound,
     InvalidMainSignuture,
     LoopTypeError,
     StackTypesError,
@@ -42,6 +44,8 @@ from lang.typing.exceptions import (
         ("tokenize_error.aaa", [TokenizerError]),
         ("parse_error.aaa", [ParseError]),
         ("invalid_main_signature.aaa", [InvalidMainSignuture]),
+        ("absolute_import.aaa", [AbsoluteImportError]),
+        ("imported_item_not_found.aaa", [ImportedItemNotFound]),
     ],
 )
 def test_exceptions(

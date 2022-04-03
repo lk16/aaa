@@ -153,12 +153,15 @@ class Program:
             for imported_item in import_.imported:
                 if imported_item not in loaded_identifiers:
                     # TODO change grammar so we can more precisely point to the item that was not found
-                    raise ImportedItemNotFound(
-                        file=file,
-                        tokens=tokens,
-                        node=import_,
-                        imported_item=imported_item,
+                    errors.append(
+                        ImportedItemNotFound(
+                            file=file,
+                            tokens=tokens,
+                            node=import_,
+                            imported_item=imported_item,
+                        )
                     )
+                    continue
 
                 self.identifiers[file][imported_item] = ProgramImport(
                     original_name=imported_item, source_file=import_path

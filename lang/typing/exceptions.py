@@ -330,11 +330,13 @@ class InvalidMainSignuture(TypeException):
         return f"Invalid signature for main function\n" + self.get_error_header()
 
 
+# TODO this is not really a type exception
 class AbsoluteImportError(TypeException):
     def what(self) -> str:
         return f"Absolute imports are not allowed\n" + self.get_error_header()
 
 
+# TODO this is not really a type exception
 class ImportedItemNotFound(TypeException):
     def __init__(
         self,

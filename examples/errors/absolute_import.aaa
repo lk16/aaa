@@ -1,0 +1,3 @@
+from "/foo" import bar
+
+fn main begin nop end

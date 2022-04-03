@@ -1,0 +1,3 @@
+from "../fizzbuzz" import foo
+
+fn main begin nop end
