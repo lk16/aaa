@@ -66,7 +66,8 @@ class Program:
                 print(file=sys.stderr)
 
         error_count = len(self.file_load_errors)
-        print(f"Found {error_count} error{'' if error_count == 1 else 's'}.")
+        maybe_s = "" if error_count == 1 else "s"
+        print(f"Found {error_count} error{maybe_s}.")
         exit(1)
 
     def _load_file(self, file: Path) -> List[FileLoadException]:
@@ -87,7 +88,6 @@ class Program:
         except OSError:
             self.file_load_stack.pop()
             return [FileReadError(file)]
-        # TODO handle case of non-existing file
 
         self.identifiers[file] = {}
         import_errors = self._load_imported_files(file, parsed_file, tokens)
