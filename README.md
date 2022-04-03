@@ -29,6 +29,7 @@ Stack-based language, like forth.
 - functions (`fn`)
 - comments (`//`)
 - shebang, see below (`#!`)
+- multi-file support (`import`)
 - [upcoming](./TODO.md)
 
 ### Shebang
