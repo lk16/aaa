@@ -1,7 +1,7 @@
 # TODO
 
 ### Multi file programs
-- implement `Import` as `AaaTreeNode`
+- idea: put `file: Path` in `CallFunction` instruction
 - implement import in `Program`
 - add import with alternative name using `as`
 - support optional trailing comma for `import`, `args`, `return`

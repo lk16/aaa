@@ -10,7 +10,9 @@ def test_program_implements_all_instructions() -> None:
     instruction_types = {
         obj
         for _, obj in inspect.getmembers(sys.modules["lang.instructions.types"])
-        if inspect.isclass(obj) and obj is not Instruction
+        if inspect.isclass(obj)
+        and issubclass(obj, Instruction)
+        and obj is not Instruction
     }
 
     simulator = Simulator(Program.without_file("fn main begin nop end"))

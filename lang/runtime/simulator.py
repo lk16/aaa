@@ -1,5 +1,6 @@
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Dict, List, Type
 
 from lang.instructions.types import (
@@ -45,6 +46,7 @@ from lang.typing.signatures import StackItem
 @dataclass
 class CallStackItem:
     func_name: str
+    source_file: Path
     instruction_pointer: int
     argument_values: Dict[str, StackItem]
 
@@ -116,8 +118,11 @@ class Simulator:
             return
 
         ip = self.get_instruction_pointer()
-        func_name = self.call_stack[-1].func_name
-        instructions = self.program.get_instructions(func_name)
+        current_function = self.call_stack[-1]
+        func_name = current_function.func_name
+        instructions = self.program.get_instructions(
+            file=current_function.source_file, name=func_name
+        )
 
         try:
             instruction = instructions[ip].__repr__()
@@ -141,10 +146,10 @@ class Simulator:
         if self.verbose:  # pragma: nocover
             self.program.print_all_instructions()
 
-        self.call_function("main")
+        self.call_function(self.program.entry_point_file, "main")
 
-    def call_function(self, func_name: str) -> None:
-        function = self.program.get_function(func_name)
+    def call_function(self, file: Path, func_name: str) -> None:
+        function = self.program.get_function(file, func_name)
 
         assert function  # If this assertion breaks, then Aaa's type checking is broken
 
@@ -152,9 +157,16 @@ class Simulator:
             arg.name: self.pop() for arg in reversed(function.arguments)
         }
 
-        self.call_stack.append(CallStackItem(func_name, 0, argument_values))
+        self.call_stack.append(
+            CallStackItem(
+                func_name=func_name,
+                source_file=file,
+                instruction_pointer=0,
+                argument_values=argument_values,
+            )
+        )
 
-        instructions = self.program.get_instructions(function.name)
+        instructions = self.program.get_instructions(file, function.name)
 
         while True:
             instruction_pointer = self.get_instruction_pointer()
@@ -361,7 +373,7 @@ class Simulator:
 
     def instruction_call_function(self, instruction: Instruction) -> int:
         assert isinstance(instruction, CallFunction)
-        self.call_function(instruction.func_name)
+        self.call_function(instruction.file, instruction.func_name)
         return self.get_instruction_pointer() + 1
 
     def instruction_push_function_argument(self, instruction: Instruction) -> int:

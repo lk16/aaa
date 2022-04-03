@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from parser.parser.exceptions import ParseError
 from parser.tokenizer.exceptions import TokenizerError
 from parser.tokenizer.models import Token
@@ -14,8 +15,15 @@ from lang.runtime.parse import Function, ParsedFile
 from lang.typing.checker import TypeChecker
 from lang.typing.exceptions import FunctionNameCollision, TypeException
 
+
+@dataclass(kw_only=True)
+class ProgramImport:
+    original_name: str
+    source_file: Path
+
+
 # Identifiable are things identified uniquely by a filepath and name
-Identifiable = Function
+Identifiable = Function | ProgramImport
 
 FileLoadException = TokenizerError | ParseError | TypeException
 
@@ -94,7 +102,7 @@ class Program:
         file_instructions: Dict[str, List[Instruction]] = {}
         for function in parsed_file.functions:
             file_instructions[function.name] = InstructionGenerator(
-                function
+                file, function, self
             ).generate_instructions()
         return file_instructions
 
@@ -134,29 +142,40 @@ class Program:
                     # TODO append new exception and continue
                     raise NotImplementedError
 
-                self.identifiers[file][imported_item] = loaded_identifiers[
-                    imported_item
-                ]
-
-        breakpoint()
-        ...
+                self.identifiers[file][imported_item] = ProgramImport(
+                    original_name=imported_item, source_file=import_path
+                )
 
         return errors
 
-    def get_function(self, name: str) -> Optional[Function]:
+    def get_function(self, file: Path, name: str) -> Optional[Function]:
         try:
-            # TODO this won't always work when we support multiple files
-            identified = self.identifiers[self.entry_point_file][name]
+            identified = self.identifiers[file][name]
         except KeyError:
+            # TODO just raise KeyError here?
             return None
 
-        # TODO check that identified is a Function when Identifiable becomes a union
+        if isinstance(identified, Function):
+            return identified
+        elif isinstance(identified, ProgramImport):
+            return self.get_function(identified.source_file, identified.original_name)
+        else:  # pragma: nocover
+            assert False
 
-        return identified
+    def get_function_source_and_name(
+        self, called_from: Path, called_name: str
+    ) -> Tuple[Path, str]:
+        identified = self.identifiers[called_from][called_name]
 
-    def get_instructions(self, name: str) -> List[Instruction]:
-        # TODO this won't always work when we support multiple files
-        return self.function_instructions[self.entry_point_file][name]
+        if isinstance(identified, Function):
+            return called_from, called_name
+        elif isinstance(identified, ProgramImport):
+            return identified.source_file, identified.original_name
+        else:  # pragma nocover
+            assert False
+
+    def get_instructions(self, file: Path, name: str) -> List[Instruction]:
+        return self.function_instructions[file][name]
 
     def print_all_instructions(self) -> None:  # pragma: nocover
         for functions in self.function_instructions.values():

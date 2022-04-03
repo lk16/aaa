@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -149,6 +150,7 @@ class StringLength(Instruction):
 @dataclass
 class CallFunction(Instruction):
     func_name: str
+    file: Path
 
     def __repr__(self) -> str:  # pragma: nocover
         return f"{type(self).__name__}('{self.func_name}')"

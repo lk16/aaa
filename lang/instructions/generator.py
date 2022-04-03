@@ -1,4 +1,5 @@
-from typing import Callable, Dict, List, Type
+from pathlib import Path
+from typing import TYPE_CHECKING, Callable, Dict, List, Type
 
 from lang.instructions.types import (
     And,
@@ -48,6 +49,9 @@ from lang.runtime.parse import (
     StringLiteral,
 )
 
+if TYPE_CHECKING:  # pragma: nocover
+    from lang.runtime.program import Program
+
 OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "-": Minus(),
     "!=": IntNotEqual(),
@@ -78,8 +82,10 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
 
 
 class InstructionGenerator:
-    def __init__(self, function: Function) -> None:
+    def __init__(self, file: Path, function: Function, program: "Program") -> None:
         self.function = function
+        self.file = file
+        self.program = program
 
         self.instruction_funcs: Dict[
             Type[AaaTreeNode], Callable[[AaaTreeNode, int], List[Instruction]]
@@ -154,9 +160,10 @@ class InstructionGenerator:
         if identifier in {arg.name for arg in self.function.arguments}:
             return [PushFunctionArgument(identifier)]
 
-        # If it's not an arugment, we must be calling a function.
-        # Whether a function by that name exists will be checked in Program.
-        return [CallFunction(identifier)]
+        source_file, original_name = self.program.get_function_source_and_name(
+            self.file, identifier
+        )
+        return [CallFunction(func_name=original_name, file=source_file)]
 
     def instructions_for_branch(
         self, node: AaaTreeNode, offset: int
