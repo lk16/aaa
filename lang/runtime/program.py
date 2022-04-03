@@ -13,7 +13,12 @@ from lang.instructions.types import Instruction
 from lang.runtime.debug import format_str
 from lang.runtime.parse import Function, ParsedFile
 from lang.typing.checker import TypeChecker
-from lang.typing.exceptions import FunctionNameCollision, TypeException
+from lang.typing.exceptions import (
+    AbsoluteImportError,
+    FunctionNameCollision,
+    ImportedItemNotFound,
+    TypeException,
+)
 
 
 @dataclass(kw_only=True)
@@ -56,13 +61,16 @@ class Program:
         exit(1)
 
     def _load_file(self, file: Path) -> List[FileLoadException]:
+        # TODO make sure the file wasn't loaded already
+
         try:
             tokens, parsed_file = self._parse_file(file)
         except (TokenizerError, ParseError) as e:
             return [e]
+        # TODO handle case of non-existing file
 
         self.identifiers[file] = {}
-        import_errors = self._load_imported_files(file, parsed_file)
+        import_errors = self._load_imported_files(file, parsed_file, tokens)
 
         if import_errors:
             return import_errors
@@ -92,7 +100,7 @@ class Program:
     ) -> None:
         for function in parsed_file.functions:
             if function.name in self.identifiers[file]:
-                raise FunctionNameCollision(file, function, tokens, function)
+                raise FunctionNameCollision(file=file, tokens=tokens, function=function)
 
             self.identifiers[file][function.name] = function
 
@@ -119,14 +127,19 @@ class Program:
         return type_exceptions
 
     def _load_imported_files(
-        self, file: Path, parsed_file: ParsedFile
+        self,
+        file: Path,
+        parsed_file: ParsedFile,
+        tokens: List[Token],
     ) -> List[FileLoadException]:
         errors: List[FileLoadException] = []
 
         for import_ in parsed_file.imports:
             if import_.source.startswith("/"):
-                # TODO append new exception and continue
-                raise NotImplementedError
+                errors.append(
+                    AbsoluteImportError(file=file, tokens=tokens, node=import_)
+                )
+                continue
 
             import_path = (file.parent / f"{import_.source}.aaa").resolve()
 
@@ -139,8 +152,13 @@ class Program:
 
             for imported_item in import_.imported:
                 if imported_item not in loaded_identifiers:
-                    # TODO append new exception and continue
-                    raise NotImplementedError
+                    # TODO change grammar so we can more precisely point to the item that was not found
+                    raise ImportedItemNotFound(
+                        file=file,
+                        tokens=tokens,
+                        node=import_,
+                        imported_item=imported_item,
+                    )
 
                 self.identifiers[file][imported_item] = ProgramImport(
                     original_name=imported_item, source_file=import_path

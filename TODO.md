@@ -1,10 +1,10 @@
 # TODO
 
 ### Multi file programs
-- idea: put `file: Path` in `CallFunction` instruction
-- implement import in `Program`
+- check for cyclic import dependencies
 - add import with alternative name using `as`
 - support optional trailing comma for `import`, `args`, `return`
+- better tests for exact error messages
 
 ### Language features
 - return early (`return`)

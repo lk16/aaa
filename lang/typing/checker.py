@@ -76,11 +76,11 @@ class TypeChecker:
 
         if computed_return_types != expected_return_types:
             raise FunctionTypeError(
-                self.file,
-                self.function,
-                self.tokens,
-                expected_return_types,
-                computed_return_types,
+                file=self.file,
+                tokens=self.tokens,
+                function=self.function,
+                expected_return_types=expected_return_types,
+                computed_return_types=computed_return_types,
             )
 
     # TODO move this function to Program
@@ -94,7 +94,9 @@ class TypeChecker:
             return IDENTIFIER_TO_TYPE[type]
         except KeyError as e:
             # TODO change grammar so we can point the error to token of type rather than name of the arg
-            raise UnknownType(self.file, self.function, self.tokens, node) from e
+            raise UnknownType(
+                file=self.file, function=self.function, tokens=self.tokens, node=node
+            ) from e
 
     def _get_function_signature(self, function: Function) -> Signature:
         placeholder_args: Set[str] = {
@@ -109,7 +111,10 @@ class TypeChecker:
                 and return_type.type not in placeholder_args
             ):
                 raise UnknownPlaceholderType(
-                    self.file, self.function, self.tokens, return_type
+                    file=self.file,
+                    function=self.function,
+                    tokens=self.tokens,
+                    node=return_type,
                 )
 
         arg_types: List[SignatureItem] = []
@@ -148,7 +153,9 @@ class TypeChecker:
         arg_count = len(signature.arg_types)
 
         if len(stack) < arg_count:
-            raise StackUnderflowError(self.file, self.function, self.tokens, node)
+            raise StackUnderflowError(
+                file=self.file, function=self.function, tokens=self.tokens, node=node
+            )
 
         if arg_count == 0:
             type_stack_under_args = stack
@@ -166,7 +173,12 @@ class TypeChecker:
                 placeholder_types[signature_arg_type.name] = type_stack_arg
             elif signature_arg_type != type_stack_arg:
                 raise StackTypesError(
-                    self.file, self.function, self.tokens, node, signature, type_stack
+                    file=self.file,
+                    function=self.function,
+                    tokens=self.tokens,
+                    node=node,
+                    signature=signature,
+                    type_stack=type_stack,
                 )
 
         stack = type_stack_under_args
@@ -232,7 +244,12 @@ class TypeChecker:
             ]
         ):
             raise ConditionTypeError(
-                self.file, self.function, self.tokens, node, type_stack, condition_stack
+                file=self.file,
+                function=self.function,
+                tokens=self.tokens,
+                node=node,
+                type_stack=type_stack,
+                condition_stack=condition_stack,
             )
 
         # The bool pushed by the condition is removed when evaluated,
@@ -244,13 +261,13 @@ class TypeChecker:
         # afterwards the stack should be the same.
         if if_stack != else_stack:
             raise BranchTypeError(
-                self.file,
-                self.function,
-                self.tokens,
-                node,
-                type_stack,
-                if_stack,
-                else_stack,
+                file=self.file,
+                function=self.function,
+                tokens=self.tokens,
+                node=node,
+                type_stack=type_stack,
+                if_stack=if_stack,
+                else_stack=else_stack,
             )
 
         # we can return either one, since they are the same
@@ -269,7 +286,12 @@ class TypeChecker:
             ]
         ):
             raise ConditionTypeError(
-                self.file, self.function, self.tokens, node, type_stack, condition_stack
+                file=self.file,
+                function=self.function,
+                tokens=self.tokens,
+                node=node,
+                type_stack=type_stack,
+                condition_stack=condition_stack,
             )
 
         # The bool pushed by the condition is removed when evaluated,
@@ -278,7 +300,12 @@ class TypeChecker:
 
         if loop_stack != type_stack:
             raise LoopTypeError(
-                self.file, self.function, self.tokens, node, type_stack, loop_stack
+                file=self.file,
+                function=self.function,
+                tokens=self.tokens,
+                node=node,
+                type_stack=type_stack,
+                loop_stack=loop_stack,
             )
 
         # we can return either one, since they are the same
@@ -296,7 +323,9 @@ class TypeChecker:
         func = self.program.get_function(self.file, node.name)
 
         if not func:
-            raise UnknownFunction(self.file, self.function, self.tokens, node)
+            raise UnknownFunction(
+                file=self.file, function=self.function, tokens=self.tokens, node=node
+            )
 
         signature = self._get_function_signature(func)
         return self._check_and_apply_signature(copy(type_stack), signature, node)
@@ -322,13 +351,20 @@ class TypeChecker:
                     len(node.return_types) == 0,
                 ]
             ):
-                raise InvalidMainSignuture(self.file, self.function, self.tokens, node)
+                raise InvalidMainSignuture(
+                    file=self.file,
+                    function=self.function,
+                    tokens=self.tokens,
+                    node=node,
+                )
 
         argument_and_names: Set[str] = set()
 
         for arg in node.arguments:
             if arg.name in argument_and_names or node.name == arg.name:
-                raise ArgumentNameCollision(self.file, self.function, self.tokens, arg)
+                raise ArgumentNameCollision(
+                    file=self.file, function=self.function, tokens=self.tokens, node=arg
+                )
             argument_and_names.add(arg.name)
 
         return self._check(node.body, type_stack)

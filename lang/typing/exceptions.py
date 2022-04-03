@@ -9,11 +9,8 @@ from lang.typing.signatures import PlaceholderType, Signature, TypeStack
 
 
 class TypeException(Exception):
-    def __init__(
-        self, file: Path, function: "Function", tokens: List[Token], node: "AaaTreeNode"
-    ) -> None:
+    def __init__(self, *, file: Path, tokens: List[Token], node: "AaaTreeNode") -> None:
         self.file = file
-        self.function = function
         self.tokens = tokens
         self.node = node
         self.code = file.read_text()
@@ -64,15 +61,17 @@ class TypeException(Exception):
 class FunctionTypeError(TypeException):
     def __init__(
         self,
+        *,
         file: Path,
-        function: "Function",
         tokens: List[Token],
+        function: "Function",
         expected_return_types: TypeStack,
         computed_return_types: TypeStack,
     ) -> None:
+        self.function = function
         self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
-        super().__init__(file, function, tokens, function)
+        super().__init__(file=file, tokens=tokens, node=function)
 
     def what(self) -> str:
         return (
@@ -88,6 +87,17 @@ class FunctionTypeError(TypeException):
 
 
 class StackUnderflowError(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+    ) -> None:
+        self.function = function
+        super().__init__(file=file, tokens=tokens, node=node)
+
     def what(self) -> str:
         return (
             f"Stack underflow inside {self.function.name}\n" + self.get_error_header()
@@ -97,16 +107,18 @@ class StackUnderflowError(TypeException):
 class StackTypesError(TypeException):
     def __init__(
         self,
+        *,
         file: Path,
-        function: "Function",
         tokens: List[Token],
         node: "AaaTreeNode",
+        function: "Function",
         signature: Signature,
         type_stack: TypeStack,
     ) -> None:
+        self.function = function
         self.signature = signature
         self.type_stack = type_stack
-        super().__init__(file, function, tokens, node)
+        super().__init__(file=file, tokens=tokens, node=node)
 
     def what(self) -> str:
         return (
@@ -122,16 +134,18 @@ class StackTypesError(TypeException):
 class ConditionTypeError(TypeException):
     def __init__(
         self,
+        *,
         file: Path,
-        function: "Function",
         tokens: List[Token],
         node: "AaaTreeNode",
+        function: "Function",
         type_stack: TypeStack,
         condition_stack: TypeStack,
     ) -> None:
+        self.function = function
         self.type_stack = type_stack
         self.condition_stack = condition_stack
-        super().__init__(file, function, tokens, node)
+        super().__init__(file=file, tokens=tokens, node=node)
 
     def what(self) -> str:
         return (
@@ -149,18 +163,20 @@ class ConditionTypeError(TypeException):
 class BranchTypeError(TypeException):
     def __init__(
         self,
+        *,
         file: Path,
-        function: "Function",
         tokens: List[Token],
         node: "AaaTreeNode",
+        function: "Function",
         type_stack: TypeStack,
         if_stack: TypeStack,
         else_stack: TypeStack,
     ) -> None:
+        self.function = function
         self.type_stack = type_stack
         self.if_stack = if_stack
         self.else_stack = else_stack
-        super().__init__(file, function, tokens, node)
+        super().__init__(file=file, tokens=tokens, node=node)
 
     def what(self) -> str:
         return (
@@ -181,16 +197,18 @@ class BranchTypeError(TypeException):
 class LoopTypeError(TypeException):
     def __init__(
         self,
+        *,
         file: Path,
-        function: "Function",
         tokens: List[Token],
         node: "AaaTreeNode",
+        function: "Function",
         type_stack: TypeStack,
         loop_stack: TypeStack,
     ) -> None:
+        self.function = function
         self.type_stack = type_stack
         self.loop_stack = loop_stack
-        super().__init__(file, function, tokens, node)
+        super().__init__(file=file, tokens=tokens, node=node)
 
     def what(self) -> str:
         return (
@@ -206,6 +224,16 @@ class LoopTypeError(TypeException):
 
 
 class FunctionNameCollision(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        function: "Function",
+    ) -> None:
+        self.function = function
+        super().__init__(file=file, tokens=tokens, node=function)
+
     def what(self) -> str:
         return (
             f"Function {self.function.name} was already defined.\n"
@@ -214,6 +242,17 @@ class FunctionNameCollision(TypeException):
 
 
 class ArgumentNameCollision(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+    ) -> None:
+        self.function = function
+        super().__init__(file=file, tokens=tokens, node=node)
+
     def what(self) -> str:
         return (
             f"Argument name already used by other argument or function name in {self.function.name}\n"
@@ -222,6 +261,17 @@ class ArgumentNameCollision(TypeException):
 
 
 class UnknownFunction(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+    ) -> None:
+        self.function = function
+        super().__init__(file=file, tokens=tokens, node=node)
+
     def what(self) -> str:
         return (
             f"Unknown function or identifier in {self.function.name}\n"
@@ -230,11 +280,33 @@ class UnknownFunction(TypeException):
 
 
 class UnknownType(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+    ) -> None:
+        self.function = function
+        super().__init__(file=file, tokens=tokens, node=node)
+
     def what(self) -> str:
         return f"Unknown type in {self.function.name}\n" + self.get_error_header()
 
 
 class UnknownPlaceholderType(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+    ) -> None:
+        self.function = function
+        super().__init__(file=file, tokens=tokens, node=node)
+
     def what(self) -> str:
         return (
             f"Usage of unknown placeholder type in {self.function.name}\n"
@@ -243,5 +315,40 @@ class UnknownPlaceholderType(TypeException):
 
 
 class InvalidMainSignuture(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+    ) -> None:
+        self.function = function
+        super().__init__(file=file, tokens=tokens, node=node)
+
     def what(self) -> str:
         return f"Invalid signature for main function\n" + self.get_error_header()
+
+
+class AbsoluteImportError(TypeException):
+    def what(self) -> str:
+        return f"Absolute imports are not allowed\n" + self.get_error_header()
+
+
+class ImportedItemNotFound(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        imported_item: str,
+    ) -> None:
+        self.imported_item = imported_item
+        super().__init__(file=file, tokens=tokens, node=node)
+
+    def what(self) -> str:
+        return (
+            f'Imported item "{self.imported_item}" was not found\n'
+            + self.get_error_header()
+        )
