@@ -1,0 +1,7 @@
+from "five" import five as get_five
+
+fn
+    main
+begin
+    get_five .
+end

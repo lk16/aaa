@@ -53,14 +53,15 @@ EXPECTED_EXAMPLE_OUTPUT = {
     "examples/print_twice.aaa": "hello!\nhello!\n",
     "examples/function_demo.aaa": "a=1\nb=2\nc=3\n",
     "examples/typing_playground.aaa": "five = 5\n3 5 max = 5\n4 factorial = 24\n7 dup_twice = 777\n",
+    "examples/renamed_import/main.aaa": "5",
 }
 
 
 @pytest.mark.parametrize(
     ["example_file_path", "expected_output"],
     [
-        (example_file_path, EXPECTED_EXAMPLE_OUTPUT[str(example_file_path)])
-        for example_file_path in Path("examples").glob("*.aaa")
+        (file, expected_output)
+        for file, expected_output in EXPECTED_EXAMPLE_OUTPUT.items()
     ],
 )
 def test_example_commands(

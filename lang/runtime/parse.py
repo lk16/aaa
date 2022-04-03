@@ -282,22 +282,46 @@ class Function(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class ImportItem(AaaTreeNode):
+    origninal_name: str
+    imported_name: str
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ImportItem":
+        assert tree.token_type == NonTerminal.IMPORT_ITEM
+
+        origninal_name = tree[0].value(tokens, code)
+
+        if len(tree.children) == 3:
+            imported_name = tree[2].value(tokens, code)
+        else:
+            imported_name = tree[0].value(tokens, code)
+
+        return ImportItem(
+            origninal_name=origninal_name,
+            imported_name=imported_name,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class Import(AaaTreeNode):
     source: str
-    imported: List[str]
+    imported_items: List[ImportItem]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Import":
         assert tree.token_type == NonTerminal.IMPORT_STATEMENT
 
         source = tree[1].value(tokens, code)[1:-1]
-        imported = [
-            imported_item.value(tokens, code) for imported_item in tree[3].children
+        imported_items = [
+            ImportItem.from_tree(child, tokens, code) for child in tree[3].children
         ]
 
         return Import(
             source=source,
-            imported=imported,
+            imported_items=imported_items,
             token_count=tree.token_count,
             token_offset=tree.token_offset,
         )

@@ -139,7 +139,8 @@ class NonTerminal(IntEnum):
     FUNCTION_BODY = next(next_offset)
     FUNCTION_BODY_ITEM = next(next_offset)
     FUNCTION_DEFINITION = next(next_offset)
-    IMPORTED_ITEMS = next(next_offset)
+    IMPORT_ITEM = next(next_offset)
+    IMPORT_ITEMS = next(next_offset)
     IMPORT_STATEMENT = next(next_offset)
     LITERAL = next(next_offset)
     LOOP = next(next_offset)
@@ -212,12 +213,20 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         NonTerminalExpression(NonTerminal.FUNCTION_BODY),
         TerminalExpression(Terminal.END),
     ),
-    NonTerminal.IMPORTED_ITEMS: ConcatenationExpression(
+    NonTerminal.IMPORT_ITEM: ConcatenationExpression(
         TerminalExpression(Terminal.IDENTIFIER),
+        OptionalExpression(
+            ConcatenationExpression(
+                TerminalExpression(Terminal.AS), TerminalExpression(Terminal.IDENTIFIER)
+            )
+        ),
+    ),
+    NonTerminal.IMPORT_ITEMS: ConcatenationExpression(
+        NonTerminalExpression(NonTerminal.IMPORT_ITEM),
         RepeatExpression(
             ConcatenationExpression(
                 TerminalExpression(Terminal.COMMA),
-                TerminalExpression(Terminal.IDENTIFIER),
+                NonTerminalExpression(NonTerminal.IMPORT_ITEM),
             )
         ),
     ),
@@ -225,7 +234,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         TerminalExpression(Terminal.FROM),
         TerminalExpression(Terminal.STRING),
         TerminalExpression(Terminal.IMPORT),
-        NonTerminalExpression(NonTerminal.IMPORTED_ITEMS),
+        NonTerminalExpression(NonTerminal.IMPORT_ITEMS),
     ),
     NonTerminal.LITERAL: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.BOOLEAN),
