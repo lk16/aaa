@@ -316,7 +316,9 @@ class Import(AaaTreeNode):
 
         source = tree[1].value(tokens, code)[1:-1]
         imported_items = [
-            ImportItem.from_tree(child, tokens, code) for child in tree[3].children
+            ImportItem.from_tree(child, tokens, code)
+            for child in tree[3].children
+            if child.token_type == NonTerminal.IMPORT_ITEM
         ]
 
         return Import(

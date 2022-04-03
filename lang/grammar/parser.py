@@ -166,6 +166,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
                 NonTerminalExpression(NonTerminal.ARGUMENT),
             )
         ),
+        OptionalExpression(TerminalExpression(Terminal.COMMA)),
     ),
     NonTerminal.BOOLEAN: ConjunctionExpression(
         TerminalExpression(Terminal.TRUE), TerminalExpression(Terminal.FALSE)
@@ -229,6 +230,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
                 NonTerminalExpression(NonTerminal.IMPORT_ITEM),
             )
         ),
+        OptionalExpression(TerminalExpression(Terminal.COMMA)),
     ),
     NonTerminal.IMPORT_STATEMENT: ConcatenationExpression(
         TerminalExpression(Terminal.FROM),
@@ -288,6 +290,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
                 NonTerminalExpression(NonTerminal.RETURN_TYPE),
             )
         ),
+        OptionalExpression(TerminalExpression(Terminal.COMMA)),
     ),
     NonTerminal.ROOT: RepeatExpression(
         ConjunctionExpression(

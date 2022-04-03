@@ -1,7 +1,6 @@
 # TODO
 
 ### Multi file programs
-- support optional trailing comma for `import`, `args`, `return`
 - better tests for exact error messages
 
 ### Language features

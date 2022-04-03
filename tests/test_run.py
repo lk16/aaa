@@ -155,6 +155,14 @@ def test_prgram_full_source_ok(
             "6",
             [],
         ),
+        (
+            {
+                "add.aaa": "fn add args a as int, b as int, return int, begin a b + end",
+                "main.aaa": 'from "add" import add,\n fn main begin 3 2 add . end',
+            },
+            "5",
+            [],
+        ),
     ],
 )
 def test_program_multi_file(
