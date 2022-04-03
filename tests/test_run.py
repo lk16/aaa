@@ -1,7 +1,10 @@
+from pathlib import Path
+from typing import Dict, List, Optional, Type
+
 import pytest
 from pytest import CaptureFixture
 
-from lang.runtime.program import Program
+from lang.runtime.program import FileLoadException, Program
 from lang.runtime.simulator import Simulator
 
 
@@ -138,3 +141,38 @@ def test_prgram_full_source_ok(
     stdout, stderr = capfd.readouterr()
     assert expected_output == stdout
     assert "" == stderr
+
+
+@pytest.mark.parametrize(
+    ["files", "expected_output", "expected_errors"],
+    [
+        (
+            {
+                "five.aaa": "fn five return int begin 5 end",
+                "six.aaa": 'from "five" import five\n fn six return int begin five 1 + end',
+                "main.aaa": 'from "six" import six\n fn main begin six . end',
+            },
+            "6",
+            [],
+        ),
+    ],
+)
+def test_program_multi_file(
+    files: Dict[str, str],
+    expected_output: Optional[str],
+    expected_errors: List[Type[FileLoadException]],
+    tmp_path: Path,
+    capfd: CaptureFixture[str],
+) -> None:
+    for filename, code in files.items():
+        (tmp_path / filename).write_text(code)
+
+    program = Program(tmp_path / "main.aaa")
+
+    assert list(map(type, program.file_load_errors)) == expected_errors
+
+    if not expected_errors:
+        Simulator(program).run()
+        stdout, stderr = capfd.readouterr()
+        assert expected_output == stdout
+        assert "" == stderr
