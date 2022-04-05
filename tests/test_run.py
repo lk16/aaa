@@ -84,6 +84,9 @@ from lang.runtime.simulator import Simulator
         ("nop //\n", ""),
         ("if //\ntrue begin 3 . end", "3"),
         ("true assert", ""),
+        ("int .", "0"),
+        ("bool .", "false"),
+        ("str .", ""),
     ],
 )
 def test_program_run_ok(

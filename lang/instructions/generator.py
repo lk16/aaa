@@ -47,6 +47,7 @@ from lang.runtime.parse import (
     Loop,
     Operator,
     StringLiteral,
+    TypeLiteral,
 )
 
 if TYPE_CHECKING:  # pragma: nocover
@@ -90,14 +91,15 @@ class InstructionGenerator:
         self.instruction_funcs: Dict[
             Type[AaaTreeNode], Callable[[AaaTreeNode, int], List[Instruction]]
         ] = {
-            IntegerLiteral: self.instructions_for_integer_literal,
-            StringLiteral: self.instructions_for_string_literal,
             BooleanLiteral: self.instructions_for_boolean_literal,
-            Operator: self.instructions_for_operator,
-            Loop: self.instructions_for_loop,
-            Identifier: self.instructions_for_identfier,
             Branch: self.instructions_for_branch,
             FunctionBody: self.instructions_for_function_body,
+            Identifier: self.instructions_for_identfier,
+            IntegerLiteral: self.instructions_for_integer_literal,
+            Loop: self.instructions_for_loop,
+            Operator: self.instructions_for_operator,
+            StringLiteral: self.instructions_for_string_literal,
+            TypeLiteral: self.instructions_for_type_literal,
         }
 
     def generate_instructions(self) -> List[Instruction]:
@@ -198,3 +200,20 @@ class InstructionGenerator:
             instructions += self._generate_instructions(child, child_offset)
 
         return instructions
+
+    def instructions_for_type_literal(
+        self, node: AaaTreeNode, offset: int
+    ) -> List[Instruction]:
+        assert isinstance(node, TypeLiteral)
+        type_literal = node.value
+
+        if type_literal is int:
+            return [IntPush(0)]
+
+        if type_literal is bool:
+            return [BoolPush(False)]
+
+        if type_literal is str:
+            return [StringPush("")]
+
+        raise NotImplementedError

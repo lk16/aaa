@@ -204,6 +204,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         NonTerminalExpression(NonTerminal.OPERATOR),
         TerminalExpression(Terminal.IDENTIFIER),
         NonTerminalExpression(NonTerminal.LITERAL),
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
     ),
     NonTerminal.FUNCTION_DEFINITION: ConcatenationExpression(
         TerminalExpression(Terminal.FN),

@@ -14,6 +14,7 @@ from lang.runtime.parse import (
     Loop,
     Operator,
     StringLiteral,
+    TypeLiteral,
 )
 
 if TYPE_CHECKING:  # pragma: nocover
@@ -59,15 +60,16 @@ class TypeChecker:
             Type[AaaTreeNode],
             Callable[[AaaTreeNode, TypeStack], TypeStack],
         ] = {
-            IntegerLiteral: self._check_integer_literal,
-            StringLiteral: self.check_string_literal,
             BooleanLiteral: self._check_boolean_literal,
-            Operator: self._check_operator,
-            Loop: self._check_loop,
-            Identifier: self._check_identifier,
             Branch: self._check_branch,
-            FunctionBody: self._check_function_body,
             Function: self._check_function,
+            FunctionBody: self._check_function_body,
+            Identifier: self._check_identifier,
+            IntegerLiteral: self._check_integer_literal,
+            Loop: self._check_loop,
+            Operator: self._check_operator,
+            StringLiteral: self.check_string_literal,
+            TypeLiteral: self._check_type_literal,
         }
 
     def check(self) -> None:
@@ -230,6 +232,17 @@ class TypeChecker:
             raise last_stack_type_error
 
         return stack
+
+    def _check_type_literal(
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
+        assert isinstance(node, TypeLiteral)
+        type_literal = node.value
+
+        if type_literal in {int, str, bool}:
+            return type_stack + [type_literal]
+
+        raise NotImplementedError
 
     def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Branch)

@@ -6,6 +6,7 @@ from parser.tokenizer.models import Token
 from typing import Dict, List, Optional, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
+from lang.typing.signatures import IDENTIFIER_TO_TYPE, StackItem
 
 FunctionBodyItem = Union[
     "Branch",
@@ -15,6 +16,7 @@ FunctionBodyItem = Union[
     "IntegerLiteral",
     "StringLiteral",
     "Identifier",
+    "TypeLiteral",
 ]
 
 
@@ -70,6 +72,21 @@ class BooleanLiteral(AaaTreeNode):
         assert tree.token_type == NonTerminal.BOOLEAN
         value = tree.value(tokens, code) == "true"
         return BooleanLiteral(
+            value=value, token_count=tree.token_count, token_offset=tree.token_offset
+        )
+
+
+@dataclass(kw_only=True)
+class TypeLiteral(AaaTreeNode):
+    value: Type[StackItem]
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "TypeLiteral":
+        assert tree.token_type == NonTerminal.TYPE_LITERAL
+        type_literal = tree.value(tokens, code)
+
+        value = IDENTIFIER_TO_TYPE[type_literal]
+        return TypeLiteral(
             value=value, token_count=tree.token_count, token_offset=tree.token_offset
         )
 
@@ -158,10 +175,11 @@ class FunctionBody(AaaTreeNode):
         aaa_tree_nodes: Dict[Optional[IntEnum], Type[FunctionBodyItem]] = {
             NonTerminal.BOOLEAN: BooleanLiteral,
             NonTerminal.BRANCH: Branch,
-            Terminal.IDENTIFIER: Identifier,
-            Terminal.INTEGER: IntegerLiteral,
             NonTerminal.LOOP: Loop,
             NonTerminal.OPERATOR: Operator,
+            NonTerminal.TYPE_LITERAL: TypeLiteral,
+            Terminal.IDENTIFIER: Identifier,
+            Terminal.INTEGER: IntegerLiteral,
             Terminal.STRING: StringLiteral,
         }
 
