@@ -4,7 +4,6 @@
 - better tests for exact error messages
 
 ### Containers
-- Add `vec[TYPE]` and `map[TYPE, TYPE]` to grammar
 - Inside function body:
     - `int` should push `0`
     - `bool` should push `false`

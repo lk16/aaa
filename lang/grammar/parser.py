@@ -56,6 +56,7 @@ class Terminal(IntEnum):
     INTEGER = next(next_offset)
     LESS_EQUALS = next(next_offset)
     LESS_THAN = next(next_offset)
+    MAP = next(next_offset)
     MINUS = next(next_offset)
     NOP = next(next_offset)
     NOT = next(next_offset)
@@ -75,22 +76,25 @@ class Terminal(IntEnum):
     SUBSTR = next(next_offset)
     SWAP = next(next_offset)
     TRUE = next(next_offset)
+    TYPE_PARAMS_END = next(next_offset)
+    TYPE_PARAMS_START = next(next_offset)
+    VEC = next(next_offset)
     WHILE = next(next_offset)
     WHITESPACE = next(next_offset)
 
 
 TERMINAL_RULES: List[TokenDescriptor] = [
+    Regex(Terminal.ARGS, "args(?=\\s|$)"),
+    Regex(Terminal.AS, "as(?=\\s|$)"),
     Regex(Terminal.BEGIN, "begin(?=\\s|$)"),
     Regex(Terminal.ELSE, "else(?=\\s|$)"),
     Regex(Terminal.END, "end(?=\\s|$)"),
     Regex(Terminal.FN, "fn(?=\\s|$)"),
-    Regex(Terminal.IF, "if(?=\\s|$)"),
-    Regex(Terminal.WHILE, "while(?=\\s|$)"),
-    Regex(Terminal.ARGS, "args(?=\\s|$)"),
-    Regex(Terminal.AS, "as(?=\\s|$)"),
-    Regex(Terminal.RETURN, "return(?=\\s|$)"),
     Regex(Terminal.FROM, "from(?=\\s|$)"),
+    Regex(Terminal.IF, "if(?=\\s|$)"),
     Regex(Terminal.IMPORT, "import(?=\\s|$)"),
+    Regex(Terminal.RETURN, "return(?=\\s|$)"),
+    Regex(Terminal.WHILE, "while(?=\\s|$)"),
     Regex(Terminal.AND, "and(?=\\s|$)"),
     Regex(Terminal.ASSERT, "assert(?=\\s|$)"),
     Literal(Terminal.ASTERISK, "*"),
@@ -117,16 +121,20 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.STRLEN, "strlen(?=\\s|$)"),
     Regex(Terminal.SUBSTR, "substr(?=\\s|$)"),
     Regex(Terminal.SWAP, "swap(?=\\s|$)"),
-    Regex(Terminal.TRUE, "true(?=\\s|$)"),
     Regex(Terminal.FALSE, "false(?=\\s|$)"),
-    Regex(Terminal.INT, "int(?=\\s|$)"),
-    Regex(Terminal.STR, "str(?=\\s|$)"),
+    Regex(Terminal.TRUE, "true(?=\\s|$)"),
     Regex(Terminal.BOOL, "bool(?=\\s|$)"),
+    Regex(Terminal.INT, "int(?=\\s|$)"),
+    Regex(Terminal.MAP, "map(?=\\s|$)"),
+    Regex(Terminal.STR, "str(?=\\s|$)"),
+    Regex(Terminal.VEC, "vec(?=\\s|$)"),
+    Literal(Terminal.TYPE_PARAMS_START, "["),
+    Literal(Terminal.TYPE_PARAMS_END, "]"),
     Regex(Terminal.IDENTIFIER, "[a-z_]+"),
     Regex(Terminal.INTEGER, "[0-9]+"),
     Regex(Terminal.STRING, '"([^\\\\]|\\\\("|n|\\\\))*?"'),
-    Regex(Terminal.WHITESPACE, "([ \n]|$)+"),
     Regex(Terminal.COMMENT, "//[^\n]*"),
+    Regex(Terminal.WHITESPACE, "([ \n]|$)+"),
     Regex(Terminal.SHEBANG, "#![^\n]*"),
 ]
 
@@ -144,6 +152,7 @@ class NonTerminal(IntEnum):
     IMPORT_STATEMENT = next(next_offset)
     LITERAL = next(next_offset)
     LOOP = next(next_offset)
+    MAP_TYPE_LITERAL = next(next_offset)
     OPERATOR = next(next_offset)
     RETURN_TYPE = next(next_offset)
     RETURN_TYPES = next(next_offset)
@@ -151,6 +160,7 @@ class NonTerminal(IntEnum):
     TYPED_ARGUMENT = next(next_offset)
     TYPE_LITERAL = next(next_offset)
     TYPE_PLACEHOLDER = next(next_offset)
+    VEC_TYPE_LITERAL = next(next_offset)
 
 
 NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
@@ -250,6 +260,14 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         NonTerminalExpression(NonTerminal.FUNCTION_BODY),
         TerminalExpression(Terminal.END),
     ),
+    NonTerminal.MAP_TYPE_LITERAL: ConcatenationExpression(
+        TerminalExpression(Terminal.MAP),
+        TerminalExpression(Terminal.TYPE_PARAMS_START),
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        TerminalExpression(Terminal.COMMA),
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        TerminalExpression(Terminal.TYPE_PARAMS_END),
+    ),
     NonTerminal.OPERATOR: ConjunctionExpression(
         TerminalExpression(Terminal.AND),
         TerminalExpression(Terminal.ASSERT),
@@ -307,12 +325,20 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         ),
     ),
     NonTerminal.TYPE_LITERAL: ConjunctionExpression(
-        TerminalExpression(Terminal.INT),
-        TerminalExpression(Terminal.STR),
         TerminalExpression(Terminal.BOOL),
+        TerminalExpression(Terminal.INT),
+        NonTerminalExpression(NonTerminal.MAP_TYPE_LITERAL),
+        TerminalExpression(Terminal.STR),
+        NonTerminalExpression(NonTerminal.VEC_TYPE_LITERAL),
     ),
     NonTerminal.TYPE_PLACEHOLDER: ConcatenationExpression(
         TerminalExpression(Terminal.ASTERISK), TerminalExpression(Terminal.IDENTIFIER)
+    ),
+    NonTerminal.VEC_TYPE_LITERAL: ConcatenationExpression(
+        TerminalExpression(Terminal.VEC),
+        TerminalExpression(Terminal.TYPE_PARAMS_START),
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        TerminalExpression(Terminal.TYPE_PARAMS_END),
     ),
 }
 

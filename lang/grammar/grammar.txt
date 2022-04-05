@@ -10,17 +10,17 @@
 
 // --- control flow keyword tokens ---
 
+@ token ARGS   = regex("args(?=\\s|$)")   .
+@ token AS     = regex("as(?=\\s|$)")     .
 @ token BEGIN  = regex("begin(?=\\s|$)")  .
 @ token ELSE   = regex("else(?=\\s|$)")   .
 @ token END    = regex("end(?=\\s|$)")    .
 @ token FN     = regex("fn(?=\\s|$)")     .
-@ token IF     = regex("if(?=\\s|$)")     .
-@ token WHILE  = regex("while(?=\\s|$)")  .
-@ token ARGS   = regex("args(?=\\s|$)")   .
-@ token AS     = regex("as(?=\\s|$)")     .
-@ token RETURN = regex("return(?=\\s|$)") .
 @ token FROM   = regex("from(?=\\s|$)")   .
+@ token IF     = regex("if(?=\\s|$)")     .
 @ token IMPORT = regex("import(?=\\s|$)") .
+@ token RETURN = regex("return(?=\\s|$)") .
+@ token WHILE  = regex("while(?=\\s|$)")  .
 
 // --- operator tokens ---
 
@@ -53,14 +53,21 @@
 
 // --- literal tokens ---
 
-@ token TRUE       = regex("true(?=\\s|$)")  .
 @ token FALSE      = regex("false(?=\\s|$)") .
+@ token TRUE       = regex("true(?=\\s|$)")  .
 
 // --- builtin types ---
 
-@ token INT  =  regex("int(?=\\s|$)")  .
-@ token STR  =  regex("str(?=\\s|$)")  .
-@ token BOOL =  regex("bool(?=\\s|$)") .
+@ token BOOL = regex("bool(?=\\s|$)") .
+@ token INT  = regex("int(?=\\s|$)")  .
+@ token MAP  = regex("map(?=\\s|$)")  .
+@ token STR  = regex("str(?=\\s|$)")  .
+@ token VEC  = regex("vec(?=\\s|$)")  .
+
+// --- type param blocks ---
+
+@ token TYPE_PARAMS_START = "[" .
+@ token TYPE_PARAMS_END   = "]" .
 
 // --- more generic literal tokens ---
 
@@ -70,8 +77,8 @@
 
 // --- pruned tokens ---
 
-@ token @ prune WHITESPACE = regex("([ \n]|$)+") .
 @ token @ prune COMMENT    = regex("//[^\n]*")   .
+@ token @ prune WHITESPACE = regex("([ \n]|$)+") .
 @ token @ prune SHEBANG    = regex("#![^\n]*")   .
 
 // ---
@@ -86,7 +93,17 @@ IMPORT_ITEM = IDENTIFIER (AS IDENTIFIER)? .
 
 FUNCTION_DEFINITION = FN IDENTIFIER (ARGS ARGUMENT_LIST)? (RETURN RETURN_TYPES)? BEGIN FUNCTION_BODY END .
 
-TYPE_LITERAL = INT | STR | BOOL .
+TYPE_LITERAL = (
+      BOOL
+    | INT
+    | MAP_TYPE_LITERAL
+    | STR
+    | VEC_TYPE_LITERAL
+) .
+
+MAP_TYPE_LITERAL = MAP TYPE_PARAMS_START TYPE_LITERAL COMMA TYPE_LITERAL TYPE_PARAMS_END .
+
+VEC_TYPE_LITERAL = VEC TYPE_PARAMS_START TYPE_LITERAL TYPE_PARAMS_END .
 
 @ prune
 TYPE_PLACEHOLDER = ASTERISK IDENTIFIER .
