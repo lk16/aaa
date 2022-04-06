@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto
-from typing import Any, Final, List, Optional
+from typing import Any, Final, List, Optional, Union
 
 
 class RootType(IntEnum):
     BOOL = auto()
     INT = auto()
-    STR = auto()
-    VEC = auto()
-    MAP = auto()
+    STRING = auto()
+    VECTOR = auto()
+    MAPPING = auto()
 
 
 class VariableType:
@@ -18,10 +18,13 @@ class VariableType:
         self.root_type: Final[RootType] = root_type
         self.type_params: Final[List[RootType]] = type_params or []
 
+    def __repr__(self) -> str:
+        raise NotImplementedError
+
 
 Bool: Final[VariableType] = VariableType(RootType.BOOL)
 Int: Final[VariableType] = VariableType(RootType.INT)
-Str: Final[VariableType] = VariableType(RootType.STR)
+Str: Final[VariableType] = VariableType(RootType.STRING)
 
 
 TypeStack = List[VariableType]
@@ -49,17 +52,17 @@ class Variable:
         elif root_type == RootType.INT:
             assert type(self.value) == int
 
-        elif root_type == RootType.STR:
+        elif root_type == RootType.STRING:
             assert type(self.value) == str
 
-        elif root_type == RootType.VEC:
+        elif root_type == RootType.VECTOR:
             assert type(self.value) == list
             assert len(type_params) == 1
             for item in self.value:
                 assert item.type == type_params[0]
                 item.check()
 
-        elif root_type == RootType.MAP:
+        elif root_type == RootType.MAPPING:
             assert type(self.value) == dict
             assert len(type_params) == 2
             for key, value in self.value.items():
@@ -71,6 +74,9 @@ class Variable:
         else:  # pragma: nocover
             assert False
 
+    def has_root_type(self, root_type: RootType) -> bool:
+        return self.type.root_type == root_type
+
     def __repr__(self) -> str:
         return repr(self.value)
 
@@ -78,6 +84,9 @@ class Variable:
 @dataclass
 class PlaceholderType:
     name: str
+
+
+SignatureItem = Union[VariableType | PlaceholderType]
 
 
 @dataclass

@@ -38,7 +38,7 @@ from lang.instructions.types import (
     SubString,
     Swap,
 )
-from lang.runtime.debug import format_stack_item, format_str
+from lang.runtime.debug import format_str
 from lang.runtime.program import Program
 from lang.typing.types import StackItem
 
@@ -134,7 +134,7 @@ class Simulator:
         instruction = format_str(instruction, max_length=30)
         func_name = format_str(func_name, max_length=15)
 
-        stack_str = " ".join(format_stack_item(item) for item in self.stack)
+        stack_str = " ".join(repr(item) for item in self.stack)
         stack_str = format_str(stack_str, max_length=60)
 
         print(

@@ -31,16 +31,9 @@ from lang.typing.exceptions import (
     StackUnderflowError,
     UnknownFunction,
     UnknownPlaceholderType,
-    UnknownType,
 )
 from lang.typing.signatures import OPERATOR_SIGNATURES
-from lang.typing.types import (
-    IDENTIFIER_TO_TYPE,
-    PlaceholderType,
-    Signature,
-    SignatureItem,
-    TypeStack,
-)
+from lang.typing.types import PlaceholderType, Signature, SignatureItem, TypeStack
 
 
 class TypeChecker:
@@ -92,13 +85,8 @@ class TypeChecker:
         if type.startswith("*"):
             return PlaceholderType(placeholder_name)
 
-        try:
-            return IDENTIFIER_TO_TYPE[type]
-        except KeyError as e:
-            # TODO change grammar so we can point the error to token of type rather than name of the arg
-            raise UnknownType(
-                file=self.file, function=self.function, tokens=self.tokens, node=node
-            ) from e
+        # TODO figure this out, raise UnknownType when we can't find the type
+        raise NotImplementedError
 
     def _get_function_signature(self, function: Function) -> Signature:
         placeholder_args: Set[str] = {
@@ -141,7 +129,10 @@ class TypeChecker:
             if arg.name == name:
                 if arg.type.startswith("*"):
                     return PlaceholderType(arg.name)
-                return IDENTIFIER_TO_TYPE[arg.type]
+
+                # TODO, IDENTIFIER_TO_TYPE was here
+                raise NotImplementedError
+
         return None
 
     def _check(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:

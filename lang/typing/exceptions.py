@@ -1,11 +1,11 @@
 from parser.tokenizer.models import Token
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List, Sequence, Tuple
 
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.parse import AaaTreeNode, Function
 
-from lang.typing.types import Signature, TypeStack, format_signature_item
+from lang.typing.types import PlaceholderType, Signature, TypeStack, VariableType
 
 
 class TypeException(Exception):
@@ -47,10 +47,11 @@ class TypeException(Exception):
             + "^\n"
         )
 
-    def format_typestack(self, type_stack: TypeStack) -> str:  # pragma: nocover
-        return " ".join(
-            format_signature_item(type_stack_item) for type_stack_item in type_stack
-        )
+    # TODO rename this function
+    def format_typestack(
+        self, type_stack: Sequence[VariableType | PlaceholderType]
+    ) -> str:  # pragma: nocover
+        return " ".join(repr(type_stack_item) for type_stack_item in type_stack)
 
 
 class FunctionTypeError(TypeException):
@@ -60,7 +61,7 @@ class FunctionTypeError(TypeException):
         file: Path,
         tokens: List[Token],
         function: "Function",
-        expected_return_types: TypeStack,
+        expected_return_types: List[VariableType | PlaceholderType],
         computed_return_types: TypeStack,
     ) -> None:
         self.function = function

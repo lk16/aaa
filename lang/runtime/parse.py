@@ -6,7 +6,6 @@ from parser.tokenizer.models import Token
 from typing import Dict, List, Optional, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
-from lang.typing.types import IDENTIFIER_TO_TYPE, StackItem
 
 FunctionBodyItem = Union[
     "Branch",
