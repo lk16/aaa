@@ -33,9 +33,9 @@ from lang.typing.exceptions import (
     UnknownPlaceholderType,
     UnknownType,
 )
-from lang.typing.signatures import (
+from lang.typing.signatures import OPERATOR_SIGNATURES
+from lang.typing.types import (
     IDENTIFIER_TO_TYPE,
-    OPERATOR_SIGNATURES,
     PlaceholderType,
     Signature,
     SignatureItem,

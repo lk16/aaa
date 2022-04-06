@@ -40,7 +40,7 @@ from lang.instructions.types import (
 )
 from lang.runtime.debug import format_stack_item, format_str
 from lang.runtime.program import Program
-from lang.typing.signatures import StackItem
+from lang.typing.types import StackItem
 
 
 @dataclass
@@ -191,8 +191,8 @@ class Simulator:
 
     def instruction_plus(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Plus)
-        x: int | str = self.pop()
-        y: int | str = self.pop()
+        x: int | str = self.pop()  # type: ignore
+        y: int | str = self.pop()  # type: ignore
 
         self.push(y + x)  # type: ignore
         return self.get_instruction_pointer() + 1

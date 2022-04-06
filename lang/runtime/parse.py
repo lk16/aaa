@@ -6,7 +6,7 @@ from parser.tokenizer.models import Token
 from typing import Dict, List, Optional, Type, Union
 
 from lang.grammar.parser import NonTerminal, Terminal
-from lang.typing.signatures import IDENTIFIER_TO_TYPE, StackItem
+from lang.typing.types import IDENTIFIER_TO_TYPE, StackItem
 
 FunctionBodyItem = Union[
     "Branch",
@@ -78,16 +78,23 @@ class BooleanLiteral(AaaTreeNode):
 
 @dataclass(kw_only=True)
 class TypeLiteral(AaaTreeNode):
-    value: Type[StackItem]
+    type_name: str
+    type_parameters: List["TypeLiteral"]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "TypeLiteral":
         assert tree.token_type == NonTerminal.TYPE_LITERAL
-        type_literal = tree.value(tokens, code)
+        type_name = tree[0].value(tokens, code)
 
-        value = IDENTIFIER_TO_TYPE[type_literal]
+        # TODO type params are not implemented yet here
+        assert len(tree.children) == 1
+        type_parameters: List["TypeLiteral"] = []
+
         return TypeLiteral(
-            value=value, token_count=tree.token_count, token_offset=tree.token_offset
+            type_name=type_name,
+            type_parameters=type_parameters,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
         )
 
 

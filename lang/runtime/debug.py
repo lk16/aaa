@@ -1,9 +1,11 @@
 from typing import Optional
 
-from lang.typing.signatures import StackItem
+from lang.typing.types import StackItem
 
 
 def format_stack_item(item: StackItem) -> str:  # pragma: nocover
+    # TODO consider using __repr__() methods
+
     if isinstance(item, bool):
         if item:
             return "true"

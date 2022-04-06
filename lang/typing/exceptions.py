@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, List, Tuple
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.parse import AaaTreeNode, Function
 
-from lang.typing.signatures import PlaceholderType, Signature, TypeStack
+from lang.typing.types import Signature, TypeStack, format_signature_item
 
 
 class TypeException(Exception):
@@ -48,14 +48,9 @@ class TypeException(Exception):
         )
 
     def format_typestack(self, type_stack: TypeStack) -> str:  # pragma: nocover
-        formatted: List[str] = []
-        for item in type_stack:
-            if isinstance(item, PlaceholderType):
-                formatted.append(f"*{item.name}")
-            else:
-                formatted.append(item.__name__)
-
-        return " ".join(formatted)
+        return " ".join(
+            format_signature_item(type_stack_item) for type_stack_item in type_stack
+        )
 
 
 class FunctionTypeError(TypeException):
