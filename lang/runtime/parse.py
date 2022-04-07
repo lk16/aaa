@@ -201,58 +201,74 @@ class FunctionBody(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class ParsedTypePlaceholder(AaaTreeNode):
+    name: str
+
+    @classmethod
+    def from_tree(
+        cls, tree: Tree, tokens: List[Token], code: str
+    ) -> "ParsedTypePlaceholder":
+        assert tree.token_type == NonTerminal.TYPE_PLACEHOLDER
+
+        return ParsedTypePlaceholder(
+            name=tree[1].value(tokens, code),
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class Argument(AaaTreeNode):
     name: str
-    type: str
+    type: Union[TypeLiteral, ParsedTypePlaceholder]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Argument":
         assert tree.token_type == NonTerminal.ARGUMENT
 
+        type: Union[TypeLiteral, ParsedTypePlaceholder]
+
         if tree[0].token_type in [Terminal.IDENTIFIER, NonTerminal.TYPE_LITERAL]:
-            return Argument(
-                name=tree[0].value(tokens, code),
-                type=tree[2].value(tokens, code),
-                token_count=tree.token_count,
-                token_offset=tree.token_offset,
-            )
+            type = TypeLiteral.from_tree(tree[2], tokens, code)
 
         elif tree[0].token_type == Terminal.ASTERISK:
-            return Argument(
-                name=tree[1].value(tokens, code),
-                type="*" + tree[1].value(tokens, code),
-                token_count=tree.token_count,
-                token_offset=tree.token_offset,
-            )
+            type = ParsedTypePlaceholder.from_tree(tree[2], tokens, code)
 
         else:  # pragma: nocover
             assert False
 
+        return Argument(
+            name=tree[0].value(tokens, code),
+            type=type,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
 
 @dataclass(kw_only=True)
 class ReturnType(AaaTreeNode):
-    type: str
+    type: Union[TypeLiteral, ParsedTypePlaceholder]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ReturnType":
         assert tree.token_type == NonTerminal.RETURN_TYPE
 
+        type: Union[TypeLiteral, ParsedTypePlaceholder]
+
         if tree[0].token_type in [Terminal.IDENTIFIER, NonTerminal.TYPE_LITERAL]:
-            return ReturnType(
-                type=tree[0].value(tokens, code),
-                token_count=tree.token_count,
-                token_offset=tree.token_offset,
-            )
+            type = TypeLiteral.from_tree(tree[2], tokens, code)
 
         elif tree[0].token_type == Terminal.ASTERISK:
-            return ReturnType(
-                type="*" + tree[1].value(tokens, code),
-                token_count=tree.token_count,
-                token_offset=tree.token_offset,
-            )
+            type = ParsedTypePlaceholder.from_tree(tree[2], tokens, code)
 
         else:  # pragma: nocover
             assert False
+
+        return ReturnType(
+            type=type,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
 
 
 @dataclass(kw_only=True)

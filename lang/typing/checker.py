@@ -13,6 +13,7 @@ from lang.runtime.parse import (
     IntegerLiteral,
     Loop,
     Operator,
+    ParsedTypePlaceholder,
     StringLiteral,
     TypeLiteral,
 )
@@ -33,7 +34,17 @@ from lang.typing.exceptions import (
     UnknownPlaceholderType,
 )
 from lang.typing.signatures import OPERATOR_SIGNATURES
-from lang.typing.types import PlaceholderType, Signature, SignatureItem, TypeStack
+from lang.typing.types import (
+    Bool,
+    Int,
+    PlaceholderType,
+    RootType,
+    Signature,
+    SignatureItem,
+    Str,
+    TypeStack,
+    VariableType,
+)
 
 
 class TypeChecker:
@@ -78,27 +89,17 @@ class TypeChecker:
                 computed_return_types=computed_return_types,
             )
 
-    # TODO move this function to Program
-    def _string_to_signature_item(
-        self, placeholder_name: str, type: str, node: AaaTreeNode
-    ) -> SignatureItem:
-        if type.startswith("*"):
-            return PlaceholderType(placeholder_name)
-
-        # TODO figure this out, raise UnknownType when we can't find the type
-        raise NotImplementedError
-
     def _get_function_signature(self, function: Function) -> Signature:
-        placeholder_args: Set[str] = {
-            arg_type.type
-            for arg_type in function.arguments
-            if arg_type.type.startswith("*")
-        }
+        placeholder_args: Set[str] = set()
+
+        for argument in function.arguments:
+            if isinstance(argument.type, ParsedTypePlaceholder):
+                placeholder_args.add(argument.type.name)
 
         for return_type in function.return_types:
             if (
-                return_type.type.startswith("*")
-                and return_type.type not in placeholder_args
+                isinstance(return_type.type, ParsedTypePlaceholder)
+                and return_type.type.name not in placeholder_args
             ):
                 raise UnknownPlaceholderType(
                     file=self.file,
@@ -108,30 +109,33 @@ class TypeChecker:
                 )
 
         arg_types: List[SignatureItem] = []
-        for arg_type in function.arguments:
-            sig_item = self._string_to_signature_item(
-                arg_type.name, arg_type.type, arg_type
-            )
-            arg_types.append(sig_item)
-
         return_types: List[SignatureItem] = []
+
+        for argument in function.arguments:
+            if isinstance(argument.type, PlaceholderType):
+                arg_types.append(argument.type)
+            elif isinstance(argument.type, TypeLiteral):
+                arg_types.append(VariableType.from_type_literal(argument.type))
+            else:  # pragma: nocover
+                assert False
+
         for return_type in function.return_types:
-            placeholder_name = return_type.type[1:]
-            sig_item = self._string_to_signature_item(
-                placeholder_name, return_type.type, return_type
-            )
-            return_types.append(sig_item)
+            if isinstance(return_type.type, PlaceholderType):
+                return_types.append(return_type.type)
+            elif isinstance(return_type.type, TypeLiteral):
+                return_types.append(VariableType.from_type_literal(return_type.type))
+            else:  # pragma: nocover
+                assert False
 
         return Signature(arg_types, return_types)
 
     def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
-        for arg in self.function.arguments:
-            if arg.name == name:
-                if arg.type.startswith("*"):
-                    return PlaceholderType(arg.name)
-
-                # TODO, IDENTIFIER_TO_TYPE was here
-                raise NotImplementedError
+        for argument in self.function.arguments:
+            if argument.name == name:
+                if isinstance(argument, PlaceholderType):
+                    return argument
+                elif isinstance(argument, TypeLiteral):
+                    return VariableType.from_type_literal(argument)
 
         return None
 
@@ -162,7 +166,7 @@ class TypeChecker:
         for signature_arg_type, type_stack_arg in zip(
             signature.arg_types, type_stack_args, strict=True
         ):
-            if isinstance(signature_arg_type, PlaceholderType):
+            if isinstance(signature_arg_type, ParsedTypePlaceholder):
                 placeholder_types[signature_arg_type.name] = type_stack_arg
             elif signature_arg_type != type_stack_arg:
                 raise StackTypesError(
@@ -188,19 +192,19 @@ class TypeChecker:
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, IntegerLiteral)
-        return type_stack + [int]
+        return type_stack + [Int]
 
     def check_string_literal(
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, StringLiteral)
-        return type_stack + [str]
+        return type_stack + [Str]
 
     def _check_boolean_literal(
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, BooleanLiteral)
-        return type_stack + [bool]
+        return type_stack + [Bool]
 
     def _check_operator(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Operator)
@@ -228,24 +232,29 @@ class TypeChecker:
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, TypeLiteral)
-        type_literal = node.value
 
-        if type_literal in {int, str, bool}:
-            return type_stack + [type_literal]
+        # TODO we need to convert TypeLiteral into a VariableType instance
+        if node.type_name == "int":
+            return type_stack + [Int]
+        if node.type_name == "str":
+            return type_stack + [Str]
+        if node.type_name == "bool":
+            return type_stack + [Bool]
 
         raise NotImplementedError
 
     def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Branch)
+
+        # TODO move condition check to new function and call also from _check_loop
         # Condition should push exactly one boolean and nothing else.
         condition_stack = self._check(node.condition, copy(type_stack))
 
-        if not all(
-            [
-                len(condition_stack) == len(type_stack) + 1,
-                condition_stack[:-1] == type_stack,
-                condition_stack[-1] == bool,
-            ]
+        if not (
+            len(condition_stack) == len(type_stack) + 1
+            and condition_stack[:-1] == type_stack
+            and isinstance(condition_stack[-1], VariableType)
+            and condition_stack[-1].root_type == RootType.BOOL
         ):
             raise ConditionTypeError(
                 file=self.file,
@@ -282,12 +291,11 @@ class TypeChecker:
         # Condition should push exactly one boolean and nothing else.
         condition_stack = self._check(node.condition, copy(type_stack))
 
-        if not all(
-            [
-                len(condition_stack) == len(type_stack) + 1,
-                condition_stack[:-1] == type_stack,
-                condition_stack[-1] == bool,
-            ]
+        if not (
+            len(condition_stack) == len(type_stack) + 1
+            and condition_stack[:-1] == type_stack
+            and isinstance(condition_stack[-1], VariableType)
+            and condition_stack[-1].root_type == RootType.BOOL
         ):
             raise ConditionTypeError(
                 file=self.file,

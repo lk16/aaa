@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import Any, Final, List, Optional, Union
 
+from lang.runtime.parse import TypeLiteral
+
 
 class RootType(IntEnum):
     BOOL = auto()
-    INT = auto()
+    INTEGER = auto()
     STRING = auto()
     VECTOR = auto()
     MAPPING = auto()
@@ -18,16 +20,17 @@ class VariableType:
         self.root_type: Final[RootType] = root_type
         self.type_params: Final[List[RootType]] = type_params or []
 
+    @classmethod
+    def from_type_literal(cls, type_literal: TypeLiteral) -> "VariableType":
+        raise NotImplementedError
+
     def __repr__(self) -> str:
         raise NotImplementedError
 
 
 Bool: Final[VariableType] = VariableType(RootType.BOOL)
-Int: Final[VariableType] = VariableType(RootType.INT)
+Int: Final[VariableType] = VariableType(RootType.INTEGER)
 Str: Final[VariableType] = VariableType(RootType.STRING)
-
-
-TypeStack = List[VariableType]
 
 
 class Variable:
@@ -49,7 +52,7 @@ class Variable:
         if root_type == RootType.BOOL:
             assert type(self.value) == bool
 
-        elif root_type == RootType.INT:
+        elif root_type == RootType.INTEGER:
             assert type(self.value) == int
 
         elif root_type == RootType.STRING:
@@ -74,22 +77,43 @@ class Variable:
         else:  # pragma: nocover
             assert False
 
+    def root_type(self) -> RootType:
+        return self.type.root_type
+
     def has_root_type(self, root_type: RootType) -> bool:
-        return self.type.root_type == root_type
+        return self.root_type() == root_type
 
     def __repr__(self) -> str:
         return repr(self.value)
 
+    def __str__(self) -> str:
+        return str(self.value)
 
+
+def int_var(value: int) -> Variable:
+    return Variable(RootType.INTEGER, value)
+
+
+def str_var(value: str) -> Variable:
+    return Variable(RootType.STRING, value)
+
+
+def bool_var(value: bool) -> Variable:
+    return Variable(RootType.BOOL, value)
+
+
+# TODO rename to TypePlaceholder
 @dataclass
 class PlaceholderType:
     name: str
 
 
-SignatureItem = Union[VariableType | PlaceholderType]
+SignatureItem = Union[VariableType, PlaceholderType]
+
+TypeStack = List[SignatureItem]
 
 
 @dataclass
 class Signature:
-    arg_types: List[VariableType | PlaceholderType]
-    return_types: List[VariableType | PlaceholderType]
+    arg_types: List[SignatureItem]
+    return_types: List[SignatureItem]

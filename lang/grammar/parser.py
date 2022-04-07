@@ -298,7 +298,6 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     ),
     NonTerminal.RETURN_TYPE: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
-        TerminalExpression(Terminal.IDENTIFIER),
         NonTerminalExpression(NonTerminal.TYPE_PLACEHOLDER),
     ),
     NonTerminal.RETURN_TYPES: ConcatenationExpression(
@@ -320,10 +319,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     NonTerminal.TYPED_ARGUMENT: ConcatenationExpression(
         TerminalExpression(Terminal.IDENTIFIER),
         TerminalExpression(Terminal.AS),
-        ConjunctionExpression(
-            TerminalExpression(Terminal.IDENTIFIER),
-            NonTerminalExpression(NonTerminal.TYPE_LITERAL),
-        ),
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
     ),
     NonTerminal.TYPE_LITERAL: ConjunctionExpression(
         TerminalExpression(Terminal.BOOL),
@@ -355,7 +351,6 @@ PRUNED_NON_TERMINALS: Set[IntEnum] = {
     NonTerminal.FUNCTION_BODY_ITEM,
     NonTerminal.LITERAL,
     NonTerminal.TYPED_ARGUMENT,
-    NonTerminal.TYPE_PLACEHOLDER,
 }
 
 

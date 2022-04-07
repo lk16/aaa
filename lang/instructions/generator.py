@@ -49,6 +49,7 @@ from lang.runtime.parse import (
     StringLiteral,
     TypeLiteral,
 )
+from lang.typing.types import RootType, VariableType
 
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.program import Program
@@ -205,15 +206,16 @@ class InstructionGenerator:
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, TypeLiteral)
-        type_literal = node.value
+        var_type = VariableType.from_type_literal(node)
+        root_type = var_type.root_type
 
-        if type_literal is int:
+        if root_type == RootType.INTEGER:
             return [IntPush(0)]
 
-        if type_literal is bool:
+        elif root_type == RootType.BOOL:
             return [BoolPush(False)]
 
-        if type_literal is str:
+        elif root_type == RootType.STRING:
             return [StringPush("")]
 
         raise NotImplementedError

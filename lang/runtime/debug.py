@@ -11,7 +11,7 @@ def format_stack_item(var: Variable) -> str:  # pragma: nocover
             return "true"
         return "false"
 
-    if var.has_root_type(RootType.INT):
+    if var.has_root_type(RootType.INTEGER):
         return str(var.value)
 
     if var.has_root_type(RootType.STRING):
