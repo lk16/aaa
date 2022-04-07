@@ -391,7 +391,7 @@ class Simulator:
     def instruction_jump_if_not(self, instruction: Instruction) -> int:
         assert isinstance(instruction, JumpIfNot)
 
-        x: bool = self.pop()  # type: ignore
+        x: bool = self.pop().value
         if x:
             return self.get_instruction_pointer() + 1
         else:
@@ -407,7 +407,7 @@ class Simulator:
 
     def instruction_assert(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Assert)
-        x: bool = self.pop()  # type: ignore
+        x: bool = self.pop().value
 
         if not x:
             print("Assertion failure, stacktrace:", file=sys.stderr)

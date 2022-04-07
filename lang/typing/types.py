@@ -12,6 +12,21 @@ class RootType(IntEnum):
     VECTOR = auto()
     MAPPING = auto()
 
+    @classmethod
+    def from_str(cls, name: str) -> "RootType":
+        if name == "int":
+            return RootType.INTEGER
+        elif name == "bool":
+            return RootType.BOOL
+        elif name == "str":
+            return RootType.STRING
+        elif name == "vec":
+            return RootType.VECTOR
+        elif name == "map":
+            return RootType.MAPPING
+        else:
+            raise NotImplementedError
+
 
 class VariableType:
     def __init__(
@@ -20,11 +35,38 @@ class VariableType:
         self.root_type: Final[RootType] = root_type
         self.type_params: Final[List[RootType]] = type_params or []
 
+        if root_type == RootType.VECTOR:
+            assert len(self.type_params) == 1
+        elif root_type == RootType.MAPPING:
+            assert len(self.type_params) == 2
+        else:
+            assert len(self.type_params) == 0
+
     @classmethod
     def from_type_literal(cls, type_literal: TypeLiteral) -> "VariableType":
-        raise NotImplementedError
+        root_type = RootType.from_str(type_literal.type_name)
+
+        type_params = [
+            RootType.from_str(param.type_name) for param in type_literal.type_parameters
+        ]
+
+        return VariableType(root_type, type_params)
 
     def __repr__(self) -> str:
+        if self.root_type == RootType.BOOL:
+            return "bool"
+        elif self.root_type == RootType.INTEGER:
+            return "int"
+        elif self.root_type == RootType.STRING:
+            return "str"
+        elif self.root_type == RootType.VECTOR:
+            item = repr(self.type_params[0])
+            return f"vec[{item}]"
+        elif self.root_type == RootType.MAPPING:
+            key = repr(self.type_params[0])
+            value = repr(self.type_params[1])
+            return f"map[{key}, {value}]"
+
         raise NotImplementedError
 
 
@@ -84,9 +126,21 @@ class Variable:
         return self.root_type() == root_type
 
     def __repr__(self) -> str:
+        if self.root_type() == RootType.BOOL:
+            if self.value:
+                return "true"
+            else:
+                return "false"
+
         return repr(self.value)
 
     def __str__(self) -> str:
+        if self.root_type() == RootType.BOOL:
+            if self.value:
+                return "true"
+            else:
+                return "false"
+
         return str(self.value)
 
 
