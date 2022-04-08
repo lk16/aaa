@@ -97,6 +97,7 @@ def test_program_run_ok(
 
     code = f"fn main begin {code}\nend"
     program = Program.without_file(code)
+    assert not program.file_load_errors
     Simulator(program).run()
 
     stdout, stderr = capfd.readouterr()
@@ -107,6 +108,7 @@ def test_program_run_ok(
 def test_program_run_assertion_failure() -> None:
     code = "fn main begin false assert end"
     program = Program.without_file(code)
+    assert not program.file_load_errors
     with pytest.raises(SystemExit):
         Simulator(program).run()
 
@@ -141,6 +143,7 @@ def test_prgram_full_source_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
     program = Program.without_file(code)
+    assert not program.file_load_errors
     Simulator(program).run()
 
     stdout, stderr = capfd.readouterr()
@@ -181,6 +184,7 @@ def test_program_multi_file(
         (tmp_path / filename).write_text(code)
 
     program = Program(tmp_path / "main.aaa")
+    assert not program.file_load_errors
 
     assert list(map(type, program.file_load_errors)) == expected_errors
 

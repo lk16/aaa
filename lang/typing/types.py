@@ -66,8 +66,14 @@ class VariableType:
             key = repr(self.type_params[0])
             value = repr(self.type_params[1])
             return f"map[{key}, {value}]"
+        else:
+            raise NotImplementedError
 
-        raise NotImplementedError
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, type(self)):
+            return False
+
+        return self.root_type == o.root_type and self.type_params == o.type_params
 
 
 Bool: Final[VariableType] = VariableType(RootType.BOOL)
