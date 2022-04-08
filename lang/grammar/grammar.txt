@@ -10,59 +10,59 @@
 
 // --- control flow keyword tokens ---
 
-@ token ARGS   = regex("args(?=\\s|$)")   .
-@ token AS     = regex("as(?=\\s|$)")     .
-@ token BEGIN  = regex("begin(?=\\s|$)")  .
-@ token ELSE   = regex("else(?=\\s|$)")   .
-@ token END    = regex("end(?=\\s|$)")    .
-@ token FN     = regex("fn(?=\\s|$)")     .
-@ token FROM   = regex("from(?=\\s|$)")   .
-@ token IF     = regex("if(?=\\s|$)")     .
-@ token IMPORT = regex("import(?=\\s|$)") .
-@ token RETURN = regex("return(?=\\s|$)") .
-@ token WHILE  = regex("while(?=\\s|$)")  .
+@ token ARGS   = regex("args(?=\\W|$)")   .
+@ token AS     = regex("as(?=\\W|$)")     .
+@ token BEGIN  = regex("begin(?=\\W|$)")  .
+@ token ELSE   = regex("else(?=\\W|$)")   .
+@ token END    = regex("end(?=\\W|$)")    .
+@ token FN     = regex("fn(?=\\W|$)")     .
+@ token FROM   = regex("from(?=\\W|$)")   .
+@ token IF     = regex("if(?=\\W|$)")     .
+@ token IMPORT = regex("import(?=\\W|$)") .
+@ token RETURN = regex("return(?=\\W|$)") .
+@ token WHILE  = regex("while(?=\\W|$)")  .
 
 // --- operator tokens ---
 
-@ token AND            = regex("and(?=\\s|$)")    .
-@ token ASSERT         = regex("assert(?=\\s|$)") .
+@ token AND            = regex("and(?=\\W|$)")    .
+@ token ASSERT         = regex("assert(?=\\W|$)") .
 @ token ASTERISK       = "*"                      .
-@ token BACKSLASH_N    = regex("\\\\n(?=\\s|$)")  .
-@ token COMMA          = regex(",(?=\\s|$)")      .
-@ token DROP           = regex("drop(?=\\s|$)")   .
-@ token DUP            = regex("dup(?=\\s|$)")    .
-@ token EQUALS         = regex("=(?=\\s|$)")      .
-@ token GREATER_EQUALS = regex(">=(?=\\s|$)")     .
-@ token GREATER_THAN   = regex(">(?=\\s|$)")      .
-@ token LESS_EQUALS    = regex("<=(?=\\s|$)")     .
-@ token LESS_THAN      = regex("<(?=\\s|$)")      .
-@ token MINUS          = regex("-(?=\\s|$)")      .
-@ token NOP            = regex("nop(?=\\s|$)")    .
-@ token NOT            = regex("not(?=\\s|$)")    .
-@ token NOT_EQUALS     = regex("!=(?=\\s|$)")     .
-@ token OR             = regex("or(?=\\s|$)")     .
-@ token OVER           = regex("over(?=\\s|$)")   .
-@ token PERCENT        = regex("%(?=\\s|$)")      .
-@ token PERIOD         = regex("\\.(?=\\s|$)")    .
-@ token PLUS           = regex("\\+(?=\\s|$)")    .
-@ token ROT            = regex("rot(?=\\s|$)")    .
-@ token SLASH          = regex("/(?=\\s|$)")      .
-@ token STRLEN         = regex("strlen(?=\\s|$)") .
-@ token SUBSTR         = regex("substr(?=\\s|$)") .
-@ token SWAP           = regex("swap(?=\\s|$)")   .
+@ token BACKSLASH_N    = regex("\\\\n(?=\\W|$)")  .
+@ token COMMA          = regex(",(?=\\W|$)")      .
+@ token DROP           = regex("drop(?=\\W|$)")   .
+@ token DUP            = regex("dup(?=\\W|$)")    .
+@ token EQUALS         = regex("=(?=\\W|$)")      .
+@ token GREATER_EQUALS = regex(">=(?=\\W|$)")     .
+@ token GREATER_THAN   = regex(">(?=\\W|$)")      .
+@ token LESS_EQUALS    = regex("<=(?=\\W|$)")     .
+@ token LESS_THAN      = regex("<(?=\\W|$)")      .
+@ token MINUS          = regex("-(?=\\W|$)")      .
+@ token NOP            = regex("nop(?=\\W|$)")    .
+@ token NOT            = regex("not(?=\\W|$)")    .
+@ token NOT_EQUALS     = regex("!=(?=\\W|$)")     .
+@ token OR             = regex("or(?=\\W|$)")     .
+@ token OVER           = regex("over(?=\\W|$)")   .
+@ token PERCENT        = regex("%(?=\\W|$)")      .
+@ token PERIOD         = regex("\\.(?=\\W|$)")    .
+@ token PLUS           = regex("\\+(?=\\W|$)")    .
+@ token ROT            = regex("rot(?=\\W|$)")    .
+@ token SLASH          = regex("/(?=\\W|$)")      .
+@ token STRLEN         = regex("strlen(?=\\W|$)") .
+@ token SUBSTR         = regex("substr(?=\\W|$)") .
+@ token SWAP           = regex("swap(?=\\W|$)")   .
 
 // --- literal tokens ---
 
-@ token FALSE      = regex("false(?=\\s|$)") .
-@ token TRUE       = regex("true(?=\\s|$)")  .
+@ token FALSE      = regex("false(?=\\W|$)") .
+@ token TRUE       = regex("true(?=\\W|$)")  .
 
 // --- builtin types ---
 
-@ token BOOL = regex("bool(?=\\s|$)") .
-@ token INT  = regex("int(?=\\s|$)")  .
-@ token MAP  = regex("map(?=\\s|$)")  .
-@ token STR  = regex("str(?=\\s|$)")  .
-@ token VEC  = regex("vec(?=\\s|$)")  .
+@ token BOOL = regex("bool(?=\\W|$)") .
+@ token INT  = regex("int(?=\\W|$)")  .
+@ token MAP  = regex("map(?=\\W|$)")  .
+@ token STR  = regex("str(?=\\W|$)")  .
+@ token VEC  = regex("vec(?=\\W|$)")  .
 
 // --- type param blocks ---
 
