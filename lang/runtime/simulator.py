@@ -259,11 +259,9 @@ class Simulator:
 
     def instruction_equals(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Equals)
-        x_var = self.pop()
-        x = x_var.value
+        x = self.pop().value
         y = self.pop().value
-        result = Variable(x_var.root_type(), x == y)
-        self.push(result)
+        self.push(bool_var(x == y))
         return self.get_instruction_pointer() + 1
 
     def instruction_int_less_than(self, instruction: Instruction) -> int:
@@ -296,11 +294,9 @@ class Simulator:
 
     def instruction_int_not_equal(self, instruction: Instruction) -> int:
         assert isinstance(instruction, IntNotEqual)
-        x_var = self.pop()
-        x = x_var.value
+        x = self.pop().value
         y = self.pop().value
-        result = Variable(x_var.root_type(), bool_var(y != x))
-        self.push(result)
+        self.push(bool_var(y != x))
         return self.get_instruction_pointer() + 1
 
     def instruction_drop(self, instruction: Instruction) -> int:
@@ -347,8 +343,8 @@ class Simulator:
 
     def instruction_print(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Print)
-        x = self.pop().value
-        print(x, end="")
+        x_var = self.pop()
+        print(x_var, end="")
         return self.get_instruction_pointer() + 1
 
     def instruction_string_push(self, instruction: Instruction) -> int:

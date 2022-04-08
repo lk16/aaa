@@ -55,7 +55,7 @@ OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
         Signature([Int], []),
         Signature([Str], []),
     ],
-    "subStr": [Signature([Str, Int, Int], [Str])],
-    "Strlen": [Signature([Str], [Int])],
+    "substr": [Signature([Str, Int, Int], [Str])],
+    "strlen": [Signature([Str], [Int])],
     "assert": [Signature([Bool], [])],
 }
