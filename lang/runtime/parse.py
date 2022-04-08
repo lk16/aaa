@@ -256,10 +256,10 @@ class ReturnType(AaaTreeNode):
         type: Union[TypeLiteral, ParsedTypePlaceholder]
 
         if tree[0].token_type in [Terminal.IDENTIFIER, NonTerminal.TYPE_LITERAL]:
-            type = TypeLiteral.from_tree(tree[2], tokens, code)
+            type = TypeLiteral.from_tree(tree[0], tokens, code)
 
         elif tree[0].token_type == Terminal.ASTERISK:
-            type = ParsedTypePlaceholder.from_tree(tree[2], tokens, code)
+            type = ParsedTypePlaceholder.from_tree(tree[0], tokens, code)
 
         else:  # pragma: nocover
             assert False
