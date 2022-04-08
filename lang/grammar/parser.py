@@ -97,7 +97,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.WHILE, "while(?=\\W|$)"),
     Regex(Terminal.AND, "and(?=\\W|$)"),
     Regex(Terminal.ASSERT, "assert(?=\\W|$)"),
-    Regex(Terminal.ASTERISK, "\\*(?=\\s|$)"),
+    Literal(Terminal.ASTERISK, "*"),
     Regex(Terminal.BACKSLASH_N, "\\\\n(?=\\W|$)"),
     Regex(Terminal.COMMA, ",(?=\\s|$)"),
     Regex(Terminal.DROP, "drop(?=\\W|$)"),

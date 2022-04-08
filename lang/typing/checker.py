@@ -112,18 +112,22 @@ class TypeChecker:
         return_types: List[SignatureItem] = []
 
         for argument in function.arguments:
-            if isinstance(argument.type, PlaceholderType):
-                arg_types.append(argument.type)
-            elif isinstance(argument.type, TypeLiteral):
-                arg_types.append(VariableType.from_type_literal(argument.type))
+            type = argument.type
+
+            if isinstance(type, ParsedTypePlaceholder):
+                arg_types.append(PlaceholderType(type.name))
+            elif isinstance(type, TypeLiteral):
+                arg_types.append(VariableType.from_type_literal(type))
             else:  # pragma: nocover
                 assert False
 
         for return_type in function.return_types:
-            if isinstance(return_type.type, PlaceholderType):
-                return_types.append(return_type.type)
-            elif isinstance(return_type.type, TypeLiteral):
-                return_types.append(VariableType.from_type_literal(return_type.type))
+            type = return_type.type
+
+            if isinstance(type, ParsedTypePlaceholder):
+                return_types.append(PlaceholderType(type.name))
+            elif isinstance(type, TypeLiteral):
+                return_types.append(VariableType.from_type_literal(type))
             else:  # pragma: nocover
                 assert False
 
@@ -131,11 +135,12 @@ class TypeChecker:
 
     def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
         for argument in self.function.arguments:
-            if argument.name == name:
-                if isinstance(argument.type, ParsedTypePlaceholder):
-                    return PlaceholderType(argument.type.name)
-                elif isinstance(argument.type, TypeLiteral):
-                    return VariableType.from_type_literal(argument.type)
+            type = argument.type
+            if isinstance(type, ParsedTypePlaceholder):
+                if type.name == name:
+                    return PlaceholderType(type.name)
+            elif isinstance(type, TypeLiteral):
+                return VariableType.from_type_literal(type)
 
         return None
 
@@ -326,6 +331,7 @@ class TypeChecker:
     def _check_identifier(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Identifier)
         # If it's a function argument, just push the type.
+
         arg_type = self._get_func_arg_type(node.name)
 
         if arg_type is not None:
