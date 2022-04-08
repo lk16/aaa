@@ -166,7 +166,7 @@ class TypeChecker:
         for signature_arg_type, type_stack_arg in zip(
             signature.arg_types, type_stack_args, strict=True
         ):
-            if isinstance(signature_arg_type, ParsedTypePlaceholder):
+            if isinstance(signature_arg_type, PlaceholderType):
                 placeholder_types[signature_arg_type.name] = type_stack_arg
             elif signature_arg_type != type_stack_arg:
                 raise StackTypesError(
