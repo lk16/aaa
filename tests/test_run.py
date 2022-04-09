@@ -192,8 +192,6 @@ def test_program_multi_file(
         (tmp_path / filename).write_text(code)
 
     program = Program(tmp_path / "main.aaa")
-    assert not program.file_load_errors
-
     assert list(map(type, program.file_load_errors)) == expected_errors
 
     if not expected_errors:
