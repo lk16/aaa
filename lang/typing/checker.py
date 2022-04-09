@@ -239,15 +239,8 @@ class TypeChecker:
     ) -> TypeStack:
         assert isinstance(node, TypeLiteral)
 
-        # TODO we need to convert TypeLiteral into a VariableType instance
-        if node.type_name == "int":
-            return type_stack + [Int]
-        if node.type_name == "str":
-            return type_stack + [Str]
-        if node.type_name == "bool":
-            return type_stack + [Bool]
-
-        raise NotImplementedError
+        type = VariableType.from_type_literal(node)
+        return type_stack + [type]
 
     def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Branch)
