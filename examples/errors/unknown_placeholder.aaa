@@ -5,3 +5,10 @@ return
 begin
     nop
 end
+
+
+fn
+    main
+begin
+    nop
+end

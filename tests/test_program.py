@@ -78,6 +78,7 @@ from lang.typing.exceptions import (
     ],
 )
 def test_type_checker(code: str, expected_exception: Optional[Type[Exception]]) -> None:
+    code = f"fn main begin nop end\n{code}"
     program = Program.without_file(code)
 
     if expected_exception:

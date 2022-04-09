@@ -19,6 +19,7 @@ from lang.typing.exceptions import (
     FileReadError,
     FunctionNameCollision,
     ImportedItemNotFound,
+    MainFunctionNotFound,
     TypeException,
 )
 
@@ -34,7 +35,12 @@ Identifiable = Function | ProgramImport
 
 # TODO clean this union up once we have better baseclasses for exceptions
 FileLoadException = (
-    TokenizerError | ParseError | TypeException | FileReadError | CyclicImportError
+    TokenizerError
+    | ParseError
+    | TypeException
+    | FileReadError
+    | CyclicImportError
+    | MainFunctionNotFound
 )
 
 
@@ -142,6 +148,17 @@ class Program:
         self, file: Path, parsed_file: ParsedFile, tokens: List[Token]
     ) -> List[FileLoadException]:
         type_exceptions: List[FileLoadException] = []
+
+        if file == self.entry_point_file:
+            main_found = False
+            for function in parsed_file.functions:
+                if function.name == "main":
+                    main_found = True
+                    break
+
+            if not main_found:
+                type_exceptions.append(MainFunctionNotFound(file))
+
         for function in parsed_file.functions:
             try:
                 TypeChecker(file, function, tokens, self).check()

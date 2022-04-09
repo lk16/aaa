@@ -6,3 +6,10 @@ args
 begin
     nop
 end
+
+
+fn
+    main
+begin
+    nop
+end

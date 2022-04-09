@@ -4,8 +4,16 @@ begin
     5
 end
 
+
 fn
     bar
 begin
     5
+end
+
+
+fn
+    main
+begin
+    nop
 end

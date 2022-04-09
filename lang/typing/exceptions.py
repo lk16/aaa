@@ -380,3 +380,12 @@ class CyclicImportError(Exception):
         msg += f"depends on {self.failed_import}\n"
 
         return msg
+
+
+# TODO needs better baseclass
+class MainFunctionNotFound(Exception):
+    def __inti__(self, file: Path) -> None:
+        self.file = file
+
+    def __str__(self) -> str:
+        return f"No main function found in {self.file}"

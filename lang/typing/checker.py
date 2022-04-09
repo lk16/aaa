@@ -140,7 +140,8 @@ class TypeChecker:
                 if type.name == name:
                     return PlaceholderType(type.name)
             elif isinstance(type, TypeLiteral):
-                return VariableType.from_type_literal(type)
+                if argument.name == name:
+                    return VariableType.from_type_literal(type)
 
         return None
 

@@ -39,6 +39,7 @@ from lang.instructions.types import (
     Swap,
 )
 from lang.runtime.debug import format_str
+from lang.runtime.parse import ParsedTypePlaceholder, TypeLiteral
 from lang.runtime.program import Program
 from lang.typing.types import Variable, bool_var, int_var, str_var
 
@@ -153,9 +154,15 @@ class Simulator:
 
         assert function  # If this assertion breaks, then Aaa's type checking is broken
 
-        argument_values: Dict[str, Variable] = {
-            arg.name: self.pop() for arg in reversed(function.arguments)
-        }
+        argument_values: Dict[str, Variable] = {}
+
+        for argument in reversed(function.arguments):
+            if isinstance(argument.type, TypeLiteral):
+                argument_values[argument.name] = self.pop()
+            elif isinstance(argument.type, ParsedTypePlaceholder):
+                argument_values[argument.type.name] = self.pop()
+            else:  # pragma: nocover
+                assert False
 
         self.call_stack.append(
             CallStackItem(

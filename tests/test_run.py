@@ -6,6 +6,7 @@ from pytest import CaptureFixture
 
 from lang.runtime.program import FileLoadException, Program
 from lang.runtime.simulator import Simulator
+from lang.typing.exceptions import MainFunctionNotFound
 
 
 @pytest.mark.parametrize(
@@ -170,6 +171,13 @@ def test_prgram_full_source_ok(
             },
             "5",
             [],
+        ),
+        (
+            {
+                "main.aaa": "fn foo begin nop end",
+            },
+            "",
+            [MainFunctionNotFound],
         ),
     ],
 )

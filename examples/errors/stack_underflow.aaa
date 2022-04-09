@@ -1,3 +1,5 @@
-fn foo begin
+fn
+    main
+begin
     drop
 end
