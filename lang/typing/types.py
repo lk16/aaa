@@ -24,8 +24,8 @@ class RootType(IntEnum):
             return RootType.VECTOR
         elif name == "map":
             return RootType.MAPPING
-        else:
-            raise NotImplementedError
+        else:  # pragma: nocover
+            assert False
 
 
 class VariableType:
@@ -66,8 +66,8 @@ class VariableType:
             key = repr(self.type_params[0])
             value = repr(self.type_params[1])
             return f"map[{key}, {value}]"
-        else:
-            raise NotImplementedError
+        else:  # pragma: nocover
+            assert False
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, type(self)):
