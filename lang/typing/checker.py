@@ -1,7 +1,7 @@
 from copy import copy
 from parser.tokenizer.models import Token
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Set, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 from lang.runtime.parse import (
     AaaTreeNode,
@@ -60,24 +60,8 @@ class TypeChecker:
         self.file = file
         self.tokens = tokens
 
-        self.type_check_funcs: Dict[
-            Type[AaaTreeNode],
-            Callable[[AaaTreeNode, TypeStack], TypeStack],
-        ] = {
-            BooleanLiteral: self._check_boolean_literal,
-            Branch: self._check_branch,
-            Function: self._check_function,
-            FunctionBody: self._check_function_body,
-            Identifier: self._check_identifier,
-            IntegerLiteral: self._check_integer_literal,
-            Loop: self._check_loop,
-            Operator: self._check_operator,
-            StringLiteral: self.check_string_literal,
-            TypeLiteral: self._check_type_literal,
-        }
-
     def check(self) -> None:
-        computed_return_types = self._check(self.function, [])
+        computed_return_types = self._check_function(self.function, [])
         expected_return_types = self._get_function_signature(self.function).return_types
 
         if computed_return_types != expected_return_types:
@@ -144,9 +128,6 @@ class TypeChecker:
                     return VariableType.from_type_literal(type)
 
         return None
-
-    def _check(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
-        return self.type_check_funcs[type(node)](node, type_stack)
 
     def _check_and_apply_signature(
         self, type_stack: TypeStack, signature: Signature, node: AaaTreeNode
@@ -247,7 +228,7 @@ class TypeChecker:
 
         # TODO move condition check to new function and call also from _check_loop
         # Condition should push exactly one boolean and nothing else.
-        condition_stack = self._check(node.condition, copy(type_stack))
+        condition_stack = self._check_function_body(node.condition, copy(type_stack))
 
         if not (
             len(condition_stack) == len(type_stack) + 1
@@ -266,8 +247,8 @@ class TypeChecker:
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
-        if_stack = self._check(node.if_body, copy(type_stack))
-        else_stack = self._check(node.else_body, copy(type_stack))
+        if_stack = self._check_function_body(node.if_body, copy(type_stack))
+        else_stack = self._check_function_body(node.else_body, copy(type_stack))
 
         # Regardless whether the if- or else- branch is taken,
         # afterwards the stack should be the same.
@@ -288,7 +269,7 @@ class TypeChecker:
     def _check_loop(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Loop)
         # Condition should push exactly one boolean and nothing else.
-        condition_stack = self._check(node.condition, copy(type_stack))
+        condition_stack = self._check_function_body(node.condition, copy(type_stack))
 
         if not (
             len(condition_stack) == len(type_stack) + 1
@@ -307,7 +288,7 @@ class TypeChecker:
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
-        loop_stack = self._check(node.body, copy(type_stack))
+        loop_stack = self._check_function_body(node.body, copy(type_stack))
 
         if loop_stack != type_stack:
             raise LoopTypeError(
@@ -348,8 +329,25 @@ class TypeChecker:
         assert isinstance(node, FunctionBody)
 
         stack = copy(type_stack)
-        for function_body_item in node.items:
-            stack = self._check(function_body_item, copy(stack))
+        for child_node in node.items:
+            if isinstance(child_node, BooleanLiteral):
+                stack = self._check_boolean_literal(child_node, copy(stack))
+            elif isinstance(child_node, Branch):
+                stack = self._check_branch(child_node, copy(stack))
+            elif isinstance(child_node, Identifier):
+                stack = self._check_identifier(child_node, copy(stack))
+            elif isinstance(child_node, IntegerLiteral):
+                stack = self._check_integer_literal(child_node, copy(stack))
+            elif isinstance(child_node, Loop):
+                stack = self._check_loop(child_node, copy(stack))
+            elif isinstance(child_node, Operator):
+                stack = self._check_operator(child_node, copy(stack))
+            elif isinstance(child_node, StringLiteral):
+                stack = self.check_string_literal(child_node, copy(stack))
+            elif isinstance(child_node, TypeLiteral):
+                stack = self._check_type_literal(child_node, copy(stack))
+            else:  # pragma nocover
+                assert False
 
         return stack
 
@@ -379,4 +377,4 @@ class TypeChecker:
                 )
             argument_and_names.add(arg.name)
 
-        return self._check(node.body, type_stack)
+        return self._check_function_body(node.body, type_stack)
