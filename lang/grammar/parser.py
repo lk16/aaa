@@ -34,6 +34,7 @@ class Terminal(IntEnum):
     AS = next(next_offset)
     ASSERT = next(next_offset)
     ASTERISK = next(next_offset)
+    BACKSLASH_N = next(next_offset)
     BEGIN = next(next_offset)
     BOOL = next(next_offset)
     BUILTIN_FN = next(next_offset)
@@ -100,6 +101,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.AND, "and(?=\\W|$)"),
     Regex(Terminal.ASSERT, "assert(?=\\W|$)"),
     Literal(Terminal.ASTERISK, "*"),
+    Regex(Terminal.BACKSLASH_N, "\\\\n(?=\\W|$)"),
     Literal(Terminal.COMMA, ","),
     Literal(Terminal.COLON, ":"),
     Regex(Terminal.DROP, "drop(?=\\W|$)"),

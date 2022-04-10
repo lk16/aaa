@@ -228,10 +228,15 @@ class InstructionGenerator:
             return [StringPush("")]
 
         elif root_type == RootType.VECTOR:
-            return [VecPush(var_type.type_params[0])]
+            return [VecPush(var_type.get_variable_type_param(0))]
 
         elif root_type == RootType.MAPPING:
-            return [MapPush(var_type.type_params[0], var_type.type_params[1])]
+            return [
+                MapPush(
+                    var_type.get_variable_type_param(0),
+                    var_type.get_variable_type_param(1),
+                )
+            ]
 
         else:  # pragma: nocover
             assert False

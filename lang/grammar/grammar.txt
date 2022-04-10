@@ -28,6 +28,7 @@
 @ token AND            = regex("and(?=\\W|$)")    .
 @ token ASSERT         = regex("assert(?=\\W|$)") .
 @ token ASTERISK       = "*"                      .
+@ token BACKSLASH_N    = regex("\\\\n(?=\\W|$)")  .
 @ token COMMA          = ","                      .
 @ token COLON          = ":"                      .
 @ token DROP           = regex("drop(?=\\W|$)")   .
