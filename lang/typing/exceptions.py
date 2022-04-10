@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, List, Sequence, Tuple
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.parse import AaaTreeNode, Function
 
-from lang.typing.types import PlaceholderType, Signature, TypeStack, VariableType
+from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 
 class TypeException(Exception):
@@ -49,7 +49,7 @@ class TypeException(Exception):
 
     # TODO rename this function
     def format_typestack(
-        self, type_stack: Sequence[VariableType | PlaceholderType]
+        self, type_stack: Sequence[VariableType | TypePlaceholder]
     ) -> str:  # pragma: nocover
         return " ".join(repr(type_stack_item) for type_stack_item in type_stack)
 
@@ -61,7 +61,7 @@ class FunctionTypeError(TypeException):
         file: Path,
         tokens: List[Token],
         function: "Function",
-        expected_return_types: List[VariableType | PlaceholderType],
+        expected_return_types: List[VariableType | TypePlaceholder],
         computed_return_types: TypeStack,
     ) -> None:
         self.function = function

@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from lang.typing.types import Bool, Int, PlaceholderType, Signature, Str
+from lang.typing.types import Bool, Int, Signature, Str, TypePlaceholder
 
 OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
     "+": [
@@ -27,26 +27,26 @@ OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
         Signature([Int, Int], [Bool]),
         Signature([Str, Str], [Bool]),
     ],
-    "drop": [Signature([PlaceholderType("a")], [])],
+    "drop": [Signature([TypePlaceholder("a")], [])],
     "dup": [
-        Signature([PlaceholderType("a")], [PlaceholderType("a"), PlaceholderType("a")])
+        Signature([TypePlaceholder("a")], [TypePlaceholder("a"), TypePlaceholder("a")])
     ],
     "swap": [
         Signature(
-            [PlaceholderType("a"), PlaceholderType("b")],
-            [PlaceholderType("b"), PlaceholderType("a")],
+            [TypePlaceholder("a"), TypePlaceholder("b")],
+            [TypePlaceholder("b"), TypePlaceholder("a")],
         )
     ],
     "over": [
         Signature(
-            [PlaceholderType("a"), PlaceholderType("b")],
-            [PlaceholderType("a"), PlaceholderType("b"), PlaceholderType("a")],
+            [TypePlaceholder("a"), TypePlaceholder("b")],
+            [TypePlaceholder("a"), TypePlaceholder("b"), TypePlaceholder("a")],
         )
     ],
     "rot": [
         Signature(
-            [PlaceholderType("a"), PlaceholderType("b"), PlaceholderType("c")],
-            [PlaceholderType("b"), PlaceholderType("c"), PlaceholderType("a")],
+            [TypePlaceholder("a"), TypePlaceholder("b"), TypePlaceholder("c")],
+            [TypePlaceholder("b"), TypePlaceholder("c"), TypePlaceholder("a")],
         )
     ],
     "\\n": [Signature([], [])],

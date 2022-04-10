@@ -162,13 +162,12 @@ def bool_var(value: bool) -> Variable:
     return Variable(RootType.BOOL, value)
 
 
-# TODO rename to TypePlaceholder
 @dataclass
-class PlaceholderType:
+class TypePlaceholder:
     name: str
 
 
-SignatureItem = Union[VariableType, PlaceholderType]
+SignatureItem = Union[VariableType, TypePlaceholder]
 
 TypeStack = List[SignatureItem]
 

@@ -37,11 +37,11 @@ from lang.typing.signatures import OPERATOR_SIGNATURES
 from lang.typing.types import (
     Bool,
     Int,
-    PlaceholderType,
     RootType,
     Signature,
     SignatureItem,
     Str,
+    TypePlaceholder,
     TypeStack,
     VariableType,
 )
@@ -115,7 +115,7 @@ class TypeChecker:
             type = argument.type
 
             if isinstance(type, ParsedTypePlaceholder):
-                arg_types.append(PlaceholderType(type.name))
+                arg_types.append(TypePlaceholder(type.name))
             elif isinstance(type, TypeLiteral):
                 arg_types.append(VariableType.from_type_literal(type))
             else:  # pragma: nocover
@@ -125,7 +125,7 @@ class TypeChecker:
             type = return_type.type
 
             if isinstance(type, ParsedTypePlaceholder):
-                return_types.append(PlaceholderType(type.name))
+                return_types.append(TypePlaceholder(type.name))
             elif isinstance(type, TypeLiteral):
                 return_types.append(VariableType.from_type_literal(type))
             else:  # pragma: nocover
@@ -138,7 +138,7 @@ class TypeChecker:
             type = argument.type
             if isinstance(type, ParsedTypePlaceholder):
                 if type.name == name:
-                    return PlaceholderType(type.name)
+                    return TypePlaceholder(type.name)
             elif isinstance(type, TypeLiteral):
                 if argument.name == name:
                     return VariableType.from_type_literal(type)
@@ -172,7 +172,7 @@ class TypeChecker:
         for signature_arg_type, type_stack_arg in zip(
             signature.arg_types, type_stack_args, strict=True
         ):
-            if isinstance(signature_arg_type, PlaceholderType):
+            if isinstance(signature_arg_type, TypePlaceholder):
                 placeholder_types[signature_arg_type.name] = type_stack_arg
             elif signature_arg_type != type_stack_arg:
                 raise StackTypesError(
@@ -187,7 +187,7 @@ class TypeChecker:
         stack = type_stack_under_args
 
         for return_type in signature.return_types:
-            if isinstance(return_type, PlaceholderType):
+            if isinstance(return_type, TypePlaceholder):
                 stack.append(placeholder_types[return_type.name])
             else:
                 stack.append(return_type)
