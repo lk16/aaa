@@ -72,8 +72,7 @@ class VariableType:
 
         if self.type_params:
             formatted += "["
-            for type_param in self.type_params:
-                formatted += repr(type_param)
+            formatted += ", ".join(repr(type_param) for type_param in self.type_params)
             formatted += "]"
 
         return formatted

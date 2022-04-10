@@ -87,6 +87,10 @@ from lang.typing.exceptions import MainFunctionNotFound
         ("int .", "0"),
         ("bool .", "false"),
         ("str .", ""),
+        ("vec[int] .", "[]"),
+        ("vec[vec[int]] .", "[]"),
+        ("map[int, int] .", "{}"),
+        ("map[int, map[int, int]] .", "{}"),
     ],
 )
 def test_program_run_ok(
