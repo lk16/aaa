@@ -126,6 +126,8 @@ class TypeChecker:
             elif isinstance(type, TypeLiteral):
                 if argument.name == name:
                     return VariableType.from_type_literal(type)
+            else:  # pragma: nocover
+                assert False
 
         return None
 
@@ -223,12 +225,12 @@ class TypeChecker:
         type = VariableType.from_type_literal(node)
         return type_stack + [type]
 
-    def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
-        assert isinstance(node, Branch)
+    def _check_condition(self, node: AaaTreeNode, type_stack: TypeStack) -> None:
+        assert isinstance(node, FunctionBody)
 
-        # TODO move condition check to new function and call also from _check_loop
-        # Condition should push exactly one boolean and nothing else.
-        condition_stack = self._check_function_body(node.condition, copy(type_stack))
+        # Condition is a special type of function body:
+        # It should push exactly one boolean and not modify the type stack under it
+        condition_stack = self._check_function_body(node, copy(type_stack))
 
         if not (
             len(condition_stack) == len(type_stack) + 1
@@ -244,6 +246,11 @@ class TypeChecker:
                 type_stack=type_stack,
                 condition_stack=condition_stack,
             )
+
+    def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+        assert isinstance(node, Branch)
+
+        self._check_condition(node.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
@@ -268,23 +275,8 @@ class TypeChecker:
 
     def _check_loop(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Loop)
-        # Condition should push exactly one boolean and nothing else.
-        condition_stack = self._check_function_body(node.condition, copy(type_stack))
 
-        if not (
-            len(condition_stack) == len(type_stack) + 1
-            and condition_stack[:-1] == type_stack
-            and isinstance(condition_stack[-1], VariableType)
-            and condition_stack[-1].root_type == RootType.BOOL
-        ):
-            raise ConditionTypeError(
-                file=self.file,
-                function=self.function,
-                tokens=self.tokens,
-                node=node,
-                type_stack=type_stack,
-                condition_stack=condition_stack,
-            )
+        self._check_condition(node.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
