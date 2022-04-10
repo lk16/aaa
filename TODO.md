@@ -52,6 +52,15 @@ for token in tokens:
 ```
 
 
+### Parser lib feature
+- [ ] Verbose flag to print tokens and human-readable parse tree:
+
+```py
+for token in tokens:
+    print(f"{token.type.name:>30} | {token.value(code)}")
+```
+
+
 ### Language features
 - structs
 - return early (`return`)
