@@ -19,6 +19,7 @@ from lang.instructions.types import (
     IntPush,
     Jump,
     JumpIfNot,
+    MapPush,
     Minus,
     Modulo,
     Multiply,
@@ -34,6 +35,7 @@ from lang.instructions.types import (
     StringPush,
     SubString,
     Swap,
+    VecPush,
 )
 from lang.runtime.parse import (
     AaaTreeNode,
@@ -223,6 +225,12 @@ class InstructionGenerator:
 
         elif root_type == RootType.STRING:
             return [StringPush("")]
+
+        elif root_type == RootType.VECTOR:
+            return [VecPush(var_type.type_params[0])]
+
+        elif root_type == RootType.MAPPING:
+            return [MapPush(var_type.type_params[0], var_type.type_params[1])]
 
         else:  # pragma: nocover
             assert False

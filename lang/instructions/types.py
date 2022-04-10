@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from lang.typing.types import VariableType
+
 
 @dataclass
 class Instruction:
@@ -180,3 +182,14 @@ class Nop(Instruction):
 @dataclass
 class Assert(Instruction):
     ...
+
+
+@dataclass
+class VecPush(Instruction):
+    item_type: VariableType
+
+
+@dataclass
+class MapPush(Instruction):
+    key_type: VariableType
+    value_type: VariableType

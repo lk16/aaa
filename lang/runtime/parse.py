@@ -83,11 +83,15 @@ class TypeLiteral(AaaTreeNode):
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "TypeLiteral":
         assert tree.token_type == NonTerminal.TYPE_LITERAL
-        type_name = tree[0].value(tokens, code)
 
-        # TODO type params are not implemented yet here
-        assert len(tree.children) == 1
+        type_name = tree[0].value(tokens, code)
         type_parameters: List["TypeLiteral"] = []
+
+        if len(tree.children) > 1:
+            type_parameters = [
+                TypeLiteral.from_tree(param, tokens, code)
+                for param in tree[1].children[1::2]
+            ]
 
         return TypeLiteral(
             type_name=type_name,

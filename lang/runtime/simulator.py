@@ -21,6 +21,7 @@ from lang.instructions.types import (
     IntPush,
     Jump,
     JumpIfNot,
+    MapPush,
     Minus,
     Modulo,
     Multiply,
@@ -36,11 +37,12 @@ from lang.instructions.types import (
     StringPush,
     SubString,
     Swap,
+    VecPush,
 )
 from lang.runtime.debug import format_str
 from lang.runtime.parse import ParsedTypePlaceholder, TypeLiteral
 from lang.runtime.program import Program
-from lang.typing.types import Variable, bool_var, int_var, str_var
+from lang.typing.types import RootType, Variable, bool_var, int_var, str_var
 
 
 @dataclass
@@ -77,6 +79,7 @@ class Simulator:
             IntPush: self.instruction_int_push,
             Jump: self.instruction_jump,
             JumpIfNot: self.instruction_jump_if_not,
+            MapPush: self.instruction_map_push,
             Minus: self.instruction_minus,
             Modulo: self.instruction_modulo,
             Multiply: self.instruction_multiply,
@@ -92,6 +95,7 @@ class Simulator:
             StringPush: self.instruction_string_push,
             SubString: self.instruction_substring,
             Swap: self.instruction_swap,
+            VecPush: self.instruction_vec_push,
         }
 
     def top(self) -> Variable:
@@ -422,4 +426,24 @@ class Simulator:
             # TODO add filename and line number to stacktrace
             exit(1)
 
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_push(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapPush)
+        map_var = Variable(
+            RootType.MAPPING,
+            {},
+            type_params=[instruction.key_type, instruction.value_type],
+        )
+        self.push(map_var)
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_push(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecPush)
+        map_var = Variable(
+            RootType.VECTOR,
+            [],
+            type_params=[instruction.item_type],
+        )
+        self.push(map_var)
         return self.get_instruction_pointer() + 1

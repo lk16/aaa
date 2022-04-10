@@ -154,7 +154,6 @@ class NonTerminal(IntEnum):
     IMPORT_STATEMENT = next(next_offset)
     LITERAL = next(next_offset)
     LOOP = next(next_offset)
-    MAP_TYPE_LITERAL = next(next_offset)
     OPERATOR = next(next_offset)
     REGULAR_FILE_ROOT = next(next_offset)
     RETURN_TYPE = next(next_offset)
@@ -162,8 +161,8 @@ class NonTerminal(IntEnum):
     ROOT = next(next_offset)
     TYPED_ARGUMENT = next(next_offset)
     TYPE_LITERAL = next(next_offset)
+    TYPE_PARAMS = next(next_offset)
     TYPE_PLACEHOLDER = next(next_offset)
-    VEC_TYPE_LITERAL = next(next_offset)
 
 
 NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
@@ -286,14 +285,6 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         NonTerminalExpression(NonTerminal.FUNCTION_BODY),
         TerminalExpression(Terminal.END),
     ),
-    NonTerminal.MAP_TYPE_LITERAL: ConcatenationExpression(
-        TerminalExpression(Terminal.MAP),
-        TerminalExpression(Terminal.TYPE_PARAMS_START),
-        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
-        TerminalExpression(Terminal.COMMA),
-        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
-        TerminalExpression(Terminal.TYPE_PARAMS_END),
-    ),
     NonTerminal.OPERATOR: ConjunctionExpression(
         TerminalExpression(Terminal.AND),
         TerminalExpression(Terminal.ASSERT),
@@ -355,21 +346,30 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         TerminalExpression(Terminal.AS),
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
     ),
-    NonTerminal.TYPE_LITERAL: ConjunctionExpression(
-        TerminalExpression(Terminal.BOOL),
-        TerminalExpression(Terminal.INT),
-        NonTerminalExpression(NonTerminal.MAP_TYPE_LITERAL),
-        TerminalExpression(Terminal.STR),
-        NonTerminalExpression(NonTerminal.VEC_TYPE_LITERAL),
+    NonTerminal.TYPE_LITERAL: ConcatenationExpression(
+        ConjunctionExpression(
+            TerminalExpression(Terminal.BOOL),
+            TerminalExpression(Terminal.INT),
+            TerminalExpression(Terminal.MAP),
+            TerminalExpression(Terminal.STR),
+            TerminalExpression(Terminal.VEC),
+        ),
+        OptionalExpression(NonTerminalExpression(NonTerminal.TYPE_PARAMS)),
+    ),
+    NonTerminal.TYPE_PARAMS: ConcatenationExpression(
+        TerminalExpression(Terminal.TYPE_PARAMS_START),
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        RepeatExpression(
+            ConcatenationExpression(
+                TerminalExpression(Terminal.COMMA),
+                NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+            )
+        ),
+        OptionalExpression(TerminalExpression(Terminal.COMMA)),
+        TerminalExpression(Terminal.TYPE_PARAMS_END),
     ),
     NonTerminal.TYPE_PLACEHOLDER: ConcatenationExpression(
         TerminalExpression(Terminal.ASTERISK), TerminalExpression(Terminal.IDENTIFIER)
-    ),
-    NonTerminal.VEC_TYPE_LITERAL: ConcatenationExpression(
-        TerminalExpression(Terminal.VEC),
-        TerminalExpression(Terminal.TYPE_PARAMS_START),
-        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
-        TerminalExpression(Terminal.TYPE_PARAMS_END),
     ),
 }
 
