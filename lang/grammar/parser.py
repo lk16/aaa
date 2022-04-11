@@ -226,13 +226,13 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         RepeatExpression(NonTerminalExpression(NonTerminal.FUNCTION_BODY_ITEM)),
     ),
     NonTerminal.FUNCTION_BODY_ITEM: ConjunctionExpression(
+        NonTerminalExpression(NonTerminal.MEMBER_FUNCTION),
         NonTerminalExpression(NonTerminal.BRANCH),
         NonTerminalExpression(NonTerminal.LOOP),
         NonTerminalExpression(NonTerminal.OPERATOR),
         TerminalExpression(Terminal.IDENTIFIER),
         NonTerminalExpression(NonTerminal.LITERAL),
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
-        NonTerminalExpression(NonTerminal.MEMBER_FUNCTION),
     ),
     NonTerminal.FUNCTION_DEFINITION: ConcatenationExpression(
         TerminalExpression(Terminal.FN),

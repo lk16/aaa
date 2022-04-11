@@ -12,6 +12,7 @@ from lang.runtime.parse import (
     Identifier,
     IntegerLiteral,
     Loop,
+    MemberFunction,
     Operator,
     ParsedTypePlaceholder,
     StringLiteral,
@@ -332,6 +333,8 @@ class TypeChecker:
                 stack = self._check_integer_literal(child_node, copy(stack))
             elif isinstance(child_node, Loop):
                 stack = self._check_loop(child_node, copy(stack))
+            elif isinstance(child_node, MemberFunction):
+                stack = self._check_member_function_call(child_node, copy(stack))
             elif isinstance(child_node, Operator):
                 stack = self._check_operator(child_node, copy(stack))
             elif isinstance(child_node, StringLiteral):
@@ -342,6 +345,12 @@ class TypeChecker:
                 assert False
 
         return stack
+
+    def _check_member_function_call(
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
+        assert isinstance(node, MemberFunction)
+        raise NotImplementedError
 
     def _check_function(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Function)

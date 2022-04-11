@@ -91,6 +91,7 @@ from lang.typing.exceptions import MainFunctionNotFound
         ("vec[vec[int]] .", "[]"),
         ("map[int, int] .", "{}"),
         ("map[int, map[int, int]] .", "{}"),
+        ("vec[int] 5 vec:push .", "[5]"),
     ],
 )
 def test_program_run_ok(

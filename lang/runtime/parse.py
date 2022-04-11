@@ -8,13 +8,14 @@ from typing import Dict, List, Optional, Type, Union
 from lang.grammar.parser import NonTerminal, Terminal
 
 FunctionBodyItem = Union[
-    "Branch",
-    "Loop",
-    "Operator",
     "BooleanLiteral",
-    "IntegerLiteral",
-    "StringLiteral",
+    "Branch",
     "Identifier",
+    "IntegerLiteral",
+    "Loop",
+    "MemberFunction",
+    "Operator",
+    "StringLiteral",
     "TypeLiteral",
 ]
 
@@ -175,6 +176,26 @@ class Branch(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class MemberFunction(AaaTreeNode):
+    type_name: str
+    func_name: str
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "MemberFunction":
+        assert tree.token_type == NonTerminal.MEMBER_FUNCTION
+
+        type_name = tree[0].value(tokens, code)
+        func_name = tree[2].value(tokens, code)
+
+        return MemberFunction(
+            type_name=type_name,
+            func_name=func_name,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class FunctionBody(AaaTreeNode):
     items: List[FunctionBodyItem]
 
@@ -186,6 +207,7 @@ class FunctionBody(AaaTreeNode):
             NonTerminal.BOOLEAN: BooleanLiteral,
             NonTerminal.BRANCH: Branch,
             NonTerminal.LOOP: Loop,
+            NonTerminal.MEMBER_FUNCTION: MemberFunction,
             NonTerminal.OPERATOR: Operator,
             NonTerminal.TYPE_LITERAL: TypeLiteral,
             Terminal.IDENTIFIER: Identifier,

@@ -24,12 +24,13 @@
 - [ ] Add member functions:
     - [ ] `vec.get`
     - [ ] `vec.set`
-    - [ ] `vec.append`
+    - [ ] `vec.push`
     - [ ] `vec.size`
     - [ ] `vec.empty`
     - [ ] `vec.pop`
     - [ ] `vec.clear`
     - [ ] `vec.copy`
+    - [ ] `vec.at`
     - [ ] `map.get`
     - [ ] `map.set`
     - [ ] `map.has`
