@@ -367,11 +367,11 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     ),
     NonTerminal.TYPE_PARAMS: ConcatenationExpression(
         TerminalExpression(Terminal.TYPE_PARAMS_START),
-        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        NonTerminalExpression(NonTerminal.RETURN_TYPE),
         RepeatExpression(
             ConcatenationExpression(
                 TerminalExpression(Terminal.COMMA),
-                NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+                NonTerminalExpression(NonTerminal.RETURN_TYPE),
             )
         ),
         OptionalExpression(TerminalExpression(Terminal.COMMA)),

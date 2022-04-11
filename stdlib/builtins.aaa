@@ -38,3 +38,5 @@ builtin_fn "=" args str, str return bool
 builtin_fn "+" args str, str return str
 builtin_fn "substr" args str, int, int, return str
 builtin_fn "strlen" args str return int
+
+builtin_fn "vec:push" args vec[*a], *a return vec[*a]

@@ -43,10 +43,9 @@
 @ token OR             = regex("or(?=\\W|$)")     .
 @ token OVER           = regex("over(?=\\W|$)")   .
 @ token PERCENT        = regex("%(?=\\s|$)")      .
-@ token PERIOD         = "."                      .
+@ token PERIOD         = regex("\\.(?=\\s|$)")    .
 @ token PLUS           = regex("\\+(?=\\s|$)")    .
 @ token ROT            = regex("rot(?=\\W|$)")    .
-@ token SEMICOLON      = ":"                      .
 @ token SLASH          = regex("/(?=\\s|$)")      .
 @ token STRLEN         = regex("strlen(?=\\W|$)") .
 @ token SUBSTR         = regex("substr(?=\\W|$)") .
@@ -119,10 +118,8 @@ RETURN_TYPES = RETURN_TYPE (COMMA RETURN_TYPE)* (COMMA)? .
 
 FUNCTION_BODY = (FUNCTION_BODY_ITEM)+ .
 
-MEMBER_FUNCTION = TYPE_LITERAL SEMICOLON IDENTIFIER .
-
 @ prune
-FUNCTION_BODY_ITEM = MEMBER_FUNCTION | BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL | TYPE_LITERAL .
+FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL | TYPE_LITERAL .
 
 BRANCH = IF FUNCTION_BODY BEGIN FUNCTION_BODY (ELSE FUNCTION_BODY)? END .
 
