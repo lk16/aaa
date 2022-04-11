@@ -45,7 +45,7 @@
 @ token OR             = regex("or(?=\\W|$)")     .
 @ token OVER           = regex("over(?=\\W|$)")   .
 @ token PERCENT        = regex("%(?=\\s|$)")      .
-@ token PERIOD         = regex("\\.(?=\\s|$)")    .
+@ token PERIOD         = "."                      .
 @ token PLUS           = regex("\\+(?=\\s|$)")    .
 @ token ROT            = regex("rot(?=\\W|$)")    .
 @ token SLASH          = regex("/(?=\\s|$)")      .

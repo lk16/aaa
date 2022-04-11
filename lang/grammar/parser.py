@@ -118,7 +118,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.OR, "or(?=\\W|$)"),
     Regex(Terminal.OVER, "over(?=\\W|$)"),
     Regex(Terminal.PERCENT, "%(?=\\s|$)"),
-    Regex(Terminal.PERIOD, "\\.(?=\\s|$)"),
+    Literal(Terminal.PERIOD, "."),
     Regex(Terminal.PLUS, "\\+(?=\\s|$)"),
     Regex(Terminal.ROT, "rot(?=\\W|$)"),
     Regex(Terminal.SLASH, "/(?=\\s|$)"),
