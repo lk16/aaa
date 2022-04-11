@@ -15,8 +15,9 @@
     - [x] `int` should push `0`
     - [x] `bool` should push `false`
     - [x] `str` should push `""`
-    - [ ] `vec` should push empty vector of correct child element type
-    - [ ] `map` should push empty map of correct key/value types
+    - [x] `vec` should push empty vector of correct child element type
+    - [x] `map` should push empty map of correct key/value types
+- [ ] Better error handling for wrong number of type parameters
 - [ ] Add syntax for member functions to grammar, for example: `vec.append`
 - [ ] Member functions should always return the type they operate on as first return value
 - [ ] Check that key type is hashable (currently: not a `vec` or `map`)
@@ -38,6 +39,8 @@
     - [ ] `map.remove`
     - [ ] `map.clear`
     - [ ] `map.copy`
+    - [ ] `map.keys`
+    - [ ] `map.values`
 
 ### Parser lib feature
 - [ ] Verbose flag to print tokens and human-readable parse tree:

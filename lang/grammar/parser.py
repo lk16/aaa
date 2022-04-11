@@ -68,6 +68,7 @@ class Terminal(IntEnum):
     PLUS = next(next_offset)
     RETURN = next(next_offset)
     ROT = next(next_offset)
+    SEMICOLON = next(next_offset)
     SHEBANG = next(next_offset)
     SLASH = next(next_offset)
     STR = next(next_offset)
@@ -114,9 +115,10 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.OR, "or(?=\\W|$)"),
     Regex(Terminal.OVER, "over(?=\\W|$)"),
     Regex(Terminal.PERCENT, "%(?=\\s|$)"),
-    Regex(Terminal.PERIOD, "\\.(?=\\s|$)"),
+    Literal(Terminal.PERIOD, "."),
     Regex(Terminal.PLUS, "\\+(?=\\s|$)"),
     Regex(Terminal.ROT, "rot(?=\\W|$)"),
+    Literal(Terminal.SEMICOLON, ":"),
     Regex(Terminal.SLASH, "/(?=\\s|$)"),
     Regex(Terminal.STRLEN, "strlen(?=\\W|$)"),
     Regex(Terminal.SUBSTR, "substr(?=\\W|$)"),
@@ -154,6 +156,7 @@ class NonTerminal(IntEnum):
     IMPORT_STATEMENT = next(next_offset)
     LITERAL = next(next_offset)
     LOOP = next(next_offset)
+    MEMBER_FUNCTION = next(next_offset)
     OPERATOR = next(next_offset)
     REGULAR_FILE_ROOT = next(next_offset)
     RETURN_TYPE = next(next_offset)
@@ -229,6 +232,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         TerminalExpression(Terminal.IDENTIFIER),
         NonTerminalExpression(NonTerminal.LITERAL),
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        NonTerminalExpression(NonTerminal.MEMBER_FUNCTION),
     ),
     NonTerminal.FUNCTION_DEFINITION: ConcatenationExpression(
         TerminalExpression(Terminal.FN),
@@ -284,6 +288,11 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         TerminalExpression(Terminal.BEGIN),
         NonTerminalExpression(NonTerminal.FUNCTION_BODY),
         TerminalExpression(Terminal.END),
+    ),
+    NonTerminal.MEMBER_FUNCTION: ConcatenationExpression(
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        TerminalExpression(Terminal.SEMICOLON),
+        TerminalExpression(Terminal.IDENTIFIER),
     ),
     NonTerminal.OPERATOR: ConjunctionExpression(
         TerminalExpression(Terminal.AND),
