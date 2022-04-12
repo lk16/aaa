@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto
-from typing import Any, Final, List, Optional, Union
+from typing import Any, Final, List, Optional, Sequence, Union
 
 from lang.runtime.parse import TypeLiteral
 
@@ -44,10 +44,12 @@ class RootType(IntEnum):
 
 class VariableType:
     def __init__(
-        self, root_type: RootType, type_params: Optional[List["VariableType"]] = None
+        self,
+        root_type: RootType,
+        type_params: Optional[Sequence["SignatureItem"]] = None,
     ) -> None:
         self.root_type: Final[RootType] = root_type
-        self.type_params: Final[List[VariableType]] = type_params or []
+        self.type_params: Final[Sequence[SignatureItem]] = type_params or []
 
         if root_type == RootType.VECTOR:
             assert len(self.type_params) == 1
@@ -60,7 +62,7 @@ class VariableType:
     def from_type_literal(cls, type_literal: TypeLiteral) -> "VariableType":
         root_type = RootType.from_str(type_literal.type_name)
 
-        type_params = [
+        type_params: List[SignatureItem] = [
             VariableType.from_type_literal(param)
             for param in type_literal.type_parameters
         ]
@@ -82,6 +84,15 @@ class VariableType:
             return False
 
         return self.root_type == o.root_type and self.type_params == o.type_params
+
+    def get_variable_type_param(self, offset: int) -> "VariableType":
+        """
+        Prevents getting TypePlaceholder type_params
+        """
+
+        type_param = self.type_params[offset]
+        assert isinstance(type_param, VariableType)
+        return type_param
 
 
 Bool: Final[VariableType] = VariableType(RootType.BOOL)
