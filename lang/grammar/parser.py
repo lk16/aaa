@@ -161,19 +161,19 @@ class NonTerminal(IntEnum):
     MEMBER_FUNCTION = next(next_offset)
     OPERATOR = next(next_offset)
     REGULAR_FILE_ROOT = next(next_offset)
-    RETURN_TYPE = next(next_offset)
     RETURN_TYPES = next(next_offset)
     ROOT = next(next_offset)
-    TYPED_ARGUMENT = next(next_offset)
+    TYPE = next(next_offset)
     TYPE_LITERAL = next(next_offset)
     TYPE_PARAMS = next(next_offset)
     TYPE_PLACEHOLDER = next(next_offset)
 
 
 NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
-    NonTerminal.ARGUMENT: ConjunctionExpression(
-        NonTerminalExpression(NonTerminal.TYPE_PLACEHOLDER),
-        NonTerminalExpression(NonTerminal.TYPED_ARGUMENT),
+    NonTerminal.ARGUMENT: ConcatenationExpression(
+        TerminalExpression(Terminal.IDENTIFIER),
+        TerminalExpression(Terminal.AS),
+        NonTerminalExpression(NonTerminal.TYPE),
     ),
     NonTerminal.ARGUMENT_LIST: ConcatenationExpression(
         NonTerminalExpression(NonTerminal.ARGUMENT),
@@ -334,16 +334,12 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
             )
         ),
     ),
-    NonTerminal.RETURN_TYPE: ConjunctionExpression(
-        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
-        NonTerminalExpression(NonTerminal.TYPE_PLACEHOLDER),
-    ),
     NonTerminal.RETURN_TYPES: ConcatenationExpression(
-        NonTerminalExpression(NonTerminal.RETURN_TYPE),
+        NonTerminalExpression(NonTerminal.TYPE),
         RepeatExpression(
             ConcatenationExpression(
                 TerminalExpression(Terminal.COMMA),
-                NonTerminalExpression(NonTerminal.RETURN_TYPE),
+                NonTerminalExpression(NonTerminal.TYPE),
             )
         ),
         OptionalExpression(TerminalExpression(Terminal.COMMA)),
@@ -352,10 +348,9 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         NonTerminalExpression(NonTerminal.REGULAR_FILE_ROOT),
         NonTerminalExpression(NonTerminal.BUILTINS_FILE_ROOT),
     ),
-    NonTerminal.TYPED_ARGUMENT: ConcatenationExpression(
-        TerminalExpression(Terminal.IDENTIFIER),
-        TerminalExpression(Terminal.AS),
+    NonTerminal.TYPE: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        NonTerminalExpression(NonTerminal.TYPE_PLACEHOLDER),
     ),
     NonTerminal.TYPE_LITERAL: ConcatenationExpression(
         ConjunctionExpression(
@@ -395,7 +390,6 @@ PRUNED_TERMINALS: Set[IntEnum] = {
 PRUNED_NON_TERMINALS: Set[IntEnum] = {
     NonTerminal.FUNCTION_BODY_ITEM,
     NonTerminal.LITERAL,
-    NonTerminal.TYPED_ARGUMENT,
 }
 
 

@@ -277,7 +277,7 @@ class ReturnType(AaaTreeNode):  # TODO rename to ParsedType
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ReturnType":
-        assert tree.token_type == NonTerminal.RETURN_TYPE
+        assert tree.token_type == NonTerminal.TYPE
 
         type: Union[TypeLiteral, ParsedTypePlaceholder]
 
