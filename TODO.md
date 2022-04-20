@@ -17,8 +17,8 @@
     - [x] `str` should push `""`
     - [x] `vec` should push empty vector of correct child element type
     - [x] `map` should push empty map of correct key/value types
+- [x] Add syntax for member functions to grammar, for example: `vec.append`
 - [ ] Better error handling for wrong number of type parameters
-- [ ] Add syntax for member functions to grammar, for example: `vec.append`
 - [ ] Member functions should always return the type they operate on as first return value
 - [ ] Check that key type is hashable (currently: not a `vec` or `map`)
 - [ ] Add member functions:

@@ -157,7 +157,11 @@ class TypeChecker:
         ):
             if isinstance(signature_arg_type, TypePlaceholder):
                 placeholder_types[signature_arg_type.name] = type_stack_arg
+                # TODO *a *a does not enforce both params to have same type
             elif signature_arg_type != type_stack_arg:
+                if signature_arg_type.root_type == type_stack_arg.root_type:
+                    raise NotImplementedError
+
                 raise StackTypesError(
                     file=self.file,
                     function=self.function,
@@ -350,7 +354,26 @@ class TypeChecker:
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, MemberFunction)
-        raise NotImplementedError
+
+        # TODO check that first argument is the type we operate on
+
+        # TODO check that first return value is type type we operate on
+
+        # TODO handle methods on builtin types differently than those on user-created types
+
+        key = f"{node.type_name}:{node.func_name}"
+
+        try:
+            signatures = OPERATOR_SIGNATURES[key]
+        except KeyError:
+            raise NotImplementedError
+
+        if len(signatures) != 1:
+            raise NotImplementedError
+
+        signature = signatures[0]
+
+        return self._check_and_apply_signature(type_stack, signature, node)
 
     def _check_function(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Function)
