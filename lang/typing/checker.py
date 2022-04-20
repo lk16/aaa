@@ -159,8 +159,7 @@ class TypeChecker:
                 placeholder_types[signature_arg_type.name] = type_stack_arg
                 # TODO *a *a does not enforce both params to have same type
             elif signature_arg_type != type_stack_arg:
-                if signature_arg_type.root_type == type_stack_arg.root_type:
-                    raise NotImplementedError
+                # TODO handle mismatch signature_arg_type.root_type and type_stack_arg.root_type
 
                 raise StackTypesError(
                     file=self.file,
