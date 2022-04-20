@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import Any, Final, List, Optional, Sequence, Union
 
-from lang.runtime.parse import TypeLiteral
+from lang.runtime.parse import Function, ParsedTypePlaceholder, TypeLiteral
 
 
 class RootType(IntEnum):
@@ -195,3 +195,31 @@ TypeStack = List[SignatureItem]
 class Signature:
     arg_types: List[SignatureItem]
     return_types: List[SignatureItem]
+
+    @classmethod
+    def from_function(cls, function: Function) -> "Signature":
+        arg_types: List[SignatureItem] = []
+        return_types: List[SignatureItem] = []
+        # TODO reduce code duplication below
+
+        for argument in function.arguments:
+            type = argument.type.type  # TODO reduce indirections
+
+            if isinstance(type, TypeLiteral):
+                arg_types.append(VariableType.from_type_literal(type))
+            elif isinstance(type, ParsedTypePlaceholder):
+                arg_types.append(TypePlaceholder(type.name))
+            else:  # pragma: nocover
+                assert False
+
+        for return_type in function.return_types:
+            type = return_type.type  # TODO reduce indirections
+
+            if isinstance(type, TypeLiteral):
+                return_types.append(VariableType.from_type_literal(type))
+            elif isinstance(type, ParsedTypePlaceholder):
+                return_types.append(TypePlaceholder(type.name))
+            else:  # pragma: nocover
+                assert False
+
+        return Signature(arg_types, return_types)

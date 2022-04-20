@@ -244,18 +244,17 @@ class ParsedTypePlaceholder(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
-class Argument(AaaTreeNode):
-    name: str
+class ParsedType(AaaTreeNode):
     type: Union[TypeLiteral, ParsedTypePlaceholder]
 
     @classmethod
-    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Argument":
-        assert tree.token_type == NonTerminal.ARGUMENT
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ParsedType":
+        assert tree.token_type == NonTerminal.TYPE
 
         type: Union[TypeLiteral, ParsedTypePlaceholder]
 
-        if tree[0].token_type == Terminal.IDENTIFIER:
-            type = TypeLiteral.from_tree(tree[2], tokens, code)
+        if tree[0].token_type == NonTerminal.TYPE_LITERAL:
+            type = TypeLiteral.from_tree(tree[0], tokens, code)
 
         elif tree[0].token_type == NonTerminal.TYPE_PLACEHOLDER:
             type = ParsedTypePlaceholder.from_tree(tree[0], tokens, code)
@@ -263,8 +262,7 @@ class Argument(AaaTreeNode):
         else:  # pragma: nocover
             assert False
 
-        return Argument(
-            name=tree[0].value(tokens, code),
+        return ParsedType(
             type=type,
             token_count=tree.token_count,
             token_offset=tree.token_offset,
@@ -298,10 +296,27 @@ class ReturnType(AaaTreeNode):  # TODO rename to ParsedType
 
 
 @dataclass(kw_only=True)
+class Argument(AaaTreeNode):
+    name: str
+    type: ParsedType
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Argument":
+        assert tree.token_type == NonTerminal.ARGUMENT
+
+        return Argument(
+            name=tree[0].value(tokens, code),
+            type=ParsedType.from_tree(tree[2], tokens, code),
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class Function(AaaTreeNode):
     name: str
     arguments: List[Argument]
-    return_types: List[ReturnType]
+    return_types: List[ParsedType]
     body: FunctionBody
 
     @classmethod
@@ -310,7 +325,7 @@ class Function(AaaTreeNode):
 
         name = tree[1].value(tokens, code)
         arguments: List[Argument] = []
-        return_types: List[ReturnType] = []
+        return_types: List[ParsedType] = []
 
         index = 2
 
@@ -326,7 +341,7 @@ class Function(AaaTreeNode):
 
             elif token_type == Terminal.RETURN:
                 return_types = [
-                    ReturnType.from_tree(child, tokens, code)
+                    ParsedType.from_tree(child, tokens, code)
                     for child in tree[index + 1].children
                     if child.token_type != Terminal.COMMA
                 ]

@@ -74,6 +74,10 @@ class TypeChecker:
             )
 
     def _get_function_signature(self, function: Function) -> Signature:
+        # TODO consider moving this entire function to Program
+
+        # TODO cache result of calling this function
+
         placeholder_args: Set[str] = set()
 
         for argument in function.arguments:
@@ -92,30 +96,9 @@ class TypeChecker:
                     node=return_type,
                 )
 
-        arg_types: List[SignatureItem] = []
-        return_types: List[SignatureItem] = []
+        # TODO more and better validation
 
-        for argument in function.arguments:
-            type = argument.type
-
-            if isinstance(type, ParsedTypePlaceholder):
-                arg_types.append(TypePlaceholder(type.name))
-            elif isinstance(type, TypeLiteral):
-                arg_types.append(VariableType.from_type_literal(type))
-            else:  # pragma: nocover
-                assert False
-
-        for return_type in function.return_types:
-            type = return_type.type
-
-            if isinstance(type, ParsedTypePlaceholder):
-                return_types.append(TypePlaceholder(type.name))
-            elif isinstance(type, TypeLiteral):
-                return_types.append(VariableType.from_type_literal(type))
-            else:  # pragma: nocover
-                assert False
-
-        return Signature(arg_types, return_types)
+        return Signature.from_function(function)
 
     def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
         for argument in self.function.arguments:
