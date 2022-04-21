@@ -102,7 +102,7 @@ class TypeChecker:
 
     def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
         for argument in self.function.arguments:
-            type = argument.type
+            type = argument.type.type
             if isinstance(type, ParsedTypePlaceholder):
                 if type.name == name:
                     return TypePlaceholder(type.name)

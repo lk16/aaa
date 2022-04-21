@@ -47,7 +47,6 @@ from lang.runtime.parse import (
     IntegerLiteral,
     Loop,
     Operator,
-    ParsedTypePlaceholder,
     StringLiteral,
     TypeLiteral,
 )
@@ -162,14 +161,7 @@ class InstructionGenerator:
         identifier = node.name
 
         for argument in self.function.arguments:
-            if isinstance(argument.type, TypeLiteral):
-                if argument.name == identifier:
-                    return [PushFunctionArgument(argument.name)]
-            elif isinstance(argument.type, ParsedTypePlaceholder):
-                if argument.type.name == identifier:
-                    return [PushFunctionArgument(argument.type.name)]
-            else:  # pragma: nocover
-                assert False
+            return [PushFunctionArgument(argument.name)]
 
         source_file, original_name = self.program.get_function_source_and_name(
             self.file, identifier

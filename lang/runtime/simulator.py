@@ -40,7 +40,6 @@ from lang.instructions.types import (
     VecPush,
 )
 from lang.runtime.debug import format_str
-from lang.runtime.parse import ParsedTypePlaceholder, TypeLiteral
 from lang.runtime.program import Program
 from lang.typing.types import RootType, Variable, bool_var, int_var, str_var
 
@@ -159,12 +158,7 @@ class Simulator:
         argument_values: Dict[str, Variable] = {}
 
         for argument in reversed(function.arguments):
-            if isinstance(argument.type, TypeLiteral):
-                argument_values[argument.name] = self.pop()
-            elif isinstance(argument.type, ParsedTypePlaceholder):
-                argument_values[argument.type.name] = self.pop()
-            else:  # pragma: nocover
-                assert False
+            argument_values[argument.name] = self.pop()
 
         self.call_stack.append(
             CallStackItem(
