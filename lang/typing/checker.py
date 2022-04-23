@@ -33,7 +33,6 @@ from lang.typing.exceptions import (
     UnknownFunction,
     UnknownPlaceholderType,
 )
-from lang.typing.signatures import OPERATOR_SIGNATURES
 from lang.typing.types import (
     Bool,
     Int,
@@ -197,7 +196,13 @@ class TypeChecker:
 
     def _check_operator(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Operator)
-        signatures = OPERATOR_SIGNATURES[node.value]
+
+        # TODO remove this super ugly hack and fix the real issue
+        value = node.value
+        if value == "\\n":
+            value = "\\\n"
+
+        signatures = self.program._builtins.functions[value]
 
         stack: Optional[TypeStack] = None
         last_stack_type_error: Optional[StackTypesError] = None

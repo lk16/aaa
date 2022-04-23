@@ -1,7 +1,7 @@
 
 // stack operations
 builtin_fn "drop" args *a
-builtin_fn "dup" args *a, *a return *a
+builtin_fn "dup" args *a return *a, *a
 builtin_fn "swap" args *a, *b return *b, *a
 builtin_fn "over" args *a, *b return *a, *b, *a
 builtin_fn "rot" args *a, *b, *c return *b, *c, *a
@@ -19,6 +19,7 @@ builtin_fn "/" args int, int return int
 builtin_fn "%" args int, int return int
 
 // integer comparison
+builtin_fn "!=" args int, int return bool
 builtin_fn "=" args int, int return bool
 builtin_fn ">" args int, int return bool
 builtin_fn ">=" args int, int return bool

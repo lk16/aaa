@@ -12,7 +12,13 @@ from lang.grammar.parser import parse as parse_aaa
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
 from lang.runtime.debug import format_str
-from lang.runtime.parse import Function, ParsedBuiltinsFile, ParsedFile
+from lang.runtime.parse import (
+    Function,
+    ParsedBuiltinsFile,
+    ParsedFile,
+    ParsedTypePlaceholder,
+    TypeLiteral,
+)
 from lang.typing.checker import TypeChecker
 from lang.typing.exceptions import (
     AbsoluteImportError,
@@ -23,7 +29,7 @@ from lang.typing.exceptions import (
     MainFunctionNotFound,
     TypeException,
 )
-from lang.typing.types import Signature, SignatureItem
+from lang.typing.types import Signature, SignatureItem, TypePlaceholder, VariableType
 
 
 @dataclass(kw_only=True)
@@ -51,7 +57,7 @@ PARSE_VERBOSE = "AAA_PARSING_DEBUG" in os.environ
 
 @dataclass(kw_only=True)
 class Builtins:
-    types: Set[str]
+    types: Set[str]  # TODO this isn't used currently
     functions: Dict[str, List[Signature]]
 
     @classmethod
@@ -84,8 +90,6 @@ class Program:
             return cls(file=saved_file)
 
     def _load_builtins(self) -> List[FileLoadException]:
-        return []  # TODO re-enable
-
         try:
             stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
         except KeyError:
@@ -110,18 +114,27 @@ class Program:
             if function.name not in self._builtins.functions:
                 self._builtins.functions[function.name] = []
 
+            # TODO make more DRY
             arg_types: List[SignatureItem] = []
             return_types: List[SignatureItem] = []
 
             for argument in function.arguments:
-                _ = argument
-                # TODO get type from argument and append to arg_types
-                raise NotImplementedError
+                if isinstance(argument.type, TypeLiteral):
+                    arg_types.append(VariableType.from_type_literal(argument.type))
+                elif isinstance(argument.type, ParsedTypePlaceholder):
+                    arg_types.append(TypePlaceholder(argument.type.name))
+                else:  # pragma: nocover
+                    assert False
 
-            for return_type in function.arguments:
-                _ = return_type
-                # TODO get type from return_type and append to return_types
-                raise NotImplementedError
+            for return_type in function.return_types:
+                if isinstance(return_type.type, TypeLiteral):
+                    return_types.append(
+                        VariableType.from_type_literal(return_type.type)
+                    )
+                elif isinstance(return_type.type, ParsedTypePlaceholder):
+                    return_types.append(TypePlaceholder(return_type.type.name))
+                else:  # pragma: nocover
+                    assert False
 
             self._builtins.functions[function.name].append(
                 Signature(arg_types, return_types)
