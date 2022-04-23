@@ -206,7 +206,7 @@ class Argument(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
-class ReturnType(AaaTreeNode):
+class ReturnType(AaaTreeNode):  # TODO rename to ParsedType
     type: str
 
     @classmethod
@@ -269,6 +269,9 @@ class Function(AaaTreeNode):
                 body = FunctionBody.from_tree(tree[index + 1], tokens, code)
                 break
 
+            else:  # pragma: nocover
+                assert False
+
             index += 2
 
         return Function(
@@ -330,9 +333,72 @@ class Import(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class BuiltinFunction(AaaTreeNode):
+    name: str
+    arguments: List[ReturnType]
+    return_types: List[ReturnType]
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "BuiltinFunction":
+        assert tree.token_type == NonTerminal.BUILTIN_FUNCTION_DEFINITION
+
+        arguments: List[ReturnType] = []
+        return_types: List[ReturnType] = []
+
+        index = 2
+
+        while index < len(tree.children):
+            token_type = tree[index].token_type
+
+            if token_type == Terminal.ARGS:
+                arguments = [
+                    ReturnType.from_tree(child, tokens, code)
+                    for child in tree[index + 1].children
+                    if child.token_type != Terminal.COMMA
+                ]
+
+            elif token_type == Terminal.RETURN:
+                return_types = [
+                    ReturnType.from_tree(child, tokens, code)
+                    for child in tree[index + 1].children
+                    if child.token_type != Terminal.COMMA
+                ]
+
+            else:  # pragma: nocover
+                assert False
+
+            index += 2
+
+        return BuiltinFunction(
+            name=StringLiteral.from_tree(tree[1], tokens, code).value,
+            arguments=arguments,
+            return_types=return_types,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
+class BuiltinType(AaaTreeNode):
+    name: str
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "BuiltinType":
+        assert tree.token_type == NonTerminal.BUILTIN_TYPE_DEFINITION
+
+        return BuiltinType(
+            name=StringLiteral.from_tree(tree[1], tokens, code).value,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class ParsedFile(AaaTreeNode):
     functions: List[Function]
     imports: List[Import]
+    builtin_functions: List[BuiltinFunction]
+    builtin_types: List[BuiltinType]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ParsedFile":
@@ -341,6 +407,8 @@ class ParsedFile(AaaTreeNode):
 
         functions: List[Function] = []
         imports: List[Import] = []
+        builtin_functions: List[BuiltinFunction] = []
+        builtin_types: List[BuiltinType] = []
 
         for child in tree.children:
             if child.token_type == NonTerminal.FUNCTION_DEFINITION:
@@ -351,12 +419,22 @@ class ParsedFile(AaaTreeNode):
                 import_ = Import.from_tree(child, tokens, code)
                 imports.append(import_)
 
+            elif child.token_type == NonTerminal.BUILTIN_FUNCTION_DEFINITION:
+                builtin_function = BuiltinFunction.from_tree(child, tokens, code)
+                builtin_functions.append(builtin_function)
+
+            elif child.token_type == NonTerminal.BUILTIN_TYPE_DEFINITION:
+                builtin_type = BuiltinType.from_tree(child, tokens, code)
+                builtin_types.append(builtin_type)
+
             else:  # pragma: nocover
                 assert False
 
         return ParsedFile(
             functions=functions,
             imports=imports,
+            builtin_types=builtin_types,
+            builtin_functions=builtin_functions,
             token_count=tree.token_count,
             token_offset=tree.token_offset,
         )

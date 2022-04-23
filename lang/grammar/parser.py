@@ -37,6 +37,8 @@ class Terminal(IntEnum):
     BACKSLASH_N = next(next_offset)
     BEGIN = next(next_offset)
     BOOL = next(next_offset)
+    BUILTIN_FN = next(next_offset)
+    BUILTIN_TYPE = next(next_offset)
     COMMA = next(next_offset)
     COMMENT = next(next_offset)
     DROP = next(next_offset)
@@ -80,17 +82,19 @@ class Terminal(IntEnum):
 
 
 TERMINAL_RULES: List[TokenDescriptor] = [
+    Regex(Terminal.ARGS, "args(?=\\s|$)"),
+    Regex(Terminal.AS, "as(?=\\s|$)"),
     Regex(Terminal.BEGIN, "begin(?=\\s|$)"),
+    Regex(Terminal.BUILTIN_FN, "builtin_fn(?=\\s|$)"),
+    Regex(Terminal.BUILTIN_TYPE, "builtin_type(?=\\s|$)"),
     Regex(Terminal.ELSE, "else(?=\\s|$)"),
     Regex(Terminal.END, "end(?=\\s|$)"),
     Regex(Terminal.FN, "fn(?=\\s|$)"),
-    Regex(Terminal.IF, "if(?=\\s|$)"),
-    Regex(Terminal.WHILE, "while(?=\\s|$)"),
-    Regex(Terminal.ARGS, "args(?=\\s|$)"),
-    Regex(Terminal.AS, "as(?=\\s|$)"),
-    Regex(Terminal.RETURN, "return(?=\\s|$)"),
     Regex(Terminal.FROM, "from(?=\\s|$)"),
+    Regex(Terminal.IF, "if(?=\\s|$)"),
     Regex(Terminal.IMPORT, "import(?=\\s|$)"),
+    Regex(Terminal.RETURN, "return(?=\\s|$)"),
+    Regex(Terminal.WHILE, "while(?=\\s|$)"),
     Regex(Terminal.AND, "and(?=\\s|$)"),
     Regex(Terminal.ASSERT, "assert(?=\\s|$)"),
     Literal(Terminal.ASTERISK, "*"),
@@ -136,6 +140,8 @@ class NonTerminal(IntEnum):
     ARGUMENT_LIST = next(next_offset)
     BOOLEAN = next(next_offset)
     BRANCH = next(next_offset)
+    BUILTIN_FUNCTION_DEFINITION = next(next_offset)
+    BUILTIN_TYPE_DEFINITION = next(next_offset)
     FUNCTION_BODY = next(next_offset)
     FUNCTION_BODY_ITEM = next(next_offset)
     FUNCTION_DEFINITION = next(next_offset)
@@ -183,6 +189,25 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
             )
         ),
         TerminalExpression(Terminal.END),
+    ),
+    NonTerminal.BUILTIN_FUNCTION_DEFINITION: ConcatenationExpression(
+        TerminalExpression(Terminal.BUILTIN_FN),
+        TerminalExpression(Terminal.STRING),
+        OptionalExpression(
+            ConcatenationExpression(
+                TerminalExpression(Terminal.ARGS),
+                NonTerminalExpression(NonTerminal.RETURN_TYPES),
+            )
+        ),
+        OptionalExpression(
+            ConcatenationExpression(
+                TerminalExpression(Terminal.RETURN),
+                NonTerminalExpression(NonTerminal.RETURN_TYPES),
+            )
+        ),
+    ),
+    NonTerminal.BUILTIN_TYPE_DEFINITION: ConcatenationExpression(
+        TerminalExpression(Terminal.BUILTIN_TYPE), TerminalExpression(Terminal.STRING)
     ),
     NonTerminal.FUNCTION_BODY: ConcatenationExpression(
         NonTerminalExpression(NonTerminal.FUNCTION_BODY_ITEM),
@@ -294,6 +319,8 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     ),
     NonTerminal.ROOT: RepeatExpression(
         ConjunctionExpression(
+            NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
+            NonTerminalExpression(NonTerminal.BUILTIN_TYPE_DEFINITION),
             NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION),
             NonTerminalExpression(NonTerminal.IMPORT_STATEMENT),
         )
