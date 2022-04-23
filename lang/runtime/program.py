@@ -38,6 +38,9 @@ FileLoadException = (
     TokenizerError | ParseError | TypeException | FileReadError | CyclicImportError
 )
 
+# TODO use cli flag instead
+PARSE_VERBOSE = "AAA_PARSING_DEBUG" in os.environ
+
 
 class Program:
     def __init__(self, file: Path) -> None:
@@ -63,8 +66,6 @@ class Program:
             return cls(file=saved_file)
 
     def _load_builtins(self) -> List[FileLoadException]:
-        return []  # TODO re-enable
-
         try:
             stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
         except KeyError:
@@ -95,7 +96,7 @@ class Program:
 
         error_count = len(self.file_load_errors)
         maybe_s = "" if error_count == 1 else "s"
-        print(f"Found {error_count} error{maybe_s}.")
+        print(f"Found {error_count} error{maybe_s}.", file=sys.stderr)
         exit(1)
 
     def _load_file(self, file: Path) -> List[FileLoadException]:
@@ -143,7 +144,7 @@ class Program:
 
     def _parse_regular_file(self, file: Path) -> Tuple[List[Token], ParsedFile]:
         code = file.read_text()
-        tokens, tree = parse_aaa(str(file), code)
+        tokens, tree = parse_aaa(str(file), code, verbose=PARSE_VERBOSE)
         parsed_file = ParsedFile.from_tree(tree, tokens, code)
         return tokens, parsed_file
 
@@ -151,7 +152,7 @@ class Program:
         self, file: Path
     ) -> Tuple[List[Token], ParsedBuiltinsFile]:
         code = file.read_text()
-        tokens, tree = parse_aaa(str(file), code)
+        tokens, tree = parse_aaa(str(file), code, verbose=PARSE_VERBOSE)
         parsed_builtins_file = ParsedBuiltinsFile.from_tree(tree, tokens, code)
         return tokens, parsed_builtins_file
 

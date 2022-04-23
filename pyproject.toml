@@ -7,7 +7,7 @@ license = "BSD"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-parser = {git = "https://github.com/lk16/parser.git", tag = "v0.3.3"}
+parser = {git = "https://github.com/lk16/parser.git", tag = "v0.3.4"}
 
 [tool.poetry.dev-dependencies]
 pdbpp = "^0.10.3"

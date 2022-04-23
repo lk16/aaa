@@ -7,23 +7,6 @@
 - use this instead of signatures `signatures.py`
 - ban usage of `builtin_fn` and `builtin_type` outside `AAA_STDLIB_PATH`
 
-### Improve parser lib
-
-Add this to `Parser._parse()` with `verbose` flag.
-```py
-expr_token_type = "<None>"
-if hasattr(expr, "token_type"):
-    expr_token_type = expr.token_type.name
-
-if offset >= len(self.tokens):
-    next_token_type = "<EOF>"
-else:
-    next_token_type = self.tokens[offset].type.name
-
-print(f"_parse() | offset={offset:>3} | expr_token_type={expr_token_type:>30} | next_token_type={next_token_type:>30}")
-```
-
-
 ### Aaa file errors
 - better tests for exact error messages
 

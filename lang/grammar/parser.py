@@ -192,9 +192,17 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         ),
         TerminalExpression(Terminal.END),
     ),
-    NonTerminal.BUILTINS_FILE_ROOT: ConjunctionExpression(
-        NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
-        NonTerminalExpression(NonTerminal.BUILTIN_TYPE_DEFINITION),
+    NonTerminal.BUILTINS_FILE_ROOT: ConcatenationExpression(
+        ConjunctionExpression(
+            NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
+            NonTerminalExpression(NonTerminal.BUILTIN_TYPE_DEFINITION),
+        ),
+        RepeatExpression(
+            ConjunctionExpression(
+                NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
+                NonTerminalExpression(NonTerminal.BUILTIN_TYPE_DEFINITION),
+            )
+        ),
     ),
     NonTerminal.BUILTIN_FUNCTION_DEFINITION: ConcatenationExpression(
         TerminalExpression(Terminal.BUILTIN_FN),
@@ -308,11 +316,17 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         TerminalExpression(Terminal.SUBSTR),
         TerminalExpression(Terminal.SWAP),
     ),
-    NonTerminal.REGULAR_FILE_ROOT: RepeatExpression(
+    NonTerminal.REGULAR_FILE_ROOT: ConcatenationExpression(
         ConjunctionExpression(
             NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION),
             NonTerminalExpression(NonTerminal.IMPORT_STATEMENT),
-        )
+        ),
+        RepeatExpression(
+            ConjunctionExpression(
+                NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION),
+                NonTerminalExpression(NonTerminal.IMPORT_STATEMENT),
+            )
+        ),
     ),
     NonTerminal.RETURN_TYPE: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
@@ -367,13 +381,14 @@ PRUNED_NON_TERMINALS: Set[IntEnum] = {
 }
 
 
-def parse(filename: str, code: str) -> Tuple[List[Token], Tree]:
+def parse(filename: str, code: str, verbose: bool = False) -> Tuple[List[Token], Tree]:
 
     tokens: List[Token] = Tokenizer(
         filename=filename,
         code=code,
         terminal_rules=TERMINAL_RULES,
         pruned_terminals=PRUNED_TERMINALS,
+        verbose=verbose,
     ).tokenize()
 
     tree: Tree = Parser(
@@ -383,6 +398,7 @@ def parse(filename: str, code: str) -> Tuple[List[Token], Tree]:
         non_terminal_rules=NON_TERMINAL_RULES,
         pruned_non_terminals=PRUNED_NON_TERMINALS,
         root_token="ROOT",
+        verbose=verbose,
     ).parse()
 
     return tokens, tree
