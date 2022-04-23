@@ -51,7 +51,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.aaa",
-				"match": "\\b(if|else|end|while|fn|begin|as|args|return|import|from|builtin_fn)\\b"
+				"match": "\\b(if|else|end|while|fn|begin|as|args|return|import|from|builtin_fn|builtin_type)\\b"
 			}]
 		},
 		"strings": {

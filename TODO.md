@@ -1,5 +1,12 @@
 # TODO
 
+### Singnatures in Aaa code
+- introduce env var `AAA_STDLIB_PATH`
+- load signatures of `builtin.aaa` before running typechecker
+- add `builtin_fn` and `builtin_type` to grammar.txt
+- use this instead of signatures.py
+
+
 ### Aaa file errors
 - better tests for exact error messages
 
