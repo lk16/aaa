@@ -6,7 +6,7 @@ from parser.tokenizer.exceptions import TokenizerError
 from parser.tokenizer.models import Token
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from lang.grammar.parser import parse as parse_aaa
 from lang.instructions.generator import InstructionGenerator
@@ -22,6 +22,7 @@ from lang.typing.exceptions import (
     ImportedItemNotFound,
     TypeException,
 )
+from lang.typing.signatures import Signature, SignatureItem
 
 
 @dataclass(kw_only=True)
@@ -42,6 +43,16 @@ FileLoadException = (
 PARSE_VERBOSE = "AAA_PARSING_DEBUG" in os.environ
 
 
+@dataclass(kw_only=True)
+class Builtins:
+    types: Set[str]
+    functions: Dict[str, List[Signature]]
+
+    @classmethod
+    def empty(cls) -> "Builtins":
+        return Builtins(types=set(), functions={})
+
+
 class Program:
     def __init__(self, file: Path) -> None:
         self.entry_point_file = file.resolve()
@@ -51,6 +62,7 @@ class Program:
         # Used to detect cyclic import loops
         self.file_load_stack: List[Path] = []
 
+        self._builtins = Builtins.empty()
         self.file_load_errors = self._load_builtins()
 
         if self.file_load_errors:
@@ -77,13 +89,37 @@ class Program:
         builtins_file = stdlib_path / "builtins.aaa"
 
         try:
-            tokens, parsed_file = self._parse_builtins_file(builtins_file)
+            _, parsed_file = self._parse_builtins_file(builtins_file)
         except (TokenizerError, ParseError) as e:
             return [e]
         except OSError:
             return [FileReadError(builtins_file)]
 
-        raise NotImplementedError  # TODO
+        for type in parsed_file.types:
+            self._builtins.types.add(type.name)
+
+        for function in parsed_file.functions:
+            if function.name not in self._builtins.functions:
+                self._builtins.functions[function.name] = []
+
+            arg_types: List[SignatureItem] = []
+            return_types: List[SignatureItem] = []
+
+            for argument in function.arguments:
+                _ = argument
+                # TODO get type from argument and append to arg_types
+                raise NotImplementedError
+
+            for return_type in function.arguments:
+                _ = return_type
+                # TODO get type from return_type and append to return_types
+                raise NotImplementedError
+
+            self._builtins.functions[function.name].append(
+                Signature(arg_types, return_types)
+            )
+
+        return []
 
     def exit_on_error(self) -> None:  # pragma: nocover
         if not self.file_load_errors:
