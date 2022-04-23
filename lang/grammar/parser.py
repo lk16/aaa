@@ -140,6 +140,7 @@ class NonTerminal(IntEnum):
     ARGUMENT_LIST = next(next_offset)
     BOOLEAN = next(next_offset)
     BRANCH = next(next_offset)
+    BUILTINS_FILE_ROOT = next(next_offset)
     BUILTIN_FUNCTION_DEFINITION = next(next_offset)
     BUILTIN_TYPE_DEFINITION = next(next_offset)
     FUNCTION_BODY = next(next_offset)
@@ -151,6 +152,7 @@ class NonTerminal(IntEnum):
     LITERAL = next(next_offset)
     LOOP = next(next_offset)
     OPERATOR = next(next_offset)
+    REGULAR_FILE_ROOT = next(next_offset)
     RETURN_TYPE = next(next_offset)
     RETURN_TYPES = next(next_offset)
     ROOT = next(next_offset)
@@ -189,6 +191,10 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
             )
         ),
         TerminalExpression(Terminal.END),
+    ),
+    NonTerminal.BUILTINS_FILE_ROOT: ConjunctionExpression(
+        NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
+        NonTerminalExpression(NonTerminal.BUILTIN_TYPE_DEFINITION),
     ),
     NonTerminal.BUILTIN_FUNCTION_DEFINITION: ConcatenationExpression(
         TerminalExpression(Terminal.BUILTIN_FN),
@@ -302,6 +308,12 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         TerminalExpression(Terminal.SUBSTR),
         TerminalExpression(Terminal.SWAP),
     ),
+    NonTerminal.REGULAR_FILE_ROOT: RepeatExpression(
+        ConjunctionExpression(
+            NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION),
+            NonTerminalExpression(NonTerminal.IMPORT_STATEMENT),
+        )
+    ),
     NonTerminal.RETURN_TYPE: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
         TerminalExpression(Terminal.IDENTIFIER),
@@ -317,13 +329,9 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         ),
         OptionalExpression(TerminalExpression(Terminal.COMMA)),
     ),
-    NonTerminal.ROOT: RepeatExpression(
-        ConjunctionExpression(
-            NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
-            NonTerminalExpression(NonTerminal.BUILTIN_TYPE_DEFINITION),
-            NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION),
-            NonTerminalExpression(NonTerminal.IMPORT_STATEMENT),
-        )
+    NonTerminal.ROOT: ConjunctionExpression(
+        NonTerminalExpression(NonTerminal.REGULAR_FILE_ROOT),
+        NonTerminalExpression(NonTerminal.BUILTINS_FILE_ROOT),
     ),
     NonTerminal.TYPED_ARGUMENT: ConcatenationExpression(
         TerminalExpression(Terminal.IDENTIFIER),

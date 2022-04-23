@@ -1,3 +1,4 @@
+import os
 import sys
 from dataclasses import dataclass
 from parser.parser.exceptions import ParseError
@@ -11,7 +12,7 @@ from lang.grammar.parser import parse as parse_aaa
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
 from lang.runtime.debug import format_str
-from lang.runtime.parse import Function, ParsedFile
+from lang.runtime.parse import Function, ParsedBuiltinsFile, ParsedFile
 from lang.typing.checker import TypeChecker
 from lang.typing.exceptions import (
     AbsoluteImportError,
@@ -47,6 +48,11 @@ class Program:
         # Used to detect cyclic import loops
         self.file_load_stack: List[Path] = []
 
+        self.file_load_errors = self._load_builtins()
+
+        if self.file_load_errors:
+            return
+
         self.file_load_errors = self._load_file(self.entry_point_file)
 
     @classmethod
@@ -55,6 +61,28 @@ class Program:
             saved_file = Path(file.name)
             saved_file.write_text(code)
             return cls(file=saved_file)
+
+    def _load_builtins(self) -> List[FileLoadException]:
+        return []  # TODO re-enable
+
+        try:
+            stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
+        except KeyError:
+            raise NotImplementedError  # TODO
+
+        if not stdlib_path.exists():
+            raise NotImplementedError  # TODO
+
+        builtins_file = stdlib_path / "builtins.aaa"
+
+        try:
+            tokens, parsed_file = self._parse_builtins_file(builtins_file)
+        except (TokenizerError, ParseError) as e:
+            return [e]
+        except OSError:
+            return [FileReadError(builtins_file)]
+
+        raise NotImplementedError  # TODO
 
     def exit_on_error(self) -> None:  # pragma: nocover
         if not self.file_load_errors:
@@ -81,7 +109,7 @@ class Program:
         self.file_load_stack.append(file)
 
         try:
-            tokens, parsed_file = self._parse_file(file)
+            tokens, parsed_file = self._parse_regular_file(file)
         except (TokenizerError, ParseError) as e:
             self.file_load_stack.pop()
             return [e]
@@ -113,11 +141,19 @@ class Program:
         self.file_load_stack.pop()
         return []
 
-    def _parse_file(self, file: Path) -> Tuple[List[Token], ParsedFile]:
+    def _parse_regular_file(self, file: Path) -> Tuple[List[Token], ParsedFile]:
         code = file.read_text()
         tokens, tree = parse_aaa(str(file), code)
         parsed_file = ParsedFile.from_tree(tree, tokens, code)
         return tokens, parsed_file
+
+    def _parse_builtins_file(
+        self, file: Path
+    ) -> Tuple[List[Token], ParsedBuiltinsFile]:
+        code = file.read_text()
+        tokens, tree = parse_aaa(str(file), code)
+        parsed_builtins_file = ParsedBuiltinsFile.from_tree(tree, tokens, code)
+        return tokens, parsed_builtins_file
 
     def _load_file_identifiers(
         self, file: Path, parsed_file: ParsedFile, tokens: List[Token]

@@ -394,21 +394,58 @@ class BuiltinType(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class ParsedBuiltinsFile(AaaTreeNode):
+    functions: List[BuiltinFunction]
+    types: List[BuiltinType]
+
+    @classmethod
+    def from_tree(
+        cls, tree: Tree, tokens: List[Token], code: str
+    ) -> "ParsedBuiltinsFile":
+        assert tree.token_type == NonTerminal.ROOT
+        assert tree.token_count == len(tokens)
+
+        tree = tree[0]
+        assert tree.token_type == NonTerminal.BUILTINS_FILE_ROOT
+
+        functions: List[BuiltinFunction] = []
+        types: List[BuiltinType] = []
+
+        for child in tree.children:
+            if child.token_type == NonTerminal.BUILTIN_FUNCTION_DEFINITION:
+                function = BuiltinFunction.from_tree(child, tokens, code)
+                functions.append(function)
+
+            elif child.token_type == NonTerminal.BUILTIN_TYPE_DEFINITION:
+                type = BuiltinType.from_tree(child, tokens, code)
+                types.append(type)
+
+            else:  # pragma: nocover
+                assert False
+
+        return ParsedBuiltinsFile(
+            functions=functions,
+            types=types,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class ParsedFile(AaaTreeNode):
     functions: List[Function]
     imports: List[Import]
-    builtin_functions: List[BuiltinFunction]
-    builtin_types: List[BuiltinType]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ParsedFile":
         assert tree.token_type == NonTerminal.ROOT
         assert tree.token_count == len(tokens)
 
+        tree = tree[0]
+        assert tree.token_type == NonTerminal.REGULAR_FILE_ROOT
+
         functions: List[Function] = []
         imports: List[Import] = []
-        builtin_functions: List[BuiltinFunction] = []
-        builtin_types: List[BuiltinType] = []
 
         for child in tree.children:
             if child.token_type == NonTerminal.FUNCTION_DEFINITION:
@@ -419,22 +456,12 @@ class ParsedFile(AaaTreeNode):
                 import_ = Import.from_tree(child, tokens, code)
                 imports.append(import_)
 
-            elif child.token_type == NonTerminal.BUILTIN_FUNCTION_DEFINITION:
-                builtin_function = BuiltinFunction.from_tree(child, tokens, code)
-                builtin_functions.append(builtin_function)
-
-            elif child.token_type == NonTerminal.BUILTIN_TYPE_DEFINITION:
-                builtin_type = BuiltinType.from_tree(child, tokens, code)
-                builtin_types.append(builtin_type)
-
             else:  # pragma: nocover
                 assert False
 
         return ParsedFile(
             functions=functions,
             imports=imports,
-            builtin_types=builtin_types,
-            builtin_functions=builtin_functions,
             token_count=tree.token_count,
             token_offset=tree.token_offset,
         )
