@@ -53,9 +53,9 @@ class StringLiteral(AaaTreeNode):
         assert tree.token_type == Terminal.STRING
         value = (
             tree.value(tokens, code)[1:-1]
+            .replace("\\\\", "\\")
             .replace("\\n", "\n")
             .replace('\\"', '"')
-            .replace("\\\\", "\\")
         )
         return StringLiteral(
             value=value, token_count=tree.token_count, token_offset=tree.token_offset
@@ -427,7 +427,7 @@ class BuiltinType(AaaTreeNode):
         assert tree.token_type == NonTerminal.BUILTIN_TYPE_DEFINITION
 
         return BuiltinType(
-            name=StringLiteral.from_tree(tree[1], tokens, code).value,
+            name=tree[1].value(tokens, code),
             token_count=tree.token_count,
             token_offset=tree.token_offset,
         )

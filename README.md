@@ -9,7 +9,7 @@ Stack-based language, like forth.
 ### Examples
 ```sh
 # Run code from a shell argument. This prints "aaa\n".
-./aaa.py cmd '"a" 0 while dup 3 < begin over . 1 + end drop drop \n'
+./aaa.py cmd '"a" 0 while dup 3 < begin over . 1 + end drop drop "\n" .'
 
 # Run code from a file. Implements the famous fizzbuzz interview question.
 ./aaa.py run examples/fizzbuzz.aaa

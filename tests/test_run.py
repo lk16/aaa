@@ -43,7 +43,6 @@ from lang.typing.exceptions import MainFunctionNotFound
         ("if false begin 4 . end 5 .", "5"),
         ("3 . if true begin 4 . end", "34"),
         ("3 . if false begin 4 . end", "3"),
-        ("\\n", "\n"),
         ("if true begin 1 . else 0 . end", "1"),
         ("if false begin 1 . else 0 . end", "0"),
         ("7 . if true begin 1 . else 0 . end 8 .", "718"),

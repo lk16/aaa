@@ -7,7 +7,7 @@ fn main begin
     begin
         1 +
         dup .
-        \n
+        "\n" .
     end
     drop
 end

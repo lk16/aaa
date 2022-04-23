@@ -115,11 +115,6 @@ class Rot(Instruction):
 
 
 @dataclass
-class CharNewLinePrint(Instruction):
-    ...
-
-
-@dataclass
 class Print(Instruction):
     ...
 

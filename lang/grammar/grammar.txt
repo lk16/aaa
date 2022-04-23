@@ -29,7 +29,6 @@
 @ token AND            = regex("and(?=\\W|$)")    .
 @ token ASSERT         = regex("assert(?=\\W|$)") .
 @ token ASTERISK       = "*"                      .
-@ token BACKSLASH_N    = regex("\\\\n(?=\\W|$)")  .
 @ token COMMA          = regex(",(?=\\s|$)")      .
 @ token DROP           = regex("drop(?=\\W|$)")   .
 @ token DUP            = regex("dup(?=\\W|$)")    .
@@ -146,7 +145,6 @@ OPERATOR = (
       AND
     | ASSERT
     | ASTERISK
-    | BACKSLASH_N
     | DROP
     | DUP
     | EQUALS

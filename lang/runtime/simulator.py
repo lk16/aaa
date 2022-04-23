@@ -8,7 +8,6 @@ from lang.instructions.types import (
     Assert,
     BoolPush,
     CallFunction,
-    CharNewLinePrint,
     Divide,
     Drop,
     Dup,
@@ -66,7 +65,6 @@ class Simulator:
             Assert: self.instruction_assert,
             BoolPush: self.instruction_bool_push,
             CallFunction: self.instruction_call_function,
-            CharNewLinePrint: self.instruction_char_newline_print,
             Divide: self.instruction_divide,
             Drop: self.instruction_drop,
             Dup: self.instruction_dup,
@@ -341,11 +339,6 @@ class Simulator:
         self.push(y)
         self.push(x)
         self.push(z)
-        return self.get_instruction_pointer() + 1
-
-    def instruction_char_newline_print(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, CharNewLinePrint)
-        print()  # Just print a newline
         return self.get_instruction_pointer() + 1
 
     def instruction_print(self, instruction: Instruction) -> int:

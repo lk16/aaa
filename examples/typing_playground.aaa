@@ -3,16 +3,20 @@
 fn main
 begin
     "five = " .
-    five . \n
+    five .
+    "\n" .
 
     "3 5 max = " .
-    3 5 max . \n
+    3 5 max .
+    "\n" .
 
     "4 factorial = " .
-    4 factorial . \n
+    4 factorial .
+    "\n" .
 
     "7 dup_twice = " .
-    7 dup_twice . . . \n
+    7 dup_twice . . .
+    "\n" .
 end
 
 

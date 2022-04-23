@@ -197,12 +197,7 @@ class TypeChecker:
     def _check_operator(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Operator)
 
-        # TODO remove this super ugly hack and fix the real issue
-        value = node.value
-        if value == "\\n":
-            value = "\\\n"
-
-        signatures = self.program._builtins.functions[value]
+        signatures = self.program._builtins.functions[node.value]
 
         stack: Optional[TypeStack] = None
         last_stack_type_error: Optional[StackTypesError] = None

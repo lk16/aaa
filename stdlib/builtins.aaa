@@ -44,7 +44,6 @@ builtin_fn "strlen" args str return int
 builtin_fn "." args bool
 builtin_fn "." args int
 builtin_fn "." args str
-builtin_fn "\\n"
 
 // debugging operators
 builtin_fn "assert" args bool
