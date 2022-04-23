@@ -384,8 +384,17 @@ class CyclicImportError(Exception):
 
 # TODO needs better baseclass
 class MainFunctionNotFound(Exception):
-    def __inti__(self, file: Path) -> None:
+    def __init__(self, file: Path) -> None:
         self.file = file
 
     def __str__(self) -> str:
         return f"No main function found in {self.file}"
+
+
+# TODO needs better baseclass
+class MissingEnvironmentVariable(Exception):
+    def __init__(self, env_var_name: str) -> None:
+        self.env_var_name = env_var_name
+
+    def __str__(self) -> str:
+        return f"Required environment variable {self.env_var_name} was not set."

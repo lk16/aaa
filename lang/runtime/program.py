@@ -27,6 +27,7 @@ from lang.typing.exceptions import (
     FunctionNameCollision,
     ImportedItemNotFound,
     MainFunctionNotFound,
+    MissingEnvironmentVariable,
     TypeException,
 )
 from lang.typing.types import Signature, SignatureItem, TypePlaceholder, VariableType
@@ -49,6 +50,7 @@ FileLoadException = (
     | FileReadError
     | CyclicImportError
     | MainFunctionNotFound
+    | MissingEnvironmentVariable
 )
 
 # TODO use cli flag instead
@@ -92,10 +94,7 @@ class Program:
         try:
             stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
         except KeyError:
-            raise NotImplementedError  # TODO
-
-        if not stdlib_path.exists():
-            raise NotImplementedError  # TODO
+            return [MissingEnvironmentVariable("AAA_STDLIB_PATH")]
 
         builtins_file = stdlib_path / "builtins.aaa"
 

@@ -11,14 +11,15 @@ def format_stack_item(var: Variable) -> str:  # pragma: nocover
             return "true"
         return "false"
 
-    if var.has_root_type(RootType.INTEGER):
+    elif var.has_root_type(RootType.INTEGER):
         return str(var.value)
 
-    if var.has_root_type(RootType.STRING):
+    elif var.has_root_type(RootType.STRING):
         formatted = var.value.replace("\n", "\\n").replace('"', '\\"')
         return f'"{formatted}"'
 
-    raise NotImplementedError
+    else:  # pragma: nocover
+        assert False
 
 
 def format_str(string: str, max_length: Optional[int] = None) -> str:  # pragma: nocover

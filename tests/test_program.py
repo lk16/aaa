@@ -2,6 +2,7 @@ from parser.parser.exceptions import ParseError
 from typing import Optional, Type
 
 import pytest
+from pytest import MonkeyPatch
 
 from lang.runtime.program import Program
 from lang.typing.exceptions import (
@@ -11,6 +12,7 @@ from lang.typing.exceptions import (
     FunctionNameCollision,
     FunctionTypeError,
     LoopTypeError,
+    MissingEnvironmentVariable,
     StackTypesError,
     StackUnderflowError,
     UnknownFunction,
@@ -90,3 +92,14 @@ def test_type_checker(code: str, expected_exception: Optional[Type[Exception]]) 
         assert type(program.file_load_errors[0]) == expected_exception
     else:
         assert not program.file_load_errors
+
+
+def test_program_load_builtins_without_stdlib_path_env_var(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AAA_STDLIB_PATH")
+
+    code = "fn main begin nop end"
+    program = Program.without_file(code)
+    assert len(program.file_load_errors) == 1
+    assert isinstance(program.file_load_errors[0], MissingEnvironmentVariable)

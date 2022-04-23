@@ -224,4 +224,5 @@ class InstructionGenerator:
         elif root_type == RootType.STRING:
             return [StringPush("")]
 
-        raise NotImplementedError
+        else:  # pragma: nocover
+            assert False
