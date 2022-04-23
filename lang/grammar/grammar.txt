@@ -10,18 +10,18 @@
 
 // --- control flow keyword tokens ---
 
-@ token ARGS   = regex("args(?=\\W|$)")   .
-@ token AS     = regex("as(?=\\W|$)")     .
-@ token BEGIN  = regex("begin(?=\\W|$)")  .
-@ token BUILTIN_FN   = regex("builtin_fn(?=\\W|$)")   .
-@ token ELSE   = regex("else(?=\\W|$)")   .
-@ token END    = regex("end(?=\\W|$)")    .
-@ token FN     = regex("fn(?=\\W|$)")     .
-@ token FROM   = regex("from(?=\\W|$)")   .
-@ token IF     = regex("if(?=\\W|$)")     .
-@ token IMPORT = regex("import(?=\\W|$)") .
-@ token RETURN = regex("return(?=\\W|$)") .
-@ token WHILE  = regex("while(?=\\W|$)")  .
+@ token ARGS         = regex("args(?=\\W|$)")       .
+@ token AS           = regex("as(?=\\W|$)")         .
+@ token BEGIN        = regex("begin(?=\\W|$)")      .
+@ token BUILTIN_FN   = regex("builtin_fn(?=\\W|$)") .
+@ token ELSE         = regex("else(?=\\W|$)")       .
+@ token END          = regex("end(?=\\W|$)")        .
+@ token FN           = regex("fn(?=\\W|$)")         .
+@ token FROM         = regex("from(?=\\W|$)")       .
+@ token IF           = regex("if(?=\\W|$)")         .
+@ token IMPORT       = regex("import(?=\\W|$)")     .
+@ token RETURN       = regex("return(?=\\W|$)")     .
+@ token WHILE        = regex("while(?=\\W|$)")      .
 
 // --- operator tokens ---
 

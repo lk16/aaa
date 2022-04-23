@@ -6,6 +6,11 @@ builtin_fn "swap" args *a, *b return *b, *a
 builtin_fn "over" args *a, *b return *a, *b, *a
 builtin_fn "rot" args *a, *b, *c return *b, *c, *a
 
+// special operators
+builtin_fn "." args *a
+builtin_fn "assert" args bool
+builtin_fn "nop"
+
 // integer arithmetic
 builtin_fn "+" args int, int return int
 builtin_fn "-" args int, int return int
@@ -25,7 +30,6 @@ builtin_fn "<=" args int, int return bool
 builtin_fn "and" args bool, bool return bool
 builtin_fn "or" args bool, bool return bool
 builtin_fn "not" args bool return bool
-builtin_fn "nop"
 
 // string comparison
 builtin_fn "=" args str, str return bool
@@ -34,11 +38,3 @@ builtin_fn "=" args str, str return bool
 builtin_fn "+" args str, str return str
 builtin_fn "substr" args str, int, int, return str
 builtin_fn "strlen" args str return int
-
-// printing operators
-builtin_fn "." args bool
-builtin_fn "." args int
-builtin_fn "." args str
-
-// debugging operators
-builtin_fn "assert" args bool
