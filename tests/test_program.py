@@ -1,10 +1,14 @@
+import os
 from parser.parser.exceptions import ParseError
+from parser.tokenizer.exceptions import TokenizerError
+from pathlib import Path
 from typing import Optional, Type
+from unittest.mock import patch
 
 import pytest
 from pytest import MonkeyPatch
 
-from lang.runtime.program import Program
+from lang.runtime.program import FileLoadException, Program
 from lang.typing.exceptions import (
     ArgumentNameCollision,
     BranchTypeError,
@@ -92,7 +96,27 @@ def test_program_load_builtins_without_stdlib_path_env_var(
 ) -> None:
     monkeypatch.delenv("AAA_STDLIB_PATH")
 
-    code = "fn main begin nop end"
-    program = Program.without_file(code)
+    program = Program.without_file("fn main begin nop end")
     assert len(program.file_load_errors) == 1
     assert isinstance(program.file_load_errors[0], MissingEnvironmentVariable)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception_type"],
+    [
+        ('"', TokenizerError),
+        ("5", ParseError),
+    ],
+)
+def test_pram_load_builtins_content_error(
+    code: str, expected_exception_type: Type[FileLoadException]
+) -> None:
+    def my_read_text(path: Path) -> str:
+        assert path == Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
+        return code
+
+    with patch.object(Path, "read_text", my_read_text):
+        program = Program.without_file("fn main begin nop end")
+
+    assert len(program.file_load_errors) == 1
+    assert isinstance(program.file_load_errors[0], expected_exception_type)
