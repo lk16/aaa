@@ -37,7 +37,6 @@ class Terminal(IntEnum):
     BEGIN = next(next_offset)
     BOOL = next(next_offset)
     BUILTIN_FN = next(next_offset)
-    BUILTIN_TYPE = next(next_offset)
     COMMA = next(next_offset)
     COMMENT = next(next_offset)
     DROP = next(next_offset)
@@ -89,7 +88,6 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.AS, "as(?=\\W|$)"),
     Regex(Terminal.BEGIN, "begin(?=\\W|$)"),
     Regex(Terminal.BUILTIN_FN, "builtin_fn(?=\\W|$)"),
-    Regex(Terminal.BUILTIN_TYPE, "builtin_type(?=\\W|$)"),
     Regex(Terminal.ELSE, "else(?=\\W|$)"),
     Regex(Terminal.END, "end(?=\\W|$)"),
     Regex(Terminal.FN, "fn(?=\\W|$)"),
@@ -148,7 +146,6 @@ class NonTerminal(IntEnum):
     BRANCH = next(next_offset)
     BUILTINS_FILE_ROOT = next(next_offset)
     BUILTIN_FUNCTION_DEFINITION = next(next_offset)
-    BUILTIN_TYPE_DEFINITION = next(next_offset)
     FUNCTION_BODY = next(next_offset)
     FUNCTION_BODY_ITEM = next(next_offset)
     FUNCTION_DEFINITION = next(next_offset)
@@ -201,15 +198,9 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         TerminalExpression(Terminal.END),
     ),
     NonTerminal.BUILTINS_FILE_ROOT: ConcatenationExpression(
-        ConjunctionExpression(
-            NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
-            NonTerminalExpression(NonTerminal.BUILTIN_TYPE_DEFINITION),
-        ),
+        NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
         RepeatExpression(
-            ConjunctionExpression(
-                NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION),
-                NonTerminalExpression(NonTerminal.BUILTIN_TYPE_DEFINITION),
-            )
+            NonTerminalExpression(NonTerminal.BUILTIN_FUNCTION_DEFINITION)
         ),
     ),
     NonTerminal.BUILTIN_FUNCTION_DEFINITION: ConcatenationExpression(
@@ -227,9 +218,6 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
                 NonTerminalExpression(NonTerminal.RETURN_TYPES),
             )
         ),
-    ),
-    NonTerminal.BUILTIN_TYPE_DEFINITION: ConcatenationExpression(
-        TerminalExpression(Terminal.BUILTIN_TYPE), TerminalExpression(Terminal.STRING)
     ),
     NonTerminal.FUNCTION_BODY: ConcatenationExpression(
         NonTerminalExpression(NonTerminal.FUNCTION_BODY_ITEM),

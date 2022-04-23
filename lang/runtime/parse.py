@@ -419,24 +419,8 @@ class BuiltinFunction(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
-class BuiltinType(AaaTreeNode):
-    name: str
-
-    @classmethod
-    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "BuiltinType":
-        assert tree.token_type == NonTerminal.BUILTIN_TYPE_DEFINITION
-
-        return BuiltinType(
-            name=tree[1].value(tokens, code),
-            token_count=tree.token_count,
-            token_offset=tree.token_offset,
-        )
-
-
-@dataclass(kw_only=True)
 class ParsedBuiltinsFile(AaaTreeNode):
     functions: List[BuiltinFunction]
-    types: List[BuiltinType]
 
     @classmethod
     def from_tree(
@@ -449,23 +433,17 @@ class ParsedBuiltinsFile(AaaTreeNode):
         assert tree.token_type == NonTerminal.BUILTINS_FILE_ROOT
 
         functions: List[BuiltinFunction] = []
-        types: List[BuiltinType] = []
 
         for child in tree.children:
             if child.token_type == NonTerminal.BUILTIN_FUNCTION_DEFINITION:
                 function = BuiltinFunction.from_tree(child, tokens, code)
                 functions.append(function)
 
-            elif child.token_type == NonTerminal.BUILTIN_TYPE_DEFINITION:
-                type = BuiltinType.from_tree(child, tokens, code)
-                types.append(type)
-
             else:  # pragma: nocover
                 assert False
 
         return ParsedBuiltinsFile(
             functions=functions,
-            types=types,
             token_count=tree.token_count,
             token_offset=tree.token_offset,
         )

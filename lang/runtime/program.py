@@ -6,7 +6,7 @@ from parser.tokenizer.exceptions import TokenizerError
 from parser.tokenizer.models import Token
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from lang.grammar.parser import parse as parse_aaa
 from lang.instructions.generator import InstructionGenerator
@@ -57,12 +57,11 @@ PARSE_VERBOSE = "AAA_PARSING_DEBUG" in os.environ
 
 @dataclass(kw_only=True)
 class Builtins:
-    types: Set[str]  # TODO this isn't used currently
     functions: Dict[str, List[Signature]]
 
     @classmethod
     def empty(cls) -> "Builtins":
-        return Builtins(types=set(), functions={})
+        return Builtins(functions={})
 
 
 class Program:
@@ -106,9 +105,6 @@ class Program:
             return [e]
         except OSError:
             return [FileReadError(builtins_file)]
-
-        for type in parsed_file.types:
-            self._builtins.types.add(type.name)
 
         for function in parsed_file.functions:
             if function.name not in self._builtins.functions:

@@ -14,7 +14,6 @@
 @ token AS     = regex("as(?=\\W|$)")     .
 @ token BEGIN  = regex("begin(?=\\W|$)")  .
 @ token BUILTIN_FN   = regex("builtin_fn(?=\\W|$)")   .
-@ token BUILTIN_TYPE = regex("builtin_type(?=\\W|$)") .
 @ token ELSE   = regex("else(?=\\W|$)")   .
 @ token END    = regex("end(?=\\W|$)")    .
 @ token FN     = regex("fn(?=\\W|$)")     .
@@ -86,11 +85,9 @@
 
 ROOT = REGULAR_FILE_ROOT | BUILTINS_FILE_ROOT .
 
-BUILTINS_FILE_ROOT = (BUILTIN_FUNCTION_DEFINITION | BUILTIN_TYPE_DEFINITION)+ .
+BUILTINS_FILE_ROOT = (BUILTIN_FUNCTION_DEFINITION)+ .
 
 BUILTIN_FUNCTION_DEFINITION = BUILTIN_FN STRING (ARGS RETURN_TYPES)? (RETURN RETURN_TYPES)? .
-
-BUILTIN_TYPE_DEFINITION = BUILTIN_TYPE STRING .
 
 REGULAR_FILE_ROOT = (FUNCTION_DEFINITION | IMPORT_STATEMENT)+ .
 

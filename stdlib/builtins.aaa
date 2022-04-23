@@ -6,11 +6,6 @@ builtin_fn "swap" args *a, *b return *b, *a
 builtin_fn "over" args *a, *b return *a, *b, *a
 builtin_fn "rot" args *a, *b, *c return *b, *c, *a
 
-// atom types
-builtin_type "bool"
-builtin_type "int"
-builtin_type "str"
-
 // integer arithmetic
 builtin_fn "+" args int, int return int
 builtin_fn "-" args int, int return int
