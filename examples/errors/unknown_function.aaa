@@ -1,3 +1,10 @@
 fn foo begin
     bar
 end
+
+
+fn
+    main
+begin
+    nop
+end

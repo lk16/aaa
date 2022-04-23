@@ -10,59 +10,66 @@
 
 // --- control flow keyword tokens ---
 
-@ token ARGS         = regex("args(?=\\s|$)")         .
-@ token AS           = regex("as(?=\\s|$)")           .
-@ token BEGIN        = regex("begin(?=\\s|$)")        .
-@ token BUILTIN_FN   = regex("builtin_fn(?=\\s|$)")   .
-@ token BUILTIN_TYPE = regex("builtin_type(?=\\s|$)") .
-@ token ELSE         = regex("else(?=\\s|$)")         .
-@ token END          = regex("end(?=\\s|$)")          .
-@ token FN           = regex("fn(?=\\s|$)")           .
-@ token FROM         = regex("from(?=\\s|$)")         .
-@ token IF           = regex("if(?=\\s|$)")           .
-@ token IMPORT       = regex("import(?=\\s|$)")       .
-@ token RETURN       = regex("return(?=\\s|$)")       .
-@ token WHILE        = regex("while(?=\\s|$)")        .
+@ token ARGS   = regex("args(?=\\W|$)")   .
+@ token AS     = regex("as(?=\\W|$)")     .
+@ token BEGIN  = regex("begin(?=\\W|$)")  .
+@ token BUILTIN_FN   = regex("builtin_fn(?=\\W|$)")   .
+@ token BUILTIN_TYPE = regex("builtin_type(?=\\W|$)") .
+@ token ELSE   = regex("else(?=\\W|$)")   .
+@ token END    = regex("end(?=\\W|$)")    .
+@ token FN     = regex("fn(?=\\W|$)")     .
+@ token FROM   = regex("from(?=\\W|$)")   .
+@ token IF     = regex("if(?=\\W|$)")     .
+@ token IMPORT = regex("import(?=\\W|$)") .
+@ token RETURN = regex("return(?=\\W|$)") .
+@ token WHILE  = regex("while(?=\\W|$)")  .
 
 // --- operator tokens ---
 
-@ token AND            = regex("and(?=\\s|$)")    .
-@ token ASSERT         = regex("assert(?=\\s|$)") .
+@ token AND            = regex("and(?=\\W|$)")    .
+@ token ASSERT         = regex("assert(?=\\W|$)") .
 @ token ASTERISK       = "*"                      .
-@ token BACKSLASH_N    = regex("\\\\n(?=\\s|$)")  .
+@ token BACKSLASH_N    = regex("\\\\n(?=\\W|$)")  .
 @ token COMMA          = regex(",(?=\\s|$)")      .
-@ token DROP           = regex("drop(?=\\s|$)")   .
-@ token DUP            = regex("dup(?=\\s|$)")    .
+@ token DROP           = regex("drop(?=\\W|$)")   .
+@ token DUP            = regex("dup(?=\\W|$)")    .
 @ token EQUALS         = regex("=(?=\\s|$)")      .
 @ token GREATER_EQUALS = regex(">=(?=\\s|$)")     .
 @ token GREATER_THAN   = regex(">(?=\\s|$)")      .
 @ token LESS_EQUALS    = regex("<=(?=\\s|$)")     .
 @ token LESS_THAN      = regex("<(?=\\s|$)")      .
 @ token MINUS          = regex("-(?=\\s|$)")      .
-@ token NOP            = regex("nop(?=\\s|$)")    .
-@ token NOT            = regex("not(?=\\s|$)")    .
+@ token NOP            = regex("nop(?=\\W|$)")    .
+@ token NOT            = regex("not(?=\\W|$)")    .
 @ token NOT_EQUALS     = regex("!=(?=\\s|$)")     .
-@ token OR             = regex("or(?=\\s|$)")     .
-@ token OVER           = regex("over(?=\\s|$)")   .
+@ token OR             = regex("or(?=\\W|$)")     .
+@ token OVER           = regex("over(?=\\W|$)")   .
 @ token PERCENT        = regex("%(?=\\s|$)")      .
 @ token PERIOD         = regex("\\.(?=\\s|$)")    .
 @ token PLUS           = regex("\\+(?=\\s|$)")    .
-@ token ROT            = regex("rot(?=\\s|$)")    .
+@ token ROT            = regex("rot(?=\\W|$)")    .
 @ token SLASH          = regex("/(?=\\s|$)")      .
-@ token STRLEN         = regex("strlen(?=\\s|$)") .
-@ token SUBSTR         = regex("substr(?=\\s|$)") .
-@ token SWAP           = regex("swap(?=\\s|$)")   .
+@ token STRLEN         = regex("strlen(?=\\W|$)") .
+@ token SUBSTR         = regex("substr(?=\\W|$)") .
+@ token SWAP           = regex("swap(?=\\W|$)")   .
 
 // --- literal tokens ---
 
-@ token TRUE       = regex("true(?=\\s|$)")  .
-@ token FALSE      = regex("false(?=\\s|$)") .
+@ token FALSE      = regex("false(?=\\W|$)") .
+@ token TRUE       = regex("true(?=\\W|$)")  .
 
 // --- builtin types ---
 
-@ token INT  =  regex("int(?=\\s|$)")  .
-@ token STR  =  regex("str(?=\\s|$)")  .
-@ token BOOL =  regex("bool(?=\\s|$)") .
+@ token BOOL = regex("bool(?=\\W|$)") .
+@ token INT  = regex("int(?=\\W|$)")  .
+@ token MAP  = regex("map(?=\\W|$)")  .
+@ token STR  = regex("str(?=\\W|$)")  .
+@ token VEC  = regex("vec(?=\\W|$)")  .
+
+// --- type param blocks ---
+
+@ token TYPE_PARAMS_START = "[" .
+@ token TYPE_PARAMS_END   = "]" .
 
 // --- more generic literal tokens ---
 
@@ -72,8 +79,8 @@
 
 // --- pruned tokens ---
 
-@ token @ prune WHITESPACE = regex("([ \n]|$)+") .
 @ token @ prune COMMENT    = regex("//[^\n]*")   .
+@ token @ prune WHITESPACE = regex("([ \n]|$)+") .
 @ token @ prune SHEBANG    = regex("#![^\n]*")   .
 
 // ---
@@ -96,26 +103,35 @@ IMPORT_ITEM = IDENTIFIER (AS IDENTIFIER)? .
 
 FUNCTION_DEFINITION = FN IDENTIFIER (ARGS ARGUMENT_LIST)? (RETURN RETURN_TYPES)? BEGIN FUNCTION_BODY END .
 
-TYPE_LITERAL = INT | STR | BOOL .
+TYPE_LITERAL = (
+      BOOL
+    | INT
+    | MAP_TYPE_LITERAL
+    | STR
+    | VEC_TYPE_LITERAL
+) .
 
-@ prune
+MAP_TYPE_LITERAL = MAP TYPE_PARAMS_START TYPE_LITERAL COMMA TYPE_LITERAL TYPE_PARAMS_END .
+
+VEC_TYPE_LITERAL = VEC TYPE_PARAMS_START TYPE_LITERAL TYPE_PARAMS_END .
+
 TYPE_PLACEHOLDER = ASTERISK IDENTIFIER .
 
 @ prune
-TYPED_ARGUMENT = IDENTIFIER AS (IDENTIFIER | TYPE_LITERAL) .
+TYPED_ARGUMENT = IDENTIFIER AS TYPE_LITERAL .
 
 ARGUMENT = TYPE_PLACEHOLDER | TYPED_ARGUMENT .
 
 ARGUMENT_LIST = ARGUMENT (COMMA ARGUMENT)* (COMMA)? .
 
-RETURN_TYPE = TYPE_LITERAL | IDENTIFIER | TYPE_PLACEHOLDER .
+RETURN_TYPE = TYPE_LITERAL | TYPE_PLACEHOLDER .
 
 RETURN_TYPES = RETURN_TYPE (COMMA RETURN_TYPE)* (COMMA)? .
 
 FUNCTION_BODY = (FUNCTION_BODY_ITEM)+ .
 
 @ prune
-FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL .
+FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL | TYPE_LITERAL .
 
 BRANCH = IF FUNCTION_BODY BEGIN FUNCTION_BODY (ELSE FUNCTION_BODY)? END .
 

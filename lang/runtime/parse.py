@@ -15,6 +15,7 @@ FunctionBodyItem = Union[
     "IntegerLiteral",
     "StringLiteral",
     "Identifier",
+    "TypeLiteral",
 ]
 
 
@@ -71,6 +72,28 @@ class BooleanLiteral(AaaTreeNode):
         value = tree.value(tokens, code) == "true"
         return BooleanLiteral(
             value=value, token_count=tree.token_count, token_offset=tree.token_offset
+        )
+
+
+@dataclass(kw_only=True)
+class TypeLiteral(AaaTreeNode):
+    type_name: str
+    type_parameters: List["TypeLiteral"]
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "TypeLiteral":
+        assert tree.token_type == NonTerminal.TYPE_LITERAL
+        type_name = tree[0].value(tokens, code)
+
+        # TODO type params are not implemented yet here
+        assert len(tree.children) == 1
+        type_parameters: List["TypeLiteral"] = []
+
+        return TypeLiteral(
+            type_name=type_name,
+            type_parameters=type_parameters,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
         )
 
 
@@ -158,10 +181,11 @@ class FunctionBody(AaaTreeNode):
         aaa_tree_nodes: Dict[Optional[IntEnum], Type[FunctionBodyItem]] = {
             NonTerminal.BOOLEAN: BooleanLiteral,
             NonTerminal.BRANCH: Branch,
-            Terminal.IDENTIFIER: Identifier,
-            Terminal.INTEGER: IntegerLiteral,
             NonTerminal.LOOP: Loop,
             NonTerminal.OPERATOR: Operator,
+            NonTerminal.TYPE_LITERAL: TypeLiteral,
+            Terminal.IDENTIFIER: Identifier,
+            Terminal.INTEGER: IntegerLiteral,
             Terminal.STRING: StringLiteral,
         }
 
@@ -177,58 +201,74 @@ class FunctionBody(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class ParsedTypePlaceholder(AaaTreeNode):
+    name: str
+
+    @classmethod
+    def from_tree(
+        cls, tree: Tree, tokens: List[Token], code: str
+    ) -> "ParsedTypePlaceholder":
+        assert tree.token_type == NonTerminal.TYPE_PLACEHOLDER
+
+        return ParsedTypePlaceholder(
+            name=tree[1].value(tokens, code),
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class Argument(AaaTreeNode):
     name: str
-    type: str
+    type: Union[TypeLiteral, ParsedTypePlaceholder]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Argument":
         assert tree.token_type == NonTerminal.ARGUMENT
 
-        if tree[0].token_type in [Terminal.IDENTIFIER, NonTerminal.TYPE_LITERAL]:
-            return Argument(
-                name=tree[0].value(tokens, code),
-                type=tree[2].value(tokens, code),
-                token_count=tree.token_count,
-                token_offset=tree.token_offset,
-            )
+        type: Union[TypeLiteral, ParsedTypePlaceholder]
 
-        elif tree[0].token_type == Terminal.ASTERISK:
-            return Argument(
-                name=tree[1].value(tokens, code),
-                type="*" + tree[1].value(tokens, code),
-                token_count=tree.token_count,
-                token_offset=tree.token_offset,
-            )
+        if tree[0].token_type == Terminal.IDENTIFIER:
+            type = TypeLiteral.from_tree(tree[2], tokens, code)
+
+        elif tree[0].token_type == NonTerminal.TYPE_PLACEHOLDER:
+            type = ParsedTypePlaceholder.from_tree(tree[0], tokens, code)
 
         else:  # pragma: nocover
             assert False
 
+        return Argument(
+            name=tree[0].value(tokens, code),
+            type=type,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
 
 @dataclass(kw_only=True)
 class ReturnType(AaaTreeNode):  # TODO rename to ParsedType
-    type: str
+    type: Union[TypeLiteral, ParsedTypePlaceholder]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ReturnType":
         assert tree.token_type == NonTerminal.RETURN_TYPE
 
-        if tree[0].token_type in [Terminal.IDENTIFIER, NonTerminal.TYPE_LITERAL]:
-            return ReturnType(
-                type=tree[0].value(tokens, code),
-                token_count=tree.token_count,
-                token_offset=tree.token_offset,
-            )
+        type: Union[TypeLiteral, ParsedTypePlaceholder]
 
-        elif tree[0].token_type == Terminal.ASTERISK:
-            return ReturnType(
-                type="*" + tree[1].value(tokens, code),
-                token_count=tree.token_count,
-                token_offset=tree.token_offset,
-            )
+        if tree[0].token_type == NonTerminal.TYPE_LITERAL:
+            type = TypeLiteral.from_tree(tree[0], tokens, code)
+
+        elif tree[0].token_type == NonTerminal.TYPE_PLACEHOLDER:
+            type = ParsedTypePlaceholder.from_tree(tree[0], tokens, code)
 
         else:  # pragma: nocover
             assert False
+
+        return ReturnType(
+            type=type,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
 
 
 @dataclass(kw_only=True)

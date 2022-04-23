@@ -1,11 +1,11 @@
 from parser.tokenizer.models import Token
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List, Sequence, Tuple
 
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.parse import AaaTreeNode, Function
 
-from lang.typing.signatures import PlaceholderType, Signature, TypeStack
+from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 
 class TypeException(Exception):
@@ -47,15 +47,11 @@ class TypeException(Exception):
             + "^\n"
         )
 
-    def format_typestack(self, type_stack: TypeStack) -> str:  # pragma: nocover
-        formatted: List[str] = []
-        for item in type_stack:
-            if isinstance(item, PlaceholderType):
-                formatted.append(f"*{item.name}")
-            else:
-                formatted.append(item.__name__)
-
-        return " ".join(formatted)
+    # TODO rename this function
+    def format_typestack(
+        self, type_stack: Sequence[VariableType | TypePlaceholder]
+    ) -> str:  # pragma: nocover
+        return " ".join(repr(type_stack_item) for type_stack_item in type_stack)
 
 
 class FunctionTypeError(TypeException):
@@ -65,7 +61,7 @@ class FunctionTypeError(TypeException):
         file: Path,
         tokens: List[Token],
         function: "Function",
-        expected_return_types: TypeStack,
+        expected_return_types: List[VariableType | TypePlaceholder],
         computed_return_types: TypeStack,
     ) -> None:
         self.function = function
@@ -384,3 +380,12 @@ class CyclicImportError(Exception):
         msg += f"depends on {self.failed_import}\n"
 
         return msg
+
+
+# TODO needs better baseclass
+class MainFunctionNotFound(Exception):
+    def __inti__(self, file: Path) -> None:
+        self.file = file
+
+    def __str__(self) -> str:
+        return f"No main function found in {self.file}"

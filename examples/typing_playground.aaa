@@ -48,7 +48,7 @@ fn factorial
     return int
 begin
     if n 0 < begin
-        0 // language doens't any error handling yet
+        0 // language doens't have any error handling yet
     else
         if
             n 1 =

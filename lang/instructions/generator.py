@@ -46,8 +46,11 @@ from lang.runtime.parse import (
     IntegerLiteral,
     Loop,
     Operator,
+    ParsedTypePlaceholder,
     StringLiteral,
+    TypeLiteral,
 )
+from lang.typing.types import RootType, VariableType
 
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.program import Program
@@ -90,14 +93,15 @@ class InstructionGenerator:
         self.instruction_funcs: Dict[
             Type[AaaTreeNode], Callable[[AaaTreeNode, int], List[Instruction]]
         ] = {
-            IntegerLiteral: self.instructions_for_integer_literal,
-            StringLiteral: self.instructions_for_string_literal,
             BooleanLiteral: self.instructions_for_boolean_literal,
-            Operator: self.instructions_for_operator,
-            Loop: self.instructions_for_loop,
-            Identifier: self.instructions_for_identfier,
             Branch: self.instructions_for_branch,
             FunctionBody: self.instructions_for_function_body,
+            Identifier: self.instructions_for_identfier,
+            IntegerLiteral: self.instructions_for_integer_literal,
+            Loop: self.instructions_for_loop,
+            Operator: self.instructions_for_operator,
+            StringLiteral: self.instructions_for_string_literal,
+            TypeLiteral: self.instructions_for_type_literal,
         }
 
     def generate_instructions(self) -> List[Instruction]:
@@ -157,8 +161,15 @@ class InstructionGenerator:
 
         identifier = node.name
 
-        if identifier in {arg.name for arg in self.function.arguments}:
-            return [PushFunctionArgument(identifier)]
+        for argument in self.function.arguments:
+            if isinstance(argument.type, TypeLiteral):
+                if argument.name == identifier:
+                    return [PushFunctionArgument(argument.name)]
+            elif isinstance(argument.type, ParsedTypePlaceholder):
+                if argument.type.name == identifier:
+                    return [PushFunctionArgument(argument.type.name)]
+            else:  # pragma: nocover
+                assert False
 
         source_file, original_name = self.program.get_function_source_and_name(
             self.file, identifier
@@ -198,3 +209,21 @@ class InstructionGenerator:
             instructions += self._generate_instructions(child, child_offset)
 
         return instructions
+
+    def instructions_for_type_literal(
+        self, node: AaaTreeNode, offset: int
+    ) -> List[Instruction]:
+        assert isinstance(node, TypeLiteral)
+        var_type = VariableType.from_type_literal(node)
+        root_type = var_type.root_type
+
+        if root_type == RootType.INTEGER:
+            return [IntPush(0)]
+
+        elif root_type == RootType.BOOL:
+            return [BoolPush(False)]
+
+        elif root_type == RootType.STRING:
+            return [StringPush("")]
+
+        raise NotImplementedError

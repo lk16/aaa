@@ -20,9 +20,10 @@ from lang.typing.exceptions import (
     FileReadError,
     FunctionNameCollision,
     ImportedItemNotFound,
+    MainFunctionNotFound,
     TypeException,
 )
-from lang.typing.signatures import Signature, SignatureItem
+from lang.typing.types import Signature, SignatureItem
 
 
 @dataclass(kw_only=True)
@@ -36,7 +37,12 @@ Identifiable = Function | ProgramImport
 
 # TODO clean this union up once we have better baseclasses for exceptions
 FileLoadException = (
-    TokenizerError | ParseError | TypeException | FileReadError | CyclicImportError
+    TokenizerError
+    | ParseError
+    | TypeException
+    | FileReadError
+    | CyclicImportError
+    | MainFunctionNotFound
 )
 
 # TODO use cli flag instead
@@ -78,6 +84,8 @@ class Program:
             return cls(file=saved_file)
 
     def _load_builtins(self) -> List[FileLoadException]:
+        return []  # TODO re-enable
+
         try:
             stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
         except KeyError:
@@ -215,6 +223,17 @@ class Program:
         self, file: Path, parsed_file: ParsedFile, tokens: List[Token]
     ) -> List[FileLoadException]:
         type_exceptions: List[FileLoadException] = []
+
+        if file == self.entry_point_file:
+            main_found = False
+            for function in parsed_file.functions:
+                if function.name == "main":
+                    main_found = True
+                    break
+
+            if not main_found:
+                type_exceptions.append(MainFunctionNotFound(file))
+
         for function in parsed_file.functions:
             try:
                 TypeChecker(file, function, tokens, self).check()

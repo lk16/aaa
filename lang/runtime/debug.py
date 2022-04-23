@@ -1,22 +1,24 @@
 from typing import Optional
 
-from lang.typing.signatures import StackItem
+from lang.typing.types import RootType, Variable
 
 
-def format_stack_item(item: StackItem) -> str:  # pragma: nocover
-    if isinstance(item, bool):
-        if item:
+def format_stack_item(var: Variable) -> str:  # pragma: nocover
+    # TODO consider using __repr__() methods
+
+    if var.has_root_type(RootType.BOOL):
+        if var.value:
             return "true"
         return "false"
 
-    if isinstance(item, int):
-        return str(item)
+    if var.has_root_type(RootType.INTEGER):
+        return str(var.value)
 
-    if isinstance(item, str):
-        item = item.replace("\n", "\\n").replace('"', '\\"')
-        return f'"{item}"'
+    if var.has_root_type(RootType.STRING):
+        formatted = var.value.replace("\n", "\\n").replace('"', '\\"')
+        return f'"{formatted}"'
 
-    raise NotADirectoryError
+    raise NotImplementedError
 
 
 def format_str(string: str, max_length: Optional[int] = None) -> str:  # pragma: nocover

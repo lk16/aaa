@@ -28,6 +28,11 @@ def run(file_path: str, verbose_flag: Optional[str] = None) -> None:
 
 
 def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
+    code = f"fn main begin {code}\n end"
+    cmd_full(code, verbose_flag)
+
+
+def cmd_full(code: str, verbose_flag: Optional[str] = None) -> None:
 
     verbose = False
 
@@ -37,7 +42,6 @@ def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
         else:
             raise ArgParseError("Unexpected option for cmd.")
 
-    code = f"fn main begin {code}\n end"
     program = Program.without_file(code)
     program.exit_on_error()
     simulator = Simulator(program, verbose)
@@ -63,6 +67,7 @@ def runtests(*args: Any) -> None:
 
 COMMANDS: Dict[str, Callable[..., None]] = {
     "cmd": cmd,
+    "cmd-full": cmd_full,
     "run": run,
     "runtests": runtests,
 }
@@ -77,6 +82,7 @@ def show_usage(argv: List[str], error_message: str) -> None:
         f"Argument parsing failed: {error_message}\n\n"
         + "Available commands:\n"
         + f"{argv[0]} cmd CODE <-v>\n"
+        + f"{argv[0]} cmd-full CODE <-v>\n"
         + f"{argv[0]} run FILE_PATH <-v>\n"
         + f"{argv[0]} runtests\n"
     )

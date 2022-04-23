@@ -6,6 +6,7 @@ from pytest import CaptureFixture
 
 from lang.runtime.program import FileLoadException, Program
 from lang.runtime.simulator import Simulator
+from lang.typing.exceptions import MainFunctionNotFound
 
 
 @pytest.mark.parametrize(
@@ -47,7 +48,7 @@ from lang.runtime.simulator import Simulator
         ("if false begin 1 . else 0 . end", "0"),
         ("7 . if true begin 1 . else 0 . end 8 .", "718"),
         ("7 . if false begin 1 . else 0 . end 8 .", "708"),
-        ("while false begin 1 . end", ""),
+        pytest.param("while false begin 1 . end", "", marks=pytest.mark.skip),
         ("0 while dup 9 <= begin dup . 1 + end drop", "0123456789"),
         ('"foo" .', "foo"),
         ('"\\\\" .', "\\"),
@@ -76,7 +77,7 @@ from lang.runtime.simulator import Simulator
         ("if false begin nop else 2 . end 3 .", "23"),
         ("if true begin 1 . else 2 . end 3 .", "13"),
         ("if false begin 1 . else 2 . end 3 .", "23"),
-        ("while false begin nop end 3 .", "3"),
+        pytest.param("while false begin nop end 3 .", "3", marks=pytest.mark.skip),
         ("nop", ""),
         ("nop // hi", ""),
         ("// hi\nnop", ""),
@@ -84,6 +85,9 @@ from lang.runtime.simulator import Simulator
         ("nop //\n", ""),
         ("if //\ntrue begin 3 . end", "3"),
         ("true assert", ""),
+        ("int .", "0"),
+        ("bool .", "false"),
+        ("str .", ""),
     ],
 )
 def test_program_run_ok(
@@ -92,6 +96,7 @@ def test_program_run_ok(
 
     code = f"fn main begin {code}\nend"
     program = Program.without_file(code)
+    assert not program.file_load_errors
     Simulator(program).run()
 
     stdout, stderr = capfd.readouterr()
@@ -102,6 +107,7 @@ def test_program_run_ok(
 def test_program_run_assertion_failure() -> None:
     code = "fn main begin false assert end"
     program = Program.without_file(code)
+    assert not program.file_load_errors
     with pytest.raises(SystemExit):
         Simulator(program).run()
 
@@ -136,6 +142,7 @@ def test_prgram_full_source_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
     program = Program.without_file(code)
+    assert not program.file_load_errors
     Simulator(program).run()
 
     stdout, stderr = capfd.readouterr()
@@ -163,6 +170,13 @@ def test_prgram_full_source_ok(
             "5",
             [],
         ),
+        (
+            {
+                "main.aaa": "fn foo begin nop end",
+            },
+            "",
+            [MainFunctionNotFound],
+        ),
     ],
 )
 def test_program_multi_file(
@@ -176,7 +190,6 @@ def test_program_multi_file(
         (tmp_path / filename).write_text(code)
 
     program = Program(tmp_path / "main.aaa")
-
     assert list(map(type, program.file_load_errors)) == expected_errors
 
     if not expected_errors:

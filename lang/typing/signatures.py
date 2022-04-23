@@ -1,86 +1,61 @@
-from dataclasses import dataclass
-from typing import Dict, List, Type
+from typing import Dict, List
 
-StackItem = int | bool | str
-
-
-IDENTIFIER_TO_TYPE: Dict[str, Type[StackItem]] = {
-    "bool": bool,
-    "int": int,
-    "str": str,
-}
-
-
-@dataclass
-class PlaceholderType:
-    name: str
-
-
-SignatureItem = Type[StackItem] | PlaceholderType
-
-TypeStack = List[SignatureItem]
-
-
-@dataclass
-class Signature:
-    arg_types: List[SignatureItem]
-    return_types: List[SignatureItem]
-
+from lang.typing.types import Bool, Int, Signature, Str, TypePlaceholder
 
 OPERATOR_SIGNATURES: Dict[str, List[Signature]] = {
     "+": [
-        Signature([int, int], [int]),
-        Signature([str, str], [str]),
+        Signature([Int, Int], [Int]),
+        Signature([Str, Str], [Str]),
     ],
-    "-": [Signature([int, int], [int])],
-    "*": [Signature([int, int], [int])],
-    "/": [Signature([int, int], [int])],
-    "%": [Signature([int, int], [int])],
-    "and": [Signature([bool, bool], [bool])],
-    "or": [Signature([bool, bool], [bool])],
-    "not": [Signature([bool], [bool])],
+    "-": [Signature([Int, Int], [Int])],
+    "*": [Signature([Int, Int], [Int])],
+    "/": [Signature([Int, Int], [Int])],
+    "%": [Signature([Int, Int], [Int])],
+    "and": [Signature([Bool, Bool], [Bool])],
+    "or": [Signature([Bool, Bool], [Bool])],
+    "not": [Signature([Bool], [Bool])],
     "nop": [Signature([], [])],
     "=": [
-        Signature([int, int], [bool]),
-        Signature([str, str], [str]),
+        Signature([Int, Int], [Bool]),
+        Signature([Str, Str], [Str]),
     ],
-    ">": [Signature([int, int], [bool])],
-    ">=": [Signature([int, int], [bool])],
-    "<": [Signature([int, int], [bool])],
-    "<=": [Signature([int, int], [bool])],
+    ">": [Signature([Int, Int], [Bool])],
+    ">=": [Signature([Int, Int], [Bool])],
+    "<": [Signature([Int, Int], [Bool])],
+    "<=": [Signature([Int, Int], [Bool])],
     "!=": [
-        Signature([int, int], [bool]),
-        Signature([str, str], [bool]),
+        Signature([Int, Int], [Bool]),
+        Signature([Str, Str], [Bool]),
     ],
-    "drop": [Signature([PlaceholderType("a")], [])],
+    "drop": [Signature([TypePlaceholder("a")], [])],
     "dup": [
-        Signature([PlaceholderType("a")], [PlaceholderType("a"), PlaceholderType("a")])
+        Signature([TypePlaceholder("a")], [TypePlaceholder("a"), TypePlaceholder("a")])
     ],
     "swap": [
         Signature(
-            [PlaceholderType("a"), PlaceholderType("b")],
-            [PlaceholderType("b"), PlaceholderType("a")],
+            [TypePlaceholder("a"), TypePlaceholder("b")],
+            [TypePlaceholder("b"), TypePlaceholder("a")],
         )
     ],
     "over": [
         Signature(
-            [PlaceholderType("a"), PlaceholderType("b")],
-            [PlaceholderType("a"), PlaceholderType("b"), PlaceholderType("a")],
+            [TypePlaceholder("a"), TypePlaceholder("b")],
+            [TypePlaceholder("a"), TypePlaceholder("b"), TypePlaceholder("a")],
         )
     ],
     "rot": [
         Signature(
-            [PlaceholderType("a"), PlaceholderType("b"), PlaceholderType("c")],
-            [PlaceholderType("b"), PlaceholderType("c"), PlaceholderType("a")],
+            [TypePlaceholder("a"), TypePlaceholder("b"), TypePlaceholder("c")],
+            [TypePlaceholder("b"), TypePlaceholder("c"), TypePlaceholder("a")],
         )
     ],
     "\\n": [Signature([], [])],
     ".": [
-        Signature([bool], []),
-        Signature([int], []),
-        Signature([str], []),
+        Signature([Bool], []),
+        Signature([Int], []),
+        Signature([Str], []),
     ],
-    "substr": [Signature([str, int, int], [str])],
-    "strlen": [Signature([str], [int])],
-    "assert": [Signature([bool], [])],
+    "substr": [Signature([Str, Int, Int], [Str])],
+    "strlen": [Signature([Str], [Int])],
+    "assert": [Signature([Bool], [])],
 }

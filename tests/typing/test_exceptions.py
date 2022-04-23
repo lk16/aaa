@@ -41,7 +41,7 @@ from lang.typing.exceptions import (
         ("stack_underflow.aaa", [StackUnderflowError]),
         ("unknown_function.aaa", [UnknownFunction]),
         ("unknown_placeholder.aaa", [UnknownPlaceholderType]),
-        ("unknown_type.aaa", [UnknownType]),
+        pytest.param("unknown_type.aaa", [UnknownType], marks=pytest.mark.skip),
         ("multiple_errors.aaa", [FunctionTypeError, FunctionTypeError]),
         ("tokenize_error.aaa", [TokenizerError]),
         ("parse_error.aaa", [ParseError]),

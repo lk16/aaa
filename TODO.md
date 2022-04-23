@@ -10,10 +10,39 @@
 ### Aaa file errors
 - better tests for exact error messages
 
+### Containers
+- [ ] Inside function body, type literals should push their zero-value:
+    - [x] `int` should push `0`
+    - [x] `bool` should push `false`
+    - [x] `str` should push `""`
+    - [ ] `vec` should push empty vector of correct child element type
+    - [ ] `map` should push empty map of correct key/value types
+- [ ] Add syntax for member functions to grammar, for example: `vec.append`
+- [ ] Member functions should always return the type they operate on as first return value
+- [ ] Check that key type is hashable (currently: not a `vec` or `map`)
+- [ ] Add member functions:
+    - [ ] `vec.get`
+    - [ ] `vec.set`
+    - [ ] `vec.append`
+    - [ ] `vec.size`
+    - [ ] `vec.empty`
+    - [ ] `vec.pop`
+    - [ ] `vec.clear`
+    - [ ] `vec.copy`
+    - [ ] `map.get`
+    - [ ] `map.set`
+    - [ ] `map.has`
+    - [ ] `map.size`
+    - [ ] `map.empty`
+    - [ ] `map.pop`
+    - [ ] `map.remove`
+    - [ ] `map.clear`
+    - [ ] `map.copy`
+
 ### Language features
+- structs
 - return early (`return`)
 - debug tools (`breakpoint`)
-- structs
 - rust-like enums
 - compile to native executable
 - compile itself
