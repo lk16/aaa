@@ -81,8 +81,8 @@ class TypeChecker:
         placeholder_args: Set[str] = set()
 
         for argument in function.arguments:
-            if isinstance(argument.type, ParsedTypePlaceholder):
-                placeholder_args.add(argument.type.name)
+            if isinstance(argument.type.type, ParsedTypePlaceholder):
+                placeholder_args.add(argument.type.type.name)
 
         for return_type in function.return_types:
             if (

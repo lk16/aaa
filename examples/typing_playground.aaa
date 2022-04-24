@@ -40,7 +40,7 @@ end
 
 
 fn dup_twice
-    args *a
+    args a as *a
     return *a, *a, *a
 begin
     a dup dup
@@ -52,7 +52,7 @@ fn factorial
     return int
 begin
     if n 0 < begin
-        0 // language doens't have any error handling yet
+        0 // language doesn't have any error handling yet
     else
         if
             n 1 =
