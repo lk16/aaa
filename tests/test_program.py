@@ -1,4 +1,3 @@
-import os
 from parser.parser.exceptions import ParseError
 from parser.tokenizer.exceptions import TokenizerError
 from pathlib import Path
@@ -13,7 +12,7 @@ from lang.typing.exceptions import FileReadError, MissingEnvironmentVariable
 
 pytestmark = pytest.mark.no_builtins_cache
 
-BUILTINS_FILE_PATH = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
+BUILTINS_FILE_PATH = Path().cwd() / "stdlib/builtins.aaa"
 
 
 def test_program_load_builtins_without_stdlib_path_env_var(
