@@ -161,7 +161,8 @@ class InstructionGenerator:
         identifier = node.name
 
         for argument in self.function.arguments:
-            return [PushFunctionArgument(argument.name)]
+            if node.name == argument.name:
+                return [PushFunctionArgument(argument.name)]
 
         source_file, original_name = self.program.get_function_source_and_name(
             self.file, identifier
