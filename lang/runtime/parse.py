@@ -91,7 +91,7 @@ class TypeLiteral(AaaTreeNode):
         type_parameters: List[ParsedType] = []
 
         if len(tree.children) > 1:
-            for param in tree[1].children[1:-1]:
+            for param in tree[1].children[1:-1:2]:
                 type_parameters.append(ParsedType.from_tree(param, tokens, code))
 
         return TypeLiteral(
