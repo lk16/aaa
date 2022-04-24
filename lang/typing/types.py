@@ -62,10 +62,15 @@ class VariableType:
     def from_type_literal(cls, type_literal: TypeLiteral) -> "VariableType":
         root_type = RootType.from_str(type_literal.type_name)
 
-        type_params: List[SignatureItem] = [
-            VariableType.from_type_literal(param)
-            for param in type_literal.type_parameters
-        ]
+        type_params: List[SignatureItem] = []
+
+        for param in type_literal.type_parameters:
+            if isinstance(param.type, TypeLiteral):
+                type_params.append(VariableType.from_type_literal(param.type))
+            elif isinstance(param.type, ParsedTypePlaceholder):
+                type_params.append(TypePlaceholder(param.type.name))
+            else:  # pragma: nocover
+                assert False
 
         return VariableType(root_type, type_params)
 

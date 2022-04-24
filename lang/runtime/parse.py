@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractclassmethod
 from dataclasses import dataclass
 from enum import IntEnum
@@ -79,20 +81,18 @@ class BooleanLiteral(AaaTreeNode):
 @dataclass(kw_only=True)
 class TypeLiteral(AaaTreeNode):
     type_name: str
-    type_parameters: List["TypeLiteral"]
+    type_parameters: List[ParsedType]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "TypeLiteral":
         assert tree.token_type == NonTerminal.TYPE_LITERAL
 
         type_name = tree[0].value(tokens, code)
-        type_parameters: List["TypeLiteral"] = []
+        type_parameters: List[ParsedType] = []
 
         if len(tree.children) > 1:
-            type_parameters = [
-                TypeLiteral.from_tree(param, tokens, code)
-                for param in tree[1].children[1::2]
-            ]
+            for param in tree[1].children[1:-1]:
+                type_parameters.append(ParsedType.from_tree(param, tokens, code))
 
         return TypeLiteral(
             type_name=type_name,
@@ -270,32 +270,6 @@ class ParsedType(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
-class ReturnType(AaaTreeNode):  # TODO rename to ParsedType
-    type: Union[TypeLiteral, ParsedTypePlaceholder]
-
-    @classmethod
-    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ReturnType":
-        assert tree.token_type == NonTerminal.TYPE
-
-        type: Union[TypeLiteral, ParsedTypePlaceholder]
-
-        if tree[0].token_type == NonTerminal.TYPE_LITERAL:
-            type = TypeLiteral.from_tree(tree[0], tokens, code)
-
-        elif tree[0].token_type == NonTerminal.TYPE_PLACEHOLDER:
-            type = ParsedTypePlaceholder.from_tree(tree[0], tokens, code)
-
-        else:  # pragma: nocover
-            assert False
-
-        return ReturnType(
-            type=type,
-            token_count=tree.token_count,
-            token_offset=tree.token_offset,
-        )
-
-
-@dataclass(kw_only=True)
 class Argument(AaaTreeNode):
     name: str
     type: ParsedType
@@ -416,15 +390,15 @@ class Import(AaaTreeNode):
 @dataclass(kw_only=True)
 class BuiltinFunction(AaaTreeNode):
     name: str
-    arguments: List[ReturnType]
-    return_types: List[ReturnType]
+    arguments: List[ParsedType]
+    return_types: List[ParsedType]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "BuiltinFunction":
         assert tree.token_type == NonTerminal.BUILTIN_FUNCTION_DEFINITION
 
-        arguments: List[ReturnType] = []
-        return_types: List[ReturnType] = []
+        arguments: List[ParsedType] = []
+        return_types: List[ParsedType] = []
 
         index = 2
 
@@ -433,14 +407,14 @@ class BuiltinFunction(AaaTreeNode):
 
             if token_type == Terminal.ARGS:
                 arguments = [
-                    ReturnType.from_tree(child, tokens, code)
+                    ParsedType.from_tree(child, tokens, code)
                     for child in tree[index + 1].children
                     if child.token_type != Terminal.COMMA
                 ]
 
             elif token_type == Terminal.RETURN:
                 return_types = [
-                    ReturnType.from_tree(child, tokens, code)
+                    ParsedType.from_tree(child, tokens, code)
                     for child in tree[index + 1].children
                     if child.token_type != Terminal.COMMA
                 ]
