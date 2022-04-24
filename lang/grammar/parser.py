@@ -37,6 +37,7 @@ class Terminal(IntEnum):
     BEGIN = next(next_offset)
     BOOL = next(next_offset)
     BUILTIN_FN = next(next_offset)
+    COLON = next(next_offset)
     COMMA = next(next_offset)
     COMMENT = next(next_offset)
     DROP = next(next_offset)
@@ -68,7 +69,6 @@ class Terminal(IntEnum):
     PLUS = next(next_offset)
     RETURN = next(next_offset)
     ROT = next(next_offset)
-    SEMICOLON = next(next_offset)
     SHEBANG = next(next_offset)
     SLASH = next(next_offset)
     STR = next(next_offset)
@@ -101,6 +101,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.ASSERT, "assert(?=\\W|$)"),
     Literal(Terminal.ASTERISK, "*"),
     Literal(Terminal.COMMA, ","),
+    Literal(Terminal.COLON, ":"),
     Regex(Terminal.DROP, "drop(?=\\W|$)"),
     Regex(Terminal.DUP, "dup(?=\\W|$)"),
     Regex(Terminal.EQUALS, "=(?=\\s|$)"),
@@ -115,10 +116,9 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.OR, "or(?=\\W|$)"),
     Regex(Terminal.OVER, "over(?=\\W|$)"),
     Regex(Terminal.PERCENT, "%(?=\\s|$)"),
-    Literal(Terminal.PERIOD, "."),
+    Regex(Terminal.PERIOD, "\\.(?=\\s|$)"),
     Regex(Terminal.PLUS, "\\+(?=\\s|$)"),
     Regex(Terminal.ROT, "rot(?=\\W|$)"),
-    Literal(Terminal.SEMICOLON, ":"),
     Regex(Terminal.SLASH, "/(?=\\s|$)"),
     Regex(Terminal.STRLEN, "strlen(?=\\W|$)"),
     Regex(Terminal.SUBSTR, "substr(?=\\W|$)"),
@@ -291,7 +291,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     ),
     NonTerminal.MEMBER_FUNCTION: ConcatenationExpression(
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
-        TerminalExpression(Terminal.SEMICOLON),
+        TerminalExpression(Terminal.COLON),
         TerminalExpression(Terminal.IDENTIFIER),
     ),
     NonTerminal.OPERATOR: ConjunctionExpression(
@@ -367,11 +367,11 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     ),
     NonTerminal.TYPE_PARAMS: ConcatenationExpression(
         TerminalExpression(Terminal.TYPE_PARAMS_START),
-        NonTerminalExpression(NonTerminal.RETURN_TYPE),
+        NonTerminalExpression(NonTerminal.TYPE_LITERAL),
         RepeatExpression(
             ConcatenationExpression(
                 TerminalExpression(Terminal.COMMA),
-                NonTerminalExpression(NonTerminal.RETURN_TYPE),
+                NonTerminalExpression(NonTerminal.TYPE_LITERAL),
             )
         ),
         OptionalExpression(TerminalExpression(Terminal.COMMA)),

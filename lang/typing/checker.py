@@ -363,7 +363,7 @@ class TypeChecker:
         key = f"{node.type_name}:{node.func_name}"
 
         try:
-            signatures = OPERATOR_SIGNATURES[key]
+            signatures = self.program._builtins.functions[key]
         except KeyError:
             raise NotImplementedError
 

@@ -29,6 +29,7 @@
 @ token ASSERT         = regex("assert(?=\\W|$)") .
 @ token ASTERISK       = "*"                      .
 @ token COMMA          = ","                      .
+@ token COLON          = ":"                      .
 @ token DROP           = regex("drop(?=\\W|$)")   .
 @ token DUP            = regex("dup(?=\\W|$)")    .
 @ token EQUALS         = regex("=(?=\\s|$)")      .
@@ -118,8 +119,10 @@ RETURN_TYPES = RETURN_TYPE (COMMA RETURN_TYPE)* (COMMA)? .
 
 FUNCTION_BODY = (FUNCTION_BODY_ITEM)+ .
 
+MEMBER_FUNCTION = TYPE_LITERAL COLON IDENTIFIER .
+
 @ prune
-FUNCTION_BODY_ITEM = BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL | TYPE_LITERAL .
+FUNCTION_BODY_ITEM = MEMBER_FUNCTION | BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL | TYPE_LITERAL .
 
 BRANCH = IF FUNCTION_BODY BEGIN FUNCTION_BODY (ELSE FUNCTION_BODY)? END .
 
