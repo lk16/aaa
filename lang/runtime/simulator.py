@@ -411,7 +411,7 @@ class Simulator:
                 name = call_stack_item.func_name
 
                 args = ""
-                if call_stack_item.argument_values:
+                if call_stack_item.argument_values:  # pragma: nocover
                     args = ", arguments: " + ", ".join(
                         f"{name}={value.__repr__()}"
                         for name, value in call_stack_item.argument_values.items()
