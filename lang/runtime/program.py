@@ -75,8 +75,7 @@ class Program:
         # Used to detect cyclic import loops
         self.file_load_stack: List[Path] = []
 
-        self._builtins = Builtins.empty()
-        self.file_load_errors = self._load_builtins()
+        self._builtins, self.file_load_errors = self._load_builtins()
 
         if self.file_load_errors:
             return
@@ -90,24 +89,26 @@ class Program:
             saved_file.write_text(code)
             return cls(file=saved_file)
 
-    def _load_builtins(self) -> List[FileLoadException]:
+    def _load_builtins(self) -> Tuple[Builtins, List[FileLoadException]]:
+        builtins = Builtins.empty()
+
         try:
             stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
         except KeyError:
-            return [MissingEnvironmentVariable("AAA_STDLIB_PATH")]
+            return builtins, [MissingEnvironmentVariable("AAA_STDLIB_PATH")]
 
         builtins_file = stdlib_path / "builtins.aaa"
 
         try:
             _, parsed_file = self._parse_builtins_file(builtins_file)
         except (TokenizerError, ParseError) as e:
-            return [e]
+            return builtins, [e]
         except OSError:
-            return [FileReadError(builtins_file)]
+            return builtins, [FileReadError(builtins_file)]
 
         for function in parsed_file.functions:
-            if function.name not in self._builtins.functions:
-                self._builtins.functions[function.name] = []
+            if function.name not in builtins.functions:
+                builtins.functions[function.name] = []
 
             # TODO make more DRY
             arg_types: List[SignatureItem] = []
@@ -131,11 +132,9 @@ class Program:
                 else:  # pragma: nocover
                     assert False
 
-            self._builtins.functions[function.name].append(
-                Signature(arg_types, return_types)
-            )
+            builtins.functions[function.name].append(Signature(arg_types, return_types))
 
-        return []
+        return builtins, []
 
     def exit_on_error(self) -> None:  # pragma: nocover
         if not self.file_load_errors:
