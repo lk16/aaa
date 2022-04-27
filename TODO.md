@@ -17,57 +17,31 @@
     - [x] `str` should push `""`
     - [x] `vec` should push empty vector of correct child element type
     - [x] `map` should push empty map of correct key/value types
-<<<<<<< HEAD
-- [x] Add syntax for member functions to grammar, for example: `vec.append`
+- [x] Add syntax for member functions to grammar, for example: `vec:append`
 - [ ] Better error handling for wrong number of type parameters
-=======
-- [ ] Better error handling for wrong number of type parameters
-- [ ] Add syntax for member functions to grammar, for example: `vec.append`
->>>>>>> wip: add member function
 - [ ] Member functions should always return the type they operate on as first return value
 - [ ] Check that key type is hashable (currently: not a `vec` or `map`)
 - [ ] Add member functions:
-    - [ ] `vec.get`
-    - [ ] `vec.set`
-    - [ ] `vec.push`
-    - [ ] `vec.size`
-    - [ ] `vec.empty`
-    - [ ] `vec.pop`
-    - [ ] `vec.clear`
-    - [ ] `vec.copy`
-    - [ ] `vec.at`
-    - [ ] `map.get`
-    - [ ] `map.set`
-    - [ ] `map.has`
-    - [ ] `map.size`
-    - [ ] `map.empty`
-    - [ ] `map.pop`
-    - [ ] `map.remove`
-    - [ ] `map.clear`
-    - [ ] `map.copy`
-    - [ ] `map.keys`
-    - [ ] `map.values`
-<<<<<<< HEAD
-
-### Parser lib feature
-- [ ] Verbose flag to print tokens and human-readable parse tree:
-
-```py
-for token in tokens:
-    print(f"{token.type.name:>30} | {token.value(code)}")
-```
-
-=======
->>>>>>> wip: add member function
-
-### Parser lib feature
-- [ ] Verbose flag to print tokens and human-readable parse tree:
-
-```py
-for token in tokens:
-    print(f"{token.type.name:>30} | {token.value(code)}")
-```
-
+    - [ ] `vec:get`
+    - [ ] `vec:set`
+    - [ ] `vec:push`
+    - [ ] `vec:size`
+    - [ ] `vec:empty`
+    - [ ] `vec:pop`
+    - [ ] `vec:clear`
+    - [ ] `vec:copy`
+    - [ ] `vec:at`
+    - [ ] `map:get`
+    - [ ] `map:set`
+    - [ ] `map:has`
+    - [ ] `map:size`
+    - [ ] `map:empty`
+    - [ ] `map:pop`
+    - [ ] `map:remove`
+    - [ ] `map:clear`
+    - [ ] `map:copy`
+    - [ ] `map:keys`
+    - [ ] `map:values`
 
 ### Language features
 - structs
