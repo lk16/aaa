@@ -138,37 +138,41 @@ class TypeChecker:
         for signature_arg_type, type_stack_arg in zip(
             signature.arg_types, type_stack_args, strict=True
         ):
-            assert isinstance(type_stack_arg, VariableType)
-
             if isinstance(signature_arg_type, TypePlaceholder):
                 placeholder_types[signature_arg_type.name] = type_stack_arg
                 # TODO *a *a does not enforce both params to have same type
-            elif signature_arg_type.root_type == type_stack_arg.root_type:
-                if len(signature_arg_type.type_params) != len(
-                    type_stack_arg.type_params
-                ):
-                    raise NotImplementedError
 
-                for arg_type_param, type_stack_type_param in zip(
-                    signature_arg_type.type_params, type_stack_arg.type_params
-                ):
-                    if isinstance(arg_type_param, TypePlaceholder):
-                        placeholder_types[arg_type_param.name] = type_stack_type_param
-                        continue
+            else:
+                assert isinstance(type_stack_arg, VariableType)
 
-                    if arg_type_param != type_stack_type_param:
+                if signature_arg_type.root_type == type_stack_arg.root_type:
+                    if len(signature_arg_type.type_params) != len(
+                        type_stack_arg.type_params
+                    ):
                         raise NotImplementedError
 
-            elif signature_arg_type != type_stack_arg:
+                    for arg_type_param, type_stack_type_param in zip(
+                        signature_arg_type.type_params, type_stack_arg.type_params
+                    ):
+                        if isinstance(arg_type_param, TypePlaceholder):
+                            placeholder_types[
+                                arg_type_param.name
+                            ] = type_stack_type_param
+                            continue
 
-                raise StackTypesError(
-                    file=self.file,
-                    function=self.function,
-                    tokens=self.tokens,
-                    node=node,
-                    signature=signature,
-                    type_stack=type_stack,
-                )
+                        if arg_type_param != type_stack_type_param:
+                            raise NotImplementedError
+
+                elif signature_arg_type != type_stack_arg:
+
+                    raise StackTypesError(
+                        file=self.file,
+                        function=self.function,
+                        tokens=self.tokens,
+                        node=node,
+                        signature=signature,
+                        type_stack=type_stack,
+                    )
 
         stack = type_stack_under_args
 
