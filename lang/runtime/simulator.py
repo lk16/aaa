@@ -38,7 +38,10 @@ from lang.instructions.types import (
     StringLength,
     SubString,
     Swap,
+    VecGet,
+    VecPop,
     VecPush,
+    VecSet,
 )
 from lang.runtime.debug import format_str
 from lang.runtime.program import Program
@@ -97,6 +100,9 @@ class Simulator:
             SubString: self.instruction_substring,
             Swap: self.instruction_swap,
             VecPush: self.instruction_vec_push,
+            VecPop: self.instruction_vec_pop,
+            VecSet: self.instruction_vec_set,
+            VecGet: self.instruction_vec_get,
         }
 
     def top(self) -> Variable:
@@ -450,4 +456,30 @@ class Simulator:
         vec: List[Any] = self.top().value
 
         vec.append(x)
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_pop(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecPop)
+        vec: List[Any] = self.top().value
+
+        x: Variable = vec.pop()
+        self.push(x)
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_get(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecGet)
+        x: int = self.pop().value
+        vec: List[Any] = self.top().value
+
+        self.push(vec[x])
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_set(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecSet)
+        x: Any = self.pop().value
+        index: int = self.pop().value
+        vec: List[Any] = self.top().value
+
+        vec[index] = x
         return self.get_instruction_pointer() + 1

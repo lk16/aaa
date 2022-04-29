@@ -198,3 +198,18 @@ class PushMap(Instruction):
 @dataclass
 class VecPush(Instruction):
     ...
+
+
+@dataclass
+class VecPop(Instruction):
+    ...
+
+
+@dataclass
+class VecGet(Instruction):
+    ...
+
+
+@dataclass
+class VecSet(Instruction):
+    ...

@@ -36,7 +36,10 @@ from lang.instructions.types import (
     StringLength,
     SubString,
     Swap,
+    VecGet,
+    VecPop,
     VecPush,
+    VecSet,
 )
 from lang.runtime.parse import (
     AaaTreeNode,
@@ -83,6 +86,9 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "substr": SubString(),
     "swap": Swap(),
     "vec:push": VecPush(),
+    "vec:pop": VecPop(),
+    "vec:get": VecGet(),
+    "vec:set": VecSet(),
 }
 
 
