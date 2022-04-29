@@ -1,4 +1,5 @@
 import sys
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Type
@@ -38,10 +39,14 @@ from lang.instructions.types import (
     StringLength,
     SubString,
     Swap,
+    VecClear,
+    VecCopy,
+    VecEmpty,
     VecGet,
     VecPop,
     VecPush,
     VecSet,
+    VecSize,
 )
 from lang.runtime.debug import format_str
 from lang.runtime.program import Program
@@ -103,6 +108,10 @@ class Simulator:
             VecPop: self.instruction_vec_pop,
             VecSet: self.instruction_vec_set,
             VecGet: self.instruction_vec_get,
+            VecSize: self.instruction_vec_size,
+            VecEmpty: self.instruction_vec_empty,
+            VecClear: self.instruction_vec_clear,
+            VecCopy: self.instruction_vec_copy,
         }
 
     def top(self) -> Variable:
@@ -482,4 +491,38 @@ class Simulator:
         vec: List[Any] = self.top().value
 
         vec[index] = x
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_size(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecSize)
+        vec: List[Any] = self.top().value
+
+        self.push(Variable(RootType.INTEGER, len(vec)))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_empty(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecEmpty)
+        vec: List[Any] = self.top().value
+
+        self.push(Variable(RootType.BOOL, not bool(vec)))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_clear(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecClear)
+        vec: List[Any] = self.top().value
+
+        vec.clear()
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_copy(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecCopy)
+        vec_var = self.top()
+
+        copied = Variable(
+            vec_var.root_type(),
+            deepcopy(vec_var.value),
+            deepcopy(vec_var.type.type_params),  # type: ignore
+        )
+
+        self.push(copied)
         return self.get_instruction_pointer() + 1

@@ -213,3 +213,23 @@ class VecGet(Instruction):
 @dataclass
 class VecSet(Instruction):
     ...
+
+
+@dataclass
+class VecSize(Instruction):
+    ...
+
+
+@dataclass
+class VecEmpty(Instruction):
+    ...
+
+
+@dataclass
+class VecClear(Instruction):
+    ...
+
+
+@dataclass
+class VecCopy(Instruction):
+    ...

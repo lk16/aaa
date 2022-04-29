@@ -97,6 +97,14 @@ from lang.typing.exceptions import MainFunctionNotFound
         ('vec[int] 5 vec:push vec:pop . " " . .', "5 []"),
         ('vec[int] 5 vec:push 0 vec:get . " " . .', "5 [5]"),
         ('vec[int] 5 vec:push 0 7 vec:set vec:pop . " " . .', "7 []"),
+        ("vec[int] 5 vec:push vec:size . drop", "1"),
+        ("vec[int] 5 vec:push vec:empty . drop", "false"),
+        ("vec[int] vec:empty . drop", "true"),
+        ("vec[int] 5 vec:push vec:clear vec:size . drop", "0"),
+        (
+            "vec[int] 5 vec:push vec:copy vec:clear vec:size . drop vec:size . drop",
+            "01",
+        ),
     ],
 )
 def test_program_run_ok(
