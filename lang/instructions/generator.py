@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Type
 from lang.instructions.types import (
     And,
     Assert,
-    BoolPush,
     CallFunction,
     Divide,
     Drop,
@@ -16,10 +15,8 @@ from lang.instructions.types import (
     IntLessEquals,
     IntLessThan,
     IntNotEqual,
-    IntPush,
     Jump,
     JumpIfNot,
-    MapPush,
     Minus,
     Modulo,
     Multiply,
@@ -29,10 +26,14 @@ from lang.instructions.types import (
     Over,
     Plus,
     Print,
+    PushBool,
     PushFunctionArgument,
+    PushInt,
+    PushMap,
+    PushString,
+    PushVec,
     Rot,
     StringLength,
-    StringPush,
     SubString,
     Swap,
     VecPush,
@@ -46,6 +47,7 @@ from lang.runtime.parse import (
     Identifier,
     IntegerLiteral,
     Loop,
+    MemberFunction,
     Operator,
     StringLiteral,
     TypeLiteral,
@@ -80,6 +82,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "strlen": StringLength(),
     "substr": SubString(),
     "swap": Swap(),
+    "vec:push": VecPush(),
 }
 
 
@@ -101,6 +104,7 @@ class InstructionGenerator:
             Operator: self.instructions_for_operator,
             StringLiteral: self.instructions_for_string_literal,
             TypeLiteral: self.instructions_for_type_literal,
+            MemberFunction: self.instructions_for_member_function,
         }
 
     def generate_instructions(self) -> List[Instruction]:
@@ -115,19 +119,19 @@ class InstructionGenerator:
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, IntegerLiteral)
-        return [IntPush(node.value)]
+        return [PushInt(node.value)]
 
     def instructions_for_string_literal(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, StringLiteral)
-        return [StringPush(node.value)]
+        return [PushString(node.value)]
 
     def instructions_for_boolean_literal(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, BooleanLiteral)
-        return [BoolPush(node.value)]
+        return [PushBool(node.value)]
 
     def instructions_for_operator(
         self, node: AaaTreeNode, offset: int
@@ -212,20 +216,20 @@ class InstructionGenerator:
         root_type = var_type.root_type
 
         if root_type == RootType.INTEGER:
-            return [IntPush(0)]
+            return [PushInt(0)]
 
         elif root_type == RootType.BOOL:
-            return [BoolPush(False)]
+            return [PushBool(False)]
 
         elif root_type == RootType.STRING:
-            return [StringPush("")]
+            return [PushString("")]
 
         elif root_type == RootType.VECTOR:
-            return [VecPush(var_type.get_variable_type_param(0))]
+            return [PushVec(var_type.get_variable_type_param(0))]
 
         elif root_type == RootType.MAPPING:
             return [
-                MapPush(
+                PushMap(
                     var_type.get_variable_type_param(0),
                     var_type.get_variable_type_param(1),
                 )
@@ -233,3 +237,15 @@ class InstructionGenerator:
 
         else:  # pragma: nocover
             assert False
+
+    def instructions_for_member_function(
+        self, node: AaaTreeNode, offset: int
+    ) -> List[Instruction]:
+        assert isinstance(node, MemberFunction)
+
+        if node.type_name in ["vec", "map"]:
+            key = f"{node.type_name}:{node.func_name}"
+            return [OPERATOR_INSTRUCTIONS[key]]
+
+        # non-builtin functions go here
+        raise NotImplementedError

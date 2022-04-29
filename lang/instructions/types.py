@@ -10,7 +10,7 @@ class Instruction:
 
 
 @dataclass
-class IntPush(Instruction):
+class PushInt(Instruction):
     value: int
 
     def __repr__(self) -> str:  # pragma: nocover
@@ -38,7 +38,7 @@ class Divide(Instruction):
 
 
 @dataclass
-class BoolPush(Instruction):
+class PushBool(Instruction):
     value: bool
 
     def __repr__(self) -> str:  # pragma: nocover
@@ -122,7 +122,7 @@ class Print(Instruction):
 
 
 @dataclass
-class StringPush(Instruction):
+class PushString(Instruction):
     value: str
 
     def __repr__(self) -> str:  # pragma: nocover
@@ -185,11 +185,16 @@ class Assert(Instruction):
 
 
 @dataclass
-class VecPush(Instruction):
+class PushVec(Instruction):
     item_type: VariableType
 
 
 @dataclass
-class MapPush(Instruction):
+class PushMap(Instruction):
     key_type: VariableType
     value_type: VariableType
+
+
+@dataclass
+class VecPush(Instruction):
+    ...

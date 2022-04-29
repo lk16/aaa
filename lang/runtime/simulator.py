@@ -1,12 +1,11 @@
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Type
+from typing import Any, Callable, Dict, List, Type
 
 from lang.instructions.types import (
     And,
     Assert,
-    BoolPush,
     CallFunction,
     Divide,
     Drop,
@@ -18,10 +17,8 @@ from lang.instructions.types import (
     IntLessEquals,
     IntLessThan,
     IntNotEqual,
-    IntPush,
     Jump,
     JumpIfNot,
-    MapPush,
     Minus,
     Modulo,
     Multiply,
@@ -31,10 +28,14 @@ from lang.instructions.types import (
     Over,
     Plus,
     Print,
+    PushBool,
     PushFunctionArgument,
+    PushInt,
+    PushMap,
+    PushString,
+    PushVec,
     Rot,
     StringLength,
-    StringPush,
     SubString,
     Swap,
     VecPush,
@@ -64,7 +65,6 @@ class Simulator:
         ] = {
             And: self.instruction_and,
             Assert: self.instruction_assert,
-            BoolPush: self.instruction_bool_push,
             CallFunction: self.instruction_call_function,
             Divide: self.instruction_divide,
             Drop: self.instruction_drop,
@@ -75,23 +75,25 @@ class Simulator:
             IntLessEquals: self.instruction_int_less_equals,
             IntLessThan: self.instruction_int_less_than,
             IntNotEqual: self.instruction_int_not_equal,
-            IntPush: self.instruction_int_push,
             Jump: self.instruction_jump,
             JumpIfNot: self.instruction_jump_if_not,
-            MapPush: self.instruction_map_push,
             Minus: self.instruction_minus,
             Modulo: self.instruction_modulo,
             Multiply: self.instruction_multiply,
-            Not: self.instruction_not,
             Nop: self.instruction_nop,
+            Not: self.instruction_not,
             Or: self.instruction_or,
             Over: self.instruction_over,
             Plus: self.instruction_plus,
             Print: self.instruction_print,
+            PushBool: self.instruction_push_bool,
             PushFunctionArgument: self.instruction_push_function_argument,
+            PushInt: self.instruction_push_int,
+            PushMap: self.instruction_map_push,
+            PushString: self.instruction_push_string,
+            PushVec: self.instruction_push_vec,
             Rot: self.instruction_rot,
             StringLength: self.instruction_string_length,
-            StringPush: self.instruction_string_push,
             SubString: self.instruction_substring,
             Swap: self.instruction_swap,
             VecPush: self.instruction_vec_push,
@@ -187,8 +189,8 @@ class Simulator:
 
         self.call_stack.pop()
 
-    def instruction_int_push(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, IntPush)
+    def instruction_push_int(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, PushInt)
         self.push(int_var(instruction.value))
         return self.get_instruction_pointer() + 1
 
@@ -235,8 +237,8 @@ class Simulator:
         self.push(int_var(y % x))
         return self.get_instruction_pointer() + 1
 
-    def instruction_bool_push(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, BoolPush)
+    def instruction_push_bool(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, PushBool)
         self.push(bool_var(instruction.value))
         return self.get_instruction_pointer() + 1
 
@@ -345,8 +347,8 @@ class Simulator:
         print(x_var, end="")
         return self.get_instruction_pointer() + 1
 
-    def instruction_string_push(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, StringPush)
+    def instruction_push_string(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, PushString)
         self.push(str_var(instruction.value))
         return self.get_instruction_pointer() + 1
 
@@ -423,7 +425,7 @@ class Simulator:
         return self.get_instruction_pointer() + 1
 
     def instruction_map_push(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapPush)
+        assert isinstance(instruction, PushMap)
         map_var = Variable(
             RootType.MAPPING,
             {},
@@ -432,12 +434,20 @@ class Simulator:
         self.push(map_var)
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_push(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecPush)
+    def instruction_push_vec(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, PushVec)
         map_var = Variable(
             RootType.VECTOR,
             [],
             type_params=[instruction.item_type],
         )
         self.push(map_var)
+        return self.get_instruction_pointer() + 1
+
+    def instruction_vec_push(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, VecPush)
+        x: Variable = self.pop().value
+        vec: List[Any] = self.top().value
+
+        vec.append(x)
         return self.get_instruction_pointer() + 1
