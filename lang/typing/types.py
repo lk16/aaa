@@ -155,23 +155,33 @@ class Variable:
     def has_root_type(self, root_type: RootType) -> bool:
         return self.root_type() == root_type
 
-    def __repr__(self) -> str:
-        if self.root_type() == RootType.BOOL:
-            if self.value:
-                return "true"
-            else:
-                return "false"
-
-        return repr(self.value)
-
     def __str__(self) -> str:
-        if self.root_type() == RootType.BOOL:
-            if self.value:
-                return "true"
-            else:
-                return "false"
+        root_type = self.root_type()
 
-        return str(self.value)
+        if root_type in [RootType.INTEGER, RootType.STRING]:
+            return str(self.value)
+
+        elif root_type == RootType.BOOL:
+            return str(self.value).lower()
+
+        elif root_type == RootType.VECTOR:
+            return "[" + ", ".join(repr(item) for item in self.value) + "]"
+
+        elif root_type == RootType.MAPPING:
+            return (
+                "{"
+                + ", ".join(f"{key}: {value}" for key, value in self.value.items())
+                + "}"
+            )
+
+        else:  # pragma: nocover
+            assert False
+
+    def __repr__(self) -> str:
+        if self.root_type() == RootType.STRING:
+            return '"' + str(self.value) + '"'
+
+        return str(self)
 
 
 def int_var(value: int) -> Variable:

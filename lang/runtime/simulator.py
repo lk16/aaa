@@ -446,7 +446,7 @@ class Simulator:
 
     def instruction_vec_push(self, instruction: Instruction) -> int:
         assert isinstance(instruction, VecPush)
-        x: Variable = self.pop().value
+        x: Variable = self.pop()
         vec: List[Any] = self.top().value
 
         vec.append(x)
