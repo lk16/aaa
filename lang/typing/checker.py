@@ -169,7 +169,7 @@ class TypeChecker:
 
         elif isinstance(expected_type, VariableType):
             if isinstance(type, TypePlaceholder):
-                raise NotImplementedError
+                return False
 
             if expected_type.root_type != type.root_type:
                 return False

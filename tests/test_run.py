@@ -105,6 +105,7 @@ from lang.typing.exceptions import MainFunctionNotFound
             "vec[int] 5 vec:push vec:copy vec:clear vec:size . drop vec:size . drop",
             "01",
         ),
+        ("vec[vec[int]] vec[int] 5 vec:push vec:push .", "[[5]]"),
     ],
 )
 def test_program_run_ok(

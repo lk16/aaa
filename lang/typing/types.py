@@ -27,7 +27,7 @@ class RootType(IntEnum):
         else:  # pragma: nocover
             assert False
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         if self == RootType.BOOL:
             return "bool"
         elif self == RootType.INTEGER:
@@ -74,7 +74,7 @@ class VariableType:
 
         return VariableType(root_type, type_params)
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         formatted = repr(self.root_type)
 
         if self.type_params:
@@ -85,7 +85,7 @@ class VariableType:
         return formatted
 
     def __eq__(self, o: object) -> bool:
-        if not isinstance(o, type(self)):
+        if not isinstance(o, type(self)):  # pragma: nocover
             return False
 
         return self.root_type == o.root_type and self.type_params == o.type_params
@@ -152,7 +152,7 @@ class Variable:
     def root_type(self) -> RootType:
         return self.type.root_type
 
-    def has_root_type(self, root_type: RootType) -> bool:
+    def has_root_type(self, root_type: RootType) -> bool:  # pragma: nocover
         return self.root_type() == root_type
 
     def __str__(self) -> str:
@@ -200,7 +200,7 @@ def bool_var(value: bool) -> Variable:
 class TypePlaceholder:
     name: str
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         return f"*{self.name}"
 
 
