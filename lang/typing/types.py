@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto
-from typing import Any, Final, List, Optional, Sequence, Union
+from typing import Any, Final, List, Optional, Union
 
 from lang.runtime.parse import Function, ParsedTypePlaceholder, TypeLiteral
 
@@ -46,10 +46,10 @@ class VariableType:
     def __init__(
         self,
         root_type: RootType,
-        type_params: Optional[Sequence["SignatureItem"]] = None,
+        type_params: Optional[List["SignatureItem"]] = None,
     ) -> None:
         self.root_type: Final[RootType] = root_type
-        self.type_params: Final[Sequence[SignatureItem]] = type_params or []
+        self.type_params: Final[List[SignatureItem]] = type_params or []
 
         if root_type == RootType.VECTOR:
             assert len(self.type_params) == 1
@@ -110,7 +110,7 @@ class Variable:
         self,
         root_type: RootType,
         value: Any,
-        type_params: Optional[List[VariableType]] = None,
+        type_params: Optional[List["SignatureItem"]] = None,
     ) -> None:
         self.type: Final[VariableType] = VariableType(root_type, type_params)
         self.value = value

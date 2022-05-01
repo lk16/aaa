@@ -521,7 +521,7 @@ class Simulator:
         copied = Variable(
             vec_var.root_type(),
             deepcopy(vec_var.value),
-            deepcopy(vec_var.type.type_params),  # type: ignore
+            deepcopy(vec_var.type.type_params),
         )
 
         self.push(copied)

@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from parser.tokenizer.models import Token
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Set
@@ -148,10 +148,9 @@ class TypeChecker:
         stack = stack[: len(stack) - arg_count]
 
         for return_type in signature.return_types:
-            if isinstance(return_type, TypePlaceholder):
-                stack.append(placeholder_types[return_type.name])
-            else:
-                stack.append(return_type)
+            stack.append(
+                self._update_return_type(deepcopy(return_type), placeholder_types)
+            )
 
         return stack
 
@@ -191,6 +190,27 @@ class TypeChecker:
                     return False
 
             return True
+
+        else:  # pragma: nocover
+            assert False
+
+    def _update_return_type(
+        self, return_type: SignatureItem, placeholder_types: Dict[str, SignatureItem]
+    ) -> SignatureItem:
+        if isinstance(return_type, TypePlaceholder):
+            if return_type.name in placeholder_types:
+                return placeholder_types[return_type.name]
+
+            # TODO is this an error?
+            return return_type
+
+        elif isinstance(return_type, VariableType):
+            for i, param in enumerate(return_type.type_params):
+                return_type.type_params[i] = self._update_return_type(
+                    param, placeholder_types
+                )
+
+            return return_type
 
         else:  # pragma: nocover
             assert False
