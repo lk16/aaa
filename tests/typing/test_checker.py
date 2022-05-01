@@ -72,6 +72,8 @@ from lang.typing.exceptions import (
         ("fn foo args a as bool begin nop end", None),
         ("fn foo args int as bool begin nop end", ParseError),
         ("fn int args begin nop end", ParseError),
+        ('fn foo begin vec[int] "" vec:push . end', StackTypesError),
+        ("fn foo begin vec[int] 5 vec:push . end", None),
     ],
 )
 def test_type_checker(

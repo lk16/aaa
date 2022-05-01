@@ -126,55 +126,26 @@ class TypeChecker:
                 file=self.file, function=self.function, tokens=self.tokens, node=node
             )
 
-        if arg_count == 0:
-            type_stack_under_args = stack
-            type_stack_args = []
-        else:
-            type_stack_under_args = stack[:-arg_count]
-            type_stack_args = stack[-arg_count:]
-
         placeholder_types: Dict[str, SignatureItem] = {}
+        expected_types = signature.arg_types
+        types = stack[len(stack) - arg_count :]
 
-        for signature_arg_type, type_stack_arg in zip(
-            signature.arg_types, type_stack_args, strict=True
-        ):
-            if isinstance(signature_arg_type, TypePlaceholder):
-                placeholder_types[signature_arg_type.name] = type_stack_arg
-                # TODO *a *a does not enforce both params to have same type
+        for expected_type, type in zip(expected_types, types, strict=True):
+            match_result = self._match_signature_items(
+                expected_type, type, placeholder_types
+            )
 
-            else:
-                assert isinstance(type_stack_arg, VariableType)
+            if not match_result:
+                raise StackTypesError(
+                    file=self.file,
+                    function=self.function,
+                    tokens=self.tokens,
+                    node=node,
+                    signature=signature,
+                    type_stack=type_stack,
+                )
 
-                if signature_arg_type.root_type == type_stack_arg.root_type:
-                    if len(signature_arg_type.type_params) != len(
-                        type_stack_arg.type_params
-                    ):
-                        raise NotImplementedError
-
-                    for arg_type_param, type_stack_type_param in zip(
-                        signature_arg_type.type_params, type_stack_arg.type_params
-                    ):
-                        if isinstance(arg_type_param, TypePlaceholder):
-                            placeholder_types[
-                                arg_type_param.name
-                            ] = type_stack_type_param
-                            continue
-
-                        if arg_type_param != type_stack_type_param:
-                            raise NotImplementedError
-
-                elif signature_arg_type != type_stack_arg:
-
-                    raise StackTypesError(
-                        file=self.file,
-                        function=self.function,
-                        tokens=self.tokens,
-                        node=node,
-                        signature=signature,
-                        type_stack=type_stack,
-                    )
-
-        stack = type_stack_under_args
+        stack = stack[: len(stack) - arg_count]
 
         for return_type in signature.return_types:
             if isinstance(return_type, TypePlaceholder):
@@ -183,6 +154,46 @@ class TypeChecker:
                 stack.append(return_type)
 
         return stack
+
+    def _match_signature_items(
+        self,
+        expected_type: SignatureItem,
+        type: SignatureItem,
+        placeholder_types: Dict[str, SignatureItem],
+    ) -> bool:
+        if isinstance(expected_type, TypePlaceholder):
+            if expected_type.name in placeholder_types:
+                return placeholder_types[expected_type.name] == type
+
+            placeholder_types[expected_type.name] = type
+            return True
+
+        elif isinstance(expected_type, VariableType):
+            if isinstance(type, TypePlaceholder):
+                raise NotImplementedError
+
+            if expected_type.root_type != type.root_type:
+                return False
+
+            if len(type.type_params) != len(expected_type.type_params):
+                return False
+
+            for expected_param, param in zip(
+                expected_type.type_params, type.type_params
+            ):
+                match_result = self._match_signature_items(
+                    expected_param,
+                    param,
+                    placeholder_types,
+                )
+
+                if not match_result:
+                    return False
+
+            return True
+
+        else:  # pragma: nocover
+            assert False
 
     def _check_integer_literal(
         self, node: AaaTreeNode, type_stack: TypeStack

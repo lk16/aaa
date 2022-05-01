@@ -200,6 +200,9 @@ def bool_var(value: bool) -> Variable:
 class TypePlaceholder:
     name: str
 
+    def __repr__(self) -> str:
+        return f"*{self.name}"
+
 
 SignatureItem = Union[VariableType, TypePlaceholder]
 
