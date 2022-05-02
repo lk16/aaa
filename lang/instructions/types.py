@@ -233,3 +233,58 @@ class VecClear(Instruction):
 @dataclass
 class VecCopy(Instruction):
     ...
+
+
+@dataclass
+class MapGet(Instruction):
+    ...
+
+
+@dataclass
+class MapSet(Instruction):
+    ...
+
+
+@dataclass
+class MapHasKey(Instruction):
+    ...
+
+
+@dataclass
+class MapSize(Instruction):
+    ...
+
+
+@dataclass
+class MapEmpty(Instruction):
+    ...
+
+
+@dataclass
+class MapPop(Instruction):
+    ...
+
+
+@dataclass
+class MapDrop(Instruction):
+    ...
+
+
+@dataclass
+class MapClear(Instruction):
+    ...
+
+
+@dataclass
+class MapCopy(Instruction):
+    ...
+
+
+@dataclass
+class MapKeys(Instruction):
+    ...
+
+
+@dataclass
+class MapValues(Instruction):
+    ...

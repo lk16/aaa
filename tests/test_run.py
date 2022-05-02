@@ -105,7 +105,30 @@ from lang.typing.exceptions import MainFunctionNotFound
             "vec[int] 5 vec:push vec:copy vec:clear vec:size . drop vec:size . drop",
             "01",
         ),
+        (
+            "vec[int] 5 vec:push dup vec:clear vec:size . drop vec:size . drop",
+            "00",
+        ),
         ("vec[vec[int]] vec[int] 5 vec:push vec:push .", "[[5]]"),
+        ('map[str, int] "one" 1 map:set .', '{"one": 1}'),
+        ('map[str, int] "one" 1 map:set "one" map:get . drop', "1"),
+        ('map[str, int] "one" 1 map:set "one" 2 map:set "one" map:get . drop', "2"),
+        ('map[str, int] "one" 1 map:set "one" map:has_key . drop', "true"),
+        ('map[str, int] "one" 1 map:set "two" map:has_key . drop', "false"),
+        ('map[str, int] "one" 1 map:set map:size . drop', "1"),
+        ("map[str, int] map:size . drop", "0"),
+        ('map[str, int] "one" 1 map:set map:empty . drop', "false"),
+        ("map[str, int] map:empty . drop", "true"),
+        ('map[str, int] "one" 1 map:set "one" map:pop drop map:size . drop', "0"),
+        ('map[str, int] "one" 1 map:set map:clear map:size . drop', "0"),
+        (
+            'map[str, int] "one" 1 map:set map:copy map:clear map:size . drop map:size . drop',
+            "01",
+        ),
+        (
+            'map[str, int] "one" 1 map:set dup map:clear map:size . drop map:size . drop',
+            "00",
+        ),
     ],
 )
 def test_program_run_ok(

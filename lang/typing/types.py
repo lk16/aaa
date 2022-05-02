@@ -170,7 +170,9 @@ class Variable:
         elif root_type == RootType.MAPPING:
             return (
                 "{"
-                + ", ".join(f"{key}: {value}" for key, value in self.value.items())
+                + ", ".join(
+                    repr(key) + ": " + repr(value) for key, value in self.value.items()
+                )
                 + "}"
             )
 
@@ -182,6 +184,16 @@ class Variable:
             return '"' + str(self.value) + '"'
 
         return str(self)
+
+    def __hash__(self) -> int:
+        # NOTE: this will fail for VECTOR and MAPPING
+        return hash(self.value)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Variable):
+            return False
+
+        return self.value == other.value  # type: ignore
 
 
 def int_var(value: int) -> Variable:

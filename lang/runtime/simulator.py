@@ -20,6 +20,17 @@ from lang.instructions.types import (
     IntNotEqual,
     Jump,
     JumpIfNot,
+    MapClear,
+    MapCopy,
+    MapDrop,
+    MapEmpty,
+    MapGet,
+    MapHasKey,
+    MapKeys,
+    MapPop,
+    MapSet,
+    MapSize,
+    MapValues,
     Minus,
     Modulo,
     Multiply,
@@ -112,6 +123,17 @@ class Simulator:
             VecEmpty: self.instruction_vec_empty,
             VecClear: self.instruction_vec_clear,
             VecCopy: self.instruction_vec_copy,
+            MapGet: self.instruction_map_get,
+            MapSet: self.instruction_map_set,
+            MapHasKey: self.instruction_map_has_key,
+            MapSize: self.instruction_map_size,
+            MapEmpty: self.instruction_map_empty,
+            MapPop: self.instruction_map_pop,
+            MapDrop: self.instruction_map_drop,
+            MapClear: self.instruction_map_clear,
+            MapCopy: self.instruction_map_copy,
+            MapKeys: self.instruction_map_keys,
+            MapValues: self.instruction_map_values,
         }
 
     def top(self) -> Variable:
@@ -461,17 +483,17 @@ class Simulator:
 
     def instruction_vec_push(self, instruction: Instruction) -> int:
         assert isinstance(instruction, VecPush)
-        x: Variable = self.pop()
-        vec: List[Any] = self.top().value
+        x = self.pop()
+        vec: List[Variable] = self.top().value
 
         vec.append(x)
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_pop(self, instruction: Instruction) -> int:
         assert isinstance(instruction, VecPop)
-        vec: List[Any] = self.top().value
+        vec: List[Variable] = self.top().value
 
-        x: Variable = vec.pop()
+        x = vec.pop()
         self.push(x)
 
         return self.get_instruction_pointer() + 1
@@ -479,37 +501,37 @@ class Simulator:
     def instruction_vec_get(self, instruction: Instruction) -> int:
         assert isinstance(instruction, VecGet)
         x: int = self.pop().value
-        vec: List[Any] = self.top().value
+        vec: List[Variable] = self.top().value
 
         self.push(vec[x])
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_set(self, instruction: Instruction) -> int:
         assert isinstance(instruction, VecSet)
-        x: Any = self.pop().value
+        x: Any = self.pop()
         index: int = self.pop().value
-        vec: List[Any] = self.top().value
+        vec: List[Variable] = self.top().value
 
         vec[index] = x
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_size(self, instruction: Instruction) -> int:
         assert isinstance(instruction, VecSize)
-        vec: List[Any] = self.top().value
+        vec: List[Variable] = self.top().value
 
-        self.push(Variable(RootType.INTEGER, len(vec)))
+        self.push(int_var(len(vec)))
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_empty(self, instruction: Instruction) -> int:
         assert isinstance(instruction, VecEmpty)
-        vec: List[Any] = self.top().value
+        vec: List[Variable] = self.top().value
 
-        self.push(Variable(RootType.BOOL, not bool(vec)))
+        self.push(bool_var(not bool(vec)))
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_clear(self, instruction: Instruction) -> int:
         assert isinstance(instruction, VecClear)
-        vec: List[Any] = self.top().value
+        vec: List[Variable] = self.top().value
 
         vec.clear()
         return self.get_instruction_pointer() + 1
@@ -526,3 +548,84 @@ class Simulator:
 
         self.push(copied)
         return self.get_instruction_pointer() + 1
+
+    def instruction_map_get(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapGet)
+        key = self.pop()
+        map: Dict[Variable, Variable] = self.top().value
+
+        self.push(map[key])
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_set(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapSet)
+        value = self.pop()
+        key = self.pop()
+        map: Dict[Variable, Variable] = self.top().value
+
+        map[key] = value
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_has_key(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapHasKey)
+        key = self.pop()
+        map: Dict[Variable, Variable] = self.top().value
+
+        self.push(bool_var(key in map))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_size(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapSize)
+        map: Dict[Variable, Variable] = self.top().value
+
+        self.push(int_var(len(map)))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_empty(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapEmpty)
+        map: Dict[Variable, Variable] = self.top().value
+
+        self.push(bool_var(not bool(map)))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_pop(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapPop)
+        key = self.pop()
+        map: Dict[Variable, Variable] = self.top().value
+
+        self.push(map.pop(key))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_drop(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapDrop)
+        key = self.pop()
+        map: Dict[Variable, Variable] = self.top().value
+
+        del map[key]
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_clear(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapClear)
+        map: Dict[Variable, Variable] = self.top().value
+
+        map.clear()
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_copy(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, MapCopy)
+        map_var = self.top()
+
+        copied = Variable(
+            map_var.root_type(),
+            deepcopy(map_var.value),
+            deepcopy(map_var.type.type_params),
+        )
+
+        self.push(copied)
+        return self.get_instruction_pointer() + 1
+
+    def instruction_map_keys(self, instruction: Instruction) -> int:
+        raise NotImplementedError
+
+    def instruction_map_values(self, instruction: Instruction) -> int:
+        raise NotImplementedError

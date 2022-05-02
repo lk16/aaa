@@ -20,20 +20,21 @@
 - [x] Add syntax for member functions to grammar, for example: `vec:append`
 - [ ] Better error handling for wrong number of type parameters
 - [ ] Member functions should always return the type they operate on as first return value
-- [ ] Check that key type is hashable (currently: not a `vec` or `map`)
+- [ ] Check that key type is hashable (currently: not a `vec`, `map` or `set`)
+- [ ] Make `vec`, `map` and `set` keywords (if not preceded by `:`)
 - [ ] Add member functions:
-    - [ ] `vec:get`
-    - [ ] `vec:set`
-    - [ ] `vec:push`
-    - [ ] `vec:size`
-    - [ ] `vec:empty`
-    - [ ] `vec:pop`
-    - [ ] `vec:clear`
-    - [ ] `vec:copy`
-    - [ ] `vec:at`
+    - [x] `vec:get`
+    - [x] `vec:set`
+    - [x] `vec:push`
+    - [x] `vec:size`
+    - [x] `vec:empty`
+    - [x] `vec:pop`
+    - [x] `vec:clear`
+    - [x] `vec:copy`
+    - [x] `vec:at`
     - [ ] `map:get`
     - [ ] `map:set`
-    - [ ] `map:has`
+    - [ ] `map:has_key`
     - [ ] `map:size`
     - [ ] `map:empty`
     - [ ] `map:pop`
@@ -42,6 +43,13 @@
     - [ ] `map:copy`
     - [ ] `map:keys`
     - [ ] `map:values`
+
+### Parser lib
+- Add [negative lookbehind](https://stackoverflow.com/a/9306228) so we can add these:
+    - use functions (and fields) with `foo.bar` syntax instead of `foo:bar`
+    - add `map:drop`
+    - add `set` container to builtins
+
 
 ### Language features
 - structs

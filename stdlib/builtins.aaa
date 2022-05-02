@@ -48,16 +48,17 @@ builtin_fn "vec:empty" args vec[*a]          return vec[*a], bool
 builtin_fn "vec:clear" args vec[*a]          return vec[*a]
 builtin_fn "vec:copy"  args vec[*a]          return vec[*a], vec[*a]
 
-// TODO: below is not implemented yet
-
 builtin_fn "map:get"     args map[*k, *v], *k     return map[*k, *v], *v
 builtin_fn "map:set"     args map[*k, *v], *k, *v return map[*k, *v]
 builtin_fn "map:has_key" args map[*k, *v], *k     return map[*k, *v], bool
 builtin_fn "map:size"    args map[*k, *v]         return map[*k, *v], int
 builtin_fn "map:empty"   args map[*k, *v]         return map[*k, *v], bool
 builtin_fn "map:pop"     args map[*k, *v], *k     return map[*k, *v], *v
-builtin_fn "map:drop"    args map[*k, *v], *k     return map[*k, *v]
 builtin_fn "map:clear"   args map[*k, *v]         return map[*k, *v]
 builtin_fn "map:copy"    args map[*k, *v]         return map[*k, *v], map[*k, *v]
+
+
+// TODO: below is not implemented yet
+
 builtin_fn "map:keys"    args map[*k, *v]         return vec[*k]
 builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
