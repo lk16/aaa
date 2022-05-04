@@ -62,3 +62,10 @@ builtin_fn "map:copy"    args map[*k, *v]         return map[*k, *v], map[*k, *v
 
 builtin_fn "map:keys"    args map[*k, *v]         return vec[*k]
 builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
+
+
+// struct field operations: are roughly like below
+// except *b depends on the value of the str argument
+
+// builtin_fn "?" args *a, str     return *a, *b
+// builtin_fn "!" args *a, str, *b return *a

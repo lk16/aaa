@@ -23,17 +23,21 @@
 Idea for syntax
 ```
 struct int_pair begin
-    x int,
-    y int,
+    x as int,
+    y as int,
 end
 
-fn int_pair:sum args p as int_pair return int begin
-    p:x p:y +
+fn int_pair:sum args p as int_pair return int_pair, int begin
+    p
+    "x" ?
+    "y" ?
+    +
 end
 
-fn coord:set_zero args p as int_pair begin
-    assign p:x begin 0 end
-    assign p:y begin p:x end
+fn coord:set_zero args p as int_pair return int_pair begin
+    p
+    "x" 0 !
+    "y" over "x" ? !
 end
 ```
 
