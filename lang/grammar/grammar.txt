@@ -10,48 +10,51 @@
 
 // --- control flow keyword tokens ---
 
-@ token ARGS         = regex("args(?=\\W|$)")       .
-@ token AS           = regex("as(?=\\W|$)")         .
-@ token BEGIN        = regex("begin(?=\\W|$)")      .
-@ token BUILTIN_FN   = regex("builtin_fn(?=\\W|$)") .
-@ token ELSE         = regex("else(?=\\W|$)")       .
-@ token END          = regex("end(?=\\W|$)")        .
-@ token FN           = regex("fn(?=\\W|$)")         .
-@ token FROM         = regex("from(?=\\W|$)")       .
-@ token IF           = regex("if(?=\\W|$)")         .
-@ token IMPORT       = regex("import(?=\\W|$)")     .
-@ token RETURN       = regex("return(?=\\W|$)")     .
-@ token WHILE        = regex("while(?=\\W|$)")      .
+@ token ARGS       = regex("args(?=\\W|$)")       .
+@ token AS         = regex("as(?=\\W|$)")         .
+@ token BEGIN      = regex("begin(?=\\W|$)")      .
+@ token BUILTIN_FN = regex("builtin_fn(?=\\W|$)") .
+@ token ELSE       = regex("else(?=\\W|$)")       .
+@ token END        = regex("end(?=\\W|$)")        .
+@ token FN         = regex("fn(?=\\W|$)")         .
+@ token FROM       = regex("from(?=\\W|$)")       .
+@ token IF         = regex("if(?=\\W|$)")         .
+@ token IMPORT     = regex("import(?=\\W|$)")     .
+@ token RETURN     = regex("return(?=\\W|$)")     .
+@ token STRUCT     = regex("struct(?=\\W|$)")     .
+@ token WHILE      = regex("while(?=\\W|$)")      .
 
 // --- operator tokens ---
 
-@ token AND            = regex("and(?=\\W|$)")    .
-@ token ASSERT         = regex("assert(?=\\W|$)") .
-@ token ASTERISK       = "*"                      .
-@ token BACKSLASH_N    = regex("\\\\n(?=\\W|$)")  .
-@ token COMMA          = ","                      .
-@ token COLON          = ":"                      .
-@ token DROP           = regex("drop(?=\\W|$)")   .
-@ token DUP            = regex("dup(?=\\W|$)")    .
-@ token EQUALS         = regex("=(?=\\s|$)")      .
-@ token GREATER_EQUALS = regex(">=(?=\\s|$)")     .
-@ token GREATER_THAN   = regex(">(?=\\s|$)")      .
-@ token LESS_EQUALS    = regex("<=(?=\\s|$)")     .
-@ token LESS_THAN      = regex("<(?=\\s|$)")      .
-@ token MINUS          = regex("-(?=\\s|$)")      .
-@ token NOP            = regex("nop(?=\\W|$)")    .
-@ token NOT            = regex("not(?=\\W|$)")    .
-@ token NOT_EQUALS     = regex("!=(?=\\s|$)")     .
-@ token OR             = regex("or(?=\\W|$)")     .
-@ token OVER           = regex("over(?=\\W|$)")   .
-@ token PERCENT        = regex("%(?=\\s|$)")      .
-@ token PERIOD         = "."                      .
-@ token PLUS           = regex("\\+(?=\\s|$)")    .
-@ token ROT            = regex("rot(?=\\W|$)")    .
-@ token SLASH          = regex("/(?=\\s|$)")      .
-@ token STRLEN         = regex("strlen(?=\\W|$)") .
-@ token SUBSTR         = regex("substr(?=\\W|$)") .
-@ token SWAP           = regex("swap(?=\\W|$)")   .
+@ token AND              = regex("and(?=\\W|$)")    .
+@ token ASSERT           = regex("assert(?=\\W|$)") .
+@ token ASTERISK         = "*"                      .
+@ token BACKSLASH_N      = regex("\\\\n(?=\\W|$)")  .
+@ token COMMA            = ","                      .
+@ token COLON            = ":"                      .
+@ token DROP             = regex("drop(?=\\W|$)")   .
+@ token DUP              = regex("dup(?=\\W|$)")    .
+@ token EQUALS           = regex("=(?=\\s|$)")      .
+@ token EXCLAMATION_MARK = regex("!(?=\\s|$)")      .
+@ token GREATER_EQUALS   = regex(">=(?=\\s|$)")     .
+@ token GREATER_THAN     = regex(">(?=\\s|$)")      .
+@ token LESS_EQUALS      = regex("<=(?=\\s|$)")     .
+@ token LESS_THAN        = regex("<(?=\\s|$)")      .
+@ token MINUS            = regex("-(?=\\s|$)")      .
+@ token NOP              = regex("nop(?=\\W|$)")    .
+@ token NOT              = regex("not(?=\\W|$)")    .
+@ token NOT_EQUALS       = regex("!=(?=\\s|$)")     .
+@ token OR               = regex("or(?=\\W|$)")     .
+@ token OVER             = regex("over(?=\\W|$)")   .
+@ token PERCENT          = regex("%(?=\\s|$)")      .
+@ token PERIOD           = "."                      .
+@ token PLUS             = regex("\\+(?=\\s|$)")    .
+@ token QUESTION_MARK    = "?"                      .
+@ token ROT              = regex("rot(?=\\W|$)")    .
+@ token SLASH            = regex("/(?=\\s|$)")      .
+@ token STRLEN           = regex("strlen(?=\\W|$)") .
+@ token SUBSTR           = regex("substr(?=\\W|$)") .
+@ token SWAP             = regex("swap(?=\\W|$)")   .
 
 // --- literal tokens ---
 
@@ -91,7 +94,9 @@ BUILTINS_FILE_ROOT = (BUILTIN_FUNCTION_DEFINITION)+ .
 
 BUILTIN_FUNCTION_DEFINITION = BUILTIN_FN STRING (ARGS RETURN_TYPES)? (RETURN RETURN_TYPES)? .
 
-REGULAR_FILE_ROOT = (FUNCTION_DEFINITION | IMPORT_STATEMENT)+ .
+REGULAR_FILE_ROOT = (FUNCTION_DEFINITION | IMPORT_STATEMENT | STRUCT_DEFINITION)+ .
+
+STRUCT_DEFINITION = STRUCT IDENTIFIER BEGIN ARGUMENT_LIST END .
 
 IMPORT_STATEMENT = FROM STRING IMPORT IMPORT_ITEMS .
 
@@ -99,7 +104,17 @@ IMPORT_ITEMS = IMPORT_ITEM (COMMA IMPORT_ITEM)* (COMMA)? .
 
 IMPORT_ITEM = IDENTIFIER (AS IDENTIFIER)? .
 
-FUNCTION_DEFINITION = FN IDENTIFIER (ARGS ARGUMENT_LIST)? (RETURN RETURN_TYPES)? BEGIN FUNCTION_BODY END .
+STRUCT_FUNCTION_IDENTIFIER = IDENTIFIER COLON IDENTIFIER .
+
+FUNCTION_DEFINITION = (
+    FN
+    (STRUCT_FUNCTION_IDENTIFIER | IDENTIFIER)
+    (ARGS ARGUMENT_LIST)?
+    (RETURN RETURN_TYPES)?
+    BEGIN
+    FUNCTION_BODY
+    END
+) .
 
 TYPE_LITERAL = (BOOL | INT | MAP | STR | VEC) (TYPE_PARAMS)? .
 
@@ -120,11 +135,25 @@ FUNCTION_BODY = (FUNCTION_BODY_ITEM)+ .
 MEMBER_FUNCTION = TYPE_LITERAL COLON IDENTIFIER .
 
 @ prune
-FUNCTION_BODY_ITEM = MEMBER_FUNCTION | BRANCH | LOOP | OPERATOR | IDENTIFIER | LITERAL | TYPE_LITERAL .
+FUNCTION_BODY_ITEM = (
+      MEMBER_FUNCTION
+    | BRANCH
+    | LOOP
+    | OPERATOR
+    | IDENTIFIER
+    | TYPE_LITERAL
+    | STRUCT_FIELD_QUERY
+    | STRUCT_FIELD_UPDATE
+    | LITERAL
+) .
 
 BRANCH = IF FUNCTION_BODY BEGIN FUNCTION_BODY (ELSE FUNCTION_BODY)? END .
 
 LOOP = WHILE FUNCTION_BODY BEGIN FUNCTION_BODY END .
+
+STRUCT_FIELD_QUERY = STRING QUESTION_MARK .
+
+STRUCT_FIELD_UPDATE = STRING FUNCTION_BODY EXCLAMATION_MARK .
 
 @ prune
 LITERAL = BOOLEAN | INTEGER | STRING .

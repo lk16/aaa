@@ -11,6 +11,7 @@
 - Add member functions:
     - `map:keys`
     - `map:values`
+    - `map:items`
 
 ### Parser lib
 - Add [negative lookbehind](https://stackoverflow.com/a/9306228) so we can add these:
@@ -19,6 +20,15 @@
     - add `set` container to builtins
 
 ### Add Struct syntax
+- Add syntax:
+    - struct definition
+    - update struct field
+    - query struct field
+    - struct-associated function
+- Update type checker
+    - ...
+- Allow type params for struct
+
 
 Idea for syntax
 ```
@@ -37,7 +47,7 @@ end
 fn coord:set_zero args p as int_pair return int_pair begin
     p
     "x" 0 !
-    "y" over "x" ? !
+    "y" p "x" ? ! drop
 end
 ```
 

@@ -46,6 +46,7 @@ class Terminal(IntEnum):
     ELSE = next(next_offset)
     END = next(next_offset)
     EQUALS = next(next_offset)
+    EXCLAMATION_MARK = next(next_offset)
     FALSE = next(next_offset)
     FN = next(next_offset)
     FROM = next(next_offset)
@@ -68,6 +69,7 @@ class Terminal(IntEnum):
     PERCENT = next(next_offset)
     PERIOD = next(next_offset)
     PLUS = next(next_offset)
+    QUESTION_MARK = next(next_offset)
     RETURN = next(next_offset)
     ROT = next(next_offset)
     SHEBANG = next(next_offset)
@@ -75,6 +77,7 @@ class Terminal(IntEnum):
     STR = next(next_offset)
     STRING = next(next_offset)
     STRLEN = next(next_offset)
+    STRUCT = next(next_offset)
     SUBSTR = next(next_offset)
     SWAP = next(next_offset)
     TRUE = next(next_offset)
@@ -97,6 +100,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.IF, "if(?=\\W|$)"),
     Regex(Terminal.IMPORT, "import(?=\\W|$)"),
     Regex(Terminal.RETURN, "return(?=\\W|$)"),
+    Regex(Terminal.STRUCT, "struct(?=\\W|$)"),
     Regex(Terminal.WHILE, "while(?=\\W|$)"),
     Regex(Terminal.AND, "and(?=\\W|$)"),
     Regex(Terminal.ASSERT, "assert(?=\\W|$)"),
@@ -107,6 +111,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.DROP, "drop(?=\\W|$)"),
     Regex(Terminal.DUP, "dup(?=\\W|$)"),
     Regex(Terminal.EQUALS, "=(?=\\s|$)"),
+    Regex(Terminal.EXCLAMATION_MARK, "!(?=\\s|$)"),
     Regex(Terminal.GREATER_EQUALS, ">=(?=\\s|$)"),
     Regex(Terminal.GREATER_THAN, ">(?=\\s|$)"),
     Regex(Terminal.LESS_EQUALS, "<=(?=\\s|$)"),
@@ -120,6 +125,7 @@ TERMINAL_RULES: List[TokenDescriptor] = [
     Regex(Terminal.PERCENT, "%(?=\\s|$)"),
     Literal(Terminal.PERIOD, "."),
     Regex(Terminal.PLUS, "\\+(?=\\s|$)"),
+    Literal(Terminal.QUESTION_MARK, "?"),
     Regex(Terminal.ROT, "rot(?=\\W|$)"),
     Regex(Terminal.SLASH, "/(?=\\s|$)"),
     Regex(Terminal.STRLEN, "strlen(?=\\W|$)"),
@@ -163,6 +169,10 @@ class NonTerminal(IntEnum):
     REGULAR_FILE_ROOT = next(next_offset)
     RETURN_TYPES = next(next_offset)
     ROOT = next(next_offset)
+    STRUCT_DEFINITION = next(next_offset)
+    STRUCT_FIELD_QUERY = next(next_offset)
+    STRUCT_FIELD_UPDATE = next(next_offset)
+    STRUCT_FUNCTION_IDENTIFIER = next(next_offset)
     TYPE = next(next_offset)
     TYPE_LITERAL = next(next_offset)
     TYPE_PARAMS = next(next_offset)
@@ -233,12 +243,17 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         NonTerminalExpression(NonTerminal.LOOP),
         NonTerminalExpression(NonTerminal.OPERATOR),
         TerminalExpression(Terminal.IDENTIFIER),
-        NonTerminalExpression(NonTerminal.LITERAL),
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
+        NonTerminalExpression(NonTerminal.STRUCT_FIELD_QUERY),
+        NonTerminalExpression(NonTerminal.STRUCT_FIELD_UPDATE),
+        NonTerminalExpression(NonTerminal.LITERAL),
     ),
     NonTerminal.FUNCTION_DEFINITION: ConcatenationExpression(
         TerminalExpression(Terminal.FN),
-        TerminalExpression(Terminal.IDENTIFIER),
+        ConjunctionExpression(
+            NonTerminalExpression(NonTerminal.STRUCT_FUNCTION_IDENTIFIER),
+            TerminalExpression(Terminal.IDENTIFIER),
+        ),
         OptionalExpression(
             ConcatenationExpression(
                 TerminalExpression(Terminal.ARGS),
@@ -326,11 +341,13 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
         ConjunctionExpression(
             NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION),
             NonTerminalExpression(NonTerminal.IMPORT_STATEMENT),
+            NonTerminalExpression(NonTerminal.STRUCT_DEFINITION),
         ),
         RepeatExpression(
             ConjunctionExpression(
                 NonTerminalExpression(NonTerminal.FUNCTION_DEFINITION),
                 NonTerminalExpression(NonTerminal.IMPORT_STATEMENT),
+                NonTerminalExpression(NonTerminal.STRUCT_DEFINITION),
             )
         ),
     ),
@@ -347,6 +364,26 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
     NonTerminal.ROOT: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.REGULAR_FILE_ROOT),
         NonTerminalExpression(NonTerminal.BUILTINS_FILE_ROOT),
+    ),
+    NonTerminal.STRUCT_DEFINITION: ConcatenationExpression(
+        TerminalExpression(Terminal.STRUCT),
+        TerminalExpression(Terminal.IDENTIFIER),
+        TerminalExpression(Terminal.BEGIN),
+        NonTerminalExpression(NonTerminal.ARGUMENT_LIST),
+        TerminalExpression(Terminal.END),
+    ),
+    NonTerminal.STRUCT_FIELD_QUERY: ConcatenationExpression(
+        TerminalExpression(Terminal.STRING), TerminalExpression(Terminal.QUESTION_MARK)
+    ),
+    NonTerminal.STRUCT_FIELD_UPDATE: ConcatenationExpression(
+        TerminalExpression(Terminal.STRING),
+        NonTerminalExpression(NonTerminal.FUNCTION_BODY),
+        TerminalExpression(Terminal.EXCLAMATION_MARK),
+    ),
+    NonTerminal.STRUCT_FUNCTION_IDENTIFIER: ConcatenationExpression(
+        TerminalExpression(Terminal.IDENTIFIER),
+        TerminalExpression(Terminal.COLON),
+        TerminalExpression(Terminal.IDENTIFIER),
     ),
     NonTerminal.TYPE: ConjunctionExpression(
         NonTerminalExpression(NonTerminal.TYPE_LITERAL),
