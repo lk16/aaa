@@ -11,6 +11,7 @@ class RootType(IntEnum):
     STRING = auto()
     VECTOR = auto()
     MAPPING = auto()
+    STRUCT = auto()
 
     @classmethod
     def from_str(cls, name: str) -> "RootType":
@@ -24,8 +25,8 @@ class RootType(IntEnum):
             return RootType.VECTOR
         elif name == "map":
             return RootType.MAPPING
-        else:  # pragma: nocover
-            assert False
+        else:
+            return RootType.STRUCT
 
     def __repr__(self) -> str:  # pragma: nocover
         if self == RootType.BOOL:
@@ -38,8 +39,8 @@ class RootType(IntEnum):
             return "vec"
         elif self == RootType.MAPPING:
             return "map"
-        else:  # pragma: nocover
-            assert False
+        else:
+            return "struct"
 
 
 class VariableType:

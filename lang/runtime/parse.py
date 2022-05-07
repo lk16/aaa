@@ -18,6 +18,8 @@ FunctionBodyItem = Union[
     "MemberFunction",
     "Operator",
     "StringLiteral",
+    "StructFieldQuery",
+    "StructFieldUpdate",
     "TypeLiteral",
 ]
 
@@ -196,6 +198,47 @@ class MemberFunction(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class StructFieldQuery(AaaTreeNode):
+    field_name: str
+
+    @classmethod
+    def from_tree(
+        cls, tree: Tree, tokens: List[Token], code: str
+    ) -> "StructFieldQuery":
+        assert tree.token_type == NonTerminal.STRUCT_FIELD_QUERY
+
+        field_name = StringLiteral.from_tree(tree[0], tokens, code).value
+
+        return StructFieldQuery(
+            field_name=field_name,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
+class StructFieldUpdate(AaaTreeNode):
+    field_name: str
+    new_value_expr: FunctionBody
+
+    @classmethod
+    def from_tree(
+        cls, tree: Tree, tokens: List[Token], code: str
+    ) -> "StructFieldUpdate":
+        assert tree.token_type == NonTerminal.STRUCT_FIELD_UPDATE
+
+        field_name = StringLiteral.from_tree(tree[0], tokens, code).value
+        new_value_expr = FunctionBody.from_tree(tree[1], tokens, code)
+
+        return StructFieldUpdate(
+            field_name=field_name,
+            new_value_expr=new_value_expr,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class FunctionBody(AaaTreeNode):
     items: List[FunctionBodyItem]
 
@@ -209,6 +252,8 @@ class FunctionBody(AaaTreeNode):
             NonTerminal.LOOP: Loop,
             NonTerminal.MEMBER_FUNCTION: MemberFunction,
             NonTerminal.OPERATOR: Operator,
+            NonTerminal.STRUCT_FIELD_QUERY: StructFieldQuery,
+            NonTerminal.STRUCT_FIELD_UPDATE: StructFieldUpdate,
             NonTerminal.TYPE_LITERAL: TypeLiteral,
             Terminal.IDENTIFIER: Identifier,
             Terminal.INTEGER: IntegerLiteral,
@@ -388,6 +433,31 @@ class Import(AaaTreeNode):
 
 
 @dataclass(kw_only=True)
+class Struct(AaaTreeNode):
+    name: str
+    fields: List[Argument]
+
+    @classmethod
+    def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Struct":
+        assert tree.token_type == NonTerminal.STRUCT_DEFINITION
+
+        name = tree[1].value(tokens, code)
+
+        fields = [
+            Argument.from_tree(child, tokens, code)
+            for child in tree[3].children
+            if child.token_type != Terminal.COMMA
+        ]
+
+        return Struct(
+            name=name,
+            fields=fields,
+            token_count=tree.token_count,
+            token_offset=tree.token_offset,
+        )
+
+
+@dataclass(kw_only=True)
 class BuiltinFunction(AaaTreeNode):
     name: str
     arguments: List[ParsedType]
@@ -468,6 +538,7 @@ class ParsedBuiltinsFile(AaaTreeNode):
 class ParsedFile(AaaTreeNode):
     functions: List[Function]
     imports: List[Import]
+    structs: List[Struct]
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "ParsedFile":
@@ -479,6 +550,7 @@ class ParsedFile(AaaTreeNode):
 
         functions: List[Function] = []
         imports: List[Import] = []
+        structs: List[Struct] = []
 
         for child in tree.children:
             if child.token_type == NonTerminal.FUNCTION_DEFINITION:
@@ -489,12 +561,17 @@ class ParsedFile(AaaTreeNode):
                 import_ = Import.from_tree(child, tokens, code)
                 imports.append(import_)
 
+            elif child.token_type == NonTerminal.STRUCT_DEFINITION:
+                struct = Struct.from_tree(child, tokens, code)
+                structs.append(struct)
+
             else:  # pragma: nocover
                 assert False
 
         return ParsedFile(
             functions=functions,
             imports=imports,
+            structs=structs,
             token_count=tree.token_count,
             token_offset=tree.token_offset,
         )
