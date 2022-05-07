@@ -17,6 +17,7 @@ from lang.runtime.parse import (
     ParsedBuiltinsFile,
     ParsedFile,
     ParsedTypePlaceholder,
+    Struct,
     TypeLiteral,
 )
 from lang.typing.checker import TypeChecker
@@ -40,7 +41,7 @@ class ProgramImport:
 
 
 # Identifiable are things identified uniquely by a filepath and name
-Identifiable = Function | ProgramImport
+Identifiable = Function | ProgramImport | Struct
 
 # TODO clean this union up once we have better baseclasses for exceptions
 FileLoadException = (
@@ -215,6 +216,12 @@ class Program:
                 raise FunctionNameCollision(file=file, tokens=tokens, function=function)
 
             self.identifiers[file][function.name] = function
+
+        for struct in parsed_file.structs:
+            if struct.name in self.identifiers[file]:
+                raise NotImplementedError  # TODO
+
+            self.identifiers[file][struct.name] = struct
 
     def _generate_file_instructions(
         self, file: Path, parsed_file: ParsedFile

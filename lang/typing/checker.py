@@ -14,8 +14,12 @@ from lang.runtime.parse import (
     Loop,
     MemberFunction,
     Operator,
+    ParsedType,
     ParsedTypePlaceholder,
     StringLiteral,
+    Struct,
+    StructFieldQuery,
+    StructFieldUpdate,
     TypeLiteral,
 )
 
@@ -221,7 +225,7 @@ class TypeChecker:
         assert isinstance(node, IntegerLiteral)
         return type_stack + [Int]
 
-    def check_string_literal(
+    def _check_string_literal(
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, StringLiteral)
@@ -376,9 +380,13 @@ class TypeChecker:
             elif isinstance(child_node, Operator):
                 stack = self._check_operator(child_node, copy(stack))
             elif isinstance(child_node, StringLiteral):
-                stack = self.check_string_literal(child_node, copy(stack))
+                stack = self._check_string_literal(child_node, copy(stack))
             elif isinstance(child_node, TypeLiteral):
                 stack = self._check_type_literal(child_node, copy(stack))
+            elif isinstance(child_node, StructFieldQuery):
+                stack = self._check_type_struct_field_query(child_node, copy(stack))
+            elif isinstance(child_node, StructFieldUpdate):
+                stack = self._check_type_struct_field_update(child_node, copy(stack))
             else:  # pragma nocover
                 assert False
 
@@ -436,3 +444,59 @@ class TypeChecker:
             argument_and_names.add(arg.name)
 
         return self._check_function_body(node.body, type_stack)
+
+    def _check_type_struct_field_query(
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
+        assert isinstance(node, StructFieldQuery)
+
+        type_stack = self._check_string_literal(node.field_name, copy(type_stack))
+
+        if len(type_stack) < 2:
+            raise NotImplementedError
+
+        struct_type, field_selector_type = type_stack[-2:]
+
+        assert isinstance(struct_type, VariableType)
+        assert isinstance(field_selector_type, VariableType)
+
+        if not all(
+            [
+                struct_type.root_type == RootType.STRUCT,
+                field_selector_type.root_type == RootType.STRING,
+            ]
+        ):
+            raise NotImplementedError
+
+        struct_name = struct_type.struct_name
+        struct = self.program.identifiers[self.file][struct_name]
+
+        if not isinstance(struct, Struct):
+            raise NotImplementedError
+
+        # TODO refactor getting field type by name
+
+        field_type: Optional[ParsedType] = None
+
+        for field in struct.fields:
+            if field.name == node.field_name.value:
+                field_type = field.type
+                break
+
+        if not field_type:
+            raise NotImplementedError
+
+        # drop field_selector string value
+        type_stack.pop()
+
+        # converting type representations
+        assert isinstance(field_type.type, TypeLiteral)
+        type_stack.append(VariableType.from_type_literal(field_type.type))
+
+        return type_stack
+
+    def _check_type_struct_field_update(
+        self, node: AaaTreeNode, type_stack: TypeStack
+    ) -> TypeStack:
+        assert isinstance(node, StructFieldUpdate)
+        raise NotImplementedError

@@ -4,9 +4,9 @@ struct int_pair begin
 end
 
 fn int_pair:sum args p as int_pair return int_pair, int begin
-    p
-    "x" ?
-    "y" ?
+    p "x" ?
+    p "y" ?
+    swap drop
     +
 end
 

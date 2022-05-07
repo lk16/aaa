@@ -199,7 +199,7 @@ class MemberFunction(AaaTreeNode):
 
 @dataclass(kw_only=True)
 class StructFieldQuery(AaaTreeNode):
-    field_name: str
+    field_name: StringLiteral
 
     @classmethod
     def from_tree(
@@ -207,7 +207,7 @@ class StructFieldQuery(AaaTreeNode):
     ) -> "StructFieldQuery":
         assert tree.token_type == NonTerminal.STRUCT_FIELD_QUERY
 
-        field_name = StringLiteral.from_tree(tree[0], tokens, code).value
+        field_name = StringLiteral.from_tree(tree[0], tokens, code)
 
         return StructFieldQuery(
             field_name=field_name,
@@ -218,7 +218,7 @@ class StructFieldQuery(AaaTreeNode):
 
 @dataclass(kw_only=True)
 class StructFieldUpdate(AaaTreeNode):
-    field_name: str
+    field_name: StringLiteral
     new_value_expr: FunctionBody
 
     @classmethod
@@ -227,7 +227,7 @@ class StructFieldUpdate(AaaTreeNode):
     ) -> "StructFieldUpdate":
         assert tree.token_type == NonTerminal.STRUCT_FIELD_UPDATE
 
-        field_name = StringLiteral.from_tree(tree[0], tokens, code).value
+        field_name = StringLiteral.from_tree(tree[0], tokens, code)
         new_value_expr = FunctionBody.from_tree(tree[1], tokens, code)
 
         return StructFieldUpdate(

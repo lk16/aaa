@@ -48,9 +48,19 @@ class VariableType:
         self,
         root_type: RootType,
         type_params: Optional[List["SignatureItem"]] = None,
+        struct_name: str = "",
     ) -> None:
         self.root_type: Final[RootType] = root_type
         self.type_params: Final[List[SignatureItem]] = type_params or []
+
+        # TODO consider renaming struct_name to type_name
+        # and remove RootType.__repr__() and its uses.
+
+        if self.root_type == RootType.STRUCT:
+            assert struct_name
+            self.struct_name = struct_name
+        else:
+            self.struct_name = ""
 
         if root_type == RootType.VECTOR:
             assert len(self.type_params) == 1
@@ -73,7 +83,7 @@ class VariableType:
             else:  # pragma: nocover
                 assert False
 
-        return VariableType(root_type, type_params)
+        return VariableType(root_type, type_params, struct_name=type_literal.type_name)
 
     def __repr__(self) -> str:  # pragma: nocover
         formatted = repr(self.root_type)
