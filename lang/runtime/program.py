@@ -320,7 +320,7 @@ class Program:
     ) -> Tuple[Path, str]:
         identified = self.identifiers[called_from][called_name]
 
-        if isinstance(identified, Function):
+        if isinstance(identified, (Function, Struct)):
             return called_from, called_name
         elif isinstance(identified, ProgramImport):
             return identified.source_file, identified.original_name

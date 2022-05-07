@@ -42,6 +42,7 @@ from lang.instructions.types import (
     PushInt,
     PushMap,
     PushString,
+    PushStruct,
     PushVec,
     Rot,
     StringLength,
@@ -68,6 +69,7 @@ from lang.runtime.parse import (
     MemberFunction,
     Operator,
     StringLiteral,
+    Struct,
     TypeLiteral,
 )
 from lang.typing.types import RootType, VariableType
@@ -204,10 +206,18 @@ class InstructionGenerator:
             if node.name == argument.name:
                 return [PushFunctionArgument(argument.name)]
 
-        source_file, original_name = self.program.get_function_source_and_name(
-            self.file, identifier
-        )
-        return [CallFunction(func_name=original_name, file=source_file)]
+        identified = self.program.identifiers[self.file][identifier]
+
+        if isinstance(identified, Function):
+            source_file, original_name = self.program.get_function_source_and_name(
+                self.file, identifier
+            )
+            return [CallFunction(func_name=original_name, file=source_file)]
+        elif isinstance(identified, Struct):
+            return [PushStruct(identified)]
+            ...
+        else:  # pragma: nocover
+            assert False
 
     def instructions_for_branch(
         self, node: AaaTreeNode, offset: int

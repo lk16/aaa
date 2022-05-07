@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from lang.runtime.parse import Struct
 from lang.typing.types import VariableType
 
 
@@ -288,3 +289,8 @@ class MapKeys(Instruction):
 @dataclass
 class MapValues(Instruction):
     ...
+
+
+@dataclass
+class PushStruct(Instruction):
+    type: Struct

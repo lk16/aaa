@@ -45,6 +45,7 @@ from lang.instructions.types import (
     PushInt,
     PushMap,
     PushString,
+    PushStruct,
     PushVec,
     Rot,
     StringLength,
@@ -111,6 +112,7 @@ class Simulator:
             PushInt: self.instruction_push_int,
             PushMap: self.instruction_map_push,
             PushString: self.instruction_push_string,
+            PushStruct: self.instruction_push_struct,
             PushVec: self.instruction_push_vec,
             Rot: self.instruction_rot,
             StringLength: self.instruction_string_length,
@@ -626,6 +628,20 @@ class Simulator:
         )
 
         self.push(copied)
+        return self.get_instruction_pointer() + 1
+
+    def instruction_push_struct(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, PushStruct)
+
+        struct_fields: Dict[str, Variable] = {}
+
+        # TODO set struct_fields to zero values of relevant types
+
+        struct_var = Variable(
+            RootType.STRUCT, struct_fields, struct_name=instruction.type.name
+        )
+        self.push(struct_var)
+
         return self.get_instruction_pointer() + 1
 
     def instruction_map_keys(self, instruction: Instruction) -> int:

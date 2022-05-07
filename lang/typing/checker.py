@@ -463,7 +463,9 @@ class TypeChecker:
         type_stack = self._check_string_literal(node.field_name, copy(type_stack))
 
         if len(type_stack) < 2:
-            raise NotImplementedError
+            raise StackUnderflowError(
+                file=self.file, function=self.function, tokens=self.tokens, node=node
+            )
 
         struct_type, field_selector_type = type_stack[-2:]
 

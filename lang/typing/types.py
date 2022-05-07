@@ -122,8 +122,11 @@ class Variable:
         root_type: RootType,
         value: Any,
         type_params: Optional[List["SignatureItem"]] = None,
+        struct_name: str = "",
     ) -> None:
-        self.type: Final[VariableType] = VariableType(root_type, type_params)
+        self.type: Final[VariableType] = VariableType(
+            root_type, type_params, struct_name=struct_name
+        )
         self.value = value
         self.check()
 
@@ -156,7 +159,9 @@ class Variable:
                 assert value.type == type_params[1]
                 key.check()
                 value.check()
-
+        elif root_type == RootType.STRUCT:
+            assert type(self.value) == dict
+            assert len(type_params) == 0
         else:  # pragma: nocover
             assert False
 
