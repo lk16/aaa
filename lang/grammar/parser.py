@@ -396,6 +396,7 @@ NON_TERMINAL_RULES: Dict[IntEnum, Expression] = {
             TerminalExpression(Terminal.MAP),
             TerminalExpression(Terminal.STR),
             TerminalExpression(Terminal.VEC),
+            TerminalExpression(Terminal.IDENTIFIER),
         ),
         OptionalExpression(NonTerminalExpression(NonTerminal.TYPE_PARAMS)),
     ),

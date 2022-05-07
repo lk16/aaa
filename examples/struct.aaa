@@ -1,0 +1,53 @@
+struct int_pair begin
+    x as int,
+    y as int,
+end
+
+fn int_pair:sum args p as int_pair return int_pair, int begin
+    p
+    "x" ?
+    "y" ?
+    +
+end
+
+fn int_pair:set_zero args p as int_pair return int_pair begin
+    p
+    "x" 0 !
+    "y" p "x" ? ! drop
+end
+
+fn main begin
+    int_pair
+
+    "x = " .
+    "x" ? .
+    "\n" .
+    // should print "x = 0\n"
+
+    "y = " .
+    "y" ? .
+    "\n" .
+    // should print "y = 0\n"
+
+    "x" 3 !
+    "y" 4 !
+
+    "x = " .
+    "x" ? .
+    "\n" .
+    // should print "x = 3\n"
+
+
+    "y = " .
+    "y" ? .
+    "\n" .
+    // should print "y = 4\n"
+
+    int_pair:sum .
+    "\n" .
+    // should print "7\n"
+
+    drop
+end
+
+// TODO make this file into a test
