@@ -348,15 +348,25 @@ class TypeChecker:
             return copy(type_stack) + [arg_type]
 
         # If it's not a function argument, we must be calling a function.
-        func = self.program.get_function(self.file, node.name)
+        identifier = self.program.get_identifier(self.file, node.name)
 
-        if not func:
+        if not identifier:
+            # TODO rename to UnknownIdentifier
             raise UnknownFunction(
                 file=self.file, function=self.function, tokens=self.tokens, node=node
             )
 
-        signature = self._get_function_signature(func)
-        return self._check_and_apply_signature(copy(type_stack), signature, node)
+        if isinstance(identifier, Function):
+            signature = self._get_function_signature(identifier)
+            return self._check_and_apply_signature(copy(type_stack), signature, node)
+
+        elif isinstance(identifier, Struct):
+            return copy(type_stack) + [
+                VariableType(RootType.STRUCT, struct_name=identifier.name)
+            ]
+
+        else:
+            assert False
 
     def _check_function_body(
         self, node: AaaTreeNode, type_stack: TypeStack
@@ -475,7 +485,6 @@ class TypeChecker:
             raise NotImplementedError
 
         # TODO refactor getting field type by name
-
         field_type: Optional[ParsedType] = None
 
         for field in struct.fields:
@@ -499,4 +508,26 @@ class TypeChecker:
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, StructFieldUpdate)
-        raise NotImplementedError
+
+        type_stack = self._check_string_literal(node.field_name, copy(type_stack))
+
+        type_stack_before = type_stack
+        type_stack_after = self._check_function_body(
+            node.new_value_expr, copy(type_stack_before)
+        )
+
+        if not all(
+            [
+                len(type_stack_before) == len(type_stack_after) - 1,
+                type_stack_before == type_stack_after[:-1],
+            ]
+        ):
+            raise NotImplementedError
+
+        update_expr_type = type_stack_after[-1]
+
+        # TODO check that update_expr_type matches the field we're updating
+        _ = update_expr_type
+
+        # drop field_selector and update value
+        return type_stack[:-2]

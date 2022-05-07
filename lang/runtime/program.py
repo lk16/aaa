@@ -299,7 +299,7 @@ class Program:
 
         return errors
 
-    def get_function(self, file: Path, name: str) -> Optional[Function]:
+    def get_identifier(self, file: Path, name: str) -> Optional[Identifiable]:
         try:
             identified = self.identifiers[file][name]
         except KeyError:
@@ -309,7 +309,9 @@ class Program:
         if isinstance(identified, Function):
             return identified
         elif isinstance(identified, ProgramImport):
-            return self.get_function(identified.source_file, identified.original_name)
+            return self.get_identifier(identified.source_file, identified.original_name)
+        elif isinstance(identified, Struct):
+            return identified
         else:  # pragma: nocover
             assert False
 

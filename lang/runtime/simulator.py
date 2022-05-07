@@ -60,6 +60,7 @@ from lang.instructions.types import (
     VecSize,
 )
 from lang.runtime.debug import format_str
+from lang.runtime.parse import Function
 from lang.runtime.program import Program
 from lang.typing.types import RootType, Variable, bool_var, int_var, str_var
 
@@ -190,9 +191,12 @@ class Simulator:
         self.call_function(self.program.entry_point_file, "main")
 
     def call_function(self, file: Path, func_name: str) -> None:
-        function = self.program.get_function(file, func_name)
+        function = self.program.get_identifier(file, func_name)
 
         assert function  # If this assertion breaks, then Aaa's type checking is broken
+
+        if not isinstance(function, Function):
+            raise NotImplementedError
 
         argument_values: Dict[str, Variable] = {}
 

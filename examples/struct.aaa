@@ -13,7 +13,7 @@ end
 fn int_pair:set_zero args p as int_pair return int_pair begin
     p
     "x" 0 !
-    "y" p "x" ? ! drop
+    "y" p "x" ? swap drop !
 end
 
 fn main begin
