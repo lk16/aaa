@@ -12,6 +12,7 @@ from lang.instructions.types import (
     Drop,
     Dup,
     Equals,
+    GetStructField,
     Instruction,
     IntGreaterEquals,
     IntGreaterThan,
@@ -48,6 +49,7 @@ from lang.instructions.types import (
     PushStruct,
     PushVec,
     Rot,
+    SetStructField,
     StringLength,
     SubString,
     Swap,
@@ -61,9 +63,16 @@ from lang.instructions.types import (
     VecSize,
 )
 from lang.runtime.debug import format_str
-from lang.runtime.parse import Function
+from lang.runtime.parse import Function, TypeLiteral
 from lang.runtime.program import Program
-from lang.typing.types import RootType, Variable, bool_var, int_var, str_var
+from lang.typing.types import (
+    RootType,
+    Variable,
+    VariableType,
+    bool_var,
+    int_var,
+    str_var,
+)
 
 
 @dataclass
@@ -137,6 +146,8 @@ class Simulator:
             MapCopy: self.instruction_map_copy,
             MapKeys: self.instruction_map_keys,
             MapValues: self.instruction_map_values,
+            GetStructField: self.instruction_get_struct_field,
+            SetStructField: self.instruction_set_struct_field,
         }
 
     def top(self) -> Variable:
@@ -630,12 +641,21 @@ class Simulator:
         self.push(copied)
         return self.get_instruction_pointer() + 1
 
+    def instruction_map_keys(self, instruction: Instruction) -> int:
+        raise NotImplementedError
+
+    def instruction_map_values(self, instruction: Instruction) -> int:
+        raise NotImplementedError
+
     def instruction_push_struct(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushStruct)
 
         struct_fields: Dict[str, Variable] = {}
 
-        # TODO set struct_fields to zero values of relevant types
+        for field in instruction.type.fields:
+            assert isinstance(field.type.type, TypeLiteral)
+            var_type = VariableType.from_type_literal(field.type.type)
+            struct_fields[field.name] = Variable.zero_value(var_type)
 
         struct_var = Variable(
             RootType.STRUCT, struct_fields, struct_name=instruction.type.name
@@ -644,8 +664,21 @@ class Simulator:
 
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_keys(self, instruction: Instruction) -> int:
-        raise NotImplementedError
+    def instruction_get_struct_field(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, GetStructField)
 
-    def instruction_map_values(self, instruction: Instruction) -> int:
-        raise NotImplementedError
+        field_name: str = self.pop().value
+        struct_fields: Dict[str, Variable] = self.top().value
+        self.push(struct_fields[field_name])
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_set_struct_field(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, SetStructField)
+
+        new_value: Variable = self.pop().value
+        field_name: str = self.pop().value
+        struct_fields: Dict[str, Variable] = self.top().value
+        struct_fields[field_name] = new_value
+
+        return self.get_instruction_pointer() + 1

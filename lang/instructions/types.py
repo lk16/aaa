@@ -294,3 +294,13 @@ class MapValues(Instruction):
 @dataclass
 class PushStruct(Instruction):
     type: Struct
+
+
+@dataclass
+class GetStructField(Instruction):
+    ...
+
+
+@dataclass
+class SetStructField(Instruction):
+    ...

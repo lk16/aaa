@@ -130,6 +130,27 @@ class Variable:
         self.value = value
         self.check()
 
+    @classmethod
+    def zero_value(cls, type: VariableType) -> "Variable":
+        zero_val: Any
+
+        if type.root_type == RootType.BOOL:
+            zero_val = False
+        elif type.root_type == RootType.INTEGER:
+            zero_val = 0
+        elif type.root_type == RootType.STRING:
+            zero_val = ""
+        elif type.root_type == RootType.VECTOR:
+            zero_val = []
+        elif type.root_type in [RootType.MAPPING, RootType.STRUCT]:
+            zero_val = {}
+        else:  # pragma: nocover
+            assert False
+
+        return Variable(
+            root_type=type.root_type, type_params=type.type_params, value=zero_val
+        )
+
     def check(self) -> None:
         # TODO this is slow, remove when Variable is stable
         root_type = self.type.root_type

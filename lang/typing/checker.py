@@ -510,23 +510,22 @@ class TypeChecker:
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
         assert isinstance(node, StructFieldUpdate)
-
         type_stack = self._check_string_literal(node.field_name, copy(type_stack))
 
         type_stack_before = type_stack
-        type_stack_after = self._check_function_body(
+        type_stack = self._check_function_body(
             node.new_value_expr, copy(type_stack_before)
         )
 
         if not all(
             [
-                len(type_stack_before) == len(type_stack_after) - 1,
-                type_stack_before == type_stack_after[:-1],
+                len(type_stack_before) == len(type_stack) - 1,
+                type_stack_before == type_stack[:-1],
             ]
         ):
             raise NotImplementedError
 
-        update_expr_type = type_stack_after[-1]
+        update_expr_type = type_stack[-1]
 
         # TODO check that update_expr_type matches the field we're updating
         _ = update_expr_type

@@ -9,6 +9,7 @@ from lang.instructions.types import (
     Drop,
     Dup,
     Equals,
+    GetStructField,
     Instruction,
     IntGreaterEquals,
     IntGreaterThan,
@@ -45,6 +46,7 @@ from lang.instructions.types import (
     PushStruct,
     PushVec,
     Rot,
+    SetStructField,
     StringLength,
     SubString,
     Swap,
@@ -70,6 +72,8 @@ from lang.runtime.parse import (
     Operator,
     StringLiteral,
     Struct,
+    StructFieldQuery,
+    StructFieldUpdate,
     TypeLiteral,
 )
 from lang.typing.types import RootType, VariableType
@@ -139,10 +143,12 @@ class InstructionGenerator:
             Identifier: self.instructions_for_identfier,
             IntegerLiteral: self.instructions_for_integer_literal,
             Loop: self.instructions_for_loop,
+            MemberFunction: self.instructions_for_member_function,
             Operator: self.instructions_for_operator,
             StringLiteral: self.instructions_for_string_literal,
+            StructFieldQuery: self.instructions_for_struct_field_query,
+            StructFieldUpdate: self.instructions_for_struct_field_update,
             TypeLiteral: self.instructions_for_type_literal,
-            MemberFunction: self.instructions_for_member_function,
         }
 
     def generate_instructions(self) -> List[Instruction]:
@@ -215,7 +221,6 @@ class InstructionGenerator:
             return [CallFunction(func_name=original_name, file=source_file)]
         elif isinstance(identified, Struct):
             return [PushStruct(identified)]
-            ...
         else:  # pragma: nocover
             assert False
 
@@ -256,6 +261,9 @@ class InstructionGenerator:
     def instructions_for_type_literal(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
+        # TODO make type-independent Push() instruction
+        # and use it with Variable.zero_value() instead
+
         assert isinstance(node, TypeLiteral)
         var_type = VariableType.from_type_literal(node)
 
@@ -295,3 +303,21 @@ class InstructionGenerator:
 
         # non-builtin functions go here
         raise NotImplementedError
+
+    def instructions_for_struct_field_query(
+        self, node: AaaTreeNode, offset: int
+    ) -> List[Instruction]:
+        assert isinstance(node, StructFieldQuery)
+        return [PushString(node.field_name.value), GetStructField()]
+
+    def instructions_for_struct_field_update(
+        self, node: AaaTreeNode, offset: int
+    ) -> List[Instruction]:
+        assert isinstance(node, StructFieldUpdate)
+        instructions: List[Instruction] = []
+        instructions += [PushString(node.field_name.value)]
+        instructions += self.instructions_for_function_body(
+            node.new_value_expr, offset + 1
+        )
+        instructions += [SetStructField()]
+        return instructions
