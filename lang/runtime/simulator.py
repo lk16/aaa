@@ -676,7 +676,7 @@ class Simulator:
     def instruction_set_struct_field(self, instruction: Instruction) -> int:
         assert isinstance(instruction, SetStructField)
 
-        new_value: Variable = self.pop().value
+        new_value: Variable = self.pop()
         field_name: str = self.pop().value
         struct_fields: Dict[str, Variable] = self.top().value
         struct_fields[field_name] = new_value

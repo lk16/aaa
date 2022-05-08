@@ -60,8 +60,16 @@ EXPECTED_EXAMPLE_OUTPUT = {
 @pytest.mark.parametrize(
     ["example_file_path", "expected_output"],
     [
-        (file, expected_output)
-        for file, expected_output in EXPECTED_EXAMPLE_OUTPUT.items()
+        ("examples/one_to_ten.aaa", "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n"),
+        ("examples/print_number.aaa", "42\n"),
+        ("examples/fizzbuzz.aaa", expected_fizzbuzz_output()),
+        ("examples/print_twice.aaa", "hello!\nhello!\n"),
+        ("examples/function_demo.aaa", "a=1\nb=2\nc=3\n"),
+        (
+            "examples/typing_playground.aaa",
+            "five = 5\n3 5 max = 5\n4 factorial = 24\n7 dup_twice = 777\n",
+        ),
+        pytest.param("examples/renamed_import/main.aaa", "5", marks=pytest.mark.skip),
     ],
 )
 def test_example_commands(
