@@ -31,12 +31,15 @@ from lang.typing.exceptions import (
     BranchTypeError,
     ConditionTypeError,
     FunctionTypeError,
+    GetFieldOfNonStructTypeError,
     InvalidMainSignuture,
     LoopTypeError,
+    SetFieldOfNonStructTypeError,
     StackTypesError,
     StackUnderflowError,
     UnknownFunction,
     UnknownPlaceholderType,
+    UnknownStructField,
 )
 from lang.typing.types import (
     Bool,
@@ -411,21 +414,18 @@ class TypeChecker:
 
         # TODO check that first return value is type type we operate on
 
-        # TODO handle methods on builtin types differently than those on user-created types
+        # TODO handle methods on user-created types
 
         key = f"{node.type_name}:{node.func_name}"
 
-        try:
-            signatures = self.program._builtins.functions[key]
-        except KeyError:
-            raise NotImplementedError
+        # All builtin member functions should be listed in the builtins file
+        # so this should not raise a KeyError.
+        signatures = self.program._builtins.functions[key]
 
-        if len(signatures) != 1:
-            raise NotImplementedError
+        # All builtin member functions should have a unique signature
+        assert len(signatures) == 1
 
-        signature = signatures[0]
-
-        return self._check_and_apply_signature(type_stack, signature, node)
+        return self._check_and_apply_signature(type_stack, signatures[0], node)
 
     def _check_function(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Function)
@@ -455,6 +455,32 @@ class TypeChecker:
 
         return self._check_function_body(node.body, type_stack)
 
+    def _get_struct_field_type(
+        self, node: StructFieldQuery | StructFieldUpdate, struct: Struct
+    ) -> VariableType:
+        # TODO consider moving this out since it doesn't use self
+
+        field_type: Optional[ParsedType] = None
+        field_name = node.field_name.value
+
+        for field in struct.fields:
+            if field.name == field_name:
+                field_type = field.type
+                break
+
+        if not field_type:
+            raise UnknownStructField(
+                file=self.file,
+                tokens=self.tokens,
+                node=node,
+                function=self.function,
+                struct=struct,
+                field_name=field_name,
+            )
+
+        assert isinstance(field_type.type, TypeLiteral)
+        return VariableType.from_type_literal(field_type.type)
+
     def _check_type_struct_field_query(
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
@@ -472,38 +498,28 @@ class TypeChecker:
         assert isinstance(struct_type, VariableType)
         assert isinstance(field_selector_type, VariableType)
 
-        if not all(
-            [
-                struct_type.root_type == RootType.STRUCT,
-                field_selector_type.root_type == RootType.STRING,
-            ]
-        ):
-            raise NotImplementedError
+        # This is enforced by the parser
+        assert field_selector_type.root_type == RootType.STRING
+
+        if struct_type.root_type != RootType.STRUCT:
+            raise GetFieldOfNonStructTypeError(
+                file=self.file,
+                tokens=self.tokens,
+                node=node,  # TODO point to the actual '?' in the printed error message
+                type_stack=type_stack,
+                function=self.function,
+            )
 
         struct_name = struct_type.struct_name
+
+        # These should not raise, they are enforced by the Program class
         struct = self.program.identifiers[self.file][struct_name]
+        assert isinstance(struct, Struct)
 
-        if not isinstance(struct, Struct):
-            raise NotImplementedError
+        field_type = self._get_struct_field_type(node, struct)
 
-        # TODO refactor getting field type by name
-        field_type: Optional[ParsedType] = None
-
-        for field in struct.fields:
-            if field.name == node.field_name.value:
-                field_type = field.type
-                break
-
-        if not field_type:
-            raise NotImplementedError
-
-        # drop field_selector string value
         type_stack.pop()
-
-        # converting type representations
-        assert isinstance(field_type.type, TypeLiteral)
-        type_stack.append(VariableType.from_type_literal(field_type.type))
-
+        type_stack.append(field_type)
         return type_stack
 
     def _check_type_struct_field_update(
@@ -525,10 +541,36 @@ class TypeChecker:
         ):
             raise NotImplementedError
 
-        update_expr_type = type_stack[-1]
+        if len(type_stack) < 3:
+            raise StackUnderflowError(
+                file=self.file, function=self.function, tokens=self.tokens, node=node
+            )
 
-        # TODO check that update_expr_type matches the field we're updating
-        _ = update_expr_type
+        struct_type, field_selector_type, update_expr_type = type_stack[-3:]
+
+        assert isinstance(struct_type, VariableType)
+        assert isinstance(field_selector_type, VariableType)
+        assert isinstance(update_expr_type, VariableType)
+
+        struct_name = struct_type.struct_name
+
+        if struct_type.root_type != RootType.STRUCT:
+            raise SetFieldOfNonStructTypeError(
+                file=self.file,
+                tokens=self.tokens,
+                node=node,  # TODO point to the actual '!' in the printed error message
+                type_stack=type_stack,
+                function=self.function,
+            )
+
+        # These should not raise, they are enforced by the Program class
+        struct = self.program.identifiers[self.file][struct_name]
+        assert isinstance(struct, Struct)
+
+        field_type = self._get_struct_field_type(node, struct)
+
+        if field_type != update_expr_type:
+            raise NotImplementedError
 
         # drop field_selector and update value
         return type_stack[:-2]

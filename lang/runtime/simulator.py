@@ -206,10 +206,8 @@ class Simulator:
     def call_function(self, file: Path, func_name: str) -> None:
         function = self.program.get_identifier(file, func_name)
 
-        assert function  # If this assertion breaks, then Aaa's type checking is broken
-
-        if not isinstance(function, Function):
-            raise NotImplementedError
+        # If this assertion breaks, then Aaa's type checking is broken
+        assert isinstance(function, Function)
 
         argument_values: Dict[str, Variable] = {}
 

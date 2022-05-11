@@ -219,7 +219,7 @@ class Program:
 
         for struct in parsed_file.structs:
             if struct.name in self.identifiers[file]:
-                raise NotImplementedError  # TODO
+                raise NotImplementedError
 
             self.identifiers[file][struct.name] = struct
 

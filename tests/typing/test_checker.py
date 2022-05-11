@@ -10,11 +10,14 @@ from lang.typing.exceptions import (
     ConditionTypeError,
     FunctionNameCollision,
     FunctionTypeError,
+    GetFieldOfNonStructTypeError,
     LoopTypeError,
+    SetFieldOfNonStructTypeError,
     StackTypesError,
     StackUnderflowError,
     UnknownFunction,
     UnknownPlaceholderType,
+    UnknownStructField,
 )
 
 
@@ -75,6 +78,21 @@ from lang.typing.exceptions import (
         ('fn foo begin vec[int] "" vec:push . end', StackTypesError),
         ("fn foo begin vec[int] 5 vec:push . end", None),
         ("fn foo args a as *a begin a a - drop end", StackTypesError),
+        ('fn foo begin 3 "a" ? end', GetFieldOfNonStructTypeError),
+        (
+            'struct bar begin x as int end fn foo begin bar "y" ? . drop end',
+            UnknownStructField,
+        ),
+        ('struct bar begin x as int end fn foo begin bar "x" ? . drop end', None),
+        (
+            'struct bar begin x as int end fn foo begin bar "y" 3 ! drop end',
+            UnknownStructField,
+        ),
+        ('struct bar begin x as int end fn foo begin bar "x" 3 ! drop end', None),
+        (
+            'struct bar begin x as int end fn foo begin 5 "x" 3 ! drop end',
+            SetFieldOfNonStructTypeError,
+        ),
     ],
 )
 def test_type_checker(

@@ -2,6 +2,8 @@ from parser.tokenizer.models import Token
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Sequence, Tuple
 
+from lang.runtime.parse import Struct
+
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.parse import AaaTreeNode, Function
 
@@ -291,6 +293,29 @@ class UnknownType(TypeException):
         return f"Unknown type in {self.function.name}\n" + self.get_error_header()
 
 
+class UnknownStructField(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+        struct: Struct,
+        field_name: str,
+    ) -> None:
+        self.function = function
+        self.struct = struct
+        self.field_name = field_name
+        super().__init__(file=file, tokens=tokens, node=node)
+
+    def __str__(self) -> str:
+        return (
+            f"Usage of unknown field in {self.function.name}: struct {self.struct.name} has no field {self.field_name}\n"
+            + self.get_error_header()
+        )
+
+
 class UnknownPlaceholderType(TypeException):
     def __init__(
         self,
@@ -398,3 +423,53 @@ class MissingEnvironmentVariable(Exception):
 
     def __str__(self) -> str:
         return f"Required environment variable {self.env_var_name} was not set."
+
+
+class GetFieldOfNonStructTypeError(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+        type_stack: TypeStack,
+    ) -> None:
+        self.function = function
+        self.type_stack = type_stack
+        super().__init__(file=file, tokens=tokens, node=node)
+
+    def __str__(self) -> str:
+        return (
+            f"Attempt to get field of non-struct value in {self.function.name}\n"
+            + self.get_error_header()
+            + "  Type stack: "
+            + self.format_typestack(self.type_stack)
+            + "\n"
+            "Expected top: <struct type> str \n"
+        )
+
+
+class SetFieldOfNonStructTypeError(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+        type_stack: TypeStack,
+    ) -> None:
+        self.function = function
+        self.type_stack = type_stack
+        super().__init__(file=file, tokens=tokens, node=node)
+
+    def __str__(self) -> str:
+        return (
+            f"Attempt to set field of non-struct value in {self.function.name}\n"
+            + self.get_error_header()
+            + "  Type stack: "
+            + self.format_typestack(self.type_stack)
+            + "\n"
+            "Expected top: <struct type> str <new value of field>\n"
+        )
