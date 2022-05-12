@@ -473,3 +473,32 @@ class SetFieldOfNonStructTypeError(TypeException):
             + "\n"
             "Expected top: <struct type> str <new value of field>\n"
         )
+
+
+class StructUpdateTypeError(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+        type_stack: TypeStack,
+        type_stack_before: TypeStack,
+    ) -> None:
+        self.function = function
+        self.type_stack = type_stack
+        self.type_stack_before = type_stack_before
+        super().__init__(file=file, tokens=tokens, node=node)
+
+    def __str__(self) -> str:
+        return (
+            f"Invalid stack modification after evaluating new field inside {self.function.name}\n"
+            + self.get_error_header()
+            + "  Expected: "
+            + self.format_typestack(self.type_stack_before)
+            + f" <new field value> \n"  # TODO put actual expected type for field
+            + "Type stack: "
+            + self.format_typestack(self.type_stack)
+            + "\n"
+        )

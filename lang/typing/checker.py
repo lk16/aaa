@@ -37,6 +37,7 @@ from lang.typing.exceptions import (
     SetFieldOfNonStructTypeError,
     StackTypesError,
     StackUnderflowError,
+    StructUpdateTypeError,
     UnknownFunction,
     UnknownPlaceholderType,
     UnknownStructField,
@@ -533,14 +534,6 @@ class TypeChecker:
             node.new_value_expr, copy(type_stack_before)
         )
 
-        if not all(
-            [
-                len(type_stack_before) == len(type_stack) - 1,
-                type_stack_before == type_stack[:-1],
-            ]
-        ):
-            raise NotImplementedError
-
         if len(type_stack) < 3:
             raise StackUnderflowError(
                 file=self.file, function=self.function, tokens=self.tokens, node=node
@@ -551,6 +544,21 @@ class TypeChecker:
         assert isinstance(struct_type, VariableType)
         assert isinstance(field_selector_type, VariableType)
         assert isinstance(update_expr_type, VariableType)
+
+        if not all(
+            [
+                len(type_stack_before) == len(type_stack) - 1,
+                type_stack_before == type_stack[:-1],
+            ]
+        ):
+            raise StructUpdateTypeError(
+                file=self.file,
+                function=self.function,
+                tokens=self.tokens,
+                node=node,
+                type_stack=type_stack,
+                type_stack_before=type_stack_before,
+            )
 
         struct_name = struct_type.struct_name
 
