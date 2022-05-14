@@ -16,6 +16,15 @@ fn int_pair:set_zero args p as int_pair return int_pair begin
     "y" p "x" ? swap drop !
 end
 
+fn int_pair:print args p as int_pair return int_pair begin
+    "x,y = " .
+    p
+    "x" ? .
+    "," .
+    "y" ? .
+    "\n" .
+end
+
 fn main begin
     int_pair
 
@@ -46,6 +55,14 @@ fn main begin
     int_pair:sum .
     "\n" .
     // should print "7\n"
+
+    int_pair:print
+    // should print "x,y = 3,4\n"
+
+    int_pair:set_zero
+
+    int_pair:print
+    // should print "x,y = 0,0\n"
 
     drop
 end

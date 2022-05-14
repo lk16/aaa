@@ -416,18 +416,30 @@ class TypeChecker:
 
         # TODO check that first return value is type type we operate on
 
-        # TODO handle methods on user-created types
-
         key = f"{node.type_name}:{node.func_name}"
 
-        # All builtin member functions should be listed in the builtins file
-        # so this should not raise a KeyError.
-        signatures = self.program._builtins.functions[key]
+        signatures = self.program._builtins.functions.get(key)
 
-        # All builtin member functions should have a unique signature
-        assert len(signatures) == 1
+        if signatures is not None:
+            # All builtin member functions should be listed in the builtins file
+            # so this should not raise a KeyError.
+            signatures = self.program._builtins.functions[key]
 
-        return self._check_and_apply_signature(type_stack, signatures[0], node)
+            # All builtin member functions should have a unique signature
+            assert len(signatures) == 1
+
+            signature = signatures[0]
+
+        else:
+            function = self.program.identifiers[self.file].get(key)
+
+            if function is None:
+                raise NotImplementedError
+
+            assert isinstance(function, Function)
+            signature = self._get_function_signature(function)
+
+        return self._check_and_apply_signature(type_stack, signature, node)
 
     def _check_function(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
         assert isinstance(node, Function)

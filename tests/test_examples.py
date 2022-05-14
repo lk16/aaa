@@ -70,6 +70,10 @@ EXPECTED_EXAMPLE_OUTPUT = {
             "five = 5\n3 5 max = 5\n4 factorial = 24\n7 dup_twice = 777\n",
         ),
         pytest.param("examples/renamed_import/main.aaa", "5", marks=pytest.mark.skip),
+        (
+            "examples/struct.aaa",
+            "x = 0\ny = 0\nx = 3\ny = 4\n7\nx,y = 3,4\nx,y = 0,0\n",
+        ),
     ],
 )
 def test_example_commands(
