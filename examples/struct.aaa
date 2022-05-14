@@ -66,5 +66,3 @@ fn main begin
 
     drop
 end
-
-// TODO make this file into a test
