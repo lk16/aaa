@@ -19,38 +19,9 @@
     - add `map:drop`
     - add `set` container to builtins
 
-### Add Struct syntax
-- Add syntax:
-    - struct definition
-    - update struct field
-    - query struct field
-    - struct-associated function
-- Update type checker
-    - ...
+### Structs
+- Check associated functions: first arg and return value should be type of struct
 - Allow type params for struct
-
-
-Idea for syntax
-```
-struct int_pair begin
-    x as int,
-    y as int,
-end
-
-fn int_pair:sum args p as int_pair return int_pair, int begin
-    p
-    "x" ?
-    "y" ?
-    +
-end
-
-fn coord:set_zero args p as int_pair return int_pair begin
-    p
-    "x" 0 !
-    "y" p "x" ? ! drop
-end
-```
-
 
 ### Language features
 - return early (`return`)
