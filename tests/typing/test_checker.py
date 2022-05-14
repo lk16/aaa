@@ -15,6 +15,7 @@ from lang.typing.exceptions import (
     SetFieldOfNonStructTypeError,
     StackTypesError,
     StackUnderflowError,
+    StructUpdateStackError,
     StructUpdateTypeError,
     UnknownFunction,
     UnknownPlaceholderType,
@@ -100,6 +101,14 @@ from lang.typing.exceptions import (
         ),
         (
             'struct bar begin x as int end fn foo begin bar "x" 34 35 ! "x" ? . "\n" . drop end',
+            StructUpdateStackError,
+        ),
+        (
+            'struct bar begin x as int end fn foo begin bar "x" 3 ! drop end',
+            None,
+        ),
+        (
+            'struct bar begin x as int end fn foo begin bar "x" false ! drop end',
             StructUpdateTypeError,
         ),
     ],

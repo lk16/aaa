@@ -37,6 +37,7 @@ from lang.typing.exceptions import (
     SetFieldOfNonStructTypeError,
     StackTypesError,
     StackUnderflowError,
+    StructUpdateStackError,
     StructUpdateTypeError,
     UnknownFunction,
     UnknownPlaceholderType,
@@ -551,7 +552,7 @@ class TypeChecker:
                 type_stack_before == type_stack[:-1],
             ]
         ):
-            raise StructUpdateTypeError(
+            raise StructUpdateStackError(
                 file=self.file,
                 function=self.function,
                 tokens=self.tokens,
@@ -578,7 +579,17 @@ class TypeChecker:
         field_type = self._get_struct_field_type(node, struct)
 
         if field_type != update_expr_type:
-            raise NotImplementedError
+            raise StructUpdateTypeError(
+                file=self.file,
+                tokens=self.tokens,
+                node=node,
+                function=self.function,
+                type_stack=type_stack,
+                struct=struct,
+                field_name=node.field_name.value,
+                found_type=update_expr_type,
+                expected_type=field_selector_type,
+            )
 
         # drop field_selector and update value
         return type_stack[:-2]

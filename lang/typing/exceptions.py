@@ -475,7 +475,7 @@ class SetFieldOfNonStructTypeError(TypeException):
         )
 
 
-class StructUpdateTypeError(TypeException):
+class StructUpdateStackError(TypeException):
     def __init__(
         self,
         *,
@@ -498,6 +498,41 @@ class StructUpdateTypeError(TypeException):
             + "  Expected: "
             + self.format_typestack(self.type_stack_before)
             + f" <new field value> \n"  # TODO put actual expected type for field
+            + "Type stack: "
+            + self.format_typestack(self.type_stack)
+            + "\n"
+        )
+
+
+class StructUpdateTypeError(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        function: "Function",
+        type_stack: TypeStack,
+        struct: Struct,
+        field_name: str,
+        expected_type: VariableType,
+        found_type: VariableType,
+    ) -> None:
+        self.function = function
+        self.type_stack = type_stack
+        self.struct = struct
+        self.field_name = field_name
+        self.expected_type = expected_type
+        self.found_type = found_type
+        super().__init__(file=file, tokens=tokens, node=node)
+
+    def __str__(self) -> str:
+        return (
+            f"Attempt to set field {self.field_name} of {self.struct.name} to wrong type in {self.function.name}\n"
+            + self.get_error_header()
+            + f"Expected type: {self.expected_type}\n"
+            + f"   Found type: {self.found_type}\n"
+            + "\n"
             + "Type stack: "
             + self.format_typestack(self.type_stack)
             + "\n"
