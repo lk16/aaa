@@ -223,7 +223,7 @@ class Simulator:
             )
         )
 
-        instructions = self.program.get_instructions(file, function.name)
+        instructions = self.program.get_instructions(file, function.name_key())
 
         while True:
             instruction_pointer = self.get_instruction_pointer()

@@ -33,6 +33,7 @@ from lang.typing.exceptions import (
     FunctionTypeError,
     GetFieldOfNonStructTypeError,
     InvalidMainSignuture,
+    InvalidMemberFunctionSignature,
     LoopTypeError,
     SetFieldOfNonStructTypeError,
     StackTypesError,
@@ -412,10 +413,6 @@ class TypeChecker:
     ) -> TypeStack:
         assert isinstance(node, MemberFunction)
 
-        # TODO check that first argument is the type we operate on
-
-        # TODO check that first return value is type type we operate on
-
         key = f"{node.type_name}:{node.func_name}"
 
         signatures = self.program._builtins.functions.get(key)
@@ -456,6 +453,34 @@ class TypeChecker:
                     function=self.function,
                     tokens=self.tokens,
                     node=node,
+                )
+
+        if isinstance(node.name, MemberFunction):
+
+            signature = self._get_function_signature(node)
+            struct = self.program.identifiers[self.file][node.name.type_name]
+            assert isinstance(struct, Struct)
+
+            if TYPE_CHECKING:
+                assert isinstance(signature.arg_types[0], VariableType)
+                assert isinstance(signature.return_types[0], VariableType)
+
+            # A memberfunction on a type foo needs to have foo as
+            # type of thefirst argument and first return type
+            if (
+                len(signature.arg_types) == 0
+                or signature.arg_types[0].root_type != RootType.STRUCT
+                or signature.arg_types[0].struct_name != struct.name
+                or len(signature.return_types) == 0
+                or signature.return_types[0].root_type != RootType.STRUCT
+                or signature.return_types[0].struct_name != struct.name
+            ):
+                raise InvalidMemberFunctionSignature(
+                    file=self.file,
+                    tokens=self.tokens,
+                    node=node,
+                    struct=struct,
+                    signature=signature,
                 )
 
         argument_and_names: Set[str] = set()

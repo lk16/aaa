@@ -11,6 +11,7 @@ from lang.typing.exceptions import (
     FunctionNameCollision,
     FunctionTypeError,
     GetFieldOfNonStructTypeError,
+    InvalidMemberFunctionSignature,
     LoopTypeError,
     SetFieldOfNonStructTypeError,
     StackTypesError,
@@ -110,6 +111,22 @@ from lang.typing.exceptions import (
         (
             'struct bar begin x as int end fn foo begin bar "x" false ! drop end',
             StructUpdateTypeError,
+        ),
+        (
+            "struct bar begin x as int end fn bar:foo args b as bar return bar begin bar end",
+            None,
+        ),
+        (
+            "struct bar begin x as int end fn bar:foo begin nop end",
+            InvalidMemberFunctionSignature,
+        ),
+        (
+            "struct bar begin x as int end fn bar:foo args b as bar begin nop end",
+            InvalidMemberFunctionSignature,
+        ),
+        (
+            "struct bar begin x as int end fn bar:foo return bar begin nop end",
+            InvalidMemberFunctionSignature,
         ),
     ],
 )

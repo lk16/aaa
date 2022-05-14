@@ -1,12 +1,8 @@
 from parser.tokenizer.models import Token
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
-from lang.runtime.parse import Struct
-
-if TYPE_CHECKING:  # pragma: nocover
-    from lang.runtime.parse import AaaTreeNode, Function
-
+from lang.runtime.parse import AaaTreeNode, Function, MemberFunction, Struct
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 
@@ -537,3 +533,48 @@ class StructUpdateTypeError(TypeException):
             + self.format_typestack(self.type_stack)
             + "\n"
         )
+
+
+class InvalidMemberFunctionSignature(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        tokens: List[Token],
+        node: "AaaTreeNode",
+        struct: Struct,
+        signature: Signature,
+    ) -> None:
+        self.struct = struct
+        self.signature = signature
+        super().__init__(file=file, tokens=tokens, node=node)
+
+    def __str__(self) -> str:
+        assert isinstance(self.node, Function)
+        assert isinstance(self.node.name, MemberFunction)
+
+        member_func_name = f"{self.node.name.type_name}:{self.node.name.func_name}"
+        formatted = (
+            f"Invalid member function signature found in definition of {member_func_name}\n"
+            + self.get_error_header()
+        )
+
+        if (
+            len(self.signature.arg_types) == 0
+            or str(self.signature.arg_types[0]) != self.struct.name
+        ):
+            formatted += (
+                f"Expected arg types: {self.struct.name} ...\n"
+                + f"   Found arg types: {' '.join(str(arg) for arg in self.signature.arg_types)}\n\n"
+            )
+
+        if (
+            len(self.signature.return_types) == 0
+            or str(self.signature.return_types[0]) != self.struct.name
+        ):
+            formatted += (
+                f"Expected return types: {self.struct.name} ...\n"
+                + f"   Found return types: {' '.join(str(ret) for ret in self.signature.return_types)}\n\n"
+            )
+
+        return formatted

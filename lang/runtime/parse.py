@@ -24,7 +24,7 @@ FunctionBodyItem = Union[
 ]
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class AaaTreeNode:
     token_offset: int
     token_count: int
@@ -36,7 +36,7 @@ class AaaTreeNode:
         ...
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class IntegerLiteral(AaaTreeNode):
     value: int
 
@@ -49,7 +49,7 @@ class IntegerLiteral(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class StringLiteral(AaaTreeNode):
     value: str
 
@@ -67,7 +67,7 @@ class StringLiteral(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class BooleanLiteral(AaaTreeNode):
     value: bool
 
@@ -80,7 +80,7 @@ class BooleanLiteral(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class TypeLiteral(AaaTreeNode):
     type_name: str
     type_parameters: List[ParsedType]
@@ -104,7 +104,7 @@ class TypeLiteral(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class Operator(AaaTreeNode):
     value: str
 
@@ -117,7 +117,7 @@ class Operator(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class Loop(AaaTreeNode):
     condition: "FunctionBody"
     body: "FunctionBody"
@@ -136,7 +136,7 @@ class Loop(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class Identifier(AaaTreeNode):
     name: str
 
@@ -148,7 +148,7 @@ class Identifier(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class Branch(AaaTreeNode):
     condition: "FunctionBody"
     if_body: "FunctionBody"
@@ -177,14 +177,17 @@ class Branch(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class MemberFunction(AaaTreeNode):
     type_name: str
     func_name: str
 
     @classmethod
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "MemberFunction":
-        assert tree.token_type == NonTerminal.MEMBER_FUNCTION
+        assert tree.token_type in [
+            NonTerminal.MEMBER_FUNCTION,
+            NonTerminal.STRUCT_FUNCTION_IDENTIFIER,
+        ]
 
         type_name = tree[0].value(tokens, code)
         func_name = tree[2].value(tokens, code)
@@ -197,7 +200,7 @@ class MemberFunction(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class StructFieldQuery(AaaTreeNode):
     field_name: StringLiteral
 
@@ -216,7 +219,7 @@ class StructFieldQuery(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class StructFieldUpdate(AaaTreeNode):
     field_name: StringLiteral
     new_value_expr: FunctionBody
@@ -238,7 +241,7 @@ class StructFieldUpdate(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class FunctionBody(AaaTreeNode):
     items: List[FunctionBodyItem]
 
@@ -271,7 +274,7 @@ class FunctionBody(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class ParsedTypePlaceholder(AaaTreeNode):
     name: str
 
@@ -288,7 +291,7 @@ class ParsedTypePlaceholder(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class ParsedType(AaaTreeNode):
     type: Union[TypeLiteral, ParsedTypePlaceholder]
 
@@ -314,7 +317,7 @@ class ParsedType(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class Argument(AaaTreeNode):
     name: str
     type: ParsedType
@@ -331,9 +334,9 @@ class Argument(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class Function(AaaTreeNode):
-    name: str
+    name: str | MemberFunction
     arguments: List[Argument]
     return_types: List[ParsedType]
     body: FunctionBody
@@ -342,7 +345,15 @@ class Function(AaaTreeNode):
     def from_tree(cls, tree: Tree, tokens: List[Token], code: str) -> "Function":
         assert tree.token_type == NonTerminal.FUNCTION_DEFINITION
 
-        name = tree[1].value(tokens, code)
+        name: str | MemberFunction
+
+        if tree[1].token_type == NonTerminal.STRUCT_FUNCTION_IDENTIFIER:
+            name = MemberFunction.from_tree(tree[1], tokens, code)
+        elif tree[1].token_type == Terminal.IDENTIFIER:
+            name = tree[1].value(tokens, code)
+        else:  # pragma: once
+            assert False
+
         arguments: List[Argument] = []
         return_types: List[ParsedType] = []
 
@@ -383,8 +394,16 @@ class Function(AaaTreeNode):
             token_offset=tree.token_offset,
         )
 
+    def name_key(self) -> str:
+        if isinstance(self.name, str):
+            return self.name
+        elif isinstance(self.name, MemberFunction):
+            return f"{self.name.type_name}:{self.name.func_name}"
+        else:  # pragma: nocover
+            assert False
 
-@dataclass(kw_only=True)
+
+@dataclass(kw_only=True, frozen=True)
 class ImportItem(AaaTreeNode):
     origninal_name: str
     imported_name: str
@@ -408,7 +427,7 @@ class ImportItem(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class Import(AaaTreeNode):
     source: str
     imported_items: List[ImportItem]
@@ -432,7 +451,7 @@ class Import(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class Struct(AaaTreeNode):
     name: str
     fields: List[Argument]
@@ -457,7 +476,7 @@ class Struct(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class BuiltinFunction(AaaTreeNode):
     name: str
     arguments: List[ParsedType]
@@ -503,7 +522,7 @@ class BuiltinFunction(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class ParsedBuiltinsFile(AaaTreeNode):
     functions: List[BuiltinFunction]
 
@@ -534,7 +553,7 @@ class ParsedBuiltinsFile(AaaTreeNode):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class ParsedFile(AaaTreeNode):
     functions: List[Function]
     imports: List[Import]

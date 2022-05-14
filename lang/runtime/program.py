@@ -14,6 +14,7 @@ from lang.instructions.types import Instruction
 from lang.runtime.debug import format_str
 from lang.runtime.parse import (
     Function,
+    MemberFunction,
     ParsedBuiltinsFile,
     ParsedFile,
     ParsedTypePlaceholder,
@@ -215,7 +216,7 @@ class Program:
             if function.name in self.identifiers[file]:
                 raise FunctionNameCollision(file=file, tokens=tokens, function=function)
 
-            self.identifiers[file][function.name] = function
+            self.identifiers[file][function.name_key()] = function
 
         for struct in parsed_file.structs:
             if struct.name in self.identifiers[file]:
@@ -228,7 +229,7 @@ class Program:
     ) -> Dict[str, List[Instruction]]:
         file_instructions: Dict[str, List[Instruction]] = {}
         for function in parsed_file.functions:
-            file_instructions[function.name] = InstructionGenerator(
+            file_instructions[function.name_key()] = InstructionGenerator(
                 file, function, self
             ).generate_instructions()
         return file_instructions
@@ -333,6 +334,9 @@ class Program:
     def print_all_instructions(self) -> None:  # pragma: nocover
         for functions in self.function_instructions.values():
             for name, instructions in functions.items():
+
+                if isinstance(name, MemberFunction):
+                    name = f"{name.type_name}:{name.func_name}"
 
                 func_name = format_str(name, max_length=15)
 

@@ -86,7 +86,10 @@ class VariableType:
         return VariableType(root_type, type_params, struct_name=type_literal.type_name)
 
     def __repr__(self) -> str:  # pragma: nocover
-        formatted = repr(self.root_type)
+        if self.root_type == RootType.STRUCT:
+            formatted = self.struct_name
+        else:
+            formatted = repr(self.root_type)
 
         if self.type_params:
             formatted += "["

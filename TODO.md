@@ -15,11 +15,11 @@
 
 ### Parser lib
 - Add [negative lookbehind](https://stackoverflow.com/a/9306228) so we can add these:
-    - use functions (and fields) with `foo.bar` syntax instead of `foo:bar`
     - add `map:drop`
     - add `set` container to builtins
 
 ### Structs
+- add missing fields to `MemberFunction` in `parse.py` and use it
 - Check associated functions: first arg and return value should be type of struct
 - Allow type params for struct
 
