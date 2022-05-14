@@ -304,13 +304,11 @@ class InstructionGenerator:
         member_function_name = f"{node.type_name}:{node.func_name}"
         identified = self.program.identifiers[self.file][member_function_name]
 
-        if isinstance(identified, Function):
-            source_file, original_name = self.program.get_function_source_and_name(
-                self.file, member_function_name
-            )
-            return [CallFunction(func_name=original_name, file=source_file)]
-
-        raise NotImplementedError
+        assert isinstance(identified, Function)
+        source_file, original_name = self.program.get_function_source_and_name(
+            self.file, member_function_name
+        )
+        return [CallFunction(func_name=original_name, file=source_file)]
 
     def instructions_for_struct_field_query(
         self, node: AaaTreeNode, offset: int

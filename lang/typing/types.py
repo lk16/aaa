@@ -231,7 +231,7 @@ class Variable:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Variable):
-            return False
+            return False  # pragma: nocover
 
         return self.value == other.value  # type: ignore
 

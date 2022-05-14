@@ -351,7 +351,7 @@ class Function(AaaTreeNode):
             name = MemberFunction.from_tree(tree[1], tokens, code)
         elif tree[1].token_type == Terminal.IDENTIFIER:
             name = tree[1].value(tokens, code)
-        else:  # pragma: once
+        else:  # pragma: nocover
             assert False
 
         arguments: List[Argument] = []

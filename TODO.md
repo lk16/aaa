@@ -1,7 +1,7 @@
 # TODO
 
 ### Tests
-- test if usage of `builtin_fn` and `builtin_type` outside `AAA_STDLIB_PATH` is banned
+- test if usage of `builtin_fn` and outside `AAA_STDLIB_PATH` is banned
 - tests for exact error messages
 
 ### Containers
@@ -19,8 +19,6 @@
     - add `set` container to builtins
 
 ### Structs
-- add missing fields to `MemberFunction` in `parse.py` and use it
-- Check associated functions: first arg and return value should be type of struct
 - Allow type params for struct
 
 ### Language features
