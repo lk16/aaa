@@ -3,3 +3,4 @@ __pycache__
 .coverage
 *.code-workspace
 .envrc
+lark.pdf

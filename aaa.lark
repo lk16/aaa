@@ -1,0 +1,113 @@
+// Grammar for the
+//
+//    mm
+//    ##    mmm    mmm
+//   #  #  "   #  "   #
+//   #mm#  m"""#  m"""#
+//  #    # "mm"#  "mm"#
+//
+// language.
+
+%import common.WS
+%ignore WS
+
+%import common.ESCAPED_STRING   -> STRING
+
+
+root: regular_file_root | builtins_file_root
+
+regular_file_root: builtin_function_definition+
+
+builtin_function_definition: "builtin_fn" STRING ("args" return_types)? ("return" return_types)?
+
+regular_file_root: (function_definition | import_statement | struct_definition)+
+
+// TODO consider supporting empty struct using nop syntax
+struct_definition: "struct" identifier "begin" argument_list "end"
+
+import_statement: "from" STRING "import" import_items
+
+import_items: import_item ("," import_item)* ","?
+
+import_item: identifier ("as" identifier)?
+
+struct_function_definition: identifier ":" identifier
+
+function_definition: (
+    "fun"
+    (struct_function_definition | identifier)
+    ("args" argument_list)?
+    ("return" return_types)?
+    "begin"
+    function_body
+    "end"
+)
+
+type_literal: ("bool" | "int" | "map" | "str" | "vec" | identifier) type_params?
+
+type_params: "[" type ("," type)* ","? "]"
+
+type_placeholder: "*" identifier
+
+argument: identifier "as" type
+
+argument_list: argument ("," argument)* ","?
+
+type: type_literal | type_placeholder
+
+return_types: type ("," type)* ","?
+
+function_body: function_body_item+
+
+member_function: type_literal ":" identifier
+
+function_body_item: (
+      member_function
+    | branch
+    | loop
+    | operator
+    | identifier
+    | type_literal
+    | struct_field_query
+    | struct_field_update
+    | literal
+)
+
+branch: "if" function_body "begin" function_body ("else" function_body)? "end"
+
+loop: "while" function_body "begin" function_body "end"
+
+struct_field_query: STRING "?"
+
+struct_field_update: STRING function_body "!"
+
+literal: boolean | integer | STRING
+
+boolean: "true" | "false"
+
+operator: (
+      "and"
+    | "assert"
+    | "*"
+    | "drop"
+    | "dup"
+    | "="
+    | ">="
+    | ">"
+    | "<="
+    | "<"
+    | "-"
+    | "nop"
+    | "not"
+    | "!="
+    | "or"
+    | "over"
+    | "%"
+    | "."
+    | "+"
+    | "rot"
+    | "/"
+    | "strlen"
+    | "substr"
+    | "swap"
+)
