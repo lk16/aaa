@@ -1,14 +1,12 @@
 import os
 import sys
 from dataclasses import dataclass
-from parser.parser.exceptions import ParseError
-from parser.tokenizer.exceptions import TokenizerError
-from parser.tokenizer.models import Token
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
 
-from lang.grammar.parser import parse as parse_aaa
+from lark.lark import Lark
+
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
 from lang.runtime.debug import format_str
@@ -46,9 +44,7 @@ Identifiable = Function | ProgramImport | Struct
 
 # TODO clean this union up once we have better baseclasses for exceptions
 FileLoadException = (
-    TokenizerError
-    | ParseError
-    | TypeException
+    TypeException
     | FileReadError
     | CyclicImportError
     | MainFunctionNotFound
@@ -57,6 +53,11 @@ FileLoadException = (
 
 # TODO use cli flag instead
 PARSE_VERBOSE = "AAA_PARSING_DEBUG" in os.environ
+
+AAA_GRAMMAR_PATH = "aaa.lark"
+
+aaa_builtins_parser = Lark(open(AAA_GRAMMAR_PATH).read(), start="builtins_file_root")
+aaa_source_parser = Lark(open(AAA_GRAMMAR_PATH).read(), start="regular_file_root")
 
 
 @dataclass(kw_only=True)
@@ -102,9 +103,7 @@ class Program:
         builtins_file = stdlib_path / "builtins.aaa"
 
         try:
-            _, parsed_file = self._parse_builtins_file(builtins_file)
-        except (TokenizerError, ParseError) as e:
-            return builtins, [e]
+            parsed_file = self._parse_builtins_file(builtins_file)
         except OSError:
             return builtins, [FileReadError(builtins_file)]
 
@@ -163,28 +162,25 @@ class Program:
         self.file_load_stack.append(file)
 
         try:
-            tokens, parsed_file = self._parse_regular_file(file)
-        except (TokenizerError, ParseError) as e:
-            self.file_load_stack.pop()
-            return [e]
+            parsed_file = self._parse_regular_file(file)
         except OSError:
             self.file_load_stack.pop()
             return [FileReadError(file)]
 
         self.identifiers[file] = {}
-        import_errors = self._load_imported_files(file, parsed_file, tokens)
+        import_errors = self._load_imported_files(file, parsed_file)
 
         if import_errors:
             self.file_load_stack.pop()
             return import_errors
 
         try:
-            self._load_file_identifiers(file, parsed_file, tokens)
+            self._load_file_identifiers(file, parsed_file)
         except TypeException as e:
             self.file_load_stack.pop()
             return [e]
 
-        load_file_exceptions = self._type_check_file(file, parsed_file, tokens)
+        load_file_exceptions = self._type_check_file(file, parsed_file)
         if load_file_exceptions:
             self.file_load_stack.pop()
             return load_file_exceptions
@@ -195,26 +191,18 @@ class Program:
         self.file_load_stack.pop()
         return []
 
-    def _parse_regular_file(self, file: Path) -> Tuple[List[Token], ParsedFile]:
+    def _parse_regular_file(self, file: Path) -> ParsedFile:
         code = file.read_text()
-        tokens, tree = parse_aaa(str(file), code, verbose=PARSE_VERBOSE)
-        parsed_file = ParsedFile.from_tree(tree, tokens, code)
-        return tokens, parsed_file
+        return aaa_source_parser.parse(code)  # type: ignore
 
-    def _parse_builtins_file(
-        self, file: Path
-    ) -> Tuple[List[Token], ParsedBuiltinsFile]:
+    def _parse_builtins_file(self, file: Path) -> ParsedBuiltinsFile:
         code = file.read_text()
-        tokens, tree = parse_aaa(str(file), code, verbose=PARSE_VERBOSE)
-        parsed_builtins_file = ParsedBuiltinsFile.from_tree(tree, tokens, code)
-        return tokens, parsed_builtins_file
+        return aaa_builtins_parser.parse(code)  # type: ignore
 
-    def _load_file_identifiers(
-        self, file: Path, parsed_file: ParsedFile, tokens: List[Token]
-    ) -> None:
+    def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:
         for function in parsed_file.functions:
             if function.name in self.identifiers[file]:
-                raise FunctionNameCollision(file=file, tokens=tokens, function=function)
+                raise FunctionNameCollision(file=file, function=function)
 
             self.identifiers[file][function.name_key()] = function
 
@@ -235,7 +223,7 @@ class Program:
         return file_instructions
 
     def _type_check_file(
-        self, file: Path, parsed_file: ParsedFile, tokens: List[Token]
+        self, file: Path, parsed_file: ParsedFile
     ) -> List[FileLoadException]:
         type_exceptions: List[FileLoadException] = []
 
@@ -251,7 +239,7 @@ class Program:
 
         for function in parsed_file.functions:
             try:
-                TypeChecker(file, function, tokens, self).check()
+                TypeChecker(file, function, self).check()
             except TypeException as e:
                 type_exceptions.append(e)
 
@@ -261,15 +249,12 @@ class Program:
         self,
         file: Path,
         parsed_file: ParsedFile,
-        tokens: List[Token],
     ) -> List[FileLoadException]:
         errors: List[FileLoadException] = []
 
         for import_ in parsed_file.imports:
             if import_.source.startswith("/"):
-                errors.append(
-                    AbsoluteImportError(file=file, tokens=tokens, node=import_)
-                )
+                errors.append(AbsoluteImportError(file=file, node=import_))
                 continue
 
             import_path = (file.parent / f"{import_.source}.aaa").resolve()
@@ -287,7 +272,6 @@ class Program:
                     errors.append(
                         ImportedItemNotFound(
                             file=file,
-                            tokens=tokens,
                             node=import_,
                             imported_item=imported_item.origninal_name,
                         )

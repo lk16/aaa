@@ -7,7 +7,6 @@ license = "BSD"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-parser = {git = "https://github.com/lk16/parser.git", tag = "v0.3.4"}
 lark = "^1.1.2"
 
 [tool.poetry.dev-dependencies]

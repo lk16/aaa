@@ -52,7 +52,7 @@ repos:
 
 
   - repo: https://github.com/lk16/detect-missing-init
-    rev: v0.1.1
+    rev: v0.1.6
     hooks:
-    - id: detect-mising-init
-      args: ['--create', "--track"]
+    - id: detect-missing-init
+      args: ['--create', "--track", "--python-folders", "lang,tests"]

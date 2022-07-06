@@ -1,4 +1,3 @@
-from parser.tokenizer.models import Token
 from pathlib import Path
 from typing import List, Sequence, Tuple
 
@@ -7,9 +6,8 @@ from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableTyp
 
 
 class TypeException(Exception):
-    def __init__(self, *, file: Path, tokens: List[Token], node: "AaaTreeNode") -> None:
+    def __init__(self, *, file: Path, node: "AaaTreeNode") -> None:
         self.file = file
-        self.tokens = tokens
         self.node = node
         self.code = file.read_text()
         return super().__init__()
@@ -18,22 +16,12 @@ class TypeException(Exception):
         return "TypeErrorException message, override me!"
 
     def get_line_column_numbers(self) -> Tuple[int, int]:
-        offset = self.tokens[self.node.token_offset].offset
-        before_offset = self.code[:offset]
-        line_num = 1 + before_offset.count("\n")
-        prev_newline_offset = before_offset.rfind("\n")
-        col_num = offset - prev_newline_offset
-        return line_num, col_num
+        # TODO get this data from lark
+        raise NotImplementedError
 
     def get_line(self) -> str:
-        offset = self.tokens[self.node.token_offset].offset
-        prev_newline = self.code.rfind("\n", 0, offset)
-
-        next_newline = self.code.find("\n", offset)
-        if next_newline == -1:
-            next_newline = len(self.code)
-
-        return self.code[prev_newline + 1 : next_newline]
+        # TODO get line by re-reading source file?
+        raise NotImplementedError
 
     def get_error_header(self) -> str:
         line_no, col_no = self.get_line_column_numbers()
@@ -57,7 +45,6 @@ class FunctionTypeError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         function: "Function",
         expected_return_types: List[VariableType | TypePlaceholder],
         computed_return_types: TypeStack,
@@ -65,7 +52,7 @@ class FunctionTypeError(TypeException):
         self.function = function
         self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
-        super().__init__(file=file, tokens=tokens, node=function)
+        super().__init__(file=file, node=function)
 
     def __str__(self) -> str:
         return (
@@ -85,12 +72,11 @@ class StackUnderflowError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -103,7 +89,6 @@ class StackTypesError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         signature: Signature,
@@ -112,7 +97,7 @@ class StackTypesError(TypeException):
         self.function = function
         self.signature = signature
         self.type_stack = type_stack
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -130,7 +115,6 @@ class ConditionTypeError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
@@ -139,7 +123,7 @@ class ConditionTypeError(TypeException):
         self.function = function
         self.type_stack = type_stack
         self.condition_stack = condition_stack
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -159,7 +143,6 @@ class BranchTypeError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
@@ -170,7 +153,7 @@ class BranchTypeError(TypeException):
         self.type_stack = type_stack
         self.if_stack = if_stack
         self.else_stack = else_stack
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -193,7 +176,6 @@ class LoopTypeError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
@@ -202,7 +184,7 @@ class LoopTypeError(TypeException):
         self.function = function
         self.type_stack = type_stack
         self.loop_stack = loop_stack
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -222,11 +204,10 @@ class FunctionNameCollision(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, tokens=tokens, node=function)
+        super().__init__(file=file, node=function)
 
     def __str__(self) -> str:
         return (
@@ -240,12 +221,11 @@ class ArgumentNameCollision(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -259,12 +239,11 @@ class UnknownFunction(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -278,12 +257,11 @@ class UnknownType(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return f"Unknown type in {self.function.name}\n" + self.get_error_header()
@@ -294,7 +272,6 @@ class UnknownStructField(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         struct: Struct,
@@ -303,7 +280,7 @@ class UnknownStructField(TypeException):
         self.function = function
         self.struct = struct
         self.field_name = field_name
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -317,12 +294,11 @@ class UnknownPlaceholderType(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -336,12 +312,11 @@ class InvalidMainSignuture(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return f"Invalid signature for main function\n" + self.get_error_header()
@@ -359,12 +334,11 @@ class ImportedItemNotFound(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         imported_item: str,
     ) -> None:
         self.imported_item = imported_item
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -426,14 +400,13 @@ class GetFieldOfNonStructTypeError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
     ) -> None:
         self.function = function
         self.type_stack = type_stack
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -451,14 +424,13 @@ class SetFieldOfNonStructTypeError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
     ) -> None:
         self.function = function
         self.type_stack = type_stack
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -476,7 +448,6 @@ class StructUpdateStackError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
@@ -485,7 +456,7 @@ class StructUpdateStackError(TypeException):
         self.function = function
         self.type_stack = type_stack
         self.type_stack_before = type_stack_before
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -505,7 +476,6 @@ class StructUpdateTypeError(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
@@ -520,7 +490,7 @@ class StructUpdateTypeError(TypeException):
         self.field_name = field_name
         self.expected_type = expected_type
         self.found_type = found_type
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         return (
@@ -540,14 +510,13 @@ class InvalidMemberFunctionSignature(TypeException):
         self,
         *,
         file: Path,
-        tokens: List[Token],
         node: "AaaTreeNode",
         struct: Struct,
         signature: Signature,
     ) -> None:
         self.struct = struct
         self.signature = signature
-        super().__init__(file=file, tokens=tokens, node=node)
+        super().__init__(file=file, node=node)
 
     def __str__(self) -> str:
         assert isinstance(self.node, Function)

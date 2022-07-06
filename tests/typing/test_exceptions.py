@@ -1,5 +1,3 @@
-from parser.parser.exceptions import ParseError
-from parser.tokenizer.exceptions import TokenizerError
 from pathlib import Path
 from typing import List, Type
 
@@ -43,8 +41,6 @@ from lang.typing.exceptions import (
         ("unknown_placeholder.aaa", [UnknownPlaceholderType]),
         pytest.param("unknown_type.aaa", [UnknownType], marks=pytest.mark.skip),
         ("multiple_errors.aaa", [FunctionTypeError, FunctionTypeError]),
-        ("tokenize_error.aaa", [TokenizerError]),
-        ("parse_error.aaa", [ParseError]),
         ("invalid_main_signature.aaa", [InvalidMainSignuture]),
         ("absolute_import.aaa", [AbsoluteImportError]),
         ("imported_item_not_found.aaa", [ImportedItemNotFound]),

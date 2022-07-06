@@ -1,7 +1,6 @@
 from copy import copy, deepcopy
-from parser.tokenizer.models import Token
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, Optional, Set
 
 from lang.runtime.parse import (
     AaaTreeNode,
@@ -62,22 +61,20 @@ class TypeChecker:
         self,
         file: Path,
         function: Function,
-        tokens: List[Token],
         program: "Program",
     ) -> None:
         self.function = function
         self.program = program
         self.file = file
-        self.tokens = tokens
 
     def check(self) -> None:
         computed_return_types = self._check_function(self.function, [])
         expected_return_types = self._get_function_signature(self.function).return_types
 
         if computed_return_types != expected_return_types:
+
             raise FunctionTypeError(
                 file=self.file,
-                tokens=self.tokens,
                 function=self.function,
                 expected_return_types=expected_return_types,
                 computed_return_types=computed_return_types,
@@ -102,7 +99,6 @@ class TypeChecker:
                 raise UnknownPlaceholderType(
                     file=self.file,
                     function=self.function,
-                    tokens=self.tokens,
                     node=return_type,
                 )
 
@@ -132,9 +128,7 @@ class TypeChecker:
         arg_count = len(signature.arg_types)
 
         if len(stack) < arg_count:
-            raise StackUnderflowError(
-                file=self.file, function=self.function, tokens=self.tokens, node=node
-            )
+            raise StackUnderflowError(file=self.file, function=self.function, node=node)
 
         placeholder_types: Dict[str, SignatureItem] = {}
         expected_types = signature.arg_types
@@ -149,7 +143,6 @@ class TypeChecker:
                 raise StackTypesError(
                     file=self.file,
                     function=self.function,
-                    tokens=self.tokens,
                     node=node,
                     signature=signature,
                     type_stack=type_stack,
@@ -290,7 +283,6 @@ class TypeChecker:
             raise ConditionTypeError(
                 file=self.file,
                 function=self.function,
-                tokens=self.tokens,
                 node=node,
                 type_stack=type_stack,
                 condition_stack=condition_stack,
@@ -312,7 +304,6 @@ class TypeChecker:
             raise BranchTypeError(
                 file=self.file,
                 function=self.function,
-                tokens=self.tokens,
                 node=node,
                 type_stack=type_stack,
                 if_stack=if_stack,
@@ -335,7 +326,6 @@ class TypeChecker:
             raise LoopTypeError(
                 file=self.file,
                 function=self.function,
-                tokens=self.tokens,
                 node=node,
                 type_stack=type_stack,
                 loop_stack=loop_stack,
@@ -358,9 +348,7 @@ class TypeChecker:
 
         if not identifier:
             # TODO rename to UnknownIdentifier
-            raise UnknownFunction(
-                file=self.file, function=self.function, tokens=self.tokens, node=node
-            )
+            raise UnknownFunction(file=self.file, function=self.function, node=node)
 
         if isinstance(identifier, Function):
             signature = self._get_function_signature(identifier)
@@ -451,7 +439,6 @@ class TypeChecker:
                 raise InvalidMainSignuture(
                     file=self.file,
                     function=self.function,
-                    tokens=self.tokens,
                     node=node,
                 )
 
@@ -477,7 +464,6 @@ class TypeChecker:
             ):
                 raise InvalidMemberFunctionSignature(
                     file=self.file,
-                    tokens=self.tokens,
                     node=node,
                     struct=struct,
                     signature=signature,
@@ -488,7 +474,7 @@ class TypeChecker:
         for arg in node.arguments:
             if arg.name in argument_and_names or node.name == arg.name:
                 raise ArgumentNameCollision(
-                    file=self.file, function=self.function, tokens=self.tokens, node=arg
+                    file=self.file, function=self.function, node=arg
                 )
             argument_and_names.add(arg.name)
 
@@ -510,7 +496,6 @@ class TypeChecker:
         if not field_type:
             raise UnknownStructField(
                 file=self.file,
-                tokens=self.tokens,
                 node=node,
                 function=self.function,
                 struct=struct,
@@ -528,9 +513,7 @@ class TypeChecker:
         type_stack = self._check_string_literal(node.field_name, copy(type_stack))
 
         if len(type_stack) < 2:
-            raise StackUnderflowError(
-                file=self.file, function=self.function, tokens=self.tokens, node=node
-            )
+            raise StackUnderflowError(file=self.file, function=self.function, node=node)
 
         struct_type, field_selector_type = type_stack[-2:]
 
@@ -543,7 +526,6 @@ class TypeChecker:
         if struct_type.root_type != RootType.STRUCT:
             raise GetFieldOfNonStructTypeError(
                 file=self.file,
-                tokens=self.tokens,
                 node=node,  # TODO point to the actual '?' in the printed error message
                 type_stack=type_stack,
                 function=self.function,
@@ -573,9 +555,7 @@ class TypeChecker:
         )
 
         if len(type_stack) < 3:
-            raise StackUnderflowError(
-                file=self.file, function=self.function, tokens=self.tokens, node=node
-            )
+            raise StackUnderflowError(file=self.file, function=self.function, node=node)
 
         struct_type, field_selector_type, update_expr_type = type_stack[-3:]
 
@@ -592,7 +572,6 @@ class TypeChecker:
             raise StructUpdateStackError(
                 file=self.file,
                 function=self.function,
-                tokens=self.tokens,
                 node=node,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
@@ -603,7 +582,6 @@ class TypeChecker:
         if struct_type.root_type != RootType.STRUCT:
             raise SetFieldOfNonStructTypeError(
                 file=self.file,
-                tokens=self.tokens,
                 node=node,  # TODO point to the actual '!' in the printed error message
                 type_stack=type_stack,
                 function=self.function,
@@ -618,7 +596,6 @@ class TypeChecker:
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
                 file=self.file,
-                tokens=self.tokens,
                 node=node,
                 function=self.function,
                 type_stack=type_stack,
