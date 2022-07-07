@@ -39,7 +39,7 @@ import_item: identifier ("as" identifier)?
 
 struct_function_definition: identifier ":" identifier
 
-!function_definition: "fun" (struct_function_definition | identifier) ("args" argument_list)? ("return" return_types)? "begin" function_body "end"
+!function_definition: "fn" (struct_function_definition | identifier) ("args" argument_list)? ("return" return_types)? "begin" function_body "end"
 
 !type_literal: ("bool" | "int" | "map" | "str" | "vec" | identifier) type_params?
 

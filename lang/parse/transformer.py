@@ -9,6 +9,7 @@ from lang.parse.models import (
     BuiltinFunctionArguments,
     BuiltinFunctionReturnTypes,
     Identifier,
+    IntegerLiteral,
     ParsedBuiltinsFile,
     ParsedType,
     ParsedTypePlaceholder,
@@ -72,8 +73,6 @@ class AaaTransformer(Transformer):
 
         return ParsedBuiltinsFile(functions=functions)
 
-        breakpoint()  # TODO
-
     def function_body_item(self, *args):
         breakpoint()  # TODO
 
@@ -96,11 +95,9 @@ class AaaTransformer(Transformer):
     def import_statement(self, *args):
         breakpoint()  # TODO
 
-    def integer(self, *args):
-        breakpoint()  # TODO
-
-    def literal(self, *args):
-        breakpoint()  # TODO
+    def integer(self, tokens: List[Token]) -> IntegerLiteral:
+        assert len(tokens) == 1
+        return IntegerLiteral(value=tokens[0].value)
 
     def loop(self, *args):
         breakpoint()  # TODO
@@ -153,7 +150,3 @@ class AaaTransformer(Transformer):
     def type_placeholder(self, identifiers: List[Identifier]) -> ParsedTypePlaceholder:
         assert len(identifiers) == 1
         return ParsedTypePlaceholder(name=identifiers[0].name)
-
-    def type(self, args: List[TypeLiteral | ParsedTypePlaceholder]) -> ParsedType:
-        assert len(args) == 1
-        return ParsedType(type=args[0])
