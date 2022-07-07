@@ -8,8 +8,6 @@ from typing import Any, Callable, Dict, List, Optional
 from lang.runtime.program import Program
 from lang.runtime.simulator import Simulator
 
-GRAMMAR_FILE_PATH = Path("grammar.txt")
-
 
 def run(file_path: str, verbose_flag: Optional[str] = None) -> None:
 
@@ -53,7 +51,6 @@ def runtests(*args: Any) -> None:
         raise ArgParseError("runtests expects no flags or arguments.")
 
     commands = [
-        "check_parser_staleness lang/grammar/grammar.txt lang/grammar/parser.py",
         "pre-commit run --all-files mypy",
         "pytest --cov=lang --cov-report=term-missing --pdb -x -vv",
     ]

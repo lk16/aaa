@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Sequence, Tuple
 
-from lang.runtime.parse import AaaTreeNode, Function, MemberFunction, Struct
+from lang.parse.models import AaaTreeNode, Function, MemberFunction, Struct
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 

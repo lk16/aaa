@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import Any, Final, List, Optional, Union
 
-from lang.runtime.parse import Function, ParsedTypePlaceholder, TypeLiteral
+from lang.parse.models import Function, ParsedTypePlaceholder, TypeLiteral
 
 
 class RootType(IntEnum):

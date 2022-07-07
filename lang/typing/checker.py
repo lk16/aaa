@@ -2,7 +2,7 @@ from copy import copy, deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
-from lang.runtime.parse import (
+from lang.parse.models import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,

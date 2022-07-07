@@ -20,8 +20,7 @@ FunctionBodyItem = Union[
 
 @dataclass(kw_only=True, frozen=True)
 class AaaTreeNode:
-    token_offset: int
-    token_count: int
+    ...
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -145,6 +144,16 @@ class BuiltinFunction(AaaTreeNode):
     name: str
     arguments: List[ParsedType]
     return_types: List[ParsedType]
+
+
+@dataclass(kw_only=True, frozen=True)
+class BuiltinFunctionArguments(AaaTreeNode):
+    value: List[ParsedType]
+
+
+@dataclass(kw_only=True, frozen=True)
+class BuiltinFunctionReturnTypes(AaaTreeNode):
+    value: List[ParsedType]
 
 
 @dataclass(kw_only=True, frozen=True)

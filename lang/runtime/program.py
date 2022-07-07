@@ -5,12 +5,9 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
 
-from lark.lark import Lark
-
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
-from lang.runtime.debug import format_str
-from lang.runtime.parse import (
+from lang.parse.models import (
     Function,
     MemberFunction,
     ParsedBuiltinsFile,
@@ -19,6 +16,9 @@ from lang.runtime.parse import (
     Struct,
     TypeLiteral,
 )
+from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
+from lang.parse.transformer import AaaTransformer
+from lang.runtime.debug import format_str
 from lang.typing.checker import TypeChecker
 from lang.typing.exceptions import (
     AbsoluteImportError,
@@ -53,11 +53,6 @@ FileLoadException = (
 
 # TODO use cli flag instead
 PARSE_VERBOSE = "AAA_PARSING_DEBUG" in os.environ
-
-AAA_GRAMMAR_PATH = "aaa.lark"
-
-aaa_builtins_parser = Lark(open(AAA_GRAMMAR_PATH).read(), start="builtins_file_root")
-aaa_source_parser = Lark(open(AAA_GRAMMAR_PATH).read(), start="regular_file_root")
 
 
 @dataclass(kw_only=True)
@@ -193,11 +188,13 @@ class Program:
 
     def _parse_regular_file(self, file: Path) -> ParsedFile:
         code = file.read_text()
-        return aaa_source_parser.parse(code)  # type: ignore
+        tree = aaa_source_parser.parse(code)
+        return AaaTransformer().transform(tree)  # type: ignore
 
     def _parse_builtins_file(self, file: Path) -> ParsedBuiltinsFile:
         code = file.read_text()
-        return aaa_builtins_parser.parse(code)  # type: ignore
+        tree = aaa_builtins_parser.parse(code)
+        return AaaTransformer().transform(tree)  # type: ignore
 
     def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:
         for function in parsed_file.functions:

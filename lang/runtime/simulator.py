@@ -62,8 +62,8 @@ from lang.instructions.types import (
     VecSet,
     VecSize,
 )
+from lang.parse.models import Function, TypeLiteral
 from lang.runtime.debug import format_str
-from lang.runtime.parse import Function, TypeLiteral
 from lang.runtime.program import Program
 from lang.typing.types import (
     RootType,

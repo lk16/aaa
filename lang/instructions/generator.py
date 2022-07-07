@@ -59,7 +59,7 @@ from lang.instructions.types import (
     VecSet,
     VecSize,
 )
-from lang.runtime.parse import (
+from lang.parse.models import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,

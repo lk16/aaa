@@ -11,13 +11,20 @@
 %import common.WS
 %ignore WS
 
+COMMENT: "//" /[^\n]*/ "\n"
+%ignore COMMENT
+
 identifier: /[a-z_]+/
 integer: /[0-9]+/
 string: /\"([^\\\\]|\\\\(\"|n|\\\\))*?\"/
 
 builtins_file_root: builtin_function_definition+
 
-builtin_function_definition: "builtin_fn" string ("args" return_types)? ("return" return_types)?
+builtin_function_definition: "builtin_fn" string builtin_function_arguments? builtin_function_return_types?
+
+builtin_function_arguments: "args" return_types
+
+builtin_function_return_types: "return" return_types
 
 regular_file_root: (function_definition | import_statement | struct_definition)+
 
@@ -32,7 +39,7 @@ import_item: identifier ("as" identifier)?
 
 struct_function_definition: identifier ":" identifier
 
-function_definition: "fun" (struct_function_definition | identifier) ("args" argument_list)? ("return" return_types)? "begin" function_body "end"
+!function_definition: "fun" (struct_function_definition | identifier) ("args" argument_list)? ("return" return_types)? "begin" function_body "end"
 
 !type_literal: ("bool" | "int" | "map" | "str" | "vec" | identifier) type_params?
 
@@ -62,7 +69,7 @@ function_body_item:   member_function
                     | struct_field_update
                     | literal
 
-branch: "if" function_body "begin" function_body ("else" function_body)? "end"
+!branch: "if" function_body "begin" function_body ("else" function_body)? "end"
 
 loop: "while" function_body "begin" function_body "end"
 
