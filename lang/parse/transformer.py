@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from lark.lexer import Token
 from lark.tree import Tree
@@ -6,15 +6,25 @@ from lark.visitors import Transformer
 
 from lang.parse.models import (
     AaaTreeNode,
+    Argument,
+    BooleanLiteral,
     BuiltinFunction,
     BuiltinFunctionArguments,
     BuiltinFunctionReturnTypes,
+    Function,
+    FunctionBody,
+    FunctionBodyItem,
     Identifier,
+    Import,
     IntegerLiteral,
+    MemberFunction,
+    Operator,
     ParsedBuiltinsFile,
+    ParsedFile,
     ParsedType,
     ParsedTypePlaceholder,
     StringLiteral,
+    Struct,
     TypeLiteral,
 )
 
@@ -75,12 +85,40 @@ class AaaTransformer(Transformer):
         return ParsedBuiltinsFile(functions=functions)
 
     def function_body_item(self, *args):
+        return args
+
+    def function_body(self, items: List[FunctionBodyItem]) -> FunctionBody:
+        return FunctionBody(items=items)
+
+    def function_definition(self, args: List[AaaTreeNode]) -> Function:
+        name = ""
+        body: FunctionBody
+        arguments: List[Argument] = []
+        return_types: List[ParsedType] = []
+
+        for arg in args:
+            if isinstance(arg, Identifier):
+                name = arg.name
+            elif isinstance(arg, FunctionBody):
+                body = arg
+            else:
+                assert False
+
+        return Function(
+            name=name, arguments=arguments, return_types=return_types, body=body
+        )
+
+    def function_arguments(self, *args):
         breakpoint()  # TODO
 
-    def function_body(self, *args):
-        breakpoint()  # TODO
+    def function_name(
+        self, names: List[Union[Identifier, MemberFunction]]
+    ) -> Union[Identifier, MemberFunction]:
+        assert len(names) == 1
+        assert isinstance(names[0], (Identifier, MemberFunction))
+        return names[0]
 
-    def function_definition(self, *args):
+    def function_return_types(self, *args):
         breakpoint()  # TODO
 
     def identifier(self, tokens: List[Token]) -> Identifier:
@@ -100,17 +138,36 @@ class AaaTransformer(Transformer):
         assert len(tokens) == 1
         return IntegerLiteral(value=tokens[0].value)
 
+    def literal(
+        self, literals: AaaTreeNode
+    ) -> Union[
+        IntegerLiteral, BooleanLiteral, StringLiteral
+    ]:  # TODO create union alias
+        assert len(literals) == 1
+        return literals[0]
+
     def loop(self, *args):
         breakpoint()  # TODO
 
     def member_function(self, *args):
         breakpoint()  # TODO
 
-    def operator(self, *args):
-        breakpoint()  # TODO
+    def operator(self, tokens: List[Token]) -> Operator:
+        assert len(tokens) == 1
+        return Operator(value=tokens[0].value)
 
-    def regular_file_root(self, *args):
-        breakpoint()  # TODO
+    def regular_file_root(self, args: List[AaaTreeNode]) -> ParsedFile:
+        functions: List[Function] = []
+        imports: List[Import] = []
+        structs: List[Struct] = []
+
+        for arg in args:
+            if isinstance(arg, Function):
+                functions.append(arg)
+            else:
+                assert False
+
+        return ParsedFile(functions=functions, imports=imports, structs=structs)
 
     def return_types(self, trees: List[Tree]) -> List[ParsedType]:
         return_types: List[ParsedType] = []
