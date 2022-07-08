@@ -1,6 +1,7 @@
 from typing import List
 
 from lark.lexer import Token
+from lark.tree import Tree
 from lark.visitors import Transformer
 
 from lang.parse.models import (
@@ -111,8 +112,14 @@ class AaaTransformer(Transformer):
     def regular_file_root(self, *args):
         breakpoint()  # TODO
 
-    def return_types(self, args: List[ParsedType]):
-        return args
+    def return_types(self, trees: List[Tree]) -> List[ParsedType]:
+        return_types: List[ParsedType] = []
+        for tree in trees:
+            assert isinstance(tree, Tree)
+            return_type = ParsedType(type=tree.children[0])
+            return_types.append(return_type)
+
+        return return_types
 
     def string(self, tokens: List[Token]) -> StringLiteral:
         assert len(tokens) == 1
