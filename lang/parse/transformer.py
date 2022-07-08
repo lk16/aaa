@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Any, List, Union
 
 from lark.lexer import Token
 from lark.tree import Tree
@@ -29,7 +29,7 @@ from lang.parse.models import (
 )
 
 
-class AaaTransformer(Transformer):
+class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
     def argument_list(self, *args):
         breakpoint()  # TODO
 
@@ -87,8 +87,8 @@ class AaaTransformer(Transformer):
     def function_body_item(self, *args):
         return args
 
-    def function_body(self, items: List[FunctionBodyItem]) -> FunctionBody:
-        return FunctionBody(items=items)
+    def function_body(self, items: List[List[List[FunctionBodyItem]]]) -> FunctionBody:
+        return FunctionBody(items=[item[0][0] for item in items])
 
     def function_definition(self, args: List[AaaTreeNode]) -> Function:
         name = ""
@@ -136,10 +136,11 @@ class AaaTransformer(Transformer):
 
     def integer(self, tokens: List[Token]) -> IntegerLiteral:
         assert len(tokens) == 1
-        return IntegerLiteral(value=tokens[0].value)
+        value = int(tokens[0].value)
+        return IntegerLiteral(value=value)
 
     def literal(
-        self, literals: AaaTreeNode
+        self, literals: List[Union[IntegerLiteral, BooleanLiteral, StringLiteral]]
     ) -> Union[
         IntegerLiteral, BooleanLiteral, StringLiteral
     ]:  # TODO create union alias
@@ -169,18 +170,27 @@ class AaaTransformer(Transformer):
 
         return ParsedFile(functions=functions, imports=imports, structs=structs)
 
-    def return_types(self, trees: List[Tree]) -> List[ParsedType]:
+    def return_types(self, trees: List[Tree[ParsedType]]) -> List[ParsedType]:
         return_types: List[ParsedType] = []
         for tree in trees:
             assert isinstance(tree, Tree)
-            return_type = ParsedType(type=tree.children[0])
+            type = tree.children[0]
+            assert isinstance(type, (TypeLiteral, ParsedTypePlaceholder))
+
+            return_type = ParsedType(type=type)
             return_types.append(return_type)
 
         return return_types
 
     def string(self, tokens: List[Token]) -> StringLiteral:
         assert len(tokens) == 1
-        return StringLiteral(value=tokens[0].value)
+        raw_str = tokens[0].value
+        assert len(raw_str) >= 2
+
+        value = (
+            raw_str[1:-1].replace("\\\\", "\\").replace("\\n", "\n").replace('\\"', '"')
+        )
+        return StringLiteral(value=value)
 
     def struct_definition(self, *args):
         breakpoint()  # TODO
@@ -212,7 +222,10 @@ class AaaTransformer(Transformer):
         type_params: List[ParsedType] = []
         for tree in trees:
             assert isinstance(tree, Tree)
-            type_param = ParsedType(type=tree.children[0])
+            type = tree.children[0]
+            assert isinstance(type, (TypeLiteral, ParsedTypePlaceholder))
+
+            type_param = ParsedType(type=type)
             type_params.append(type_param)
         return type_params
 
