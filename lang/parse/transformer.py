@@ -44,7 +44,12 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
 
     def argument(self, args: Tuple[Identifier, ParsedType]) -> Argument:
         name = args[0].name
-        return Argument(name=name, type=args[1])
+        return Argument(name=name, type=ParsedType(type=args[1]))
+
+    def boolean(self, args: List[Token]) -> BooleanLiteral:
+        assert len(args) == 1
+        value = args[0].value == "true"
+        return BooleanLiteral(value=value)
 
     def branch(self, args: List[AaaTreeNode]) -> Branch:
         condition: FunctionBody
@@ -135,6 +140,14 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
                 name = arg.name
             elif isinstance(arg, FunctionBody):
                 body = arg
+            elif isinstance(arg, list):
+                for item in arg:
+                    if isinstance(item, Argument):
+                        arguments.append(item)
+                    elif isinstance(item, ParsedType):
+                        return_types.append(item)
+                    else:
+                        assert False
             else:
                 assert False
 

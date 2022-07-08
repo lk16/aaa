@@ -57,6 +57,7 @@ EXPECTED_EXAMPLE_OUTPUT = {
 }
 
 
+@pytest.mark.skip()
 @pytest.mark.parametrize(
     ["example_file_path", "expected_output"],
     [

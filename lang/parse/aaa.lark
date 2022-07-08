@@ -17,7 +17,7 @@ COMMENT: "//" /[^\n]*/ "\n"
 SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
-identifier: /(?!(as|args|bool|begin|end|else|fn|from|int|map|return|str|vec|while))([a-z_]+)/
+identifier: /(?!(as|args|bool|begin|end|else|false|fn|from|int|map|return|str|true|vec|while))([a-z_]+)/
 integer: /[0-9]+/
 string: /"([^"])*"/  // TODO fix string regex
 
@@ -98,7 +98,7 @@ struct_field_update: string function_body "!"
 
 literal: boolean | integer | string
 
-boolean: "true" | "false"
+!boolean: "true" | "false"
 
 // TODO find out which ones of these should be keywords (add to identifier blacklist)
 // TODO find out which ones are regular functions (remove here)
@@ -109,9 +109,9 @@ boolean: "true" | "false"
             | "dup"
             | "="
             | ">="
-            | ">"
+            | />(?=\s)/
             | "<="
-            | "<"
+            | /<(?=\s)/
             | "-"
             | "nop"
             | "not"
