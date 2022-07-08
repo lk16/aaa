@@ -151,8 +151,13 @@ class AaaTransformer(Transformer):
 
         return TypeLiteral(type_name=type_name, type_parameters=type_parameters)
 
-    def type_params(self, parsed_types: List[ParsedType]) -> List[ParsedType]:
-        return parsed_types
+    def type_params(self, trees: List[ParsedType]) -> List[ParsedType]:
+        type_params: List[ParsedType] = []
+        for tree in trees:
+            assert isinstance(tree, Tree)
+            type_param = ParsedType(type=tree.children[0])
+            type_params.append(type_param)
+        return type_params
 
     def type_placeholder(self, identifiers: List[Identifier]) -> ParsedTypePlaceholder:
         assert len(identifiers) == 1
