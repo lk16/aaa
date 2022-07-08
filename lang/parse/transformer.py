@@ -1,7 +1,6 @@
 from typing import Any, List, Tuple, Union
 
 from lark.lexer import Token
-from lark.tree import Tree
 from lark.visitors import Transformer
 
 from lang.parse.models import (
@@ -20,6 +19,7 @@ from lang.parse.models import (
     FunctionBodyItem,
     Identifier,
     Import,
+    ImportItem,
     IntegerLiteral,
     Loop,
     LoopBody,
@@ -32,19 +32,19 @@ from lang.parse.models import (
     ParsedTypePlaceholder,
     StringLiteral,
     Struct,
+    StructFieldQuery,
+    StructFieldUpdate,
     TypeLiteral,
 )
 
 
 class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
-    def argument_list(self, *args):
-        breakpoint()  # TODO
+    def argument_list(self, arguments: List[Argument]) -> List[Argument]:
+        return arguments
 
-    def argument(self, *args):
-        breakpoint()  # TODO
-
-    def boolean(self, *args):
-        breakpoint()  # TODO
+    def argument(self, args: Tuple[Identifier, ParsedType]) -> Argument:
+        name = args[0].name
+        return Argument(name=name, type=args[1])
 
     def branch(self, args: List[AaaTreeNode]) -> Branch:
         condition: FunctionBody
@@ -53,11 +53,11 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
 
         for arg in args:
             if isinstance(arg, BranchCondition):
-                condition=arg.value
+                condition = arg.value
             elif isinstance(arg, BranchIfBody):
-                condition=arg.value
+                if_body = arg.value
             elif isinstance(arg, BranchElseBody):
-                condition=arg.value
+                else_body = arg.value
             else:
                 assert False
 
@@ -117,11 +117,13 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
 
         return ParsedBuiltinsFile(functions=functions)
 
-    def function_body_item(self, *args):
-        return args
+    def function_body_item(self, args: List[FunctionBodyItem]) -> FunctionBodyItem:
+        assert len(args) == 1
+        return args[0]
 
-    def function_body(self, items: List[List[List[FunctionBodyItem]]]) -> FunctionBody:
-        return FunctionBody(items=[item[0][0] for item in items])
+    def function_body(self, args: List[FunctionBodyItem]) -> FunctionBody:
+        breakpoint()
+        return FunctionBody(items=args)
 
     def function_definition(self, args: List[AaaTreeNode]) -> Function:
         name = ""
@@ -141,8 +143,9 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
             name=name, arguments=arguments, return_types=return_types, body=body
         )
 
-    def function_arguments(self, *args):
-        breakpoint()  # TODO
+    def function_arguments(self, args: List[List[Argument]]) -> List[Argument]:
+        assert len(args) == 1
+        return args[0]
 
     def function_name(
         self, names: List[Union[Identifier, MemberFunction]]
@@ -151,21 +154,23 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         assert isinstance(names[0], (Identifier, MemberFunction))
         return names[0]
 
-    def function_return_types(self, *args):
-        breakpoint()  # TODO
+    def function_return_types(self, args: List[List[ParsedType]]) -> List[ParsedType]:
+        return args[0]
 
     def identifier(self, tokens: List[Token]) -> Identifier:
         assert len(tokens) == 1
         return Identifier(name=tokens[0].value)
 
-    def import_item(self, *args):
-        breakpoint()  # TODO
+    def import_item(self, args: List[Identifier]) -> ImportItem:
+        assert len(args) <= 2
+        original_name = args[0].name
 
-    def import_items(self, *args):
-        breakpoint()  # TODO
+        if len(args) == 1:
+            imported_name = original_name
+        else:
+            imported_name = args[1].name
 
-    def import_statement(self, *args):
-        breakpoint()  # TODO
+        return ImportItem(origninal_name=original_name, imported_name=imported_name)
 
     def integer(self, tokens: List[Token]) -> IntegerLiteral:
         assert len(tokens) == 1
@@ -187,7 +192,7 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         for arg in args:
             if isinstance(arg, LoopCondition):
                 condition = arg.value
-            elif isinstance(arg, FunctionBody):
+            elif isinstance(arg, LoopBody):
                 body = arg.value
             else:
                 assert False
@@ -224,15 +229,12 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
 
         return ParsedFile(functions=functions, imports=imports, structs=structs)
 
-    def return_types(self, trees: List[Tree[ParsedType]]) -> List[ParsedType]:
+    def return_types(
+        self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
+    ) -> List[ParsedType]:
         return_types: List[ParsedType] = []
-        for tree in trees:
-            assert isinstance(tree, Tree)
-            type = tree.children[0]
-            assert isinstance(type, (TypeLiteral, ParsedTypePlaceholder))
-
-            return_type = ParsedType(type=type)
-            return_types.append(return_type)
+        for type in types:
+            return_types.append(ParsedType(type=type))
 
         return return_types
 
@@ -246,20 +248,29 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         )
         return StringLiteral(value=value)
 
-    def struct_definition(self, *args):
-        breakpoint()  # TODO
+    def struct_definition(
+        self, args: Tuple[List[Identifier], List[Argument]]
+    ) -> Struct:
+        assert len(args[0]) == 1
+        name = args[0][0].name
+        fields = args[1]
 
-    def struct_field_query(self, *args):
-        breakpoint()  # TODO
+        return Struct(name=name, fields=fields)
 
-    def struct_field_update(self, *args):
-        breakpoint()  # TODO
+    def struct_field_query(self, args: List[StringLiteral]) -> StructFieldQuery:
+        assert len(args) == 1
+        return StructFieldQuery(field_name=args[0])
 
-    def struct_function_definition(self, *args):
-        breakpoint()  # TODO
+    def struct_field_update(
+        self, args: Tuple[StringLiteral, FunctionBody]
+    ) -> StructFieldUpdate:
+        new_value_expr = args[1]
+        return StructFieldUpdate(field_name=args[0], new_value_expr=new_value_expr)
 
-    def type(self, *args):
-        breakpoint()  # TODO
+    def type(
+        self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
+    ) -> Union[TypeLiteral, ParsedTypePlaceholder]:
+        return types[0]
 
     def type_literal(self, args: List[Token | List[ParsedType]]) -> TypeLiteral:
         type_name = ""
@@ -275,15 +286,10 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
 
         return TypeLiteral(type_name=type_name, type_parameters=type_parameters)
 
-    def type_params(self, trees: List[ParsedType]) -> List[ParsedType]:
+    def type_params(self, types: List[ParsedType]) -> List[ParsedType]:
         type_params: List[ParsedType] = []
-        for tree in trees:
-            assert isinstance(tree, Tree)
-            type = tree.children[0]
-            assert isinstance(type, (TypeLiteral, ParsedTypePlaceholder))
-
-            type_param = ParsedType(type=type)
-            type_params.append(type_param)
+        for type in types:
+            type_params.append(type)
         return type_params
 
     def type_placeholder(self, identifiers: List[Identifier]) -> ParsedTypePlaceholder:

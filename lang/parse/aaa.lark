@@ -16,7 +16,7 @@ COMMENT: "//" /[^\n]*/ "\n"
 
 identifier: /[a-z_]+/
 integer: /[0-9]+/
-string: /\"([^\\\\]|\\\\(\"|n|\\\\))*?\"/
+string: /"([^"])*"/  // TODO fix string regex
 
 builtins_file_root: builtin_function_definition+
 

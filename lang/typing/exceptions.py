@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Sequence, Tuple
+from typing import List, Sequence
 
 from lang.parse.models import AaaTreeNode, Function, MemberFunction, Struct
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
@@ -15,23 +15,8 @@ class TypeException(Exception):
     def __str__(self) -> str:  # pragma: nocover
         return "TypeErrorException message, override me!"
 
-    def get_line_column_numbers(self) -> Tuple[int, int]:
-        # TODO get this data from lark
-        raise NotImplementedError
-
-    def get_line(self) -> str:
-        # TODO get line by re-reading source file?
-        raise NotImplementedError
-
     def get_error_header(self) -> str:
-        line_no, col_no = self.get_line_column_numbers()
-        line = self.get_line()
-        return (
-            f"{self.file}:{line_no}:{col_no}\n"
-            + f"{line}\n"
-            + " " * (col_no - 1)
-            + "^\n"
-        )
+        return ""
 
     # TODO rename this function
     def format_typestack(
