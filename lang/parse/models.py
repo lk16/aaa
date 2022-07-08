@@ -56,6 +56,16 @@ class Loop(AaaTreeNode):
 
 
 @dataclass(kw_only=True, frozen=True)
+class LoopCondition(AaaTreeNode):
+    value: "FunctionBody"
+
+
+@dataclass(kw_only=True, frozen=True)
+class LoopBody(AaaTreeNode):
+    value: "FunctionBody"
+
+
+@dataclass(kw_only=True, frozen=True)
 class Identifier(AaaTreeNode):
     name: str
 
@@ -65,6 +75,21 @@ class Branch(AaaTreeNode):
     condition: "FunctionBody"
     if_body: "FunctionBody"
     else_body: "FunctionBody"
+
+
+@dataclass(kw_only=True, frozen=True)
+class BranchCondition(AaaTreeNode):
+    value: "FunctionBody"
+
+
+@dataclass(kw_only=True, frozen=True)
+class BranchIfBody(AaaTreeNode):
+    value: "FunctionBody"
+
+
+@dataclass(kw_only=True, frozen=True)
+class BranchElseBody(AaaTreeNode):
+    value: "FunctionBody"
 
 
 @dataclass(kw_only=True, frozen=True)

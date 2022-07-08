@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, List, Tuple, Union
 
 from lark.lexer import Token
 from lark.tree import Tree
@@ -8,6 +8,10 @@ from lang.parse.models import (
     AaaTreeNode,
     Argument,
     BooleanLiteral,
+    Branch,
+    BranchCondition,
+    BranchElseBody,
+    BranchIfBody,
     BuiltinFunction,
     BuiltinFunctionArguments,
     BuiltinFunctionReturnTypes,
@@ -17,6 +21,9 @@ from lang.parse.models import (
     Identifier,
     Import,
     IntegerLiteral,
+    Loop,
+    LoopBody,
+    LoopCondition,
     MemberFunction,
     Operator,
     ParsedBuiltinsFile,
@@ -39,8 +46,34 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
     def boolean(self, *args):
         breakpoint()  # TODO
 
-    def branch(self, *args):
-        breakpoint()  # TODO
+    def branch(self, args: List[AaaTreeNode]) -> Branch:
+        condition: FunctionBody
+        if_body: FunctionBody
+        else_body = FunctionBody(items=[])
+
+        for arg in args:
+            if isinstance(arg, BranchCondition):
+                condition=arg.value
+            elif isinstance(arg, BranchIfBody):
+                condition=arg.value
+            elif isinstance(arg, BranchElseBody):
+                condition=arg.value
+            else:
+                assert False
+
+        return Branch(condition=condition, if_body=if_body, else_body=else_body)
+
+    def branch_condition(self, function_bodies: List[FunctionBody]) -> BranchCondition:
+        assert len(function_bodies) == 1
+        return BranchCondition(value=function_bodies[0])
+
+    def branch_if_body(self, function_bodies: List[FunctionBody]) -> BranchIfBody:
+        assert len(function_bodies) == 1
+        return BranchIfBody(value=function_bodies[0])
+
+    def branch_else_body(self, function_bodies: List[FunctionBody]) -> BranchElseBody:
+        assert len(function_bodies) == 1
+        return BranchElseBody(value=function_bodies[0])
 
     def builtin_function_definition(self, args: List[AaaTreeNode]) -> BuiltinFunction:
         arguments: List[ParsedType] = []
@@ -147,11 +180,32 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         assert len(literals) == 1
         return literals[0]
 
-    def loop(self, *args):
-        breakpoint()  # TODO
+    def loop(self, args: List[AaaTreeNode]) -> Loop:
+        condition: FunctionBody
+        body: FunctionBody
 
-    def member_function(self, *args):
-        breakpoint()  # TODO
+        for arg in args:
+            if isinstance(arg, LoopCondition):
+                condition = arg.value
+            elif isinstance(arg, FunctionBody):
+                body = arg.value
+            else:
+                assert False
+
+        return Loop(condition=condition, body=body)
+
+    def loop_condition(self, function_bodies: List[FunctionBody]) -> LoopCondition:
+        assert len(function_bodies) == 1
+        return LoopCondition(value=function_bodies[0])
+
+    def loop_body(self, function_bodies: List[FunctionBody]) -> LoopBody:
+        assert len(function_bodies) == 1
+        return LoopBody(value=function_bodies[0])
+
+    def member_function(self, args: Tuple[TypeLiteral, Identifier]) -> MemberFunction:
+        type_name = args[0].type_name
+        func_name = args[1].name
+        return MemberFunction(type_name=type_name, func_name=func_name)
 
     def operator(self, tokens: List[Token]) -> Operator:
         assert len(tokens) == 1
@@ -202,6 +256,9 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         breakpoint()  # TODO
 
     def struct_function_definition(self, *args):
+        breakpoint()  # TODO
+
+    def type(self, *args):
         breakpoint()  # TODO
 
     def type_literal(self, args: List[Token | List[ParsedType]]) -> TypeLiteral:

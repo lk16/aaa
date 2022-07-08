@@ -76,9 +76,18 @@ function_body_item:   member_function
                     | struct_field_update
                     | literal
 
-!branch: "if" function_body "begin" function_body ("else" function_body)? "end"
+branch: branch_condition branch_if_body branch_else_body? "end"
 
-loop: "while" function_body "begin" function_body "end"
+branch_condition: "if" function_body
+branch_if_body: "begin" function_body
+branch_else_body: "else" function_body
+
+
+loop: loop_condition loop_body "end"
+
+loop_condition: "while" function_body
+loop_body: "begin" function_body
+
 
 struct_field_query: string "?"
 
