@@ -122,7 +122,6 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         return args[0]
 
     def function_body(self, args: List[FunctionBodyItem]) -> FunctionBody:
-        breakpoint()
         return FunctionBody(items=args)
 
     def function_definition(self, args: List[AaaTreeNode]) -> Function:
@@ -286,10 +285,12 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
 
         return TypeLiteral(type_name=type_name, type_parameters=type_parameters)
 
-    def type_params(self, types: List[ParsedType]) -> List[ParsedType]:
+    def type_params(
+        self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
+    ) -> List[ParsedType]:
         type_params: List[ParsedType] = []
         for type in types:
-            type_params.append(type)
+            type_params.append(ParsedType(type=type))
         return type_params
 
     def type_placeholder(self, identifiers: List[Identifier]) -> ParsedTypePlaceholder:

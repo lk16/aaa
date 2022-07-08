@@ -14,7 +14,10 @@
 COMMENT: "//" /[^\n]*/ "\n"
 %ignore COMMENT
 
-identifier: /[a-z_]+/
+SHEBANG: "#!" /[^\n]*/ "\n"
+%ignore SHEBANG
+
+identifier: /(?!(as|args|bool|begin|end|else|fn|from|int|map|return|str|vec|while))([a-z_]+)/
 integer: /[0-9]+/
 string: /"([^"])*"/  // TODO fix string regex
 
@@ -97,6 +100,8 @@ literal: boolean | integer | string
 
 boolean: "true" | "false"
 
+// TODO find out which ones of these should be keywords (add to identifier blacklist)
+// TODO find out which ones are regular functions (remove here)
 !operator:    "and"
             | "assert"
             | "*"
