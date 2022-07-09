@@ -65,84 +65,108 @@ SWAP:       /swap(?=(\W|\s))/
 ASSERT:     /assert(?=(\W|\s))/
 NOP:        /nop(?=(\W|\s))/
 
+// --- builtin file rules ---
 
 builtins_file_root: builtin_function_definition+
 
-builtin_function_definition: _BUILTIN_FN string builtin_function_arguments? builtin_function_return_types?
+builtin_function_definition: ( \
+    _BUILTIN_FN string \
+    builtin_function_arguments? \
+    builtin_function_return_types? \
+)
 
 builtin_function_arguments: _ARGS return_types
-
 builtin_function_return_types: _RETURN return_types
+
+// --- regular source file + imports ---
 
 regular_file_root: (function_definition | import_statement | struct_definition)+
 
-struct_definition: _STRUCT identifier _BEGIN argument_list _END
-
 import_statement: _FROM string _IMPORT import_items
-
 import_items: import_item ("," import_item)* ","?
-
 import_item: identifier (_AS identifier)?
 
-struct_function_definition: identifier ":" identifier
+// --- structs ---
 
-function_definition: _FN function_name function_arguments? function_return_types? _BEGIN function_body _END
+struct_definition: ( \
+    _STRUCT identifier \
+    _BEGIN argument_list \
+    _END \
+)
+
+struct_function_definition: identifier ":" identifier
+struct_field_query: string "?"
+struct_field_update: string function_body "!"
+
+member_function: type_literal ":" identifier
+
+// --- functions, arguments, return types ---
+
+function_definition: ( \
+    _FN function_name \
+    function_arguments? \
+    function_return_types? \
+    _BEGIN function_body _END \
+)
 
 function_name: struct_function_definition | identifier
 
 function_arguments: _ARGS argument_list
-
-function_return_types: _RETURN return_types
-
-
-!type_literal: (BOOL | INT | MAP | STR | VEC | identifier) type_params?
-
-type_params: "[" type ("," type)* ","? "]"
-
-type_placeholder: "*" identifier
-
+argument_list: argument ("," argument)* ","?
 argument: identifier _AS type
 
-argument_list: argument ("," argument)* ","?
+function_return_types: _RETURN return_types
+return_types: type ("," type)* ","?
+
+// --- types and type placeholders ---
+
+!type_literal: (BOOL | INT | MAP | STR | VEC | identifier) type_params?
+type_params: "[" type ("," type)* ","? "]"
+type_placeholder: "*" identifier
 
 type: type_literal | type_placeholder
 
-return_types: type ("," type)* ","?
+// --- literals ---
+
+literal: boolean | integer | string
+!boolean: TRUE | FALSE
+
+// --- function body ---
 
 function_body: function_body_item+
 
-member_function: type_literal ":" identifier
+function_body_item: ( \
+      member_function
+    | branch
+    | loop
+    | operator
+    | identifier
+    | type_literal
+    | struct_field_query
+    | struct_field_update
+    | literal \
+)
 
-function_body_item:   member_function
-                    | branch
-                    | loop
-                    | operator
-                    | identifier
-                    | type_literal
-                    | struct_field_query
-                    | struct_field_update
-                    | literal
+// --- branch ---
 
-branch: branch_condition branch_if_body branch_else_body? _END
+branch: ( \
+    branch_condition \
+    branch_if_body \
+    branch_else_body? \
+    _END \
+)
 
 branch_condition: _IF function_body
 branch_if_body: _BEGIN function_body
 branch_else_body: _ELSE function_body
 
+// --- loop ---
 
 loop: loop_condition loop_body _END
-
 loop_condition: _WHILE function_body
 loop_body: _BEGIN function_body
 
-
-struct_field_query: string "?"
-
-struct_field_update: string function_body "!"
-
-literal: boolean | integer | string
-
-!boolean: TRUE | FALSE
+// --- operators ---
 
 !operator:    AND
             | ASSERT
