@@ -23,43 +23,69 @@ integer: /[0-9]+/
 %import common.ESCAPED_STRING
 string: ESCAPED_STRING
 
+// ignored keywords
+_AS:         /as(?=(\W|\s))/
+_ARGS:       /args(?=(\W|\s))/
+_BEGIN:      /begin(?=(\W|\s))/
+_BUILTIN_FN: /builtin_fn(?=(\W|\s))/
+_END:        /end(?=(\W|\s|$))/
+_ELSE:       /else(?=(\W|\s))/
+_FN:         /fn(?=(\W|\s))/
+_FROM:       /from(?=(\W|\s))/
+_IMPORT:     /import(?=(\W|\s))/
+_IF:         /if(?=(\W|\s))/
+_RETURN:     /return(?=(\W|\s))/
+_STRUCT:     /struct(?=(\W|\s))/
+_WHILE:      /while(?=(\W|\s))/
+
+// keywords for builtin types
+BOOL:       /bool(?=(\W|\s))/
+INT:        /int(?=(\W|\s))/
+MAP:        /map(?=(\W|\s))/
+STR:        /str(?=(\W|\s))/
+VEC:        /vec(?=(\W|\s))/
+
+// keywords for builtin constants
+FALSE:      /false(?=(\W|\s))/
+TRUE:       /true(?=(\W|\s))/
+
 builtins_file_root: builtin_function_definition+
 
-builtin_function_definition: "builtin_fn" string builtin_function_arguments? builtin_function_return_types?
+builtin_function_definition: _BUILTIN_FN string builtin_function_arguments? builtin_function_return_types?
 
-builtin_function_arguments: "args" return_types
+builtin_function_arguments: _ARGS return_types
 
-builtin_function_return_types: "return" return_types
+builtin_function_return_types: _RETURN return_types
 
 regular_file_root: (function_definition | import_statement | struct_definition)+
 
 // TODO consider supporting empty struct using nop syntax
-struct_definition: "struct" identifier "begin" argument_list "end"
+struct_definition: _STRUCT identifier _BEGIN argument_list _END
 
-import_statement: "from" string "import" import_items
+import_statement: _FROM string _IMPORT import_items
 
 import_items: import_item ("," import_item)* ","?
 
-import_item: identifier ("as" identifier)?
+import_item: identifier (_AS identifier)?
 
 struct_function_definition: identifier ":" identifier
 
-function_definition: "fn" function_name function_arguments? function_return_types? "begin" function_body "end"
+function_definition: _FN function_name function_arguments? function_return_types? _BEGIN function_body _END
 
 function_name: struct_function_definition | identifier
 
-function_arguments: "args" argument_list
+function_arguments: _ARGS argument_list
 
-function_return_types: "return" return_types
+function_return_types: _RETURN return_types
 
 
-!type_literal: (/(bool|int|map|str|vec)(?=(\W|\s))/ | identifier) type_params?
+!type_literal: (BOOL | INT | MAP | STR | VEC | identifier) type_params?
 
 type_params: "[" type ("," type)* ","? "]"
 
 type_placeholder: "*" identifier
 
-argument: identifier "as" type
+argument: identifier _AS type
 
 argument_list: argument ("," argument)* ","?
 
@@ -81,17 +107,17 @@ function_body_item:   member_function
                     | struct_field_update
                     | literal
 
-branch: branch_condition branch_if_body branch_else_body? "end"
+branch: branch_condition branch_if_body branch_else_body? _END
 
-branch_condition: "if" function_body
-branch_if_body: "begin" function_body
-branch_else_body: "else" function_body
+branch_condition: _IF function_body
+branch_if_body: _BEGIN function_body
+branch_else_body: _ELSE function_body
 
 
-loop: loop_condition loop_body "end"
+loop: loop_condition loop_body _END
 
-loop_condition: "while" function_body
-loop_body: "begin" function_body
+loop_condition: _WHILE function_body
+loop_body: _BEGIN function_body
 
 
 struct_field_query: string "?"
@@ -100,7 +126,7 @@ struct_field_update: string function_body "!"
 
 literal: boolean | integer | string
 
-!boolean: /(true|false)(?=\s)/
+!boolean: TRUE | FALSE
 
 // TODO find out which ones of these should be keywords (add to identifier blacklist)
 // TODO find out which ones are regular functions (remove here)
