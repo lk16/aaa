@@ -17,7 +17,7 @@ COMMENT: "//" /[^\n]*/ "\n"
 SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
-identifier: /(?!(as|args|bool|begin|end|else|false|fn|from|int|map|return|str|true|vec|while))([a-z_]+)/
+identifier: /(?!(as|args|bool|begin|end|else|false|fn|from|int|map|return|str|true|vec|while))([a-z_]+)/ // TODO add all keywords here
 integer: /[0-9]+/
 
 %import common.ESCAPED_STRING

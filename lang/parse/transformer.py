@@ -130,7 +130,7 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         return FunctionBody(items=args)
 
     def function_definition(self, args: List[AaaTreeNode]) -> Function:
-        name = ""
+        name: str | MemberFunction = ""
         body: FunctionBody
         arguments: List[Argument] = []
         return_types: List[ParsedType] = []
@@ -147,7 +147,10 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
                     elif isinstance(item, ParsedType):
                         return_types.append(item)
                     else:
+                        breakpoint()
                         assert False
+            elif isinstance(arg, MemberFunction):
+                name = arg
             else:
                 assert False
 
@@ -290,12 +293,13 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
     def type_literal(self, args: List[Token | List[ParsedType]]) -> TypeLiteral:
         type_name = ""
         type_parameters: List[ParsedType] = []
-
         for arg in args:
             if isinstance(arg, Token):
                 type_name = arg.value
             elif isinstance(arg, list):
                 type_parameters = arg
+            elif isinstance(arg, Identifier):
+                type_name = arg.name
             else:
                 assert False
 
