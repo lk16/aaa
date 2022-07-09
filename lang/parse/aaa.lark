@@ -76,7 +76,6 @@ builtin_function_return_types: _RETURN return_types
 
 regular_file_root: (function_definition | import_statement | struct_definition)+
 
-// TODO consider supporting empty struct using nop syntax
 struct_definition: _STRUCT identifier _BEGIN argument_list _END
 
 import_statement: _FROM string _IMPORT import_items

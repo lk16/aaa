@@ -38,7 +38,7 @@ from lang.parse.models import (
 )
 
 
-class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
+class AaaTransformer(Transformer[Any, Any]):
     def argument_list(self, arguments: List[Argument]) -> List[Argument]:
         return arguments
 
