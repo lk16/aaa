@@ -139,8 +139,6 @@ literal: boolean | integer | string
             | "or"
             | "over"
             | "rot"
-            | "strlen" // TODO unreachable, parses as str len
-            | "substr"
             | "swap"
             | /-(?=\s)/
             | /!=(?=\s)/

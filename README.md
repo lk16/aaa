@@ -22,7 +22,7 @@ Stack-based language, like forth.
 - types and static type checking: (`int`, `bool`, `str`)
 - integers and integer instructions (`+`, `-`, `*`, `/`, `%`)
 - booleans and boolean instructions (`and`, `or`, `not`)
-- strings and string instructions (`+`, `=`, `strlen`, `substr`)
+- strings and string instructions (`+`, `=`)
 - stack instructions (`drop`, `dup`, `swap`, `over`, `rot`)
 - branching (`if`, `else`, `end`)
 - loops (`while`)

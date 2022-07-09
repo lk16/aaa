@@ -131,17 +131,7 @@ class PushString(Instruction):
 
 
 @dataclass
-class SubString(Instruction):
-    ...
-
-
-@dataclass
 class Modulo(Instruction):
-    ...
-
-
-@dataclass
-class StringLength(Instruction):
     ...
 
 

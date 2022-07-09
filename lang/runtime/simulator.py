@@ -50,8 +50,6 @@ from lang.instructions.types import (
     PushVec,
     Rot,
     SetStructField,
-    StringLength,
-    SubString,
     Swap,
     VecClear,
     VecCopy,
@@ -124,8 +122,6 @@ class Simulator:
             PushStruct: self.instruction_push_struct,
             PushVec: self.instruction_push_vec,
             Rot: self.instruction_rot,
-            StringLength: self.instruction_string_length,
-            SubString: self.instruction_substring,
             Swap: self.instruction_swap,
             VecPush: self.instruction_vec_push,
             VecPop: self.instruction_vec_pop,
@@ -402,26 +398,6 @@ class Simulator:
     def instruction_push_string(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushString)
         self.push(str_var(instruction.value))
-        return self.get_instruction_pointer() + 1
-
-    def instruction_substring(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, SubString)
-        end: int = self.pop().value
-        start: int = self.pop().value
-        string: str = self.pop().value
-
-        if start >= end or start > len(string):
-            result_str = ""
-        else:
-            result_str = string[start:end]
-
-        self.push(str_var(result_str))
-        return self.get_instruction_pointer() + 1
-
-    def instruction_string_length(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, StringLength)
-        x: str = self.pop().value
-        self.push(int_var(len(x)))
         return self.get_instruction_pointer() + 1
 
     def instruction_call_function(self, instruction: Instruction) -> int:
