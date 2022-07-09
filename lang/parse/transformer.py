@@ -42,7 +42,9 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
     def argument_list(self, arguments: List[Argument]) -> List[Argument]:
         return arguments
 
-    def argument(self, args: Tuple[Identifier, ParsedType]) -> Argument:
+    def argument(
+        self, args: Tuple[Identifier, Union[TypeLiteral, ParsedTypePlaceholder]]
+    ) -> Argument:
         name = args[0].name
         return Argument(name=name, type=ParsedType(type=args[1]))
 
@@ -147,7 +149,6 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
                     elif isinstance(item, ParsedType):
                         return_types.append(item)
                     else:
-                        breakpoint()
                         assert False
             elif isinstance(arg, MemberFunction):
                 name = arg
@@ -186,6 +187,18 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
             imported_name = args[1].name
 
         return ImportItem(origninal_name=original_name, imported_name=imported_name)
+
+    def import_items(self, import_items: List[ImportItem]) -> List[ImportItem]:
+        assert all(isinstance(item, ImportItem) for item in import_items)
+        return import_items
+
+    def import_statement(
+        self, args: List[Union[StringLiteral, List[ImportItem]]]
+    ) -> Import:
+        assert len(args) == 2
+        assert isinstance(args[0], StringLiteral)
+        assert isinstance(args[1], list)
+        return Import(source=args[0].value, imported_items=args[1])
 
     def integer(self, tokens: List[Token]) -> IntegerLiteral:
         assert len(tokens) == 1
@@ -241,6 +254,8 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
                 functions.append(arg)
             elif isinstance(arg, Struct):
                 structs.append(arg)
+            elif isinstance(arg, Import):
+                imports.append(arg)
             else:
                 assert False
 
@@ -280,10 +295,12 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         new_value_expr = args[1]
         return StructFieldUpdate(field_name=args[0], new_value_expr=new_value_expr)
 
-    def struct_function_definition(self, args: List[Identifier]) -> MemberFunction:
-        assert len(args) == 2
-        type_name, func_name = args
-        return MemberFunction(type_name=type_name, func_name=func_name)
+    def struct_function_definition(
+        self, identifiers: List[Identifier]
+    ) -> MemberFunction:
+        assert len(identifiers) == 2
+        type, func = identifiers
+        return MemberFunction(type_name=type.name, func_name=func.name)
 
     def type(
         self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
