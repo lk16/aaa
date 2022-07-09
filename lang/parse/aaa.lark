@@ -19,7 +19,9 @@ SHEBANG: "#!" /[^\n]*/ "\n"
 
 identifier: /(?!(as|args|bool|begin|end|else|false|fn|from|int|map|return|str|true|vec|while))([a-z_]+)/
 integer: /[0-9]+/
-string: /"([^"])*"/  // TODO fix string regex
+
+%import common.ESCAPED_STRING
+string: ESCAPED_STRING
 
 builtins_file_root: builtin_function_definition+
 
@@ -51,7 +53,7 @@ function_arguments: "args" argument_list
 function_return_types: "return" return_types
 
 
-!type_literal: ("bool" | "int" | "map" | "str" | "vec" | identifier) type_params?
+!type_literal: (/(bool|int|map|str|vec)(?=(\W|\s))/ | identifier) type_params?
 
 type_params: "[" type ("," type)* ","? "]"
 
@@ -98,31 +100,31 @@ struct_field_update: string function_body "!"
 
 literal: boolean | integer | string
 
-!boolean: "true" | "false"
+!boolean: /(true|false)(?=\s)/
 
 // TODO find out which ones of these should be keywords (add to identifier blacklist)
 // TODO find out which ones are regular functions (remove here)
 !operator:    "and"
             | "assert"
-            | "*"
             | "drop"
             | "dup"
-            | "="
-            | ">="
-            | />(?=\s)/
-            | "<="
-            | /<(?=\s)/
-            | "-"
             | "nop"
             | "not"
-            | "!="
             | "or"
             | "over"
-            | "%"
-            | "."
-            | "+"
             | "rot"
-            | "/"
             | "strlen" // TODO unreachable, parses as str len
             | "substr"
             | "swap"
+            | /-(?=\s)/
+            | /!=(?=\s)/
+            | /\.(?=\s)/
+            | /\*(?=\s)/
+            | /\/(?=\s)/
+            | /%(?=\s)/
+            | /\+(?=\s)/
+            | /<=(?=\s)/
+            | /=(?=\s)/
+            | />=(?=\s)/
+            | /<(?=\s)/
+            | />(?=\s)/
