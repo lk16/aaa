@@ -236,6 +236,8 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         for arg in args:
             if isinstance(arg, Function):
                 functions.append(arg)
+            elif isinstance(arg, Struct):
+                structs.append(arg)
             else:
                 assert False
 
@@ -260,13 +262,9 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
         )
         return StringLiteral(value=value)
 
-    def struct_definition(
-        self, args: Tuple[List[Identifier], List[Argument]]
-    ) -> Struct:
-        assert len(args[0]) == 1
-        name = args[0][0].name
+    def struct_definition(self, args: Tuple[Identifier, List[Argument]]) -> Struct:
+        name = args[0].name
         fields = args[1]
-
         return Struct(name=name, fields=fields)
 
     def struct_field_query(self, args: List[StringLiteral]) -> StructFieldQuery:
@@ -278,6 +276,11 @@ class AaaTransformer(Transformer[Any, Any]):  # TODO find right type params here
     ) -> StructFieldUpdate:
         new_value_expr = args[1]
         return StructFieldUpdate(field_name=args[0], new_value_expr=new_value_expr)
+
+    def struct_function_definition(self, args: List[Identifier]) -> MemberFunction:
+        assert len(args) == 2
+        type_name, func_name = args
+        return MemberFunction(type_name=type_name, func_name=func_name)
 
     def type(
         self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]

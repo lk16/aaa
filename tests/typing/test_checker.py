@@ -94,11 +94,11 @@ from lang.typing.exceptions import (
             SetFieldOfNonStructTypeError,
         ),
         (
-            'struct bar begin x as int end fn foo begin bar "x" 34 ! "x" ? . "\n" . drop end',
+            'struct bar begin x as int end fn foo begin bar "x" 34 ! "x" ? . "\\n" . drop end',
             None,
         ),
         (
-            'struct bar begin x as int end fn foo begin bar "x" 34 35 ! "x" ? . "\n" . drop end',
+            'struct bar begin x as int end fn foo begin bar "x" 34 35 ! "x" ? . "\\n" . drop end',
             StructUpdateStackError,
         ),
         (
