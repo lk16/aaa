@@ -223,7 +223,6 @@ def test_program_full_source_ok(
             },
             "6",
             [],
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             {
@@ -232,7 +231,6 @@ def test_program_full_source_ok(
             },
             "5",
             [],
-            marks=pytest.mark.skip,
         ),
         (
             {
