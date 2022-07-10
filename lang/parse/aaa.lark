@@ -96,7 +96,7 @@ struct_definition: ( \
 
 struct_function_definition: identifier ":" identifier
 struct_field_query: string "?"
-struct_field_update: string function_body "!"
+struct_field_update: string _BEGIN function_body _END "!"
 
 member_function: type_literal ":" identifier
 

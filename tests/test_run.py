@@ -179,15 +179,15 @@ def test_program_run_assertion_failure() -> None:
             "{}",
         ),
         (
-            'struct foo begin x as int end fn main begin foo "x" 3 ! "x" ? . drop end',
+            'struct foo begin x as int end fn main begin foo "x" begin 3 end ! "x" ? . drop end',
             "3",
         ),
         (
-            'struct foo begin x as bool end fn main begin foo "x" true ! "x" ? . drop end',
+            'struct foo begin x as bool end fn main begin foo "x" begin true end ! "x" ? . drop end',
             "true",
         ),
         (
-            'struct foo begin x as str end fn main begin foo "x" "bar" ! "x" ? . drop end',
+            'struct foo begin x as str end fn main begin foo "x" begin "bar" end ! "x" ? . drop end',
             "bar",
         ),
         (

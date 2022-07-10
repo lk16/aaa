@@ -85,28 +85,31 @@ from lang.typing.exceptions import (
         ),
         ('struct bar begin x as int end fn foo begin bar "x" ? . drop end', None),
         (
-            'struct bar begin x as int end fn foo begin bar "y" 3 ! drop end',
+            'struct bar begin x as int end fn foo begin bar "y" begin 3 end ! drop end',
             UnknownStructField,
         ),
-        ('struct bar begin x as int end fn foo begin bar "x" 3 ! drop end', None),
         (
-            'struct bar begin x as int end fn foo begin 5 "x" 3 ! drop end',
+            'struct bar begin x as int end fn foo begin bar "x" begin 3 end ! drop end',
+            None,
+        ),
+        (
+            'struct bar begin x as int end fn foo begin 5 "x" begin 3 end ! drop end',
             SetFieldOfNonStructTypeError,
         ),
         (
-            'struct bar begin x as int end fn foo begin bar "x" 34 ! "x" ? . "\\n" . drop end',
+            'struct bar begin x as int end fn foo begin bar "x" begin 34 end ! "x" ? . "\\n" . drop end',
             None,
         ),
         (
-            'struct bar begin x as int end fn foo begin bar "x" 34 35 ! "x" ? . "\\n" . drop end',
+            'struct bar begin x as int end fn foo begin bar "x" begin 34 35 end ! "x" ? . "\\n" . drop end',
             StructUpdateStackError,
         ),
         (
-            'struct bar begin x as int end fn foo begin bar "x" 3 ! drop end',
+            'struct bar begin x as int end fn foo begin bar "x" begin 3 end ! drop end',
             None,
         ),
         (
-            'struct bar begin x as int end fn foo begin bar "x" false ! drop end',
+            'struct bar begin x as int end fn foo begin bar "x" begin false end ! drop end',
             StructUpdateTypeError,
         ),
         (

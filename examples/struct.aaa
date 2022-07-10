@@ -12,8 +12,8 @@ end
 
 fn int_pair:set_zero args p as int_pair return int_pair begin
     p
-    "x" 0 !
-    "y" p "x" ? swap drop !
+    "x" begin 0 end !
+    "y" begin p "x" ? swap drop end !
 end
 
 fn int_pair:print args p as int_pair return int_pair begin
@@ -27,12 +27,23 @@ end
 
 fn main begin
     int_pair
+    "x = " .
+    "x" ? .
+    "\n" .
+    // should print "x = 0\n"
+
     "y = " .
     "y" ? .
     "\n" .
     // should print "y = 0\n"
 
+    "x" begin 3 end !
+    "y" begin 4 end !
 
+    "x = " .
+    "x" ? .
+    "\n" .
+    // should print "x = 3\n"
 
     "y = " .
     "y" ? .
