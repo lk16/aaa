@@ -13,6 +13,7 @@ from lang.parse.models import (
     ParsedBuiltinsFile,
     ParsedFile,
     ParsedTypePlaceholder,
+    ProgramImport,
     Struct,
     TypeLiteral,
 )
@@ -31,13 +32,6 @@ from lang.typing.exceptions import (
     TypeException,
 )
 from lang.typing.types import Signature, SignatureItem, TypePlaceholder, VariableType
-
-
-@dataclass(kw_only=True)
-class ProgramImport:
-    original_name: str
-    source_file: Path
-
 
 # Identifiable are things identified uniquely by a filepath and name
 Identifiable = Function | ProgramImport | Struct

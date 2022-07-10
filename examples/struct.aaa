@@ -27,24 +27,11 @@ end
 
 fn main begin
     int_pair
-
-    "x = " .
-    "x" ? .
-    "\n" .
-    // should print "x = 0\n"
-
     "y = " .
     "y" ? .
     "\n" .
     // should print "y = 0\n"
 
-    "x" 3 !
-    "y" 4 !
-
-    "x = " .
-    "x" ? .
-    "\n" .
-    // should print "x = 3\n"
 
 
     "y = " .

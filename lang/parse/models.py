@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Union
 
 FunctionBodyItem = Union[
@@ -191,3 +192,9 @@ class ParsedFile(AaaTreeNode):
     functions: List[Function]
     imports: List[Import]
     structs: List[Struct]
+
+
+@dataclass(kw_only=True)
+class ProgramImport:
+    original_name: str
+    source_file: Path
