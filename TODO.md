@@ -1,7 +1,6 @@
 # TODO
 
 ### Tests
-- test if usage of `builtin_fn` and outside `AAA_STDLIB_PATH` is banned
 - tests for exact error messages
 
 ### Containers
@@ -36,7 +35,6 @@
 
 ### Brag in readme
 - minimal dependencies
-- custom simple parser, link to grammar.txt
 - tests
 - ci
 - expressiveness
