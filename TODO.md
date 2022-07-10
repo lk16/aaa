@@ -4,9 +4,11 @@
 - replace `if ... { ... else ... }` by `if ... { ... } else { ... }`
 - consider using `if { ... }` instead of `if ...`
 - consider using `then` keyword for true-branch of if/else
+- make loops consistent with branches
 
 ### Tests
 - group existing tests by purpose
+- move examples used for testing specific aaa features into python `tests` folder
 - redo all existing exceptions
 - handle lark parser errors nicely
 - string escape sequences
@@ -25,6 +27,10 @@
     - `map:items`
     - `map:drop`
 - Add `set` container and member functions
+
+### Instructions
+- create `ContainerOperation` instruction with enum value to select specific one
+- create `SysCall` instruction with enum value for various syscalls
 
 ### Structs
 - Allow type params for struct
