@@ -9,21 +9,21 @@ fn fizzbuzz
         remainder 0 =
     {
         "fizzbuzz" .
-    else
+    } else {
         if
             remainder 5 =
             remainder 10 = or
         {
             "buzz" .
-        else
+        } else {
             if
-            remainder 3 =
-            remainder 6 = or
-            remainder 9 = or
-            remainder 12 = or
+                remainder 3 =
+                remainder 6 = or
+                remainder 9 = or
+                remainder 12 = or
             {
                 "fizz" .
-            else
+            } else {
                 n .
             }
         }

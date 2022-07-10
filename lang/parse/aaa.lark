@@ -155,12 +155,11 @@ branch: ( \
     branch_condition \
     branch_if_body \
     branch_else_body? \
-    _END \
 )
 
 branch_condition: _IF function_body
-branch_if_body: _BEGIN function_body
-branch_else_body: _ELSE function_body
+branch_if_body: _BEGIN function_body _END
+branch_else_body: _ELSE _BEGIN function_body _END
 
 // --- loop ---
 

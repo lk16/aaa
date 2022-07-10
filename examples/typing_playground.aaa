@@ -33,7 +33,7 @@ fn max
 {
     if a b > {
         a
-    else
+    } else {
         b
     }
 }
@@ -53,13 +53,13 @@ fn factorial
 {
     if n 0 < {
         0 // language doesn't have any error handling yet
-    else
+    } else {
         if
             n 1 =
             n 0 = or
         {
             1
-        else
+        } else {
             n 1 - factorial
             n *
         }
