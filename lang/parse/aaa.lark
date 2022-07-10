@@ -17,7 +17,7 @@ COMMENT: "//" /[^\n]*/ "\n"
 SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
-identifier: /(?!(and|args|as|assert|begin|bool|builtin_fn|drop|dup|else|end|false|fn|from|if|import|int|map|nop|not|or|over|return|rot|str|struct|swap|true|vec|while))([a-z_]+)/
+identifier: /(?!(and|args|as|assert|begin|bool|builtin_fn|drop|dup|else|end|false|fn|from|if|import|int|map|nop|not|or|over|return|rot|str|struct|swap|true|vec|while)(\W|\s))([a-z_]+)/
 integer: /[0-9]+/
 
 %import common.ESCAPED_STRING
