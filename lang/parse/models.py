@@ -194,6 +194,7 @@ class ParsedFile(AaaTreeNode):
     structs: List[Struct]
 
 
+# TODO this is not created by parser/transformer, move out of parse module
 @dataclass(kw_only=True)
 class ProgramImport:
     original_name: str

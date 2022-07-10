@@ -1,7 +1,17 @@
 # TODO
 
+### Syntax and grammar
+- replace `begin` and `end` with `{` and `}`
+
 ### Tests
-- tests for exact error messages
+- split existing tests
+- redo all existing exceptions
+- handle lark parser error
+- string escape sequences
+- shallow and deep copying
+- keywords can't be used as identifiers
+- identifiers can be prefixed with keyword
+- member functions can be keyword (such as `map:drop`)
 
 ### Containers
 - Better error handling for wrong number of type parameters
@@ -11,11 +21,8 @@
     - `map:keys`
     - `map:values`
     - `map:items`
-
-### Parser lib
-- Add [negative lookbehind](https://stackoverflow.com/a/9306228) so we can add these:
-    - add `map:drop`
-    - add `set` container to builtins
+    - `map:drop`
+- Add `set` container and member functions
 
 ### Structs
 - Allow type params for struct
