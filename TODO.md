@@ -4,9 +4,9 @@
 - replace `begin` and `end` with `{` and `}`
 
 ### Tests
-- split existing tests
+- group existing tests by purpose
 - redo all existing exceptions
-- handle lark parser error
+- handle lark parser errors nicely
 - string escape sequences
 - shallow and deep copying
 - keywords can't be used as identifiers
