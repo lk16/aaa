@@ -1,13 +1,13 @@
 #!/usr/bin/env aaa
 
-fn main begin
+fn main {
     "hello!\n" print_twice
-end
+}
 
 fn
     print_twice
 args
     s as str
-begin
+{
     s dup . .
-end
+}

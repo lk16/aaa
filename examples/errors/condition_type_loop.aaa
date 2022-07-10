@@ -1,6 +1,6 @@
-fn main begin
-    while 3 true begin
+fn main {
+    while 3 true {
         nop
-    end
+    }
     drop
-end
+}

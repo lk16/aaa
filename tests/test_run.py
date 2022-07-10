@@ -37,18 +37,18 @@ from lang.typing.exceptions import MainFunctionNotFound
         ("1 2 swap . .", "12"),
         ("1 2 over . . .", "121"),
         ("1 2 3 rot . . .", "132"),
-        ("if true begin 4 . end", "4"),
-        ("if false begin 4 . end", ""),
-        ("if true begin 4 . end 5 .", "45"),
-        ("if false begin 4 . end 5 .", "5"),
-        ("3 . if true begin 4 . end", "34"),
-        ("3 . if false begin 4 . end", "3"),
-        ("if true begin 1 . else 0 . end", "1"),
-        ("if false begin 1 . else 0 . end", "0"),
-        ("7 . if true begin 1 . else 0 . end 8 .", "718"),
-        ("7 . if false begin 1 . else 0 . end 8 .", "708"),
-        ("while false begin 1 . end", ""),
-        ("0 while dup 9 <= begin dup . 1 + end drop", "0123456789"),
+        ("if true { 4 . }", "4"),
+        ("if false { 4 . }", ""),
+        ("if true { 4 . } 5 .", "45"),
+        ("if false { 4 . } 5 .", "5"),
+        ("3 . if true { 4 . }", "34"),
+        ("3 . if false { 4 . }", "3"),
+        ("if true { 1 . else 0 . }", "1"),
+        ("if false { 1 . else 0 . }", "0"),
+        ("7 . if true { 1 . else 0 . } 8 .", "718"),
+        ("7 . if false { 1 . else 0 . } 8 .", "708"),
+        ("while false { 1 . }", ""),
+        ("0 while dup 9 <= { dup . 1 + } drop", "0123456789"),
         ('"foo" .', "foo"),
         ('"\\\\" .', "\\"),
         ('"\\n" .', "\n"),
@@ -57,25 +57,25 @@ from lang.typing.exceptions import MainFunctionNotFound
         ('"aaa" "aaa" = .', "true"),
         ('"aaa" "bbb" = .', "false"),
         ("7 3 % .", "1"),
-        ("if true begin nop end 3 .", "3"),
-        ("if false begin nop end 3 .", "3"),
-        ("if true begin 1 . end 3 .", "13"),
-        ("if false begin 1 . end 3 .", "3"),
-        ("if true begin nop else nop end 3 .", "3"),
-        ("if false begin nop else nop end 3 .", "3"),
-        ("if true begin 1 . else nop end 3 .", "13"),
-        ("if false begin 1 . else nop end 3 .", "3"),
-        ("if true begin nop else 2 . end 3 .", "3"),
-        ("if false begin nop else 2 . end 3 .", "23"),
-        ("if true begin 1 . else 2 . end 3 .", "13"),
-        ("if false begin 1 . else 2 . end 3 .", "23"),
-        ("while false begin nop end 3 .", "3"),
+        ("if true { nop } 3 .", "3"),
+        ("if false { nop } 3 .", "3"),
+        ("if true { 1 . } 3 .", "13"),
+        ("if false { 1 . } 3 .", "3"),
+        ("if true { nop else nop } 3 .", "3"),
+        ("if false { nop else nop } 3 .", "3"),
+        ("if true { 1 . else nop } 3 .", "13"),
+        ("if false { 1 . else nop } 3 .", "3"),
+        ("if true { nop else 2 . } 3 .", "3"),
+        ("if false { nop else 2 . } 3 .", "23"),
+        ("if true { 1 . else 2 . } 3 .", "13"),
+        ("if false { 1 . else 2 . } 3 .", "23"),
+        ("while false { nop } 3 .", "3"),
         ("nop", ""),
         ("nop // hi", ""),
         ("// hi\nnop", ""),
         ("//\nnop", ""),
         ("nop //\n", ""),
-        ("if //\ntrue begin 3 . end", "3"),
+        ("if //\ntrue { 3 . }", "3"),
         ("true assert", ""),
         ("int .", "0"),
         ("bool .", "false"),
@@ -128,7 +128,7 @@ def test_program_run_ok(
     code: str, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
 
-    code = f"fn main begin {code}\nend"
+    code = "fn main {\n" + code + "\n}"
     program = Program.without_file(code)
     assert not program.file_load_errors
     Simulator(program).run()
@@ -139,7 +139,7 @@ def test_program_run_ok(
 
 
 def test_program_run_assertion_failure() -> None:
-    code = "fn main begin false assert end"
+    code = "fn main { false assert }"
     program = Program.without_file(code)
     assert not program.file_load_errors
     with pytest.raises(SystemExit):
@@ -149,53 +149,53 @@ def test_program_run_assertion_failure() -> None:
 @pytest.mark.parametrize(
     ["code", "expected_output"],
     [
-        ("fn main begin 1 print end fn print args a as int begin a . end", "1"),
+        ("fn main { 1 print } fn print args a as int { a . }", "1"),
         (
-            "fn main begin 1 2 3 print end fn print args a as int, b as int, c as int begin a . b . c . end",
+            "fn main { 1 2 3 print } fn print args a as int, b as int, c as int { a . b . c . }",
             "123",
         ),
-        ("fn main begin foo end\n" + "fn foo begin 1 . end", "1"),
+        ("fn main { foo }\n" + "fn foo { 1 . }", "1"),
         (
-            "fn main begin foo end\n"
-            + "fn foo begin bar end\n"
-            + "fn bar begin baz end\n"
-            + "fn baz begin 1 . end",
+            "fn main { foo }\n"
+            + "fn foo { bar }\n"
+            + "fn bar { baz }\n"
+            + "fn baz { 1 . }",
             "1",
         ),
         (
-            "fn main begin 1 2 3 foo end\n"
-            + "fn foo args a as int, b as int, c as int begin a b c bar end\n"
-            + "fn bar args a as int, b as int, c as int begin a b c baz end\n"
-            + "fn baz args a as int, b as int, c as int begin a . b . c . end",
+            "fn main { 1 2 3 foo }\n"
+            + "fn foo args a as int, b as int, c as int { a b c bar }\n"
+            + "fn bar args a as int, b as int, c as int { a b c baz }\n"
+            + "fn baz args a as int, b as int, c as int { a . b . c . }",
             "123",
         ),
-        ("#!/usr/bin/env aaa\nfn main begin nop end", ""),
-        ('struct foo begin x as int end fn main begin foo "x" ? . drop end', "0"),
-        ('struct foo begin x as bool end fn main begin foo "x" ? . drop end', "false"),
-        ('struct foo begin x as str end fn main begin foo "x" ? . drop end', ""),
-        ('struct foo begin x as vec[int] end fn main begin foo "x" ? . drop end', "[]"),
+        ("#!/usr/bin/env aaa\nfn main { nop }", ""),
+        ('struct foo { x as int } fn main { foo "x" ? . drop }', "0"),
+        ('struct foo { x as bool } fn main { foo "x" ? . drop }', "false"),
+        ('struct foo { x as str } fn main { foo "x" ? . drop }', ""),
+        ('struct foo { x as vec[int] } fn main { foo "x" ? . drop }', "[]"),
         (
-            'struct foo begin x as map[int, str] end fn main begin foo "x" ? . drop end',
+            'struct foo { x as map[int, str] } fn main { foo "x" ? . drop }',
             "{}",
         ),
         (
-            'struct foo begin x as int end fn main begin foo "x" begin 3 end ! "x" ? . drop end',
+            'struct foo { x as int } fn main { foo "x" { 3 } ! "x" ? . drop }',
             "3",
         ),
         (
-            'struct foo begin x as bool end fn main begin foo "x" begin true end ! "x" ? . drop end',
+            'struct foo { x as bool } fn main { foo "x" { true } ! "x" ? . drop }',
             "true",
         ),
         (
-            'struct foo begin x as str end fn main begin foo "x" begin "bar" end ! "x" ? . drop end',
+            'struct foo { x as str } fn main { foo "x" { "bar" } ! "x" ? . drop }',
             "bar",
         ),
         (
-            'struct foo begin x as vec[int] end fn main begin foo "x" ? 5 vec:push drop "x" ? . drop end',
+            'struct foo { x as vec[int] } fn main { foo "x" ? 5 vec:push drop "x" ? . drop }',
             "[5]",
         ),
         (
-            'struct foo begin x as map[int, str] end fn main begin foo "x" ? 5 "five" map:set drop "x" ? . drop end',
+            'struct foo { x as map[int, str] } fn main { foo "x" ? 5 "five" map:set drop "x" ? . drop }',
             '{5: "five"}',
         ),
     ],
@@ -217,24 +217,24 @@ def test_program_full_source_ok(
     [
         pytest.param(
             {
-                "five.aaa": "fn five return int begin 5 end",
-                "six.aaa": 'from "five" import five\n fn six return int begin five 1 + end',
-                "main.aaa": 'from "six" import six\n fn main begin six . end',
+                "five.aaa": "fn five return int { 5 }",
+                "six.aaa": 'from "five" import five\n fn six return int { five 1 + }',
+                "main.aaa": 'from "six" import six\n fn main { six . }',
             },
             "6",
             [],
         ),
         pytest.param(
             {
-                "add.aaa": "fn add args a as int, b as int, return int, begin a b + end",
-                "main.aaa": 'from "add" import add,\n fn main begin 3 2 add . end',
+                "add.aaa": "fn add args a as int, b as int, return int, { a b + }",
+                "main.aaa": 'from "add" import add,\n fn main { 3 2 add . }',
             },
             "5",
             [],
         ),
         (
             {
-                "main.aaa": "fn foo begin nop end",
+                "main.aaa": "fn foo { nop }",
             },
             "",
             [MainFunctionNotFound],

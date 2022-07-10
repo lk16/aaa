@@ -3,13 +3,13 @@ fn
 args
     bar as int,
     bar as int
-begin
+{
     nop
-end
+}
 
 
 fn
     main
-begin
+{
     nop
-end
+}

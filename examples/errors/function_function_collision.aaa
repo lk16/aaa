@@ -1,7 +1,7 @@
-fn foo begin
+fn foo {
     nop
-end
+}
 
-fn foo begin
+fn foo {
     nop
-end
+}

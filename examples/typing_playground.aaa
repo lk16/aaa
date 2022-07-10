@@ -1,7 +1,7 @@
 #!/usr/bin/env aaa
 
 fn main
-begin
+{
     "five = " .
     five .
     "\n" .
@@ -17,51 +17,51 @@ begin
     "7 dup_twice = " .
     7 dup_twice . . .
     "\n" .
-end
+}
 
 
 fn five
     return int
-begin
+{
     5
-end
+}
 
 
 fn max
     args a as int, b as int
     return int
-begin
-    if a b > begin
+{
+    if a b > {
         a
     else
         b
-    end
-end
+    }
+}
 
 
 fn dup_twice
     args a as *a
     return *a, *a, *a
-begin
+{
     a dup dup
-end
+}
 
 
 fn factorial
     args n as int
     return int
-begin
-    if n 0 < begin
+{
+    if n 0 < {
         0 // language doesn't have any error handling yet
     else
         if
             n 1 =
             n 0 = or
-        begin
+        {
             1
         else
             n 1 - factorial
             n *
-        end
-    end
-end
+        }
+    }
+}

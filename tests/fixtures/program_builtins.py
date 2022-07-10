@@ -19,7 +19,7 @@ def cache_program_builtins(request: SubRequest) -> Generator[None, None, None]:
         yield
         return
 
-    program = Program.without_file("fn main begin nop end")
+    program = Program.without_file("fn main { nop }")
 
     def cached_builtins(
         *args: Any,

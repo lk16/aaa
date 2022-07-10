@@ -1,10 +1,10 @@
-fn foo begin
+fn foo {
     5
-end
+}
 
 
 fn
     main
-begin
+{
     nop
-end
+}

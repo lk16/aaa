@@ -1,6 +1,6 @@
 #!/usr/bin/env aaa
 
-fn main begin
+fn main {
     42 .
     "\n" .
-end
+}

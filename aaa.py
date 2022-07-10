@@ -26,7 +26,7 @@ def run(file_path: str, verbose_flag: Optional[str] = None) -> None:
 
 
 def cmd(code: str, verbose_flag: Optional[str] = None) -> None:
-    code = f"fn main begin {code}\n end"
+    code = "fn main {\n" + code + "\n}"
     cmd_full(code, verbose_flag)
 
 

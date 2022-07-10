@@ -17,7 +17,7 @@ def test_program_load_builtins_without_stdlib_path_env_var(
 ) -> None:
     monkeypatch.delenv("AAA_STDLIB_PATH")
 
-    program = Program.without_file("fn main begin nop end")
+    program = Program.without_file("fn main { nop }")
     assert len(program.file_load_errors) == 1
     assert isinstance(program.file_load_errors[0], MissingEnvironmentVariable)
 
@@ -28,7 +28,7 @@ def test_pram_load_builtins_file_not_found() -> None:
         raise FileNotFoundError
 
     with patch.object(Path, "read_text", my_read_text):
-        program = Program.without_file("fn main begin nop end")
+        program = Program.without_file("fn main { nop }")
 
     assert len(program.file_load_errors) == 1
     assert isinstance(program.file_load_errors[0], FileReadError)

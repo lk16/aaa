@@ -4,16 +4,16 @@
 
 fn fizzbuzz
     args n as int, remainder as int
-begin
+{
     if
         remainder 0 =
-    begin
+    {
         "fizzbuzz" .
     else
         if
             remainder 5 =
             remainder 10 = or
-        begin
+        {
             "buzz" .
         else
             if
@@ -21,24 +21,24 @@ begin
             remainder 6 = or
             remainder 9 = or
             remainder 12 = or
-            begin
+            {
                 "fizz" .
             else
                 n .
-            end
-        end
-    end
+            }
+        }
+    }
     "\n" .
-end
+}
 
 
-fn main begin
+fn main {
     0
     while
         dup 100 <
-    begin
+    {
         1 +
         dup dup 15 % fizzbuzz
-    end
+    }
     drop
-end
+}

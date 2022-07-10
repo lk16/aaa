@@ -1,13 +1,13 @@
 #!/usr/bin/env aaa
 
-fn main begin
+fn main {
     0
     while
         dup 10 <
-    begin
+    {
         1 +
         dup .
         "\n" .
-    end
+    }
     drop
-end
+}

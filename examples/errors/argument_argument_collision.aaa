@@ -2,13 +2,13 @@ fn
     foo
 args
     foo as int
-begin
+{
     nop
-end
+}
 
 
 fn
     main
-begin
+{
     nop
-end
+}

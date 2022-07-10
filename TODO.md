@@ -1,7 +1,7 @@
 # TODO
 
 ### Syntax and grammar
-- replace `begin` and `end` with `{` and `}`
+- replace `if ... { ... else ... }` by `if ... { ... } else { ... }`
 
 ### Tests
 - group existing tests by purpose

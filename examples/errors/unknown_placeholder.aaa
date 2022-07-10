@@ -2,13 +2,13 @@ fn
     foo
 return
     *a
-begin
+{
     nop
-end
+}
 
 
 fn
     main
-begin
+{
     nop
-end
+}

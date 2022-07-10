@@ -2,6 +2,6 @@ fn
     main
 args
     a as int
-begin
+{
     nop
-end
+}

@@ -1,6 +1,6 @@
-fn main begin
-    if 3 true begin
+fn main {
+    if 3 true {
         nop
-    end
+    }
     drop
-end
+}

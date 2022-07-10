@@ -1,31 +1,31 @@
-struct int_pair begin
+struct int_pair {
     x as int,
     y as int,
-end
+}
 
-fn int_pair:sum args p as int_pair return int_pair, int begin
+fn int_pair:sum args p as int_pair return int_pair, int {
     p "x" ?
     p "y" ?
     swap drop
     +
-end
+}
 
-fn int_pair:set_zero args p as int_pair return int_pair begin
+fn int_pair:set_zero args p as int_pair return int_pair {
     p
-    "x" begin 0 end !
-    "y" begin p "x" ? swap drop end !
-end
+    "x" { 0 } !
+    "y" { p "x" ? swap drop } !
+}
 
-fn int_pair:print args p as int_pair return int_pair begin
+fn int_pair:print args p as int_pair return int_pair {
     "x,y = " .
     p
     "x" ? .
     "," .
     "y" ? .
     "\n" .
-end
+}
 
-fn main begin
+fn main {
     int_pair
     "x = " .
     "x" ? .
@@ -37,8 +37,8 @@ fn main begin
     "\n" .
     // should print "y = 0\n"
 
-    "x" begin 3 end !
-    "y" begin 4 end !
+    "x" { 3 } !
+    "y" { 4 } !
 
     "x = " .
     "x" ? .
@@ -63,4 +63,4 @@ fn main begin
     // should print "x,y = 0,0\n"
 
     drop
-end
+}

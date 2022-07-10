@@ -3,13 +3,13 @@
 
 fn print_values
     args a as int, b as int, c as int
-begin
+{
     "a=" . a . "\n" .
     "b=" . b . "\n" .
     "c=" . c . "\n" .
-end
+}
 
 
-fn main begin
+fn main {
     1 2 3 print_values
-end
+}

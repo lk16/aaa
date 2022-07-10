@@ -5,6 +5,6 @@ args
     y as int
 return
     int
-begin
-    if x y > begin x else y end
-end
+{
+    if x y > { x else y }
+}

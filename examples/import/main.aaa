@@ -3,6 +3,6 @@ from "imported" import max
 
 fn
     main
-begin
+{
     3 5 max .
-end
+}

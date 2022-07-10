@@ -1,3 +1,3 @@
 from "foo" import foo
 
-fn main begin nop end
+fn main { nop }

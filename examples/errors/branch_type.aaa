@@ -1,8 +1,8 @@
-fn main begin
-    if true begin
+fn main {
+    if true {
         3
     else
         ""
-    end
+    }
     drop
-end
+}

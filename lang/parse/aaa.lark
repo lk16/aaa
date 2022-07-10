@@ -17,18 +17,20 @@ COMMENT: "//" /[^\n]*/ "\n"
 SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
-identifier: /(?!(and|args|as|assert|begin|bool|builtin_fn|drop|dup|else|end|false|fn|from|if|import|int|map|nop|not|or|over|return|rot|str|struct|swap|true|vec|while)(\W|\s))([a-z_]+)/
+identifier: /(?!(and|args|as|assert|bool|builtin_fn|drop|dup|else|false|fn|from|if|import|int|map|nop|not|or|over|return|rot|str|struct|swap|true|vec|while)(\W|\s))([a-z_]+)/
 integer: /[0-9]+/
 
 %import common.ESCAPED_STRING
 string: ESCAPED_STRING
 
+// block delimiters
+_BEGIN:      /{(?=(\W|\s))/
+_END:        /}(?=(\W|\s|$))/
+
 // ignored keywords
 _AS:         /as(?=(\W|\s))/
 _ARGS:       /args(?=(\W|\s))/
-_BEGIN:      /begin(?=(\W|\s))/
 _BUILTIN_FN: /builtin_fn(?=(\W|\s))/
-_END:        /end(?=(\W|\s|$))/
 _ELSE:       /else(?=(\W|\s))/
 _FN:         /fn(?=(\W|\s))/
 _FROM:       /from(?=(\W|\s))/

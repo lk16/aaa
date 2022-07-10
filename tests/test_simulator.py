@@ -15,6 +15,6 @@ def test_program_implements_all_instructions() -> None:
         and obj is not Instruction
     }
 
-    simulator = Simulator(Program.without_file("fn main begin nop end"))
+    simulator = Simulator(Program.without_file("fn main { nop }"))
     implemented_instructions = set(simulator.instruction_funcs.keys())
     assert instruction_types == implemented_instructions
