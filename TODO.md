@@ -28,13 +28,13 @@
 - create `ContainerOperation` instruction with enum value to select specific one
 - create `SysCall` instruction with enum value for various syscalls
 
-### Structs
-- Allow type params for struct
-
 ### Language features
+- negative `int` literals
+- `float` type
+- rust-like enums
 - return early (`return`)
 - debug tools (`breakpoint`)
-- rust-like enums
+- allow type params for struct
 - compile to native executable
 - compile itself
 
