@@ -213,7 +213,9 @@ class InstructionGenerator:
 
         if isinstance(identified, ProgramImport):
             # If this is an import, copy from other file
-            identified = self.program.identifiers[identified.source_file][identified.original_name]
+            identified = self.program.identifiers[identified.source_file][
+                identified.original_name
+            ]
 
         if isinstance(identified, Function):
             source_file, original_name = self.program.get_function_source_and_name(
