@@ -1,11 +1,5 @@
 # TODO
 
-### Syntax and grammar
-- replace `if ... { ... else ... }` by `if ... { ... } else { ... }`
-- consider using `if { ... }` instead of `if ...`
-- consider using `then` keyword for true-branch of if/else
-- make loops consistent with branches
-
 ### Tests
 - group existing tests by purpose
 - move examples used for testing specific aaa features into python `tests` folder
