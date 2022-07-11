@@ -22,7 +22,7 @@ def test_program_load_builtins_without_stdlib_path_env_var(
     assert isinstance(program.file_load_errors[0], MissingEnvironmentVariable)
 
 
-def test_pram_load_builtins_file_not_found() -> None:
+def test_program_load_builtins_file_not_found() -> None:
     def my_read_text(path: Path) -> str:
         assert path == BUILTINS_FILE_PATH
         raise FileNotFoundError
@@ -33,3 +33,8 @@ def test_pram_load_builtins_file_not_found() -> None:
     assert len(program.file_load_errors) == 1
     assert isinstance(program.file_load_errors[0], FileReadError)
     assert program.file_load_errors[0].file == BUILTINS_FILE_PATH
+
+
+def test_program_load_builtins_ok() -> None:
+    program = Program.without_file("fn main { nop }")
+    assert len(program.file_load_errors) == 0
