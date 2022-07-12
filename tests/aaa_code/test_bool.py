@@ -20,5 +20,5 @@ from tests.aaa_code import check_aaa_code
         pytest.param("false false or .", "false", id="false-or-false"),
     ],
 )
-def test_bool_math(code: str, expected_output: str) -> None:
+def test_bool(code: str, expected_output: str) -> None:
     check_aaa_code(code, expected_output, [])
