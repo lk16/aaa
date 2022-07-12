@@ -5,8 +5,6 @@
 - move examples used for testing specific aaa features into python `tests` folder
 - redo all existing exceptions
 - handle lark parser errors nicely
-- string escape sequences
-- shallow and deep copying
 - keywords can't be used as identifiers
 - identifiers can be prefixed with keyword
 - member functions can be keyword (such as `map:drop`)
