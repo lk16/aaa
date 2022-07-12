@@ -12,54 +12,6 @@ from lang.typing.exceptions import MainFunctionNotFound
 @pytest.mark.parametrize(
     ["code", "expected_output"],
     [
-        ("map[int, int] .", "{}"),
-        ("map[int, map[int, int]] .", "{}"),
-        ('map[str, int] "one" 1 map:set .', '{"one": 1}'),
-        ('map[str, int] "one" 1 map:set "one" map:get . drop', "1"),
-        ('map[str, int] "one" 1 map:set "one" 2 map:set "one" map:get . drop', "2"),
-        ('map[str, int] "one" 1 map:set "one" map:has_key . drop', "true"),
-        ('map[str, int] "one" 1 map:set "two" map:has_key . drop', "false"),
-        ('map[str, int] "one" 1 map:set map:size . drop', "1"),
-        ("map[str, int] map:size . drop", "0"),
-        ('map[str, int] "one" 1 map:set map:empty . drop', "false"),
-        ("map[str, int] map:empty . drop", "true"),
-        ('map[str, int] "one" 1 map:set "one" map:pop drop map:size . drop', "0"),
-        ('map[str, int] "one" 1 map:set map:clear map:size . drop', "0"),
-        (
-            'map[str, int] "one" 1 map:set map:copy map:clear map:size . drop map:size . drop',
-            "01",
-        ),
-        (
-            'map[str, int] "one" 1 map:set dup map:clear map:size . drop map:size . drop',
-            "00",
-        ),
-    ],
-)
-def test_program_run_ok(
-    code: str, expected_output: str, capfd: CaptureFixture[str]
-) -> None:
-
-    code = "fn main {\n" + code + "\n}"
-    program = Program.without_file(code)
-    assert not program.file_load_errors
-    Simulator(program).run()
-
-    stdout, stderr = capfd.readouterr()
-    assert expected_output == stdout
-    assert "" == stderr
-
-
-def test_program_run_assertion_failure() -> None:
-    code = "fn main { false assert }"
-    program = Program.without_file(code)
-    assert not program.file_load_errors
-    with pytest.raises(SystemExit):
-        Simulator(program).run()
-
-
-@pytest.mark.parametrize(
-    ["code", "expected_output"],
-    [
         ("fn main { 1 print } fn print args a as int { a . }", "1"),
         (
             "fn main { 1 2 3 print } fn print args a as int, b as int, c as int { a . b . c . }",
