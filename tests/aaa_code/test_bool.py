@@ -8,6 +8,7 @@ from tests.aaa_code import check_aaa_code
     [
         pytest.param("true .", "true", id="print-true"),
         pytest.param("false .", "false", id="print-false"),
+        pytest.param("bool .", "false", id="print-zero-value"),
         pytest.param("false not .", "true", id="not-false"),
         pytest.param("true not .", "false", id="not-true"),
         pytest.param("true true and .", "true", id="true-and-true"),

@@ -19,6 +19,7 @@ from tests.aaa_code import check_aaa_code
             id="invalid-escape-sequence",
             marks=pytest.mark.skip,
         ),
+        pytest.param("str .", "", [], id="print-zero-value"),
         pytest.param('"a" "b" + .', "ab", [], id="concatenate"),
         pytest.param('"" "a" + .', "a", [], id="concatenate-lhs-empty"),
         pytest.param('"a" "" + .', "a", [], id="concatenate-rhs-empty"),
