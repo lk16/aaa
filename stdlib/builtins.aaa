@@ -67,3 +67,46 @@ builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
 
 // builtin_fn "?" args *a, str     return *a, *b
 // builtin_fn "!" args *a, str, *b return *a
+
+
+// TODO everything below should be moved to separate file in stdlib
+// Function and type names should not be reserved / builtin
+
+builtin_fn "environ" return map[str, str]
+builtin_fn "getenv" args str, str, str
+builtin_fn "setenv" args str, str
+builtin_fn "unsetenv" args str
+
+// syscalls
+
+builtin_fn "chdir" args str
+builtin_fn "getcwd" return str
+
+builtin_fn "exit" args int
+builtin_fn "fork" return int
+
+// TODO group/user id related syscalls
+
+builtin_fn "getpid" return int
+builtin_fn "getppid" return int
+
+
+// TODO more file related sys calls
+builtin_fn "open" args str, int, int return int
+builtin_fn "close" args int
+
+// TODO consider str/bytes variants
+builtin_fn "read" args int, int return str, int
+builtin_fn "write" args int, str return int
+
+builtin_fn "link" args str, str return int
+builtin_fn "unlink" args str return int
+
+builtin_fn "execve" args str, vec[str], vec[str] return int
+
+builtin_fn "time" return int
+
+builtin_fn "chmod" args str, int return int
+
+
+// TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
