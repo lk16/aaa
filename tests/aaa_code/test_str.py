@@ -28,7 +28,7 @@ from tests.aaa_code import check_aaa_code
         pytest.param('"aaa" "bbb" = .', "false", [], id="equals-false"),
     ],
 )
-def test_string(
+def test_str(
     code: str, expected_output: str, expected_exception_types: List[Type[Exception]]
 ) -> None:
     check_aaa_code(code, expected_output, expected_exception_types)
