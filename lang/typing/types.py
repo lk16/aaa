@@ -1,8 +1,7 @@
-from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import Any, Final, List, Optional, Union
 
-from lang.parse.models import Function, ParsedTypePlaceholder, TypeLiteral
+from lang.parse.models import AaaModel, Function, ParsedTypePlaceholder, TypeLiteral
 
 
 class RootType(IntEnum):
@@ -79,7 +78,7 @@ class VariableType:
             if isinstance(param.type, TypeLiteral):
                 type_params.append(VariableType.from_type_literal(param.type))
             elif isinstance(param.type, ParsedTypePlaceholder):
-                type_params.append(TypePlaceholder(param.type.name))
+                type_params.append(TypePlaceholder(name=param.type.name))
             else:  # pragma: nocover
                 assert False
 
@@ -248,8 +247,7 @@ def bool_var(value: bool) -> Variable:
     return Variable(RootType.BOOL, value)
 
 
-@dataclass
-class TypePlaceholder:
+class TypePlaceholder(AaaModel):
     name: str
 
     def __repr__(self) -> str:  # pragma: nocover
@@ -261,8 +259,10 @@ SignatureItem = Union[VariableType, TypePlaceholder]
 TypeStack = List[SignatureItem]
 
 
-@dataclass
-class Signature:
+class Signature(AaaModel):
+    class Config:
+        arbitrary_types_allowed = True  # TODO make VariableType an AaaModel
+
     arg_types: List[SignatureItem]
     return_types: List[SignatureItem]
 
@@ -278,7 +278,7 @@ class Signature:
             if isinstance(type, TypeLiteral):
                 arg_types.append(VariableType.from_type_literal(type))
             elif isinstance(type, ParsedTypePlaceholder):
-                arg_types.append(TypePlaceholder(type.name))
+                arg_types.append(TypePlaceholder(name=type.name))
             else:  # pragma: nocover
                 assert False
 
@@ -288,8 +288,8 @@ class Signature:
             if isinstance(type, TypeLiteral):
                 return_types.append(VariableType.from_type_literal(type))
             elif isinstance(type, ParsedTypePlaceholder):
-                return_types.append(TypePlaceholder(type.name))
+                return_types.append(TypePlaceholder(name=type.name))
             else:  # pragma: nocover
                 assert False
 
-        return Signature(arg_types, return_types)
+        return Signature(arg_types=arg_types, return_types=return_types)

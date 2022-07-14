@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Union
 
 from pydantic import BaseModel
 
 
-class AaaTreeNode(BaseModel):
+class AaaModel(BaseModel):
+    class Config:
+        extra = "forbid"
+        frozen = True
+
+
+class AaaTreeNode(AaaModel):
     class Config:
         extra = "forbid"
         frozen = True
@@ -39,16 +44,16 @@ class Operator(FunctionBodyItem):
 
 
 class Loop(FunctionBodyItem):
-    condition: "FunctionBody"
-    body: "FunctionBody"
+    condition: FunctionBody
+    body: FunctionBody
 
 
 class LoopCondition(AaaTreeNode):
-    value: "FunctionBody"
+    value: FunctionBody
 
 
 class LoopBody(AaaTreeNode):
-    value: "FunctionBody"
+    value: FunctionBody
 
 
 class Identifier(FunctionBodyItem):
@@ -56,21 +61,21 @@ class Identifier(FunctionBodyItem):
 
 
 class Branch(FunctionBodyItem):
-    condition: "FunctionBody"
-    if_body: "FunctionBody"
-    else_body: "FunctionBody"
+    condition: FunctionBody
+    if_body: FunctionBody
+    else_body: FunctionBody
 
 
 class BranchCondition(AaaTreeNode):
-    value: "FunctionBody"
+    value: FunctionBody
 
 
 class BranchIfBody(AaaTreeNode):
-    value: "FunctionBody"
+    value: FunctionBody
 
 
 class BranchElseBody(AaaTreeNode):
-    value: "FunctionBody"
+    value: FunctionBody
 
 
 class MemberFunction(FunctionBodyItem):
@@ -159,13 +164,11 @@ class ParsedFile(AaaTreeNode):
 
 
 # TODO this is not created by parser/transformer, move out of parse module
-@dataclass(kw_only=True)
-class ProgramImport:
+class ProgramImport(AaaModel):
     original_name: str
     source_file: Path
 
 
-# TODO reorder models so we don't need this
 LoopBody.update_forward_refs()
 LoopCondition.update_forward_refs()
 Loop.update_forward_refs()

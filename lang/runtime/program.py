@@ -105,7 +105,7 @@ class Program:
                 if isinstance(argument.type, TypeLiteral):
                     arg_types.append(VariableType.from_type_literal(argument.type))
                 elif isinstance(argument.type, ParsedTypePlaceholder):
-                    arg_types.append(TypePlaceholder(argument.type.name))
+                    arg_types.append(TypePlaceholder(name=argument.type.name))
                 else:  # pragma: nocover
                     assert False
 
@@ -115,11 +115,13 @@ class Program:
                         VariableType.from_type_literal(return_type.type)
                     )
                 elif isinstance(return_type.type, ParsedTypePlaceholder):
-                    return_types.append(TypePlaceholder(return_type.type.name))
+                    return_types.append(TypePlaceholder(name=return_type.type.name))
                 else:  # pragma: nocover
                     assert False
 
-            builtins.functions[function.name].append(Signature(arg_types, return_types))
+            builtins.functions[function.name].append(
+                Signature(arg_types=arg_types, return_types=return_types)
+            )
 
         return builtins, []
 

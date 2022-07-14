@@ -111,7 +111,7 @@ class TypeChecker:
             type = argument.type.type
             if isinstance(type, ParsedTypePlaceholder):
                 if type.name == name:
-                    return TypePlaceholder(type.name)
+                    return TypePlaceholder(name=type.name)
             elif isinstance(type, TypeLiteral):
                 if argument.name == name:
                     return VariableType.from_type_literal(type)
