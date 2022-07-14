@@ -12,27 +12,6 @@ from lang.typing.exceptions import MainFunctionNotFound
 @pytest.mark.parametrize(
     ["code", "expected_output"],
     [
-        ("fn main { 1 print } fn print args a as int { a . }", "1"),
-        (
-            "fn main { 1 2 3 print } fn print args a as int, b as int, c as int { a . b . c . }",
-            "123",
-        ),
-        ("fn main { foo }\n" + "fn foo { 1 . }", "1"),
-        (
-            "fn main { foo }\n"
-            + "fn foo { bar }\n"
-            + "fn bar { baz }\n"
-            + "fn baz { 1 . }",
-            "1",
-        ),
-        (
-            "fn main { 1 2 3 foo }\n"
-            + "fn foo args a as int, b as int, c as int { a b c bar }\n"
-            + "fn bar args a as int, b as int, c as int { a b c baz }\n"
-            + "fn baz args a as int, b as int, c as int { a . b . c . }",
-            "123",
-        ),
-        ("#!/usr/bin/env aaa\nfn main { nop }", ""),
         ('struct foo { x as int } fn main { foo "x" ? . drop }', "0"),
         ('struct foo { x as bool } fn main { foo "x" ? . drop }', "false"),
         ('struct foo { x as str } fn main { foo "x" ? . drop }', ""),

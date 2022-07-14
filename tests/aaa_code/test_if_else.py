@@ -1,6 +1,6 @@
 import pytest
 
-from tests.aaa_code import check_aaa_code
+from tests.aaa_code import check_aaa_main
 
 
 @pytest.mark.parametrize(
@@ -15,4 +15,4 @@ from tests.aaa_code import check_aaa_code
     ],
 )
 def test_if_else(code: str, expected_output: str) -> None:
-    check_aaa_code(code, expected_output, [])
+    check_aaa_main(code, expected_output, [])

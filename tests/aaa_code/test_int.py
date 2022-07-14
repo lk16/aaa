@@ -2,7 +2,7 @@ from typing import List, Type
 
 import pytest
 
-from tests.aaa_code import check_aaa_code
+from tests.aaa_code import check_aaa_main
 
 
 @pytest.mark.parametrize(
@@ -40,4 +40,4 @@ from tests.aaa_code import check_aaa_code
 def test_int(
     code: str, expected_output: str, expected_exception_types: List[Type[Exception]]
 ) -> None:
-    check_aaa_code(code, expected_output, expected_exception_types)
+    check_aaa_main(code, expected_output, expected_exception_types)
