@@ -4,134 +4,106 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Union
 
-FunctionBodyItem = Union[
-    "BooleanLiteral",
-    "Branch",
-    "Identifier",
-    "IntegerLiteral",
-    "Loop",
-    "MemberFunction",
-    "Operator",
-    "StringLiteral",
-    "StructFieldQuery",
-    "StructFieldUpdate",
-    "TypeLiteral",
-]
+from pydantic import BaseModel
 
 
-@dataclass(kw_only=True, frozen=True)
-class AaaTreeNode:
+class AaaTreeNode(BaseModel):
+    class Config:
+        extra = "forbid"
+        frozen = True
+
+
+class FunctionBodyItem(AaaTreeNode):
     ...
 
 
-@dataclass(kw_only=True, frozen=True)
-class IntegerLiteral(AaaTreeNode):
+class IntegerLiteral(FunctionBodyItem):
     value: int
 
 
-@dataclass(kw_only=True, frozen=True)
-class StringLiteral(AaaTreeNode):
+class StringLiteral(FunctionBodyItem):
     value: str
 
 
-@dataclass(kw_only=True, frozen=True)
-class BooleanLiteral(AaaTreeNode):
+class BooleanLiteral(FunctionBodyItem):
     value: bool
 
 
-@dataclass(kw_only=True, frozen=True)
-class TypeLiteral(AaaTreeNode):
+class TypeLiteral(FunctionBodyItem):
     type_name: str
     type_parameters: List[ParsedType]
 
 
-@dataclass(kw_only=True, frozen=True)
-class Operator(AaaTreeNode):
+class Operator(FunctionBodyItem):
     value: str
 
 
-@dataclass(kw_only=True, frozen=True)
-class Loop(AaaTreeNode):
+class Loop(FunctionBodyItem):
     condition: "FunctionBody"
     body: "FunctionBody"
 
 
-@dataclass(kw_only=True, frozen=True)
 class LoopCondition(AaaTreeNode):
     value: "FunctionBody"
 
 
-@dataclass(kw_only=True, frozen=True)
 class LoopBody(AaaTreeNode):
     value: "FunctionBody"
 
 
-@dataclass(kw_only=True, frozen=True)
-class Identifier(AaaTreeNode):
+class Identifier(FunctionBodyItem):
     name: str
 
 
-@dataclass(kw_only=True, frozen=True)
-class Branch(AaaTreeNode):
+class Branch(FunctionBodyItem):
     condition: "FunctionBody"
     if_body: "FunctionBody"
     else_body: "FunctionBody"
 
 
-@dataclass(kw_only=True, frozen=True)
 class BranchCondition(AaaTreeNode):
     value: "FunctionBody"
 
 
-@dataclass(kw_only=True, frozen=True)
 class BranchIfBody(AaaTreeNode):
     value: "FunctionBody"
 
 
-@dataclass(kw_only=True, frozen=True)
 class BranchElseBody(AaaTreeNode):
     value: "FunctionBody"
 
 
-@dataclass(kw_only=True, frozen=True)
-class MemberFunction(AaaTreeNode):
+class MemberFunction(FunctionBodyItem):
     type_name: str
     func_name: str
 
 
-@dataclass(kw_only=True, frozen=True)
-class StructFieldQuery(AaaTreeNode):
+class StructFieldQuery(FunctionBodyItem):
     field_name: StringLiteral
 
 
-@dataclass(kw_only=True, frozen=True)
-class StructFieldUpdate(AaaTreeNode):
+class StructFieldUpdate(FunctionBodyItem):
     field_name: StringLiteral
     new_value_expr: FunctionBody
 
 
-@dataclass(kw_only=True, frozen=True)
 class FunctionBody(AaaTreeNode):
     items: List[FunctionBodyItem]
 
 
-@dataclass(kw_only=True, frozen=True)
 class ParsedTypePlaceholder(AaaTreeNode):
     name: str
 
 
-@dataclass(kw_only=True, frozen=True)
 class ParsedType(AaaTreeNode):
     type: Union[TypeLiteral, ParsedTypePlaceholder]
 
 
-@dataclass(kw_only=True, frozen=True)
 class Argument(AaaTreeNode):
     name: str
     type: ParsedType
 
 
-@dataclass(kw_only=True, frozen=True)
 class Function(AaaTreeNode):
     name: str | MemberFunction
     arguments: List[Argument]
@@ -147,47 +119,39 @@ class Function(AaaTreeNode):
             assert False
 
 
-@dataclass(kw_only=True, frozen=True)
 class ImportItem(AaaTreeNode):
     origninal_name: str
     imported_name: str
 
 
-@dataclass(kw_only=True, frozen=True)
 class Import(AaaTreeNode):
     source: str
     imported_items: List[ImportItem]
 
 
-@dataclass(kw_only=True, frozen=True)
 class Struct(AaaTreeNode):
     name: str
     fields: List[Argument]
 
 
-@dataclass(kw_only=True, frozen=True)
 class BuiltinFunction(AaaTreeNode):
     name: str
     arguments: List[ParsedType]
     return_types: List[ParsedType]
 
 
-@dataclass(kw_only=True, frozen=True)
 class BuiltinFunctionArguments(AaaTreeNode):
     value: List[ParsedType]
 
 
-@dataclass(kw_only=True, frozen=True)
 class BuiltinFunctionReturnTypes(AaaTreeNode):
     value: List[ParsedType]
 
 
-@dataclass(kw_only=True, frozen=True)
 class ParsedBuiltinsFile(AaaTreeNode):
     functions: List[BuiltinFunction]
 
 
-@dataclass(kw_only=True, frozen=True)
 class ParsedFile(AaaTreeNode):
     functions: List[Function]
     imports: List[Import]
@@ -199,3 +163,16 @@ class ParsedFile(AaaTreeNode):
 class ProgramImport:
     original_name: str
     source_file: Path
+
+
+# TODO reorder models so we don't need this
+LoopBody.update_forward_refs()
+LoopCondition.update_forward_refs()
+Loop.update_forward_refs()
+Branch.update_forward_refs()
+BranchCondition.update_forward_refs()
+BranchIfBody.update_forward_refs()
+BranchElseBody.update_forward_refs()
+TypeLiteral.update_forward_refs()
+StructFieldUpdate.update_forward_refs()
+StructFieldQuery.update_forward_refs()
