@@ -10,51 +10,6 @@ from lang.typing.exceptions import MainFunctionNotFound
 
 
 @pytest.mark.parametrize(
-    ["code", "expected_output"],
-    [
-        ('struct foo { x as int } fn main { foo "x" ? . drop }', "0"),
-        ('struct foo { x as bool } fn main { foo "x" ? . drop }', "false"),
-        ('struct foo { x as str } fn main { foo "x" ? . drop }', ""),
-        ('struct foo { x as vec[int] } fn main { foo "x" ? . drop }', "[]"),
-        (
-            'struct foo { x as map[int, str] } fn main { foo "x" ? . drop }',
-            "{}",
-        ),
-        (
-            'struct foo { x as int } fn main { foo "x" { 3 } ! "x" ? . drop }',
-            "3",
-        ),
-        (
-            'struct foo { x as bool } fn main { foo "x" { true } ! "x" ? . drop }',
-            "true",
-        ),
-        (
-            'struct foo { x as str } fn main { foo "x" { "bar" } ! "x" ? . drop }',
-            "bar",
-        ),
-        (
-            'struct foo { x as vec[int] } fn main { foo "x" ? 5 vec:push drop "x" ? . drop }',
-            "[5]",
-        ),
-        (
-            'struct foo { x as map[int, str] } fn main { foo "x" ? 5 "five" map:set drop "x" ? . drop }',
-            '{5: "five"}',
-        ),
-    ],
-)
-def test_program_full_source_ok(
-    code: str, expected_output: str, capfd: CaptureFixture[str]
-) -> None:
-    program = Program.without_file(code)
-    assert not program.file_load_errors
-    Simulator(program).run()
-
-    stdout, stderr = capfd.readouterr()
-    assert expected_output == stdout
-    assert "" == stderr
-
-
-@pytest.mark.parametrize(
     ["files", "expected_output", "expected_errors"],
     [
         pytest.param(
