@@ -160,19 +160,19 @@ class InstructionGenerator:
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, IntegerLiteral)
-        return [PushInt(node.value)]
+        return [PushInt(value=node.value)]
 
     def instructions_for_string_literal(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, StringLiteral)
-        return [PushString(node.value)]
+        return [PushString(value=node.value)]
 
     def instructions_for_boolean_literal(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, BooleanLiteral)
-        return [PushBool(node.value)]
+        return [PushBool(value=node.value)]
 
     def instructions_for_operator(
         self, node: AaaTreeNode, offset: int
@@ -192,9 +192,9 @@ class InstructionGenerator:
         loop_instructions: List[Instruction] = []
 
         loop_instructions += condition_instructions
-        loop_instructions += [JumpIfNot(beyond_loop_end)]
+        loop_instructions += [JumpIfNot(instruction_offset=beyond_loop_end)]
         loop_instructions += body_instructions
-        loop_instructions += [Jump(offset)]
+        loop_instructions += [Jump(instruction_offset=offset)]
 
         return loop_instructions
 
@@ -207,7 +207,7 @@ class InstructionGenerator:
 
         for argument in self.function.arguments:
             if node.name == argument.name:
-                return [PushFunctionArgument(argument.name)]
+                return [PushFunctionArgument(arg_name=argument.name)]
 
         identified = self.program.identifiers[self.file][identifier]
 
@@ -223,7 +223,7 @@ class InstructionGenerator:
             )
             return [CallFunction(func_name=original_name, file=source_file)]
         elif isinstance(identified, Struct):
-            return [PushStruct(identified)]
+            return [PushStruct(type=identified)]
         else:  # pragma: nocover
             assert False
 
@@ -242,9 +242,9 @@ class InstructionGenerator:
         beyond_else_offset = else_offset + len(else_instructions)
 
         branch_instructions = condition_instructions
-        branch_instructions += [JumpIfNot(else_offset)]
+        branch_instructions += [JumpIfNot(instruction_offset=else_offset)]
         branch_instructions += if_instructions
-        branch_instructions += [Jump(beyond_else_offset)]
+        branch_instructions += [Jump(instruction_offset=beyond_else_offset)]
         branch_instructions += else_instructions
         return branch_instructions
 
@@ -273,22 +273,22 @@ class InstructionGenerator:
         root_type = var_type.root_type
 
         if root_type == RootType.INTEGER:
-            return [PushInt(0)]
+            return [PushInt(value=0)]
 
         elif root_type == RootType.BOOL:
-            return [PushBool(False)]
+            return [PushBool(value=False)]
 
         elif root_type == RootType.STRING:
-            return [PushString("")]
+            return [PushString(value="")]
 
         elif root_type == RootType.VECTOR:
-            return [PushVec(var_type.get_variable_type_param(0))]
+            return [PushVec(item_type=var_type.get_variable_type_param(0))]
 
         elif root_type == RootType.MAPPING:
             return [
                 PushMap(
-                    var_type.get_variable_type_param(0),
-                    var_type.get_variable_type_param(1),
+                    key_type=var_type.get_variable_type_param(0),
+                    value_type=var_type.get_variable_type_param(1),
                 )
             ]
 
@@ -317,14 +317,14 @@ class InstructionGenerator:
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, StructFieldQuery)
-        return [PushString(node.field_name.value), GetStructField()]
+        return [PushString(value=node.field_name.value), GetStructField()]
 
     def instructions_for_struct_field_update(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, StructFieldUpdate)
         instructions: List[Instruction] = []
-        instructions += [PushString(node.field_name.value)]
+        instructions += [PushString(value=node.field_name.value)]
         instructions += self.instructions_for_function_body(
             node.new_value_expr, offset + 1
         )
