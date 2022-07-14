@@ -7,26 +7,6 @@ from pytest import CaptureFixture
 from aaa import main
 
 
-def test_readme_command(capfd: CaptureFixture[str]) -> None:
-    readme_commands: List[str] = []
-
-    with open("README.md") as readme:
-        for line in readme:
-            if "aaa.py cmd" in line:
-                readme_commands.append(line)
-
-    command = '"a" 0 while dup 3 < { over . 1 + } drop drop "\\n" .'
-
-    # README hasn't changed command and no commands were added
-    assert command in readme_commands[0]
-    assert len(readme_commands) == 1
-
-    main(["./aaa.py", "cmd", command])
-
-    stdout, _ = capfd.readouterr()
-    assert str(stdout) == "aaa\n"
-
-
 def expected_fizzbuzz_output() -> str:
     fizzbuzz_table = {
         0: "fizzbuzz",
@@ -60,23 +40,37 @@ EXPECTED_EXAMPLE_OUTPUT = {
 @pytest.mark.parametrize(
     ["example_file_path", "expected_output"],
     [
-        ("examples/one_to_ten.aaa", "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n"),
-        ("examples/print_number.aaa", "42\n"),
-        ("examples/fizzbuzz.aaa", expected_fizzbuzz_output()),
-        ("examples/print_twice.aaa", "hello!\nhello!\n"),
-        ("examples/function_demo.aaa", "a=1\nb=2\nc=3\n"),
-        (
+        pytest.param(
+            "examples/one_to_ten.aaa",
+            "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n",
+            id="one_to_ten.aaa",
+        ),
+        pytest.param("examples/print_number.aaa", "42\n", id="print_number.aaa"),
+        pytest.param(
+            "examples/fizzbuzz.aaa", expected_fizzbuzz_output(), id="fizzbuzz.aaa"
+        ),
+        pytest.param(
+            "examples/print_twice.aaa", "hello!\nhello!\n", id="print_twice.aaa"
+        ),
+        pytest.param(
+            "examples/function_demo.aaa", "a=1\nb=2\nc=3\n", id="function_demo.aaa"
+        ),
+        pytest.param(
             "examples/typing_playground.aaa",
             "five = 5\n3 5 max = 5\n4 factorial = 24\n7 dup_twice = 777\n",
+            id="typing_playground.aaa",
         ),
-        pytest.param("examples/renamed_import/main.aaa", "5"),
-        (
+        pytest.param(
+            "examples/renamed_import/main.aaa", "5", id="renamed_import/main.aaa"
+        ),
+        pytest.param(
             "examples/struct.aaa",
             "x = 0\ny = 0\nx = 3\ny = 4\n7\nx,y = 3,4\nx,y = 0,0\n",
+            id="struct.aaa",
         ),
     ],
 )
-def test_example_commands(
+def test_examples(
     example_file_path: Path, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
     main(["./aaa.py", "run", str(example_file_path)])
