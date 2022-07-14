@@ -1,8 +1,9 @@
 import sys
 from copy import deepcopy
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Type
+
+from pydantic import BaseModel
 
 from lang.instructions.types import (
     And,
@@ -73,8 +74,12 @@ from lang.typing.types import (
 )
 
 
-@dataclass
-class CallStackItem:
+# TODO move out and create new base model class for modifiable AaaModels
+class CallStackItem(BaseModel):
+    class Config:
+        extra = "forbid"
+        arbitrary_types_allowed = True  # TODO fix
+
     func_name: str
     source_file: Path
     instruction_pointer: int

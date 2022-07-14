@@ -1,6 +1,5 @@
 import os
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
@@ -8,6 +7,7 @@ from typing import Dict, List, Optional, Tuple
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
 from lang.parse.models import (
+    AaaModel,
     Function,
     MemberFunction,
     ParsedBuiltinsFile,
@@ -46,8 +46,8 @@ FileLoadException = (
 )
 
 
-@dataclass(kw_only=True)
-class Builtins:
+# TODO move this out
+class Builtins(AaaModel):
     functions: Dict[str, List[Signature]]
 
     @classmethod
