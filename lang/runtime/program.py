@@ -45,9 +45,6 @@ FileLoadException = (
     | MissingEnvironmentVariable
 )
 
-# TODO use cli flag instead
-PARSE_VERBOSE = "AAA_PARSING_DEBUG" in os.environ
-
 
 @dataclass(kw_only=True)
 class Builtins:
