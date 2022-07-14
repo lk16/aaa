@@ -26,6 +26,15 @@
 - create `ContainerOperation` instruction with enum value to select specific one
 - create `SysCall` instruction with enum value for various syscalls
 
+### Support syscalls
+- Add binary or/and/not integer operations
+- Consider adding buffer type
+- Add basic file syscalls: open, close, read, write
+- Add environment-related functions (not really syscalls)
+- Add basic time-related functions: time, gettimeofday
+- Add basic process-related functions: getpid, getppid
+- Add network-related functions: socket, bind, listen, accept, ...
+
 ### Structs
 - Allow type params for struct
 

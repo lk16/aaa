@@ -105,6 +105,7 @@ builtin_fn "unlink" args str return int
 builtin_fn "execve" args str, vec[str], vec[str] return int
 
 builtin_fn "time" return int
+builtin_fn "gettimeofday" return int, int  // note: not a system call
 
 builtin_fn "chmod" args str, int return int
 
