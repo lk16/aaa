@@ -1,3 +1,0 @@
-from "../fizzbuzz" import foo
-
-fn main { nop }

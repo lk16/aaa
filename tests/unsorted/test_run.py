@@ -12,23 +12,6 @@ from lang.typing.exceptions import MainFunctionNotFound
 @pytest.mark.parametrize(
     ["files", "expected_output", "expected_errors"],
     [
-        pytest.param(
-            {
-                "five.aaa": "fn five return int { 5 }",
-                "six.aaa": 'from "five" import five\n fn six return int { five 1 + }',
-                "main.aaa": 'from "six" import six\n fn main { six . }',
-            },
-            "6",
-            [],
-        ),
-        pytest.param(
-            {
-                "add.aaa": "fn add args a as int, b as int, return int, { a b + }",
-                "main.aaa": 'from "add" import add,\n fn main { 3 2 add . }',
-            },
-            "5",
-            [],
-        ),
         (
             {
                 "main.aaa": "fn foo { nop }",
