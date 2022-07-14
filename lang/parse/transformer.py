@@ -65,7 +65,7 @@ class AaaTransformer(Transformer[Any, Any]):
                 if_body = arg.value
             elif isinstance(arg, BranchElseBody):
                 else_body = arg.value
-            else:
+            else:  # pragma: nocover
                 assert False
 
         return Branch(condition=condition, if_body=if_body, else_body=else_body)
@@ -94,7 +94,7 @@ class AaaTransformer(Transformer[Any, Any]):
                 arguments = arg.value
             elif isinstance(arg, BuiltinFunctionReturnTypes):
                 return_types = arg.value
-            else:
+            else:  # pragma: nocover
                 assert False
 
         return BuiltinFunction(
@@ -119,7 +119,7 @@ class AaaTransformer(Transformer[Any, Any]):
         for arg in args:
             if isinstance(arg, BuiltinFunction):
                 functions.append(arg)
-            else:
+            else:  # pragma: nocover
                 assert False
 
         return ParsedBuiltinsFile(functions=functions)
@@ -148,11 +148,11 @@ class AaaTransformer(Transformer[Any, Any]):
                         arguments.append(item)
                     elif isinstance(item, ParsedType):
                         return_types.append(item)
-                    else:
+                    else:  # pragma: nocover
                         assert False
             elif isinstance(arg, MemberFunction):
                 name = arg
-            else:
+            else:  # pragma: nocover
                 assert False
 
         return Function(
@@ -222,7 +222,7 @@ class AaaTransformer(Transformer[Any, Any]):
                 condition = arg.value
             elif isinstance(arg, LoopBody):
                 body = arg.value
-            else:
+            else:  # pragma: nocover
                 assert False
 
         return Loop(condition=condition, body=body)
@@ -256,7 +256,7 @@ class AaaTransformer(Transformer[Any, Any]):
                 structs.append(arg)
             elif isinstance(arg, Import):
                 imports.append(arg)
-            else:
+            else:  # pragma: nocover
                 assert False
 
         return ParsedFile(functions=functions, imports=imports, structs=structs)
@@ -317,7 +317,7 @@ class AaaTransformer(Transformer[Any, Any]):
                 type_parameters = arg
             elif isinstance(arg, Identifier):
                 type_name = arg.name
-            else:
+            else:  # pragma: nocover
                 assert False
 
         return TypeLiteral(type_name=type_name, type_parameters=type_parameters)
