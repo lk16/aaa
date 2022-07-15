@@ -70,6 +70,25 @@ from tests.aaa import check_aaa_main
             [],
             id="dup",
         ),
+        pytest.param(
+            'map[str, int] "one" 1 map:set "one" map:pop . drop',
+            "1",
+            [],
+            id="pop-ok",
+        ),
+        pytest.param(
+            'map[str, int] "one" map:pop . drop',
+            "",
+            [NotImplementedError],
+            id="pop-fail",
+            marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            'map[str, int] "one" 1 map:set "one" map:drop .',
+            "{}",
+            [],
+            id="drop-ok",
+        ),
     ],
 )
 def test_map(

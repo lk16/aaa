@@ -18,6 +18,8 @@ SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
 identifier: /(?!(and|args|as|assert|bool|builtin_fn|drop|dup|else|false|fn|from|if|import|int|map|nop|not|or|over|return|rot|str|struct|swap|true|vec|while)(\W|\s))([a-z_]+)/
+member_function_name: /[a-z_]+/
+
 integer: /[0-9]+/
 
 %import common.ESCAPED_STRING
@@ -100,7 +102,7 @@ struct_function_definition: identifier ":" identifier
 struct_field_query: string "?"
 struct_field_update: string _BEGIN function_body _END "!"
 
-member_function: type_literal ":" identifier
+member_function: type_literal ":" member_function_name
 
 // --- functions, arguments, return types ---
 

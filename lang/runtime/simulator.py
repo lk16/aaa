@@ -61,8 +61,8 @@ from lang.instructions.types import (
     VecSet,
     VecSize,
 )
-from lang.models.runtime import CallStackItem
 from lang.models.parse import Function, TypeLiteral
+from lang.models.runtime import CallStackItem
 from lang.runtime.debug import format_str
 from lang.runtime.program import Program
 from lang.typing.types import (
@@ -187,7 +187,7 @@ class Simulator:
             file=sys.stderr,
         )
 
-    def run(self, raise_=False) -> None:
+    def run(self, raise_: bool = False) -> None:
         if self.verbose:  # pragma: nocover
             self.program.print_all_instructions()
 
@@ -603,10 +603,12 @@ class Simulator:
         self.push(copied)
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_keys(self, instruction: Instruction) -> int:
+    def instruction_map_keys(self, instruction: Instruction) -> int:  # pragma: nocover
         raise NotImplementedError
 
-    def instruction_map_values(self, instruction: Instruction) -> int:
+    def instruction_map_values(
+        self, instruction: Instruction
+    ) -> int:  # pragma: nocover
         raise NotImplementedError
 
     def instruction_push_struct(self, instruction: Instruction) -> int:

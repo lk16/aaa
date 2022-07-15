@@ -1,8 +1,9 @@
 from enum import IntEnum, auto
 from typing import Any, Final, List, Optional, Union
 
-from lang.models.parse import Function, ParsedTypePlaceholder, TypeLiteral
 from lang.models import AaaModel
+from lang.models.parse import Function, ParsedTypePlaceholder, TypeLiteral
+
 
 class RootType(IntEnum):
     BOOL = auto()

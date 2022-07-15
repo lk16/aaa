@@ -52,6 +52,7 @@ builtin_fn "map:has_key" args map[*k, *v], *k     return map[*k, *v], bool
 builtin_fn "map:size"    args map[*k, *v]         return map[*k, *v], int
 builtin_fn "map:empty"   args map[*k, *v]         return map[*k, *v], bool
 builtin_fn "map:pop"     args map[*k, *v], *k     return map[*k, *v], *v
+builtin_fn "map:drop"    args map[*k, *v], *k     return map[*k, *v]
 builtin_fn "map:clear"   args map[*k, *v]         return map[*k, *v]
 builtin_fn "map:copy"    args map[*k, *v]         return map[*k, *v], map[*k, *v]
 

@@ -203,11 +203,10 @@ class TypeChecker:
         self, return_type: SignatureItem, placeholder_types: Dict[str, SignatureItem]
     ) -> SignatureItem:
         if isinstance(return_type, TypePlaceholder):
-            if return_type.name in placeholder_types:
-                return placeholder_types[return_type.name]
+            if return_type.name not in placeholder_types:
+                raise NotImplementedError
 
-            # TODO is this an error?
-            return return_type
+            return placeholder_types[return_type.name]
 
         elif isinstance(return_type, VariableType):
             for i, param in enumerate(return_type.type_params):
@@ -361,7 +360,7 @@ class TypeChecker:
                 VariableType(RootType.STRUCT, struct_name=identifier.name)
             ]
 
-        else:
+        else:  # pragma: nocover
             assert False
 
     def _check_function_body(
@@ -418,10 +417,12 @@ class TypeChecker:
             signature = signatures[0]
 
         else:
-            function = self.program.identifiers[self.file].get(key)
+            file_identifiers = self.program.identifiers[self.file]
 
-            if function is None:
-                raise NotImplementedError
+            try:
+                function = file_identifiers[key]
+            except KeyError as e:
+                raise NotImplementedError from e
 
             assert isinstance(function, Function)
             signature = self._get_function_signature(function)
@@ -450,7 +451,7 @@ class TypeChecker:
             struct = self.program.identifiers[self.file][node.name.type_name]
             assert isinstance(struct, Struct)
 
-            if TYPE_CHECKING:
+            if TYPE_CHECKING:  # pragma: nocover
                 assert isinstance(signature.arg_types[0], VariableType)
                 assert isinstance(signature.return_types[0], VariableType)
 

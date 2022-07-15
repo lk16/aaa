@@ -235,6 +235,10 @@ class AaaTransformer(Transformer[Any, Any]):
         assert len(function_bodies) == 1
         return LoopBody(value=function_bodies[0])
 
+    def member_function_name(self, args: List[Token]) -> Identifier:
+        assert len(args) == 1
+        return Identifier(name=str(args[0]))
+
     def member_function(self, args: Tuple[TypeLiteral, Identifier]) -> MemberFunction:
         type_name = args[0].type_name
         func_name = args[1].name
