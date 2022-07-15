@@ -1,7 +1,7 @@
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from lark.lexer import Token
-from lark.visitors import Transformer
+from lark.visitors import Transformer, v_args
 
 from lang.models.parse import (
     AaaTreeNode,
@@ -38,22 +38,23 @@ from lang.models.parse import (
 )
 
 
+@v_args(inline=True)
 class AaaTransformer(Transformer[Any, Any]):
+    @v_args(inline=False)
     def argument_list(self, arguments: List[Argument]) -> List[Argument]:
         return arguments
 
+    @v_args(inline=False)
     def argument(
         self, args: Tuple[Identifier, Union[TypeLiteral, ParsedTypePlaceholder]]
     ) -> Argument:
         name = args[0].name
         return Argument(name=name, type=ParsedType(type=args[1]))
 
-    def boolean(self, args: List[Token]) -> BooleanLiteral:
-        assert len(args) == 1
-        value = args[0].value == "true"
-        return BooleanLiteral(value=value)
+    def boolean(self, token: Token) -> BooleanLiteral:
+        return BooleanLiteral(value=token.value)
 
-    def branch(self, args: List[AaaTreeNode]) -> Branch:
+    def branch(self, *args: List[AaaTreeNode]) -> Branch:
         condition: FunctionBody
         if_body: FunctionBody
         else_body = FunctionBody(items=[])
@@ -70,19 +71,16 @@ class AaaTransformer(Transformer[Any, Any]):
 
         return Branch(condition=condition, if_body=if_body, else_body=else_body)
 
-    def branch_condition(self, function_bodies: List[FunctionBody]) -> BranchCondition:
-        assert len(function_bodies) == 1
-        return BranchCondition(value=function_bodies[0])
+    def branch_condition(self, function_body: FunctionBody) -> BranchCondition:
+        return BranchCondition(value=function_body)
 
-    def branch_if_body(self, function_bodies: List[FunctionBody]) -> BranchIfBody:
-        assert len(function_bodies) == 1
-        return BranchIfBody(value=function_bodies[0])
+    def branch_if_body(self, function_body: FunctionBody) -> BranchIfBody:
+        return BranchIfBody(value=function_body)
 
-    def branch_else_body(self, function_bodies: List[FunctionBody]) -> BranchElseBody:
-        assert len(function_bodies) == 1
-        return BranchElseBody(value=function_bodies[0])
+    def branch_else_body(self, function_body: FunctionBody) -> BranchElseBody:
+        return BranchElseBody(value=function_body)
 
-    def builtin_function_definition(self, args: List[AaaTreeNode]) -> BuiltinFunction:
+    def builtin_function_definition(self, *args: List[AaaTreeNode]) -> BuiltinFunction:
         arguments: List[ParsedType] = []
         return_types: List[ParsedType] = []
         name = ""
@@ -102,17 +100,16 @@ class AaaTransformer(Transformer[Any, Any]):
         )
 
     def builtin_function_arguments(
-        self, arguments: List[List[ParsedType]]
+        self, arguments: List[ParsedType]
     ) -> BuiltinFunctionArguments:
-        assert len(arguments) == 1
-        return BuiltinFunctionArguments(value=arguments[0])
+        return BuiltinFunctionArguments(value=arguments)
 
     def builtin_function_return_types(
-        self, arguments: List[List[ParsedType]]
+        self, arguments: List[ParsedType]
     ) -> BuiltinFunctionReturnTypes:
-        assert len(arguments) == 1
-        return BuiltinFunctionReturnTypes(value=arguments[0])
+        return BuiltinFunctionReturnTypes(value=arguments)
 
+    @v_args(inline=False)
     def builtins_file_root(self, args: List[BuiltinFunction]) -> ParsedBuiltinsFile:
         functions: List[BuiltinFunction] = []
 
@@ -124,13 +121,16 @@ class AaaTransformer(Transformer[Any, Any]):
 
         return ParsedBuiltinsFile(functions=functions)
 
-    def function_body_item(self, args: List[FunctionBodyItem]) -> FunctionBodyItem:
-        assert len(args) == 1
-        return args[0]
+    def function_body_item(
+        self, function_body_item: FunctionBodyItem
+    ) -> FunctionBodyItem:
+        return function_body_item
 
+    @v_args(inline=False)
     def function_body(self, args: List[FunctionBodyItem]) -> FunctionBody:
         return FunctionBody(items=args)
 
+    @v_args(inline=False)
     def function_definition(self, args: List[AaaTreeNode]) -> Function:
         name: str | MemberFunction = ""
         body: FunctionBody
@@ -159,95 +159,69 @@ class AaaTransformer(Transformer[Any, Any]):
             name=name, arguments=arguments, return_types=return_types, body=body
         )
 
-    def function_arguments(self, args: List[List[Argument]]) -> List[Argument]:
-        assert len(args) == 1
-        return args[0]
+    def function_arguments(self, args: List[Argument]) -> List[Argument]:
+        return args
 
     def function_name(
-        self, names: List[Union[Identifier, MemberFunction]]
+        self, name: Union[Identifier, MemberFunction]
     ) -> Union[Identifier, MemberFunction]:
-        assert len(names) == 1
-        assert isinstance(names[0], (Identifier, MemberFunction))
-        return names[0]
+        return name
 
-    def function_return_types(self, args: List[List[ParsedType]]) -> List[ParsedType]:
-        return args[0]
+    def function_return_types(self, args: List[ParsedType]) -> List[ParsedType]:
+        return args
 
-    def identifier(self, tokens: List[Token]) -> Identifier:
-        assert len(tokens) == 1
-        return Identifier(name=tokens[0].value)
+    def identifier(self, token: Token) -> Identifier:
+        return Identifier(name=token.value)
 
-    def import_item(self, args: List[Identifier]) -> ImportItem:
-        assert len(args) <= 2
-        original_name = args[0].name
-
-        if len(args) == 1:
+    def import_item(
+        self, original_name: Identifier, imported_name: Optional[Identifier] = None
+    ) -> ImportItem:
+        if imported_name is None:
             imported_name = original_name
-        else:
-            imported_name = args[1].name
 
-        return ImportItem(origninal_name=original_name, imported_name=imported_name)
+        return ImportItem(
+            origninal_name=original_name.name, imported_name=imported_name.name
+        )
 
+    @v_args(inline=False)
     def import_items(self, import_items: List[ImportItem]) -> List[ImportItem]:
         assert all(isinstance(item, ImportItem) for item in import_items)
         return import_items
 
     def import_statement(
-        self, args: List[Union[StringLiteral, List[ImportItem]]]
+        self, source: StringLiteral, imported_items: List[ImportItem]
     ) -> Import:
-        assert len(args) == 2
-        assert isinstance(args[0], StringLiteral)
-        assert isinstance(args[1], list)
-        return Import(source=args[0].value, imported_items=args[1])
+        return Import(source=source.value, imported_items=imported_items)
 
-    def integer(self, tokens: List[Token]) -> IntegerLiteral:
-        assert len(tokens) == 1
-        value = int(tokens[0].value)
-        return IntegerLiteral(value=value)
+    def integer(self, token: Token) -> IntegerLiteral:
+        return IntegerLiteral(value=int(token.value))
 
     def literal(
-        self, literals: List[Union[IntegerLiteral, BooleanLiteral, StringLiteral]]
-    ) -> Union[
-        IntegerLiteral, BooleanLiteral, StringLiteral
-    ]:  # TODO create union alias
-        assert len(literals) == 1
-        return literals[0]
+        self, literal: Union[IntegerLiteral, BooleanLiteral, StringLiteral]
+    ) -> Union[IntegerLiteral, BooleanLiteral, StringLiteral]:
+        return literal
 
-    def loop(self, args: List[AaaTreeNode]) -> Loop:
-        condition: FunctionBody
-        body: FunctionBody
+    def loop(self, condition: LoopCondition, body: LoopBody) -> Loop:
+        return Loop(condition=condition.value, body=body.value)
 
-        for arg in args:
-            if isinstance(arg, LoopCondition):
-                condition = arg.value
-            elif isinstance(arg, LoopBody):
-                body = arg.value
-            else:  # pragma: nocover
-                assert False
+    def loop_condition(self, function_body: FunctionBody) -> LoopCondition:
+        return LoopCondition(value=function_body)
 
-        return Loop(condition=condition, body=body)
+    def loop_body(self, function_body: FunctionBody) -> LoopBody:
+        return LoopBody(value=function_body)
 
-    def loop_condition(self, function_bodies: List[FunctionBody]) -> LoopCondition:
-        assert len(function_bodies) == 1
-        return LoopCondition(value=function_bodies[0])
+    def member_function_name(self, token: Token) -> Identifier:
+        return Identifier(name=token.value)
 
-    def loop_body(self, function_bodies: List[FunctionBody]) -> LoopBody:
-        assert len(function_bodies) == 1
-        return LoopBody(value=function_bodies[0])
+    def member_function(
+        self, type_name: TypeLiteral, func_name: Identifier
+    ) -> MemberFunction:
+        return MemberFunction(type_name=type_name.type_name, func_name=func_name.name)
 
-    def member_function_name(self, args: List[Token]) -> Identifier:
-        assert len(args) == 1
-        return Identifier(name=str(args[0]))
+    def operator(self, token: Token) -> Operator:
+        return Operator(value=token.value)
 
-    def member_function(self, args: Tuple[TypeLiteral, Identifier]) -> MemberFunction:
-        type_name = args[0].type_name
-        func_name = args[1].name
-        return MemberFunction(type_name=type_name, func_name=func_name)
-
-    def operator(self, tokens: List[Token]) -> Operator:
-        assert len(tokens) == 1
-        return Operator(value=tokens[0].value)
-
+    @v_args(inline=False)
     def regular_file_root(self, args: List[AaaTreeNode]) -> ParsedFile:
         functions: List[Function] = []
         imports: List[Import] = []
@@ -265,6 +239,7 @@ class AaaTransformer(Transformer[Any, Any]):
 
         return ParsedFile(functions=functions, imports=imports, structs=structs)
 
+    @v_args(inline=False)
     def return_types(
         self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
     ) -> List[ParsedType]:
@@ -274,43 +249,38 @@ class AaaTransformer(Transformer[Any, Any]):
 
         return return_types
 
-    def string(self, tokens: List[Token]) -> StringLiteral:
-        assert len(tokens) == 1
-        raw_str = tokens[0].value
-        assert len(raw_str) >= 2
+    def string(self, token: Token) -> StringLiteral:
+        assert len(token.value) >= 2
 
-        value = (
-            raw_str[1:-1].replace("\\\\", "\\").replace("\\n", "\n").replace('\\"', '"')
-        )
+        value = token.value[1:-1]
+        value = value.replace("\\\\", "\\")
+        value = value.replace("\\n", "\n")
+        value = value.replace('\\"', '"')
+
         return StringLiteral(value=value)
 
-    def struct_definition(self, args: Tuple[Identifier, List[Argument]]) -> Struct:
-        name = args[0].name
-        fields = args[1]
-        return Struct(name=name, fields=fields)
+    def struct_definition(self, name: Identifier, fields: List[Argument]) -> Struct:
+        return Struct(name=name.name, fields=fields)
 
-    def struct_field_query(self, args: List[StringLiteral]) -> StructFieldQuery:
-        assert len(args) == 1
-        return StructFieldQuery(field_name=args[0])
+    def struct_field_query(self, field_name: StringLiteral) -> StructFieldQuery:
+        return StructFieldQuery(field_name=field_name)
 
     def struct_field_update(
-        self, args: Tuple[StringLiteral, FunctionBody]
+        self, field_name: StringLiteral, new_value_expr: FunctionBody
     ) -> StructFieldUpdate:
-        new_value_expr = args[1]
-        return StructFieldUpdate(field_name=args[0], new_value_expr=new_value_expr)
+        return StructFieldUpdate(field_name=field_name, new_value_expr=new_value_expr)
 
     def struct_function_identifier(
-        self, identifiers: List[Identifier]
+        self, type_name: Identifier, func_name: Identifier
     ) -> MemberFunction:
-        assert len(identifiers) == 2
-        type, func = identifiers
-        return MemberFunction(type_name=type.name, func_name=func.name)
+        return MemberFunction(type_name=type_name.name, func_name=func_name.name)
 
     def type(
-        self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
+        self, type: Union[TypeLiteral, ParsedTypePlaceholder]
     ) -> Union[TypeLiteral, ParsedTypePlaceholder]:
-        return types[0]
+        return type
 
+    @v_args(inline=False)
     def type_literal(self, args: List[Token | List[ParsedType]]) -> TypeLiteral:
         type_name = ""
         type_parameters: List[ParsedType] = []
@@ -326,6 +296,7 @@ class AaaTransformer(Transformer[Any, Any]):
 
         return TypeLiteral(type_name=type_name, type_parameters=type_parameters)
 
+    @v_args(inline=False)
     def type_params(
         self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
     ) -> List[ParsedType]:
@@ -334,6 +305,5 @@ class AaaTransformer(Transformer[Any, Any]):
             type_params.append(ParsedType(type=type))
         return type_params
 
-    def type_placeholder(self, identifiers: List[Identifier]) -> ParsedTypePlaceholder:
-        assert len(identifiers) == 1
-        return ParsedTypePlaceholder(name=identifiers[0].name)
+    def type_placeholder(self, identifier: Identifier) -> ParsedTypePlaceholder:
+        return ParsedTypePlaceholder(name=identifier.name)
