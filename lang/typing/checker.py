@@ -25,8 +25,13 @@ from lang.parse.models import (
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.program import Program
 
-from lang.typing.exceptions import (
+from lang.exceptions.naming import (
     ArgumentNameCollision,
+    UnknownFunction,
+    UnknownPlaceholderType,
+    UnknownStructField,
+)
+from lang.exceptions.typing import (
     BranchTypeError,
     ConditionTypeError,
     FunctionTypeError,
@@ -39,9 +44,6 @@ from lang.typing.exceptions import (
     StackUnderflowError,
     StructUpdateStackError,
     StructUpdateTypeError,
-    UnknownFunction,
-    UnknownPlaceholderType,
-    UnknownStructField,
 )
 from lang.typing.types import (
     Bool,

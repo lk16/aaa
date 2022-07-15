@@ -4,6 +4,15 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
 
+from lang.exceptions import AaaLoadException
+from lang.exceptions.import_ import (
+    AbsoluteImportError,
+    CyclicImportError,
+    FileReadError,
+    ImportedItemNotFound,
+)
+from lang.exceptions.misc import MainFunctionNotFound, MissingEnvironmentVariable
+from lang.exceptions.naming import FunctionNameCollision, StructNameCollision
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
 from lang.parse.models import (
@@ -21,30 +30,10 @@ from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
 from lang.typing.checker import TypeChecker
-from lang.typing.exceptions import (
-    AbsoluteImportError,
-    CyclicImportError,
-    FileReadError,
-    FunctionNameCollision,
-    ImportedItemNotFound,
-    MainFunctionNotFound,
-    MissingEnvironmentVariable,
-    StructNameCollision,
-    TypeException,
-)
 from lang.typing.types import Signature, SignatureItem, TypePlaceholder, VariableType
 
 # Identifiable are things identified uniquely by a filepath and name
 Identifiable = Function | ProgramImport | Struct
-
-# TODO clean this union up once we have better baseclasses for exceptions
-FileLoadException = (
-    TypeException
-    | FileReadError
-    | CyclicImportError
-    | MainFunctionNotFound
-    | MissingEnvironmentVariable
-)
 
 
 # TODO move this out
@@ -79,7 +68,7 @@ class Program:
             saved_file.write_text(code)
             return cls(file=saved_file)
 
-    def _load_builtins(self) -> Tuple[Builtins, List[FileLoadException]]:
+    def _load_builtins(self) -> Tuple[Builtins, List[AaaLoadException]]:
         builtins = Builtins.empty()
 
         try:
@@ -140,7 +129,7 @@ class Program:
         print(f"Found {error_count} error{maybe_s}.", file=sys.stderr)
         exit(1)
 
-    def _load_file(self, file: Path) -> List[FileLoadException]:
+    def _load_file(self, file: Path) -> List[AaaLoadException]:
         # TODO make sure the file wasn't loaded already
 
         if file in self.file_load_stack:
@@ -165,7 +154,7 @@ class Program:
 
         try:
             self._load_file_identifiers(file, parsed_file)
-        except TypeException as e:
+        except AaaLoadException as e:
             self.file_load_stack.pop()
             return [e]
 
@@ -215,8 +204,8 @@ class Program:
 
     def _type_check_file(
         self, file: Path, parsed_file: ParsedFile
-    ) -> List[FileLoadException]:
-        type_exceptions: List[FileLoadException] = []
+    ) -> List[AaaLoadException]:
+        exceptions: List[AaaLoadException] = []
 
         if file == self.entry_point_file:
             main_found = False
@@ -226,26 +215,26 @@ class Program:
                     break
 
             if not main_found:
-                type_exceptions.append(MainFunctionNotFound(file))
+                exceptions.append(MainFunctionNotFound(file))
 
         for function in parsed_file.functions:
             try:
                 TypeChecker(file, function, self).check()
-            except TypeException as e:
-                type_exceptions.append(e)
+            except AaaLoadException as e:
+                exceptions.append(e)
 
-        return type_exceptions
+        return exceptions
 
     def _load_imported_files(
         self,
         file: Path,
         parsed_file: ParsedFile,
-    ) -> List[FileLoadException]:
-        errors: List[FileLoadException] = []
+    ) -> List[AaaLoadException]:
+        errors: List[AaaLoadException] = []
 
         for import_ in parsed_file.imports:
             if import_.source.startswith("/"):
-                errors.append(AbsoluteImportError(file=file, node=import_))
+                errors.append(AbsoluteImportError(file=file))
                 continue
 
             import_path = (file.parent / f"{import_.source}.aaa").resolve()
@@ -259,11 +248,10 @@ class Program:
 
             for imported_item in import_.imported_items:
                 if imported_item.origninal_name not in loaded_identifiers:
-                    # TODO change grammar so we can more precisely point to the item that was not found
                     errors.append(
                         ImportedItemNotFound(
                             file=file,
-                            node=import_,
+                            import_source=import_.source,
                             imported_item=imported_item.origninal_name,
                         )
                     )

@@ -1,11 +1,12 @@
 from pathlib import Path
 from typing import List, Sequence
 
+from lang.exceptions import AaaLoadException
 from lang.parse.models import AaaTreeNode, Function, MemberFunction, Struct
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 
-class TypeException(Exception):
+class TypeException(AaaLoadException):
     def __init__(self, *, file: Path, node: "AaaTreeNode") -> None:
         self.file = file
         self.node = node
@@ -184,131 +185,6 @@ class LoopTypeError(TypeException):
         )
 
 
-class FunctionNameCollision(TypeException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        function: "Function",
-    ) -> None:
-        self.function = function
-        super().__init__(file=file, node=function)
-
-    def __str__(self) -> str:
-        return (
-            f"Function {self.function.name} was already defined.\n"
-            + self.get_error_header()
-        )
-
-
-class StructNameCollision(TypeException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        struct: "Struct",
-    ) -> None:
-        self.struct = struct
-        super().__init__(file=file, node=struct)
-
-    def __str__(self) -> str:
-        return (
-            f"Struct {self.struct.name} was already defined.\n"
-            + self.get_error_header()
-        )
-
-
-class ArgumentNameCollision(TypeException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        node: "AaaTreeNode",
-        function: "Function",
-    ) -> None:
-        self.function = function
-        super().__init__(file=file, node=node)
-
-    def __str__(self) -> str:
-        return (
-            f"Argument name already used by other argument or function name in {self.function.name}\n"
-            + self.get_error_header()
-        )
-
-
-class UnknownFunction(TypeException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        node: "AaaTreeNode",
-        function: "Function",
-    ) -> None:
-        self.function = function
-        super().__init__(file=file, node=node)
-
-    def __str__(self) -> str:
-        return (
-            f"Unknown function or identifier in {self.function.name}\n"
-            + self.get_error_header()
-        )
-
-
-class UnknownType(TypeException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        node: "AaaTreeNode",
-        function: "Function",
-    ) -> None:
-        self.function = function
-        super().__init__(file=file, node=node)
-
-    def __str__(self) -> str:
-        return f"Unknown type in {self.function.name}\n" + self.get_error_header()
-
-
-class UnknownStructField(TypeException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        node: "AaaTreeNode",
-        function: "Function",
-        struct: Struct,
-        field_name: str,
-    ) -> None:
-        self.function = function
-        self.struct = struct
-        self.field_name = field_name
-        super().__init__(file=file, node=node)
-
-    def __str__(self) -> str:
-        return (
-            f"Usage of unknown field in {self.function.name}: struct {self.struct.name} has no field {self.field_name}\n"
-            + self.get_error_header()
-        )
-
-
-class UnknownPlaceholderType(TypeException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        node: "AaaTreeNode",
-        function: "Function",
-    ) -> None:
-        self.function = function
-        super().__init__(file=file, node=node)
-
-    def __str__(self) -> str:
-        return (
-            f"Usage of unknown placeholder type in {self.function.name}\n"
-            + self.get_error_header()
-        )
-
-
 class InvalidMainSignuture(TypeException):
     def __init__(
         self,
@@ -322,79 +198,6 @@ class InvalidMainSignuture(TypeException):
 
     def __str__(self) -> str:
         return f"Invalid signature for main function\n" + self.get_error_header()
-
-
-# TODO this is not really a type exception
-class AbsoluteImportError(TypeException):
-    def __str__(self) -> str:
-        return f"Absolute imports are not allowed\n" + self.get_error_header()
-
-
-# TODO this is not really a type exception
-class ImportedItemNotFound(TypeException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        node: "AaaTreeNode",
-        imported_item: str,
-    ) -> None:
-        self.imported_item = imported_item
-        super().__init__(file=file, node=node)
-
-    def __str__(self) -> str:
-        return (
-            f'Imported item "{self.imported_item}" was not found\n'
-            + self.get_error_header()
-        )
-
-
-# TODO needs better baseclass
-class FileReadError(Exception):
-    def __init__(self, file: Path) -> None:
-        self.file = file
-
-    def __str__(self) -> str:
-        return f'Failed to open or read "{self.file}". Maybe it doesn\'t exist?\n'
-
-
-# TODO needs better baseclass
-class CyclicImportError(Exception):
-    def __init__(self, *, dependencies: List[Path], failed_import: Path) -> None:
-        self.dependencies = dependencies
-        self.failed_import = failed_import
-
-    def __str__(self) -> str:
-        msg = "Cyclic import dependency was detected:\n"
-        _ = msg
-
-        msg += f"           {self.failed_import}\n"
-
-        cycle_start = self.dependencies.index(self.failed_import)
-        for cycle_item in reversed(self.dependencies[cycle_start + 1 :]):
-            msg += f"depends on {cycle_item}\n"
-
-        msg += f"depends on {self.failed_import}\n"
-
-        return msg
-
-
-# TODO needs better baseclass
-class MainFunctionNotFound(Exception):
-    def __init__(self, file: Path) -> None:
-        self.file = file
-
-    def __str__(self) -> str:
-        return f"No main function found in {self.file}"
-
-
-# TODO needs better baseclass
-class MissingEnvironmentVariable(Exception):
-    def __init__(self, env_var_name: str) -> None:
-        self.env_var_name = env_var_name
-
-    def __str__(self) -> str:
-        return f"Required environment variable {self.env_var_name} was not set."
 
 
 class GetFieldOfNonStructTypeError(TypeException):

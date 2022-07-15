@@ -6,10 +6,11 @@ from unittest.mock import patch
 import pytest
 from pytest import MonkeyPatch
 
+from lang.exceptions.import_ import FileReadError
+from lang.exceptions.misc import MissingEnvironmentVariable
 from lang.instructions.types import Instruction
 from lang.runtime.program import Program
 from lang.runtime.simulator import Simulator
-from lang.typing.exceptions import FileReadError, MissingEnvironmentVariable
 
 pytestmark = pytest.mark.no_builtins_cache
 

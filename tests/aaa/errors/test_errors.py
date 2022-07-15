@@ -2,29 +2,30 @@ from typing import List, Type
 
 import pytest
 
-from lang.typing.exceptions import (
-    AbsoluteImportError,
+from lang.exceptions.import_ import AbsoluteImportError, CyclicImportError
+from lang.exceptions.misc import MainFunctionNotFound
+from lang.exceptions.naming import (
     ArgumentNameCollision,
+    FunctionNameCollision,
+    StructNameCollision,
+    UnknownFunction,
+    UnknownPlaceholderType,
+    UnknownStructField,
+    UnknownType,
+)
+from lang.exceptions.typing import (
     BranchTypeError,
     ConditionTypeError,
-    CyclicImportError,
-    FunctionNameCollision,
     FunctionTypeError,
     GetFieldOfNonStructTypeError,
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     LoopTypeError,
-    MainFunctionNotFound,
     SetFieldOfNonStructTypeError,
     StackTypesError,
     StackUnderflowError,
-    StructNameCollision,
     StructUpdateStackError,
     StructUpdateTypeError,
-    UnknownFunction,
-    UnknownPlaceholderType,
-    UnknownStructField,
-    UnknownType,
 )
 from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
 

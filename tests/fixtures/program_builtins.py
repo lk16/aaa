@@ -4,7 +4,8 @@ from unittest.mock import patch
 import pytest
 from _pytest.fixtures import SubRequest
 
-from lang.runtime.program import Builtins, FileLoadException, Program
+from lang.exceptions import AaaLoadException
+from lang.runtime.program import Builtins, Program
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -24,7 +25,7 @@ def cache_program_builtins(request: SubRequest) -> Generator[None, None, None]:
     def cached_builtins(
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[Builtins, List[FileLoadException]]:
+    ) -> Tuple[Builtins, List[AaaLoadException]]:
         return program._builtins, program.file_load_errors
 
     with patch.object(Program, "_load_builtins", cached_builtins):
