@@ -98,7 +98,7 @@ struct_definition: ( \
     _END \
 )
 
-struct_function_definition: identifier ":" identifier
+struct_function_identifier: identifier ":" member_function_name
 struct_field_query: string "?"
 struct_field_update: string _BEGIN function_body _END "!"
 
@@ -113,7 +113,7 @@ function_definition: ( \
     _BEGIN function_body _END \
 )
 
-function_name: struct_function_definition | identifier
+function_name: struct_function_identifier | identifier
 
 function_arguments: _ARGS argument_list
 argument_list: argument ("," argument)* ","?

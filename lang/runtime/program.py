@@ -4,6 +4,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
 
+from lark.exceptions import UnexpectedInput
+
 from lang.exceptions import AaaLoadException
 from lang.exceptions.import_ import (
     AbsoluteImportError,
@@ -11,7 +13,11 @@ from lang.exceptions.import_ import (
     FileReadError,
     ImportedItemNotFound,
 )
-from lang.exceptions.misc import MainFunctionNotFound, MissingEnvironmentVariable
+from lang.exceptions.misc import (
+    AaaParseException,
+    MainFunctionNotFound,
+    MissingEnvironmentVariable,
+)
 from lang.exceptions.naming import FunctionNameCollision, StructNameCollision
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
@@ -144,6 +150,9 @@ class Program:
         except OSError:
             self.file_load_stack.pop()
             return [FileReadError(file)]
+        except AaaLoadException as e:
+            self.file_load_stack.pop()
+            return [e]
 
         self.identifiers[file] = {}
         import_errors = self._load_imported_files(file, parsed_file)
@@ -171,12 +180,22 @@ class Program:
 
     def _parse_regular_file(self, file: Path) -> ParsedFile:
         code = file.read_text()
-        tree = aaa_source_parser.parse(code)
+
+        try:
+            tree = aaa_source_parser.parse(code)
+        except UnexpectedInput as e:
+            raise AaaParseException(e)
+
         return AaaTransformer().transform(tree)  # type: ignore
 
     def _parse_builtins_file(self, file: Path) -> ParsedBuiltinsFile:
         code = file.read_text()
-        tree = aaa_builtins_parser.parse(code)
+
+        try:
+            tree = aaa_builtins_parser.parse(code)
+        except UnexpectedInput as e:
+            raise AaaParseException(e)
+
         return AaaTransformer().transform(tree)  # type: ignore
 
     def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:

@@ -299,7 +299,7 @@ class AaaTransformer(Transformer[Any, Any]):
         new_value_expr = args[1]
         return StructFieldUpdate(field_name=args[0], new_value_expr=new_value_expr)
 
-    def struct_function_definition(
+    def struct_function_identifier(
         self, identifiers: List[Identifier]
     ) -> MemberFunction:
         assert len(identifiers) == 2

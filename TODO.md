@@ -3,9 +3,6 @@
 ### Tests
 - redo all existing exceptions
 - handle lark parser errors nicely
-- keywords can't be used as identifiers
-- identifiers can be prefixed with keyword
-- member functions can be keyword (such as `map:drop`)
 - test all instructions
 - test vscode extension
 

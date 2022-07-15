@@ -52,7 +52,7 @@ def runtests(*args: Any) -> None:
 
     commands = [
         "pre-commit run --all-files mypy",
-        "pytest --cov=lang --cov-report=term-missing --pdb -x -vv",
+        "pytest --cov=lang --cov-report=term-missing --pdb -x --lf --nf",
     ]
 
     for command in commands:
