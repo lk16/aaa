@@ -16,7 +16,7 @@ class AbsoluteImportError(ImportException):
     ) -> None:
         self.file = file
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return f"In {self.file}: absolute imports are forbidden"
 
 
@@ -32,7 +32,7 @@ class ImportedItemNotFound(ImportException):
         self.import_source = import_source
         self.file = file
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f'In {self.file}: could not import "'
             + '{self.imported_item}" from {self.import_source}\n'
@@ -43,7 +43,7 @@ class FileReadError(ImportException):
     def __init__(self, file: Path) -> None:
         self.file = file
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return f'Failed to open or read "{self.file}". Maybe it doesn\'t exist?\n'
 
 
@@ -52,10 +52,8 @@ class CyclicImportError(ImportException):
         self.dependencies = dependencies
         self.failed_import = failed_import
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         msg = "Cyclic import dependency was detected:\n"
-        _ = msg
-
         msg += f"           {self.failed_import}\n"
 
         cycle_start = self.dependencies.index(self.failed_import)

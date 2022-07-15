@@ -16,10 +16,11 @@ class TypeException(AaaLoadException):
     def __str__(self) -> str:  # pragma: nocover
         return "TypeErrorException message, override me!"
 
-    def get_error_header(self) -> str:
+    # TODO remove this
+    def get_error_header(self) -> str:  # pragma: nocover
         return ""
 
-    # TODO rename this function
+    # TODO remove this
     def format_typestack(
         self, type_stack: Sequence[VariableType | TypePlaceholder]
     ) -> str:  # pragma: nocover
@@ -40,7 +41,7 @@ class FunctionTypeError(TypeException):
         self.computed_return_types = computed_return_types
         super().__init__(file=file, node=function)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Function {self.function.name} returns wrong type(s)\n"
             + self.get_error_header()
@@ -64,7 +65,7 @@ class StackUnderflowError(TypeException):
         self.function = function
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Stack underflow inside {self.function.name}\n" + self.get_error_header()
         )
@@ -85,7 +86,7 @@ class StackTypesError(TypeException):
         self.type_stack = type_stack
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Invalid stack types inside {self.function.name}\n"
             + self.get_error_header()
@@ -111,7 +112,7 @@ class ConditionTypeError(TypeException):
         self.condition_stack = condition_stack
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Invalid stack modification in condition inside {self.function.name}\n"
             + self.get_error_header()
@@ -141,7 +142,7 @@ class BranchTypeError(TypeException):
         self.else_stack = else_stack
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Inconsistent stack modification in if (else)-block {self.function.name}\n"
             + self.get_error_header()
@@ -172,7 +173,7 @@ class LoopTypeError(TypeException):
         self.loop_stack = loop_stack
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Stack modification inside loop body inside {self.function.name}\n"
             + self.get_error_header()
@@ -196,7 +197,7 @@ class InvalidMainSignuture(TypeException):
         self.function = function
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return f"Invalid signature for main function\n" + self.get_error_header()
 
 
@@ -213,7 +214,7 @@ class GetFieldOfNonStructTypeError(TypeException):
         self.type_stack = type_stack
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Attempt to get field of non-struct value in {self.function.name}\n"
             + self.get_error_header()
@@ -237,7 +238,7 @@ class SetFieldOfNonStructTypeError(TypeException):
         self.type_stack = type_stack
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Attempt to set field of non-struct value in {self.function.name}\n"
             + self.get_error_header()
@@ -263,7 +264,7 @@ class StructUpdateStackError(TypeException):
         self.type_stack_before = type_stack_before
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Invalid stack modification after evaluating new field inside {self.function.name}\n"
             + self.get_error_header()
@@ -297,7 +298,7 @@ class StructUpdateTypeError(TypeException):
         self.found_type = found_type
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return (
             f"Attempt to set field {self.field_name} of {self.struct.name} to wrong type in {self.function.name}\n"
             + self.get_error_header()
@@ -323,7 +324,7 @@ class InvalidMemberFunctionSignature(TypeException):
         self.signature = signature
         super().__init__(file=file, node=node)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         assert isinstance(self.node, Function)
         assert isinstance(self.node.name, MemberFunction)
 
