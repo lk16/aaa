@@ -1,6 +1,0 @@
-fn main {
-    if 3 true {
-        nop
-    }
-    drop
-}

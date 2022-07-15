@@ -3,7 +3,7 @@ from typing import List, Type
 import pytest
 
 from lang.typing.exceptions import MainFunctionNotFound
-from tests.aaa_code import check_aaa_full_source
+from tests.aaa import check_aaa_full_source
 
 
 @pytest.mark.parametrize(

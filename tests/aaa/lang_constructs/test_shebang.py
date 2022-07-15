@@ -1,4 +1,4 @@
-from tests.aaa_code import check_aaa_full_source
+from tests.aaa import check_aaa_full_source
 
 
 def test_shebang() -> None:

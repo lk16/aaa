@@ -1,6 +1,0 @@
-fn main {
-    while 3 true {
-        nop
-    }
-    drop
-}

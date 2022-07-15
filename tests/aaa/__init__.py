@@ -17,12 +17,13 @@ def check_aaa_full_source(
     code: str, expected_output: str, expected_exception_types: List[Type[Exception]]
 ) -> None:
     program = Program.without_file(code)
-    assert not program.file_load_errors
-    Simulator(program).run()
 
-    with redirect_stdout(StringIO()) as stdout:
-        with redirect_stderr(StringIO()) as stderr:
-            Simulator(program).run()
+    if not program.file_load_errors:
+        Simulator(program).run()
+
+        with redirect_stdout(StringIO()) as stdout:
+            with redirect_stderr(StringIO()) as stderr:
+                Simulator(program).run()
 
     assert list(map(type, program.file_load_errors)) == expected_exception_types
 

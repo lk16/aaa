@@ -2,7 +2,7 @@ from typing import List, Type
 
 import pytest
 
-from tests.aaa_code import check_aaa_main
+from tests.aaa import check_aaa_main
 
 
 @pytest.mark.parametrize(
