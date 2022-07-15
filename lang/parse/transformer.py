@@ -3,7 +3,7 @@ from typing import Any, List, Tuple, Union
 from lark.lexer import Token
 from lark.visitors import Transformer
 
-from lang.parse.models import (
+from lang.models.parse import (
     AaaTreeNode,
     Argument,
     BooleanLiteral,

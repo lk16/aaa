@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Sequence
 
 from lang.exceptions import AaaLoadException
-from lang.parse.models import AaaTreeNode, Function, MemberFunction, Struct
+from lang.models.parse import AaaTreeNode, Function, MemberFunction, Struct
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 

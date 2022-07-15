@@ -1,20 +1,12 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import List, Union
 
-from pydantic import BaseModel
-
-
-class AaaModel(BaseModel):
-    class Config:
-        extra = "forbid"
-        frozen = True
+from lang.models import AaaModel
 
 
 class AaaTreeNode(AaaModel):
     class Config:
-        extra = "forbid"
         frozen = True
 
 
@@ -161,12 +153,6 @@ class ParsedFile(AaaTreeNode):
     functions: List[Function]
     imports: List[Import]
     structs: List[Struct]
-
-
-# TODO this is not created by parser/transformer, move out of parse module
-class ProgramImport(AaaModel):
-    original_name: str
-    source_file: Path
 
 
 LoopBody.update_forward_refs()

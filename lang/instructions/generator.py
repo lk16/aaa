@@ -57,7 +57,7 @@ from lang.instructions.types import (
     VecSet,
     VecSize,
 )
-from lang.parse.models import (
+from lang.models.parse import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,
@@ -68,13 +68,13 @@ from lang.parse.models import (
     Loop,
     MemberFunction,
     Operator,
-    ProgramImport,
     StringLiteral,
     Struct,
     StructFieldQuery,
     StructFieldUpdate,
     TypeLiteral,
 )
+from lang.models.program import ProgramImport
 from lang.typing.types import RootType, VariableType
 
 if TYPE_CHECKING:  # pragma: nocover

@@ -13,6 +13,7 @@ from lang.exceptions.naming import (
     UnknownStructField,
     UnknownType,
 )
+from lang.exceptions.runtime import AaaAssertionFailure
 from lang.exceptions.typing import (
     BranchTypeError,
     ConditionTypeError,
@@ -212,6 +213,13 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             [MainFunctionNotFound],
             id="main-not-found",
+        ),
+        pytest.param(
+            """
+            fn main { false assert }
+            """,
+            [AaaAssertionFailure],
+            id="assertion-failure",
         ),
     ],
 )

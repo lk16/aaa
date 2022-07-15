@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from lang.parse.models import AaaModel, Struct
+from lang.models import AaaModel
+from lang.models.parse import Struct
 from lang.typing.types import VariableType
 
 

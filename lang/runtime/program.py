@@ -15,17 +15,17 @@ from lang.exceptions.misc import MainFunctionNotFound, MissingEnvironmentVariabl
 from lang.exceptions.naming import FunctionNameCollision, StructNameCollision
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
-from lang.parse.models import (
-    AaaModel,
+from lang.models import AaaModel
+from lang.models.parse import (
     Function,
     MemberFunction,
     ParsedBuiltinsFile,
     ParsedFile,
     ParsedTypePlaceholder,
-    ProgramImport,
     Struct,
     TypeLiteral,
 )
+from lang.models.program import ProgramImport
 from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str

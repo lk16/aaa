@@ -3,8 +3,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Type
 
-from pydantic import BaseModel
-
+from lang.exceptions import AaaRuntimeException
+from lang.exceptions.runtime import AaaAssertionFailure
 from lang.instructions.types import (
     And,
     Assert,
@@ -61,7 +61,8 @@ from lang.instructions.types import (
     VecSet,
     VecSize,
 )
-from lang.parse.models import Function, TypeLiteral
+from lang.models.runtime import CallStackItem
+from lang.models.parse import Function, TypeLiteral
 from lang.runtime.debug import format_str
 from lang.runtime.program import Program
 from lang.typing.types import (
@@ -72,18 +73,6 @@ from lang.typing.types import (
     int_var,
     str_var,
 )
-
-
-# TODO move out and create new base model class for modifiable AaaModels
-class CallStackItem(BaseModel):
-    class Config:
-        extra = "forbid"
-        arbitrary_types_allowed = True  # TODO fix
-
-    func_name: str
-    source_file: Path
-    instruction_pointer: int
-    argument_values: Dict[str, Variable]
 
 
 class Simulator:
@@ -198,11 +187,18 @@ class Simulator:
             file=sys.stderr,
         )
 
-    def run(self) -> None:
+    def run(self, raise_=False) -> None:
         if self.verbose:  # pragma: nocover
             self.program.print_all_instructions()
 
-        self.call_function(self.program.entry_point_file, "main")
+        try:
+            self.call_function(self.program.entry_point_file, "main")
+        except AaaRuntimeException as e:
+            print(e, file=sys.stderr)
+            if raise_:  # This is for testing. TODO find better solution
+                raise e
+            else:  # pragma: nocover
+                exit(1)
 
     def call_function(self, file: Path, func_name: str) -> None:
         function = self.program.get_identifier(file, func_name)
@@ -439,21 +435,8 @@ class Simulator:
         x: bool = self.pop().value
 
         if not x:
-            print("Assertion failure, stacktrace:", file=sys.stderr)
-            for call_stack_item in self.call_stack:
-                name = call_stack_item.func_name
-
-                args = ""
-                if call_stack_item.argument_values:  # pragma: nocover
-                    args = ", arguments: " + ", ".join(
-                        f"{name}={value.__repr__()}"
-                        for name, value in call_stack_item.argument_values.items()
-                    )
-
-                print(f"- {name}{args}", file=sys.stderr)
-
-            # TODO add filename and line number to stacktrace
-            exit(1)
+            call_stack_copy = deepcopy(self.call_stack)
+            raise AaaAssertionFailure(call_stack_copy)
 
         return self.get_instruction_pointer() + 1
 
