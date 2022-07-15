@@ -201,6 +201,23 @@ class FunctionNameCollision(TypeException):
         )
 
 
+class StructNameCollision(TypeException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        struct: "Struct",
+    ) -> None:
+        self.struct = struct
+        super().__init__(file=file, node=struct)
+
+    def __str__(self) -> str:
+        return (
+            f"Struct {self.struct.name} was already defined.\n"
+            + self.get_error_header()
+        )
+
+
 class ArgumentNameCollision(TypeException):
     def __init__(
         self,

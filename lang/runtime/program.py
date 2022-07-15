@@ -29,6 +29,7 @@ from lang.typing.exceptions import (
     ImportedItemNotFound,
     MainFunctionNotFound,
     MissingEnvironmentVariable,
+    StructNameCollision,
     TypeException,
 )
 from lang.typing.types import Signature, SignatureItem, TypePlaceholder, VariableType
@@ -198,7 +199,7 @@ class Program:
 
         for struct in parsed_file.structs:
             if struct.name in self.identifiers[file]:
-                raise NotImplementedError
+                raise StructNameCollision(file=file, struct=struct)
 
             self.identifiers[file][struct.name] = struct
 

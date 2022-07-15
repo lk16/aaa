@@ -14,9 +14,11 @@ from lang.typing.exceptions import (
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     LoopTypeError,
+    MainFunctionNotFound,
     SetFieldOfNonStructTypeError,
     StackTypesError,
     StackUnderflowError,
+    StructNameCollision,
     StructUpdateStackError,
     StructUpdateTypeError,
     UnknownFunction,
@@ -194,6 +196,21 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             [InvalidMemberFunctionSignature],
             id="member-func-without-arg-type",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            struct main { x as int }
+            """,
+            [StructNameCollision],
+            id="struct-name-collision",
+        ),
+        pytest.param(
+            """
+            fn foo { nop }
+            """,
+            [MainFunctionNotFound],
+            id="main-not-found",
         ),
     ],
 )
