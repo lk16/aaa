@@ -25,7 +25,8 @@ def check_aaa_full_source(
             with redirect_stderr(StringIO()) as stderr:
                 Simulator(program).run()
 
-    assert list(map(type, program.file_load_errors)) == expected_exception_types
+    exception_types = list(map(type, program.file_load_errors))
+    assert exception_types == expected_exception_types
 
     if not expected_exception_types:
         assert expected_output == stdout.getvalue()

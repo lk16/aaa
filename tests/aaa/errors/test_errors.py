@@ -10,12 +10,18 @@ from lang.typing.exceptions import (
     CyclicImportError,
     FunctionNameCollision,
     FunctionTypeError,
+    GetFieldOfNonStructTypeError,
     InvalidMainSignuture,
+    InvalidMemberFunctionSignature,
     LoopTypeError,
+    SetFieldOfNonStructTypeError,
     StackTypesError,
     StackUnderflowError,
+    StructUpdateStackError,
+    StructUpdateTypeError,
     UnknownFunction,
     UnknownPlaceholderType,
+    UnknownStructField,
     UnknownType,
 )
 from tests.aaa import check_aaa_full_source
@@ -67,8 +73,7 @@ from tests.aaa import check_aaa_full_source
         pytest.param("fn main { drop }", [StackUnderflowError], id="stack-underflow"),
         pytest.param(
             """
-            fn foo { bar }
-            fn main { nop }
+            fn main { bar }
             """,
             [UnknownFunction],
             id="unknown-function",
@@ -92,10 +97,11 @@ from tests.aaa import check_aaa_full_source
         ),
         pytest.param(
             """
-            fn foo { 5 } fn bar { 5 }
+            fn foo { 5 }
+            fn bar { 5 "" + }
             fn main { nop }
             """,
-            [FunctionTypeError, FunctionTypeError],
+            [FunctionTypeError, StackTypesError],
             id="multiple-errors",
         ),
         pytest.param(
@@ -112,7 +118,85 @@ from tests.aaa import check_aaa_full_source
             id="absolute-import",
         ),
         pytest.param(
-            "# TODO", [CyclicImportError], id="cyclic-import", marks=pytest.mark.skip
+            "// TODO", [CyclicImportError], id="cyclic-import", marks=pytest.mark.skip
+        ),
+        pytest.param(
+            """
+            fn foo { 3 "a" ? }
+            fn main { nop }
+            """,
+            [GetFieldOfNonStructTypeError],
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn foo { bar "y" ? . drop }
+            fn main { nop }
+            """,
+            [UnknownStructField],
+            id="unknown-struct-field-get",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn foo { bar "y" { 3 } ! drop }
+            fn main { nop }
+            """,
+            [UnknownStructField],
+            id="unknown-struct-field-set",
+        ),
+        pytest.param(
+            """
+            fn foo { 5 "x" { 3 } ! drop }
+            fn main { nop }
+            """,
+            [SetFieldOfNonStructTypeError],
+            id="set-field-of-non-struct",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn foo { bar "x" { 34 35 } ! "x" ? . "\\n" . drop }
+            fn main { nop }
+            """,
+            [StructUpdateStackError],
+            id="struct-update-stack-error",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn foo { bar "x" { false } ! drop }
+            fn main { nop }
+            """,
+            [StructUpdateTypeError],
+            id="struct-update-type-error",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn bar:foo { nop }
+            fn main { nop }
+            """,
+            [InvalidMemberFunctionSignature],
+            id="member-func-without-arg-or-return-type",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn bar:foo args b as bar { nop }
+            fn main { nop }
+            """,
+            [InvalidMemberFunctionSignature],
+            id="member-func-without-return-type",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn bar:foo return bar { nop }
+            fn main { nop }
+            """,
+            [InvalidMemberFunctionSignature],
+            id="member-func-without-arg-type",
         ),
     ],
 )

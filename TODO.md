@@ -1,8 +1,6 @@
 # TODO
 
 ### Tests
-- group existing tests by purpose
-- move examples used for testing specific aaa features into python `tests` folder
 - redo all existing exceptions
 - handle lark parser errors nicely
 - keywords can't be used as identifiers
