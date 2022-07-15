@@ -24,7 +24,7 @@ from lang.typing.exceptions import (
     UnknownStructField,
     UnknownType,
 )
-from tests.aaa import check_aaa_full_source
+from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
 
 
 @pytest.mark.parametrize(
@@ -118,9 +118,6 @@ from tests.aaa import check_aaa_full_source
             id="absolute-import",
         ),
         pytest.param(
-            "// TODO", [CyclicImportError], id="cyclic-import", marks=pytest.mark.skip
-        ),
-        pytest.param(
             """
             fn foo { 3 "a" ? }
             fn main { nop }
@@ -202,3 +199,17 @@ from tests.aaa import check_aaa_full_source
 )
 def test_errors(code: str, expected_exception_types: List[Type[Exception]]) -> None:
     check_aaa_full_source(code, "", expected_exception_types)
+
+
+def test_cyclic_import() -> None:
+    files = {
+        "main.aaa": """
+        from "foo" import foo
+        fn main { nop }
+        """,
+        "foo.aaa": """
+        from "main" import main
+        fn foo { nop }
+        """,
+    }
+    check_aaa_full_source_multi_file(files, "", [CyclicImportError])
