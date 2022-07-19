@@ -1,9 +1,7 @@
 from pathlib import Path
-from typing import Sequence
 
 from lang.exceptions import AaaLoadException
 from lang.models.parse import AaaTreeNode, Function, Struct
-from lang.typing.types import TypePlaceholder, VariableType
 
 
 class NamingException(AaaLoadException):
@@ -15,12 +13,6 @@ class NamingException(AaaLoadException):
 
     def __str__(self) -> str:  # pragma: nocover
         return "TypeErrorException message, override me!"
-
-    # TODO remove this
-    def format_typestack(
-        self, type_stack: Sequence[VariableType | TypePlaceholder]
-    ) -> str:  # pragma: nocover
-        return " ".join(repr(type_stack_item) for type_stack_item in type_stack)
 
 
 class FunctionNameCollision(NamingException):

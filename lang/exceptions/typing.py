@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import List, Sequence
+from typing import List
 
-from lang.exceptions import AaaLoadException
+from lang.exceptions import AaaLoadException, format_typestack
 from lang.models.parse import AaaTreeNode, Function, MemberFunction, Struct
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
@@ -12,12 +12,6 @@ class TypeException(AaaLoadException):
         self.node = node
         self.code = file.read_text()
         return super().__init__()
-
-    # TODO this should not be a member function
-    def format_typestack(
-        self, type_stack: Sequence[VariableType | TypePlaceholder]
-    ) -> str:  # pragma: nocover
-        return " ".join(repr(type_stack_item) for type_stack_item in type_stack)
 
 
 class FunctionTypeError(TypeException):
@@ -41,10 +35,10 @@ class FunctionTypeError(TypeException):
         return (
             f"{self.file}:{line}:{col}: Function {self.function.name} returns wrong type(s)\n"
             + "expected return types: "
-            + self.format_typestack(self.expected_return_types)
+            + format_typestack(self.expected_return_types)
             + "\n"
             + "   found return types: "
-            + self.format_typestack(self.computed_return_types)
+            + format_typestack(self.computed_return_types)
             + "\n"
         )
 
@@ -91,9 +85,9 @@ class StackTypesError(TypeException):
         return (
             f"{self.file}:{line}:{col} Function {self.function.name} has a stack type error\n"
             + "  Type stack: "
-            + self.format_typestack(self.type_stack)
+            + format_typestack(self.type_stack)
             + "\n"
-            "Expected top: " + self.format_typestack(self.signature.arg_types) + "\n"
+            "Expected top: " + format_typestack(self.signature.arg_types) + "\n"
         )
 
 
@@ -119,10 +113,10 @@ class ConditionTypeError(TypeException):
         return (
             f"{self.file}:{line}:{col} Function {self.function.name} has a condition type error\n"
             + "stack before: "
-            + self.format_typestack(self.type_stack)
+            + format_typestack(self.type_stack)
             + "\n"
             + " stack after: "
-            + self.format_typestack(self.condition_stack)
+            + format_typestack(self.condition_stack)
             + "\n"
         )
 
@@ -151,13 +145,13 @@ class BranchTypeError(TypeException):
         return (
             f"{self.file}:{line}:{col} Function {self.function.name} has inconsistent stacks for branches\n"
             + "           before: "
-            + self.format_typestack(self.type_stack)
+            + format_typestack(self.type_stack)
             + "\n"
             + "  after if-branch: "
-            + self.format_typestack(self.if_stack)
+            + format_typestack(self.if_stack)
             + "\n"
             + "after else-branch: "
-            + self.format_typestack(self.else_stack)
+            + format_typestack(self.else_stack)
             + "\n"
         )
 
@@ -184,10 +178,10 @@ class LoopTypeError(TypeException):
         return (
             f"{self.file}:{line}:{col} Function {self.function.name} has a stack modification inside loop body\n"
             + "before loop: "
-            + self.format_typestack(self.type_stack)
+            + format_typestack(self.type_stack)
             + "\n"
             + " after loop: "
-            + self.format_typestack(self.loop_stack)
+            + format_typestack(self.loop_stack)
             + "\n"
         )
 
@@ -230,7 +224,7 @@ class GetFieldOfNonStructTypeError(TypeException):
         return (
             f"{self.file}:{line}:{col} Function {self.function.name} tries to get field of non-struct value\n"
             + "  Type stack: "
-            + self.format_typestack(self.type_stack)
+            + format_typestack(self.type_stack)
             + "\n"
             "Expected top: <struct type> str \n"
         )
@@ -256,7 +250,7 @@ class SetFieldOfNonStructTypeError(TypeException):
         return (
             f"{self.file}:{line}:{col} Function {self.function.name} tries to set field of non-struct value\n"
             + "  Type stack: "
-            + self.format_typestack(self.type_stack)
+            + format_typestack(self.type_stack)
             + "\n"
             "Expected top: <struct type> str \n"
         )
@@ -284,10 +278,10 @@ class StructUpdateStackError(TypeException):
         return (
             f"{self.file}:{line}:{col} Function {self.function.name} modifies stack incorrectly when updating struct field\n"
             + "  Expected: "
-            + self.format_typestack(self.type_stack_before)
+            + format_typestack(self.type_stack_before)
             + f" <new field value> \n"  # TODO put actual expected type for field
             + "    Found: "
-            + self.format_typestack(self.type_stack)
+            + format_typestack(self.type_stack)
             + "\n"
         )
 
@@ -324,7 +318,7 @@ class StructUpdateTypeError(TypeException):
             + f"   Found type: {self.found_type}\n"
             + "\n"
             + "Type stack: "
-            + self.format_typestack(self.type_stack)
+            + format_typestack(self.type_stack)
             + "\n"
         )
 
