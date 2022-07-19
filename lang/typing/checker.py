@@ -578,7 +578,6 @@ class TypeChecker:
         if struct_type.root_type != RootType.STRUCT:
             raise SetFieldOfNonStructTypeError(
                 file=self.file,
-                node=node,  # TODO point to the actual '!' in the printed error message
                 type_stack=type_stack,
                 function=self.function,
             )
