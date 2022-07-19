@@ -60,11 +60,11 @@ class StackTypesError(TypeException):
     def __str__(self) -> str:  # pragma: nocover
         # TODO can we add which function call or operator would get invalid operands?
 
+        stack = format_typestack(self.type_stack)
+
         return (
             f"{self.where()} Function {self.function.name} has a stack type error\n"
-            + "  Type stack: "
-            + format_typestack(self.type_stack)
-            + "\n"
+            + f"  Type stack: {stack}\n"
             "Expected top: " + format_typestack(self.signature.arg_types) + "\n"
         )
 
@@ -83,14 +83,13 @@ class ConditionTypeError(TypeException):
         super().__init__(file, function)
 
     def __str__(self) -> str:  # pragma: nocover
+        stack_before = format_typestack(self.type_stack)
+        stack_after = format_typestack(self.condition_stack)
+
         return (
             f"{self.where()} Function {self.function.name} has a condition type error\n"
-            + "stack before: "
-            + format_typestack(self.type_stack)
-            + "\n"
-            + " stack after: "
-            + format_typestack(self.condition_stack)
-            + "\n"
+            + f"stack before: {stack_before}\n"
+            + f" stack after: {stack_after}\n"
         )
 
 
@@ -110,17 +109,15 @@ class BranchTypeError(TypeException):
         super().__init__(file, function)
 
     def __str__(self) -> str:  # pragma: nocover
+        before_stack = format_typestack(self.type_stack)
+        if_stack = format_typestack(self.if_stack)
+        else_stack = format_typestack(self.else_stack)
+
         return (
             f"{self.where()} Function {self.function.name} has inconsistent stacks for branches\n"
-            + "           before: "
-            + format_typestack(self.type_stack)
-            + "\n"
-            + "  after if-branch: "
-            + format_typestack(self.if_stack)
-            + "\n"
-            + "after else-branch: "
-            + format_typestack(self.else_stack)
-            + "\n"
+            + f"           before: {before_stack}\n"
+            + f"  after if-branch: {if_stack}\n"
+            + f"after else-branch: {else_stack}\n"
         )
 
 
@@ -138,14 +135,13 @@ class LoopTypeError(TypeException):
         super().__init__(file, function)
 
     def __str__(self) -> str:  # pragma: nocover
+        before_stack = format_typestack(self.type_stack)
+        after_stack = format_typestack(self.loop_stack)
+
         return (
             f"{self.where()} Function {self.function.name} has a stack modification inside loop body\n"
-            + "before loop: "
-            + format_typestack(self.type_stack)
-            + "\n"
-            + " after loop: "
-            + format_typestack(self.loop_stack)
-            + "\n"
+            + f"before loop: {before_stack}\n"
+            + f" after loop: {after_stack}\n"
         )
 
 
@@ -167,12 +163,12 @@ class GetFieldOfNonStructTypeError(TypeException):
         super().__init__(file, function)
 
     def __str__(self) -> str:  # pragma: nocover
+        stack = format_typestack(self.type_stack)
+
         return (
             f"{self.where()} Function {self.function.name} tries to get field of non-struct value\n"
-            + "  Type stack: "
-            + format_typestack(self.type_stack)
-            + "\n"
-            "Expected top: <struct type> str \n"
+            + f"  Type stack: {stack}\n"
+            + "Expected top: <struct type> str \n"
         )
 
 
@@ -189,12 +185,12 @@ class SetFieldOfNonStructTypeError(TypeException):
 
     def __str__(self) -> str:  # pragma: nocover
         # TODO this just points to start of function
+        stack = format_typestack(self.type_stack)
+
         return (
             f"{self.where()} Function {self.function.name} tries to set field of non-struct value\n"
-            + "  Type stack: "
-            + format_typestack(self.type_stack)
-            + "\n"
-            "Expected top: <struct type> str \n"
+            + f"  Type stack: {stack}\n"
+            + "Expected top: <struct type> str \n"
         )
 
 
@@ -213,14 +209,13 @@ class StructUpdateStackError(TypeException):
 
     def __str__(self) -> str:  # pragma: nocover
         # TODO this just points to start of function
+        expected_stack = format_typestack(self.type_stack_before)
+        found_stack = format_typestack(self.type_stack)
+
         return (
             f"{self.where()} Function {self.function.name} modifies stack incorrectly when updating struct field\n"
-            + "  Expected: "
-            + format_typestack(self.type_stack_before)
-            + f" <new field value> \n"  # TODO put actual expected type for field
-            + "    Found: "
-            + format_typestack(self.type_stack)
-            + "\n"
+            + f"  Expected: {expected_stack} <new field value> \n"  # TODO put actual expected type for field
+            + f"    Found: {found_stack}\n"
         )
 
 
