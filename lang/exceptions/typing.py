@@ -7,11 +7,7 @@ from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableTyp
 
 
 class TypeException(AaaLoadException):
-    def __init__(self, *, file: Path, node: "AaaTreeNode") -> None:
-        self.file = file
-        self.node = node
-        self.code = file.read_text()
-        return super().__init__()
+    ...
 
 
 class FunctionTypeError(TypeException):
@@ -26,7 +22,7 @@ class FunctionTypeError(TypeException):
         self.function = function
         self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
-        super().__init__(file=file, node=function)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -48,11 +44,10 @@ class StackUnderflowError(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -66,7 +61,6 @@ class StackTypesError(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
         signature: Signature,
         type_stack: TypeStack,
@@ -74,7 +68,7 @@ class StackTypesError(TypeException):
         self.function = function
         self.signature = signature
         self.type_stack = type_stack
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -96,7 +90,6 @@ class ConditionTypeError(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
         condition_stack: TypeStack,
@@ -104,7 +97,7 @@ class ConditionTypeError(TypeException):
         self.function = function
         self.type_stack = type_stack
         self.condition_stack = condition_stack
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -126,7 +119,6 @@ class BranchTypeError(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
         if_stack: TypeStack,
@@ -136,7 +128,7 @@ class BranchTypeError(TypeException):
         self.type_stack = type_stack
         self.if_stack = if_stack
         self.else_stack = else_stack
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -161,7 +153,6 @@ class LoopTypeError(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
         loop_stack: TypeStack,
@@ -169,7 +160,7 @@ class LoopTypeError(TypeException):
         self.function = function
         self.type_stack = type_stack
         self.loop_stack = loop_stack
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -191,11 +182,10 @@ class InvalidMainSignuture(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -209,13 +199,12 @@ class GetFieldOfNonStructTypeError(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
     ) -> None:
         self.function = function
         self.type_stack = type_stack
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -241,7 +230,7 @@ class SetFieldOfNonStructTypeError(TypeException):
     ) -> None:
         self.function = function
         self.type_stack = type_stack
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -261,7 +250,6 @@ class StructUpdateStackError(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
         type_stack_before: TypeStack,
@@ -269,7 +257,7 @@ class StructUpdateStackError(TypeException):
         self.function = function
         self.type_stack = type_stack
         self.type_stack_before = type_stack_before
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -291,7 +279,6 @@ class StructUpdateTypeError(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
         type_stack: TypeStack,
         struct: Struct,
@@ -305,7 +292,7 @@ class StructUpdateTypeError(TypeException):
         self.field_name = field_name
         self.expected_type = expected_type
         self.found_type = found_type
-        super().__init__(file=file, node=node)
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
         line = self.function.token.line
@@ -328,22 +315,24 @@ class InvalidMemberFunctionSignature(TypeException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
+        function: Function,
         struct: Struct,
         signature: Signature,
     ) -> None:
         self.struct = struct
         self.signature = signature
-        super().__init__(file=file, node=node)
+        self.function = function
+        self.file = file
 
     def __str__(self) -> str:  # pragma: nocover
-        assert isinstance(self.node, Function)
-        assert isinstance(self.node.name, MemberFunction)
+        assert isinstance(self.function.name, MemberFunction)
 
-        member_func_name = f"{self.node.name.type_name}:{self.node.name.func_name}"
+        member_func_name = (
+            f"{self.function.name.type_name}:{self.function.name.func_name}"
+        )
 
-        line = self.node.token.line
-        col = self.node.token.column
+        line = self.function.token.line
+        col = self.function.token.column
 
         formatted = f"{self.file}:{line}:{col} Function {member_func_name} has invalid member-function signature\n\n"
 

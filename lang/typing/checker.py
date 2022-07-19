@@ -130,7 +130,7 @@ class TypeChecker:
         arg_count = len(signature.arg_types)
 
         if len(stack) < arg_count:
-            raise StackUnderflowError(file=self.file, function=self.function, node=node)
+            raise StackUnderflowError(file=self.file, function=self.function)
 
         placeholder_types: Dict[str, SignatureItem] = {}
         expected_types = signature.arg_types
@@ -145,7 +145,6 @@ class TypeChecker:
                 raise StackTypesError(
                     file=self.file,
                     function=self.function,
-                    node=node,
                     signature=signature,
                     type_stack=type_stack,
                 )
@@ -284,7 +283,6 @@ class TypeChecker:
             raise ConditionTypeError(
                 file=self.file,
                 function=self.function,
-                node=node,
                 type_stack=type_stack,
                 condition_stack=condition_stack,
             )
@@ -305,7 +303,6 @@ class TypeChecker:
             raise BranchTypeError(
                 file=self.file,
                 function=self.function,
-                node=node,
                 type_stack=type_stack,
                 if_stack=if_stack,
                 else_stack=else_stack,
@@ -327,7 +324,6 @@ class TypeChecker:
             raise LoopTypeError(
                 file=self.file,
                 function=self.function,
-                node=node,
                 type_stack=type_stack,
                 loop_stack=loop_stack,
             )
@@ -442,7 +438,6 @@ class TypeChecker:
                 raise InvalidMainSignuture(
                     file=self.file,
                     function=self.function,
-                    node=node,
                 )
 
         if isinstance(node.name, MemberFunction):
@@ -467,7 +462,7 @@ class TypeChecker:
             ):
                 raise InvalidMemberFunctionSignature(
                     file=self.file,
-                    node=node,
+                    function=node,
                     struct=struct,
                     signature=signature,
                 )
@@ -516,7 +511,7 @@ class TypeChecker:
         type_stack = self._check_string_literal(node.field_name, copy(type_stack))
 
         if len(type_stack) < 2:
-            raise StackUnderflowError(file=self.file, function=self.function, node=node)
+            raise StackUnderflowError(file=self.file, function=self.function)
 
         struct_type, field_selector_type = type_stack[-2:]
 
@@ -529,7 +524,6 @@ class TypeChecker:
         if struct_type.root_type != RootType.STRUCT:
             raise GetFieldOfNonStructTypeError(
                 file=self.file,
-                node=node,  # TODO point to the actual '?' in the printed error message
                 type_stack=type_stack,
                 function=self.function,
             )
@@ -558,7 +552,7 @@ class TypeChecker:
         )
 
         if len(type_stack) < 3:
-            raise StackUnderflowError(file=self.file, function=self.function, node=node)
+            raise StackUnderflowError(file=self.file, function=self.function)
 
         struct_type, field_selector_type, update_expr_type = type_stack[-3:]
 
@@ -575,7 +569,6 @@ class TypeChecker:
             raise StructUpdateStackError(
                 file=self.file,
                 function=self.function,
-                node=node,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
             )
@@ -599,7 +592,6 @@ class TypeChecker:
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
                 file=self.file,
-                node=node,
                 function=self.function,
                 type_stack=type_stack,
                 struct=struct,
