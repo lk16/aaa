@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import List, Union
 
+from lark.lexer import Token
+
 from lang.models import AaaModel
 
 
@@ -102,6 +104,7 @@ class Argument(AaaTreeNode):
 
 
 class Function(AaaTreeNode):
+    token: Token
     name: str | MemberFunction
     arguments: List[Argument]
     return_types: List[ParsedType]

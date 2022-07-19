@@ -136,6 +136,7 @@ class AaaTransformer(Transformer[Any, Any]):
         body: FunctionBody
         arguments: List[Argument] = []
         return_types: List[ParsedType] = []
+        token: Token
 
         for arg in args:
             if isinstance(arg, Identifier):
@@ -152,11 +153,17 @@ class AaaTransformer(Transformer[Any, Any]):
                         assert False
             elif isinstance(arg, MemberFunction):
                 name = arg
+            elif isinstance(arg, Token):
+                token = arg
             else:  # pragma: nocover
                 assert False
 
         return Function(
-            name=name, arguments=arguments, return_types=return_types, body=body
+            name=name,
+            arguments=arguments,
+            return_types=return_types,
+            body=body,
+            token=token,
         )
 
     def function_arguments(self, args: List[Argument]) -> List[Argument]:

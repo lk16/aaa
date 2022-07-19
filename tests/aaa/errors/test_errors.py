@@ -127,6 +127,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             [GetFieldOfNonStructTypeError],
+            id="get-field-of-non-struct",
         ),
         pytest.param(
             """

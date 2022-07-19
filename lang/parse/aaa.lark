@@ -34,7 +34,7 @@ _AS:         /as(?=(\W|\s))/
 _ARGS:       /args(?=(\W|\s))/
 _BUILTIN_FN: /builtin_fn(?=(\W|\s))/
 _ELSE:       /else(?=(\W|\s))/
-_FN:         /fn(?=(\W|\s))/
+FN:         /fn(?=(\W|\s))/
 _FROM:       /from(?=(\W|\s))/
 _IMPORT:     /import(?=(\W|\s))/
 _IF:         /if(?=(\W|\s))/
@@ -107,7 +107,7 @@ member_function: type_literal ":" member_function_name
 // --- functions, arguments, return types ---
 
 function_definition: ( \
-    _FN function_name \
+    FN function_name \
     function_arguments? \
     function_return_types? \
     _BEGIN function_body _END \

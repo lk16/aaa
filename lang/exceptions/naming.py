@@ -17,10 +17,6 @@ class NamingException(AaaLoadException):
         return "TypeErrorException message, override me!"
 
     # TODO remove this
-    def get_error_header(self) -> str:  # pragma: nocover
-        return ""
-
-    # TODO remove this
     def format_typestack(
         self, type_stack: Sequence[VariableType | TypePlaceholder]
     ) -> str:  # pragma: nocover
@@ -38,10 +34,7 @@ class FunctionNameCollision(NamingException):
         super().__init__(file=file, node=function)
 
     def __str__(self) -> str:  # pragma: nocover
-        return (
-            f"Function {self.function.name} collides with other identifier.\n"
-            + self.get_error_header()
-        )
+        return f"Function {self.function.name} collides with other identifier.\n"
 
 
 class StructNameCollision(NamingException):
@@ -55,10 +48,7 @@ class StructNameCollision(NamingException):
         super().__init__(file=file, node=struct)
 
     def __str__(self) -> str:  # pragma: nocover
-        return (
-            f"Struct {self.struct.name} collides with other identifier.\n"
-            + self.get_error_header()
-        )
+        return f"Struct {self.struct.name} collides with other identifier.\n"
 
 
 class ArgumentNameCollision(NamingException):
@@ -73,10 +63,7 @@ class ArgumentNameCollision(NamingException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
-        return (
-            f"Argument name already used by other argument or function name in {self.function.name}\n"
-            + self.get_error_header()
-        )
+        return f"Argument name already used by other argument or function name in {self.function.name}\n"
 
 
 class UnknownFunction(NamingException):
@@ -91,10 +78,7 @@ class UnknownFunction(NamingException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
-        return (
-            f"Unknown function or identifier in {self.function.name}\n"
-            + self.get_error_header()
-        )
+        return f"Unknown function or identifier in {self.function.name}\n"
 
 
 class UnknownType(NamingException):
@@ -109,7 +93,7 @@ class UnknownType(NamingException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"Unknown type in {self.function.name}\n" + self.get_error_header()
+        return f"Unknown type in {self.function.name}\n"
 
 
 class UnknownStructField(NamingException):
@@ -128,10 +112,7 @@ class UnknownStructField(NamingException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
-        return (
-            f"Usage of unknown field in {self.function.name}: struct {self.struct.name} has no field {self.field_name}\n"
-            + self.get_error_header()
-        )
+        return f"Usage of unknown field in {self.function.name}: struct {self.struct.name} has no field {self.field_name}\n"
 
 
 class UnknownPlaceholderType(NamingException):
@@ -146,7 +127,4 @@ class UnknownPlaceholderType(NamingException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
-        return (
-            f"Usage of unknown placeholder type in {self.function.name}\n"
-            + self.get_error_header()
-        )
+        return f"Usage of unknown placeholder type in {self.function.name}\n"

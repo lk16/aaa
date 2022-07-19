@@ -13,14 +13,7 @@ class TypeException(AaaLoadException):
         self.code = file.read_text()
         return super().__init__()
 
-    def __str__(self) -> str:  # pragma: nocover
-        return "TypeErrorException message, override me!"
-
-    # TODO remove this
-    def get_error_header(self) -> str:  # pragma: nocover
-        return ""
-
-    # TODO remove this
+    # TODO this should not be a member function
     def format_typestack(
         self, type_stack: Sequence[VariableType | TypePlaceholder]
     ) -> str:  # pragma: nocover
@@ -42,9 +35,11 @@ class FunctionTypeError(TypeException):
         super().__init__(file=file, node=function)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
         return (
-            f"Function {self.function.name} returns wrong type(s)\n"
-            + self.get_error_header()
+            f"{self.file}:{line}:{col}: Function {self.function.name} returns wrong type(s)\n"
             + "expected return types: "
             + self.format_typestack(self.expected_return_types)
             + "\n"
@@ -66,9 +61,10 @@ class StackUnderflowError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
-        return (
-            f"Stack underflow inside {self.function.name}\n" + self.get_error_header()
-        )
+        line = self.function.token.line
+        col = self.function.token.column
+
+        return f"{self.file}:{line}:{col} Function {self.function.name} has a stack underflow\n"
 
 
 class StackTypesError(TypeException):
@@ -87,9 +83,13 @@ class StackTypesError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
+        # TODO can we add which function call or operator would get invalid operands?
+
         return (
-            f"Invalid stack types inside {self.function.name}\n"
-            + self.get_error_header()
+            f"{self.file}:{line}:{col} Function {self.function.name} has a stack type error\n"
             + "  Type stack: "
             + self.format_typestack(self.type_stack)
             + "\n"
@@ -113,9 +113,11 @@ class ConditionTypeError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
         return (
-            f"Invalid stack modification in condition inside {self.function.name}\n"
-            + self.get_error_header()
+            f"{self.file}:{line}:{col} Function {self.function.name} has a condition type error\n"
             + "stack before: "
             + self.format_typestack(self.type_stack)
             + "\n"
@@ -143,9 +145,11 @@ class BranchTypeError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
         return (
-            f"Inconsistent stack modification in if (else)-block {self.function.name}\n"
-            + self.get_error_header()
+            f"{self.file}:{line}:{col} Function {self.function.name} has inconsistent stacks for branches\n"
             + "           before: "
             + self.format_typestack(self.type_stack)
             + "\n"
@@ -174,9 +178,11 @@ class LoopTypeError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
         return (
-            f"Stack modification inside loop body inside {self.function.name}\n"
-            + self.get_error_header()
+            f"{self.file}:{line}:{col} Function {self.function.name} has a stack modification inside loop body\n"
             + "before loop: "
             + self.format_typestack(self.type_stack)
             + "\n"
@@ -198,7 +204,10 @@ class InvalidMainSignuture(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"Invalid signature for main function\n" + self.get_error_header()
+        line = self.function.token.line
+        col = self.function.token.column
+
+        return f"{self.file}:{line}:{col} Main function has invalid signature\n"
 
 
 class GetFieldOfNonStructTypeError(TypeException):
@@ -215,9 +224,11 @@ class GetFieldOfNonStructTypeError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
         return (
-            f"Attempt to get field of non-struct value in {self.function.name}\n"
-            + self.get_error_header()
+            f"{self.file}:{line}:{col} Function {self.function.name} tries to get field of non-struct value\n"
             + "  Type stack: "
             + self.format_typestack(self.type_stack)
             + "\n"
@@ -239,13 +250,15 @@ class SetFieldOfNonStructTypeError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
         return (
-            f"Attempt to set field of non-struct value in {self.function.name}\n"
-            + self.get_error_header()
+            f"{self.file}:{line}:{col} Function {self.function.name} tries to set field of non-struct value\n"
             + "  Type stack: "
             + self.format_typestack(self.type_stack)
             + "\n"
-            "Expected top: <struct type> str <new value of field>\n"
+            "Expected top: <struct type> str \n"
         )
 
 
@@ -265,13 +278,15 @@ class StructUpdateStackError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
         return (
-            f"Invalid stack modification after evaluating new field inside {self.function.name}\n"
-            + self.get_error_header()
+            f"{self.file}:{line}:{col} Function {self.function.name} modifies stack incorrectly when updating struct field\n"
             + "  Expected: "
             + self.format_typestack(self.type_stack_before)
             + f" <new field value> \n"  # TODO put actual expected type for field
-            + "Type stack: "
+            + "    Found: "
             + self.format_typestack(self.type_stack)
             + "\n"
         )
@@ -299,9 +314,12 @@ class StructUpdateTypeError(TypeException):
         super().__init__(file=file, node=node)
 
     def __str__(self) -> str:  # pragma: nocover
+        line = self.function.token.line
+        col = self.function.token.column
+
         return (
+            f"{self.file}:{line}:{col} Function {self.function.name} tries to update struct field with wrong type\n"
             f"Attempt to set field {self.field_name} of {self.struct.name} to wrong type in {self.function.name}\n"
-            + self.get_error_header()
             + f"Expected type: {self.expected_type}\n"
             + f"   Found type: {self.found_type}\n"
             + "\n"
@@ -329,10 +347,11 @@ class InvalidMemberFunctionSignature(TypeException):
         assert isinstance(self.node.name, MemberFunction)
 
         member_func_name = f"{self.node.name.type_name}:{self.node.name.func_name}"
-        formatted = (
-            f"Invalid member function signature found in definition of {member_func_name}\n"
-            + self.get_error_header()
-        )
+
+        line = self.node.token.line
+        col = self.node.token.column
+
+        formatted = f"{self.file}:{line}:{col} Function {member_func_name} has invalid member-function signature\n\n"
 
         if (
             len(self.signature.arg_types) == 0
