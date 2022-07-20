@@ -130,6 +130,7 @@ class Import(AaaTreeNode):
 
 
 class Struct(AaaTreeNode):
+    token: Token
     name: str
     fields: List[Argument]
 

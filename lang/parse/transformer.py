@@ -266,8 +266,10 @@ class AaaTransformer(Transformer[Any, Any]):
 
         return StringLiteral(value=value)
 
-    def struct_definition(self, name: Identifier, fields: List[Argument]) -> Struct:
-        return Struct(name=name.name, fields=fields)
+    def struct_definition(
+        self, token: Token, name: Identifier, fields: List[Argument]
+    ) -> Struct:
+        return Struct(name=name.name, fields=fields, token=token)
 
     def struct_field_query(self, field_name: StringLiteral) -> StructFieldQuery:
         return StructFieldQuery(field_name=field_name)

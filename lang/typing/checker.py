@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Set
+from typing import TYPE_CHECKING, Dict, Optional, Set, Union
 
 from lang.models.parse import (
     AaaTreeNode,
@@ -122,8 +122,13 @@ class TypeChecker:
         return None
 
     def _check_and_apply_signature(
-        self, type_stack: TypeStack, signature: Signature, node: AaaTreeNode
+        self,
+        type_stack: TypeStack,
+        signature: Signature,
+        func_like: Union[Operator, Function, MemberFunction],
     ) -> TypeStack:
+        # TODO load signature here, instead of passing it as argument
+
         stack = copy(type_stack)
 
         arg_count = len(signature.arg_types)
@@ -146,6 +151,7 @@ class TypeChecker:
                     function=self.function,
                     signature=signature,
                     type_stack=type_stack,
+                    func_like=func_like,
                 )
 
         stack = stack[: len(stack) - arg_count]
@@ -348,7 +354,9 @@ class TypeChecker:
 
         if isinstance(identifier, Function):
             signature = self._get_function_signature(identifier)
-            return self._check_and_apply_signature(copy(type_stack), signature, node)
+            return self._check_and_apply_signature(
+                copy(type_stack), signature, identifier
+            )
 
         elif isinstance(identifier, Struct):
             return copy(type_stack) + [

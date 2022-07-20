@@ -39,7 +39,7 @@ _FROM:       /from(?=(\W|\s))/
 _IMPORT:     /import(?=(\W|\s))/
 _IF:         /if(?=(\W|\s))/
 _RETURN:     /return(?=(\W|\s))/
-_STRUCT:     /struct(?=(\W|\s))/
+STRUCT:     /struct(?=(\W|\s))/
 _WHILE:      /while(?=(\W|\s))/
 
 // keywords for builtin types
@@ -93,7 +93,7 @@ import_item: identifier (_AS identifier)?
 // --- structs ---
 
 struct_definition: ( \
-    _STRUCT identifier \
+    STRUCT identifier \
     _BEGIN argument_list \
     _END \
 )

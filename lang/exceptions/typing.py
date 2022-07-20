@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from lang.exceptions import AaaLoadException, error_location, format_typestack
-from lang.models.parse import Function, MemberFunction, Struct
+from lang.models.parse import Function, MemberFunction, Operator, Struct
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 
@@ -52,20 +52,33 @@ class StackTypesError(TypeException):
         function: "Function",
         signature: Signature,
         type_stack: TypeStack,
+        func_like: Union[Operator, Function, MemberFunction],
     ) -> None:
         self.signature = signature
         self.type_stack = type_stack
+        self.func_like = func_like
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
-        # TODO can we add which function call or operator would get invalid operands?
+    def func_like_name(self) -> str:
+        if isinstance(self.func_like, Operator):
+            return self.func_like.value
+        elif isinstance(self.func_like, Function):
+            assert isinstance(self.func_like.name, str)
+            return self.func_like.name
+        elif isinstance(self.func_like, MemberFunction):
+            return f"{self.func_like.type_name}:{self.func_like.func_name}"
+        else:  # pragma: nocover
+            assert False
 
+    def __str__(self) -> str:  # pragma: nocover
         stack = format_typestack(self.type_stack)
 
         return (
-            f"{self.where()} Function {self.function.name} has a stack type error\n"
-            + f"  Type stack: {stack}\n"
-            "Expected top: " + format_typestack(self.signature.arg_types) + "\n"
+            f"{self.where()} Function {self.function.name} has invalid stack types when calling {self.func_like_name()}\n"
+            + f"Expected stack top: "
+            + format_typestack(self.signature.arg_types)
+            + "\n"
+            + f"       Found stack: {stack}\n"
         )
 
 

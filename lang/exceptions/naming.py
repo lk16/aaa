@@ -22,7 +22,7 @@ class IdentifierCollision(NamingException):
         super().__init__(file=file)
 
     def __str__(self) -> str:  # pragma: nocover
-        lhs_where = error_location(self.colliding.token)
+        lhs_where = error_location(self.file, self.colliding.token)
         # TODO point out what we collide with
 
         if isinstance(self.colliding, Struct):
@@ -65,11 +65,13 @@ class UnknownFunction(NamingException):
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:  # pragma: nocover
+        # TODO add name of unknown identifier
         return (
             f"{self.where()}: Function {self.function.name} uses unknown identifier\n"
         )
 
 
+# TODO add name of unknown type, consider merging with Unknown identifier
 class UnknownType(NamingException):
     def __init__(
         self,
@@ -87,6 +89,7 @@ class UnknownType(NamingException):
         return f"{self.where()}: Function {self.function.name} uses unknown type\n"
 
 
+# TODO add name of unknown struct field
 class UnknownStructField(NamingException):
     def __init__(
         self,
@@ -108,6 +111,7 @@ class UnknownStructField(NamingException):
         return f"{self.where()}: Function {self.function.name} tries to use non-existing field {self.field_name} of struct {self.struct.name}\n"
 
 
+# TODO add name of unknown placeholder type
 class UnknownPlaceholderType(NamingException):
     def __init__(
         self,
