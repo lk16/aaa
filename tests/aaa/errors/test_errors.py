@@ -1,8 +1,12 @@
-from typing import List, Type
+from typing import Dict, List, Type
 
 import pytest
 
-from lang.exceptions.import_ import AbsoluteImportError, CyclicImportError
+from lang.exceptions.import_ import (
+    AbsoluteImportError,
+    CyclicImportError,
+    ImportNamingCollision,
+)
 from lang.exceptions.misc import MainFunctionNotFound
 from lang.exceptions.naming import (
     ArgumentNameCollision,
@@ -228,15 +232,41 @@ def test_errors(code: str, expected_exception_types: List[Type[Exception]]) -> N
     check_aaa_full_source(code, "", expected_exception_types)
 
 
-def test_cyclic_import() -> None:
-    files = {
-        "main.aaa": """
-        from "foo" import foo
-        fn main { nop }
-        """,
-        "foo.aaa": """
-        from "main" import main
-        fn foo { nop }
-        """,
-    }
-    check_aaa_full_source_multi_file(files, "", [CyclicImportError])
+@pytest.mark.parametrize(
+    ["files", "expected_exception_types"],
+    [
+        pytest.param(
+            {
+                "main.aaa": """
+                from "foo" import foo
+                fn main { nop }
+                """,
+                "foo.aaa": """
+                from "main" import main
+                fn foo { nop }
+                """,
+            },
+            [CyclicImportError],
+            id="cyclic-import",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "five" import five as foo
+                from "five" import five as foo
+                fn main { nop }
+                """,
+                "five.aaa": """
+                fn five return int { 5 }
+                """,
+            },
+            [ImportNamingCollision],
+            id="import-naming-collision",
+            marks=pytest.mark.skip,
+        ),
+    ],
+)
+def test_multi_file_errors(
+    files: Dict[str, str], expected_exception_types: List[Type[Exception]]
+) -> None:
+    check_aaa_full_source_multi_file(files, "", expected_exception_types)

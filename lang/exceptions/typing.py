@@ -7,7 +7,7 @@ from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableTyp
 
 
 class TypeException(AaaLoadException):
-    def __init__(self, file: Path, function: Function) -> None:
+    def __init__(self, *, file: Path, function: Function) -> None:
         self.file = file
         self.function = function
 
@@ -26,7 +26,7 @@ class FunctionTypeError(TypeException):
     ) -> None:
         self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         expected = format_typestack(self.expected_return_types)
@@ -55,7 +55,7 @@ class StackTypesError(TypeException):
     ) -> None:
         self.signature = signature
         self.type_stack = type_stack
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         # TODO can we add which function call or operator would get invalid operands?
@@ -80,7 +80,7 @@ class ConditionTypeError(TypeException):
     ) -> None:
         self.type_stack = type_stack
         self.condition_stack = condition_stack
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         stack_before = format_typestack(self.type_stack)
@@ -106,7 +106,7 @@ class BranchTypeError(TypeException):
         self.type_stack = type_stack
         self.if_stack = if_stack
         self.else_stack = else_stack
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         before_stack = format_typestack(self.type_stack)
@@ -132,7 +132,7 @@ class LoopTypeError(TypeException):
     ) -> None:
         self.type_stack = type_stack
         self.loop_stack = loop_stack
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         before_stack = format_typestack(self.type_stack)
@@ -160,7 +160,7 @@ class GetFieldOfNonStructTypeError(TypeException):
         type_stack: TypeStack,
     ) -> None:
         self.type_stack = type_stack
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         stack = format_typestack(self.type_stack)
@@ -181,7 +181,7 @@ class SetFieldOfNonStructTypeError(TypeException):
         type_stack: TypeStack,
     ) -> None:
         self.type_stack = type_stack
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         # TODO this just points to start of function
@@ -205,7 +205,7 @@ class StructUpdateStackError(TypeException):
     ) -> None:
         self.type_stack = type_stack
         self.type_stack_before = type_stack_before
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         # TODO this just points to start of function
@@ -236,7 +236,7 @@ class StructUpdateTypeError(TypeException):
         self.field_name = field_name
         self.expected_type = expected_type
         self.found_type = found_type
-        super().__init__(file, function)
+        super().__init__(file=file, function=function)
 
     def __str__(self) -> str:  # pragma: nocover
         # TODO this just points to start of function

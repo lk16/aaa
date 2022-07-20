@@ -101,7 +101,6 @@ class TypeChecker:
                 raise UnknownPlaceholderType(
                     file=self.file,
                     function=self.function,
-                    node=return_type,
                 )
 
         # TODO more and better validation
@@ -345,7 +344,7 @@ class TypeChecker:
 
         if not identifier:
             # TODO rename to UnknownIdentifier
-            raise UnknownFunction(file=self.file, function=self.function, node=node)
+            raise UnknownFunction(file=self.file, function=self.function)
 
         if isinstance(identifier, Function):
             signature = self._get_function_signature(identifier)
@@ -471,9 +470,7 @@ class TypeChecker:
 
         for arg in node.arguments:
             if arg.name in argument_and_names or node.name == arg.name:
-                raise ArgumentNameCollision(
-                    file=self.file, function=self.function, node=arg
-                )
+                raise ArgumentNameCollision(file=self.file, function=self.function)
             argument_and_names.add(arg.name)
 
         return self._check_function_body(node.body, type_stack)
@@ -494,7 +491,6 @@ class TypeChecker:
         if not field_type:
             raise UnknownStructField(
                 file=self.file,
-                node=node,
                 function=self.function,
                 struct=struct,
                 field_name=field_name,

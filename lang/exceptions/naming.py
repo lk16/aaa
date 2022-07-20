@@ -1,20 +1,15 @@
 from pathlib import Path
 
-from lang.exceptions import AaaLoadException
-from lang.models.parse import AaaTreeNode, Function, Struct
+from lang.exceptions import AaaLoadException, error_location
+from lang.models.parse import Function, Struct
 
 
 class NamingException(AaaLoadException):
-    def __init__(self, *, file: Path, node: "AaaTreeNode") -> None:
+    def __init__(self, *, file: Path) -> None:
         self.file = file
-        self.node = node
-        self.code = file.read_text()
-        return super().__init__()
-
-    def __str__(self) -> str:  # pragma: nocover
-        return "TypeErrorException message, override me!"
 
 
+# TODO create IdentifierCollision replacing FunctionNameCollision and StructNameCollision
 class FunctionNameCollision(NamingException):
     def __init__(
         self,
@@ -23,7 +18,7 @@ class FunctionNameCollision(NamingException):
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, node=function)
+        super().__init__(file=file)
 
     def __str__(self) -> str:  # pragma: nocover
         return f"Function {self.function.name} collides with other identifier.\n"
@@ -37,7 +32,7 @@ class StructNameCollision(NamingException):
         struct: "Struct",
     ) -> None:
         self.struct = struct
-        super().__init__(file=file, node=struct)
+        super().__init__(file=file)
 
     def __str__(self) -> str:  # pragma: nocover
         return f"Struct {self.struct.name} collides with other identifier.\n"
@@ -48,29 +43,36 @@ class ArgumentNameCollision(NamingException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, node=node)
+        super().__init__(file=file)
+
+    def where(self) -> str:
+        return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"Argument name already used by other argument or function name in {self.function.name}\n"
+        return f"{self.where()}: Function {self.function.name} uses argument which collides with function name another or argument\n"
 
 
+# TODO rename to UnknownIdentifier
 class UnknownFunction(NamingException):
     def __init__(
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, node=node)
+        super().__init__(file=file)
+
+    def where(self) -> str:
+        return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"Unknown function or identifier in {self.function.name}\n"
+        return (
+            f"{self.where()}: Function {self.function.name} uses unknown identifier\n"
+        )
 
 
 class UnknownType(NamingException):
@@ -78,14 +80,16 @@ class UnknownType(NamingException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, node=node)
+        super().__init__(file=file)
+
+    def where(self) -> str:
+        return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"Unknown type in {self.function.name}\n"
+        return f"{self.where()}: Function {self.function.name} uses unknown type\n"
 
 
 class UnknownStructField(NamingException):
@@ -93,7 +97,6 @@ class UnknownStructField(NamingException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
         struct: Struct,
         field_name: str,
@@ -101,10 +104,13 @@ class UnknownStructField(NamingException):
         self.function = function
         self.struct = struct
         self.field_name = field_name
-        super().__init__(file=file, node=node)
+        super().__init__(file=file)
+
+    def where(self) -> str:
+        return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"Usage of unknown field in {self.function.name}: struct {self.struct.name} has no field {self.field_name}\n"
+        return f"{self.where()}: Function {self.function.name} tries to use non-existing field {self.field_name} of struct {self.struct.name}\n"
 
 
 class UnknownPlaceholderType(NamingException):
@@ -112,11 +118,15 @@ class UnknownPlaceholderType(NamingException):
         self,
         *,
         file: Path,
-        node: "AaaTreeNode",
         function: "Function",
     ) -> None:
         self.function = function
-        super().__init__(file=file, node=node)
+        super().__init__(file=file)
+
+    def where(self) -> str:
+        return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"Usage of unknown placeholder type in {self.function.name}\n"
+        return (
+            f"{self.where()}: Function {self.function.name} uses unknown placeholder\n"
+        )

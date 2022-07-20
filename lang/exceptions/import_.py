@@ -63,3 +63,7 @@ class CyclicImportError(ImportException):
         msg += f"depends on {self.failed_import}\n"
 
         return msg
+
+
+class ImportNamingCollision(ImportException):
+    ...  # TODO
