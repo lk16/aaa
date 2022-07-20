@@ -2,16 +2,11 @@ from typing import Dict, List, Type
 
 import pytest
 
-from lang.exceptions.import_ import (
-    AbsoluteImportError,
-    CyclicImportError,
-    ImportNamingCollision,
-)
+from lang.exceptions.import_ import AbsoluteImportError, CyclicImportError
 from lang.exceptions.misc import MainFunctionNotFound
 from lang.exceptions.naming import (
     ArgumentNameCollision,
-    FunctionNameCollision,
-    StructNameCollision,
+    IdentifierCollision,
     UnknownFunction,
     UnknownPlaceholderType,
     UnknownStructField,
@@ -72,7 +67,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { nop }
             fn foo { nop }
             """,
-            [FunctionNameCollision],
+            [IdentifierCollision],
             id="funcname-funcname-collision",
         ),
         pytest.param("fn main { 5 }", [FunctionTypeError], id="function-type"),
@@ -209,7 +204,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             struct main { x as int }
             """,
-            [StructNameCollision],
+            [IdentifierCollision],
             id="struct-name-collision",
         ),
         pytest.param(
@@ -260,7 +255,7 @@ def test_errors(code: str, expected_exception_types: List[Type[Exception]]) -> N
                 fn five return int { 5 }
                 """,
             },
-            [ImportNamingCollision],
+            [IdentifierCollision],
             id="import-naming-collision",
             marks=pytest.mark.skip,
         ),

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union
 
 from lang.exceptions import AaaLoadException, error_location
 from lang.models.parse import Function, Struct
@@ -9,33 +10,27 @@ class NamingException(AaaLoadException):
         self.file = file
 
 
-# TODO create IdentifierCollision replacing FunctionNameCollision and StructNameCollision
-class FunctionNameCollision(NamingException):
+# TODO support colliding import
+class IdentifierCollision(NamingException):
     def __init__(
         self,
         *,
         file: Path,
-        function: "Function",
+        colliding: Union[Struct, Function],
     ) -> None:
-        self.function = function
+        self.colliding = colliding
         super().__init__(file=file)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"Function {self.function.name} collides with other identifier.\n"
+        lhs_where = error_location(self.colliding.token)
+        # TODO point out what we collide with
 
+        if isinstance(self.colliding, Struct):
+            lhs = f"Struct {self.colliding.name}"
+        elif isinstance(self.colliding, Function):
+            lhs = f"Function {self.colliding.name}"
 
-class StructNameCollision(NamingException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        struct: "Struct",
-    ) -> None:
-        self.struct = struct
-        super().__init__(file=file)
-
-    def __str__(self) -> str:  # pragma: nocover
-        return f"Struct {self.struct.name} collides with other identifier.\n"
+        return f"{lhs_where}: {lhs} collides with other identifier.\n"
 
 
 class ArgumentNameCollision(NamingException):
@@ -43,7 +38,7 @@ class ArgumentNameCollision(NamingException):
         self,
         *,
         file: Path,
-        function: "Function",
+        function: Function,
     ) -> None:
         self.function = function
         super().__init__(file=file)
@@ -52,7 +47,7 @@ class ArgumentNameCollision(NamingException):
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:  # pragma: nocover
-        return f"{self.where()}: Function {self.function.name} uses argument which collides with function name another or argument\n"
+        return f"{self.where()}: Function {self.function.name} has argument which collides with function name another or argument\n"
 
 
 # TODO rename to UnknownIdentifier
@@ -61,7 +56,7 @@ class UnknownFunction(NamingException):
         self,
         *,
         file: Path,
-        function: "Function",
+        function: Function,
     ) -> None:
         self.function = function
         super().__init__(file=file)
@@ -80,7 +75,7 @@ class UnknownType(NamingException):
         self,
         *,
         file: Path,
-        function: "Function",
+        function: Function,
     ) -> None:
         self.function = function
         super().__init__(file=file)
@@ -97,7 +92,7 @@ class UnknownStructField(NamingException):
         self,
         *,
         file: Path,
-        function: "Function",
+        function: Function,
         struct: Struct,
         field_name: str,
     ) -> None:
@@ -118,7 +113,7 @@ class UnknownPlaceholderType(NamingException):
         self,
         *,
         file: Path,
-        function: "Function",
+        function: Function,
     ) -> None:
         self.function = function
         super().__init__(file=file)

@@ -18,7 +18,7 @@ from lang.exceptions.misc import (
     MainFunctionNotFound,
     MissingEnvironmentVariable,
 )
-from lang.exceptions.naming import FunctionNameCollision, StructNameCollision
+from lang.exceptions.naming import IdentifierCollision
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
 from lang.models import AaaModel
@@ -199,15 +199,17 @@ class Program:
         return AaaTransformer().transform(tree)  # type: ignore
 
     def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:
+        # TODO combine these loops
+
         for function in parsed_file.functions:
             if function.name in self.identifiers[file]:
-                raise FunctionNameCollision(file=file, function=function)
+                raise IdentifierCollision(file=file, colliding=function)
 
             self.identifiers[file][function.name_key()] = function
 
         for struct in parsed_file.structs:
             if struct.name in self.identifiers[file]:
-                raise StructNameCollision(file=file, struct=struct)
+                raise IdentifierCollision(file=file, colliding=struct)
 
             self.identifiers[file][struct.name] = struct
 
