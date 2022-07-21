@@ -7,7 +7,7 @@ from lang.exceptions.misc import MainFunctionNotFound
 from lang.exceptions.naming import (
     ArgumentNameCollision,
     CollidingIdentifier,
-    UnknownFunction,
+    UnknownIdentifier,
     UnknownPlaceholderType,
     UnknownStructField,
     UnknownType,
@@ -78,7 +78,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """
             fn main { bar }
             """,
-            [UnknownFunction],
+            [UnknownIdentifier],
             id="unknown-function",
         ),
         pytest.param(

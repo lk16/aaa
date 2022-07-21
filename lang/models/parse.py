@@ -51,6 +51,7 @@ class LoopBody(AaaTreeNode):
 
 
 class Identifier(FunctionBodyItem):
+    token: Token
     name: str
 
 

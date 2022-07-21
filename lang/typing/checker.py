@@ -27,7 +27,7 @@ if TYPE_CHECKING:  # pragma: nocover
 
 from lang.exceptions.naming import (
     ArgumentNameCollision,
-    UnknownFunction,
+    UnknownIdentifier,
     UnknownPlaceholderType,
     UnknownStructField,
 )
@@ -349,8 +349,9 @@ class TypeChecker:
         identifier = self.program.get_identifier(self.file, node.name)
 
         if not identifier:
-            # TODO rename to UnknownIdentifier
-            raise UnknownFunction(file=self.file, function=self.function)
+            raise UnknownIdentifier(
+                file=self.file, function=self.function, identifier=node
+            )
 
         if isinstance(identifier, Function):
             signature = self._get_function_signature(identifier)

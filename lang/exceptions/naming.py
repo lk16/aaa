@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Union
 
 from lang.exceptions import AaaLoadException, error_location
-from lang.models.parse import Function, Struct
+from lang.models.parse import Function, Identifier, Struct
 from lang.models.program import ProgramImport
 
 
@@ -60,25 +60,20 @@ class ArgumentNameCollision(NamingException):
         return f"{self.where()}: Function {self.function.name} has argument which collides with function name another or argument\n"
 
 
-# TODO rename to UnknownIdentifier
-class UnknownFunction(NamingException):
+class UnknownIdentifier(NamingException):
     def __init__(
-        self,
-        *,
-        file: Path,
-        function: Function,
+        self, *, file: Path, function: Function, identifier: Identifier
     ) -> None:
         self.function = function
+        self.identifier = identifier
         super().__init__(file=file)
 
     def where(self) -> str:
-        return error_location(self.file, self.function.token)
+        return error_location(self.file, self.identifier.token)
 
     def __str__(self) -> str:
         # TODO add name of unknown identifier
-        return (
-            f"{self.where()}: Function {self.function.name} uses unknown identifier\n"
-        )
+        return f"{self.where()}: Function {self.function.name} uses unknown identifier {self.identifier.name}\n"
 
 
 # TODO add name of unknown type, consider merging with UnknownIdentifier

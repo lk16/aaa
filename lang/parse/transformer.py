@@ -178,7 +178,7 @@ class AaaTransformer(Transformer[Any, Any]):
         return args
 
     def identifier(self, token: Token) -> Identifier:
-        return Identifier(name=token.value)
+        return Identifier(name=token.value, token=token)
 
     def import_item(
         self, original_name: Identifier, imported_name: Optional[Identifier] = None
@@ -218,7 +218,7 @@ class AaaTransformer(Transformer[Any, Any]):
         return LoopBody(value=function_body)
 
     def member_function_name(self, token: Token) -> Identifier:
-        return Identifier(name=token.value)
+        return Identifier(name=token.value, token=token)
 
     # TODO the token and function name needs to be improved
     def member_function(
