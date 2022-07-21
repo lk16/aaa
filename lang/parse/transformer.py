@@ -24,7 +24,7 @@ from lang.models.parse import (
     Loop,
     LoopBody,
     LoopCondition,
-    MemberFunction,
+    MemberFunctionName,
     Operator,
     ParsedBuiltinsFile,
     ParsedFile,
@@ -132,7 +132,7 @@ class AaaTransformer(Transformer[Any, Any]):
 
     @v_args(inline=False)
     def function_definition(self, args: List[AaaTreeNode]) -> Function:
-        name: str | MemberFunction = ""
+        name: str | MemberFunctionName = ""
         body: FunctionBody
         arguments: List[Argument] = []
         return_types: List[ParsedType] = []
@@ -151,7 +151,7 @@ class AaaTransformer(Transformer[Any, Any]):
                         return_types.append(item)
                     else:  # pragma: nocover
                         assert False
-            elif isinstance(arg, MemberFunction):
+            elif isinstance(arg, MemberFunctionName):
                 name = arg
             elif isinstance(arg, Token):
                 token = arg
@@ -170,8 +170,8 @@ class AaaTransformer(Transformer[Any, Any]):
         return args
 
     def function_name(
-        self, name: Union[Identifier, MemberFunction]
-    ) -> Union[Identifier, MemberFunction]:
+        self, name: Union[Identifier, MemberFunctionName]
+    ) -> Union[Identifier, MemberFunctionName]:
         return name
 
     def function_return_types(self, args: List[ParsedType]) -> List[ParsedType]:
@@ -220,10 +220,13 @@ class AaaTransformer(Transformer[Any, Any]):
     def member_function_name(self, token: Token) -> Identifier:
         return Identifier(name=token.value)
 
+    # TODO the token and function name needs to be improved
     def member_function(
         self, type_name: TypeLiteral, func_name: Identifier
-    ) -> MemberFunction:
-        return MemberFunction(type_name=type_name.type_name, func_name=func_name.name)
+    ) -> MemberFunctionName:
+        return MemberFunctionName(
+            type_name=type_name.type_name, func_name=func_name.name
+        )
 
     def operator(self, token: Token) -> Operator:
         return Operator(value=token.value)
@@ -281,8 +284,8 @@ class AaaTransformer(Transformer[Any, Any]):
 
     def struct_function_identifier(
         self, type_name: Identifier, func_name: Identifier
-    ) -> MemberFunction:
-        return MemberFunction(type_name=type_name.name, func_name=func_name.name)
+    ) -> MemberFunctionName:
+        return MemberFunctionName(type_name=type_name.name, func_name=func_name.name)
 
     def type(
         self, type: Union[TypeLiteral, ParsedTypePlaceholder]

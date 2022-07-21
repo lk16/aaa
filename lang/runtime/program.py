@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from lark.exceptions import UnexpectedInput
 
@@ -18,13 +18,13 @@ from lang.exceptions.misc import (
     MainFunctionNotFound,
     MissingEnvironmentVariable,
 )
-from lang.exceptions.naming import IdentifierCollision
+from lang.exceptions.naming import CollidingIdentifier
 from lang.instructions.generator import InstructionGenerator
 from lang.instructions.types import Instruction
 from lang.models import AaaModel
 from lang.models.parse import (
     Function,
-    MemberFunction,
+    MemberFunctionName,
     ParsedBuiltinsFile,
     ParsedFile,
     ParsedTypePlaceholder,
@@ -199,26 +199,29 @@ class Program:
         return AaaTransformer().transform(tree)  # type: ignore
 
     def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:
-        # TODO combine these loops
+        identifiables: List[Union[Function, Struct]] = []
+        identifiables += parsed_file.functions
+        identifiables += parsed_file.structs
 
-        for function in parsed_file.functions:
-            if function.name in self.identifiers[file]:
-                raise IdentifierCollision(file=file, colliding=function)
+        file_identifiers = self.identifiers[file]
 
-            self.identifiers[file][function.name_key()] = function
+        for identifiable in identifiables:
+            identifier = identifiable.identify()
 
-        for struct in parsed_file.structs:
-            if struct.name in self.identifiers[file]:
-                raise IdentifierCollision(file=file, colliding=struct)
+            if identifier in file_identifiers:
+                found = file_identifiers[identifier]
+                raise CollidingIdentifier(
+                    file=file, found=found, colliding=identifiable
+                )
 
-            self.identifiers[file][struct.name] = struct
+            file_identifiers[identifier] = identifiable
 
     def _generate_file_instructions(
         self, file: Path, parsed_file: ParsedFile
     ) -> Dict[str, List[Instruction]]:
         file_instructions: Dict[str, List[Instruction]] = {}
         for function in parsed_file.functions:
-            file_instructions[function.name_key()] = InstructionGenerator(
+            file_instructions[str(function.name)] = InstructionGenerator(
                 file, function, self
             ).generate_instructions()
         return file_instructions
@@ -279,7 +282,10 @@ class Program:
                     continue
 
                 self.identifiers[file][imported_item.imported_name] = ProgramImport(
-                    original_name=imported_item.origninal_name, source_file=import_path
+                    imported_name=imported_item.imported_name,
+                    original_name=imported_item.origninal_name,
+                    source_file=import_path,
+                    token=import_.token,
                 )
 
         return errors
@@ -319,7 +325,7 @@ class Program:
         for functions in self.function_instructions.values():
             for name, instructions in functions.items():
 
-                if isinstance(name, MemberFunction):
+                if isinstance(name, MemberFunctionName):
                     name = f"{name.type_name}:{name.func_name}"
 
                 func_name = format_str(name, max_length=15)

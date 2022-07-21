@@ -6,7 +6,7 @@ from lang.exceptions.import_ import AbsoluteImportError, CyclicImportError
 from lang.exceptions.misc import MainFunctionNotFound
 from lang.exceptions.naming import (
     ArgumentNameCollision,
-    IdentifierCollision,
+    CollidingIdentifier,
     UnknownFunction,
     UnknownPlaceholderType,
     UnknownStructField,
@@ -67,7 +67,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { nop }
             fn foo { nop }
             """,
-            [IdentifierCollision],
+            [CollidingIdentifier],
             id="funcname-funcname-collision",
         ),
         pytest.param("fn main { 5 }", [FunctionTypeError], id="function-type"),
@@ -204,7 +204,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             struct main { x as int }
             """,
-            [IdentifierCollision],
+            [CollidingIdentifier],
             id="struct-name-collision",
         ),
         pytest.param(
@@ -255,7 +255,7 @@ def test_errors(code: str, expected_exception_types: List[Type[Exception]]) -> N
                 fn five return int { 5 }
                 """,
             },
-            [IdentifierCollision],
+            [CollidingIdentifier],
             id="import-naming-collision",
             marks=pytest.mark.skip,
         ),

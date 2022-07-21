@@ -72,9 +72,12 @@ class BranchElseBody(AaaTreeNode):
     value: FunctionBody
 
 
-class MemberFunction(FunctionBodyItem):
+class MemberFunctionName(FunctionBodyItem):
     type_name: str
     func_name: str
+
+    def __str__(self) -> str:
+        return f"{self.type_name}:{self.func_name}"
 
 
 class StructFieldQuery(FunctionBodyItem):
@@ -105,15 +108,15 @@ class Argument(AaaTreeNode):
 
 class Function(AaaTreeNode):
     token: Token
-    name: str | MemberFunction
+    name: str | MemberFunctionName
     arguments: List[Argument]
     return_types: List[ParsedType]
     body: FunctionBody
 
-    def name_key(self) -> str:
+    def identify(self) -> str:
         if isinstance(self.name, str):
             return self.name
-        elif isinstance(self.name, MemberFunction):
+        elif isinstance(self.name, MemberFunctionName):
             return f"{self.name.type_name}:{self.name.func_name}"
         else:  # pragma: nocover
             assert False
@@ -134,6 +137,9 @@ class Struct(AaaTreeNode):
     token: Token
     name: str
     fields: List[Argument]
+
+    def identify(self) -> str:
+        return self.name
 
 
 class BuiltinFunction(AaaTreeNode):

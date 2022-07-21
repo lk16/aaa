@@ -3,34 +3,44 @@ from typing import Union
 
 from lang.exceptions import AaaLoadException, error_location
 from lang.models.parse import Function, Struct
+from lang.models.program import ProgramImport
 
 
 class NamingException(AaaLoadException):
-    def __init__(self, *, file: Path) -> None:
+    def __init__(self, *, file: Path) -> None:  # TODO refactor this out
         self.file = file
 
 
-# TODO support colliding import
-class IdentifierCollision(NamingException):
+class CollidingIdentifier(NamingException):
     def __init__(
         self,
         *,
         file: Path,
         colliding: Union[Struct, Function],
+        found: Union[Struct, Function, ProgramImport],
     ) -> None:
         self.colliding = colliding
+        self.found = found
         super().__init__(file=file)
+
+    def describe(self, item: Union[Struct, Function, ProgramImport]) -> str:
+        if isinstance(item, Struct):
+            return f"struct {item.identify()}"
+        elif isinstance(item, Function):
+            return f"function {item.identify()}"
+        elif isinstance(item, ProgramImport):
+            return f"imported identifier {item.identify()}"
+        else:  # pragma: nocover
+            assert False
 
     def __str__(self) -> str:
         lhs_where = error_location(self.file, self.colliding.token)
-        # TODO point out what we collide with
+        rhs_where = error_location(self.file, self.found.token)
 
-        if isinstance(self.colliding, Struct):
-            lhs = f"Struct {self.colliding.name}"
-        elif isinstance(self.colliding, Function):
-            lhs = f"Function {self.colliding.name}"
-
-        return f"{lhs_where}: {lhs} collides with other identifier.\n"
+        return (
+            f"{lhs_where}: {self.describe(self.colliding)} collides with:\n"
+            f"{rhs_where}: {self.describe(self.found)}\n"
+        )
 
 
 class ArgumentNameCollision(NamingException):

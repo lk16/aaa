@@ -66,7 +66,7 @@ from lang.models.parse import (
     Identifier,
     IntegerLiteral,
     Loop,
-    MemberFunction,
+    MemberFunctionName,
     Operator,
     StringLiteral,
     Struct,
@@ -140,7 +140,7 @@ class InstructionGenerator:
             Identifier: self.instructions_for_identfier,
             IntegerLiteral: self.instructions_for_integer_literal,
             Loop: self.instructions_for_loop,
-            MemberFunction: self.instructions_for_member_function,
+            MemberFunctionName: self.instructions_for_member_function,
             Operator: self.instructions_for_operator,
             StringLiteral: self.instructions_for_string_literal,
             StructFieldQuery: self.instructions_for_struct_field_query,
@@ -298,7 +298,7 @@ class InstructionGenerator:
     def instructions_for_member_function(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
-        assert isinstance(node, MemberFunction)
+        assert isinstance(node, MemberFunctionName)
 
         if node.type_name in ["vec", "map"]:
             key = f"{node.type_name}:{node.func_name}"

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Union
 
 from lang.exceptions import AaaLoadException, error_location, format_typestack
-from lang.models.parse import Function, MemberFunction, Operator, Struct
+from lang.models.parse import Function, MemberFunctionName, Operator, Struct
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 
@@ -52,7 +52,7 @@ class StackTypesError(TypeException):
         function: "Function",
         signature: Signature,
         type_stack: TypeStack,
-        func_like: Union[Operator, Function, MemberFunction],
+        func_like: Union[Operator, Function, MemberFunctionName],
     ) -> None:
         self.signature = signature
         self.type_stack = type_stack
@@ -65,7 +65,7 @@ class StackTypesError(TypeException):
         elif isinstance(self.func_like, Function):
             assert isinstance(self.func_like.name, str)
             return self.func_like.name
-        elif isinstance(self.func_like, MemberFunction):
+        elif isinstance(self.func_like, MemberFunctionName):
             return f"{self.func_like.type_name}:{self.func_like.func_name}"
         else:
             assert False
@@ -280,7 +280,7 @@ class InvalidMemberFunctionSignature(TypeException):
         self.file = file
 
     def __str__(self) -> str:
-        assert isinstance(self.function.name, MemberFunction)
+        assert isinstance(self.function.name, MemberFunctionName)
 
         member_func_name = (
             f"{self.function.name.type_name}:{self.function.name.func_name}"

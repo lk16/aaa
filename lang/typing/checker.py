@@ -11,7 +11,7 @@ from lang.models.parse import (
     Identifier,
     IntegerLiteral,
     Loop,
-    MemberFunction,
+    MemberFunctionName,
     Operator,
     ParsedType,
     ParsedTypePlaceholder,
@@ -125,7 +125,7 @@ class TypeChecker:
         self,
         type_stack: TypeStack,
         signature: Signature,
-        func_like: Union[Operator, Function, MemberFunction],
+        func_like: Union[Operator, Function, MemberFunctionName],
     ) -> TypeStack:
         # TODO load signature here, instead of passing it as argument
 
@@ -383,7 +383,7 @@ class TypeChecker:
                 stack = self._check_integer_literal(child_node, copy(stack))
             elif isinstance(child_node, Loop):
                 stack = self._check_loop(child_node, copy(stack))
-            elif isinstance(child_node, MemberFunction):
+            elif isinstance(child_node, MemberFunctionName):
                 stack = self._check_member_function_call(child_node, copy(stack))
             elif isinstance(child_node, Operator):
                 stack = self._check_operator(child_node, copy(stack))
@@ -403,7 +403,7 @@ class TypeChecker:
     def _check_member_function_call(
         self, node: AaaTreeNode, type_stack: TypeStack
     ) -> TypeStack:
-        assert isinstance(node, MemberFunction)
+        assert isinstance(node, MemberFunctionName)
 
         key = f"{node.type_name}:{node.func_name}"
 
@@ -447,7 +447,7 @@ class TypeChecker:
                     function=self.function,
                 )
 
-        if isinstance(node.name, MemberFunction):
+        if isinstance(node.name, MemberFunctionName):
 
             signature = self._get_function_signature(node)
             struct = self.program.identifiers[self.file][node.name.type_name]
