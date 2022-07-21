@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Union
 
 from lang.exceptions import AaaLoadException, error_location
-from lang.models.parse import Function, Identifier, Struct
+from lang.models.parse import Function, Identifier, Struct, TypeLiteral
 from lang.models.program import ProgramImport
 
 
@@ -76,22 +76,23 @@ class UnknownIdentifier(NamingException):
         return f"{self.where()}: Function {self.function.name} uses unknown identifier {self.identifier.name}\n"
 
 
-# TODO add name of unknown type, consider merging with UnknownIdentifier
-class UnknownType(NamingException):
+class UnknownArgumentType(NamingException):
     def __init__(
         self,
         *,
         file: Path,
         function: Function,
+        type_literal: TypeLiteral,
     ) -> None:
         self.function = function
+        self.type_literal = type_literal
         super().__init__(file=file)
 
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} uses unknown type\n"
+        return f"{self.where()}: Function {self.function.name} has argument with unknown type {self.type_literal.type_name}\n"
 
 
 # TODO add name of unknown struct field

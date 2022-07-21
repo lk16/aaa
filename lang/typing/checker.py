@@ -27,6 +27,7 @@ if TYPE_CHECKING:  # pragma: nocover
 
 from lang.exceptions.naming import (
     ArgumentNameCollision,
+    UnknownArgumentType,
     UnknownIdentifier,
     UnknownPlaceholderType,
     UnknownStructField,
@@ -70,6 +71,7 @@ class TypeChecker:
         self.file = file
 
     def check(self) -> None:
+        self._check_argument_types()
         computed_return_types = self._check_function(self.function, [])
         expected_return_types = self._get_function_signature(self.function).return_types
 
@@ -81,6 +83,35 @@ class TypeChecker:
                 expected_return_types=expected_return_types,
                 computed_return_types=computed_return_types,
             )
+
+    def _check_argument_types(self) -> None:
+
+        known_identifiers = self.program.identifiers[self.file]
+
+        for argument in self.function.arguments:
+            if not isinstance(argument.type.type, TypeLiteral):
+                continue
+
+            arg_type_name = argument.type.type.type_name
+
+            # TODO load list from builtin types from builtins.aaa
+            if arg_type_name in ["bool", "int", "map", "str", "vec"]:
+                return
+
+            if arg_type_name not in known_identifiers:
+                raise UnknownArgumentType(
+                    file=self.file,
+                    function=self.function,
+                    type_literal=argument.type.type,
+                )
+
+            if not isinstance(known_identifiers[arg_type_name], Struct):
+                # Identifier was found, but it's not for a struct
+                raise UnknownArgumentType(
+                    file=self.file,
+                    function=self.function,
+                    type_literal=argument.type.type,
+                )
 
     def _get_function_signature(self, function: Function) -> Signature:
         # TODO consider moving this entire function to Program

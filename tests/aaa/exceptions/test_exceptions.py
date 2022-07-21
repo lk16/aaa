@@ -7,10 +7,10 @@ from lang.exceptions.misc import MainFunctionNotFound
 from lang.exceptions.naming import (
     ArgumentNameCollision,
     CollidingIdentifier,
+    UnknownArgumentType,
     UnknownIdentifier,
     UnknownPlaceholderType,
     UnknownStructField,
-    UnknownType,
 )
 from lang.exceptions.runtime import AaaAssertionFailure
 from lang.exceptions.typing import (
@@ -94,7 +94,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args bar as baz { nop }
             fn main { nop }
             """,
-            [UnknownType],
+            [UnknownArgumentType],
             id="unknown-type",
             marks=pytest.mark.skip,
         ),
@@ -220,6 +220,22 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             [AaaAssertionFailure],
             id="assertion-failure",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo args b as bar { nop }
+            """,
+            [UnknownArgumentType],
+            id="unknown-argument-type",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo args m as main { nop }
+            """,
+            [UnknownArgumentType],
+            id="function-name-as-argument-type",
         ),
     ],
 )

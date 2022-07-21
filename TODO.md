@@ -2,7 +2,7 @@
 
 ### Tests
 - redo all existing exceptions
-- handle lark parser errors nicely
+- fix crash of `./aaa.py cmd-full 'fn main { nop } fn foo args b as vec { nop }'`
 - test all instructions
 - test vscode extension
 

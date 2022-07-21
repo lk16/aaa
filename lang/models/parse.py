@@ -99,7 +99,7 @@ class ParsedTypePlaceholder(AaaTreeNode):
 
 
 class ParsedType(AaaTreeNode):
-    type: Union[TypeLiteral, ParsedTypePlaceholder]
+    type: Union[TypeLiteral, ParsedTypePlaceholder]  # TODO use inheritance instead
 
 
 class Argument(AaaTreeNode):
