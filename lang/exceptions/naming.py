@@ -21,7 +21,7 @@ class IdentifierCollision(NamingException):
         self.colliding = colliding
         super().__init__(file=file)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         lhs_where = error_location(self.file, self.colliding.token)
         # TODO point out what we collide with
 
@@ -46,7 +46,7 @@ class ArgumentNameCollision(NamingException):
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         return f"{self.where()}: Function {self.function.name} has argument which collides with function name another or argument\n"
 
 
@@ -64,14 +64,14 @@ class UnknownFunction(NamingException):
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         # TODO add name of unknown identifier
         return (
             f"{self.where()}: Function {self.function.name} uses unknown identifier\n"
         )
 
 
-# TODO add name of unknown type, consider merging with Unknown identifier
+# TODO add name of unknown type, consider merging with UnknownIdentifier
 class UnknownType(NamingException):
     def __init__(
         self,
@@ -85,7 +85,7 @@ class UnknownType(NamingException):
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         return f"{self.where()}: Function {self.function.name} uses unknown type\n"
 
 
@@ -107,7 +107,7 @@ class UnknownStructField(NamingException):
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         return f"{self.where()}: Function {self.function.name} tries to use non-existing field {self.field_name} of struct {self.struct.name}\n"
 
 
@@ -125,7 +125,7 @@ class UnknownPlaceholderType(NamingException):
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         return (
             f"{self.where()}: Function {self.function.name} uses unknown placeholder\n"
         )

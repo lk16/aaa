@@ -11,11 +11,13 @@ class AaaAssertionFailure(AaaRuntimeException):
     def __str__(self) -> str:
         msg = "Assertion failure, stacktrace:\n"
 
+        # TODO show exact location of all calls in stacktrace
+
         for call_stack_item in self.call_stack:
             name = call_stack_item.func_name
 
             args = ""
-            if call_stack_item.argument_values:  # pragma: nocover
+            if call_stack_item.argument_values:
                 args = ", arguments: " + ", ".join(
                     f"{name}={value.__repr__()}"
                     for name, value in call_stack_item.argument_values.items()

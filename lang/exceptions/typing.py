@@ -28,7 +28,7 @@ class FunctionTypeError(TypeException):
         self.computed_return_types = computed_return_types
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         expected = format_typestack(self.expected_return_types)
         found = format_typestack(self.computed_return_types)
 
@@ -40,7 +40,7 @@ class FunctionTypeError(TypeException):
 
 
 class StackUnderflowError(TypeException):
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         return f"{self.where()} Function {self.function.name} has a stack underflow\n"
 
 
@@ -67,10 +67,10 @@ class StackTypesError(TypeException):
             return self.func_like.name
         elif isinstance(self.func_like, MemberFunction):
             return f"{self.func_like.type_name}:{self.func_like.func_name}"
-        else:  # pragma: nocover
+        else:
             assert False
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         stack = format_typestack(self.type_stack)
 
         return (
@@ -95,7 +95,7 @@ class ConditionTypeError(TypeException):
         self.condition_stack = condition_stack
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         stack_before = format_typestack(self.type_stack)
         stack_after = format_typestack(self.condition_stack)
 
@@ -121,7 +121,7 @@ class BranchTypeError(TypeException):
         self.else_stack = else_stack
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         before_stack = format_typestack(self.type_stack)
         if_stack = format_typestack(self.if_stack)
         else_stack = format_typestack(self.else_stack)
@@ -147,7 +147,7 @@ class LoopTypeError(TypeException):
         self.loop_stack = loop_stack
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         before_stack = format_typestack(self.type_stack)
         after_stack = format_typestack(self.loop_stack)
 
@@ -159,7 +159,7 @@ class LoopTypeError(TypeException):
 
 
 class InvalidMainSignuture(TypeException):
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         return f"{self.where()} Main function should have no arguments and no return types\n"
 
 
@@ -174,7 +174,7 @@ class GetFieldOfNonStructTypeError(TypeException):
         self.type_stack = type_stack
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         stack = format_typestack(self.type_stack)
 
         # TODO this just points to start of function
@@ -196,7 +196,7 @@ class SetFieldOfNonStructTypeError(TypeException):
         self.type_stack = type_stack
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         # TODO this just points to start of function
         stack = format_typestack(self.type_stack)
 
@@ -220,7 +220,7 @@ class StructUpdateStackError(TypeException):
         self.type_stack_before = type_stack_before
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         # TODO this just points to start of function
         expected_stack = format_typestack(self.type_stack_before)
         found_stack = format_typestack(self.type_stack)
@@ -251,7 +251,7 @@ class StructUpdateTypeError(TypeException):
         self.found_type = found_type
         super().__init__(file=file, function=function)
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         # TODO this just points to start of function
         return (
             f"{self.where()} Function {self.function.name} tries to update struct field with wrong type\n"
@@ -279,7 +279,7 @@ class InvalidMemberFunctionSignature(TypeException):
         self.function = function
         self.file = file
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         assert isinstance(self.function.name, MemberFunction)
 
         member_func_name = (

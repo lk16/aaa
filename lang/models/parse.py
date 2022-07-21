@@ -125,6 +125,7 @@ class ImportItem(AaaTreeNode):
 
 
 class Import(AaaTreeNode):
+    token: Token
     source: str
     imported_items: List[ImportItem]
 

@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import List
 
-from lang.exceptions import AaaLoadException
+from lang.exceptions import AaaLoadException, error_location
+from lang.models.parse import Import
 
 
 class ImportException(AaaLoadException):
@@ -13,11 +14,16 @@ class AbsoluteImportError(ImportException):
         self,
         *,
         file: Path,
+        import_: Import,
     ) -> None:
         self.file = file
+        self.import_ = import_
 
-    def __str__(self) -> str:  # pragma: nocover
-        return f"In {self.file}: absolute imports are forbidden"
+    def where(self) -> str:
+        return error_location(self.file, self.import_.token)
+
+    def __str__(self) -> str:
+        return f"{self.where()}: absolute imports are forbidden"
 
 
 class ImportedItemNotFound(ImportException):
@@ -25,17 +31,17 @@ class ImportedItemNotFound(ImportException):
         self,
         *,
         file: Path,
-        import_source: str,
+        import_: Import,
         imported_item: str,
     ) -> None:
+        self.import_ = import_
         self.imported_item = imported_item
-        self.import_source = import_source
         self.file = file
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
         return (
-            f'In {self.file}: could not import "'
-            + '{self.imported_item}" from {self.import_source}\n'
+            f"{self.file}: Could not import "
+            + f'"{self.imported_item}" from {self.import_.source}\n'
         )
 
 
@@ -43,8 +49,8 @@ class FileReadError(ImportException):
     def __init__(self, file: Path) -> None:
         self.file = file
 
-    def __str__(self) -> str:  # pragma: nocover
-        return f'Failed to open or read "{self.file}". Maybe it doesn\'t exist?\n'
+    def __str__(self) -> str:
+        return f"{self.file}: Failed to open or read\n"
 
 
 class CyclicImportError(ImportException):
@@ -52,7 +58,8 @@ class CyclicImportError(ImportException):
         self.dependencies = dependencies
         self.failed_import = failed_import
 
-    def __str__(self) -> str:  # pragma: nocover
+    def __str__(self) -> str:
+        # TODO show exact location of imports
         msg = "Cyclic import dependency was detected:\n"
         msg += f"           {self.failed_import}\n"
 

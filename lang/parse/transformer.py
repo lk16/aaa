@@ -196,9 +196,9 @@ class AaaTransformer(Transformer[Any, Any]):
         return import_items
 
     def import_statement(
-        self, source: StringLiteral, imported_items: List[ImportItem]
+        self, token: Token, source: StringLiteral, imported_items: List[ImportItem]
     ) -> Import:
-        return Import(source=source.value, imported_items=imported_items)
+        return Import(source=source.value, imported_items=imported_items, token=token)
 
     def integer(self, token: Token) -> IntegerLiteral:
         return IntegerLiteral(value=int(token.value))

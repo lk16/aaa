@@ -184,7 +184,7 @@ class Program:
         try:
             tree = aaa_source_parser.parse(code)
         except UnexpectedInput as e:
-            raise AaaParseException(e)
+            raise AaaParseException(file=file, parse_error=e)
 
         return AaaTransformer().transform(tree)  # type: ignore
 
@@ -194,7 +194,7 @@ class Program:
         try:
             tree = aaa_builtins_parser.parse(code)
         except UnexpectedInput as e:
-            raise AaaParseException(e)
+            raise AaaParseException(file=file, parse_error=e)
 
         return AaaTransformer().transform(tree)  # type: ignore
 
@@ -255,7 +255,7 @@ class Program:
 
         for import_ in parsed_file.imports:
             if import_.source.startswith("/"):
-                errors.append(AbsoluteImportError(file=file))
+                errors.append(AbsoluteImportError(file=file, import_=import_))
                 continue
 
             import_path = (file.parent / f"{import_.source}.aaa").resolve()
@@ -272,7 +272,7 @@ class Program:
                     errors.append(
                         ImportedItemNotFound(
                             file=file,
-                            import_source=import_.source,
+                            import_=import_,
                             imported_item=imported_item.origninal_name,
                         )
                     )

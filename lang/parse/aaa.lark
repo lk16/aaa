@@ -35,7 +35,7 @@ _ARGS:       /args(?=(\W|\s))/
 _BUILTIN_FN: /builtin_fn(?=(\W|\s))/
 _ELSE:       /else(?=(\W|\s))/
 FN:         /fn(?=(\W|\s))/
-_FROM:       /from(?=(\W|\s))/
+FROM:       /from(?=(\W|\s))/
 _IMPORT:     /import(?=(\W|\s))/
 _IF:         /if(?=(\W|\s))/
 _RETURN:     /return(?=(\W|\s))/
@@ -86,7 +86,7 @@ builtin_function_return_types: _RETURN return_types
 
 regular_file_root: (function_definition | import_statement | struct_definition)+
 
-import_statement: _FROM string _IMPORT import_items
+import_statement: FROM string _IMPORT import_items
 import_items: import_item ("," import_item)* ","?
 import_item: identifier (_AS identifier)?
 
