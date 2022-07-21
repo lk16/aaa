@@ -160,8 +160,7 @@ class LoopTypeError(TypeException):
 
 class InvalidMainSignuture(TypeException):
     def __str__(self) -> str:  # pragma: nocover
-        # TODO put expected signature
-        return f"{self.where()} Main function has invalid signature\n"
+        return f"{self.where()} Main function should have no arguments and no return types\n"
 
 
 class GetFieldOfNonStructTypeError(TypeException):
@@ -178,6 +177,7 @@ class GetFieldOfNonStructTypeError(TypeException):
     def __str__(self) -> str:  # pragma: nocover
         stack = format_typestack(self.type_stack)
 
+        # TODO this just points to start of function
         return (
             f"{self.where()} Function {self.function.name} tries to get field of non-struct value\n"
             + f"  Type stack: {stack}\n"
