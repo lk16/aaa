@@ -274,13 +274,23 @@ class AaaTransformer(Transformer[Any, Any]):
     ) -> Struct:
         return Struct(name=name.name, fields=fields, token=token)
 
-    def struct_field_query(self, field_name: StringLiteral) -> StructFieldQuery:
-        return StructFieldQuery(field_name=field_name)
+    def struct_field_query_operator(self, token: Token) -> Token:
+        return token
+
+    def struct_field_query(
+        self, field_name: StringLiteral, token: Token
+    ) -> StructFieldQuery:
+        return StructFieldQuery(field_name=field_name, operator_token=token)
+
+    def struct_field_update_operator(self, token: Token) -> Token:
+        return token
 
     def struct_field_update(
-        self, field_name: StringLiteral, new_value_expr: FunctionBody
+        self, field_name: StringLiteral, new_value_expr: FunctionBody, token: Token
     ) -> StructFieldUpdate:
-        return StructFieldUpdate(field_name=field_name, new_value_expr=new_value_expr)
+        return StructFieldUpdate(
+            field_name=field_name, new_value_expr=new_value_expr, operator_token=token
+        )
 
     def struct_function_identifier(
         self, type_name: Identifier, func_name: Identifier

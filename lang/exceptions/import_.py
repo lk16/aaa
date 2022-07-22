@@ -59,7 +59,6 @@ class CyclicImportError(ImportException):
         self.failed_import = failed_import
 
     def __str__(self) -> str:
-        # TODO show exact location of imports
         msg = "Cyclic import dependency was detected:\n"
         msg += f"           {self.failed_import}\n"
 

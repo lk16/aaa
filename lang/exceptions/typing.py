@@ -2,7 +2,14 @@ from pathlib import Path
 from typing import List, Union
 
 from lang.exceptions import AaaLoadException, error_location, format_typestack
-from lang.models.parse import Function, MemberFunctionName, Operator, Struct
+from lang.models.parse import (
+    Function,
+    MemberFunctionName,
+    Operator,
+    Struct,
+    StructFieldQuery,
+    StructFieldUpdate,
+)
 from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
 
 
@@ -170,14 +177,18 @@ class GetFieldOfNonStructTypeError(TypeException):
         file: Path,
         function: "Function",
         type_stack: TypeStack,
+        field_query: StructFieldQuery,
     ) -> None:
         self.type_stack = type_stack
+        self.field_query = field_query
         super().__init__(file=file, function=function)
+
+    def where(self) -> str:
+        return error_location(self.file, self.field_query.operator_token)
 
     def __str__(self) -> str:
         stack = format_typestack(self.type_stack)
 
-        # TODO this just points to start of function
         return (
             f"{self.where()} Function {self.function.name} tries to get field of non-struct value\n"
             + f"  Type stack: {stack}\n"
@@ -192,12 +203,16 @@ class SetFieldOfNonStructTypeError(TypeException):
         file: Path,
         function: "Function",
         type_stack: TypeStack,
+        field_update: StructFieldUpdate,
     ) -> None:
         self.type_stack = type_stack
+        self.field_update = field_update
         super().__init__(file=file, function=function)
 
+    def where(self) -> str:
+        return error_location(self.file, self.field_update.operator_token)
+
     def __str__(self) -> str:
-        # TODO this just points to start of function
         stack = format_typestack(self.type_stack)
 
         return (
@@ -215,13 +230,17 @@ class StructUpdateStackError(TypeException):
         function: "Function",
         type_stack: TypeStack,
         type_stack_before: TypeStack,
+        field_update: StructFieldUpdate,
     ) -> None:
         self.type_stack = type_stack
         self.type_stack_before = type_stack_before
+        self.field_update = field_update
         super().__init__(file=file, function=function)
 
+    def where(self) -> str:
+        return error_location(self.file, self.field_update.operator_token)
+
     def __str__(self) -> str:
-        # TODO this just points to start of function
         expected_stack = format_typestack(self.type_stack_before)
         found_stack = format_typestack(self.type_stack)
 
@@ -243,16 +262,20 @@ class StructUpdateTypeError(TypeException):
         field_name: str,
         expected_type: VariableType,
         found_type: VariableType,
+        field_update: StructFieldUpdate,
     ) -> None:
         self.type_stack = type_stack
         self.struct = struct
         self.field_name = field_name
         self.expected_type = expected_type
         self.found_type = found_type
+        self.field_update = field_update
         super().__init__(file=file, function=function)
 
+    def where(self) -> str:
+        return error_location(self.file, self.field_update.operator_token)
+
     def __str__(self) -> str:
-        # TODO this just points to start of function
         return (
             f"{self.where()} Function {self.function.name} tries to update struct field with wrong type\n"
             f"Attempt to set field {self.field_name} of {self.struct.name} to wrong type in {self.function.name}\n"

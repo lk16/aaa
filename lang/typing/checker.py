@@ -563,6 +563,7 @@ class TypeChecker:
                 file=self.file,
                 type_stack=type_stack,
                 function=self.function,
+                field_query=node,
             )
 
         struct_name = struct_type.struct_name
@@ -608,6 +609,7 @@ class TypeChecker:
                 function=self.function,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
+                field_update=node,
             )
 
         struct_name = struct_type.struct_name
@@ -617,6 +619,7 @@ class TypeChecker:
                 file=self.file,
                 type_stack=type_stack,
                 function=self.function,
+                field_update=node,
             )
 
         # These should not raise, they are enforced by the Program class
@@ -634,6 +637,7 @@ class TypeChecker:
                 field_name=node.field_name.value,
                 found_type=update_expr_type,
                 expected_type=field_selector_type,
+                field_update=node,
             )
 
         # drop field_selector and update value

@@ -99,8 +99,12 @@ struct_definition: ( \
 )
 
 struct_function_identifier: identifier ":" member_function_name
-struct_field_query: string "?"
-struct_field_update: string _BEGIN function_body _END "!"
+
+struct_field_query: string struct_field_query_operator
+!struct_field_query_operator: "?"
+
+struct_field_update: string _BEGIN function_body _END struct_field_update_operator
+!struct_field_update_operator: "!"
 
 member_function: type_literal ":" member_function_name
 

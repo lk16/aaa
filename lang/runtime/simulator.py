@@ -163,10 +163,10 @@ class Simulator:
             return
 
         ip = self.get_instruction_pointer()
-        current_function = self.call_stack[-1]
-        func_name = current_function.func_name
+        call_stack_item = self.call_stack[-1]
+        func_name = call_stack_item.function.identify()
         instructions = self.program.get_instructions(
-            file=current_function.source_file, name=func_name
+            file=call_stack_item.source_file, name=func_name
         )
 
         try:
@@ -213,7 +213,7 @@ class Simulator:
 
         self.call_stack.append(
             CallStackItem(
-                func_name=func_name,
+                function=function,
                 source_file=file,
                 instruction_pointer=0,
                 argument_values=argument_values,

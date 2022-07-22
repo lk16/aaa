@@ -82,10 +82,12 @@ class MemberFunctionName(FunctionBodyItem):
 
 
 class StructFieldQuery(FunctionBodyItem):
+    operator_token: Token
     field_name: StringLiteral
 
 
 class StructFieldUpdate(FunctionBodyItem):
+    operator_token: Token
     field_name: StringLiteral
     new_value_expr: FunctionBody
 
