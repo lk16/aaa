@@ -38,10 +38,13 @@ class ImportedItemNotFound(ImportException):
         self.imported_item = imported_item
         self.file = file
 
+    def where(self) -> str:
+        return error_location(self.file, self.import_.token)
+
     def __str__(self) -> str:
         return (
-            f"{self.file}: Could not import "
-            + f'"{self.imported_item}" from {self.import_.source}\n'
+            f"{self.where()}: Could not import "
+            + f"{self.imported_item} from {self.import_.source}\n"
         )
 
 

@@ -1,8 +1,12 @@
-from typing import Dict, List, Type
+from typing import Dict, Type
 
 import pytest
 
-from lang.exceptions.import_ import AbsoluteImportError, CyclicImportError
+from lang.exceptions.import_ import (
+    AbsoluteImportError,
+    CyclicImportError,
+    ImportedItemNotFound,
+)
 from lang.exceptions.misc import MainFunctionNotFound
 from lang.exceptions.naming import (
     ArgumentNameCollision,
@@ -355,7 +359,7 @@ def test_errors(
 
 
 @pytest.mark.parametrize(
-    ["files", "expected_exception_types"],
+    ["files", "expected_exception_type", "expected_exception_message"],
     [
         pytest.param(
             {
@@ -368,8 +372,10 @@ def test_errors(
                 fn foo { nop }
                 """,
             },
-            [CyclicImportError],
+            CyclicImportError,
+            "",
             id="cyclic-import",
+            marks=pytest.mark.skip,
         ),
         pytest.param(
             {
@@ -382,13 +388,41 @@ def test_errors(
                 fn five return int { 5 }
                 """,
             },
-            [CollidingIdentifier],
+            CollidingIdentifier,
+            "",
             id="import-naming-collision",
             marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "five" import six as foo
+                fn main { nop }
+                """,
+                "five.aaa": """
+                fn five return int { 5 }
+                """,
+            },
+            ImportedItemNotFound,
+            "/foo/main.aaa:2:17: Could not import six from five\n",
+            id="imported-item-not-found",
         ),
     ],
 )
 def test_multi_file_errors(
-    files: Dict[str, str], expected_exception_types: List[Type[Exception]]
+    files: Dict[str, str],
+    expected_exception_type: Type[Exception],
+    expected_exception_message: str,
 ) -> None:
-    check_aaa_full_source_multi_file(files, "", expected_exception_types)
+    tmp_dir, exceptions = check_aaa_full_source_multi_file(
+        files, "", [expected_exception_type]
+    )
+
+    assert len(exceptions) == 1
+    exception_message = str(exceptions[0])
+
+    exception_message = exception_message.replace(tmp_dir, "/foo")
+
+    print(repr(exception_message))
+    print()
+    assert exception_message == expected_exception_message
