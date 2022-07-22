@@ -47,6 +47,7 @@ class FunctionTypeError(TypeException):
 
 
 class StackUnderflowError(TypeException):
+    # TODO point out where the stack underflow happens, stack and expected types
     def __str__(self) -> str:
         return f"{self.where()} Function {self.function.name} has a stack underflow\n"
 
@@ -218,7 +219,7 @@ class SetFieldOfNonStructTypeError(TypeException):
         return (
             f"{self.where()} Function {self.function.name} tries to set field of non-struct value\n"
             + f"  Type stack: {stack}\n"
-            + "Expected top: <struct type> str \n"
+            + "Expected top: <struct type> str <type of field to update>\n"
         )
 
 
@@ -320,7 +321,7 @@ class InvalidMemberFunctionSignature(TypeException):
         ):
             formatted += (
                 f"Expected arg types: {self.struct.name} ...\n"
-                + f"   Found arg types: {' '.join(str(arg) for arg in self.signature.arg_types)}\n\n"
+                + f"   Found arg types: {' '.join(str(arg) for arg in self.signature.arg_types)}\n"
             )
 
         if (
@@ -329,7 +330,7 @@ class InvalidMemberFunctionSignature(TypeException):
         ):
             formatted += (
                 f"Expected return types: {self.struct.name} ...\n"
-                + f"   Found return types: {' '.join(str(ret) for ret in self.signature.return_types)}\n\n"
+                + f"   Found return types: {' '.join(str(ret) for ret in self.signature.return_types)}\n"
             )
 
         return formatted

@@ -31,14 +31,15 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
 
 
 @pytest.mark.parametrize(
-    ["code", "expected_exception_types"],
+    ["code", "expected_exception_type", "expected_exception_message"],
     [
         pytest.param(
             """
             fn foo args foo as int { nop }
             fn main { nop }
             """,
-            [ArgumentNameCollision],
+            ArgumentNameCollision,
+            "/foo/main.aaa:2:13: Function foo has argument which collides with function name another or argument\n",
             id="funcname-argname-collision",
         ),
         pytest.param(
@@ -46,39 +47,85 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args bar as int, bar as int { nop }
             fn main { nop }
             """,
-            [ArgumentNameCollision],
+            ArgumentNameCollision,
+            "/foo/main.aaa:2:13: Function foo has argument which collides with function name another or argument\n",
             id="argname-argname-collision",
         ),
         pytest.param(
-            'fn main { if true { 3 } else { "" } }', [BranchTypeError], id="branch-type"
+            'fn main { if true { 3 } else { "" } }',
+            BranchTypeError,
+            "/foo/main.aaa:1:1 Function main has inconsistent stacks for branches\n"
+            + "           before: \n"
+            + "  after if-branch: int\n"
+            + "after else-branch: str\n",
+            id="branch-type",
         ),
         pytest.param(
             "fn main { if 3 true { nop } }",
-            [ConditionTypeError],
+            ConditionTypeError,
+            "/foo/main.aaa:1:1 Function main has a condition type error\n"
+            + "stack before: \n"
+            + " stack after: int bool\n",
             id="condition-type-branch",
         ),
         pytest.param(
             "fn main { while 3 true { nop } }",
-            [ConditionTypeError],
+            ConditionTypeError,
+            "/foo/main.aaa:1:1 Function main has a condition type error\n"
+            + "stack before: \n"
+            + " stack after: int bool\n",
             id="condition-type-loop",
         ),
-        pytest.param(
+        pytest.param(  # TODO try other combinations
             """
             fn foo { nop }
             fn foo { nop }
+            fn main { nop }
             """,
-            [CollidingIdentifier],
+            CollidingIdentifier,
+            "/foo/main.aaa:3:13: function foo collides with:\n"
+            + "/foo/main.aaa:2:13: function foo\n",
             id="funcname-funcname-collision",
         ),
-        pytest.param("fn main { 5 }", [FunctionTypeError], id="function-type"),
-        pytest.param("fn main { while true { 0 } }", [LoopTypeError], id="loop-type"),
-        pytest.param('fn main { 3 " " + . }', [StackTypesError], id="stack-types"),
-        pytest.param("fn main { drop }", [StackUnderflowError], id="stack-underflow"),
+        pytest.param(
+            """
+            fn bar { 5 }
+            fn main { nop }
+            """,
+            FunctionTypeError,
+            "/foo/main.aaa:2:13: Function bar returns wrong type(s)\n"
+            + "expected return types: \n"
+            + "   found return types: int\n",
+            id="function-type",
+        ),
+        pytest.param(
+            "fn main { while true { 0 } }",
+            LoopTypeError,
+            "/foo/main.aaa:1:1 Function main has a stack modification inside loop body\n"
+            + "before loop: \n"
+            + " after loop: int\n",
+            id="loop-type",
+        ),
+        pytest.param(
+            'fn main { 3 " " + . }',
+            StackTypesError,
+            "/foo/main.aaa:1:1 Function main has invalid stack types when calling +\n"
+            + "Expected stack top: str str\n"
+            + "       Found stack: int str\n",
+            id="stack-types",
+        ),
+        pytest.param(
+            "fn main { drop }",
+            StackUnderflowError,
+            "/foo/main.aaa:1:1 Function main has a stack underflow\n",
+            id="stack-underflow",
+        ),
         pytest.param(
             """
             fn main { bar }
             """,
-            [UnknownIdentifier],
+            UnknownIdentifier,
+            "/foo/main.aaa:2:23: Function main uses unknown identifier bar\n",
             id="unknown-function",
         ),
         pytest.param(
@@ -86,7 +133,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo return *a { nop }
             fn main { nop }
             """,
-            [UnknownPlaceholderType],
+            UnknownPlaceholderType,
+            "/foo/main.aaa:2:13: Function foo uses unknown placeholder a\n",
             id="unknown-placeholder-type",
         ),
         pytest.param(
@@ -94,30 +142,38 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args bar as baz { nop }
             fn main { nop }
             """,
-            [UnknownArgumentType],
+            UnknownArgumentType,
+            "",
             id="unknown-type",
             marks=pytest.mark.skip,
         ),
         pytest.param(
-            """
-            fn foo { 5 }
-            fn bar { 5 "" + }
-            fn main { nop }
-            """,
-            [FunctionTypeError, StackTypesError],
-            id="multiple-errors",
+            "fn main args a as int { nop }",
+            InvalidMainSignuture,
+            "/foo/main.aaa:1:1 Main function should have no arguments and no return types\n",
+            id="invalid-main-signature-argument",
         ),
         pytest.param(
-            "fn main args a as int { nop }",
-            [InvalidMainSignuture],
-            id="invalid-main-signature",
+            "fn main { 5 }",
+            InvalidMainSignuture,
+            "",
+            id="invalid-main-signature-return-type",
+            marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            "fn main args a as int { 5 }",
+            InvalidMainSignuture,
+            "",
+            id="invalid-main-signature-both",
+            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
             from "/foo" import bar
             fn main { nop }
             """,
-            [AbsoluteImportError],
+            AbsoluteImportError,
+            "/foo/main.aaa:2:13: Absolute imports are forbidden",
             id="absolute-import",
         ),
         pytest.param(
@@ -125,7 +181,10 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { 3 "a" ? }
             fn main { nop }
             """,
-            [GetFieldOfNonStructTypeError],
+            GetFieldOfNonStructTypeError,
+            "/foo/main.aaa:2:28 Function foo tries to get field of non-struct value\n"
+            + "  Type stack: int str\n"
+            + "Expected top: <struct type> str \n",
             id="get-field-of-non-struct",
         ),
         pytest.param(
@@ -134,7 +193,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { bar "y" ? . drop }
             fn main { nop }
             """,
-            [UnknownStructField],
+            UnknownStructField,
+            "/foo/main.aaa:3:13: Function foo tries to use non-existing field y of struct bar\n",
             id="unknown-struct-field-get",
         ),
         pytest.param(
@@ -143,7 +203,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { bar "y" { 3 } ! drop }
             fn main { nop }
             """,
-            [UnknownStructField],
+            UnknownStructField,
+            "/foo/main.aaa:3:13: Function foo tries to use non-existing field y of struct bar\n",
             id="unknown-struct-field-set",
         ),
         pytest.param(
@@ -151,7 +212,10 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { 5 "x" { 3 } ! drop }
             fn main { nop }
             """,
-            [SetFieldOfNonStructTypeError],
+            SetFieldOfNonStructTypeError,
+            "/foo/main.aaa:2:34 Function foo tries to set field of non-struct value\n"
+            + "  Type stack: int str int\n"
+            + "Expected top: <struct type> str <type of field to update>\n",
             id="set-field-of-non-struct",
         ),
         pytest.param(
@@ -160,7 +224,10 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { bar "x" { 34 35 } ! "x" ? . "\\n" . drop }
             fn main { nop }
             """,
-            [StructUpdateStackError],
+            StructUpdateStackError,
+            "/foo/main.aaa:3:40 Function foo modifies stack incorrectly when updating struct field\n"
+            + "  Expected: bar str <new field value> \n"
+            + "    Found: bar str int int\n",
             id="struct-update-stack-error",
         ),
         pytest.param(
@@ -169,7 +236,13 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { bar "x" { false } ! drop }
             fn main { nop }
             """,
-            [StructUpdateTypeError],
+            StructUpdateTypeError,
+            "/foo/main.aaa:3:40 Function foo tries to update struct field with wrong type\n"
+            + "Attempt to set field x of bar to wrong type in foo\n"
+            + "Expected type: str"
+            + "\n   Found type: bool\n"
+            + "\n"
+            + "Type stack: bar str bool\n",
             id="struct-update-type-error",
         ),
         pytest.param(
@@ -178,7 +251,13 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn bar:foo { nop }
             fn main { nop }
             """,
-            [InvalidMemberFunctionSignature],
+            InvalidMemberFunctionSignature,
+            "/foo/main.aaa:3:13 Function bar:foo has invalid member-function signature\n"
+            + "\n"
+            + "Expected arg types: bar ...\n"
+            + "   Found arg types: \n"
+            + "Expected return types: bar ...\n"
+            + "   Found return types: \n",
             id="member-func-without-arg-or-return-type",
         ),
         pytest.param(
@@ -187,7 +266,11 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn bar:foo args b as bar { nop }
             fn main { nop }
             """,
-            [InvalidMemberFunctionSignature],
+            InvalidMemberFunctionSignature,
+            "/foo/main.aaa:3:13 Function bar:foo has invalid member-function signature\n"
+            + "\n"
+            + "Expected return types: bar ...\n"
+            + "   Found return types: \n",
             id="member-func-without-return-type",
         ),
         pytest.param(
@@ -196,7 +279,11 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn bar:foo return bar { nop }
             fn main { nop }
             """,
-            [InvalidMemberFunctionSignature],
+            InvalidMemberFunctionSignature,
+            "/foo/main.aaa:3:13 Function bar:foo has invalid member-function signature\n"
+            + "\n"
+            + "Expected arg types: bar ...\n"
+            + "   Found arg types: \n",
             id="member-func-without-arg-type",
         ),
         pytest.param(
@@ -204,29 +291,35 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             struct main { x as int }
             """,
-            [CollidingIdentifier],
+            CollidingIdentifier,
+            "/foo/main.aaa:3:13: struct main collides with:\n"
+            + "/foo/main.aaa:2:13: function main\n",
             id="struct-name-collision",
         ),
         pytest.param(
             """
             fn foo { nop }
             """,
-            [MainFunctionNotFound],
+            MainFunctionNotFound,
+            "/foo/main.aaa: No main function found",
             id="main-not-found",
         ),
         pytest.param(
             """
             fn main { false assert }
             """,
-            [AaaAssertionFailure],
+            AaaAssertionFailure,
+            "",
             id="assertion-failure",
+            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
             fn main { nop }
             fn foo args b as bar { nop }
             """,
-            [UnknownArgumentType],
+            UnknownArgumentType,
+            "/foo/main.aaa:3:13: Function foo has argument with unknown type bar\n",
             id="unknown-argument-type",
         ),
         pytest.param(
@@ -234,13 +327,31 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             fn foo args m as main { nop }
             """,
-            [UnknownArgumentType],
+            UnknownArgumentType,
+            "/foo/main.aaa:3:13: Function foo has argument with unknown type main\n",
             id="function-name-as-argument-type",
         ),
     ],
 )
-def test_errors(code: str, expected_exception_types: List[Type[Exception]]) -> None:
-    check_aaa_full_source(code, "", expected_exception_types)
+def test_errors(
+    code: str, expected_exception_type: Type[Exception], expected_exception_message: str
+) -> None:
+    tmp_dir, exceptions = check_aaa_full_source(code, "", [expected_exception_type])
+    assert len(exceptions) == 1
+    exception_message = str(exceptions[0])
+
+    exception_message = exception_message.replace(tmp_dir, "/foo")
+
+    print(repr(exception_message))
+    print()
+    assert exception_message == expected_exception_message
+
+
+# TODO handle multiple errors
+#     fn foo { 5 }
+#     fn bar { 5 "" + }
+#     fn main { nop }
+# ),
 
 
 @pytest.mark.parametrize(

@@ -23,7 +23,7 @@ class AbsoluteImportError(ImportException):
         return error_location(self.file, self.import_.token)
 
     def __str__(self) -> str:
-        return f"{self.where()}: absolute imports are forbidden"
+        return f"{self.where()}: Absolute imports are forbidden"
 
 
 class ImportedItemNotFound(ImportException):

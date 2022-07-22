@@ -58,6 +58,7 @@ class ArgumentNameCollision(NamingException):
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
+        # TODO add what the actual colliding argument name is
         return f"{self.where()}: Function {self.function.name} has argument which collides with function name another or argument\n"
 
 
