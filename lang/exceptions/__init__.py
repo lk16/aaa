@@ -18,6 +18,10 @@ class AaaRuntimeException(AaaException):
     ...
 
 
+class NamingException(AaaLoadException):
+    ...
+
+
 def format_typestack(
     type_stack: Sequence[VariableType | TypePlaceholder],
 ) -> str:

@@ -132,6 +132,7 @@ class TypeChecker:
                 raise UnknownPlaceholderType(
                     file=self.file,
                     function=self.function,
+                    placeholder=return_type.type,
                 )
 
         # TODO more and better validation
