@@ -75,6 +75,7 @@ builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
 
 builtin_fn "exit" args int
 
+builtin_fn "getcwd" return str
 
 // TODO: not implemented yet
 builtin_fn "environ" return map[str, str]
@@ -92,30 +93,39 @@ builtin_fn "unsetenv" args str
 builtin_fn "chdir" args str
 
 // TODO: not implemented yet
-builtin_fn "getcwd" return str
-
-
-// TODO group/user id related syscalls
 builtin_fn "getpid" return int
+
+// TODO: not implemented yet
 builtin_fn "getppid" return int
 
-
-// TODO more file related sys calls
+// TODO: not implemented yet
 builtin_fn "open" args str, int, int return int
+
+// TODO: not implemented yet
 builtin_fn "close" args int
 
-// TODO consider str/bytes variants
+// TODO: not implemented yet
 builtin_fn "read" args int, int return str, int
+
+// TODO: not implemented yet
 builtin_fn "write" args int, str return int
 
+// TODO: not implemented yet
 builtin_fn "link" args str, str return int
+
+// TODO: not implemented yet
 builtin_fn "unlink" args str return int
 
+// TODO: not implemented yet
 builtin_fn "execve" args str, vec[str], vec[str] return int
 
+// TODO: not implemented yet
 builtin_fn "time" return int
+
+// TODO: not implemented yet
 builtin_fn "gettimeofday" return int, int  // note: not a system call
 
+// TODO: not implemented yet
 builtin_fn "chmod" args str, int return int
 
 

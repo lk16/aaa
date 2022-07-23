@@ -1,3 +1,4 @@
+import os
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -126,6 +127,7 @@ class Simulator:
             StandardLibraryCallKind.VEC_SET: self.instruction_vec_set,
             StandardLibraryCallKind.VEC_SIZE: self.instruction_vec_size,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
+            StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
         }
 
     def top(self) -> Variable:
@@ -637,3 +639,8 @@ class Simulator:
     def instruction_syscall_exit(self) -> int:
         x: int = self.pop().value
         exit(x)
+
+    def instruction_syscall_getcwd(self) -> int:
+        self.push(str_var(os.getcwd()))
+
+        return self.get_instruction_pointer() + 1
