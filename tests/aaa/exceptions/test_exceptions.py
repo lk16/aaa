@@ -9,7 +9,6 @@ from lang.exceptions.import_ import (
 )
 from lang.exceptions.misc import MainFunctionNotFound
 from lang.exceptions.naming import (
-    ArgumentNameCollision,
     CollidingIdentifier,
     UnknownArgumentType,
     UnknownIdentifier,
@@ -42,8 +41,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args foo as int { nop }
             fn main { nop }
             """,
-            ArgumentNameCollision,
-            "/foo/main.aaa:2:13: Function foo has argument which collides with function name another or argument\n",
+            CollidingIdentifier,
+            "/foo/main.aaa:2:25: function argument foo collides with:\n"
+            + "/foo/main.aaa:2:13: function foo\n",
             id="funcname-argname-collision",
         ),
         pytest.param(
@@ -51,8 +51,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args bar as int, bar as int { nop }
             fn main { nop }
             """,
-            ArgumentNameCollision,
-            "/foo/main.aaa:2:13: Function foo has argument which collides with function name another or argument\n",
+            CollidingIdentifier,
+            "/foo/main.aaa:2:37: function argument bar collides with:\n"
+            + "/foo/main.aaa:2:25: function argument bar\n",
             id="argname-argname-collision",
         ),
         pytest.param(

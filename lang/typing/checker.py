@@ -26,7 +26,7 @@ if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.program import Program
 
 from lang.exceptions.naming import (
-    ArgumentNameCollision,
+    CollidingIdentifier,
     UnknownArgumentType,
     UnknownIdentifier,
     UnknownPlaceholderType,
@@ -507,12 +507,26 @@ class TypeChecker:
                     signature=signature,
                 )
 
-        argument_and_names: Set[str] = set()
+        for arg_offset, arg in enumerate(node.arguments):
+            colliding_identifier = self.program.get_identifier(self.file, arg.name)
 
-        for arg in node.arguments:
-            if arg.name in argument_and_names or node.name == arg.name:
-                raise ArgumentNameCollision(file=self.file, function=self.function)
-            argument_and_names.add(arg.name)
+            if colliding_identifier:
+                raise CollidingIdentifier(
+                    file=self.file,
+                    colliding=arg,
+                    found=colliding_identifier,
+                )
+
+            if arg.name == node.name:
+                raise CollidingIdentifier(file=self.file, colliding=arg, found=node)
+
+            for preceding_arg in node.arguments[:arg_offset]:
+                if arg.name == preceding_arg.name:
+                    raise CollidingIdentifier(
+                        file=self.file,
+                        colliding=arg,
+                        found=preceding_arg,
+                    )
 
         return self._check_function_body(node.body, type_stack)
 

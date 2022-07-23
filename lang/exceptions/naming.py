@@ -3,6 +3,7 @@ from typing import Union
 
 from lang.exceptions import NamingException, error_location
 from lang.models.parse import (
+    Argument,
     Function,
     Identifier,
     ParsedTypePlaceholder,
@@ -17,49 +18,39 @@ class CollidingIdentifier(NamingException):
         self,
         *,
         file: Path,
-        colliding: Union[Struct, Function],
-        found: Union[Struct, Function, ProgramImport],
+        colliding: Union[Argument, Function, Struct],
+        found: Union[Argument, Function, Struct, ProgramImport],
     ) -> None:
         self.colliding = colliding
         self.found = found
         self.file = file
 
-    def describe(self, item: Union[Struct, Function, ProgramImport]) -> str:
+    def describe(self, item: Union[Argument, Function, Struct, ProgramImport]) -> str:
         if isinstance(item, Struct):
             return f"struct {item.identify()}"
         elif isinstance(item, Function):
             return f"function {item.identify()}"
         elif isinstance(item, ProgramImport):
             return f"imported identifier {item.identify()}"
+        elif isinstance(item, Argument):
+            return f"function argument {item.name}"
         else:  # pragma: nocover
             assert False
 
+    def where(self, item: Union[Argument, Function, Struct, ProgramImport]) -> str:
+        if isinstance(item, Argument):
+            return error_location(self.file, item.name_token)
+        else:
+            return error_location(self.file, item.token)
+
     def __str__(self) -> str:
-        lhs_where = error_location(self.file, self.colliding.token)
-        rhs_where = error_location(self.file, self.found.token)
+        lhs_where = self.where(self.colliding)
+        rhs_where = self.where(self.found)
 
         return (
             f"{lhs_where}: {self.describe(self.colliding)} collides with:\n"
             f"{rhs_where}: {self.describe(self.found)}\n"
         )
-
-
-class ArgumentNameCollision(NamingException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        function: Function,
-    ) -> None:
-        self.function = function
-        self.file = file
-
-    def where(self) -> str:
-        return error_location(self.file, self.function.token)
-
-    def __str__(self) -> str:
-        # TODO add what the actual colliding argument name is
-        return f"{self.where()}: Function {self.function.name} has argument which collides with function name another or argument\n"
 
 
 class UnknownIdentifier(NamingException):

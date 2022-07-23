@@ -49,7 +49,8 @@ class AaaTransformer(Transformer[Any, Any]):
         self, args: Tuple[Identifier, Union[TypeLiteral, ParsedTypePlaceholder]]
     ) -> Argument:
         name = args[0].name
-        return Argument(name=name, type=ParsedType(type=args[1]))
+        name_token = args[0].token
+        return Argument(name=name, name_token=name_token, type=ParsedType(type=args[1]))
 
     def boolean(self, token: Token) -> BooleanLiteral:
         return BooleanLiteral(value=token.value)

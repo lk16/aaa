@@ -105,6 +105,7 @@ class ParsedType(AaaTreeNode):
 
 
 class Argument(AaaTreeNode):
+    name_token: Token
     name: str
     type: ParsedType
 
