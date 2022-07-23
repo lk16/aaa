@@ -1,8 +1,31 @@
+from enum import Enum
 from pathlib import Path
 
 from lang.models import AaaModel
 from lang.models.parse import Struct
 from lang.typing.types import VariableType
+
+
+class StandardLibraryCallKind(Enum):
+    MAP_CLEAR = "MAP_CLEAR"
+    MAP_COPY = "MAP_COPY"
+    MAP_DROP = "MAP_DROP"
+    MAP_EMPTY = "MAP_EMPTY"
+    MAP_GET = "MAP_GET"
+    MAP_HAS_KEY = "MAP_HAS_KEY"
+    MAP_KEYS = "MAP_KEYS"
+    MAP_POP = "MAP_POP"
+    MAP_SET = "MAP_SET"
+    MAP_SIZE = "MAP_SIZE"
+    MAP_VALUES = "MAP_VALUES"
+    VEC_COPY = "VEC_COPY"
+    VEC_CLEAR = "VEC_CLEAR"
+    VEC_EMPTY = "VEC_EMPTY"
+    VEC_GET = "VEC_GET"
+    VEC_POP = "VEC_POP"
+    VEC_PUSH = "VEC_PUSH"
+    VEC_SET = "VEC_SET"
+    VEC_SIZE = "VEC_SIZE"
 
 
 class Instruction(AaaModel):
@@ -155,80 +178,8 @@ class PushMap(Instruction):
     value_type: VariableType
 
 
-class VecPush(Instruction):
-    ...
-
-
-class VecPop(Instruction):
-    ...
-
-
-class VecGet(Instruction):
-    ...
-
-
-class VecSet(Instruction):
-    ...
-
-
-class VecSize(Instruction):
-    ...
-
-
-class VecEmpty(Instruction):
-    ...
-
-
-class VecClear(Instruction):
-    ...
-
-
-class VecCopy(Instruction):
-    ...
-
-
-class MapGet(Instruction):
-    ...
-
-
-class MapSet(Instruction):
-    ...
-
-
-class MapHasKey(Instruction):
-    ...
-
-
-class MapSize(Instruction):
-    ...
-
-
-class MapEmpty(Instruction):
-    ...
-
-
-class MapPop(Instruction):
-    ...
-
-
-class MapDrop(Instruction):
-    ...
-
-
-class MapClear(Instruction):
-    ...
-
-
-class MapCopy(Instruction):
-    ...
-
-
-class MapKeys(Instruction):
-    ...
-
-
-class MapValues(Instruction):
-    ...
+class StandardLibraryCall(Instruction):
+    kind: StandardLibraryCallKind
 
 
 class PushStruct(Instruction):

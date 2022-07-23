@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Type
 
 from lang.exceptions import AaaRuntimeException
 from lang.exceptions.runtime import AaaAssertionFailure
-from lang.instructions.types import (
+from lang.models.instructions import (
     And,
     Assert,
     CallFunction,
@@ -22,17 +22,6 @@ from lang.instructions.types import (
     IntNotEqual,
     Jump,
     JumpIfNot,
-    MapClear,
-    MapCopy,
-    MapDrop,
-    MapEmpty,
-    MapGet,
-    MapHasKey,
-    MapKeys,
-    MapPop,
-    MapSet,
-    MapSize,
-    MapValues,
     Minus,
     Modulo,
     Multiply,
@@ -51,15 +40,9 @@ from lang.instructions.types import (
     PushVec,
     Rot,
     SetStructField,
+    StandardLibraryCall,
+    StandardLibraryCallKind,
     Swap,
-    VecClear,
-    VecCopy,
-    VecEmpty,
-    VecGet,
-    VecPop,
-    VecPush,
-    VecSet,
-    VecSize,
 )
 from lang.models.parse import Function, TypeLiteral
 from lang.models.runtime import CallStackItem
@@ -117,27 +100,31 @@ class Simulator:
             PushVec: self.instruction_push_vec,
             Rot: self.instruction_rot,
             Swap: self.instruction_swap,
-            VecPush: self.instruction_vec_push,
-            VecPop: self.instruction_vec_pop,
-            VecSet: self.instruction_vec_set,
-            VecGet: self.instruction_vec_get,
-            VecSize: self.instruction_vec_size,
-            VecEmpty: self.instruction_vec_empty,
-            VecClear: self.instruction_vec_clear,
-            VecCopy: self.instruction_vec_copy,
-            MapGet: self.instruction_map_get,
-            MapSet: self.instruction_map_set,
-            MapHasKey: self.instruction_map_has_key,
-            MapSize: self.instruction_map_size,
-            MapEmpty: self.instruction_map_empty,
-            MapPop: self.instruction_map_pop,
-            MapDrop: self.instruction_map_drop,
-            MapClear: self.instruction_map_clear,
-            MapCopy: self.instruction_map_copy,
-            MapKeys: self.instruction_map_keys,
-            MapValues: self.instruction_map_values,
+            StandardLibraryCall: self.instruction_stdandard_library_call,
             GetStructField: self.instruction_get_struct_field,
             SetStructField: self.instruction_set_struct_field,
+        }
+
+        self.stdlib_funcs: Dict[StandardLibraryCallKind, Callable[[], int]] = {
+            StandardLibraryCallKind.MAP_CLEAR: self.instruction_map_clear,
+            StandardLibraryCallKind.MAP_COPY: self.instruction_map_copy,
+            StandardLibraryCallKind.MAP_DROP: self.instruction_map_drop,
+            StandardLibraryCallKind.MAP_EMPTY: self.instruction_map_empty,
+            StandardLibraryCallKind.MAP_GET: self.instruction_map_get,
+            StandardLibraryCallKind.MAP_HAS_KEY: self.instruction_map_has_key,
+            StandardLibraryCallKind.MAP_KEYS: self.instruction_map_keys,
+            StandardLibraryCallKind.MAP_POP: self.instruction_map_pop,
+            StandardLibraryCallKind.MAP_SET: self.instruction_map_set,
+            StandardLibraryCallKind.MAP_SIZE: self.instruction_map_size,
+            StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
+            StandardLibraryCallKind.VEC_COPY: self.instruction_vec_copy,
+            StandardLibraryCallKind.VEC_CLEAR: self.instruction_vec_clear,
+            StandardLibraryCallKind.VEC_EMPTY: self.instruction_vec_empty,
+            StandardLibraryCallKind.VEC_GET: self.instruction_vec_get,
+            StandardLibraryCallKind.VEC_POP: self.instruction_vec_pop,
+            StandardLibraryCallKind.VEC_PUSH: self.instruction_vec_push,
+            StandardLibraryCallKind.VEC_SET: self.instruction_vec_set,
+            StandardLibraryCallKind.VEC_SIZE: self.instruction_vec_size,
         }
 
     def top(self) -> Variable:
@@ -231,7 +218,7 @@ class Simulator:
                 # We hit the end of the function
                 break
 
-            # Excecute the instruction and get value for next instruction ointer
+            # Excecute the instruction and get value for next instruction pointer
             next_instruction = self.instruction_funcs[type(instruction)](instruction)
             self.print_debug_info()
             self.set_instruction_pointer(next_instruction)
@@ -474,16 +461,14 @@ class Simulator:
         self.push(map_var)
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_push(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecPush)
+    def instruction_vec_push(self) -> int:
         x = self.pop()
         vec: List[Variable] = self.top().value
 
         vec.append(x)
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_pop(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecPop)
+    def instruction_vec_pop(self) -> int:
         vec: List[Variable] = self.top().value
 
         x = vec.pop()
@@ -491,16 +476,14 @@ class Simulator:
 
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_get(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecGet)
+    def instruction_vec_get(self) -> int:
         x: int = self.pop().value
         vec: List[Variable] = self.top().value
 
         self.push(vec[x])
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_set(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecSet)
+    def instruction_vec_set(self) -> int:
         x: Any = self.pop()
         index: int = self.pop().value
         vec: List[Variable] = self.top().value
@@ -508,29 +491,25 @@ class Simulator:
         vec[index] = x
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_size(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecSize)
+    def instruction_vec_size(self) -> int:
         vec: List[Variable] = self.top().value
 
         self.push(int_var(len(vec)))
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_empty(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecEmpty)
+    def instruction_vec_empty(self) -> int:
         vec: List[Variable] = self.top().value
 
         self.push(bool_var(not bool(vec)))
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_clear(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecClear)
+    def instruction_vec_clear(self) -> int:
         vec: List[Variable] = self.top().value
 
         vec.clear()
         return self.get_instruction_pointer() + 1
 
-    def instruction_vec_copy(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, VecCopy)
+    def instruction_vec_copy(self) -> int:
         vec_var = self.top()
 
         copied = Variable(
@@ -542,16 +521,14 @@ class Simulator:
         self.push(copied)
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_get(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapGet)
+    def instruction_map_get(self) -> int:
         key = self.pop()
         map: Dict[Variable, Variable] = self.top().value
 
         self.push(map[key])
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_set(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapSet)
+    def instruction_map_set(self) -> int:
         value = self.pop()
         key = self.pop()
         map: Dict[Variable, Variable] = self.top().value
@@ -559,53 +536,46 @@ class Simulator:
         map[key] = value
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_has_key(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapHasKey)
+    def instruction_map_has_key(self) -> int:
         key = self.pop()
         map: Dict[Variable, Variable] = self.top().value
 
         self.push(bool_var(key in map))
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_size(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapSize)
+    def instruction_map_size(self) -> int:
         map: Dict[Variable, Variable] = self.top().value
 
         self.push(int_var(len(map)))
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_empty(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapEmpty)
+    def instruction_map_empty(self) -> int:
         map: Dict[Variable, Variable] = self.top().value
 
         self.push(bool_var(not bool(map)))
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_pop(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapPop)
+    def instruction_map_pop(self) -> int:
         key = self.pop()
         map: Dict[Variable, Variable] = self.top().value
 
         self.push(map.pop(key))
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_drop(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapDrop)
+    def instruction_map_drop(self) -> int:
         key = self.pop()
         map: Dict[Variable, Variable] = self.top().value
 
         del map[key]
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_clear(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapClear)
+    def instruction_map_clear(self) -> int:
         map: Dict[Variable, Variable] = self.top().value
 
         map.clear()
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_copy(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, MapCopy)
+    def instruction_map_copy(self) -> int:
         map_var = self.top()
 
         copied = Variable(
@@ -617,12 +587,10 @@ class Simulator:
         self.push(copied)
         return self.get_instruction_pointer() + 1
 
-    def instruction_map_keys(self, instruction: Instruction) -> int:  # pragma: nocover
+    def instruction_map_keys(self) -> int:  # pragma: nocover
         raise NotImplementedError
 
-    def instruction_map_values(
-        self, instruction: Instruction
-    ) -> int:  # pragma: nocover
+    def instruction_map_values(self) -> int:  # pragma: nocover
         raise NotImplementedError
 
     def instruction_push_struct(self, instruction: Instruction) -> int:
@@ -660,3 +628,7 @@ class Simulator:
         struct_fields[field_name] = new_value
 
         return self.get_instruction_pointer() + 1
+
+    def instruction_stdandard_library_call(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, StandardLibraryCall)
+        return self.stdlib_funcs[instruction.kind]()

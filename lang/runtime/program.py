@@ -20,8 +20,8 @@ from lang.exceptions.misc import (
 )
 from lang.exceptions.naming import CollidingIdentifier
 from lang.instructions.generator import InstructionGenerator
-from lang.instructions.types import Instruction
 from lang.models import AaaModel
+from lang.models.instructions import Instruction
 from lang.models.parse import (
     Function,
     MemberFunctionName,

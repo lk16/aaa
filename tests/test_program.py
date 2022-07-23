@@ -8,7 +8,7 @@ from pytest import MonkeyPatch
 
 from lang.exceptions.import_ import FileReadError
 from lang.exceptions.misc import MissingEnvironmentVariable
-from lang.instructions.types import Instruction
+from lang.models.instructions import Instruction
 from lang.runtime.program import Program
 from lang.runtime.simulator import Simulator
 
@@ -48,7 +48,7 @@ def test_program_load_builtins_ok() -> None:
 def test_program_implements_all_instructions() -> None:
     instruction_types = {
         obj
-        for _, obj in inspect.getmembers(sys.modules["lang.instructions.types"])
+        for _, obj in inspect.getmembers(sys.modules["lang.models.instructions"])
         if inspect.isclass(obj)
         and issubclass(obj, Instruction)
         and obj is not Instruction
