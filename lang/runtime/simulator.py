@@ -2,6 +2,7 @@ import os
 import sys
 from copy import deepcopy
 from pathlib import Path
+from time import time
 from typing import Any, Callable, Dict, List, Type
 
 from lang.exceptions import AaaRuntimeException
@@ -129,6 +130,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
             StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
+            StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
         }
 
     def top(self) -> Variable:
@@ -658,5 +660,11 @@ class Simulator:
         else:
             self.push(str_var(read_data))
             self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_time(self) -> int:
+        unix_timestamp = int(time())
+        self.push(int_var(unix_timestamp))
 
         return self.get_instruction_pointer() + 1

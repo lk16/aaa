@@ -29,6 +29,7 @@ class StandardLibraryCallKind(Enum):
     SYSCALL_EXIT = "SYSCALL_EXIT"
     SYSCALL_GETCWD = "SYSCALL_GETCWD"
     SYSCALL_READ = "SYSCALL_READ"
+    SYSCALL_TIME = "SYSCALL_TIME"
 
 
 class Instruction(AaaModel):

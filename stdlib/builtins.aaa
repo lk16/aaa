@@ -84,6 +84,9 @@ builtin_fn "getcwd" return str
 // TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "read" args int, int return str, bool
 
+builtin_fn "time" return int
+
+
 
 // TODO: not implemented yet
 builtin_fn "environ" return map[str, str]
@@ -123,9 +126,6 @@ builtin_fn "unlink" args str return int
 
 // TODO: not implemented yet
 builtin_fn "execve" args str, vec[str], vec[str] return int
-
-// TODO: not implemented yet
-builtin_fn "time" return int
 
 // TODO: not implemented yet
 builtin_fn "gettimeofday" return int, int  // note: not a system call
