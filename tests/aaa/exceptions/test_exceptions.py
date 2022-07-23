@@ -36,26 +36,6 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
     ["code", "expected_exception_type", "expected_exception_message"],
     [
         pytest.param(
-            """
-            fn foo args foo as int { nop }
-            fn main { nop }
-            """,
-            CollidingIdentifier,
-            "/foo/main.aaa:2:25: function argument foo collides with:\n"
-            + "/foo/main.aaa:2:13: function foo\n",
-            id="funcname-argname-collision",
-        ),
-        pytest.param(
-            """
-            fn foo args bar as int, bar as int { nop }
-            fn main { nop }
-            """,
-            CollidingIdentifier,
-            "/foo/main.aaa:2:37: function argument bar collides with:\n"
-            + "/foo/main.aaa:2:25: function argument bar\n",
-            id="argname-argname-collision",
-        ),
-        pytest.param(
             'fn main { if true { 3 } else { "" } }',
             BranchTypeError,
             "/foo/main.aaa:1:1 Function main has inconsistent stacks for branches\n"
@@ -339,7 +319,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
     ],
 )
-def test_errors(
+def test_one_error(
     code: str, expected_exception_type: Type[Exception], expected_exception_message: str
 ) -> None:
     tmp_dir, exceptions = check_aaa_full_source(code, "", [expected_exception_type])
@@ -347,17 +327,7 @@ def test_errors(
     exception_message = str(exceptions[0])
 
     exception_message = exception_message.replace(tmp_dir, "/foo")
-
-    print(repr(exception_message))
-    print()
     assert exception_message == expected_exception_message
-
-
-# TODO handle multiple errors
-#     fn foo { 5 }
-#     fn bar { 5 "" + }
-#     fn main { nop }
-# ),
 
 
 @pytest.mark.parametrize(
@@ -377,22 +347,6 @@ def test_errors(
             CyclicImportError,
             "",
             id="cyclic-import",
-            marks=pytest.mark.skip,
-        ),
-        pytest.param(
-            {
-                "main.aaa": """
-                from "five" import five as foo
-                from "five" import five as foo
-                fn main { nop }
-                """,
-                "five.aaa": """
-                fn five return int { 5 }
-                """,
-            },
-            CollidingIdentifier,
-            "",
-            id="import-naming-collision",
             marks=pytest.mark.skip,
         ),
         pytest.param(
@@ -418,6 +372,194 @@ def test_multi_file_errors(
 ) -> None:
     tmp_dir, exceptions = check_aaa_full_source_multi_file(
         files, "", [expected_exception_type]
+    )
+
+    assert len(exceptions) == 1
+    exception_message = str(exceptions[0])
+
+    exception_message = exception_message.replace(tmp_dir, "/foo")
+    assert exception_message == expected_exception_message
+
+
+@pytest.mark.parametrize(
+    ["files", "expected_exception_message"],
+    [
+        pytest.param(
+            {
+                "main.aaa": """
+                fn bar { nop }
+                fn foo args bar as int { nop }
+                fn main { nop }
+                """
+            },
+            "/foo/main.aaa:3:29: function argument bar collides with:\n"
+            + "/foo/main.aaa:2:17: function bar\n",
+            id="argname-other-func-name",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                fn foo args foo as int { nop }
+                fn main { nop }
+                """
+            },
+            "/foo/main.aaa:2:29: function argument foo collides with:\n"
+            + "/foo/main.aaa:2:17: function foo\n",
+            id="argname-same-funcname",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                fn foo args bar as int, bar as int { nop }
+                fn main { nop }
+                """
+            },
+            "/foo/main.aaa:2:41: function argument bar collides with:\n"
+            + "/foo/main.aaa:2:29: function argument bar\n",
+            id="argname-argname",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                struct bar { x as int }
+                fn foo args bar as int { nop }
+                fn main { nop }
+                """
+            },
+            "/foo/main.aaa:3:29: function argument bar collides with:\n"
+            + "/foo/main.aaa:2:17: struct bar\n",
+            id="argname-struct",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "five" import five
+                fn foo args five as int { nop }
+                fn main { nop }
+                """,
+                "five.aaa": """
+               fn five return int { 5 }
+                """,
+            },
+            "/foo/main.aaa:3:29: function argument five collides with:\n"
+            + "/foo/main.aaa:2:16: function five\n",
+            id="argname-import",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                fn foo { nop }
+                fn foo { nop }
+                fn main { nop }
+                """
+            },
+            "/foo/main.aaa:3:17: function foo collides with:\n"
+            + "/foo/main.aaa:2:17: function foo\n",
+            id="funcname-funcname",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                struct foo { x as int }
+                fn foo { nop }
+                fn main { nop }
+                """
+            },
+            "/foo/main.aaa:2:17: struct foo collides with:\n"
+            + "/foo/main.aaa:3:17: function foo\n",
+            id="funcname-struct",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "five" import five
+                fn five { nop }
+                fn main { nop }
+                """,
+                "five.aaa": """
+               fn five return int { 5 }
+                """,
+            },
+            "/foo/main.aaa:3:17: function five collides with:\n"
+            + "/foo/main.aaa:2:17: imported identifier five\n",
+            id="funcname-import",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                fn foo { nop }
+                struct foo { x as int }
+                fn main { nop }
+                """,
+            },
+            "/foo/main.aaa:3:17: struct foo collides with:\n"
+            + "/foo/main.aaa:2:17: function foo\n",
+            id="struct-funcname",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                struct foo { x as int }
+                struct foo { x as int }
+                fn main { nop }
+                """,
+            },
+            "/foo/main.aaa:3:17: struct foo collides with:\n"
+            + "/foo/main.aaa:2:17: struct foo\n",
+            id="struct-struct",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "five" import five
+                struct five { x as int }
+                fn main { nop }
+                """,
+                "five.aaa": """
+               fn five return int { 5 }
+                """,
+            },
+            "/foo/main.aaa:3:17: struct five collides with:\n"
+            + "/foo/main.aaa:2:17: imported identifier five\n",
+            id="struct-import",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "five" import five as bar
+                fn foo args bar as int { nop }
+                fn main { nop }
+                """,
+                "five.aaa": """
+               fn five return int { 5 }
+                """,
+            },
+            "/foo/main.aaa:3:29: function argument bar collides with:\n"
+            + "/foo/main.aaa:2:16: function five\n",
+            id="argname-import-renamed",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "five" import five as foo
+                from "five" import five as foo
+                fn main { nop }
+                """,
+                "five.aaa": """
+                fn five return int { 5 }
+                """,
+            },
+            "",
+            id="import-import",
+            marks=pytest.mark.skip,
+        ),
+    ],
+)
+def test_colliding_identifier(
+    files: Dict[str, str], expected_exception_message: str
+) -> None:
+    tmp_dir, exceptions = check_aaa_full_source_multi_file(
+        files, "", [CollidingIdentifier]
     )
 
     assert len(exceptions) == 1
