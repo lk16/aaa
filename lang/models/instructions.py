@@ -28,6 +28,7 @@ class StandardLibraryCallKind(Enum):
     VEC_SIZE = "VEC_SIZE"
     SYSCALL_EXIT = "SYSCALL_EXIT"
     SYSCALL_GETCWD = "SYSCALL_GETCWD"
+    SYSCALL_READ = "SYSCALL_READ"
 
 
 class Instruction(AaaModel):

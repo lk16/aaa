@@ -107,6 +107,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "vec:size": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SIZE),
     "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
     "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),
+    "read": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_READ),
 }
 
 

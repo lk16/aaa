@@ -128,6 +128,7 @@ class Simulator:
             StandardLibraryCallKind.VEC_SIZE: self.instruction_vec_size,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
+            StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
         }
 
     def top(self) -> Variable:
@@ -642,5 +643,20 @@ class Simulator:
 
     def instruction_syscall_getcwd(self) -> int:
         self.push(str_var(os.getcwd()))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_read(self) -> int:
+        n: int = self.pop().value
+        fd: int = self.pop().value
+
+        try:
+            read_data = os.read(fd, n).decode("utf-8")
+        except OSError:
+            self.push(str_var(""))
+            self.push(bool_var(False))
+        else:
+            self.push(str_var(read_data))
+            self.push(bool_var(True))
 
         return self.get_instruction_pointer() + 1

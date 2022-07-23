@@ -15,7 +15,11 @@ builtin_fn "nop"
 builtin_fn "+" args int, int return int
 builtin_fn "-" args int, int return int
 builtin_fn "*" args int, int return int
+
+// TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "/" args int, int return int, bool
+
+// TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "%" args int, int return int, bool
 
 // integer comparison
@@ -77,6 +81,10 @@ builtin_fn "exit" args int
 
 builtin_fn "getcwd" return str
 
+// TODO: return enum indicating success/failure instead of extra bool
+builtin_fn "read" args int, int return str, bool
+
+
 // TODO: not implemented yet
 builtin_fn "environ" return map[str, str]
 
@@ -103,9 +111,6 @@ builtin_fn "open" args str, int, int return int
 
 // TODO: not implemented yet
 builtin_fn "close" args int
-
-// TODO: not implemented yet
-builtin_fn "read" args int, int return str, int
 
 // TODO: not implemented yet
 builtin_fn "write" args int, str return int
