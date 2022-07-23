@@ -56,10 +56,10 @@ builtin_fn "map:drop"    args map[*k, *v], *k     return map[*k, *v]
 builtin_fn "map:clear"   args map[*k, *v]         return map[*k, *v]
 builtin_fn "map:copy"    args map[*k, *v]         return map[*k, *v], map[*k, *v]
 
-
-// TODO: below is not implemented yet
-
+// TODO: not implemented yet
 builtin_fn "map:keys"    args map[*k, *v]         return vec[*k]
+
+// TODO: not implemented yet
 builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
 
 
@@ -73,21 +73,29 @@ builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
 // TODO everything below should be moved to separate file in stdlib
 // Function and type names should not be reserved / builtin
 
+builtin_fn "exit" args int
+
+
+// TODO: not implemented yet
 builtin_fn "environ" return map[str, str]
+
+// TODO: not implemented yet
 builtin_fn "getenv" args str, str, str
+
+// TODO: not implemented yet
 builtin_fn "setenv" args str, str
+
+// TODO: not implemented yet
 builtin_fn "unsetenv" args str
 
-// syscalls
-
+// TODO: not implemented yet
 builtin_fn "chdir" args str
+
+// TODO: not implemented yet
 builtin_fn "getcwd" return str
 
-builtin_fn "exit" args int
-builtin_fn "fork" return int
 
 // TODO group/user id related syscalls
-
 builtin_fn "getpid" return int
 builtin_fn "getppid" return int
 

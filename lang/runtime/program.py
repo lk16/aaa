@@ -23,6 +23,7 @@ from lang.instructions.generator import InstructionGenerator
 from lang.models import AaaModel
 from lang.models.instructions import Instruction
 from lang.models.parse import (
+    BuiltinFunction,
     Function,
     MemberFunctionName,
     ParsedBuiltinsFile,
@@ -39,12 +40,12 @@ from lang.typing.checker import TypeChecker
 from lang.typing.types import Signature, SignatureItem, TypePlaceholder, VariableType
 
 # Identifiable are things identified uniquely by a filepath and name
-Identifiable = Function | ProgramImport | Struct
+Identifiable = Function | ProgramImport | Struct | BuiltinFunction
 
 
 # TODO move this out
 class Builtins(AaaModel):
-    functions: Dict[str, List[Signature]]
+    functions: Dict[str, List[Tuple[BuiltinFunction, Signature]]]
 
     @classmethod
     def empty(cls) -> "Builtins":
@@ -115,9 +116,9 @@ class Program:
                 else:  # pragma: nocover
                     assert False
 
-            builtins.functions[function.name].append(
-                Signature(arg_types=arg_types, return_types=return_types)
-            )
+            signature = Signature(arg_types=arg_types, return_types=return_types)
+
+            builtins.functions[function.name].append((function, signature))
 
         return builtins, []
 
@@ -304,6 +305,16 @@ class Program:
         return errors
 
     def get_identifier(self, file: Path, name: str) -> Optional[Identifiable]:
+        # TODO refactor getting builtin identifiers
+        if name in self._builtins.functions:
+            tuples = self._builtins.functions[name]
+
+            # TODO make signatures unique
+            assert len(tuples) == 1
+
+            builtin_func, _ = tuples[0]
+            return builtin_func
+
         try:
             identified = self.identifiers[file][name]
         except KeyError:

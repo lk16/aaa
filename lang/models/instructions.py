@@ -26,6 +26,7 @@ class StandardLibraryCallKind(Enum):
     VEC_PUSH = "VEC_PUSH"
     VEC_SET = "VEC_SET"
     VEC_SIZE = "VEC_SIZE"
+    SYSCALL_EXIT = "SYSCALL_EXIT"
 
 
 class Instruction(AaaModel):

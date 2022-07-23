@@ -125,6 +125,7 @@ class Simulator:
             StandardLibraryCallKind.VEC_PUSH: self.instruction_vec_push,
             StandardLibraryCallKind.VEC_SET: self.instruction_vec_set,
             StandardLibraryCallKind.VEC_SIZE: self.instruction_vec_size,
+            StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
         }
 
     def top(self) -> Variable:
@@ -632,3 +633,7 @@ class Simulator:
     def instruction_stdandard_library_call(self, instruction: Instruction) -> int:
         assert isinstance(instruction, StandardLibraryCall)
         return self.stdlib_funcs[instruction.kind]()
+
+    def instruction_syscall_exit(self) -> int:
+        x: int = self.pop().value
+        exit(x)

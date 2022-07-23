@@ -3,6 +3,7 @@ from typing import List, Union
 
 from lang.exceptions import AaaLoadException, error_location, format_typestack
 from lang.models.parse import (
+    BuiltinFunction,
     Function,
     MemberFunctionName,
     Operator,
@@ -62,7 +63,12 @@ class StackTypesError(TypeException):
         signature: Union[Signature, StructQuerySignature, StructUpdateSignature],
         type_stack: TypeStack,
         func_like: Union[
-            Operator, Function, MemberFunctionName, StructFieldUpdate, StructFieldQuery
+            Operator,
+            Function,
+            MemberFunctionName,
+            StructFieldUpdate,
+            StructFieldQuery,
+            BuiltinFunction,
         ],
     ) -> None:
         self.signature = signature
@@ -78,6 +84,8 @@ class StackTypesError(TypeException):
             return self.func_like.name
         elif isinstance(self.func_like, MemberFunctionName):
             return f"{self.func_like.type_name}:{self.func_like.func_name}"
+        elif isinstance(self.func_like, BuiltinFunction):
+            return self.func_like.name
         else:
             assert False
 

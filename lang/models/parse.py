@@ -151,6 +151,9 @@ class BuiltinFunction(AaaTreeNode):
     arguments: List[ParsedType]
     return_types: List[ParsedType]
 
+    def identify(self) -> str:
+        return self.name
+
 
 class BuiltinFunctionArguments(AaaTreeNode):
     value: List[ParsedType]

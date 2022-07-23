@@ -4,6 +4,7 @@ from typing import Union
 from lang.exceptions import NamingException, error_location
 from lang.models.parse import (
     Argument,
+    BuiltinFunction,
     Function,
     Identifier,
     ParsedTypePlaceholder,
@@ -18,18 +19,22 @@ class CollidingIdentifier(NamingException):
         self,
         *,
         file: Path,
-        colliding: Union[Argument, Function, Struct, ProgramImport],
-        found: Union[Argument, Function, Struct, ProgramImport],
+        colliding: Union[Argument, BuiltinFunction, Function, Struct, ProgramImport],
+        found: Union[Argument, BuiltinFunction, Function, Struct, ProgramImport],
     ) -> None:
         self.colliding = colliding
         self.found = found
         self.file = file
 
-    def describe(self, item: Union[Argument, Function, Struct, ProgramImport]) -> str:
+    def describe(
+        self, item: Union[Argument, BuiltinFunction, Function, Struct, ProgramImport]
+    ) -> str:
         if isinstance(item, Struct):
             return f"struct {item.identify()}"
         elif isinstance(item, Function):
             return f"function {item.identify()}"
+        elif isinstance(item, BuiltinFunction):
+            return f"built-in function {item.identify()}"
         elif isinstance(item, ProgramImport):
             return f"imported identifier {item.identify()}"
         elif isinstance(item, Argument):
@@ -37,9 +42,13 @@ class CollidingIdentifier(NamingException):
         else:  # pragma: nocover
             assert False
 
-    def where(self, item: Union[Argument, Function, Struct, ProgramImport]) -> str:
+    def where(
+        self, item: Union[Argument, BuiltinFunction, Function, Struct, ProgramImport]
+    ) -> str:
         if isinstance(item, Argument):
             return error_location(self.file, item.name_token)
+        if isinstance(item, BuiltinFunction):
+            return "<stdlib>:"  # TODO
         else:
             return error_location(self.file, item.token)
 

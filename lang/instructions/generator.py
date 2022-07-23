@@ -105,6 +105,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "vec:push": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_PUSH),
     "vec:set": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SET),
     "vec:size": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SIZE),
+    "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
 }
 
 
@@ -191,6 +192,9 @@ class InstructionGenerator:
         for argument in self.function.arguments:
             if node.name == argument.name:
                 return [PushFunctionArgument(arg_name=argument.name)]
+
+        if node.name in OPERATOR_INSTRUCTIONS:
+            return [OPERATOR_INSTRUCTIONS[node.name]]
 
         identified = self.program.identifiers[self.file][identifier]
 

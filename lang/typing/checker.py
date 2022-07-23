@@ -6,6 +6,7 @@ from lang.models.parse import (
     AaaTreeNode,
     BooleanLiteral,
     Branch,
+    BuiltinFunction,
     Function,
     FunctionBody,
     Identifier,
@@ -158,7 +159,7 @@ class TypeChecker:
         self,
         type_stack: TypeStack,
         signature: Signature,
-        func_like: Union[Operator, Function, MemberFunctionName],
+        func_like: Union[Operator, Function, MemberFunctionName, BuiltinFunction],
     ) -> TypeStack:
         # TODO load signature here, instead of passing it as argument
 
@@ -288,7 +289,7 @@ class TypeChecker:
         stack: Optional[TypeStack] = None
         last_stack_type_error: Optional[StackTypesError] = None
 
-        for signature in signatures:
+        for _, signature in signatures:
             try:
                 stack = self._check_and_apply_signature(
                     copy(type_stack), signature, node
@@ -403,6 +404,12 @@ class TypeChecker:
                 VariableType(RootType.STRUCT, struct_name=identifier.name)
             ]
 
+        elif isinstance(identifier, BuiltinFunction):
+            signature = self.program._builtins.functions[identifier.name][0][1]
+            return self._check_and_apply_signature(
+                copy(type_stack), signature, identifier
+            )
+
         else:  # pragma: nocover
             assert False
 
@@ -452,12 +459,13 @@ class TypeChecker:
         if signatures is not None:
             # All builtin member functions should be listed in the builtins file
             # so this should not raise a KeyError.
-            signatures = self.program._builtins.functions[key]
+            builtin_tuples = self.program._builtins.functions[key]
 
             # All builtin member functions should have a unique signature
-            assert len(signatures) == 1
+            assert len(builtin_tuples) == 1
 
-            signature = signatures[0]
+            builtin_tuple = builtin_tuples[0]
+            _, signature = builtin_tuple
 
         else:
             file_identifiers = self.program.identifiers[self.file]
