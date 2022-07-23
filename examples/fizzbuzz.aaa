@@ -28,7 +28,6 @@ fn fizzbuzz
             }
         }
     }
-    "\n" .
 }
 
 
@@ -38,7 +37,10 @@ fn main {
         dup 100 <
     {
         1 +
-        dup dup 15 % fizzbuzz
+        dup
+        dup 15 % drop
+        fizzbuzz
+        "\n" .
     }
     drop
 }

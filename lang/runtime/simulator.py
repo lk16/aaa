@@ -276,14 +276,28 @@ class Simulator:
         assert isinstance(instruction, Divide)
         x: int = self.pop().value
         y: int = self.pop().value
-        self.push(int_var(y // x))
+
+        if x == 0:
+            self.push(int_var(0))
+            self.push(bool_var(False))
+        else:
+            self.push(int_var(y // x))
+            self.push(bool_var(True))
+
         return self.get_instruction_pointer() + 1
 
     def instruction_modulo(self, instruction: Instruction) -> int:
         assert isinstance(instruction, Modulo)
         x: int = self.pop().value
         y: int = self.pop().value
-        self.push(int_var(y % x))
+
+        if x == 0:
+            self.push(int_var(0))
+            self.push(bool_var(False))
+        else:
+            self.push(int_var(y % x))
+            self.push(bool_var(True))
+
         return self.get_instruction_pointer() + 1
 
     def instruction_push_bool(self, instruction: Instruction) -> int:

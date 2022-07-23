@@ -15,8 +15,8 @@ builtin_fn "nop"
 builtin_fn "+" args int, int return int
 builtin_fn "-" args int, int return int
 builtin_fn "*" args int, int return int
-builtin_fn "/" args int, int return int
-builtin_fn "%" args int, int return int
+builtin_fn "/" args int, int return int, bool
+builtin_fn "%" args int, int return int, bool
 
 // integer comparison
 builtin_fn "!=" args int, int return bool
