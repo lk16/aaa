@@ -42,7 +42,6 @@ from lang.exceptions.typing import (
     LoopTypeError,
     SetFieldOfNonStructTypeError,
     StackTypesError,
-    StackUnderflowError,
     StructUpdateStackError,
     StructUpdateTypeError,
 )
@@ -53,6 +52,8 @@ from lang.typing.types import (
     Signature,
     SignatureItem,
     Str,
+    StructQuerySignature,
+    StructUpdateSignature,
     TypePlaceholder,
     TypeStack,
     VariableType,
@@ -166,7 +167,13 @@ class TypeChecker:
         arg_count = len(signature.arg_types)
 
         if len(stack) < arg_count:
-            raise StackUnderflowError(file=self.file, function=self.function)
+            raise StackTypesError(
+                file=self.file,
+                function=self.function,
+                signature=signature,
+                type_stack=type_stack,
+                func_like=func_like,
+            )
 
         placeholder_types: Dict[str, SignatureItem] = {}
         expected_types = signature.arg_types
@@ -562,7 +569,13 @@ class TypeChecker:
         type_stack = self._check_string_literal(node.field_name, copy(type_stack))
 
         if len(type_stack) < 2:
-            raise StackUnderflowError(file=self.file, function=self.function)
+            raise StackTypesError(
+                file=self.file,
+                function=self.function,
+                signature=StructQuerySignature(),
+                type_stack=type_stack,
+                func_like=node,
+            )
 
         struct_type, field_selector_type = type_stack[-2:]
 
@@ -604,7 +617,13 @@ class TypeChecker:
         )
 
         if len(type_stack) < 3:
-            raise StackUnderflowError(file=self.file, function=self.function)
+            raise StackTypesError(
+                file=self.file,
+                function=self.function,
+                signature=StructUpdateSignature(),
+                type_stack=type_stack,
+                func_like=node,
+            )
 
         struct_type, field_selector_type, update_expr_type = type_stack[-3:]
 

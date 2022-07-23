@@ -294,3 +294,11 @@ class Signature(AaaModel):
                 assert False
 
         return Signature(arg_types=arg_types, return_types=return_types)
+
+
+class StructUpdateSignature:
+    ...
+
+
+class StructQuerySignature:
+    ...

@@ -26,7 +26,6 @@ from lang.exceptions.typing import (
     LoopTypeError,
     SetFieldOfNonStructTypeError,
     StackTypesError,
-    StackUnderflowError,
     StructUpdateStackError,
     StructUpdateTypeError,
 )
@@ -121,9 +120,11 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             "fn main { drop }",
-            StackUnderflowError,
-            "/foo/main.aaa:1:1 Function main has a stack underflow\n",
-            id="stack-underflow",
+            StackTypesError,
+            "/foo/main.aaa:1:1 Function main has invalid stack types when calling drop\n"
+            + "Expected stack top: *a\n"
+            + "       Found stack: \n",
+            id="stack-types-underflow",
         ),
         pytest.param(
             """

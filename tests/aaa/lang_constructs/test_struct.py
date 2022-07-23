@@ -2,7 +2,7 @@ from typing import List, Type
 
 import pytest
 
-from lang.exceptions.typing import StackUnderflowError
+from lang.exceptions.typing import StackTypesError
 from tests.aaa import check_aaa_full_source
 
 
@@ -71,14 +71,14 @@ from tests.aaa import check_aaa_full_source
         ),
         pytest.param(
             'fn main { "x" ? }',
-            '{5: "five"}',
-            [StackUnderflowError],
+            "",
+            [StackTypesError],
             id="get-stack-underflow",
         ),
         pytest.param(
             'fn main { "x" { 3 } ! }',
-            '{5: "five"}',
-            [StackUnderflowError],
+            "",
+            [StackTypesError],
             id="set-stack-underflow",
         ),
     ],

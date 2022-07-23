@@ -10,7 +10,14 @@ from lang.models.parse import (
     StructFieldQuery,
     StructFieldUpdate,
 )
-from lang.typing.types import Signature, TypePlaceholder, TypeStack, VariableType
+from lang.typing.types import (
+    Signature,
+    StructQuerySignature,
+    StructUpdateSignature,
+    TypePlaceholder,
+    TypeStack,
+    VariableType,
+)
 
 
 class TypeException(AaaLoadException):
@@ -46,21 +53,17 @@ class FunctionTypeError(TypeException):
         )
 
 
-class StackUnderflowError(TypeException):
-    # TODO point out where the stack underflow happens, stack and expected types
-    def __str__(self) -> str:
-        return f"{self.where()} Function {self.function.name} has a stack underflow\n"
-
-
 class StackTypesError(TypeException):
     def __init__(
         self,
         *,
         file: Path,
         function: "Function",
-        signature: Signature,
+        signature: Union[Signature, StructQuerySignature, StructUpdateSignature],
         type_stack: TypeStack,
-        func_like: Union[Operator, Function, MemberFunctionName],
+        func_like: Union[
+            Operator, Function, MemberFunctionName, StructFieldUpdate, StructFieldQuery
+        ],
     ) -> None:
         self.signature = signature
         self.type_stack = type_stack
@@ -78,15 +81,21 @@ class StackTypesError(TypeException):
         else:
             assert False
 
-    def __str__(self) -> str:
-        stack = format_typestack(self.type_stack)
+    def format_typestack(self) -> str:
+        if isinstance(self.signature, Signature):
+            return format_typestack(self.signature.arg_types)
+        elif isinstance(self.signature, StructQuerySignature):
+            return "<struct type> str"
+        elif isinstance(self.signature, StructUpdateSignature):
+            return "<struct type> str <type of field to update>"
+        else:  # pragma:nocover
+            assert False
 
+    def __str__(self) -> str:
         return (
             f"{self.where()} Function {self.function.name} has invalid stack types when calling {self.func_like_name()}\n"
-            + f"Expected stack top: "
-            + format_typestack(self.signature.arg_types)
-            + "\n"
-            + f"       Found stack: {stack}\n"
+            + f"Expected stack top: {self.format_typestack()}\n"
+            + f"       Found stack: {format_typestack(self.type_stack)}\n"
         )
 
 
