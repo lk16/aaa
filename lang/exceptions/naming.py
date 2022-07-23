@@ -18,7 +18,7 @@ class CollidingIdentifier(NamingException):
         self,
         *,
         file: Path,
-        colliding: Union[Argument, Function, Struct],
+        colliding: Union[Argument, Function, Struct, ProgramImport],
         found: Union[Argument, Function, Struct, ProgramImport],
     ) -> None:
         self.colliding = colliding

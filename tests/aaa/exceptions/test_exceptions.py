@@ -5,6 +5,7 @@ import pytest
 from lang.exceptions.import_ import (
     AbsoluteImportError,
     CyclicImportError,
+    FileReadError,
     ImportedItemNotFound,
 )
 from lang.exceptions.misc import MainFunctionNotFound
@@ -363,6 +364,12 @@ def test_one_error(
             "/foo/main.aaa:2:17: Could not import six from five\n",
             id="imported-item-not-found",
         ),
+        pytest.param(
+            {},
+            FileReadError,
+            "/foo/main.aaa: Failed to open or read\n",
+            id="file-not-found",
+        ),
     ],
 )
 def test_multi_file_errors(
@@ -549,9 +556,9 @@ def test_multi_file_errors(
                 fn five return int { 5 }
                 """,
             },
-            "",
+            "/foo/main.aaa:3:17: imported identifier foo collides with:\n"
+            + "/foo/main.aaa:2:17: function five\n",
             id="import-import",
-            marks=pytest.mark.skip,
         ),
     ],
 )

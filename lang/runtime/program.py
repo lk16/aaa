@@ -281,12 +281,25 @@ class Program:
                     )
                     continue
 
-                self.identifiers[file][imported_item.imported_name] = ProgramImport(
+                program_import = ProgramImport(
                     imported_name=imported_item.imported_name,
                     original_name=imported_item.origninal_name,
                     source_file=import_path,
                     token=import_.token,
                 )
+
+                found = self.get_identifier(file, imported_item.imported_name)
+
+                if found:
+                    errors += [
+                        CollidingIdentifier(
+                            file=file,
+                            found=found,
+                            colliding=program_import,
+                        )
+                    ]
+                else:
+                    self.identifiers[file][imported_item.imported_name] = program_import
 
         return errors
 
