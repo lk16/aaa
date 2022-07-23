@@ -125,16 +125,6 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             id="unknown-placeholder-type",
         ),
         pytest.param(
-            """
-            fn foo args bar as baz { nop }
-            fn main { nop }
-            """,
-            UnknownArgumentType,
-            "",
-            id="unknown-type",
-            marks=pytest.mark.skip,
-        ),
-        pytest.param(
             "fn main args a as int { nop }",
             InvalidMainSignuture,
             "/foo/main.aaa:1:1 Main function should have no arguments and no return types\n",

@@ -1,13 +1,12 @@
 # TODO
 
 ### Tests
-- redo all existing exceptions
-- fix crash of `./aaa.py cmd-full 'fn main { nop } fn foo args b as vec { nop }'`
-- test all instructions
-- test vscode extension
+- add tests for all instructions
+- add tests for vscode extension
 
 ### Containers
 - Better error handling for wrong number of type parameters
+    - this crashes: `./aaa.py cmd-full 'fn main { nop } fn foo args b as vec { nop }'`
 - Member functions should always return the type they operate on as first return value
 - Check that key type is hashable (currently: not a `vec`, `map` or `set`)
 - Add member functions:
