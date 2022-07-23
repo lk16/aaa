@@ -256,7 +256,7 @@ class StructUpdateStackError(TypeException):
 
         return (
             f"{self.where()} Function {self.function.name} modifies stack incorrectly when updating struct field\n"
-            + f"  Expected: {expected_stack} <new field value> \n"  # TODO put actual expected type for field
+            + f"  Expected: {expected_stack} <new field value> \n"
             + f"    Found: {found_stack}\n"
         )
 
