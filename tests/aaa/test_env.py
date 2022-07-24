@@ -1,4 +1,5 @@
 from contextlib import redirect_stdout
+from copy import copy
 from io import StringIO
 from unittest.mock import patch
 
@@ -41,3 +42,20 @@ def test_getenv(code: str, expected_output: str) -> None:
             Simulator(program).run()
 
     assert stdout.getvalue() == expected_output
+
+
+def test_setenv() -> None:
+    program = Program.without_file('fn main { "ENV_VAR_NAME" "ENV_VAR_VALUE" setenv }')
+
+    env_vars = copy(TEST_ENV_VARS)
+
+    with patch("lang.runtime.simulator.os.environ", env_vars):
+        with redirect_stdout(StringIO()) as stdout:
+            Simulator(program).run()
+
+    assert stdout.getvalue() == ""
+
+    assert env_vars == {
+        "ENV_VAR_NAME": "ENV_VAR_VALUE",
+        **TEST_ENV_VARS,
+    }

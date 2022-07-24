@@ -135,6 +135,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
             StandardLibraryCallKind.ENVIRON: self.instruction_environ,
             StandardLibraryCallKind.GETENV: self.instruction_getenv,
+            StandardLibraryCallKind.SETENV: self.instruction_setenv,
         }
 
     def top(self) -> Variable:
@@ -695,5 +696,13 @@ class Simulator:
         else:
             self.push(str_var(env_var_value))
             self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_setenv(self) -> int:
+        env_var_value: str = self.pop().value
+        env_var_name: str = self.pop().value
+
+        os.environ[env_var_name] = env_var_value
 
         return self.get_instruction_pointer() + 1

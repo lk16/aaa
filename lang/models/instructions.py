@@ -28,6 +28,7 @@ class StandardLibraryCallKind(Enum):
     VEC_PUSH = "VEC_PUSH"
     VEC_SET = "VEC_SET"
     VEC_SIZE = "VEC_SIZE"
+    SETENV = "SETENV"
     SYSCALL_EXIT = "SYSCALL_EXIT"
     SYSCALL_GETCWD = "SYSCALL_GETCWD"
     SYSCALL_READ = "SYSCALL_READ"

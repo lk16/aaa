@@ -91,10 +91,6 @@ builtin_fn "environ" return map[str, str]
 // TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "getenv" args str return str, bool
 
-
-// TODO: not implemented yet
-
-// TODO: not implemented yet
 builtin_fn "setenv" args str, str
 
 // TODO: not implemented yet

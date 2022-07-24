@@ -86,6 +86,10 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "over": Over(),
     "rot": Rot(),
     "swap": Swap(),
+    "environ": StandardLibraryCall(kind=StandardLibraryCallKind.ENVIRON),
+    "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
+    "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),
+    "getenv": StandardLibraryCall(kind=StandardLibraryCallKind.GETENV),
     "map:clear": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_CLEAR),
     "map:copy": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_COPY),
     "map:drop": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_DROP),
@@ -97,6 +101,9 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "map:set": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_SET),
     "map:size": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_SIZE),
     "map:values": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_VALUES),
+    "read": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_READ),
+    "setenv": StandardLibraryCall(kind=StandardLibraryCallKind.SETENV),
+    "time": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_TIME),
     "vec:clear": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_CLEAR),
     "vec:copy": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_COPY),
     "vec:empty": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_EMPTY),
@@ -105,12 +112,6 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "vec:push": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_PUSH),
     "vec:set": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SET),
     "vec:size": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SIZE),
-    "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
-    "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),
-    "read": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_READ),
-    "time": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_TIME),
-    "environ": StandardLibraryCall(kind=StandardLibraryCallKind.ENVIRON),
-    "getenv": StandardLibraryCall(kind=StandardLibraryCallKind.GETENV),
 }
 
 
