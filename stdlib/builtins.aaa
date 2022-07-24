@@ -86,10 +86,10 @@ builtin_fn "read" args int, int return str, bool
 
 builtin_fn "time" return int
 
+builtin_fn "environ" return map[str, str]
 
 
 // TODO: not implemented yet
-builtin_fn "environ" return map[str, str]
 
 // TODO: not implemented yet
 builtin_fn "getenv" args str, str, str

@@ -1,5 +1,5 @@
 from enum import IntEnum, auto
-from typing import Any, Final, List, Optional, Union
+from typing import Any, Dict, Final, List, Optional, Union
 
 from lang.models import AaaModel
 from lang.models.parse import Function, ParsedTypePlaceholder, TypeLiteral
@@ -246,6 +246,18 @@ def str_var(value: str) -> Variable:
 
 def bool_var(value: bool) -> Variable:
     return Variable(RootType.BOOL, value)
+
+
+def map_var(
+    key_type: VariableType,
+    value_type: VariableType,
+    value: Dict[Variable, Variable],
+) -> Variable:
+    return Variable(
+        root_type=RootType.MAPPING,
+        type_params=[key_type, value_type],
+        value=value,
+    )
 
 
 class TypePlaceholder(AaaModel):

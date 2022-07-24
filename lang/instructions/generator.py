@@ -109,6 +109,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),
     "read": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_READ),
     "time": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_TIME),
+    "environ": StandardLibraryCall(kind=StandardLibraryCallKind.ENVIRON),
 }
 
 

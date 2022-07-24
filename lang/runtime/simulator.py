@@ -52,10 +52,12 @@ from lang.runtime.debug import format_str
 from lang.runtime.program import Program
 from lang.typing.types import (
     RootType,
+    Str,
     Variable,
     VariableType,
     bool_var,
     int_var,
+    map_var,
     str_var,
 )
 
@@ -131,6 +133,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
             StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
             StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
+            StandardLibraryCallKind.ENVIRON: self.instruction_environ,
         }
 
     def top(self) -> Variable:
@@ -667,4 +670,15 @@ class Simulator:
         unix_timestamp = int(time())
         self.push(int_var(unix_timestamp))
 
+        return self.get_instruction_pointer() + 1
+
+    def instruction_environ(self) -> int:
+        value = {
+            str_var(env_var_name): str_var(env_var_value)
+            for env_var_name, env_var_value in os.environ.items()
+        }
+
+        env_vars_map = map_var(key_type=Str, value_type=Str, value=value)
+
+        self.push(env_vars_map)
         return self.get_instruction_pointer() + 1
