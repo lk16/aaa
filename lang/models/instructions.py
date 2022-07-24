@@ -8,6 +8,7 @@ from lang.typing.types import VariableType
 
 class StandardLibraryCallKind(Enum):
     ENVIRON = "ENVIRON"
+    GETENV = "GETENV"
     MAP_CLEAR = "MAP_CLEAR"
     MAP_COPY = "MAP_COPY"
     MAP_DROP = "MAP_DROP"

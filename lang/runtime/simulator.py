@@ -1,8 +1,8 @@
 import os
 import sys
+import time
 from copy import deepcopy
 from pathlib import Path
-from time import time
 from typing import Any, Callable, Dict, List, Type
 
 from lang.exceptions import AaaRuntimeException
@@ -134,6 +134,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
             StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
             StandardLibraryCallKind.ENVIRON: self.instruction_environ,
+            StandardLibraryCallKind.GETENV: self.instruction_getenv,
         }
 
     def top(self) -> Variable:
@@ -667,7 +668,7 @@ class Simulator:
         return self.get_instruction_pointer() + 1
 
     def instruction_syscall_time(self) -> int:
-        unix_timestamp = int(time())
+        unix_timestamp = int(time.time())
         self.push(int_var(unix_timestamp))
 
         return self.get_instruction_pointer() + 1
@@ -681,4 +682,18 @@ class Simulator:
         env_vars_map = map_var(key_type=Str, value_type=Str, value=value)
 
         self.push(env_vars_map)
+        return self.get_instruction_pointer() + 1
+
+    def instruction_getenv(self) -> int:
+        env_var_name: str = self.pop().value
+
+        try:
+            env_var_value = os.environ[env_var_name]
+        except KeyError:
+            self.push(str_var(""))
+            self.push(bool_var(False))
+        else:
+            self.push(str_var(env_var_value))
+            self.push(bool_var(True))
+
         return self.get_instruction_pointer() + 1
