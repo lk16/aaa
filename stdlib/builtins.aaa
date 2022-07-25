@@ -93,11 +93,10 @@ builtin_fn "getenv" args str return str, bool
 
 builtin_fn "setenv" args str, str
 
-// TODO: not implemented yet
 builtin_fn "unsetenv" args str
 
-// TODO: not implemented yet
-builtin_fn "chdir" args str
+// TODO: return enum indicating success/failure instead of extra bool
+builtin_fn "chdir" args str return bool
 
 // TODO: not implemented yet
 builtin_fn "getpid" return int

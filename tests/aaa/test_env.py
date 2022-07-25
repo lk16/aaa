@@ -59,3 +59,19 @@ def test_setenv() -> None:
         "ENV_VAR_NAME": "ENV_VAR_VALUE",
         **TEST_ENV_VARS,
     }
+
+
+def test_unsetenv() -> None:
+    program = Program.without_file('fn main { "HOME" unsetenv }')
+
+    env_vars = copy(TEST_ENV_VARS)
+
+    with patch("lang.runtime.simulator.os.environ", env_vars):
+        with redirect_stdout(StringIO()) as stdout:
+            Simulator(program).run()
+
+    assert stdout.getvalue() == ""
+
+    assert env_vars == {
+        "USER": "lk16",
+    }

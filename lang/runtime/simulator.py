@@ -129,6 +129,7 @@ class Simulator:
             StandardLibraryCallKind.VEC_PUSH: self.instruction_vec_push,
             StandardLibraryCallKind.VEC_SET: self.instruction_vec_set,
             StandardLibraryCallKind.VEC_SIZE: self.instruction_vec_size,
+            StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
             StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
@@ -136,6 +137,7 @@ class Simulator:
             StandardLibraryCallKind.ENVIRON: self.instruction_environ,
             StandardLibraryCallKind.GETENV: self.instruction_getenv,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
+            StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
         }
 
     def top(self) -> Variable:
@@ -704,5 +706,27 @@ class Simulator:
         env_var_name: str = self.pop().value
 
         os.environ[env_var_name] = env_var_value
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_unsetenv(self) -> int:
+        env_var_name: str = self.pop().value
+
+        try:
+            del os.environ[env_var_name]
+        except KeyError:
+            pass
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_chdir(self) -> int:
+        dir_name: str = self.pop().value
+
+        try:
+            os.chdir(dir_name)
+        except OSError:
+            self.push(bool_var(False))
+        else:
+            self.push(bool_var(True))
 
         return self.get_instruction_pointer() + 1
