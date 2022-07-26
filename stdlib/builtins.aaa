@@ -98,10 +98,8 @@ builtin_fn "unsetenv" args str
 // TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "chdir" args str return bool
 
-// TODO: not implemented yet
 builtin_fn "getpid" return int
 
-// TODO: not implemented yet
 builtin_fn "getppid" return int
 
 // TODO: return enum indicating success/failure instead of extra bool
