@@ -110,6 +110,8 @@ class Simulator:
         }
 
         self.stdlib_funcs: Dict[StandardLibraryCallKind, Callable[[], int]] = {
+            StandardLibraryCallKind.ENVIRON: self.instruction_environ,
+            StandardLibraryCallKind.GETENV: self.instruction_getenv,
             StandardLibraryCallKind.MAP_CLEAR: self.instruction_map_clear,
             StandardLibraryCallKind.MAP_COPY: self.instruction_map_copy,
             StandardLibraryCallKind.MAP_DROP: self.instruction_map_drop,
@@ -121,25 +123,24 @@ class Simulator:
             StandardLibraryCallKind.MAP_SET: self.instruction_map_set,
             StandardLibraryCallKind.MAP_SIZE: self.instruction_map_size,
             StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
-            StandardLibraryCallKind.VEC_COPY: self.instruction_vec_copy,
+            StandardLibraryCallKind.SETENV: self.instruction_setenv,
+            StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
+            StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
+            StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
+            StandardLibraryCallKind.SYSCALL_GETPID: self.instruction_getpid,
+            StandardLibraryCallKind.SYSCALL_GETPPID: self.instruction_getppid,
+            StandardLibraryCallKind.SYSCALL_OPEN: self.instruction_open,
+            StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
+            StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
+            StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
             StandardLibraryCallKind.VEC_CLEAR: self.instruction_vec_clear,
+            StandardLibraryCallKind.VEC_COPY: self.instruction_vec_copy,
             StandardLibraryCallKind.VEC_EMPTY: self.instruction_vec_empty,
             StandardLibraryCallKind.VEC_GET: self.instruction_vec_get,
             StandardLibraryCallKind.VEC_POP: self.instruction_vec_pop,
             StandardLibraryCallKind.VEC_PUSH: self.instruction_vec_push,
             StandardLibraryCallKind.VEC_SET: self.instruction_vec_set,
             StandardLibraryCallKind.VEC_SIZE: self.instruction_vec_size,
-            StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
-            StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
-            StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
-            StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
-            StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
-            StandardLibraryCallKind.ENVIRON: self.instruction_environ,
-            StandardLibraryCallKind.GETENV: self.instruction_getenv,
-            StandardLibraryCallKind.SETENV: self.instruction_setenv,
-            StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
-            StandardLibraryCallKind.SYSCALL_GETPID: self.instruction_getpid,
-            StandardLibraryCallKind.SYSCALL_GETPPID: self.instruction_getppid,
         }
 
     def top(self) -> Variable:
@@ -742,5 +743,21 @@ class Simulator:
     def instruction_getppid(self) -> int:
         ppid = os.getppid()
         self.push(int_var(ppid))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_open(self) -> int:
+        mode: int = self.pop().value
+        flags: int = self.pop().value
+        path: str = self.pop().value
+
+        try:
+            fd = os.open(path=path, flags=flags, mode=mode)
+        except Exception:
+            self.push(int_var(0))
+            self.push(bool_var(False))
+        else:
+            self.push(int_var(fd))
+            self.push(bool_var(True))
 
         return self.get_instruction_pointer() + 1
