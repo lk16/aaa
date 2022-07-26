@@ -138,6 +138,8 @@ class Simulator:
             StandardLibraryCallKind.GETENV: self.instruction_getenv,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
             StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
+            StandardLibraryCallKind.SYSCALL_GETPID: self.instruction_getpid,
+            StandardLibraryCallKind.SYSCALL_GETPPID: self.instruction_getppid,
         }
 
     def top(self) -> Variable:
@@ -728,5 +730,17 @@ class Simulator:
             self.push(bool_var(False))
         else:
             self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_getpid(self) -> int:
+        pid = os.getpid()
+        self.push(int_var(pid))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_getppid(self) -> int:
+        ppid = os.getppid()
+        self.push(int_var(ppid))
 
         return self.get_instruction_pointer() + 1
