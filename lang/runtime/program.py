@@ -70,7 +70,7 @@ class Program:
 
     @classmethod
     def without_file(cls, code: str) -> "Program":
-        with NamedTemporaryFile(delete=False) as file:
+        with NamedTemporaryFile() as file:
             saved_file = Path(file.name)
             saved_file.write_text(code)
             return cls(file=saved_file)

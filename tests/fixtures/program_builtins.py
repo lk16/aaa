@@ -1,4 +1,4 @@
-from typing import Any, Generator, List, Tuple
+from typing import Any, Generator, List, Optional, Tuple
 from unittest.mock import patch
 
 import pytest
@@ -6,6 +6,8 @@ from _pytest.fixtures import SubRequest
 
 from lang.exceptions import AaaLoadException
 from lang.runtime.program import Builtins, Program
+
+cached_builtins: Optional[Builtins] = None
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -20,13 +22,22 @@ def cache_program_builtins(request: SubRequest) -> Generator[None, None, None]:
         yield
         return
 
-    program = Program.without_file("fn main { nop }")
+    # We can't use a package/session scope fixture without breaking tests.
+    # We also can't use a fixture with smaller scope without lowing the tests down a lot.
+    # So we cache it ourselves -.-
+    global cached_builtins
 
-    def cached_builtins(
+    if not cached_builtins:
+        program = Program.without_file("fn main { nop }")
+        cached_builtins = program._builtins
+        assert not program.file_load_errors
+
+    def load_cached_builtins(
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[Builtins, List[AaaLoadException]]:
-        return program._builtins, program.file_load_errors
+        assert cached_builtins
+        return cached_builtins, []
 
-    with patch.object(Program, "_load_builtins", cached_builtins):
+    with patch.object(Program, "_load_builtins", load_cached_builtins):
         yield
