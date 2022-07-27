@@ -118,6 +118,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "vec:push": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_PUSH),
     "vec:set": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SET),
     "vec:size": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SIZE),
+    "write": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_WRITE),
 }
 
 

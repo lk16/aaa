@@ -133,6 +133,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_OPEN: self.instruction_open,
             StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
             StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
+            StandardLibraryCallKind.SYSCALL_WRITE: self.instruction_write,
             StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
             StandardLibraryCallKind.VEC_CLEAR: self.instruction_vec_clear,
             StandardLibraryCallKind.VEC_COPY: self.instruction_vec_copy,
@@ -771,6 +772,21 @@ class Simulator:
         except Exception:
             self.push(bool_var(False))
         else:
+            self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_write(self) -> int:
+        data: str = self.pop().value
+        fd: int = self.pop().value
+
+        try:
+            written = os.write(fd, bytes(data, encoding="utf-8"))
+        except Exception:
+            self.push(int_var(0))
+            self.push(bool_var(False))
+        else:
+            self.push(int_var(written))
             self.push(bool_var(True))
 
         return self.get_instruction_pointer() + 1
