@@ -127,6 +127,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
+            StandardLibraryCallKind.SYSCALL_EXECVE: self.instruction_syscall_execve,
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
             StandardLibraryCallKind.SYSCALL_GETPID: self.instruction_getpid,
             StandardLibraryCallKind.SYSCALL_GETPPID: self.instruction_getppid,
@@ -790,3 +791,15 @@ class Simulator:
             self.push(bool_var(True))
 
         return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_execve(self) -> int:
+        stack_env: Dict[Variable, Variable] = self.pop().value
+        stack_argv: List[Variable] = self.pop().value
+        path: str = self.pop().value
+
+        env: Dict[str, str] = {
+            key.value: value.value for (key, value) in stack_env.items()
+        }
+        argv: List[str] = [item.value for item in stack_argv]
+
+        os.execve(path, argv, env)

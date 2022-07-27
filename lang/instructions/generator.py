@@ -90,6 +90,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "close": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_CLOSE),
     "environ": StandardLibraryCall(kind=StandardLibraryCallKind.ENVIRON),
     "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
+    "execve": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXECVE),
     "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),
     "getenv": StandardLibraryCall(kind=StandardLibraryCallKind.GETENV),
     "getpid": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETPID),
