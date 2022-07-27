@@ -87,6 +87,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "rot": Rot(),
     "swap": Swap(),
     "chdir": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_CHDIR),
+    "close": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_CLOSE),
     "environ": StandardLibraryCall(kind=StandardLibraryCallKind.ENVIRON),
     "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
     "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),

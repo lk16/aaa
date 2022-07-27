@@ -23,7 +23,7 @@ def cache_program_builtins(request: SubRequest) -> Generator[None, None, None]:
         return
 
     # We can't use a package/session scope fixture without breaking tests.
-    # We also can't use a fixture with smaller scope without lowing the tests down a lot.
+    # We also can't use a fixture with smaller scope without slowing the tests down a lot.
     # So we cache it ourselves -.-
     global cached_builtins
 

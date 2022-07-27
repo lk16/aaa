@@ -125,6 +125,7 @@ class Simulator:
             StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
+            StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
             StandardLibraryCallKind.SYSCALL_GETPID: self.instruction_getpid,
@@ -758,6 +759,18 @@ class Simulator:
             self.push(bool_var(False))
         else:
             self.push(int_var(fd))
+            self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_close(self) -> int:
+        fd: int = self.pop().value
+
+        try:
+            os.close(fd)
+        except Exception:
+            self.push(bool_var(False))
+        else:
             self.push(bool_var(True))
 
         return self.get_instruction_pointer() + 1

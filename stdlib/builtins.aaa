@@ -105,8 +105,8 @@ builtin_fn "getppid" return int
 // TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "open" args str, int, int return int, bool
 
-// TODO: not implemented yet
-builtin_fn "close" args int
+// TODO: return enum indicating success/failure instead of extra bool
+builtin_fn "close" args int return bool
 
 // TODO: not implemented yet
 builtin_fn "write" args int, str return int
