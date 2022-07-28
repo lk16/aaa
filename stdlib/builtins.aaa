@@ -22,6 +22,8 @@ builtin_fn "/" args int, int return int, bool
 // TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "%" args int, int return int, bool
 
+// TODO add bitwise operators
+
 // integer comparison
 builtin_fn "!=" args int, int return bool
 builtin_fn "="  args int, int return bool
@@ -133,3 +135,22 @@ builtin_fn "chmod" args str, int return int
 
 
 // TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
+
+
+// TODO: none of these are implemented yet
+builtin_fn "str:join" args str, vec[str] return str
+builtin_fn "str:split" args str, str return str, vec[str]
+builtin_fn "str:strip" args str return str
+builtin_fn "str:to_int" args str return int, bool
+builtin_fn "str:to_bool" args str return bool, bool
+builtin_fn "str:contains" args str, str return bool
+builtin_fn "str:find" args str, str return str, int, bool
+builtin_fn "str:find_after" args str, str return str, int, bool
+builtin_fn "str:substr" args str, int, int return str, bool
+builtin_fn "str:replace" args str, str, str return str
+builtin_fn "str:append" args str, str return str
+builtin_fn "str:equals" args str, str return bool
+
+builtin_fn "int:to_str" args int return int, str
+
+builtin_fn "bool:to_str" args bool return bool, str
