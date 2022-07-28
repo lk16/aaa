@@ -91,6 +91,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "environ": StandardLibraryCall(kind=StandardLibraryCallKind.ENVIRON),
     "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
     "execve": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXECVE),
+    "fork": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_FORK),
     "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),
     "getenv": StandardLibraryCall(kind=StandardLibraryCallKind.GETENV),
     "getpid": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETPID),
@@ -120,6 +121,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "vec:set": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SET),
     "vec:size": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SIZE),
     "write": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_WRITE),
+    "waitpid": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_WAITPID),
 }
 
 

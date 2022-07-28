@@ -128,6 +128,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_EXECVE: self.instruction_syscall_execve,
+            StandardLibraryCallKind.SYSCALL_FORK: self.instruction_syscall_fork,
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
             StandardLibraryCallKind.SYSCALL_GETPID: self.instruction_getpid,
             StandardLibraryCallKind.SYSCALL_GETPPID: self.instruction_getppid,
@@ -135,6 +136,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
             StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
             StandardLibraryCallKind.SYSCALL_WRITE: self.instruction_write,
+            StandardLibraryCallKind.SYSCALL_WAITPID: self.instruction_waitpid,
             StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
             StandardLibraryCallKind.VEC_CLEAR: self.instruction_vec_clear,
             StandardLibraryCallKind.VEC_COPY: self.instruction_vec_copy,
@@ -803,3 +805,25 @@ class Simulator:
         argv: List[str] = [item.value for item in stack_argv]
 
         os.execve(path, argv, env)
+
+    def instruction_syscall_fork(self) -> int:
+        pid = os.fork()
+        self.push(int_var(pid))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_waitpid(self) -> int:
+        options: int = self.pop().value
+        pid: int = self.pop().value
+
+        try:
+            _, wait_status = os.waitpid(pid, options)
+            exit_code = os.waitstatus_to_exitcode(wait_status)
+        except OSError:
+            self.push(int_var(0))
+            self.push(bool_var(False))
+        else:
+            self.push(int_var(exit_code))
+            self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
