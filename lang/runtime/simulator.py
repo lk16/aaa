@@ -124,6 +124,7 @@ class Simulator:
             StandardLibraryCallKind.MAP_SIZE: self.instruction_map_size,
             StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
+            StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
@@ -825,5 +826,11 @@ class Simulator:
         else:
             self.push(int_var(exit_code))
             self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_strip(self) -> int:
+        string: str = self.pop().value
+        self.push(str_var(string.strip()))
 
         return self.get_instruction_pointer() + 1

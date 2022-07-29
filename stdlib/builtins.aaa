@@ -115,10 +115,9 @@ builtin_fn "write" args int, str return int, bool
 
 builtin_fn "execve" args str, vec[str], map[str, str]
 
-// TODO: not implemented yet
 builtin_fn "fork" return int
 
-// TODO: not implemented yet
+// TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "waitpid" args int, int return int, bool
 
 // TODO: not implemented yet
@@ -137,10 +136,11 @@ builtin_fn "chmod" args str, int return int
 // TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
 
 
+builtin_fn "str:strip" args str return str
+
 // TODO: none of these are implemented yet
 builtin_fn "str:join" args str, vec[str] return str
 builtin_fn "str:split" args str, str return str, vec[str]
-builtin_fn "str:strip" args str return str
 builtin_fn "str:to_int" args str return int, bool
 builtin_fn "str:to_bool" args str return bool, bool
 builtin_fn "str:contains" args str, str return bool

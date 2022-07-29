@@ -110,6 +110,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "open": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_OPEN),
     "read": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_READ),
     "setenv": StandardLibraryCall(kind=StandardLibraryCallKind.SETENV),
+    "str:strip": StandardLibraryCall(kind=StandardLibraryCallKind.STR_STRIP),
     "time": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_TIME),
     "unsetenv": StandardLibraryCall(kind=StandardLibraryCallKind.UNSETENV),
     "vec:clear": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_CLEAR),
@@ -303,7 +304,8 @@ class InstructionGenerator:
     ) -> List[Instruction]:
         assert isinstance(node, MemberFunctionName)
 
-        if node.type_name in ["vec", "map"]:
+        # TODO we should need this list hardcoded here
+        if node.type_name in ["bool", "int", "str", "vec", "map"]:
             key = f"{node.type_name}:{node.func_name}"
             return [OPERATOR_INSTRUCTIONS[key]]
 
