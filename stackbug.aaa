@@ -1,0 +1,13 @@
+// expected behavior: infinite loop
+
+// observed behavior: stack underflow
+
+fn main {
+    while true {
+        if false {
+            nop
+        } else {
+            0 drop
+        }
+    }
+}
