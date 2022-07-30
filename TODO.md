@@ -20,6 +20,12 @@
 - create `ContainerOperation` instruction with enum value to select specific one
 - create `SysCall` instruction with enum value for various syscalls
 
+### Instruction optimization
+- remove `nop` instructions
+- eliminate jumps to jumps
+- [constant folding](https://en.wikipedia.org/wiki/Constant_folding)
+- removing dead branches
+
 ### Support syscalls
 - Add binary or/and/not integer operations
 - Consider adding buffer type

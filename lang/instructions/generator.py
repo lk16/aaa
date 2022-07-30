@@ -185,17 +185,21 @@ class InstructionGenerator:
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, Loop)
+
         condition_instructions = self._generate_instructions(node.condition, offset)
-        body_offset = offset + len(condition_instructions) + 2
+        body_offset = offset + 1 + len(condition_instructions) + 1
+
         body_instructions = self._generate_instructions(node.body, body_offset)
-        beyond_loop_end = body_offset + len(body_instructions)
+        beyond_loop_nop_offset = body_offset + len(body_instructions) + 1
 
         loop_instructions: List[Instruction] = []
 
+        loop_instructions += [Nop()]
         loop_instructions += condition_instructions
-        loop_instructions += [JumpIfNot(instruction_offset=beyond_loop_end)]
+        loop_instructions += [JumpIfNot(instruction_offset=beyond_loop_nop_offset)]
         loop_instructions += body_instructions
         loop_instructions += [Jump(instruction_offset=offset)]
+        loop_instructions += [Nop()]
 
         return loop_instructions
 
@@ -239,17 +243,23 @@ class InstructionGenerator:
         branch_instructions: List[Instruction] = []
 
         condition_instructions = self._generate_instructions(node.condition, offset)
-        if_offset = offset + len(condition_instructions) + 1
+
+        if_offset = offset + 1 + len(condition_instructions)
         if_instructions = self._generate_instructions(node.if_body, if_offset)
-        else_offset = if_offset + len(if_instructions) + 1
+
+        else_nop_offset = if_offset + len(if_instructions) + 1
+        else_offset = else_nop_offset + 1
         else_instructions = self._generate_instructions(node.else_body, else_offset)
-        beyond_else_offset = else_offset + len(else_instructions)
+
+        branch_end_nop_offset = else_offset + len(else_instructions)
 
         branch_instructions = condition_instructions
-        branch_instructions += [JumpIfNot(instruction_offset=else_offset)]
+        branch_instructions += [JumpIfNot(instruction_offset=else_nop_offset)]
         branch_instructions += if_instructions
-        branch_instructions += [Jump(instruction_offset=beyond_else_offset)]
+        branch_instructions += [Jump(instruction_offset=branch_end_nop_offset)]
+        branch_instructions += [Nop()]
         branch_instructions += else_instructions
+        branch_instructions += [Nop()]
         return branch_instructions
 
     def instructions_for_function_body(
