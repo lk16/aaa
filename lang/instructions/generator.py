@@ -184,17 +184,21 @@ class InstructionGenerator:
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         assert isinstance(node, Loop)
+
         condition_instructions = self._generate_instructions(node.condition, offset)
-        body_offset = offset + len(condition_instructions) + 2
+        body_offset = offset + 1 + len(condition_instructions) + 1
+
         body_instructions = self._generate_instructions(node.body, body_offset)
-        beyond_loop_end = body_offset + len(body_instructions)
+        beyond_loop_nop_offset = body_offset + len(body_instructions) + 1
 
         loop_instructions: List[Instruction] = []
 
+        loop_instructions += [Nop()]
         loop_instructions += condition_instructions
-        loop_instructions += [JumpIfNot(instruction_offset=beyond_loop_end)]
+        loop_instructions += [JumpIfNot(instruction_offset=beyond_loop_nop_offset)]
         loop_instructions += body_instructions
         loop_instructions += [Jump(instruction_offset=offset)]
+        loop_instructions += [Nop()]
 
         return loop_instructions
 
