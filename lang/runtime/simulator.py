@@ -806,6 +806,7 @@ class Simulator:
         argv: List[str] = [item.value for item in stack_argv]
 
         os.execve(path, argv, env)
+        return self.get_instruction_pointer() + 1
 
     def instruction_syscall_fork(self) -> int:
         pid = os.fork()

@@ -3,6 +3,19 @@
 ### Tests
 - add tests for all instructions
 - add tests for vscode extension
+- add tests that stackbug doesn't happen anymore:
+```
+fn main {
+    while true {
+        if false {
+            nop
+        } else {
+            0 drop
+        }
+    }
+}
+```
+
 
 ### Containers
 - Better error handling for wrong number of type parameters
