@@ -1,0 +1,34 @@
+
+fn run_process args input as str {
+    if input "" = not {
+        input
+        " " str:split 0 vec:get swap
+        environ
+        execve
+        drop
+    }
+}
+
+
+fn main {
+    while true {
+        "> " .
+        0 1024 read drop str:strip
+
+        if dup "exit" = {
+            0 exit
+        }
+
+        fork
+        if dup 0 = {
+            // child
+            drop
+            run_process
+
+        } else {
+            // parent
+            swap drop
+            0 waitpid drop drop
+        }
+    }
+}
