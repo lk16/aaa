@@ -57,6 +57,7 @@ from lang.typing.types import (
     VariableType,
     bool_var,
     int_var,
+    list_var,
     map_var,
     str_var,
 )
@@ -125,6 +126,7 @@ class Simulator:
             StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
             StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
+            StandardLibraryCallKind.STR_SPLIT: self.instruction_str_split,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
@@ -833,5 +835,19 @@ class Simulator:
     def instruction_str_strip(self) -> int:
         string: str = self.pop().value
         self.push(str_var(string.strip()))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_split(self) -> int:
+        separator: str = self.pop().value
+        string: str = self.top().value
+
+        split = string.split(separator)
+
+        split_var = list_var(
+            item_type=Str, value=[str_var(split_item) for split_item in split]
+        )
+
+        self.push(split_var)
 
         return self.get_instruction_pointer() + 1

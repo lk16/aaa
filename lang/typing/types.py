@@ -260,6 +260,17 @@ def map_var(
     )
 
 
+def list_var(
+    item_type: VariableType,
+    value: List[Variable],
+) -> Variable:
+    return Variable(
+        root_type=RootType.VECTOR,
+        type_params=[item_type],
+        value=value,
+    )
+
+
 class TypePlaceholder(AaaModel):
     name: str
 

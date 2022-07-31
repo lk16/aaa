@@ -26,6 +26,7 @@ from tests.aaa import check_aaa_main
         pytest.param('"" "" + .', "", [], id="concatenate-both-empty"),
         pytest.param('"aaa" "aaa" = .', "true", [], id="equals-true"),
         pytest.param('"aaa" "bbb" = .', "false", [], id="equals-false"),
+        pytest.param('"a b c" " " str:split . drop', '["a", "b", "c"]', [], id="split"),
     ],
 )
 def test_str(

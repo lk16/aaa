@@ -137,10 +137,10 @@ builtin_fn "chmod" args str, int return int
 
 
 builtin_fn "str:strip" args str return str
+builtin_fn "str:split" args str, str return str, vec[str]
 
 // TODO: none of these are implemented yet
 builtin_fn "str:join" args str, vec[str] return str
-builtin_fn "str:split" args str, str return str, vec[str]
 builtin_fn "str:to_int" args str return int, bool
 builtin_fn "str:to_bool" args str return bool, bool
 builtin_fn "str:contains" args str, str return bool
