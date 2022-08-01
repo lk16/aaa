@@ -120,6 +120,8 @@ builtin_fn "fork" return int
 // TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "waitpid" args int, int return int, bool
 
+builtin_fn "fsync" args int return bool
+
 // TODO: not implemented yet
 builtin_fn "link" args str, str return int
 

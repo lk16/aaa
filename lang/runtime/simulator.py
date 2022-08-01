@@ -132,6 +132,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_EXECVE: self.instruction_syscall_execve,
             StandardLibraryCallKind.SYSCALL_FORK: self.instruction_syscall_fork,
+            StandardLibraryCallKind.SYSCALL_FSYNC: self.instruction_syscall_fsync,
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
             StandardLibraryCallKind.SYSCALL_GETPID: self.instruction_getpid,
             StandardLibraryCallKind.SYSCALL_GETPPID: self.instruction_getppid,
@@ -849,5 +850,22 @@ class Simulator:
         )
 
         self.push(split_var)
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_fsync(self) -> int:
+        fd: int = self.pop().value
+
+        if fd == 1:
+            sys.stdout.flush()
+        elif fd == 2:
+            sys.stderr.flush()
+
+        try:
+            os.fsync(fd)
+        except OSError:
+            self.push(bool_var(False))
+        else:
+            self.push(bool_var(True))
 
         return self.get_instruction_pointer() + 1

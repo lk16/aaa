@@ -92,6 +92,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
     "execve": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXECVE),
     "fork": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_FORK),
+    "fsync": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_FSYNC),
     "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),
     "getenv": StandardLibraryCall(kind=StandardLibraryCallKind.GETENV),
     "getpid": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETPID),
