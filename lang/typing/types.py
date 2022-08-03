@@ -216,6 +216,16 @@ class Variable:
                 + "}"
             )
 
+        elif root_type == RootType.STRUCT:
+            return (
+                f"<struct {self.type.struct_name}>"
+                + "{"
+                + ", ".join(
+                    repr(key) + ": " + repr(value) for key, value in self.value.items()
+                )
+                + "}"
+            )
+
         else:  # pragma: nocover
             assert False
 

@@ -127,6 +127,8 @@ class Simulator:
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
             StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
             StandardLibraryCallKind.STR_SPLIT: self.instruction_str_split,
+            StandardLibraryCallKind.STR_SUBSTR: self.instruction_str_substr,
+            StandardLibraryCallKind.STR_LEN: self.instruction_str_len,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
@@ -868,4 +870,29 @@ class Simulator:
         else:
             self.push(bool_var(True))
 
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_substr(self) -> int:
+        end: int = self.pop().value
+        start: int = self.pop().value
+        string: str = self.top().value
+
+        if (
+            start < 0
+            or end < 0
+            or start > len(string)
+            or end > len(string)
+            or end < start
+        ):
+            self.push(str_var(""))
+            self.push(bool_var(False))
+        else:
+            self.push(str_var(string[start:end]))
+            self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_len(self) -> int:
+        string: str = self.top().value
+        self.push(int_var(len(string)))
         return self.get_instruction_pointer() + 1
