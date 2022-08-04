@@ -46,6 +46,12 @@ from tests.aaa import check_aaa_main
         pytest.param('"ABCD" str:lower . drop', "abcd", [], id="lower"),
         pytest.param('"abcd" "bc" str:find . . drop', "true1", [], id="find-ok"),
         pytest.param('"abcd" "x" str:find . . drop', "false0", [], id="find-fail"),
+        pytest.param(
+            '"abcd" "bc" 1 str:find_after . . drop', "true1", [], id="find-after-ok"
+        ),
+        pytest.param(
+            '"abcd" "bc" 2 str:find_after . . drop', "false0", [], id="find-after-fail"
+        ),
     ],
 )
 def test_str(

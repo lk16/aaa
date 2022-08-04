@@ -146,6 +146,7 @@ builtin_fn "str:len"        args str           return str, int
 builtin_fn "str:lower"      args str           return str, str
 builtin_fn "str:upper"      args str           return str, str
 builtin_fn "str:find"       args str, str      return str, int, bool
+builtin_fn "str:find_after" args str, str, int return str, int, bool
 
 // TODO: none of these are implemented yet
 builtin_fn "str:join"       args str, vec[str] return str

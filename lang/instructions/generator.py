@@ -112,6 +112,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "read": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_READ),
     "setenv": StandardLibraryCall(kind=StandardLibraryCallKind.SETENV),
     "str:find": StandardLibraryCall(kind=StandardLibraryCallKind.STR_FIND),
+    "str:find_after": StandardLibraryCall(kind=StandardLibraryCallKind.STR_FIND_AFTER),
     "str:len": StandardLibraryCall(kind=StandardLibraryCallKind.STR_LEN),
     "str:lower": StandardLibraryCall(kind=StandardLibraryCallKind.STR_LOWER),
     "str:strip": StandardLibraryCall(kind=StandardLibraryCallKind.STR_STRIP),

@@ -132,6 +132,7 @@ class Simulator:
             StandardLibraryCallKind.STR_SUBSTR: self.instruction_str_substr,
             StandardLibraryCallKind.STR_UPPER: self.instruction_str_upper,
             StandardLibraryCallKind.STR_FIND: self.instruction_str_find,
+            StandardLibraryCallKind.STR_FIND_AFTER: self.instruction_str_find_after,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXECVE: self.instruction_syscall_execve,
@@ -916,6 +917,22 @@ class Simulator:
         string: str = self.top().value
 
         index = string.find(search)
+
+        if index == -1:
+            self.push(int_var(0))
+            self.push(bool_var(False))
+        else:
+            self.push(int_var(index))
+            self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_find_after(self) -> int:
+        offset: int = self.pop().value
+        search: str = self.pop().value
+        string: str = self.top().value
+
+        index = string.find(search, offset)
 
         if index == -1:
             self.push(int_var(0))
