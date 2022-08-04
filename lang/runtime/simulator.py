@@ -125,8 +125,11 @@ class Simulator:
             StandardLibraryCallKind.MAP_SIZE: self.instruction_map_size,
             StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
+            StandardLibraryCallKind.STR_CONTAINS: self.instruction_str_contains,
+            StandardLibraryCallKind.STR_EQUALS: self.instruction_str_equals,
             StandardLibraryCallKind.STR_FIND: self.instruction_str_find,
             StandardLibraryCallKind.STR_FIND_AFTER: self.instruction_str_find_after,
+            StandardLibraryCallKind.STR_JOIN: self.instruction_str_join,
             StandardLibraryCallKind.STR_LEN: self.instruction_str_len,
             StandardLibraryCallKind.STR_LOWER: self.instruction_str_lower,
             StandardLibraryCallKind.STR_SPLIT: self.instruction_str_split,
@@ -955,5 +958,31 @@ class Simulator:
         else:
             self.push(int_var(integer))
             self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_join(self) -> int:
+        parts: List[Variable] = self.pop().value
+        string: str = self.top().value
+
+        joined = string.join(part.value for part in parts)
+
+        self.push(str_var(joined))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_equals(self) -> int:
+        other: str = self.pop().value
+        string: str = self.top().value
+
+        self.push(bool_var(string == other))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_contains(self) -> int:
+        other: str = self.pop().value
+        string: str = self.top().value
+
+        self.push(bool_var(other in string))
 
         return self.get_instruction_pointer() + 1

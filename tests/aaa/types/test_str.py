@@ -54,6 +54,16 @@ from tests.aaa import check_aaa_main
         ),
         pytest.param('"123" str:to_int . . drop', "true123", [], id="to_int-ok"),
         pytest.param('"1x23" str:to_int . . drop', "false0", [], id="to_int-fail"),
+        pytest.param(
+            '"." vec[str] "a" vec:push "b" vec:push str:join . drop',
+            "a.b",
+            [],
+            id="join",
+        ),
+        pytest.param('"a" "a" str:equals . drop', "true", [], id="equals-ok"),
+        pytest.param('"a" "b" str:equals . drop', "false", [], id="equals-fail"),
+        pytest.param('"abc" "b" str:contains . drop', "true", [], id="contains-ok"),
+        pytest.param('"abc" "d" str:contains . drop', "false", [], id="contains-fail"),
     ],
 )
 def test_str(

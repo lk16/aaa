@@ -37,7 +37,7 @@ builtin_fn "and" args bool, bool return bool
 builtin_fn "or"  args bool, bool return bool
 builtin_fn "not" args bool       return bool
 
-// string comparison
+// string comparison, TODO this is deprecated
 builtin_fn "=" args str, str return bool
 
 // string operators
@@ -148,14 +148,14 @@ builtin_fn "str:upper"      args str           return str, str
 builtin_fn "str:find"       args str, str      return str, int, bool
 builtin_fn "str:find_after" args str, str, int return str, int, bool
 builtin_fn "str:to_int"     args str           return str, int, bool
+builtin_fn "str:join"       args str, vec[str] return str, str
+builtin_fn "str:equals"     args str, str      return str, bool
+builtin_fn "str:contains"   args str, str      return str, bool
 
 // TODO: none of these are implemented yet
-builtin_fn "str:join"       args str, vec[str] return str
 builtin_fn "str:to_bool"    args str           return str, bool, bool
-builtin_fn "str:contains"   args str, str      return str, bool
 builtin_fn "str:replace"    args str, str, str return str, str
 builtin_fn "str:append"     args str, str      return str, str
-builtin_fn "str:equals"     args str, str      return str, bool
 
 // TODO: not implemented yet
 builtin_fn "int:to_str" args int return int, str

@@ -1,5 +1,8 @@
 # TODO
 
+### Member functions
+- make not returning the object the default
+
 ### Tests
 - add tests for all instructions
 - add tests for vscode extension
@@ -42,10 +45,7 @@ fn main {
 ### Support syscalls
 - Add binary or/and/not integer operations
 - Consider adding buffer type
-- Add basic file syscalls: open, close, read, write
-- Add environment-related functions (not really syscalls)
 - Add basic time-related functions: time, gettimeofday
-- Add basic process-related functions: getpid, getppid
 - Add network-related functions: socket, bind, listen, accept, ...
 
 ### Structs
