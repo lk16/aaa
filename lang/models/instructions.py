@@ -21,6 +21,7 @@ class StandardLibraryCallKind(Enum):
     MAP_SIZE = "MAP_SIZE"
     MAP_VALUES = "MAP_VALUES"
     SETENV = "SETENV"
+    STR_FIND = "STR_FIND"
     STR_LEN = "STR_LEN"
     STR_LOWER = "STR_LOWER"
     STR_STRIP = "STR_STRIP"

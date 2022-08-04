@@ -44,6 +44,8 @@ from tests.aaa import check_aaa_main
         pytest.param('"abcd" str:len . drop', "4", [], id="len"),
         pytest.param('"abcd" str:upper . drop', "ABCD", [], id="upper"),
         pytest.param('"ABCD" str:lower . drop', "abcd", [], id="lower"),
+        pytest.param('"abcd" "bc" str:find . . drop', "true1", [], id="find-ok"),
+        pytest.param('"abcd" "x" str:find . . drop', "false0", [], id="find-fail"),
     ],
 )
 def test_str(

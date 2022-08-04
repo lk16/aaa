@@ -131,6 +131,7 @@ class Simulator:
             StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
             StandardLibraryCallKind.STR_SUBSTR: self.instruction_str_substr,
             StandardLibraryCallKind.STR_UPPER: self.instruction_str_upper,
+            StandardLibraryCallKind.STR_FIND: self.instruction_str_find,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXECVE: self.instruction_syscall_execve,
@@ -908,4 +909,19 @@ class Simulator:
     def instruction_str_lower(self) -> int:
         string: str = self.top().value
         self.push(str_var(string.lower()))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_find(self) -> int:
+        search: str = self.pop().value
+        string: str = self.top().value
+
+        index = string.find(search)
+
+        if index == -1:
+            self.push(int_var(0))
+            self.push(bool_var(False))
+        else:
+            self.push(int_var(index))
+            self.push(bool_var(True))
+
         return self.get_instruction_pointer() + 1

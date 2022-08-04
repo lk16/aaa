@@ -145,13 +145,13 @@ builtin_fn "str:substr"     args str, int, int return str, str, bool
 builtin_fn "str:len"        args str           return str, int
 builtin_fn "str:lower"      args str           return str, str
 builtin_fn "str:upper"      args str           return str, str
+builtin_fn "str:find"       args str, str      return str, int, bool
 
 // TODO: none of these are implemented yet
 builtin_fn "str:join"       args str, vec[str] return str
 builtin_fn "str:to_int"     args str           return str, int, bool
 builtin_fn "str:to_bool"    args str           return str, bool, bool
 builtin_fn "str:contains"   args str, str      return str, bool
-builtin_fn "str:find"       args str, str      return str, int, bool
 builtin_fn "str:replace"    args str, str, str return str, str
 builtin_fn "str:append"     args str, str      return str
 builtin_fn "str:equals"     args str, str      return str, bool
