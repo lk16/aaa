@@ -135,6 +135,7 @@ class Simulator:
             StandardLibraryCallKind.STR_SPLIT: self.instruction_str_split,
             StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
             StandardLibraryCallKind.STR_SUBSTR: self.instruction_str_substr,
+            StandardLibraryCallKind.STR_TO_BOOL: self.instruction_str_to_bool,
             StandardLibraryCallKind.STR_TO_INT: self.instruction_str_to_int,
             StandardLibraryCallKind.STR_UPPER: self.instruction_str_upper,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
@@ -984,5 +985,17 @@ class Simulator:
         string: str = self.top().value
 
         self.push(bool_var(other in string))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_to_bool(self) -> int:
+        string: str = self.top().value
+
+        if string in ["true", "false"]:
+            self.push(bool_var(string == "true"))
+            self.push(bool_var(True))
+        else:
+            self.push(bool_var(False))
+            self.push(bool_var(False))
 
         return self.get_instruction_pointer() + 1

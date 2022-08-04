@@ -64,6 +64,11 @@ from tests.aaa import check_aaa_main
         pytest.param('"a" "b" str:equals . drop', "false", [], id="equals-fail"),
         pytest.param('"abc" "b" str:contains . drop', "true", [], id="contains-ok"),
         pytest.param('"abc" "d" str:contains . drop', "false", [], id="contains-fail"),
+        pytest.param('"true" str:to_bool . . drop', "truetrue", [], id="to_str-true"),
+        pytest.param(
+            '"false" str:to_bool . . drop', "truefalse", [], id="to_str-false"
+        ),
+        pytest.param('"foo" str:to_bool . . drop', "falsefalse", [], id="to_str-fail"),
     ],
 )
 def test_str(
