@@ -52,6 +52,8 @@ from tests.aaa import check_aaa_main
         pytest.param(
             '"abcd" "bc" 2 str:find_after . . drop', "false0", [], id="find-after-fail"
         ),
+        pytest.param('"123" str:to_int . . drop', "true123", [], id="to_int-ok"),
+        pytest.param('"1x23" str:to_int . . drop', "false0", [], id="to_int-fail"),
     ],
 )
 def test_str(

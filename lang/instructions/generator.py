@@ -118,6 +118,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "str:strip": StandardLibraryCall(kind=StandardLibraryCallKind.STR_STRIP),
     "str:split": StandardLibraryCall(kind=StandardLibraryCallKind.STR_SPLIT),
     "str:substr": StandardLibraryCall(kind=StandardLibraryCallKind.STR_SUBSTR),
+    "str:to_int": StandardLibraryCall(kind=StandardLibraryCallKind.STR_TO_INT),
     "str:upper": StandardLibraryCall(kind=StandardLibraryCallKind.STR_UPPER),
     "time": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_TIME),
     "unsetenv": StandardLibraryCall(kind=StandardLibraryCallKind.UNSETENV),

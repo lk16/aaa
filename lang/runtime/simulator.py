@@ -125,14 +125,15 @@ class Simulator:
             StandardLibraryCallKind.MAP_SIZE: self.instruction_map_size,
             StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
+            StandardLibraryCallKind.STR_FIND: self.instruction_str_find,
+            StandardLibraryCallKind.STR_FIND_AFTER: self.instruction_str_find_after,
             StandardLibraryCallKind.STR_LEN: self.instruction_str_len,
             StandardLibraryCallKind.STR_LOWER: self.instruction_str_lower,
             StandardLibraryCallKind.STR_SPLIT: self.instruction_str_split,
             StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
             StandardLibraryCallKind.STR_SUBSTR: self.instruction_str_substr,
+            StandardLibraryCallKind.STR_TO_INT: self.instruction_str_to_int,
             StandardLibraryCallKind.STR_UPPER: self.instruction_str_upper,
-            StandardLibraryCallKind.STR_FIND: self.instruction_str_find,
-            StandardLibraryCallKind.STR_FIND_AFTER: self.instruction_str_find_after,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
             StandardLibraryCallKind.SYSCALL_EXECVE: self.instruction_syscall_execve,
@@ -939,6 +940,20 @@ class Simulator:
             self.push(bool_var(False))
         else:
             self.push(int_var(index))
+            self.push(bool_var(True))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_to_int(self) -> int:
+        string: str = self.top().value
+
+        try:
+            integer = int(string)
+        except ValueError:
+            self.push(int_var(0))
+            self.push(bool_var(False))
+        else:
+            self.push(int_var(integer))
             self.push(bool_var(True))
 
         return self.get_instruction_pointer() + 1
