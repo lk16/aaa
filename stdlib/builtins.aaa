@@ -68,6 +68,7 @@ builtin_fn "map:keys"    args map[*k, *v]         return vec[*k]
 // TODO: not implemented yet
 builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
 
+// TODO: rename vec:size and map:size to vec:len and map:len
 
 // struct field operations: are roughly like below
 // except *b depends on the value of the str argument
@@ -138,22 +139,25 @@ builtin_fn "chmod" args str, int return int
 // TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
 
 
-builtin_fn "str:strip" args str return str
-builtin_fn "str:split" args str, str return str, vec[str]
-builtin_fn "str:substr" args str, int, int return str, str, bool
-builtin_fn "str:len" args str return str, int
+builtin_fn "str:strip"      args str           return str
+builtin_fn "str:split"      args str, str      return str, vec[str]
+builtin_fn "str:substr"     args str, int, int return str, str, bool
+builtin_fn "str:len"        args str           return str, int
+builtin_fn "str:lower"      args str           return str, str
+builtin_fn "str:upper"      args str           return str, str
 
 // TODO: none of these are implemented yet
-builtin_fn "str:join" args str, vec[str] return str
-builtin_fn "str:to_int" args str return int, bool
-builtin_fn "str:to_bool" args str return bool, bool
-builtin_fn "str:contains" args str, str return bool
-builtin_fn "str:find" args str, str return str, int, bool
-builtin_fn "str:find_after" args str, str return str, int, bool
-builtin_fn "str:replace" args str, str, str return str
-builtin_fn "str:append" args str, str return str
-builtin_fn "str:equals" args str, str return bool
+builtin_fn "str:join"       args str, vec[str] return str
+builtin_fn "str:to_int"     args str           return str, int, bool
+builtin_fn "str:to_bool"    args str           return str, bool, bool
+builtin_fn "str:contains"   args str, str      return str, bool
+builtin_fn "str:find"       args str, str      return str, int, bool
+builtin_fn "str:replace"    args str, str, str return str, str
+builtin_fn "str:append"     args str, str      return str
+builtin_fn "str:equals"     args str, str      return str, bool
 
+// TODO: not implemented yet
 builtin_fn "int:to_str" args int return int, str
 
+// TODO: not implemented yet
 builtin_fn "bool:to_str" args bool return bool, str

@@ -27,6 +27,23 @@ from tests.aaa import check_aaa_main
         pytest.param('"aaa" "aaa" = .', "true", [], id="equals-true"),
         pytest.param('"aaa" "bbb" = .', "false", [], id="equals-false"),
         pytest.param('"a b c" " " str:split . drop', '["a", "b", "c"]', [], id="split"),
+        pytest.param('" a " str:strip .', "a", [], id="strip"),
+        pytest.param('"abcd" 1 3 str:substr . . drop', "truebc", [], id="substr-ok"),
+        pytest.param(
+            '"abcd" 1 2 - 3 str:substr . . drop', "false", [], id="substr-fail-start"
+        ),
+        pytest.param(
+            '"abcd" 1 5 str:substr . . drop', "false", [], id="substr-fail-end"
+        ),
+        pytest.param(
+            '"abcd" 1 2 - 5 str:substr . . drop', "false", [], id="substr-fail-both"
+        ),
+        pytest.param(
+            '"abcd" 2 1 str:substr . . drop', "false", [], id="substr-start-after-end"
+        ),
+        pytest.param('"abcd" str:len . drop', "4", [], id="len"),
+        pytest.param('"abcd" str:upper . drop', "ABCD", [], id="upper"),
+        pytest.param('"ABCD" str:lower . drop', "abcd", [], id="lower"),
     ],
 )
 def test_str(

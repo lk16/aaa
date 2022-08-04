@@ -125,14 +125,16 @@ class Simulator:
             StandardLibraryCallKind.MAP_SIZE: self.instruction_map_size,
             StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
-            StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
-            StandardLibraryCallKind.STR_SPLIT: self.instruction_str_split,
-            StandardLibraryCallKind.STR_SUBSTR: self.instruction_str_substr,
             StandardLibraryCallKind.STR_LEN: self.instruction_str_len,
+            StandardLibraryCallKind.STR_LOWER: self.instruction_str_lower,
+            StandardLibraryCallKind.STR_SPLIT: self.instruction_str_split,
+            StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
+            StandardLibraryCallKind.STR_SUBSTR: self.instruction_str_substr,
+            StandardLibraryCallKind.STR_UPPER: self.instruction_str_upper,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
-            StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_EXECVE: self.instruction_syscall_execve,
+            StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_FORK: self.instruction_syscall_fork,
             StandardLibraryCallKind.SYSCALL_FSYNC: self.instruction_syscall_fsync,
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
@@ -141,8 +143,8 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_OPEN: self.instruction_open,
             StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
             StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
-            StandardLibraryCallKind.SYSCALL_WRITE: self.instruction_write,
             StandardLibraryCallKind.SYSCALL_WAITPID: self.instruction_waitpid,
+            StandardLibraryCallKind.SYSCALL_WRITE: self.instruction_write,
             StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
             StandardLibraryCallKind.VEC_CLEAR: self.instruction_vec_clear,
             StandardLibraryCallKind.VEC_COPY: self.instruction_vec_copy,
@@ -207,11 +209,11 @@ class Simulator:
 
         try:
             self.call_function(self.program.entry_point_file, "main")
-        except AaaRuntimeException as e:
+        except AaaRuntimeException as e:  # pragma: nocover
             print(e, file=sys.stderr)
             if raise_:  # This is for testing. TODO find better solution
                 raise e
-            else:  # pragma: nocover
+            else:
                 exit(1)
 
     def call_function(self, file: Path, func_name: str) -> None:
@@ -858,6 +860,7 @@ class Simulator:
     def instruction_syscall_fsync(self) -> int:
         fd: int = self.pop().value
 
+        # TODO: is this still necessary if we run python with -u ?
         if fd == 1:
             sys.stdout.flush()
         elif fd == 2:
@@ -895,4 +898,14 @@ class Simulator:
     def instruction_str_len(self) -> int:
         string: str = self.top().value
         self.push(int_var(len(string)))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_upper(self) -> int:
+        string: str = self.top().value
+        self.push(str_var(string.upper()))
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_lower(self) -> int:
+        string: str = self.top().value
+        self.push(str_var(string.lower()))
         return self.get_instruction_pointer() + 1
