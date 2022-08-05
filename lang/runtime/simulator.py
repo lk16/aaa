@@ -125,6 +125,7 @@ class Simulator:
             StandardLibraryCallKind.MAP_SIZE: self.instruction_map_size,
             StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
+            StandardLibraryCallKind.STR_APPEND: self.instruction_str_append,
             StandardLibraryCallKind.STR_CONTAINS: self.instruction_str_contains,
             StandardLibraryCallKind.STR_EQUALS: self.instruction_str_equals,
             StandardLibraryCallKind.STR_FIND: self.instruction_str_find,
@@ -132,6 +133,7 @@ class Simulator:
             StandardLibraryCallKind.STR_JOIN: self.instruction_str_join,
             StandardLibraryCallKind.STR_LEN: self.instruction_str_len,
             StandardLibraryCallKind.STR_LOWER: self.instruction_str_lower,
+            StandardLibraryCallKind.STR_REPLACE: self.instruction_str_replace,
             StandardLibraryCallKind.STR_SPLIT: self.instruction_str_split,
             StandardLibraryCallKind.STR_STRIP: self.instruction_str_strip,
             StandardLibraryCallKind.STR_SUBSTR: self.instruction_str_substr,
@@ -997,5 +999,24 @@ class Simulator:
         else:
             self.push(bool_var(False))
             self.push(bool_var(False))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_replace(self) -> int:
+        replacement: str = self.pop().value
+        search: str = self.pop().value
+        string: str = self.top().value
+
+        replaced = string.replace(search, replacement)
+        self.push(str_var(replaced))
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_str_append(self) -> int:
+        suffix: str = self.pop().value
+        string: str = self.top().value
+
+        appeneded = string + suffix
+        self.push(str_var(appeneded))
 
         return self.get_instruction_pointer() + 1

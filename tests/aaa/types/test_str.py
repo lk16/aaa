@@ -69,6 +69,8 @@ from tests.aaa import check_aaa_main
             '"false" str:to_bool . . drop', "truefalse", [], id="to_str-false"
         ),
         pytest.param('"foo" str:to_bool . . drop', "falsefalse", [], id="to_str-fail"),
+        pytest.param('"abcd" "bc" "ef" str:replace . drop', "aefd", [], id="replace"),
+        pytest.param('"abcd" "ef" str:append . drop', "abcdef", [], id="replace"),
     ],
 )
 def test_str(
