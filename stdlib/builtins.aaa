@@ -2,9 +2,9 @@
 // stack operations
 builtin_fn "drop" args *a
 builtin_fn "dup" args *a return *a, *a
-builtin_fn "swap" args *a, *b return *b, *a
 builtin_fn "over" args *a, *b return *a, *b, *a
 builtin_fn "rot" args *a, *b, *c return *b, *c, *a
+builtin_fn "swap" args *a, *b return *b, *a
 
 // special operators
 builtin_fn "." args *a
@@ -12,60 +12,54 @@ builtin_fn "assert" args bool
 builtin_fn "nop"
 
 // integer arithmetic
-builtin_fn "+" args int, int return int
 builtin_fn "-" args int, int return int
 builtin_fn "*" args int, int return int
+builtin_fn "+" args int, int return int
 
 // TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "/" args int, int return int, bool
-
-// TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "%" args int, int return int, bool
 
 // TODO add bitwise operators
 
 // integer comparison
 builtin_fn "!=" args int, int return bool
+builtin_fn "<"  args int, int return bool
+builtin_fn "<=" args int, int return bool
 builtin_fn "="  args int, int return bool
 builtin_fn ">"  args int, int return bool
 builtin_fn ">=" args int, int return bool
-builtin_fn "<"  args int, int return bool
-builtin_fn "<=" args int, int return bool
 
 // boolean operators
 builtin_fn "and" args bool, bool return bool
-builtin_fn "or"  args bool, bool return bool
 builtin_fn "not" args bool       return bool
+builtin_fn "or"  args bool, bool return bool
 
-// string comparison, TODO this is deprecated
+// string operators, TODO these is deprecated
+builtin_fn "+" args str, str return str
 builtin_fn "=" args str, str return bool
 
-// string operators
-builtin_fn "+"      args str, str      return str
-
-builtin_fn "vec:get"   args vec[*a], int     return vec[*a], *a
-builtin_fn "vec:set"   args vec[*a], int, *a return vec[*a]
-builtin_fn "vec:push"  args vec[*a], *a      return vec[*a]
-builtin_fn "vec:pop"   args vec[*a]          return vec[*a], *a
-builtin_fn "vec:size"  args vec[*a]          return vec[*a], int
-builtin_fn "vec:empty" args vec[*a]          return vec[*a], bool
 builtin_fn "vec:clear" args vec[*a]          return vec[*a]
 builtin_fn "vec:copy"  args vec[*a]          return vec[*a], vec[*a]
+builtin_fn "vec:empty" args vec[*a]          return vec[*a], bool
+builtin_fn "vec:get"   args vec[*a], int     return vec[*a], *a
+builtin_fn "vec:pop"   args vec[*a]          return vec[*a], *a
+builtin_fn "vec:push"  args vec[*a], *a      return vec[*a]
+builtin_fn "vec:set"   args vec[*a], int, *a return vec[*a]
+builtin_fn "vec:size"  args vec[*a]          return vec[*a], int
 
-builtin_fn "map:get"     args map[*k, *v], *k     return map[*k, *v], *v
-builtin_fn "map:set"     args map[*k, *v], *k, *v return map[*k, *v]
-builtin_fn "map:has_key" args map[*k, *v], *k     return map[*k, *v], bool
-builtin_fn "map:size"    args map[*k, *v]         return map[*k, *v], int
-builtin_fn "map:empty"   args map[*k, *v]         return map[*k, *v], bool
-builtin_fn "map:pop"     args map[*k, *v], *k     return map[*k, *v], *v
-builtin_fn "map:drop"    args map[*k, *v], *k     return map[*k, *v]
 builtin_fn "map:clear"   args map[*k, *v]         return map[*k, *v]
 builtin_fn "map:copy"    args map[*k, *v]         return map[*k, *v], map[*k, *v]
+builtin_fn "map:drop"    args map[*k, *v], *k     return map[*k, *v]
+builtin_fn "map:empty"   args map[*k, *v]         return map[*k, *v], bool
+builtin_fn "map:get"     args map[*k, *v], *k     return map[*k, *v], *v
+builtin_fn "map:has_key" args map[*k, *v], *k     return map[*k, *v], bool
+builtin_fn "map:pop"     args map[*k, *v], *k     return map[*k, *v], *v
+builtin_fn "map:set"     args map[*k, *v], *k, *v return map[*k, *v]
+builtin_fn "map:size"    args map[*k, *v]         return map[*k, *v], int
 
 // TODO: not implemented yet
 builtin_fn "map:keys"    args map[*k, *v]         return vec[*k]
-
-// TODO: not implemented yet
 builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
 
 // TODO: rename vec:size and map:size to vec:len and map:len
@@ -76,68 +70,36 @@ builtin_fn "map:values"  args map[*k, *v]         return vec[*v]
 // builtin_fn "?" args *a, str     return *a, *b
 // builtin_fn "!" args *a, str, *b return *a
 
-
 // TODO everything below should be moved to separate file in stdlib
 // Function and type names should not be reserved / builtin
 
-builtin_fn "exit" args int
-
-builtin_fn "getcwd" return str
-
-// TODO: return enum indicating success/failure instead of extra bool
-builtin_fn "read" args int, int return str, bool
-
-builtin_fn "time" return int
-
 builtin_fn "environ" return map[str, str]
-
-// TODO: return enum indicating success/failure instead of extra bool
-builtin_fn "getenv" args str return str, bool
-
+builtin_fn "execve" args str, vec[str], map[str, str]
+builtin_fn "exit" args int
+builtin_fn "fork" return int
+builtin_fn "getcwd" return str
+builtin_fn "getpid" return int
+builtin_fn "getppid" return int
 builtin_fn "setenv" args str, str
-
+builtin_fn "time" return int
 builtin_fn "unsetenv" args str
 
 // TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "chdir" args str return bool
-
-builtin_fn "getpid" return int
-
-builtin_fn "getppid" return int
-
-// TODO: return enum indicating success/failure instead of extra bool
-builtin_fn "open" args str, int, int return int, bool
-
-// TODO: return enum indicating success/failure instead of extra bool
 builtin_fn "close" args int return bool
-
-// TODO: return enum indicating success/failure instead of extra bool
+builtin_fn "fsync" args int return bool
+builtin_fn "getenv" args str return str, bool
+builtin_fn "open" args str, int, int return int, bool
+builtin_fn "read" args int, int return str, bool
+builtin_fn "waitpid" args int, int return int, bool
 builtin_fn "write" args int, str return int, bool
 
-builtin_fn "execve" args str, vec[str], map[str, str]
-
-builtin_fn "fork" return int
-
-// TODO: return enum indicating success/failure instead of extra bool
-builtin_fn "waitpid" args int, int return int, bool
-
-builtin_fn "fsync" args int return bool
-
-// TODO: not implemented yet
-builtin_fn "link" args str, str return int
-
-// TODO: not implemented yet
-builtin_fn "unlink" args str return int
-
-// TODO: not implemented yet
-builtin_fn "gettimeofday" return int, int  // note: not a system call
-
-// TODO: not implemented yet
-builtin_fn "chmod" args str, int return int
-
-
 // TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
-
+// TODO: not implemented yet
+// builtin_fn "link" args str, str return int
+// builtin_fn "unlink" args str return int
+// builtin_fn "gettimeofday" return int, int  // note: not a system call
+// builtin_fn "chmod" args str, int return int
 
 builtin_fn "str:append"     args str, str      return str, str
 builtin_fn "str:contains"   args str, str      return str, bool
@@ -157,9 +119,6 @@ builtin_fn "str:substr"     args str, int, int return str, str, bool
 builtin_fn "str:to_bool"    args str           return str, bool, bool
 builtin_fn "str:to_int"     args str           return str, int, bool
 
-
 // TODO: not implemented yet
-builtin_fn "int:to_str" args int return int, str
-
-// TODO: not implemented yet
-builtin_fn "bool:to_str" args bool return bool, str
+// builtin_fn "int:to_str"  args int  return int, str
+// builtin_fn "bool:to_str" args bool return bool, str
