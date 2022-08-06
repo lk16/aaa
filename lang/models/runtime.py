@@ -7,9 +7,6 @@ from lang.typing.types import Variable
 
 
 class CallStackItem(AaaModel):
-    class Config:
-        arbitrary_types_allowed = True  # TODO fix
-
     function: Function
     source_file: Path
     instruction_pointer: int

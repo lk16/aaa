@@ -62,8 +62,7 @@ class StandardLibraryCallKind(Enum):
 
 
 class Instruction(AaaModel):
-    class Config:
-        arbitrary_types_allowed = True  # TODO fix
+    ...
 
 
 class PushInt(Instruction):

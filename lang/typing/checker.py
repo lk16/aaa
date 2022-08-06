@@ -404,7 +404,7 @@ class TypeChecker:
                 VariableType(
                     root_type=RootType.STRUCT,
                     type_params=[],
-                    struct_name=identifier.name,
+                    name=identifier.name,
                 )
             ]
 
@@ -514,10 +514,10 @@ class TypeChecker:
             if (
                 len(signature.arg_types) == 0
                 or signature.arg_types[0].root_type != RootType.STRUCT
-                or signature.arg_types[0].struct_name != struct.name
+                or signature.arg_types[0].name != struct.name
                 or len(signature.return_types) == 0
                 or signature.return_types[0].root_type != RootType.STRUCT
-                or signature.return_types[0].struct_name != struct.name
+                or signature.return_types[0].name != struct.name
             ):
                 raise InvalidMemberFunctionSignature(
                     file=self.file,
@@ -605,7 +605,7 @@ class TypeChecker:
                 field_query=node,
             )
 
-        struct_name = struct_type.struct_name
+        struct_name = struct_type.name
 
         # These should not raise, they are enforced by the Program class
         struct = self.program.identifiers[self.file][struct_name]
@@ -657,7 +657,7 @@ class TypeChecker:
                 field_update=node,
             )
 
-        struct_name = struct_type.struct_name
+        struct_name = struct_type.name
 
         if struct_type.root_type != RootType.STRUCT:
             raise SetFieldOfNonStructTypeError(

@@ -12,6 +12,7 @@ class RootType(IntEnum):
     VECTOR = auto()
     MAPPING = auto()
     STRUCT = auto()
+    PLACEHOLDER = auto()
 
     @classmethod
     def from_str(cls, name: str) -> "RootType":
@@ -25,6 +26,8 @@ class RootType(IntEnum):
             return RootType.VECTOR
         elif name == "map":
             return RootType.MAPPING
+        elif name.startswith("*"):
+            assert False
         else:
             return RootType.STRUCT
 
@@ -39,23 +42,24 @@ class RootType(IntEnum):
             return "vec"
         elif self == RootType.MAPPING:
             return "map"
-        else:
+        elif self == RootType.STRUCT:
             return "struct"
+        elif self == RootType.PLACEHOLDER:
+            return "placeholder"
+        else:
+            assert False
 
 
 class VariableType(AaaModel):
     root_type: RootType
     type_params: List["SignatureItem"]
-    struct_name: str = ""
+    name: str = ""
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-        # TODO consider renaming struct_name to type_name
-        # and remove RootType.__repr__() and its uses.
-
-        if self.root_type == RootType.STRUCT:
-            assert self.struct_name
+        if self.root_type in [RootType.STRUCT, RootType.PLACEHOLDER]:
+            assert self.name
 
         if self.root_type == RootType.VECTOR:
             assert len(self.type_params) == 1
@@ -81,12 +85,12 @@ class VariableType(AaaModel):
         return VariableType(
             root_type=root_type,
             type_params=type_params,
-            struct_name=type_literal.type_name,
+            name=type_literal.type_name,
         )
 
     def __repr__(self) -> str:  # pragma: nocover
         if self.root_type == RootType.STRUCT:
-            formatted = self.struct_name
+            formatted = self.name
         else:
             formatted = repr(self.root_type)
 
@@ -139,6 +143,9 @@ class Variable(AaaModel):
             zero_val = []
         elif type.root_type in [RootType.MAPPING, RootType.STRUCT]:
             zero_val = {}
+        elif type.root_type == RootType.PLACEHOLDER:
+            # Can't get zero value of placeholder type.
+            assert False
         else:  # pragma: nocover
             assert False
 
@@ -211,7 +218,7 @@ class Variable(AaaModel):
 
         elif root_type == RootType.STRUCT:
             return (
-                f"<struct {self.type.struct_name}>"
+                f"<struct {self.type.name}>"
                 + "{"
                 + ", ".join(
                     repr(key) + ": " + repr(value) for key, value in self.value.items()
@@ -287,15 +294,14 @@ class TypePlaceholder(AaaModel):  # TODO use Variable with special VariableType 
         return f"*{self.name}"
 
 
-SignatureItem = Union[VariableType, TypePlaceholder]
+SignatureItem = Union[
+    VariableType, TypePlaceholder
+]  # TODO remove after TypePlaceholder is removed
 
 TypeStack = List[SignatureItem]
 
 
 class Signature(AaaModel):
-    class Config:
-        arbitrary_types_allowed = True  # TODO make VariableType an AaaModel
-
     arg_types: List[SignatureItem]
     return_types: List[SignatureItem]
 

@@ -636,7 +636,7 @@ class Simulator:
             type=VariableType(
                 root_type=RootType.STRUCT,
                 type_params=[],
-                struct_name=instruction.type.name,
+                name=instruction.type.name,
             ),
             value=struct_fields,
         )
