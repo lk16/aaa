@@ -482,9 +482,11 @@ class Simulator:
     def instruction_map_push(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushMap)
         map_var = Variable(
-            RootType.MAPPING,
-            {},
-            type_params=[instruction.key_type, instruction.value_type],
+            type=VariableType(
+                root_type=RootType.MAPPING,
+                type_params=[instruction.key_type, instruction.value_type],
+            ),
+            value={},
         )
         self.push(map_var)
         return self.get_instruction_pointer() + 1
@@ -492,9 +494,10 @@ class Simulator:
     def instruction_push_vec(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushVec)
         map_var = Variable(
-            RootType.VECTOR,
-            [],
-            type_params=[instruction.item_type],
+            type=VariableType(
+                root_type=RootType.VECTOR, type_params=[instruction.item_type]
+            ),
+            value=[],
         )
         self.push(map_var)
         return self.get_instruction_pointer() + 1
@@ -549,13 +552,7 @@ class Simulator:
 
     def instruction_vec_copy(self) -> int:
         vec_var = self.top()
-
-        copied = Variable(
-            vec_var.root_type(),
-            deepcopy(vec_var.value),
-            deepcopy(vec_var.type.type_params),
-        )
-
+        copied = deepcopy(vec_var)
         self.push(copied)
         return self.get_instruction_pointer() + 1
 
@@ -615,13 +612,7 @@ class Simulator:
 
     def instruction_map_copy(self) -> int:
         map_var = self.top()
-
-        copied = Variable(
-            map_var.root_type(),
-            deepcopy(map_var.value),
-            deepcopy(map_var.type.type_params),
-        )
-
+        copied = deepcopy(map_var)
         self.push(copied)
         return self.get_instruction_pointer() + 1
 
@@ -642,7 +633,12 @@ class Simulator:
             struct_fields[field.name] = Variable.zero_value(var_type)
 
         struct_var = Variable(
-            RootType.STRUCT, struct_fields, [], struct_name=instruction.type.name
+            type=VariableType(
+                root_type=RootType.STRUCT,
+                type_params=[],
+                struct_name=instruction.type.name,
+            ),
+            value=struct_fields,
         )
         self.push(struct_var)
 

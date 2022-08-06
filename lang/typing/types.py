@@ -1,8 +1,6 @@
 from enum import IntEnum, auto
 from typing import Any, Dict, Final, List, Union
 
-from pydantic import BaseModel
-
 from lang.models import AaaModel
 from lang.models.parse import Function, ParsedTypePlaceholder, TypeLiteral
 
@@ -45,7 +43,7 @@ class RootType(IntEnum):
             return "struct"
 
 
-class VariableType(BaseModel):
+class VariableType(AaaModel):
     root_type: RootType
     type_params: List["SignatureItem"]
     struct_name: str = ""
@@ -118,18 +116,13 @@ class VariableType(BaseModel):
         return type_param
 
 
-class Variable:
-    def __init__(
-        self,
-        root_type: RootType,
-        value: Any,
-        type_params: List["SignatureItem"],
-        struct_name: str = "",
-    ) -> None:
-        self.type: Final[VariableType] = VariableType(
-            root_type=root_type, type_params=type_params, struct_name=struct_name
-        )
-        self.value = value
+class Variable(AaaModel):
+
+    type: VariableType
+    value: Any
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
         self.check()
 
     @classmethod
@@ -150,7 +143,8 @@ class Variable:
             assert False
 
         return Variable(
-            root_type=type.root_type, type_params=type.type_params, value=zero_val
+            type=VariableType(root_type=type.root_type, type_params=type.type_params),
+            value=zero_val,
         )
 
     def check(self) -> None:
@@ -246,15 +240,21 @@ class Variable:
 
 
 def int_var(value: int) -> Variable:
-    return Variable(RootType.INTEGER, value, [])
+    return Variable(
+        type=VariableType(root_type=RootType.INTEGER, type_params=[]), value=value
+    )
 
 
 def str_var(value: str) -> Variable:
-    return Variable(RootType.STRING, value, [])
+    return Variable(
+        type=VariableType(root_type=RootType.STRING, type_params=[]), value=value
+    )
 
 
 def bool_var(value: bool) -> Variable:
-    return Variable(RootType.BOOL, value, [])
+    return Variable(
+        type=VariableType(root_type=RootType.BOOL, type_params=[]), value=value
+    )
 
 
 def map_var(
@@ -263,8 +263,9 @@ def map_var(
     value: Dict[Variable, Variable],
 ) -> Variable:
     return Variable(
-        root_type=RootType.MAPPING,
-        type_params=[key_type, value_type],
+        type=VariableType(
+            root_type=RootType.MAPPING, type_params=[key_type, value_type]
+        ),
         value=value,
     )
 
@@ -274,13 +275,12 @@ def list_var(
     value: List[Variable],
 ) -> Variable:
     return Variable(
-        root_type=RootType.VECTOR,
-        type_params=[item_type],
+        type=VariableType(root_type=RootType.VECTOR, type_params=[item_type]),
         value=value,
     )
 
 
-class TypePlaceholder(AaaModel):
+class TypePlaceholder(AaaModel):  # TODO use Variable with special VariableType instead
     name: str
 
     def __repr__(self) -> str:  # pragma: nocover
