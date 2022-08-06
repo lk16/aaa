@@ -1,5 +1,7 @@
 from enum import IntEnum, auto
-from typing import Any, Dict, Final, List, Optional, Union
+from typing import Any, Dict, Final, List, Union
+
+from pydantic import BaseModel
 
 from lang.models import AaaModel
 from lang.models.parse import Function, ParsedTypePlaceholder, TypeLiteral
@@ -43,28 +45,23 @@ class RootType(IntEnum):
             return "struct"
 
 
-class VariableType:
-    def __init__(
-        self,
-        root_type: RootType,
-        type_params: Optional[List["SignatureItem"]] = None,
-        struct_name: str = "",
-    ) -> None:
-        self.root_type: Final[RootType] = root_type
-        self.type_params: Final[List[SignatureItem]] = type_params or []
+class VariableType(BaseModel):
+    root_type: RootType
+    type_params: List["SignatureItem"]
+    struct_name: str = ""
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
 
         # TODO consider renaming struct_name to type_name
         # and remove RootType.__repr__() and its uses.
 
         if self.root_type == RootType.STRUCT:
-            assert struct_name
-            self.struct_name = struct_name
-        else:
-            self.struct_name = ""
+            assert self.struct_name
 
-        if root_type == RootType.VECTOR:
+        if self.root_type == RootType.VECTOR:
             assert len(self.type_params) == 1
-        elif root_type == RootType.MAPPING:
+        elif self.root_type == RootType.MAPPING:
             assert len(self.type_params) == 2
         else:
             assert len(self.type_params) == 0
@@ -83,7 +80,11 @@ class VariableType:
             else:  # pragma: nocover
                 assert False
 
-        return VariableType(root_type, type_params, struct_name=type_literal.type_name)
+        return VariableType(
+            root_type=root_type,
+            type_params=type_params,
+            struct_name=type_literal.type_name,
+        )
 
     def __repr__(self) -> str:  # pragma: nocover
         if self.root_type == RootType.STRUCT:
@@ -97,6 +98,9 @@ class VariableType:
             formatted += "]"
 
         return formatted
+
+    def __str__(self) -> str:
+        return repr(self)
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, type(self)):  # pragma: nocover
@@ -114,21 +118,16 @@ class VariableType:
         return type_param
 
 
-Bool: Final[VariableType] = VariableType(RootType.BOOL)
-Int: Final[VariableType] = VariableType(RootType.INTEGER)
-Str: Final[VariableType] = VariableType(RootType.STRING)
-
-
 class Variable:
     def __init__(
         self,
         root_type: RootType,
         value: Any,
-        type_params: Optional[List["SignatureItem"]] = None,
+        type_params: List["SignatureItem"],
         struct_name: str = "",
     ) -> None:
         self.type: Final[VariableType] = VariableType(
-            root_type, type_params, struct_name=struct_name
+            root_type=root_type, type_params=type_params, struct_name=struct_name
         )
         self.value = value
         self.check()
@@ -247,15 +246,15 @@ class Variable:
 
 
 def int_var(value: int) -> Variable:
-    return Variable(RootType.INTEGER, value)
+    return Variable(RootType.INTEGER, value, [])
 
 
 def str_var(value: str) -> Variable:
-    return Variable(RootType.STRING, value)
+    return Variable(RootType.STRING, value, [])
 
 
 def bool_var(value: bool) -> Variable:
-    return Variable(RootType.BOOL, value)
+    return Variable(RootType.BOOL, value, [])
 
 
 def map_var(
@@ -335,3 +334,11 @@ class StructUpdateSignature:
 
 class StructQuerySignature:
     ...
+
+
+VariableType.update_forward_refs()
+
+
+Bool: Final[VariableType] = VariableType(root_type=RootType.BOOL, type_params=[])
+Int: Final[VariableType] = VariableType(root_type=RootType.INTEGER, type_params=[])
+Str: Final[VariableType] = VariableType(root_type=RootType.STRING, type_params=[])

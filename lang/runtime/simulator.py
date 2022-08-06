@@ -642,7 +642,7 @@ class Simulator:
             struct_fields[field.name] = Variable.zero_value(var_type)
 
         struct_var = Variable(
-            RootType.STRUCT, struct_fields, struct_name=instruction.type.name
+            RootType.STRUCT, struct_fields, [], struct_name=instruction.type.name
         )
         self.push(struct_var)
 

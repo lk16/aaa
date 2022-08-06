@@ -401,7 +401,11 @@ class TypeChecker:
 
         elif isinstance(identifier, Struct):
             return copy(type_stack) + [
-                VariableType(RootType.STRUCT, struct_name=identifier.name)
+                VariableType(
+                    root_type=RootType.STRUCT,
+                    type_params=[],
+                    struct_name=identifier.name,
+                )
             ]
 
         elif isinstance(identifier, BuiltinFunction):
