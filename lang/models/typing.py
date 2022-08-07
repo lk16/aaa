@@ -4,8 +4,6 @@ from typing import Any, Dict, Final, List
 from lang.models import AaaModel
 from lang.models.parse import BuiltinFunction, Function, ParsedType
 
-# TODO move everything in this file to the models module
-
 
 class RootType(IntEnum):
     BOOL = auto()

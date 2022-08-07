@@ -864,12 +864,6 @@ class Simulator:
     def instruction_syscall_fsync(self) -> int:
         fd: int = self.pop().value
 
-        # TODO: is this still necessary if we run python with -u ?
-        if fd == 1:
-            sys.stdout.flush()
-        elif fd == 2:
-            sys.stderr.flush()
-
         try:
             os.fsync(fd)
         except OSError:
