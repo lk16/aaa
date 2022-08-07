@@ -4,7 +4,6 @@ from lark.lexer import Token
 from lark.visitors import Transformer, v_args
 
 from lang.models.parse import (
-    AaaTreeNode,
     Argument,
     BooleanLiteral,
     Branch,
@@ -54,7 +53,7 @@ class AaaTransformer(Transformer[Any, Any]):
     def boolean(self, token: Token) -> BooleanLiteral:
         return BooleanLiteral(value=token.value)
 
-    def branch(self, *args: List[AaaTreeNode]) -> Branch:
+    def branch(self, *args: List[StructFieldQuery]) -> Branch:
         condition: FunctionBody
         if_body: FunctionBody
         else_body = FunctionBody(items=[])
@@ -80,7 +79,9 @@ class AaaTransformer(Transformer[Any, Any]):
     def branch_else_body(self, function_body: FunctionBody) -> BranchElseBody:
         return BranchElseBody(value=function_body)
 
-    def builtin_function_definition(self, *args: List[AaaTreeNode]) -> BuiltinFunction:
+    def builtin_function_definition(
+        self, *args: List[StructFieldQuery]
+    ) -> BuiltinFunction:
         arguments: List[ParsedType] = []
         return_types: List[ParsedType] = []
         name = ""
@@ -131,7 +132,7 @@ class AaaTransformer(Transformer[Any, Any]):
         return FunctionBody(items=args)
 
     @v_args(inline=False)
-    def function_definition(self, args: List[AaaTreeNode]) -> Function:
+    def function_definition(self, args: List[StructFieldQuery]) -> Function:
         name: str | MemberFunctionName = ""
         body: FunctionBody
         arguments: List[Argument] = []
@@ -230,7 +231,7 @@ class AaaTransformer(Transformer[Any, Any]):
         return Operator(value=token.value)
 
     @v_args(inline=False)
-    def regular_file_root(self, args: List[AaaTreeNode]) -> ParsedFile:
+    def regular_file_root(self, args: List[StructFieldQuery]) -> ParsedFile:
         functions: List[Function] = []
         imports: List[Import] = []
         structs: List[Struct] = []

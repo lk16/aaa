@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Type
+from typing import TYPE_CHECKING, Dict, List
 
 from lang.models.instructions import (
     And,
@@ -147,9 +147,7 @@ class InstructionGenerator:
         self.file = file
         self.program = program
 
-        self.instruction_funcs: Dict[
-            Type[AaaTreeNode], Callable[[AaaTreeNode, int], List[Instruction]]
-        ] = {
+        self.instruction_funcs = {
             BooleanLiteral: self.instructions_for_boolean_literal,
             Branch: self.instructions_for_branch,
             FunctionBody: self.instructions_for_function_body,
@@ -170,6 +168,7 @@ class InstructionGenerator:
     def _generate_instructions(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
+        # TODO use if/else list like in TypeChecker._check_function_body()
         return self.instruction_funcs[type(node)](node, offset)
 
     def instructions_for_integer_literal(
