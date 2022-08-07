@@ -41,7 +41,6 @@ from lang.models.instructions import (
     Swap,
 )
 from lang.models.parse import (
-    AaaTreeNode,
     BooleanLiteral,
     Branch,
     Function,
@@ -63,7 +62,7 @@ from lang.models.typing import RootType, VariableType
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.program import Program
 
-OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
+OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {  # TODO move non-operators out
     "-": Minus(),
     "!=": IntNotEqual(),
     ".": Print(),
@@ -147,63 +146,34 @@ class InstructionGenerator:
         self.file = file
         self.program = program
 
-        self.instruction_funcs = {
-            BooleanLiteral: self.instructions_for_boolean_literal,
-            Branch: self.instructions_for_branch,
-            FunctionBody: self.instructions_for_function_body,
-            Identifier: self.instructions_for_identfier,
-            IntegerLiteral: self.instructions_for_integer_literal,
-            Loop: self.instructions_for_loop,
-            MemberFunctionName: self.instructions_for_member_function,
-            Operator: self.instructions_for_operator,
-            StringLiteral: self.instructions_for_string_literal,
-            StructFieldQuery: self.instructions_for_struct_field_query,
-            StructFieldUpdate: self.instructions_for_struct_field_update,
-            ParsedType: self.instructions_for_parsed_type,
-        }
-
     def generate_instructions(self) -> List[Instruction]:
-        return self._generate_instructions(self.function.body, 0)
-
-    def _generate_instructions(
-        self, node: AaaTreeNode, offset: int
-    ) -> List[Instruction]:
-        # TODO use if/else list like in TypeChecker._check_function_body()
-        return self.instruction_funcs[type(node)](node, offset)
+        return self.instructions_for_function_body(self.function.body, 0)
 
     def instructions_for_integer_literal(
-        self, node: AaaTreeNode, offset: int
+        self, integer_literal: IntegerLiteral
     ) -> List[Instruction]:
-        assert isinstance(node, IntegerLiteral)
-        return [PushInt(value=node.value)]
+        return [PushInt(value=integer_literal.value)]
 
     def instructions_for_string_literal(
-        self, node: AaaTreeNode, offset: int
+        self, string_literal: StringLiteral
     ) -> List[Instruction]:
-        assert isinstance(node, StringLiteral)
-        return [PushString(value=node.value)]
+        return [PushString(value=string_literal.value)]
 
     def instructions_for_boolean_literal(
-        self, node: AaaTreeNode, offset: int
+        self, boolean_literal: BooleanLiteral
     ) -> List[Instruction]:
-        assert isinstance(node, BooleanLiteral)
-        return [PushBool(value=node.value)]
+        return [PushBool(value=boolean_literal.value)]
 
-    def instructions_for_operator(
-        self, node: AaaTreeNode, offset: int
-    ) -> List[Instruction]:
-        assert isinstance(node, Operator)
-        return [OPERATOR_INSTRUCTIONS[node.value]]
+    def instructions_for_operator(self, operator: Operator) -> List[Instruction]:
+        return [OPERATOR_INSTRUCTIONS[operator.value]]
 
-    def instructions_for_loop(
-        self, node: AaaTreeNode, offset: int
-    ) -> List[Instruction]:
-        assert isinstance(node, Loop)
-
-        condition_instructions = self._generate_instructions(node.condition, offset)
+    def instructions_for_loop(self, loop: Loop, offset: int) -> List[Instruction]:
+        condition_instructions = self.instructions_for_function_body(
+            loop.condition, offset
+        )
         body_offset = offset + 1 + len(condition_instructions) + 1
 
-        body_instructions = self._generate_instructions(node.body, body_offset)
+        body_instructions = self.instructions_for_function_body(loop.body, body_offset)
         beyond_loop_nop_offset = body_offset + len(body_instructions) + 1
 
         loop_instructions: List[Instruction] = []
@@ -217,31 +187,28 @@ class InstructionGenerator:
 
         return loop_instructions
 
-    def instructions_for_identfier(
-        self, node: AaaTreeNode, offset: int
-    ) -> List[Instruction]:
-        assert isinstance(node, Identifier)
-
-        identifier = node.name
+    def instructions_for_identfier(self, identifier: Identifier) -> List[Instruction]:
+        # TODO refactor
 
         for argument in self.function.arguments:
-            if node.name == argument.name:
+            if identifier.name == argument.name:
                 return [PushFunctionArgument(arg_name=argument.name)]
 
-        if node.name in OPERATOR_INSTRUCTIONS:
-            return [OPERATOR_INSTRUCTIONS[node.name]]
+        if identifier.name in OPERATOR_INSTRUCTIONS:
+            return [OPERATOR_INSTRUCTIONS[identifier.name]]
 
-        identified = self.program.identifiers[self.file][identifier]
+        identified = self.program.get_identifier(self.file, identifier.name)
+        assert identified
 
         if isinstance(identified, ProgramImport):
             # If this is an import, copy from other file
-            identified = self.program.identifiers[identified.source_file][
-                identified.original_name
-            ]
+            identified = self.program.get_identifier(
+                identified.source_file, identified.original_name
+            )
 
         if isinstance(identified, Function):
             source_file, original_name = self.program.get_function_source_and_name(
-                self.file, identifier
+                self.file, identifier.name
             )
             return [CallFunction(func_name=original_name, file=source_file)]
         elif isinstance(identified, Struct):
@@ -249,21 +216,21 @@ class InstructionGenerator:
         else:  # pragma: nocover
             assert False
 
-    def instructions_for_branch(
-        self, node: AaaTreeNode, offset: int
-    ) -> List[Instruction]:
-        assert isinstance(node, Branch)
-
+    def instructions_for_branch(self, branch: Branch, offset: int) -> List[Instruction]:
         branch_instructions: List[Instruction] = []
 
-        condition_instructions = self._generate_instructions(node.condition, offset)
+        condition_instructions = self.instructions_for_function_body(
+            branch.condition, offset
+        )
 
         if_offset = offset + 1 + len(condition_instructions)
-        if_instructions = self._generate_instructions(node.if_body, if_offset)
+        if_instructions = self.instructions_for_function_body(branch.if_body, if_offset)
 
         else_nop_offset = if_offset + len(if_instructions) + 1
         else_offset = else_nop_offset + 1
-        else_instructions = self._generate_instructions(node.else_body, else_offset)
+        else_instructions = self.instructions_for_function_body(
+            branch.else_body, else_offset
+        )
 
         branch_end_nop_offset = else_offset + len(else_instructions)
 
@@ -277,26 +244,53 @@ class InstructionGenerator:
         return branch_instructions
 
     def instructions_for_function_body(
-        self, node: AaaTreeNode, offset: int
+        self, function_body: FunctionBody, offset: int
     ) -> List[Instruction]:
-        assert isinstance(node, FunctionBody)
-
         instructions: List[Instruction] = []
 
-        for child in node.items:
+        for child in function_body.items:
             child_offset = offset + len(instructions)
-            instructions += self._generate_instructions(child, child_offset)
+
+            if isinstance(child, BooleanLiteral):
+                instructions += self.instructions_for_boolean_literal(child)
+            elif isinstance(child, Branch):
+                instructions += self.instructions_for_branch(child, child_offset)
+            elif isinstance(child, FunctionBody):
+                instructions += self.instructions_for_function_body(child, child_offset)
+            elif isinstance(child, Identifier):
+                instructions += self.instructions_for_identfier(child)
+            elif isinstance(child, IntegerLiteral):
+                instructions += self.instructions_for_integer_literal(child)
+            elif isinstance(child, Loop):
+                instructions += self.instructions_for_loop(child, child_offset)
+            elif isinstance(child, MemberFunctionName):
+                instructions += self.instructions_for_member_function(
+                    child, child_offset
+                )
+            elif isinstance(child, Operator):
+                instructions += self.instructions_for_operator(child)
+            elif isinstance(child, ParsedType):
+                instructions += self.instructions_for_parsed_type(child)
+            elif isinstance(child, StringLiteral):
+                instructions += self.instructions_for_string_literal(child)
+            elif isinstance(child, StructFieldQuery):
+                instructions += self.instructions_for_struct_field_query(child)
+            elif isinstance(child, StructFieldUpdate):
+                instructions += self.instructions_for_struct_field_update(
+                    child, child_offset
+                )
+            else:  # pragma: nocover
+                assert False
 
         return instructions
 
     def instructions_for_parsed_type(
-        self, node: AaaTreeNode, offset: int
+        self, parsed_type: ParsedType
     ) -> List[Instruction]:
         # TODO make type-independent Push() instruction
         # and use it with Variable.zero_value() instead
 
-        assert isinstance(node, ParsedType)
-        var_type = VariableType.from_parsed_type(node)
+        var_type = VariableType.from_parsed_type(parsed_type)
 
         root_type = var_type.root_type
 
@@ -324,38 +318,34 @@ class InstructionGenerator:
             assert False
 
     def instructions_for_member_function(
-        self, node: AaaTreeNode, offset: int
+        self, member_function_name: MemberFunctionName, offset: int
     ) -> List[Instruction]:
-        assert isinstance(node, MemberFunctionName)
-
         # TODO we should need this list hardcoded here
-        if node.type_name in ["bool", "int", "str", "vec", "map"]:
-            key = f"{node.type_name}:{node.func_name}"
+        if member_function_name.type_name in ["bool", "int", "str", "vec", "map"]:
+            key = f"{member_function_name.type_name}:{member_function_name.func_name}"
             return [OPERATOR_INSTRUCTIONS[key]]
 
-        member_function_name = f"{node.type_name}:{node.func_name}"
-        identified = self.program.identifiers[self.file][member_function_name]
+        key = f"{member_function_name.type_name}:{member_function_name.func_name}"
+        identified = self.program.identifiers[self.file][key]
 
         assert isinstance(identified, Function)
         source_file, original_name = self.program.get_function_source_and_name(
-            self.file, member_function_name
+            self.file, key
         )
         return [CallFunction(func_name=original_name, file=source_file)]
 
     def instructions_for_struct_field_query(
-        self, node: AaaTreeNode, offset: int
+        self, field_query: StructFieldQuery
     ) -> List[Instruction]:
-        assert isinstance(node, StructFieldQuery)
-        return [PushString(value=node.field_name.value), GetStructField()]
+        return [PushString(value=field_query.field_name.value), GetStructField()]
 
     def instructions_for_struct_field_update(
-        self, node: AaaTreeNode, offset: int
+        self, field_update: StructFieldUpdate, offset: int
     ) -> List[Instruction]:
-        assert isinstance(node, StructFieldUpdate)
         instructions: List[Instruction] = []
-        instructions += [PushString(value=node.field_name.value)]
+        instructions += [PushString(value=field_update.field_name.value)]
         instructions += self.instructions_for_function_body(
-            node.new_value_expr, offset + 1
+            field_update.new_value_expr, offset + 1
         )
         instructions += [SetStructField()]
         return instructions
