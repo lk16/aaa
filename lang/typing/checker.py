@@ -210,7 +210,7 @@ class TypeChecker:
             placeholder_types[expected_type.name] = type
             return True
 
-        elif isinstance(expected_type, VariableType):
+        else:
             if expected_type.root_type == RootType.PLACEHOLDER:
                 return False
 
@@ -233,9 +233,6 @@ class TypeChecker:
                     return False
 
             return True
-
-        else:  # pragma: nocover
-            assert False
 
     def _update_return_type(
         self, return_type: VariableType, placeholder_types: Dict[str, VariableType]

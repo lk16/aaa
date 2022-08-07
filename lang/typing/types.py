@@ -15,18 +15,18 @@ class RootType(IntEnum):
     PLACEHOLDER = auto()
 
     @classmethod
-    def from_str(cls, name: str) -> "RootType":
-        if name == "int":
+    def from_parsed_type(cls, parsed_type: ParsedType) -> "RootType":
+        if parsed_type.name == "int":
             return RootType.INTEGER
-        elif name == "bool":
+        elif parsed_type.name == "bool":
             return RootType.BOOL
-        elif name == "str":
+        elif parsed_type.name == "str":
             return RootType.STRING
-        elif name == "vec":
+        elif parsed_type.name == "vec":
             return RootType.VECTOR
-        elif name == "map":
+        elif parsed_type.name == "map":
             return RootType.MAPPING
-        elif name.startswith("*"):
+        elif parsed_type.is_placeholder:
             return RootType.PLACEHOLDER
         else:
             return RootType.STRUCT
@@ -72,7 +72,7 @@ class VariableType(AaaModel):
     def from_type_literal(cls, parsed_type: ParsedType) -> "VariableType":
         # TODO make this work for PLACEHOLDER root_type as well
 
-        root_type = RootType.from_str(parsed_type.name)
+        root_type = RootType.from_parsed_type(parsed_type)
 
         type_params: List[VariableType] = []
 
