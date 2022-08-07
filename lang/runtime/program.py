@@ -35,7 +35,7 @@ from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
 from lang.typing.checker import TypeChecker
-from lang.typing.types import RootType, Signature, VariableType
+from lang.typing.types import Signature
 
 # Identifiable are things identified uniquely by a filepath and name
 Identifiable = Function | ProgramImport | Struct | BuiltinFunction
@@ -92,36 +92,7 @@ class Program:
             if function.name not in builtins.functions:
                 builtins.functions[function.name] = []
 
-            # TODO make more DRY
-            arg_types: List[VariableType] = []
-            return_types: List[VariableType] = []
-
-            for argument in function.arguments:
-                if not argument.is_placeholder:  # TODO swap if/else
-                    arg_types.append(VariableType.from_type_literal(argument))
-                else:
-                    arg_types.append(
-                        VariableType(
-                            root_type=RootType.PLACEHOLDER,
-                            type_params=[],
-                            name=argument.name,
-                        )
-                    )
-
-            for return_type in function.return_types:
-                if not return_type.is_placeholder:  # TODO swap if/else
-                    return_types.append(VariableType.from_type_literal(return_type))
-                else:
-                    return_types.append(
-                        VariableType(
-                            root_type=RootType.PLACEHOLDER,
-                            type_params=[],
-                            name=return_type.name,
-                        )
-                    )
-
-            signature = Signature(arg_types=arg_types, return_types=return_types)
-
+            signature = Signature.from_builtin_function(function)
             builtins.functions[function.name].append((function, signature))
 
         return builtins, []

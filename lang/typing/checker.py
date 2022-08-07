@@ -145,7 +145,7 @@ class TypeChecker:
                     )
             else:
                 if argument.name == name:
-                    return VariableType.from_type_literal(argument.type)
+                    return VariableType.from_parsed_type(argument.type)
 
         return None
 
@@ -302,7 +302,7 @@ class TypeChecker:
     ) -> List[VariableType]:
         assert isinstance(node, ParsedType)
 
-        type = VariableType.from_type_literal(node)
+        type = VariableType.from_parsed_type(node)
         return type_stack + [type]
 
     def _check_condition(
@@ -573,7 +573,7 @@ class TypeChecker:
                 field_name=field_name,
             )
 
-        return VariableType.from_type_literal(field_type)
+        return VariableType.from_parsed_type(field_type)
 
     def _check_type_struct_field_query(
         self, node: AaaTreeNode, type_stack: List[VariableType]

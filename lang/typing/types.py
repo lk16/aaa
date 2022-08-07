@@ -2,7 +2,9 @@ from enum import IntEnum, auto
 from typing import Any, Dict, Final, List
 
 from lang.models import AaaModel
-from lang.models.parse import Function, ParsedType
+from lang.models.parse import BuiltinFunction, Function, ParsedType
+
+# TODO move everything in this file to the models module
 
 
 class RootType(IntEnum):
@@ -69,24 +71,12 @@ class VariableType(AaaModel):
             assert len(self.type_params) == 0
 
     @classmethod
-    def from_type_literal(cls, parsed_type: ParsedType) -> "VariableType":
-        # TODO make this work for PLACEHOLDER root_type as well
-
+    def from_parsed_type(cls, parsed_type: ParsedType) -> "VariableType":
         root_type = RootType.from_parsed_type(parsed_type)
 
-        type_params: List[VariableType] = []
-
-        for param in parsed_type.parameters:
-            if not parsed_type.is_placeholder:  # TODO swap if/else
-                type_params.append(VariableType.from_type_literal(param))
-            else:
-                type_params.append(
-                    VariableType(
-                        root_type=RootType.PLACEHOLDER,
-                        type_params=[],
-                        name=param.name,
-                    )
-                )
+        type_params: List[VariableType] = [
+            VariableType.from_parsed_type(param) for param in parsed_type.parameters
+        ]
 
         return VariableType(
             root_type=root_type,
@@ -302,35 +292,29 @@ class Signature(AaaModel):
 
     @classmethod
     def from_function(cls, function: Function) -> "Signature":
-        arg_types: List[VariableType] = []
-        return_types: List[VariableType] = []
-        # TODO reduce code duplication below
+        return Signature(
+            arg_types=[
+                VariableType.from_parsed_type(argument.type)
+                for argument in function.arguments
+            ],
+            return_types=[
+                VariableType.from_parsed_type(return_type)
+                for return_type in function.return_types
+            ],
+        )
 
-        for argument in function.arguments:
-            if not argument.type.is_placeholder:  # TODO swap if/else
-                arg_types.append(VariableType.from_type_literal(argument.type))
-            else:
-                arg_types.append(
-                    VariableType(
-                        root_type=RootType.PLACEHOLDER,
-                        type_params=[],
-                        name=argument.type.name,
-                    )
-                )
-
-        for return_type in function.return_types:
-            if not return_type.is_placeholder:  # TODO swap if/else
-                return_types.append(VariableType.from_type_literal(return_type))
-            else:
-                return_types.append(
-                    VariableType(
-                        root_type=RootType.PLACEHOLDER,
-                        type_params=[],
-                        name=return_type.name,
-                    )
-                )
-
-        return Signature(arg_types=arg_types, return_types=return_types)
+    @classmethod
+    def from_builtin_function(cls, builtin_function: BuiltinFunction) -> "Signature":
+        return Signature(
+            arg_types=[
+                VariableType.from_parsed_type(argument)
+                for argument in builtin_function.arguments
+            ],
+            return_types=[
+                VariableType.from_parsed_type(return_type)
+                for return_type in builtin_function.return_types
+            ],
+        )
 
 
 class StructUpdateSignature:

@@ -297,7 +297,7 @@ class InstructionGenerator:
         # and use it with Variable.zero_value() instead
 
         assert isinstance(node, ParsedType)
-        var_type = VariableType.from_type_literal(node)
+        var_type = VariableType.from_parsed_type(node)
 
         root_type = var_type.root_type
 

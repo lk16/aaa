@@ -628,7 +628,7 @@ class Simulator:
         struct_fields: Dict[str, Variable] = {}
 
         for field in instruction.type.fields:
-            var_type = VariableType.from_type_literal(field.type)
+            var_type = VariableType.from_parsed_type(field.type)
             struct_fields[field.name] = Variable.zero_value(var_type)
 
         struct_var = Variable(
