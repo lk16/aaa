@@ -37,7 +37,7 @@ from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
 from lang.typing.checker import TypeChecker
-from lang.typing.types import Signature, SignatureItem, TypePlaceholder, VariableType
+from lang.typing.types import RootType, Signature, VariableType
 
 # Identifiable are things identified uniquely by a filepath and name
 Identifiable = Function | ProgramImport | Struct | BuiltinFunction
@@ -95,14 +95,20 @@ class Program:
                 builtins.functions[function.name] = []
 
             # TODO make more DRY
-            arg_types: List[SignatureItem] = []
-            return_types: List[SignatureItem] = []
+            arg_types: List[VariableType] = []
+            return_types: List[VariableType] = []
 
             for argument in function.arguments:
                 if isinstance(argument.type, TypeLiteral):
                     arg_types.append(VariableType.from_type_literal(argument.type))
                 elif isinstance(argument.type, ParsedTypePlaceholder):
-                    arg_types.append(TypePlaceholder(name=argument.type.name))
+                    arg_types.append(
+                        VariableType(
+                            root_type=RootType.PLACEHOLDER,
+                            type_params=[],
+                            name=argument.type.name,
+                        )
+                    )
                 else:  # pragma: nocover
                     assert False
 
@@ -112,7 +118,13 @@ class Program:
                         VariableType.from_type_literal(return_type.type)
                     )
                 elif isinstance(return_type.type, ParsedTypePlaceholder):
-                    return_types.append(TypePlaceholder(name=return_type.type.name))
+                    return_types.append(
+                        VariableType(
+                            root_type=RootType.PLACEHOLDER,
+                            type_params=[],
+                            name=return_type.type.name,
+                        )
+                    )
                 else:  # pragma: nocover
                     assert False
 

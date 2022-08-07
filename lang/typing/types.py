@@ -1,5 +1,5 @@
 from enum import IntEnum, auto
-from typing import Any, Dict, Final, List, Union
+from typing import Any, Dict, Final, List
 
 from lang.models import AaaModel
 from lang.models.parse import Function, ParsedTypePlaceholder, TypeLiteral
@@ -45,14 +45,14 @@ class RootType(IntEnum):
         elif self == RootType.STRUCT:
             return "struct"
         elif self == RootType.PLACEHOLDER:
-            return "placeholder"
+            return f"placeholder"
         else:
             assert False
 
 
 class VariableType(AaaModel):
     root_type: RootType
-    type_params: List["SignatureItem"]
+    type_params: List["VariableType"]
     name: str = ""
 
     def __init__(self, **kwargs: Any) -> None:
@@ -70,15 +70,23 @@ class VariableType(AaaModel):
 
     @classmethod
     def from_type_literal(cls, type_literal: TypeLiteral) -> "VariableType":
+        # TODO make this work for PLACEHOLDER root_type as well
+
         root_type = RootType.from_str(type_literal.type_name)
 
-        type_params: List[SignatureItem] = []
+        type_params: List[VariableType] = []
 
         for param in type_literal.type_parameters:
             if isinstance(param.type, TypeLiteral):
                 type_params.append(VariableType.from_type_literal(param.type))
             elif isinstance(param.type, ParsedTypePlaceholder):
-                type_params.append(TypePlaceholder(name=param.type.name))
+                type_params.append(
+                    VariableType(
+                        root_type=RootType.PLACEHOLDER,
+                        type_params=[],
+                        name=param.type.name,
+                    )
+                )
             else:  # pragma: nocover
                 assert False
 
@@ -89,6 +97,9 @@ class VariableType(AaaModel):
         )
 
     def __repr__(self) -> str:  # pragma: nocover
+        if self.root_type == RootType.PLACEHOLDER:
+            return f"*{self.name}"
+
         if self.root_type == RootType.STRUCT:
             formatted = self.name
         else:
@@ -287,28 +298,17 @@ def list_var(
     )
 
 
-class TypePlaceholder(AaaModel):  # TODO use Variable with special VariableType instead
-    name: str
-
-    def __repr__(self) -> str:  # pragma: nocover
-        return f"*{self.name}"
-
-
-SignatureItem = Union[
-    VariableType, TypePlaceholder
-]  # TODO remove after TypePlaceholder is removed
-
-TypeStack = List[SignatureItem]
+TypeStack = List[VariableType]
 
 
 class Signature(AaaModel):
-    arg_types: List[SignatureItem]
-    return_types: List[SignatureItem]
+    arg_types: List[VariableType]
+    return_types: List[VariableType]
 
     @classmethod
     def from_function(cls, function: Function) -> "Signature":
-        arg_types: List[SignatureItem] = []
-        return_types: List[SignatureItem] = []
+        arg_types: List[VariableType] = []
+        return_types: List[VariableType] = []
         # TODO reduce code duplication below
 
         for argument in function.arguments:
@@ -317,7 +317,11 @@ class Signature(AaaModel):
             if isinstance(type, TypeLiteral):
                 arg_types.append(VariableType.from_type_literal(type))
             elif isinstance(type, ParsedTypePlaceholder):
-                arg_types.append(TypePlaceholder(name=type.name))
+                arg_types.append(
+                    VariableType(
+                        root_type=RootType.PLACEHOLDER, type_params=[], name=type.name
+                    )
+                )
             else:  # pragma: nocover
                 assert False
 
@@ -327,7 +331,11 @@ class Signature(AaaModel):
             if isinstance(type, TypeLiteral):
                 return_types.append(VariableType.from_type_literal(type))
             elif isinstance(type, ParsedTypePlaceholder):
-                return_types.append(TypePlaceholder(name=type.name))
+                return_types.append(
+                    VariableType(
+                        root_type=RootType.PLACEHOLDER, type_params=[], name=type.name
+                    )
+                )
             else:  # pragma: nocover
                 assert False
 

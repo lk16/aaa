@@ -15,7 +15,6 @@ from lang.typing.types import (
     Signature,
     StructQuerySignature,
     StructUpdateSignature,
-    TypePlaceholder,
     TypeStack,
     VariableType,
 )
@@ -36,7 +35,7 @@ class FunctionTypeError(TypeException):
         *,
         file: Path,
         function: "Function",
-        expected_return_types: List[VariableType | TypePlaceholder],
+        expected_return_types: List[VariableType],
         computed_return_types: TypeStack,
     ) -> None:
         self.expected_return_types = expected_return_types

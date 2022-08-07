@@ -51,11 +51,9 @@ from lang.typing.types import (
     Int,
     RootType,
     Signature,
-    SignatureItem,
     Str,
     StructQuerySignature,
     StructUpdateSignature,
-    TypePlaceholder,
     TypeStack,
     VariableType,
 )
@@ -141,12 +139,14 @@ class TypeChecker:
 
         return Signature.from_function(function)
 
-    def _get_func_arg_type(self, name: str) -> Optional[SignatureItem]:
+    def _get_func_arg_type(self, name: str) -> Optional[VariableType]:
         for argument in self.function.arguments:
             type = argument.type.type
             if isinstance(type, ParsedTypePlaceholder):
                 if type.name == name:
-                    return TypePlaceholder(name=type.name)
+                    return VariableType(
+                        root_type=RootType.PLACEHOLDER, type_params=[], name=type.name
+                    )
             elif isinstance(type, TypeLiteral):
                 if argument.name == name:
                     return VariableType.from_type_literal(type)
@@ -176,7 +176,7 @@ class TypeChecker:
                 func_like=func_like,
             )
 
-        placeholder_types: Dict[str, SignatureItem] = {}
+        placeholder_types: Dict[str, VariableType] = {}
         expected_types = signature.arg_types
         types = stack[len(stack) - arg_count :]
 
@@ -205,11 +205,11 @@ class TypeChecker:
 
     def _match_signature_items(
         self,
-        expected_type: SignatureItem,
-        type: SignatureItem,
-        placeholder_types: Dict[str, SignatureItem],
+        expected_type: VariableType,
+        type: VariableType,
+        placeholder_types: Dict[str, VariableType],
     ) -> bool:
-        if isinstance(expected_type, TypePlaceholder):
+        if expected_type.root_type == RootType.PLACEHOLDER:
             if expected_type.name in placeholder_types:
                 return placeholder_types[expected_type.name] == type
 
@@ -217,7 +217,7 @@ class TypeChecker:
             return True
 
         elif isinstance(expected_type, VariableType):
-            if isinstance(type, TypePlaceholder):
+            if expected_type.root_type == RootType.PLACEHOLDER:
                 return False
 
             if expected_type.root_type != type.root_type:
@@ -244,9 +244,9 @@ class TypeChecker:
             assert False
 
     def _update_return_type(
-        self, return_type: SignatureItem, placeholder_types: Dict[str, SignatureItem]
-    ) -> SignatureItem:
-        if isinstance(return_type, TypePlaceholder):
+        self, return_type: VariableType, placeholder_types: Dict[str, VariableType]
+    ) -> VariableType:
+        if return_type.root_type == RootType.PLACEHOLDER:
             if return_type.name not in placeholder_types:
                 raise NotImplementedError
 
