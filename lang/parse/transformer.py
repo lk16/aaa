@@ -249,13 +249,7 @@ class AaaTransformer(Transformer[Any, Any]):
 
     @v_args(inline=False)
     def return_types(self, types: List[ParsedType]) -> List[ParsedType]:
-        # TODO this function seems redundant
-
-        return_types: List[ParsedType] = []
-        for type in types:
-            return_types.append(type)
-
-        return return_types
+        return types
 
     def string(self, token: Token) -> StringLiteral:
         assert len(token.value) >= 2
@@ -296,7 +290,6 @@ class AaaTransformer(Transformer[Any, Any]):
         return MemberFunctionName(type_name=type_name.name, func_name=func_name.name)
 
     def type(self, type: ParsedType) -> ParsedType:
-        # TODO this function seems redundant
         return type
 
     @v_args(inline=False)
@@ -319,7 +312,6 @@ class AaaTransformer(Transformer[Any, Any]):
 
     @v_args(inline=False)
     def type_params(self, types: List[ParsedType]) -> List[ParsedType]:
-        # TODO this function seems redundant
         return types
 
     def type_placeholder(self, identifier: Identifier) -> ParsedType:
