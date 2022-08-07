@@ -35,7 +35,7 @@ builtin_fn "and" args bool, bool return bool
 builtin_fn "not" args bool       return bool
 builtin_fn "or"  args bool, bool return bool
 
-// string operators, TODO these is deprecated
+// string operators, TODO these are deprecated
 builtin_fn "+" args str, str return str
 builtin_fn "=" args str, str return bool
 

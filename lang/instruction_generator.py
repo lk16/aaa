@@ -62,7 +62,7 @@ from lang.models.typing import RootType, VariableType
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.program import Program
 
-OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {  # TODO move non-operators out
+OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "-": Minus(),
     "!=": IntNotEqual(),
     ".": Print(),
@@ -85,58 +85,61 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {  # TODO move non-operators out
     "over": Over(),
     "rot": Rot(),
     "swap": Swap(),
-    "chdir": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_CHDIR),
-    "close": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_CLOSE),
-    "environ": StandardLibraryCall(kind=StandardLibraryCallKind.ENVIRON),
-    "exit": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXIT),
-    "execve": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_EXECVE),
-    "fork": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_FORK),
-    "fsync": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_FSYNC),
-    "getcwd": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETCWD),
-    "getenv": StandardLibraryCall(kind=StandardLibraryCallKind.GETENV),
-    "getpid": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETPID),
-    "getppid": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_GETPPID),
-    "map:clear": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_CLEAR),
-    "map:copy": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_COPY),
-    "map:drop": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_DROP),
-    "map:empty": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_EMPTY),
-    "map:get": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_GET),
-    "map:has_key": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_HAS_KEY),
-    "map:keys": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_KEYS),
-    "map:pop": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_POP),
-    "map:set": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_SET),
-    "map:size": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_SIZE),
-    "map:values": StandardLibraryCall(kind=StandardLibraryCallKind.MAP_VALUES),
-    "open": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_OPEN),
-    "read": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_READ),
-    "setenv": StandardLibraryCall(kind=StandardLibraryCallKind.SETENV),
-    "str:append": StandardLibraryCall(kind=StandardLibraryCallKind.STR_APPEND),
-    "str:contains": StandardLibraryCall(kind=StandardLibraryCallKind.STR_CONTAINS),
-    "str:equals": StandardLibraryCall(kind=StandardLibraryCallKind.STR_EQUALS),
-    "str:find": StandardLibraryCall(kind=StandardLibraryCallKind.STR_FIND),
-    "str:find_after": StandardLibraryCall(kind=StandardLibraryCallKind.STR_FIND_AFTER),
-    "str:join": StandardLibraryCall(kind=StandardLibraryCallKind.STR_JOIN),
-    "str:len": StandardLibraryCall(kind=StandardLibraryCallKind.STR_LEN),
-    "str:lower": StandardLibraryCall(kind=StandardLibraryCallKind.STR_LOWER),
-    "str:replace": StandardLibraryCall(kind=StandardLibraryCallKind.STR_REPLACE),
-    "str:strip": StandardLibraryCall(kind=StandardLibraryCallKind.STR_STRIP),
-    "str:split": StandardLibraryCall(kind=StandardLibraryCallKind.STR_SPLIT),
-    "str:substr": StandardLibraryCall(kind=StandardLibraryCallKind.STR_SUBSTR),
-    "str:to_bool": StandardLibraryCall(kind=StandardLibraryCallKind.STR_TO_BOOL),
-    "str:to_int": StandardLibraryCall(kind=StandardLibraryCallKind.STR_TO_INT),
-    "str:upper": StandardLibraryCall(kind=StandardLibraryCallKind.STR_UPPER),
-    "time": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_TIME),
-    "unsetenv": StandardLibraryCall(kind=StandardLibraryCallKind.UNSETENV),
-    "vec:clear": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_CLEAR),
-    "vec:copy": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_COPY),
-    "vec:empty": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_EMPTY),
-    "vec:get": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_GET),
-    "vec:pop": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_POP),
-    "vec:push": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_PUSH),
-    "vec:set": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SET),
-    "vec:size": StandardLibraryCall(kind=StandardLibraryCallKind.VEC_SIZE),
-    "write": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_WRITE),
-    "waitpid": StandardLibraryCall(kind=StandardLibraryCallKind.SYSCALL_WAITPID),
+}
+
+STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
+    "chdir": StandardLibraryCallKind.SYSCALL_CHDIR,
+    "close": StandardLibraryCallKind.SYSCALL_CLOSE,
+    "environ": StandardLibraryCallKind.ENVIRON,
+    "execve": StandardLibraryCallKind.SYSCALL_EXECVE,
+    "exit": StandardLibraryCallKind.SYSCALL_EXIT,
+    "fork": StandardLibraryCallKind.SYSCALL_FORK,
+    "fsync": StandardLibraryCallKind.SYSCALL_FSYNC,
+    "getcwd": StandardLibraryCallKind.SYSCALL_GETCWD,
+    "getenv": StandardLibraryCallKind.GETENV,
+    "getpid": StandardLibraryCallKind.SYSCALL_GETPID,
+    "getppid": StandardLibraryCallKind.SYSCALL_GETPPID,
+    "map:clear": StandardLibraryCallKind.MAP_CLEAR,
+    "map:copy": StandardLibraryCallKind.MAP_COPY,
+    "map:drop": StandardLibraryCallKind.MAP_DROP,
+    "map:empty": StandardLibraryCallKind.MAP_EMPTY,
+    "map:get": StandardLibraryCallKind.MAP_GET,
+    "map:has_key": StandardLibraryCallKind.MAP_HAS_KEY,
+    "map:keys": StandardLibraryCallKind.MAP_KEYS,
+    "map:pop": StandardLibraryCallKind.MAP_POP,
+    "map:set": StandardLibraryCallKind.MAP_SET,
+    "map:size": StandardLibraryCallKind.MAP_SIZE,
+    "map:values": StandardLibraryCallKind.MAP_VALUES,
+    "open": StandardLibraryCallKind.SYSCALL_OPEN,
+    "read": StandardLibraryCallKind.SYSCALL_READ,
+    "setenv": StandardLibraryCallKind.SETENV,
+    "str:append": StandardLibraryCallKind.STR_APPEND,
+    "str:contains": StandardLibraryCallKind.STR_CONTAINS,
+    "str:equals": StandardLibraryCallKind.STR_EQUALS,
+    "str:find_after": StandardLibraryCallKind.STR_FIND_AFTER,
+    "str:find": StandardLibraryCallKind.STR_FIND,
+    "str:join": StandardLibraryCallKind.STR_JOIN,
+    "str:len": StandardLibraryCallKind.STR_LEN,
+    "str:lower": StandardLibraryCallKind.STR_LOWER,
+    "str:replace": StandardLibraryCallKind.STR_REPLACE,
+    "str:split": StandardLibraryCallKind.STR_SPLIT,
+    "str:strip": StandardLibraryCallKind.STR_STRIP,
+    "str:substr": StandardLibraryCallKind.STR_SUBSTR,
+    "str:to_bool": StandardLibraryCallKind.STR_TO_BOOL,
+    "str:to_int": StandardLibraryCallKind.STR_TO_INT,
+    "str:upper": StandardLibraryCallKind.STR_UPPER,
+    "time": StandardLibraryCallKind.SYSCALL_TIME,
+    "unsetenv": StandardLibraryCallKind.UNSETENV,
+    "vec:clear": StandardLibraryCallKind.VEC_CLEAR,
+    "vec:copy": StandardLibraryCallKind.VEC_COPY,
+    "vec:empty": StandardLibraryCallKind.VEC_EMPTY,
+    "vec:get": StandardLibraryCallKind.VEC_GET,
+    "vec:pop": StandardLibraryCallKind.VEC_POP,
+    "vec:push": StandardLibraryCallKind.VEC_PUSH,
+    "vec:set": StandardLibraryCallKind.VEC_SET,
+    "vec:size": StandardLibraryCallKind.VEC_SIZE,
+    "waitpid": StandardLibraryCallKind.SYSCALL_WAITPID,
+    "write": StandardLibraryCallKind.SYSCALL_WRITE,
 }
 
 
@@ -196,6 +199,10 @@ class InstructionGenerator:
 
         if identifier.name in OPERATOR_INSTRUCTIONS:
             return [OPERATOR_INSTRUCTIONS[identifier.name]]
+
+        if identifier.name in STDLIB_INSTRUCTIONS:
+            stdlib_call = StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[identifier.name])
+            return [stdlib_call]
 
         identified = self.program.get_identifier(self.file, identifier.name)
         assert identified
@@ -320,12 +327,12 @@ class InstructionGenerator:
     def instructions_for_member_function(
         self, member_function_name: MemberFunctionName, offset: int
     ) -> List[Instruction]:
-        # TODO we should need this list hardcoded here
-        if member_function_name.type_name in ["bool", "int", "str", "vec", "map"]:
-            key = f"{member_function_name.type_name}:{member_function_name.func_name}"
-            return [OPERATOR_INSTRUCTIONS[key]]
-
         key = f"{member_function_name.type_name}:{member_function_name.func_name}"
+
+        if key in STDLIB_INSTRUCTIONS:
+            stdlib_call = StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[key])
+            return [stdlib_call]
+
         identified = self.program.identifiers[self.file][key]
 
         assert isinstance(identified, Function)

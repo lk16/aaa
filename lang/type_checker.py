@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union
 
 from lang.models.parse import (
-    AaaTreeNode,
     BooleanLiteral,
     Branch,
     BuiltinFunction,
@@ -551,10 +550,8 @@ class TypeChecker:
         return VariableType.from_parsed_type(field_type)
 
     def _check_type_struct_field_query(
-        self, node: AaaTreeNode, type_stack: List[VariableType]
+        self, field_query: StructFieldQuery, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        assert isinstance(node, StructFieldQuery)
-
         type_stack = self._check_string_literal(copy(type_stack))
 
         if len(type_stack) < 2:
@@ -563,13 +560,10 @@ class TypeChecker:
                 function=self.function,
                 signature=StructQuerySignature(),
                 type_stack=type_stack,
-                func_like=node,
+                func_like=field_query,
             )
 
         struct_type, field_selector_type = type_stack[-2:]
-
-        assert isinstance(struct_type, VariableType)
-        assert isinstance(field_selector_type, VariableType)
 
         # This is enforced by the parser
         assert field_selector_type.root_type == RootType.STRING
@@ -579,7 +573,7 @@ class TypeChecker:
                 file=self.file,
                 type_stack=type_stack,
                 function=self.function,
-                field_query=node,
+                field_query=field_query,
             )
 
         struct_name = struct_type.name
@@ -588,21 +582,20 @@ class TypeChecker:
         struct = self.program.identifiers[self.file][struct_name]
         assert isinstance(struct, Struct)
 
-        field_type = self._get_struct_field_type(node, struct)
+        field_type = self._get_struct_field_type(field_query, struct)
 
         type_stack.pop()
         type_stack.append(field_type)
         return type_stack
 
     def _check_type_struct_field_update(
-        self, node: AaaTreeNode, type_stack: List[VariableType]
+        self, field_update: StructFieldUpdate, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        assert isinstance(node, StructFieldUpdate)
         type_stack = self._check_string_literal(copy(type_stack))
 
         type_stack_before = type_stack
         type_stack = self._check_function_body(
-            node.new_value_expr, copy(type_stack_before)
+            field_update.new_value_expr, copy(type_stack_before)
         )
 
         if len(type_stack) < 3:
@@ -611,14 +604,10 @@ class TypeChecker:
                 function=self.function,
                 signature=StructUpdateSignature(),
                 type_stack=type_stack,
-                func_like=node,
+                func_like=field_update,
             )
 
         struct_type, field_selector_type, update_expr_type = type_stack[-3:]
-
-        assert isinstance(struct_type, VariableType)
-        assert isinstance(field_selector_type, VariableType)
-        assert isinstance(update_expr_type, VariableType)
 
         if not all(
             [
@@ -631,7 +620,7 @@ class TypeChecker:
                 function=self.function,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
-                field_update=node,
+                field_update=field_update,
             )
 
         struct_name = struct_type.name
@@ -641,14 +630,14 @@ class TypeChecker:
                 file=self.file,
                 type_stack=type_stack,
                 function=self.function,
-                field_update=node,
+                field_update=field_update,
             )
 
         # These should not raise, they are enforced by the Program class
         struct = self.program.identifiers[self.file][struct_name]
         assert isinstance(struct, Struct)
 
-        field_type = self._get_struct_field_type(node, struct)
+        field_type = self._get_struct_field_type(field_update, struct)
 
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
@@ -656,10 +645,10 @@ class TypeChecker:
                 function=self.function,
                 type_stack=type_stack,
                 struct=struct,
-                field_name=node.field_name.value,
+                field_name=field_update.field_name.value,
                 found_type=update_expr_type,
                 expected_type=field_selector_type,
-                field_update=node,
+                field_update=field_update,
             )
 
         # drop field_selector and update value
