@@ -51,11 +51,11 @@ from lang.models.parse import (
     Loop,
     MemberFunctionName,
     Operator,
+    ParsedType,
     StringLiteral,
     Struct,
     StructFieldQuery,
     StructFieldUpdate,
-    TypeLiteral,
 )
 from lang.models.program import ProgramImport
 from lang.typing.types import RootType, VariableType
@@ -161,7 +161,7 @@ class InstructionGenerator:
             StringLiteral: self.instructions_for_string_literal,
             StructFieldQuery: self.instructions_for_struct_field_query,
             StructFieldUpdate: self.instructions_for_struct_field_update,
-            TypeLiteral: self.instructions_for_type_literal,
+            ParsedType: self.instructions_for_parsed_type,
         }
 
     def generate_instructions(self) -> List[Instruction]:
@@ -290,13 +290,13 @@ class InstructionGenerator:
 
         return instructions
 
-    def instructions_for_type_literal(
+    def instructions_for_parsed_type(
         self, node: AaaTreeNode, offset: int
     ) -> List[Instruction]:
         # TODO make type-independent Push() instruction
         # and use it with Variable.zero_value() instead
 
-        assert isinstance(node, TypeLiteral)
+        assert isinstance(node, ParsedType)
         var_type = VariableType.from_type_literal(node)
 
         root_type = var_type.root_type

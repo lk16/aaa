@@ -15,12 +15,10 @@ from lang.models.parse import (
     MemberFunctionName,
     Operator,
     ParsedType,
-    ParsedTypePlaceholder,
     StringLiteral,
     Struct,
     StructFieldQuery,
     StructFieldUpdate,
-    TypeLiteral,
 )
 
 if TYPE_CHECKING:  # pragma: nocover
@@ -88,10 +86,10 @@ class TypeChecker:
         known_identifiers = self.program.identifiers[self.file]
 
         for argument in self.function.arguments:
-            if not isinstance(argument.type.type, TypeLiteral):
+            if argument.type.is_placeholder:  # TODO is this correct?
                 continue
 
-            arg_type_name = argument.type.type.type_name
+            arg_type_name = argument.type.name
 
             # TODO load list from builtin types from builtins.aaa
             if arg_type_name in ["bool", "int", "map", "str", "vec"]:
@@ -101,7 +99,7 @@ class TypeChecker:
                 raise UnknownArgumentType(
                     file=self.file,
                     function=self.function,
-                    type_literal=argument.type.type,
+                    parsed_type=argument.type,
                 )
 
             if not isinstance(known_identifiers[arg_type_name], Struct):
@@ -109,7 +107,7 @@ class TypeChecker:
                 raise UnknownArgumentType(
                     file=self.file,
                     function=self.function,
-                    type_literal=argument.type.type,
+                    parsed_type=argument.type,
                 )
 
     def _get_function_signature(self, function: Function) -> Signature:
@@ -120,18 +118,15 @@ class TypeChecker:
         placeholder_args: Set[str] = set()
 
         for argument in function.arguments:
-            if isinstance(argument.type.type, ParsedTypePlaceholder):
-                placeholder_args.add(argument.type.type.name)
+            if argument.type.is_placeholder:
+                placeholder_args.add(argument.type.name)
 
         for return_type in function.return_types:
-            if (
-                isinstance(return_type.type, ParsedTypePlaceholder)
-                and return_type.type.name not in placeholder_args
-            ):
+            if return_type.is_placeholder and return_type.name not in placeholder_args:
                 raise UnknownPlaceholderType(
                     file=self.file,
                     function=self.function,
-                    placeholder=return_type.type,
+                    parsed_type=return_type,
                 )
 
         # TODO more and better validation
@@ -139,18 +134,18 @@ class TypeChecker:
         return Signature.from_function(function)
 
     def _get_func_arg_type(self, name: str) -> Optional[VariableType]:
+        # TODO simplify
         for argument in self.function.arguments:
-            type = argument.type.type
-            if isinstance(type, ParsedTypePlaceholder):
-                if type.name == name:
+            if argument.type.is_placeholder:
+                if argument.type.name == name:
                     return VariableType(
-                        root_type=RootType.PLACEHOLDER, type_params=[], name=type.name
+                        root_type=RootType.PLACEHOLDER,
+                        type_params=[],
+                        name=argument.type.name,
                     )
-            elif isinstance(type, TypeLiteral):
+            else:
                 if argument.name == name:
-                    return VariableType.from_type_literal(type)
-            else:  # pragma: nocover
-                assert False
+                    return VariableType.from_type_literal(argument.type)
 
         return None
 
@@ -305,10 +300,10 @@ class TypeChecker:
 
         return stack
 
-    def _check_type_literal(
+    def _check_parsed_type(
         self, node: AaaTreeNode, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        assert isinstance(node, TypeLiteral)
+        assert isinstance(node, ParsedType)
 
         type = VariableType.from_type_literal(node)
         return type_stack + [type]
@@ -449,8 +444,8 @@ class TypeChecker:
                 stack = self._check_operator(child_node, copy(stack))
             elif isinstance(child_node, StringLiteral):
                 stack = self._check_string_literal(child_node, copy(stack))
-            elif isinstance(child_node, TypeLiteral):
-                stack = self._check_type_literal(child_node, copy(stack))
+            elif isinstance(child_node, ParsedType):
+                stack = self._check_parsed_type(child_node, copy(stack))
             elif isinstance(child_node, StructFieldQuery):
                 stack = self._check_type_struct_field_query(child_node, copy(stack))
             elif isinstance(child_node, StructFieldUpdate):
@@ -581,8 +576,7 @@ class TypeChecker:
                 field_name=field_name,
             )
 
-        assert isinstance(field_type.type, TypeLiteral)
-        return VariableType.from_type_literal(field_type.type)
+        return VariableType.from_type_literal(field_type)
 
     def _check_type_struct_field_query(
         self, node: AaaTreeNode, type_stack: List[VariableType]

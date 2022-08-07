@@ -7,9 +7,8 @@ from lang.models.parse import (
     BuiltinFunction,
     Function,
     Identifier,
-    ParsedTypePlaceholder,
+    ParsedType,
     Struct,
-    TypeLiteral,
 )
 from lang.models.program import ProgramImport
 
@@ -83,17 +82,17 @@ class UnknownArgumentType(NamingException):
         *,
         file: Path,
         function: Function,
-        type_literal: TypeLiteral,
+        parsed_type: ParsedType,
     ) -> None:
         self.function = function
-        self.type_literal = type_literal
+        self.parsed_type = parsed_type
         self.file = file
 
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} has argument with unknown type {self.type_literal.type_name}\n"
+        return f"{self.where()}: Function {self.function.name} has argument with unknown type {self.parsed_type.name}\n"
 
 
 class UnknownStructField(NamingException):
@@ -117,20 +116,21 @@ class UnknownStructField(NamingException):
         return f"{self.where()}: Function {self.function.name} tries to use non-existing field {self.field_name} of struct {self.struct.name}\n"
 
 
+# TODO consider merging this with UnknownArgumentType
 class UnknownPlaceholderType(NamingException):
     def __init__(
         self,
         *,
         file: Path,
         function: Function,
-        placeholder: ParsedTypePlaceholder,
+        parsed_type: ParsedType,
     ) -> None:
         self.function = function
-        self.placeholder = placeholder
+        self.parsed_type = parsed_type
         self.file = file
 
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} uses unknown placeholder {self.placeholder.name}\n"
+        return f"{self.where()}: Function {self.function.name} uses unknown placeholder {self.parsed_type.name}\n"

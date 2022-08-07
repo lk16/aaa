@@ -29,12 +29,10 @@ from lang.models.parse import (
     ParsedBuiltinsFile,
     ParsedFile,
     ParsedType,
-    ParsedTypePlaceholder,
     StringLiteral,
     Struct,
     StructFieldQuery,
     StructFieldUpdate,
-    TypeLiteral,
 )
 
 
@@ -45,12 +43,13 @@ class AaaTransformer(Transformer[Any, Any]):
         return arguments
 
     @v_args(inline=False)
-    def argument(
-        self, args: Tuple[Identifier, Union[TypeLiteral, ParsedTypePlaceholder]]
-    ) -> Argument:
-        name = args[0].name
-        name_token = args[0].token
-        return Argument(name=name, name_token=name_token, type=ParsedType(type=args[1]))
+    def argument(self, args: Tuple[Identifier, ParsedType]) -> Argument:
+        name_identifier, parsed_type = args
+        return Argument(
+            name=name_identifier.name,
+            name_token=name_identifier.token,
+            type=parsed_type,
+        )
 
     def boolean(self, token: Token) -> BooleanLiteral:
         return BooleanLiteral(value=token.value)
@@ -223,11 +222,9 @@ class AaaTransformer(Transformer[Any, Any]):
 
     # TODO the token and function name needs to be improved
     def member_function(
-        self, type_name: TypeLiteral, func_name: Identifier
+        self, parsed_type: ParsedType, func_name: Identifier
     ) -> MemberFunctionName:
-        return MemberFunctionName(
-            type_name=type_name.type_name, func_name=func_name.name
-        )
+        return MemberFunctionName(type_name=parsed_type.name, func_name=func_name.name)
 
     def operator(self, token: Token) -> Operator:
         return Operator(value=token.value)
@@ -251,12 +248,12 @@ class AaaTransformer(Transformer[Any, Any]):
         return ParsedFile(functions=functions, imports=imports, structs=structs)
 
     @v_args(inline=False)
-    def return_types(
-        self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
-    ) -> List[ParsedType]:
+    def return_types(self, types: List[ParsedType]) -> List[ParsedType]:
+        # TODO this function seems redundant
+
         return_types: List[ParsedType] = []
         for type in types:
-            return_types.append(ParsedType(type=type))
+            return_types.append(type)
 
         return return_types
 
@@ -298,13 +295,12 @@ class AaaTransformer(Transformer[Any, Any]):
     ) -> MemberFunctionName:
         return MemberFunctionName(type_name=type_name.name, func_name=func_name.name)
 
-    def type(
-        self, type: Union[TypeLiteral, ParsedTypePlaceholder]
-    ) -> Union[TypeLiteral, ParsedTypePlaceholder]:
+    def type(self, type: ParsedType) -> ParsedType:
+        # TODO this function seems redundant
         return type
 
     @v_args(inline=False)
-    def type_literal(self, args: List[Token | List[ParsedType]]) -> TypeLiteral:
+    def type_literal(self, args: List[Token | List[ParsedType]]) -> ParsedType:
         type_name = ""
         type_parameters: List[ParsedType] = []
         for arg in args:
@@ -317,16 +313,14 @@ class AaaTransformer(Transformer[Any, Any]):
             else:  # pragma: nocover
                 assert False
 
-        return TypeLiteral(type_name=type_name, type_parameters=type_parameters)
+        return ParsedType(
+            name=type_name, parameters=type_parameters, is_placeholder=False
+        )
 
     @v_args(inline=False)
-    def type_params(
-        self, types: List[Union[TypeLiteral, ParsedTypePlaceholder]]
-    ) -> List[ParsedType]:
-        type_params: List[ParsedType] = []
-        for type in types:
-            type_params.append(ParsedType(type=type))
-        return type_params
+    def type_params(self, types: List[ParsedType]) -> List[ParsedType]:
+        # TODO this function seems redundant
+        return types
 
-    def type_placeholder(self, identifier: Identifier) -> ParsedTypePlaceholder:
-        return ParsedTypePlaceholder(name=identifier.name)
+    def type_placeholder(self, identifier: Identifier) -> ParsedType:
+        return ParsedType(name=identifier.name, parameters=[], is_placeholder=True)

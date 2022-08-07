@@ -2,7 +2,7 @@ from enum import IntEnum, auto
 from typing import Any, Dict, Final, List
 
 from lang.models import AaaModel
-from lang.models.parse import Function, ParsedTypePlaceholder, TypeLiteral
+from lang.models.parse import Function, ParsedType
 
 
 class RootType(IntEnum):
@@ -27,7 +27,7 @@ class RootType(IntEnum):
         elif name == "map":
             return RootType.MAPPING
         elif name.startswith("*"):
-            assert False
+            return RootType.PLACEHOLDER
         else:
             return RootType.STRUCT
 
@@ -69,31 +69,29 @@ class VariableType(AaaModel):
             assert len(self.type_params) == 0
 
     @classmethod
-    def from_type_literal(cls, type_literal: TypeLiteral) -> "VariableType":
+    def from_type_literal(cls, parsed_type: ParsedType) -> "VariableType":
         # TODO make this work for PLACEHOLDER root_type as well
 
-        root_type = RootType.from_str(type_literal.type_name)
+        root_type = RootType.from_str(parsed_type.name)
 
         type_params: List[VariableType] = []
 
-        for param in type_literal.type_parameters:
-            if isinstance(param.type, TypeLiteral):
-                type_params.append(VariableType.from_type_literal(param.type))
-            elif isinstance(param.type, ParsedTypePlaceholder):
+        for param in parsed_type.parameters:
+            if not parsed_type.is_placeholder:  # TODO swap if/else
+                type_params.append(VariableType.from_type_literal(param))
+            else:
                 type_params.append(
                     VariableType(
                         root_type=RootType.PLACEHOLDER,
                         type_params=[],
-                        name=param.type.name,
+                        name=param.name,
                     )
                 )
-            else:  # pragma: nocover
-                assert False
 
         return VariableType(
             root_type=root_type,
             type_params=type_params,
-            name=type_literal.type_name,
+            name=parsed_type.name,
         )
 
     def __repr__(self) -> str:  # pragma: nocover
@@ -309,32 +307,28 @@ class Signature(AaaModel):
         # TODO reduce code duplication below
 
         for argument in function.arguments:
-            type = argument.type.type  # TODO reduce indirections
-
-            if isinstance(type, TypeLiteral):
-                arg_types.append(VariableType.from_type_literal(type))
-            elif isinstance(type, ParsedTypePlaceholder):
+            if not argument.type.is_placeholder:  # TODO swap if/else
+                arg_types.append(VariableType.from_type_literal(argument.type))
+            else:
                 arg_types.append(
                     VariableType(
-                        root_type=RootType.PLACEHOLDER, type_params=[], name=type.name
+                        root_type=RootType.PLACEHOLDER,
+                        type_params=[],
+                        name=argument.type.name,
                     )
                 )
-            else:  # pragma: nocover
-                assert False
 
         for return_type in function.return_types:
-            type = return_type.type  # TODO reduce indirections
-
-            if isinstance(type, TypeLiteral):
-                return_types.append(VariableType.from_type_literal(type))
-            elif isinstance(type, ParsedTypePlaceholder):
+            if not return_type.is_placeholder:  # TODO swap if/else
+                return_types.append(VariableType.from_type_literal(return_type))
+            else:
                 return_types.append(
                     VariableType(
-                        root_type=RootType.PLACEHOLDER, type_params=[], name=type.name
+                        root_type=RootType.PLACEHOLDER,
+                        type_params=[],
+                        name=return_type.name,
                     )
                 )
-            else:  # pragma: nocover
-                assert False
 
         return Signature(arg_types=arg_types, return_types=return_types)
 

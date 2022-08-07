@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Union
+from typing import List
 
 from lark.lexer import Token
 
@@ -26,11 +26,6 @@ class StringLiteral(FunctionBodyItem):
 
 class BooleanLiteral(FunctionBodyItem):
     value: bool
-
-
-class TypeLiteral(FunctionBodyItem):
-    type_name: str
-    type_parameters: List[ParsedType]
 
 
 class Operator(FunctionBodyItem):
@@ -96,12 +91,10 @@ class FunctionBody(AaaTreeNode):
     items: List[FunctionBodyItem]
 
 
-class ParsedTypePlaceholder(AaaTreeNode):
+class ParsedType(FunctionBodyItem):
     name: str
-
-
-class ParsedType(AaaTreeNode):
-    type: Union[TypeLiteral, ParsedTypePlaceholder]  # TODO use inheritance instead
+    parameters: List[ParsedType]
+    is_placeholder: bool
 
 
 class Argument(AaaTreeNode):
@@ -180,6 +173,5 @@ Branch.update_forward_refs()
 BranchCondition.update_forward_refs()
 BranchIfBody.update_forward_refs()
 BranchElseBody.update_forward_refs()
-TypeLiteral.update_forward_refs()
 StructFieldUpdate.update_forward_refs()
 StructFieldQuery.update_forward_refs()

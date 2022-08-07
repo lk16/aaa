@@ -28,9 +28,7 @@ from lang.models.parse import (
     MemberFunctionName,
     ParsedBuiltinsFile,
     ParsedFile,
-    ParsedTypePlaceholder,
     Struct,
-    TypeLiteral,
 )
 from lang.models.program import ProgramImport
 from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
@@ -99,34 +97,28 @@ class Program:
             return_types: List[VariableType] = []
 
             for argument in function.arguments:
-                if isinstance(argument.type, TypeLiteral):
-                    arg_types.append(VariableType.from_type_literal(argument.type))
-                elif isinstance(argument.type, ParsedTypePlaceholder):
+                if not argument.is_placeholder:  # TODO swap if/else
+                    arg_types.append(VariableType.from_type_literal(argument))
+                else:
                     arg_types.append(
                         VariableType(
                             root_type=RootType.PLACEHOLDER,
                             type_params=[],
-                            name=argument.type.name,
+                            name=argument.name,
                         )
                     )
-                else:  # pragma: nocover
-                    assert False
 
             for return_type in function.return_types:
-                if isinstance(return_type.type, TypeLiteral):
-                    return_types.append(
-                        VariableType.from_type_literal(return_type.type)
-                    )
-                elif isinstance(return_type.type, ParsedTypePlaceholder):
+                if not return_type.is_placeholder:  # TODO swap if/else
+                    return_types.append(VariableType.from_type_literal(return_type))
+                else:
                     return_types.append(
                         VariableType(
                             root_type=RootType.PLACEHOLDER,
                             type_params=[],
-                            name=return_type.type.name,
+                            name=return_type.name,
                         )
                     )
-                else:  # pragma: nocover
-                    assert False
 
             signature = Signature(arg_types=arg_types, return_types=return_types)
 
