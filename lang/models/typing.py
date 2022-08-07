@@ -107,15 +107,6 @@ class VariableType(AaaModel):
 
         return self.root_type == o.root_type and self.type_params == o.type_params
 
-    def get_variable_type_param(self, offset: int) -> "VariableType":
-        """
-        Prevents getting TypePlaceholder type_params
-        """
-
-        type_param = self.type_params[offset]
-        assert isinstance(type_param, VariableType)
-        return type_param
-
 
 class Variable(AaaModel):
     type: VariableType

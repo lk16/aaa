@@ -311,13 +311,13 @@ class InstructionGenerator:
             return [PushString(value="")]
 
         elif root_type == RootType.VECTOR:
-            return [PushVec(item_type=var_type.get_variable_type_param(0))]
+            return [PushVec(item_type=var_type.type_params[0])]
 
         elif root_type == RootType.MAPPING:
             return [
                 PushMap(
-                    key_type=var_type.get_variable_type_param(0),
-                    value_type=var_type.get_variable_type_param(1),
+                    key_type=var_type.type_params[0],
+                    value_type=var_type.type_params[1],
                 )
             ]
 
