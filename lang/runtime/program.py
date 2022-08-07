@@ -32,7 +32,6 @@ from lang.models.parse import (
     Struct,
 )
 from lang.models.program import ProgramImport
-from lang.models.typing import Signature
 from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
@@ -44,7 +43,9 @@ Identifiable = Function | ProgramImport | Struct | BuiltinFunction
 
 # TODO move this out
 class Builtins(AaaModel):
-    functions: Dict[str, List[Tuple[BuiltinFunction, Signature]]]
+    functions: Dict[
+        str, List[BuiltinFunction]
+    ]  # TODO make this Dict[str, BuiltinFunction]
 
     @classmethod
     def empty(cls) -> "Builtins":
@@ -93,8 +94,7 @@ class Program:
             if function.name not in builtins.functions:
                 builtins.functions[function.name] = []
 
-            signature = Signature.from_builtin_function(function)
-            builtins.functions[function.name].append((function, signature))
+            builtins.functions[function.name].append(function)
 
         return builtins, []
 
@@ -285,13 +285,12 @@ class Program:
     def get_identifier(self, file: Path, name: str) -> Optional[Identifiable]:
         # TODO refactor getting builtin identifiers
         if name in self._builtins.functions:
-            tuples = self._builtins.functions[name]
+            builtin_funcs = self._builtins.functions[name]
 
             # TODO make signatures unique
-            assert len(tuples) == 1
+            assert len(builtin_funcs) == 1
 
-            builtin_func, _ = tuples[0]
-            return builtin_func
+            return builtin_funcs[0]
 
         try:
             identified = self.identifiers[file][name]

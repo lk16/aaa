@@ -264,12 +264,11 @@ class TypeChecker:
     def _check_operator(
         self, operator: Operator, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        signatures = self.program._builtins.functions[operator.value]
-
         stack: Optional[List[VariableType]] = None
         last_stack_type_error: Optional[StackTypesError] = None
 
-        for _, signature in signatures:
+        for builtin_function in self.program._builtins.functions[operator.value]:
+            signature = Signature.from_builtin_function(builtin_function)
             try:
                 stack = self._check_and_apply_signature(
                     copy(type_stack), signature, operator
@@ -387,7 +386,8 @@ class TypeChecker:
             ]
 
         elif isinstance(identified, BuiltinFunction):
-            signature = self.program._builtins.functions[identifier.name][0][1]
+            builtin_function = self.program._builtins.functions[identifier.name][0]
+            signature = Signature.from_builtin_function(builtin_function)
             return self._check_and_apply_signature(
                 copy(type_stack), signature, identified
             )
@@ -438,14 +438,12 @@ class TypeChecker:
         if signatures is not None:
             # All builtin member functions should be listed in the builtins file
             # so this should not raise a KeyError.
-            builtin_tuples = self.program._builtins.functions[key]
+            builtin_funcs = self.program._builtins.functions[key]
 
             # All builtin member functions should have a unique signature
-            assert len(builtin_tuples) == 1
+            assert len(builtin_funcs) == 1
 
-            builtin_tuple = builtin_tuples[0]
-            _, signature = builtin_tuple
-
+            signature = Signature.from_builtin_function(builtin_funcs[0])
         else:
             file_identifiers = self.program.identifiers[self.file]
 
