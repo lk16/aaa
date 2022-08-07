@@ -44,7 +44,7 @@ from lang.exceptions.typing import (
     StructUpdateStackError,
     StructUpdateTypeError,
 )
-from lang.typing.types import (
+from lang.models.typing import (
     Bool,
     Int,
     RootType,

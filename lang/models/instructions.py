@@ -3,7 +3,7 @@ from pathlib import Path
 
 from lang.models import AaaModel
 from lang.models.parse import Struct
-from lang.typing.types import VariableType
+from lang.models.typing import VariableType
 
 
 class StandardLibraryCallKind(Enum):

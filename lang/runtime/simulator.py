@@ -48,9 +48,7 @@ from lang.models.instructions import (
 )
 from lang.models.parse import Function
 from lang.models.runtime import CallStackItem
-from lang.runtime.debug import format_str
-from lang.runtime.program import Program
-from lang.typing.types import (
+from lang.models.typing import (
     RootType,
     Str,
     Variable,
@@ -61,6 +59,8 @@ from lang.typing.types import (
     map_var,
     str_var,
 )
+from lang.runtime.debug import format_str
+from lang.runtime.program import Program
 
 
 class Simulator:

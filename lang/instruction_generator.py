@@ -58,7 +58,7 @@ from lang.models.parse import (
     StructFieldUpdate,
 )
 from lang.models.program import ProgramImport
-from lang.typing.types import RootType, VariableType
+from lang.models.typing import RootType, VariableType
 
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.program import Program

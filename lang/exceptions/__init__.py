@@ -3,7 +3,7 @@ from typing import Sequence
 
 from lark.lexer import Token
 
-from lang.typing.types import VariableType
+from lang.models.typing import VariableType
 
 
 class AaaException(Exception):

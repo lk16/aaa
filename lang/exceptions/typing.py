@@ -11,7 +11,7 @@ from lang.models.parse import (
     StructFieldQuery,
     StructFieldUpdate,
 )
-from lang.typing.types import (
+from lang.models.typing import (
     Signature,
     StructQuerySignature,
     StructUpdateSignature,

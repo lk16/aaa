@@ -19,7 +19,7 @@ from lang.exceptions.misc import (
     MissingEnvironmentVariable,
 )
 from lang.exceptions.naming import CollidingIdentifier
-from lang.instructions.generator import InstructionGenerator
+from lang.instruction_generator import InstructionGenerator
 from lang.models import AaaModel
 from lang.models.instructions import Instruction
 from lang.models.parse import (
@@ -31,11 +31,11 @@ from lang.models.parse import (
     Struct,
 )
 from lang.models.program import ProgramImport
+from lang.models.typing import Signature
 from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
-from lang.typing.checker import TypeChecker
-from lang.typing.types import Signature
+from lang.type_checker import TypeChecker
 
 # Identifiable are things identified uniquely by a filepath and name
 Identifiable = Function | ProgramImport | Struct | BuiltinFunction
