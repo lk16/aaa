@@ -298,9 +298,6 @@ def list_var(
     )
 
 
-TypeStack = List[VariableType]
-
-
 class Signature(AaaModel):
     arg_types: List[VariableType]
     return_types: List[VariableType]

@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Set, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union
 
 from lang.models.parse import (
     AaaTreeNode,
@@ -54,7 +54,6 @@ from lang.typing.types import (
     Str,
     StructQuerySignature,
     StructUpdateSignature,
-    TypeStack,
     VariableType,
 )
 
@@ -157,10 +156,10 @@ class TypeChecker:
 
     def _check_and_apply_signature(
         self,
-        type_stack: TypeStack,
+        type_stack: List[VariableType],
         signature: Signature,
         func_like: Union[Operator, Function, MemberFunctionName, BuiltinFunction],
-    ) -> TypeStack:
+    ) -> List[VariableType]:
         # TODO load signature here, instead of passing it as argument
 
         stack = copy(type_stack)
@@ -264,29 +263,31 @@ class TypeChecker:
             assert False
 
     def _check_integer_literal(
-        self, node: AaaTreeNode, type_stack: TypeStack
-    ) -> TypeStack:
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, IntegerLiteral)
         return type_stack + [Int]
 
     def _check_string_literal(
-        self, node: AaaTreeNode, type_stack: TypeStack
-    ) -> TypeStack:
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, StringLiteral)
         return type_stack + [Str]
 
     def _check_boolean_literal(
-        self, node: AaaTreeNode, type_stack: TypeStack
-    ) -> TypeStack:
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, BooleanLiteral)
         return type_stack + [Bool]
 
-    def _check_operator(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_operator(
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, Operator)
 
         signatures = self.program._builtins.functions[node.value]
 
-        stack: Optional[TypeStack] = None
+        stack: Optional[List[VariableType]] = None
         last_stack_type_error: Optional[StackTypesError] = None
 
         for _, signature in signatures:
@@ -305,14 +306,16 @@ class TypeChecker:
         return stack
 
     def _check_type_literal(
-        self, node: AaaTreeNode, type_stack: TypeStack
-    ) -> TypeStack:
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, TypeLiteral)
 
         type = VariableType.from_type_literal(node)
         return type_stack + [type]
 
-    def _check_condition(self, node: AaaTreeNode, type_stack: TypeStack) -> None:
+    def _check_condition(
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> None:
         assert isinstance(node, FunctionBody)
 
         # Condition is a special type of function body:
@@ -332,7 +335,9 @@ class TypeChecker:
                 condition_stack=condition_stack,
             )
 
-    def _check_branch(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_branch(
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, Branch)
 
         self._check_condition(node.condition, copy(type_stack))
@@ -356,7 +361,9 @@ class TypeChecker:
         # we can return either one, since they are the same
         return if_stack
 
-    def _check_loop(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_loop(
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, Loop)
 
         self._check_condition(node.condition, copy(type_stack))
@@ -376,7 +383,9 @@ class TypeChecker:
         # we can return either one, since they are the same
         return loop_stack
 
-    def _check_identifier(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_identifier(
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, Identifier)
         # If it's a function argument, just push the type.
 
@@ -418,8 +427,8 @@ class TypeChecker:
             assert False
 
     def _check_function_body(
-        self, node: AaaTreeNode, type_stack: TypeStack
-    ) -> TypeStack:
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, FunctionBody)
 
         stack = copy(type_stack)
@@ -452,8 +461,8 @@ class TypeChecker:
         return stack
 
     def _check_member_function_call(
-        self, node: AaaTreeNode, type_stack: TypeStack
-    ) -> TypeStack:
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, MemberFunctionName)
 
         key = f"{node.type_name}:{node.func_name}"
@@ -484,7 +493,9 @@ class TypeChecker:
 
         return self._check_and_apply_signature(type_stack, signature, node)
 
-    def _check_function(self, node: AaaTreeNode, type_stack: TypeStack) -> TypeStack:
+    def _check_function(
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, Function)
 
         if node.name == "main":
@@ -574,8 +585,8 @@ class TypeChecker:
         return VariableType.from_type_literal(field_type.type)
 
     def _check_type_struct_field_query(
-        self, node: AaaTreeNode, type_stack: TypeStack
-    ) -> TypeStack:
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, StructFieldQuery)
 
         type_stack = self._check_string_literal(node.field_name, copy(type_stack))
@@ -618,8 +629,8 @@ class TypeChecker:
         return type_stack
 
     def _check_type_struct_field_update(
-        self, node: AaaTreeNode, type_stack: TypeStack
-    ) -> TypeStack:
+        self, node: AaaTreeNode, type_stack: List[VariableType]
+    ) -> List[VariableType]:
         assert isinstance(node, StructFieldUpdate)
         type_stack = self._check_string_literal(node.field_name, copy(type_stack))
 
