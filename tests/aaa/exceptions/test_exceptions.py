@@ -336,9 +336,11 @@ def test_one_error(
                 """,
             },
             CyclicImportError,
-            "",
+            "Cyclic import dependency was detected:\n"
+            + "           /foo/main.aaa\n"
+            + "depends on /foo/foo.aaa\n"
+            + "depends on /foo/main.aaa\n",
             id="cyclic-import",
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             {

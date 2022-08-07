@@ -1,5 +1,6 @@
 import os
 import sys
+from copy import deepcopy
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple, Union
@@ -116,7 +117,9 @@ class Program:
 
         if file in self.file_load_stack:
             return [
-                CyclicImportError(dependencies=self.file_load_stack, failed_import=file)
+                CyclicImportError(
+                    dependencies=deepcopy(self.file_load_stack), failed_import=file
+                )
             ]
 
         self.file_load_stack.append(file)
