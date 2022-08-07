@@ -191,18 +191,16 @@ class InstructionGenerator:
         return loop_instructions
 
     def instructions_for_identfier(self, identifier: Identifier) -> List[Instruction]:
-        # TODO refactor
-
-        for argument in self.function.arguments:
-            if identifier.name == argument.name:
-                return [PushFunctionArgument(arg_name=argument.name)]
-
         if identifier.name in OPERATOR_INSTRUCTIONS:
             return [OPERATOR_INSTRUCTIONS[identifier.name]]
 
         if identifier.name in STDLIB_INSTRUCTIONS:
             stdlib_call = StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[identifier.name])
             return [stdlib_call]
+
+        for argument in self.function.arguments:
+            if identifier.name == argument.name:
+                return [PushFunctionArgument(arg_name=argument.name)]
 
         identified = self.program.get_identifier(self.file, identifier.name)
         assert identified
@@ -294,11 +292,7 @@ class InstructionGenerator:
     def instructions_for_parsed_type(
         self, parsed_type: ParsedType
     ) -> List[Instruction]:
-        # TODO make type-independent Push() instruction
-        # and use it with Variable.zero_value() instead
-
         var_type = VariableType.from_parsed_type(parsed_type)
-
         root_type = var_type.root_type
 
         if root_type == RootType.INTEGER:
