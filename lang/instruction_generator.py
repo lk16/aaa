@@ -191,9 +191,6 @@ class InstructionGenerator:
         return loop_instructions
 
     def instructions_for_identfier(self, identifier: Identifier) -> List[Instruction]:
-        if identifier.name in OPERATOR_INSTRUCTIONS:
-            return [OPERATOR_INSTRUCTIONS[identifier.name]]
-
         if identifier.name in STDLIB_INSTRUCTIONS:
             stdlib_call = StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[identifier.name])
             return [stdlib_call]

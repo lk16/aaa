@@ -126,7 +126,7 @@ class Variable(AaaModel):
             zero_val = []
         elif type.root_type in [RootType.MAPPING, RootType.STRUCT]:
             zero_val = {}
-        elif type.root_type == RootType.PLACEHOLDER:
+        elif type.root_type == RootType.PLACEHOLDER:  # pragma: nocover
             # Can't get zero value of placeholder type.
             assert False
         else:  # pragma: nocover
@@ -143,7 +143,7 @@ class Variable(AaaModel):
     def has_root_type(self, root_type: RootType) -> bool:  # pragma: nocover
         return self.root_type() == root_type
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         root_type = self.root_type()
 
         if root_type in [RootType.INTEGER, RootType.STRING]:
