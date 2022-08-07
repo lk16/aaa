@@ -86,7 +86,7 @@ class TypeChecker:
         known_identifiers = self.program.identifiers[self.file]
 
         for argument in self.function.arguments:
-            if argument.type.is_placeholder:  # TODO is this correct?
+            if argument.type.is_placeholder:
                 continue
 
             arg_type_name = argument.type.name
@@ -134,18 +134,11 @@ class TypeChecker:
         return Signature.from_function(function)
 
     def _get_func_arg_type(self, name: str) -> Optional[VariableType]:
-        # TODO simplify
         for argument in self.function.arguments:
-            if argument.type.is_placeholder:
-                if argument.type.name == name:
-                    return VariableType(
-                        root_type=RootType.PLACEHOLDER,
-                        type_params=[],
-                        name=argument.type.name,
-                    )
-            else:
-                if argument.name == name:
-                    return VariableType.from_parsed_type(argument.type)
+            if (argument.type.is_placeholder and argument.type.name == name) or (
+                not argument.type.is_placeholder and argument.name == name
+            ):
+                return VariableType.from_parsed_type(argument.type)
 
         return None
 
