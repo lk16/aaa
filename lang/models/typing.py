@@ -2,7 +2,7 @@ from enum import IntEnum, auto
 from typing import Any, Dict, Final, List
 
 from lang.models import AaaModel
-from lang.models.parse import BuiltinFunction, Function, ParsedType
+from lang.models.parse import BuiltinFunction, ParsedType
 
 
 class RootType(IntEnum):
@@ -238,19 +238,6 @@ def list_var(
 class Signature(AaaModel):
     arg_types: List[VariableType]
     return_types: List[VariableType]
-
-    @classmethod
-    def from_function(cls, function: Function) -> "Signature":
-        return Signature(
-            arg_types=[
-                VariableType.from_parsed_type(argument.type)
-                for argument in function.arguments
-            ],
-            return_types=[
-                VariableType.from_parsed_type(return_type)
-                for return_type in function.return_types
-            ],
-        )
 
     @classmethod
     def from_builtin_function(cls, builtin_function: BuiltinFunction) -> "Signature":

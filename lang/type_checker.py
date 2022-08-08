@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from lang.models.parse import (
     BooleanLiteral,
@@ -27,7 +27,6 @@ from lang.exceptions.naming import (
     CollidingIdentifier,
     UnknownArgumentType,
     UnknownIdentifier,
-    UnknownPlaceholderType,
     UnknownStructField,
 )
 from lang.exceptions.typing import (
@@ -69,7 +68,9 @@ class TypeChecker:
     def check(self) -> None:
         self._check_argument_types()
         computed_return_types = self._check_function(self.function, [])
-        expected_return_types = self._get_function_signature(self.function).return_types
+        expected_return_types = self.program.get_signature(
+            self.file, self.function
+        ).return_types
 
         if computed_return_types != expected_return_types:
 
@@ -109,29 +110,6 @@ class TypeChecker:
                     parsed_type=argument.type,
                 )
 
-    def _get_function_signature(self, function: Function) -> Signature:
-        # TODO consider moving this entire function to Program
-
-        # TODO cache result of calling this function
-
-        placeholder_args: Set[str] = set()
-
-        for argument in function.arguments:
-            if argument.type.is_placeholder:
-                placeholder_args.add(argument.type.name)
-
-        for return_type in function.return_types:
-            if return_type.is_placeholder and return_type.name not in placeholder_args:
-                raise UnknownPlaceholderType(
-                    file=self.file,
-                    function=self.function,
-                    parsed_type=return_type,
-                )
-
-        # TODO more and better validation
-
-        return Signature.from_function(function)
-
     def _get_func_arg_type(self, name: str) -> Optional[VariableType]:
         for argument in self.function.arguments:
             if (argument.type.is_placeholder and argument.type.name == name) or (
@@ -147,10 +125,7 @@ class TypeChecker:
         signature: Signature,
         func_like: Union[Operator, Function, MemberFunctionName, BuiltinFunction],
     ) -> List[VariableType]:
-        # TODO load signature here, instead of passing it as argument
-
         stack = copy(type_stack)
-
         arg_count = len(signature.arg_types)
 
         if len(stack) < arg_count:
@@ -367,7 +342,7 @@ class TypeChecker:
             )
 
         if isinstance(identified, Function):
-            signature = self._get_function_signature(identified)
+            signature = self.program.get_signature(self.file, identified)
             return self._check_and_apply_signature(
                 copy(type_stack), signature, identified
             )
@@ -444,7 +419,7 @@ class TypeChecker:
                 raise NotImplementedError from e
 
             assert isinstance(function, Function)
-            signature = self._get_function_signature(function)
+            signature = self.program.get_signature(self.file, function)
 
         return self._check_and_apply_signature(
             type_stack, signature, member_function_name
@@ -466,8 +441,7 @@ class TypeChecker:
                 )
 
         if isinstance(function.name, MemberFunctionName):
-
-            signature = self._get_function_signature(function)
+            signature = self.program.get_signature(self.file, function)
             struct = self.program.identifiers[self.file][function.name.type_name]
             assert isinstance(struct, Struct)
 

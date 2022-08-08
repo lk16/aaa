@@ -3,7 +3,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from lark.exceptions import UnexpectedInput
 
@@ -19,7 +19,7 @@ from lang.exceptions.misc import (
     MainFunctionNotFound,
     MissingEnvironmentVariable,
 )
-from lang.exceptions.naming import CollidingIdentifier
+from lang.exceptions.naming import CollidingIdentifier, UnknownPlaceholderType
 from lang.instruction_generator import InstructionGenerator
 from lang.models.instructions import Instruction
 from lang.models.parse import (
@@ -30,6 +30,7 @@ from lang.models.parse import (
     Struct,
 )
 from lang.models.program import Builtins, ProgramImport
+from lang.models.typing import Signature, VariableType
 from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
@@ -44,6 +45,7 @@ class Program:
         self.entry_point_file = file.resolve()
         self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
         self.function_instructions: Dict[Path, Dict[str, List[Instruction]]] = {}
+        self.function_signatures: Dict[Path, Dict[str, Signature]] = {}
 
         # Used to detect cyclic import loops
         self.file_load_stack: List[Path] = []
@@ -298,6 +300,44 @@ class Program:
 
     def get_instructions(self, file: Path, name: str) -> List[Instruction]:
         return self.function_instructions[file][name]
+
+    def get_signature(self, file: Path, function: Function) -> Signature:
+        try:
+            return self.function_signatures[file][function.identify()]
+        except KeyError:
+            pass
+
+        placeholder_args: Set[str] = set()
+
+        for argument in function.arguments:
+            if argument.type.is_placeholder:
+                placeholder_args.add(argument.type.name)
+
+        for return_type in function.return_types:
+            if return_type.is_placeholder and return_type.name not in placeholder_args:
+                raise UnknownPlaceholderType(
+                    file=file,
+                    function=function,
+                    parsed_type=return_type,
+                )
+
+        signature = Signature(
+            arg_types=[
+                VariableType.from_parsed_type(argument.type)
+                for argument in function.arguments
+            ],
+            return_types=[
+                VariableType.from_parsed_type(return_type)
+                for return_type in function.return_types
+            ],
+        )
+
+        if file not in self.function_signatures:
+            self.function_signatures[file] = {}
+
+        self.function_signatures[file][function.identify()] = signature
+
+        return signature
 
     def print_all_instructions(self) -> None:  # pragma: nocover
         for functions in self.function_instructions.values():
