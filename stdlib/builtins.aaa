@@ -35,10 +35,6 @@ builtin_fn "and" args bool, bool return bool
 builtin_fn "not" args bool       return bool
 builtin_fn "or"  args bool, bool return bool
 
-// string operators, TODO these are deprecated
-builtin_fn "+" args str, str return str
-builtin_fn "=" args str, str return bool
-
 builtin_fn "vec:clear" args vec[*a]          return vec[*a]
 builtin_fn "vec:copy"  args vec[*a]          return vec[*a], vec[*a]
 builtin_fn "vec:empty" args vec[*a]          return vec[*a], bool

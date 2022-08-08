@@ -95,7 +95,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             'fn main { 3 " " + . }',
             StackTypesError,
             "/foo/main.aaa:1:1 Function main has invalid stack types when calling +\n"
-            + "Expected stack top: str str\n"
+            + "Expected stack top: int int\n"
             + "       Found stack: int str\n",
             id="stack-types",
         ),

@@ -264,24 +264,9 @@ class TypeChecker:
     def _check_operator(
         self, operator: Operator, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        stack: Optional[List[VariableType]] = None
-        last_stack_type_error: Optional[StackTypesError] = None
-
-        for builtin_function in self.program._builtins.functions[operator.value]:
-            signature = Signature.from_builtin_function(builtin_function)
-            try:
-                stack = self._check_and_apply_signature(
-                    copy(type_stack), signature, operator
-                )
-                break
-            except StackTypesError as e:
-                last_stack_type_error = e
-
-        if stack is None:
-            assert last_stack_type_error
-            raise last_stack_type_error
-
-        return stack
+        builtin_function = self.program._builtins.functions[operator.value]
+        signature = Signature.from_builtin_function(builtin_function)
+        return self._check_and_apply_signature(copy(type_stack), signature, operator)
 
     def _check_parsed_type(
         self, parsed_type: ParsedType, type_stack: List[VariableType]
@@ -386,7 +371,7 @@ class TypeChecker:
             ]
 
         elif isinstance(identified, BuiltinFunction):
-            builtin_function = self.program._builtins.functions[identifier.name][0]
+            builtin_function = self.program._builtins.functions[identifier.name]
             signature = Signature.from_builtin_function(builtin_function)
             return self._check_and_apply_signature(
                 copy(type_stack), signature, identified
@@ -433,17 +418,12 @@ class TypeChecker:
     ) -> List[VariableType]:
         key = f"{member_function_name.type_name}:{member_function_name.func_name}"
 
-        signatures = self.program._builtins.functions.get(key)
+        builtin_function = self.program._builtins.functions.get(key)
 
-        if signatures is not None:
+        if builtin_function:
             # All builtin member functions should be listed in the builtins file
             # so this should not raise a KeyError.
-            builtin_funcs = self.program._builtins.functions[key]
-
-            # All builtin member functions should have a unique signature
-            assert len(builtin_funcs) == 1
-
-            signature = Signature.from_builtin_function(builtin_funcs[0])
+            signature = Signature.from_builtin_function(builtin_function)
         else:
             file_identifiers = self.program.identifiers[self.file]
 

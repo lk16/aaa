@@ -43,9 +43,7 @@ Identifiable = Function | ProgramImport | Struct | BuiltinFunction
 
 # TODO move this out
 class Builtins(AaaModel):
-    functions: Dict[
-        str, List[BuiltinFunction]
-    ]  # TODO make this Dict[str, BuiltinFunction]
+    functions: Dict[str, BuiltinFunction]
 
     @classmethod
     def empty(cls) -> "Builtins":
@@ -91,10 +89,7 @@ class Program:
             return builtins, [FileReadError(builtins_file)]
 
         for function in parsed_file.functions:
-            if function.name not in builtins.functions:
-                builtins.functions[function.name] = []
-
-            builtins.functions[function.name].append(function)
+            builtins.functions[function.name] = function
 
         return builtins, []
 
@@ -283,14 +278,8 @@ class Program:
         return errors
 
     def get_identifier(self, file: Path, name: str) -> Optional[Identifiable]:
-        # TODO refactor getting builtin identifiers
         if name in self._builtins.functions:
-            builtin_funcs = self._builtins.functions[name]
-
-            # TODO make signatures unique
-            assert len(builtin_funcs) == 1
-
-            return builtin_funcs[0]
+            return self._builtins.functions[name]
 
         try:
             identified = self.identifiers[file][name]
