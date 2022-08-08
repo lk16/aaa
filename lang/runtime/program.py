@@ -23,7 +23,6 @@ from lang.exceptions.naming import CollidingIdentifier
 from lang.instruction_generator import InstructionGenerator
 from lang.models.instructions import Instruction
 from lang.models.parse import (
-    BuiltinFunction,
     Function,
     MemberFunctionName,
     ParsedBuiltinsFile,
@@ -37,8 +36,7 @@ from lang.runtime.debug import format_str
 from lang.type_checker import TypeChecker
 
 # Identifiable are things identified uniquely by a filepath and name
-# TODO remove BuiltinFunction
-Identifiable = Function | ProgramImport | Struct | BuiltinFunction
+Identifiable = Function | ProgramImport | Struct
 
 
 class Program:
@@ -271,9 +269,6 @@ class Program:
         return errors
 
     def get_identifier(self, file: Path, name: str) -> Optional[Identifiable]:
-        if name in self._builtins.functions:
-            return self._builtins.functions[name]
-
         try:
             identified = self.identifiers[file][name]
         except KeyError:

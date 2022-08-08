@@ -348,6 +348,17 @@ class TypeChecker:
             return copy(type_stack) + [arg_type]
 
         # If it's not a function argument, we must be calling a function.
+
+        try:
+            builtin_function = self.program._builtins.functions[identifier.name]
+        except KeyError:
+            pass
+        else:
+            signature = Signature.from_builtin_function(builtin_function)
+            return self._check_and_apply_signature(
+                copy(type_stack), signature, builtin_function
+            )
+
         identified = self.program.get_identifier(self.file, identifier.name)
 
         if not identified:
