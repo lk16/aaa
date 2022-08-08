@@ -21,7 +21,6 @@ from lang.exceptions.misc import (
 )
 from lang.exceptions.naming import CollidingIdentifier
 from lang.instruction_generator import InstructionGenerator
-from lang.models import AaaModel
 from lang.models.instructions import Instruction
 from lang.models.parse import (
     BuiltinFunction,
@@ -31,23 +30,15 @@ from lang.models.parse import (
     ParsedFile,
     Struct,
 )
-from lang.models.program import ProgramImport
+from lang.models.program import Builtins, ProgramImport
 from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
 from lang.type_checker import TypeChecker
 
 # Identifiable are things identified uniquely by a filepath and name
+# TODO remove BuiltinFunction
 Identifiable = Function | ProgramImport | Struct | BuiltinFunction
-
-
-# TODO move this out
-class Builtins(AaaModel):
-    functions: Dict[str, BuiltinFunction]
-
-    @classmethod
-    def empty(cls) -> "Builtins":
-        return Builtins(functions={})
 
 
 class Program:
@@ -58,6 +49,8 @@ class Program:
 
         # Used to detect cyclic import loops
         self.file_load_stack: List[Path] = []
+
+        # TODO don't load in __init__, but in separate function.
 
         self._builtins, self.file_load_errors = self._load_builtins()
 
