@@ -4,17 +4,8 @@ from typing import Dict, List
 
 from lark.lexer import Token
 
-from lang.models import AaaModel
+from lang.models import AaaTreeNode, FunctionBodyItem
 from lang.models.typing.var_type import VariableType
-
-
-class AaaTreeNode(AaaModel):
-    class Config:
-        frozen = True
-
-
-class FunctionBodyItem(AaaTreeNode):
-    ...
 
 
 class IntegerLiteral(FunctionBodyItem):
@@ -89,8 +80,7 @@ class StructFieldUpdate(FunctionBodyItem):
 
 
 class FunctionBody(AaaTreeNode):
-    # TODO make VariableType a FunctionBodyItem
-    items: List[FunctionBodyItem | VariableType]
+    items: List[FunctionBodyItem]
 
 
 class Argument(AaaTreeNode):

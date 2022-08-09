@@ -1,7 +1,7 @@
 from enum import IntEnum, auto
 from typing import Any, Final, List
 
-from lang.models import AaaModel
+from lang.models import FunctionBodyItem
 
 
 class RootType(IntEnum):
@@ -32,8 +32,7 @@ class RootType(IntEnum):
             assert False
 
 
-# Move into models/parse
-class VariableType(AaaModel):
+class VariableType(FunctionBodyItem):
     root_type: RootType
     type_params: List["VariableType"]
     name: str = ""

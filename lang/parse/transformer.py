@@ -3,6 +3,7 @@ from typing import Any, List, Optional, Tuple, Union
 from lark.lexer import Token
 from lark.visitors import Transformer, v_args
 
+from lang.models import FunctionBodyItem
 from lang.models.parse import (
     Argument,
     BooleanLiteral,
@@ -15,7 +16,6 @@ from lang.models.parse import (
     BuiltinFunctionReturnTypes,
     Function,
     FunctionBody,
-    FunctionBodyItem,
     Identifier,
     Import,
     ImportItem,
