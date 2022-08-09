@@ -8,7 +8,6 @@ class Variable(AaaModel):
     type: VariableType
     value: Any
 
-    # TODO make member function of VariableType
     @classmethod
     def zero_value(cls, type: VariableType) -> "Variable":
         zero_val: Any

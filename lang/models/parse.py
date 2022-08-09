@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from lark.lexer import Token
 
@@ -103,6 +103,15 @@ class Function(AaaTreeNode):
             return f"{self.name.type_name}:{self.name.func_name}"
         else:  # pragma: nocover
             assert False
+
+    def get_arg_type(self, name: str) -> Optional[VariableType]:
+        for argument in self.arguments:
+            if (argument.type.is_placeholder() and argument.type.name == name) or (
+                not argument.type.is_placeholder() and argument.name == name
+            ):
+                return argument.type
+
+        return None
 
 
 class ImportItem(AaaTreeNode):

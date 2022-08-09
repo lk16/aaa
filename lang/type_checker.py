@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
 from lang.models.parse import (
     BooleanLiteral,
@@ -104,17 +104,6 @@ class TypeChecker:
                     function=self.function,
                     var_type=argument.type,
                 )
-
-    def _get_func_arg_type(self, name: str) -> Optional[VariableType]:
-        # TODO make function member function
-
-        for argument in self.function.arguments:
-            if (argument.type.is_placeholder() and argument.type.name == name) or (
-                not argument.type.is_placeholder() and argument.name == name
-            ):
-                return argument.type
-
-        return None
 
     def _check_and_apply_signature(
         self,
@@ -312,7 +301,7 @@ class TypeChecker:
     def _check_identifier(
         self, identifier: Identifier, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        arg_type = self._get_func_arg_type(identifier.name)
+        arg_type = self.function.get_arg_type(identifier.name)
 
         if arg_type is not None:
             # If it's a function argument, just push the type.
