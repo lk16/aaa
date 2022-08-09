@@ -497,18 +497,15 @@ class TypeChecker:
         field_type: Optional[ParsedType] = None
         field_name = node.field_name.value
 
-        for field in struct.fields:
-            if field.name == field_name:
-                field_type = field.type
-                break
-
-        if not field_type:
+        try:
+            field_type = struct.fields[field_name]
+        except KeyError as e:
             raise UnknownStructField(
                 file=self.file,
                 function=self.function,
                 struct=struct,
                 field_name=field_name,
-            )
+            ) from e
 
         return VariableType.from_parsed_type(field_type)
 

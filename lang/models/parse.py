@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import Dict, List
 
 from lark.lexer import Token
 
@@ -133,7 +133,7 @@ class Import(AaaTreeNode):
 class Struct(AaaTreeNode):
     token: Token
     name: str
-    fields: List[Argument]
+    fields: Dict[str, ParsedType]
 
     def identify(self) -> str:
         return self.name
