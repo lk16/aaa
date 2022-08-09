@@ -2,15 +2,9 @@ from pathlib import Path
 from typing import Union
 
 from lang.exceptions import NamingException, error_location
-from lang.models.parse import (
-    Argument,
-    BuiltinFunction,
-    Function,
-    Identifier,
-    ParsedType,
-    Struct,
-)
+from lang.models.parse import Argument, BuiltinFunction, Function, Identifier, Struct
 from lang.models.program import ProgramImport
+from lang.models.typing.var_type import VariableType
 
 
 class CollidingIdentifier(NamingException):
@@ -82,17 +76,17 @@ class UnknownArgumentType(NamingException):
         *,
         file: Path,
         function: Function,
-        parsed_type: ParsedType,
+        var_type: VariableType,
     ) -> None:
         self.function = function
-        self.parsed_type = parsed_type
+        self.var_type = var_type
         self.file = file
 
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} has argument with unknown type {self.parsed_type.name}\n"
+        return f"{self.where()}: Function {self.function.name} has argument with unknown type {self.var_type.name}\n"
 
 
 class UnknownStructField(NamingException):
@@ -123,14 +117,14 @@ class UnknownPlaceholderType(NamingException):
         *,
         file: Path,
         function: Function,
-        parsed_type: ParsedType,
+        var_type: VariableType,
     ) -> None:
         self.function = function
-        self.parsed_type = parsed_type
+        self.var_type = var_type
         self.file = file
 
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} uses unknown placeholder {self.parsed_type.name}\n"
+        return f"{self.where()}: Function {self.function.name} uses unknown placeholder {self.var_type.name}\n"

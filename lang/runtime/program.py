@@ -30,7 +30,7 @@ from lang.models.parse import (
     Struct,
 )
 from lang.models.program import Builtins, ProgramImport
-from lang.models.typing import Signature, VariableType
+from lang.models.typing.signature import Signature
 from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
@@ -314,22 +314,19 @@ class Program:
                 placeholder_args.add(argument.type.name)
 
         for return_type in function.return_types:
-            if return_type.is_placeholder and return_type.name not in placeholder_args:
+            if (
+                return_type.is_placeholder()
+                and return_type.name not in placeholder_args
+            ):
                 raise UnknownPlaceholderType(
                     file=file,
                     function=function,
-                    parsed_type=return_type,
+                    var_type=return_type,
                 )
 
         signature = Signature(
-            arg_types=[
-                VariableType.from_parsed_type(argument.type)
-                for argument in function.arguments
-            ],
-            return_types=[
-                VariableType.from_parsed_type(return_type)
-                for return_type in function.return_types
-            ],
+            arg_types=[argument.type for argument in function.arguments],
+            return_types=function.return_types,
         )
 
         if file not in self.function_signatures:

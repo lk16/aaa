@@ -5,6 +5,7 @@ from typing import Dict, List
 from lark.lexer import Token
 
 from lang.models import AaaModel
+from lang.models.typing.var_type import VariableType
 
 
 class AaaTreeNode(AaaModel):
@@ -88,26 +89,21 @@ class StructFieldUpdate(FunctionBodyItem):
 
 
 class FunctionBody(AaaTreeNode):
-    items: List[FunctionBodyItem]
-
-
-class ParsedType(FunctionBodyItem):
-    name: str
-    parameters: List[ParsedType]
-    is_placeholder: bool
+    # TODO make VariableType a FunctionBodyItem
+    items: List[FunctionBodyItem | VariableType]
 
 
 class Argument(AaaTreeNode):
     name_token: Token
     name: str
-    type: ParsedType
+    type: VariableType
 
 
 class Function(AaaTreeNode):
     token: Token
     name: str | MemberFunctionName
     arguments: List[Argument]
-    return_types: List[ParsedType]
+    return_types: List[VariableType]
     body: FunctionBody
 
     def identify(self) -> str:
@@ -133,27 +129,28 @@ class Import(AaaTreeNode):
 class Struct(AaaTreeNode):
     token: Token
     name: str
-    fields: Dict[str, ParsedType]
+    fields: Dict[str, VariableType]
 
     def identify(self) -> str:
         return self.name
 
 
+# TODO make builtin functions just a regular Function
 class BuiltinFunction(AaaTreeNode):
     name: str
-    arguments: List[ParsedType]
-    return_types: List[ParsedType]
+    arguments: List[VariableType]
+    return_types: List[VariableType]
 
     def identify(self) -> str:
         return self.name
 
 
 class BuiltinFunctionArguments(AaaTreeNode):
-    value: List[ParsedType]
+    value: List[VariableType]
 
 
 class BuiltinFunctionReturnTypes(AaaTreeNode):
-    value: List[ParsedType]
+    value: List[VariableType]
 
 
 class ParsedBuiltinsFile(AaaTreeNode):

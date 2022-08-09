@@ -13,7 +13,6 @@ from lang.models.parse import (
     Loop,
     MemberFunctionName,
     Operator,
-    ParsedType,
     StringLiteral,
     Struct,
     StructFieldQuery,
@@ -42,16 +41,12 @@ from lang.exceptions.typing import (
     StructUpdateStackError,
     StructUpdateTypeError,
 )
-from lang.models.typing import (
-    Bool,
-    Int,
-    RootType,
+from lang.models.typing.signature import (
     Signature,
-    Str,
     StructQuerySignature,
     StructUpdateSignature,
-    VariableType,
 )
+from lang.models.typing.var_type import Bool, Int, RootType, Str, VariableType
 
 
 class TypeChecker:
@@ -86,7 +81,7 @@ class TypeChecker:
         known_identifiers = self.program.identifiers[self.file]
 
         for argument in self.function.arguments:
-            if argument.type.is_placeholder:
+            if argument.type.is_placeholder():
                 continue
 
             arg_type_name = argument.type.name
@@ -99,7 +94,7 @@ class TypeChecker:
                 raise UnknownArgumentType(
                     file=self.file,
                     function=self.function,
-                    parsed_type=argument.type,
+                    var_type=argument.type,
                 )
 
             if not isinstance(known_identifiers[arg_type_name], Struct):
@@ -107,15 +102,17 @@ class TypeChecker:
                 raise UnknownArgumentType(
                     file=self.file,
                     function=self.function,
-                    parsed_type=argument.type,
+                    var_type=argument.type,
                 )
 
     def _get_func_arg_type(self, name: str) -> Optional[VariableType]:
+        # TODO make function member function
+
         for argument in self.function.arguments:
-            if (argument.type.is_placeholder and argument.type.name == name) or (
-                not argument.type.is_placeholder and argument.name == name
+            if (argument.type.is_placeholder() and argument.type.name == name) or (
+                not argument.type.is_placeholder() and argument.name == name
             ):
-                return VariableType.from_parsed_type(argument.type)
+                return argument.type
 
         return None
 
@@ -244,10 +241,9 @@ class TypeChecker:
         return self._check_and_apply_signature(copy(type_stack), signature, operator)
 
     def _check_parsed_type(
-        self, parsed_type: ParsedType, type_stack: List[VariableType]
+        self, var_type: VariableType, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        type = VariableType.from_parsed_type(parsed_type)
-        return type_stack + [type]
+        return type_stack + [var_type]
 
     def _check_condition(
         self, function_body: FunctionBody, type_stack: List[VariableType]
@@ -388,7 +384,7 @@ class TypeChecker:
                 stack = self._check_operator(child_node, copy(stack))
             elif isinstance(child_node, StringLiteral):
                 stack = self._check_string_literal(copy(stack))
-            elif isinstance(child_node, ParsedType):
+            elif isinstance(child_node, VariableType):
                 stack = self._check_parsed_type(child_node, copy(stack))
             elif isinstance(child_node, StructFieldQuery):
                 stack = self._check_type_struct_field_query(child_node, copy(stack))
@@ -494,11 +490,10 @@ class TypeChecker:
     ) -> VariableType:
         # TODO consider moving this out since it doesn't use self
 
-        field_type: Optional[ParsedType] = None
         field_name = node.field_name.value
 
         try:
-            field_type = struct.fields[field_name]
+            return struct.fields[field_name]
         except KeyError as e:
             raise UnknownStructField(
                 file=self.file,
@@ -506,8 +501,6 @@ class TypeChecker:
                 struct=struct,
                 field_name=field_name,
             ) from e
-
-        return VariableType.from_parsed_type(field_type)
 
     def _check_type_struct_field_query(
         self, field_query: StructFieldQuery, type_stack: List[VariableType]

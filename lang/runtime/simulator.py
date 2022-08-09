@@ -48,17 +48,15 @@ from lang.models.instructions import (
 )
 from lang.models.parse import Function
 from lang.models.runtime import CallStackItem
-from lang.models.typing import (
-    RootType,
-    Str,
+from lang.models.typing.var import (
     Variable,
-    VariableType,
     bool_var,
     int_var,
-    list_var,
     map_var,
     str_var,
+    vec_var,
 )
+from lang.models.typing.var_type import RootType, Str, VariableType
 from lang.runtime.debug import format_str
 from lang.runtime.program import Program
 
@@ -625,8 +623,8 @@ class Simulator:
 
         struct_fields: Dict[str, Variable] = {}
 
-        for field_name, parsed_type in instruction.type.fields.items():
-            var_type = VariableType.from_parsed_type(parsed_type)
+        # TODO move code to create zero value of struct out
+        for field_name, var_type in instruction.type.fields.items():
             struct_fields[field_name] = Variable.zero_value(var_type)
 
         struct_var = Variable(
@@ -849,7 +847,7 @@ class Simulator:
 
         split = string.split(separator)
 
-        split_var = list_var(
+        split_var = vec_var(
             item_type=Str, value=[str_var(split_item) for split_item in split]
         )
 

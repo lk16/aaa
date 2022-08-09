@@ -3,7 +3,7 @@ from typing import Dict
 
 from lang.models import AaaModel
 from lang.models.parse import Function
-from lang.models.typing import Variable
+from lang.models.typing.var import Variable
 
 
 class CallStackItem(AaaModel):

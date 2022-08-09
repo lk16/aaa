@@ -1,6 +1,7 @@
 from typing import Optional
 
-from lang.models.typing import RootType, Variable
+from lang.models.typing.var import Variable
+from lang.models.typing.var_type import RootType
 
 
 def format_stack_item(var: Variable) -> str:  # pragma: nocover

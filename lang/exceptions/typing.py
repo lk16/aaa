@@ -11,12 +11,12 @@ from lang.models.parse import (
     StructFieldQuery,
     StructFieldUpdate,
 )
-from lang.models.typing import (
+from lang.models.typing.signature import (
     Signature,
     StructQuerySignature,
     StructUpdateSignature,
-    VariableType,
 )
+from lang.models.typing.var_type import VariableType
 
 
 class TypeException(AaaLoadException):

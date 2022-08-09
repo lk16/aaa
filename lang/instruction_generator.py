@@ -50,14 +50,13 @@ from lang.models.parse import (
     Loop,
     MemberFunctionName,
     Operator,
-    ParsedType,
     StringLiteral,
     Struct,
     StructFieldQuery,
     StructFieldUpdate,
 )
 from lang.models.program import ProgramImport
-from lang.models.typing import RootType, VariableType
+from lang.models.typing.var_type import RootType, VariableType
 
 if TYPE_CHECKING:  # pragma: nocover
     from lang.runtime.program import Program
@@ -271,8 +270,8 @@ class InstructionGenerator:
                 )
             elif isinstance(child, Operator):
                 instructions += self.instructions_for_operator(child)
-            elif isinstance(child, ParsedType):
-                instructions += self.instructions_for_parsed_type(child)
+            elif isinstance(child, VariableType):
+                instructions += self.instructions_for_variable_type(child)
             elif isinstance(child, StringLiteral):
                 instructions += self.instructions_for_string_literal(child)
             elif isinstance(child, StructFieldQuery):
@@ -286,10 +285,9 @@ class InstructionGenerator:
 
         return instructions
 
-    def instructions_for_parsed_type(
-        self, parsed_type: ParsedType
+    def instructions_for_variable_type(
+        self, var_type: VariableType
     ) -> List[Instruction]:
-        var_type = VariableType.from_parsed_type(parsed_type)
         root_type = var_type.root_type
 
         if root_type == RootType.INTEGER:
