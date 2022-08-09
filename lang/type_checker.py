@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Dict, List, Union
 from lang.models.parse import (
     BooleanLiteral,
     Branch,
-    BuiltinFunction,
     Function,
     FunctionBody,
     Identifier,
@@ -109,7 +108,7 @@ class TypeChecker:
         self,
         type_stack: List[VariableType],
         signature: Signature,
-        func_like: Union[Operator, Function, MemberFunctionName, BuiltinFunction],
+        func_like: Union[Operator, Function, MemberFunctionName],
     ) -> List[VariableType]:
         stack = copy(type_stack)
         arg_count = len(signature.arg_types)
@@ -225,8 +224,8 @@ class TypeChecker:
     def _check_operator(
         self, operator: Operator, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        builtin_function = self.program._builtins.functions[operator.value]
-        signature = Signature.from_builtin_function(builtin_function)
+        function = self.program._builtins.functions[operator.value]
+        signature = self.program.get_builtin_signature(function)
         return self._check_and_apply_signature(copy(type_stack), signature, operator)
 
     def _check_parsed_type(
@@ -314,7 +313,7 @@ class TypeChecker:
         except KeyError:
             pass
         else:
-            signature = Signature.from_builtin_function(builtin_function)
+            signature = self.program.get_builtin_signature(builtin_function)
             return self._check_and_apply_signature(
                 copy(type_stack), signature, builtin_function
             )
@@ -340,13 +339,6 @@ class TypeChecker:
                     name=identified.name,
                 )
             ]
-
-        elif isinstance(identified, BuiltinFunction):
-            builtin_function = self.program._builtins.functions[identifier.name]
-            signature = Signature.from_builtin_function(builtin_function)
-            return self._check_and_apply_signature(
-                copy(type_stack), signature, identified
-            )
 
         else:  # pragma: nocover
             assert False
@@ -387,14 +379,14 @@ class TypeChecker:
     def _check_member_function_call(
         self, member_function_name: MemberFunctionName, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        key = f"{member_function_name.type_name}:{member_function_name.func_name}"
+        key = member_function_name.identify()
 
         builtin_function = self.program._builtins.functions.get(key)
 
         if builtin_function:
             # All builtin member functions should be listed in the builtins file
             # so this should not raise a KeyError.
-            signature = Signature.from_builtin_function(builtin_function)
+            signature = self.program.get_builtin_signature(builtin_function)
         else:
             file_identifiers = self.program.identifiers[self.file]
 
@@ -477,8 +469,6 @@ class TypeChecker:
     def _get_struct_field_type(
         self, node: StructFieldQuery | StructFieldUpdate, struct: Struct
     ) -> VariableType:
-        # TODO consider moving this out since it doesn't use self
-
         field_name = node.field_name.value
 
         try:

@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Tuple, Union
 from lark.lexer import Token
 from lark.visitors import Transformer, v_args
 
-from lang.models import FunctionBodyItem
+from lang.models import AaaTreeNode, FunctionBodyItem
 from lang.models.parse import (
     Argument,
     BooleanLiteral,
@@ -11,9 +11,6 @@ from lang.models.parse import (
     BranchCondition,
     BranchElseBody,
     BranchIfBody,
-    BuiltinFunction,
-    BuiltinFunctionArguments,
-    BuiltinFunctionReturnTypes,
     Function,
     FunctionBody,
     Identifier,
@@ -53,7 +50,7 @@ class AaaTransformer(Transformer[Any, Any]):
     def boolean(self, token: Token) -> BooleanLiteral:
         return BooleanLiteral(value=token.value)
 
-    def branch(self, *args: List[StructFieldQuery]) -> Branch:
+    def branch(self, *args: List[AaaTreeNode]) -> Branch:
         condition: FunctionBody
         if_body: FunctionBody
         else_body = FunctionBody(items=[])
@@ -79,43 +76,45 @@ class AaaTransformer(Transformer[Any, Any]):
     def branch_else_body(self, function_body: FunctionBody) -> BranchElseBody:
         return BranchElseBody(value=function_body)
 
-    def builtin_function_definition(
-        self, *args: List[StructFieldQuery]
-    ) -> BuiltinFunction:
-        arguments: List[VariableType] = []
+    @v_args(inline=False)
+    def builtin_function_definition(self, args: List[Any]) -> Function:
+        name: str | MemberFunctionName = ""
+        arguments: List[Argument] = []
         return_types: List[VariableType] = []
-        name = ""
+        token: Token
 
         for arg in args:
             if isinstance(arg, StringLiteral):
                 name = arg.value
-            elif isinstance(arg, BuiltinFunctionArguments):
-                arguments = arg.value
-            elif isinstance(arg, BuiltinFunctionReturnTypes):
-                return_types = arg.value
+            elif isinstance(arg, list):
+                for item in arg:
+                    if isinstance(item, Argument):
+                        arguments.append(item)
+                    elif isinstance(item, VariableType):
+                        return_types.append(item)
+                    else:  # pragma: nocover
+                        assert False
+            elif isinstance(arg, MemberFunctionName):
+                name = arg
+            elif isinstance(arg, Token):
+                token = arg
             else:  # pragma: nocover
                 assert False
 
-        return BuiltinFunction(
-            name=name, arguments=arguments, return_types=return_types
+        return Function(
+            name=name,
+            arguments=arguments,
+            return_types=return_types,
+            body=FunctionBody(items=[]),
+            token=token,
         )
 
-    def builtin_function_arguments(
-        self, arguments: List[VariableType]
-    ) -> BuiltinFunctionArguments:
-        return BuiltinFunctionArguments(value=arguments)
-
-    def builtin_function_return_types(
-        self, arguments: List[VariableType]
-    ) -> BuiltinFunctionReturnTypes:
-        return BuiltinFunctionReturnTypes(value=arguments)
-
     @v_args(inline=False)
-    def builtins_file_root(self, args: List[BuiltinFunction]) -> ParsedBuiltinsFile:
-        functions: List[BuiltinFunction] = []
+    def builtins_file_root(self, args: List[Function]) -> ParsedBuiltinsFile:
+        functions: List[Function] = []
 
         for arg in args:
-            if isinstance(arg, BuiltinFunction):
+            if isinstance(arg, Function):
                 functions.append(arg)
             else:  # pragma: nocover
                 assert False
@@ -132,7 +131,7 @@ class AaaTransformer(Transformer[Any, Any]):
         return FunctionBody(items=args)
 
     @v_args(inline=False)
-    def function_definition(self, args: List[StructFieldQuery]) -> Function:
+    def function_definition(self, args: List[Any]) -> Function:
         name: str | MemberFunctionName = ""
         body: FunctionBody
         arguments: List[Argument] = []

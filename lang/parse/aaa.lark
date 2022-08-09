@@ -32,7 +32,7 @@ _END:        /}(?=(\W|\s|$))/
 // ignored keywords
 _AS:         /as(?=(\W|\s))/
 _ARGS:       /args(?=(\W|\s))/
-_BUILTIN_FN: /builtin_fn(?=(\W|\s))/
+BUILTIN_FN: /builtin_fn(?=(\W|\s))/
 _ELSE:       /else(?=(\W|\s))/
 FN:         /fn(?=(\W|\s))/
 FROM:       /from(?=(\W|\s))/
@@ -74,9 +74,9 @@ NOP:        /nop(?=(\W|\s))/
 builtins_file_root: builtin_function_definition+
 
 builtin_function_definition: ( \
-    _BUILTIN_FN string \
-    builtin_function_arguments? \
-    builtin_function_return_types? \
+    BUILTIN_FN string \
+    function_arguments? \
+    function_return_types? \
 )
 
 builtin_function_arguments: _ARGS return_types

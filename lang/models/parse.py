@@ -64,8 +64,11 @@ class MemberFunctionName(FunctionBodyItem):
     type_name: str
     func_name: str
 
-    def __str__(self) -> str:
+    def identify(self) -> str:
         return f"{self.type_name}:{self.func_name}"
+
+    def __str__(self) -> str:
+        return self.identify()
 
 
 class StructFieldQuery(FunctionBodyItem):
@@ -134,26 +137,8 @@ class Struct(AaaTreeNode):
         return self.name
 
 
-# TODO make builtin functions just a regular Function
-class BuiltinFunction(AaaTreeNode):
-    name: str
-    arguments: List[VariableType]
-    return_types: List[VariableType]
-
-    def identify(self) -> str:
-        return self.name
-
-
-class BuiltinFunctionArguments(AaaTreeNode):
-    value: List[VariableType]
-
-
-class BuiltinFunctionReturnTypes(AaaTreeNode):
-    value: List[VariableType]
-
-
 class ParsedBuiltinsFile(AaaTreeNode):
-    functions: List[BuiltinFunction]
+    functions: List[Function]
 
 
 class ParsedFile(AaaTreeNode):

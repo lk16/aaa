@@ -4,7 +4,7 @@ from typing import Dict
 from lark.lexer import Token
 
 from lang.models import AaaModel
-from lang.models.parse import BuiltinFunction
+from lang.models.parse import Function
 
 
 class ProgramImport(AaaModel):
@@ -18,8 +18,5 @@ class ProgramImport(AaaModel):
 
 
 class Builtins(AaaModel):
-    functions: Dict[str, BuiltinFunction]
-
-    @classmethod
-    def empty(cls) -> "Builtins":
-        return Builtins(functions={})
+    functions: Dict[str, Function]
+    path: Path

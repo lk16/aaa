@@ -67,7 +67,7 @@ class Program:
             return cls(file=saved_file)
 
     def _load_builtins(self) -> Tuple[Builtins, List[AaaLoadException]]:
-        builtins = Builtins.empty()
+        builtins = Builtins(path="", functions={})
 
         try:
             stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
@@ -75,6 +75,7 @@ class Program:
             return builtins, [MissingEnvironmentVariable("AAA_STDLIB_PATH")]
 
         builtins_file = stdlib_path / "builtins.aaa"
+        builtins.path = builtins_file
 
         try:
             parsed_file = self._parse_builtins_file(builtins_file)
@@ -82,7 +83,7 @@ class Program:
             return builtins, [FileReadError(builtins_file)]
 
         for function in parsed_file.functions:
-            builtins.functions[function.name] = function
+            builtins.functions[function.identify()] = function
 
         return builtins, []
 
@@ -274,7 +275,6 @@ class Program:
         try:
             identified = self.identifiers[file][name]
         except KeyError:
-            # TODO just raise KeyError here?
             return None
 
         if isinstance(identified, Function):
@@ -335,6 +335,9 @@ class Program:
         self.function_signatures[file][function.identify()] = signature
 
         return signature
+
+    def get_builtin_signature(self, function: Function) -> Signature:
+        return self.get_signature(self._builtins.path, function)
 
     def print_all_instructions(self) -> None:  # pragma: nocover
         for functions in self.function_instructions.values():
