@@ -17,8 +17,8 @@ COMMENT: "//" /[^\n]*/ "\n"
 SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
-identifier: /(?!(and|args|as|assert|bool|builtin_fn|drop|dup|else|false|fn|from|if|import|int|map|nop|not|or|over|return|rot|str|struct|swap|true|vec|while)(\W|\s))([a-z_]+)/
-member_function_name: /[a-z_]+/
+identifier.0: /[a-z_]+/
+member_function_name: /[a-z_]+/  // TODO use identifier instead
 
 integer: /[0-9]+/
 
@@ -137,7 +137,7 @@ type: type_literal | type_placeholder
 // --- literals ---
 
 literal: boolean | integer | string
-!boolean: TRUE | FALSE
+!boolean.1: TRUE | FALSE
 
 // --- function body ---
 
@@ -175,7 +175,7 @@ loop_body: _BEGIN function_body
 
 // --- operators ---
 
-!operator:    AND
+!operator.1:  AND
             | ASSERT
             | DROP
             | DUP
