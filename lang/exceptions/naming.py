@@ -78,7 +78,15 @@ class UnknownArgumentType(NamingException):
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} has argument with unknown type {self.var_type.name}\n"
+        string = f"{self.where()}: Function {self.function.name} "
+
+        if self.var_type.is_placeholder():
+            string += "uses unknown placeholder "
+        else:
+            string += "has argument with unknown type "
+
+        string += f"{self.var_type.name}\n"
+        return string
 
 
 class UnknownStructField(NamingException):
@@ -100,23 +108,3 @@ class UnknownStructField(NamingException):
 
     def __str__(self) -> str:
         return f"{self.where()}: Function {self.function.name} tries to use non-existing field {self.field_name} of struct {self.struct.name}\n"
-
-
-# TODO consider merging this with UnknownArgumentType
-class UnknownPlaceholderType(NamingException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        function: Function,
-        var_type: VariableType,
-    ) -> None:
-        self.function = function
-        self.var_type = var_type
-        self.file = file
-
-    def where(self) -> str:
-        return error_location(self.file, self.function.token)
-
-    def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} uses unknown placeholder {self.var_type.name}\n"

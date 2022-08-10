@@ -13,7 +13,6 @@ from lang.exceptions.naming import (
     CollidingIdentifier,
     UnknownArgumentType,
     UnknownIdentifier,
-    UnknownPlaceholderType,
     UnknownStructField,
 )
 from lang.exceptions.runtime import AaaAssertionFailure
@@ -120,7 +119,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo return *a { nop }
             fn main { nop }
             """,
-            UnknownPlaceholderType,
+            UnknownArgumentType,
             "/foo/main.aaa:2:13: Function foo uses unknown placeholder a\n",
             id="unknown-placeholder-type",
         ),

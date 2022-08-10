@@ -19,7 +19,7 @@ from lang.exceptions.misc import (
     MainFunctionNotFound,
     MissingEnvironmentVariable,
 )
-from lang.exceptions.naming import CollidingIdentifier, UnknownPlaceholderType
+from lang.exceptions.naming import CollidingIdentifier, UnknownArgumentType
 from lang.instruction_generator import InstructionGenerator
 from lang.models.instructions import Instruction
 from lang.models.parse import (
@@ -318,7 +318,7 @@ class Program:
                 return_type.is_placeholder()
                 and return_type.name not in placeholder_args
             ):
-                raise UnknownPlaceholderType(
+                raise UnknownArgumentType(
                     file=file,
                     function=function,
                     var_type=return_type,
