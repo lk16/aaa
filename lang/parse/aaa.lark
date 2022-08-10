@@ -32,14 +32,14 @@ _END:        /}(?=(\W|\s|$))/
 // ignored keywords
 _AS:         /as(?=(\W|\s))/
 _ARGS:       /args(?=(\W|\s))/
-BUILTIN_FN: /builtin_fn(?=(\W|\s))/
+BUILTIN_FN:  /builtin_fn(?=(\W|\s))/
 _ELSE:       /else(?=(\W|\s))/
-FN:         /fn(?=(\W|\s))/
-FROM:       /from(?=(\W|\s))/
+FN:          /fn(?=(\W|\s))/
+FROM:        /from(?=(\W|\s))/
 _IMPORT:     /import(?=(\W|\s))/
 _IF:         /if(?=(\W|\s))/
 _RETURN:     /return(?=(\W|\s))/
-STRUCT:     /struct(?=(\W|\s))/
+STRUCT:      /struct(?=(\W|\s))/
 _WHILE:      /while(?=(\W|\s))/
 
 // keywords for builtin types
