@@ -128,7 +128,8 @@ return_types: type ("," type)* ","?
 
 // --- types and type placeholders ---
 
-!type_literal: (BOOL | INT | MAP | STR | VEC | identifier) type_params?
+_builtin_type.1: BOOL | INT | MAP | STR | VEC
+!type_literal: (_builtin_type | identifier) type_params?
 type_params: "[" type ("," type)* ","? "]"
 type_placeholder: "*" identifier
 
