@@ -37,6 +37,7 @@ AAA_KEYWORDS = [
 ]
 
 
+@pytest.mark.skip
 def test_keywords_list_up_to_date() -> None:
     # The grammar is the only source of truth
     # So we have to compare if our list of keywords is up to date

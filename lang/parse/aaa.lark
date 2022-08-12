@@ -79,9 +79,6 @@ builtin_function_definition: ( \
     function_return_types? \
 )
 
-builtin_function_arguments: _ARGS return_types
-builtin_function_return_types: _RETURN return_types
-
 // --- regular source file + imports ---
 
 regular_file_root: (function_definition | import_statement | struct_definition)+
