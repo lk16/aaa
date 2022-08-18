@@ -50,17 +50,39 @@ The name of this language is just the first letter of the Latin alphabet [repeat
 ### Setup
 All these commands should be run from the root of this repository.
 
+This project requires python 3.10, consider using [pyenv](https://github.com/pyenv/pyenv).
+
+```sh
+# Download python 3.10.2
+pyenv install 3.10.2
+
+# Use it in this project
+pyenv local 3.10.2
+
+# Tell poetry to use it when it creates a virtual environment
+poetry env use 3.10
+```
+
+After setting up the right python for poetry, run the following commands
+
 ```sh
 # Install dependencies
 poetry install
 
 # Enter poetry environment
 poetry shell
+
+# Tell Aaa where the standard library lives
+export AAA_STDLIB_PATH=$(pwd)/stdlib
+
+# Run hello world program
+./aaa.py cmd '"Hello world\n" .'
+
+# Run tests
+./aaa.py runtests
 ```
 
-To enable syntax highlighting for vs code, enable the [Aaa language extension](./aaa-vscode-extension/README.md)
-
-
+To enable syntax highlighting for VS Code, enable the [Aaa language extension](./aaa-vscode-extension/README.md)
 
 
 ### Aaa and porth
