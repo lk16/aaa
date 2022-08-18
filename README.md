@@ -63,7 +63,7 @@ pyenv local 3.10.2
 poetry env use 3.10
 ```
 
-After setting up the right python for poetry, run the following commands
+After setting up the right python for poetry, run the following commands.
 
 ```sh
 # Install dependencies
@@ -81,6 +81,8 @@ export AAA_STDLIB_PATH=$(pwd)/stdlib
 # Run tests
 ./aaa.py runtests
 ```
+
+Now you can start running code in Aaa or develop the language!
 
 To enable syntax highlighting for VS Code, enable the [Aaa language extension](./aaa-vscode-extension/README.md)
 
