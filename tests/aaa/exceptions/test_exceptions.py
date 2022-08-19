@@ -314,6 +314,7 @@ def test_one_error(
     code: str, expected_exception_type: Type[Exception], expected_exception_message: str
 ) -> None:
     tmp_dir, exceptions = check_aaa_full_source(code, "", [expected_exception_type])
+
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
 
