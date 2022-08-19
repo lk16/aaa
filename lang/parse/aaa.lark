@@ -195,3 +195,24 @@ loop_body: _BEGIN function_body
             | />=(?=\s)/
             | /<(?=\s)/
             | />(?=\s)/
+
+keyword:  boolean
+        | operator
+        | _ARGS
+        | _AS
+        | _BEGIN
+        | _ELSE
+        | _END
+        | _IF
+        | _IMPORT
+        | _RETURN
+        | _WHILE
+        | BOOL
+        | BUILTIN_FN
+        | FN
+        | FROM
+        | INT
+        | MAP
+        | STR
+        | STRUCT
+        | VEC

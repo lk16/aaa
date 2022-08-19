@@ -1,8 +1,11 @@
+from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
+from lark.exceptions import UnexpectedInput
 from lark.lexer import Token
 from lark.visitors import Transformer, v_args
 
+from lang.exceptions.misc import KeywordUsedAsIdentifier
 from lang.models import AaaTreeNode, FunctionBodyItem
 from lang.models.parse import (
     Argument,
@@ -30,10 +33,15 @@ from lang.models.parse import (
     StructFieldUpdate,
 )
 from lang.models.typing.var_type import RootType, VariableType
+from lang.parse.parser import aaa_keyword_parser
 
 
 @v_args(inline=True)
 class AaaTransformer(Transformer[Any, Any]):
+    def __init__(self, file: Path) -> None:
+        self.file = file
+        super().__init__()
+
     @v_args(inline=False)
     def argument_list(self, arguments: List[Argument]) -> List[Argument]:
         return arguments
@@ -178,7 +186,13 @@ class AaaTransformer(Transformer[Any, Any]):
         return args
 
     def identifier(self, token: Token) -> Identifier:
-        return Identifier(name=token.value, token=token)
+        try:
+            aaa_keyword_parser.parse(f"{token.value} ")
+        except UnexpectedInput:
+            return Identifier(name=token.value, token=token)
+        else:
+            # We're getting a keyword where we're expecting an identifier
+            raise KeywordUsedAsIdentifier(token=token, file=self.file)
 
     def import_item(
         self, original_name: Identifier, imported_name: Optional[Identifier] = None

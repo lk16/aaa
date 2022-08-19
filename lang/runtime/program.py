@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Set, Tuple, Union
 
-from lark.exceptions import UnexpectedInput
+from lark.exceptions import UnexpectedInput, VisitError
 
 from lang.exceptions import AaaLoadException
 from lang.exceptions.import_ import (
@@ -154,7 +154,10 @@ class Program:
         except UnexpectedInput as e:
             raise AaaParseException(file=file, parse_error=e)
 
-        return AaaTransformer().transform(tree)  # type: ignore
+        try:
+            return AaaTransformer(file).transform(tree)  # type: ignore
+        except VisitError as e:
+            raise e.orig_exc
 
     def _parse_builtins_file(self, file: Path) -> ParsedBuiltinsFile:
         code = file.read_text()
@@ -164,7 +167,7 @@ class Program:
         except UnexpectedInput as e:
             raise AaaParseException(file=file, parse_error=e)
 
-        return AaaTransformer().transform(tree)  # type: ignore
+        return AaaTransformer(file).transform(tree)  # type: ignore
 
     def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:
         identifiables: List[Union[Function, Struct]] = []

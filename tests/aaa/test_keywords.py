@@ -1,6 +1,6 @@
 import pytest
 
-from lang.exceptions.misc import AaaParseException
+from lang.exceptions.misc import KeywordUsedAsIdentifier
 from tests.aaa import check_aaa_full_source
 
 AAA_KEYWORDS = [
@@ -43,7 +43,7 @@ def test_keyword_invalid_param_name(keyword: str) -> None:
     code = "fn foo args " + keyword + " as int { nop }\n"
     code += "fn main { nop }"
 
-    check_aaa_full_source(code, "", [AaaParseException])
+    check_aaa_full_source(code, "", [KeywordUsedAsIdentifier])
 
 
 @pytest.mark.parametrize(
