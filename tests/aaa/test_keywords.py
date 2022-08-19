@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from lang.exceptions.misc import AaaParseException
@@ -35,15 +33,6 @@ AAA_KEYWORDS = [
     "vec",
     "while",
 ]
-
-
-@pytest.mark.skip
-def test_keywords_list_up_to_date() -> None:
-    # The grammar is the only source of truth
-    # So we have to compare if our list of keywords is up to date
-
-    grammar = Path("lang/parse/aaa.lark").read_text()
-    assert "|".join(sorted(AAA_KEYWORDS)) in grammar
 
 
 @pytest.mark.parametrize(
