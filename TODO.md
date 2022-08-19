@@ -34,10 +34,6 @@ fn main {
     - `map:drop`
 - Add `set` container and member functions
 
-### Instructions
-- create `ContainerOperation` instruction with enum value to select specific one
-- create `SysCall` instruction with enum value for various syscalls
-
 ### Instruction optimization
 - remove `nop` instructions
 - eliminate jumps to jumps
