@@ -2,16 +2,9 @@ from pathlib import Path
 from typing import Union
 
 from lang.exceptions import NamingException, error_location
-from lang.models.parse import (
-    Argument,
-    BuiltinFunction,
-    Function,
-    Identifier,
-    ParsedTypePlaceholder,
-    Struct,
-    TypeLiteral,
-)
+from lang.models.parse import Argument, Function, Identifier, Struct
 from lang.models.program import ProgramImport
+from lang.models.typing.var_type import VariableType
 
 
 class CollidingIdentifier(NamingException):
@@ -19,22 +12,18 @@ class CollidingIdentifier(NamingException):
         self,
         *,
         file: Path,
-        colliding: Union[Argument, BuiltinFunction, Function, Struct, ProgramImport],
-        found: Union[Argument, BuiltinFunction, Function, Struct, ProgramImport],
+        colliding: Union[Argument, Function, Struct, ProgramImport],
+        found: Union[Argument, Function, Struct, ProgramImport],
     ) -> None:
         self.colliding = colliding
         self.found = found
         self.file = file
 
-    def describe(
-        self, item: Union[Argument, BuiltinFunction, Function, Struct, ProgramImport]
-    ) -> str:
+    def describe(self, item: Union[Argument, Function, Struct, ProgramImport]) -> str:
         if isinstance(item, Struct):
             return f"struct {item.identify()}"
         elif isinstance(item, Function):
             return f"function {item.identify()}"
-        elif isinstance(item, BuiltinFunction):
-            return f"built-in function {item.identify()}"
         elif isinstance(item, ProgramImport):
             return f"imported identifier {item.identify()}"
         elif isinstance(item, Argument):
@@ -42,13 +31,9 @@ class CollidingIdentifier(NamingException):
         else:  # pragma: nocover
             assert False
 
-    def where(
-        self, item: Union[Argument, BuiltinFunction, Function, Struct, ProgramImport]
-    ) -> str:
+    def where(self, item: Union[Argument, Function, Struct, ProgramImport]) -> str:
         if isinstance(item, Argument):
             return error_location(self.file, item.name_token)
-        if isinstance(item, BuiltinFunction):
-            return "<stdlib>:"  # TODO
         else:
             return error_location(self.file, item.token)
 
@@ -83,17 +68,25 @@ class UnknownArgumentType(NamingException):
         *,
         file: Path,
         function: Function,
-        type_literal: TypeLiteral,
+        var_type: VariableType,
     ) -> None:
         self.function = function
-        self.type_literal = type_literal
+        self.var_type = var_type
         self.file = file
 
     def where(self) -> str:
         return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} has argument with unknown type {self.type_literal.type_name}\n"
+        string = f"{self.where()}: Function {self.function.name} "
+
+        if self.var_type.is_placeholder():
+            string += "uses unknown placeholder "
+        else:
+            string += "has argument with unknown type "
+
+        string += f"{self.var_type.name}\n"
+        return string
 
 
 class UnknownStructField(NamingException):
@@ -115,22 +108,3 @@ class UnknownStructField(NamingException):
 
     def __str__(self) -> str:
         return f"{self.where()}: Function {self.function.name} tries to use non-existing field {self.field_name} of struct {self.struct.name}\n"
-
-
-class UnknownPlaceholderType(NamingException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        function: Function,
-        placeholder: ParsedTypePlaceholder,
-    ) -> None:
-        self.function = function
-        self.placeholder = placeholder
-        self.file = file
-
-    def where(self) -> str:
-        return error_location(self.file, self.function.token)
-
-    def __str__(self) -> str:
-        return f"{self.where()}: Function {self.function.name} uses unknown placeholder {self.placeholder.name}\n"

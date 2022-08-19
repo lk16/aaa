@@ -3,7 +3,6 @@ from typing import List, Union
 
 from lang.exceptions import AaaLoadException, error_location, format_typestack
 from lang.models.parse import (
-    BuiltinFunction,
     Function,
     MemberFunctionName,
     Operator,
@@ -11,14 +10,12 @@ from lang.models.parse import (
     StructFieldQuery,
     StructFieldUpdate,
 )
-from lang.typing.types import (
+from lang.models.typing.signature import (
     Signature,
     StructQuerySignature,
     StructUpdateSignature,
-    TypePlaceholder,
-    TypeStack,
-    VariableType,
 )
+from lang.models.typing.var_type import VariableType
 
 
 class TypeException(AaaLoadException):
@@ -36,8 +33,8 @@ class FunctionTypeError(TypeException):
         *,
         file: Path,
         function: "Function",
-        expected_return_types: List[VariableType | TypePlaceholder],
-        computed_return_types: TypeStack,
+        expected_return_types: List[VariableType],
+        computed_return_types: List[VariableType],
     ) -> None:
         self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
@@ -61,14 +58,13 @@ class StackTypesError(TypeException):
         file: Path,
         function: "Function",
         signature: Union[Signature, StructQuerySignature, StructUpdateSignature],
-        type_stack: TypeStack,
+        type_stack: List[VariableType],
         func_like: Union[
             Operator,
             Function,
             MemberFunctionName,
             StructFieldUpdate,
             StructFieldQuery,
-            BuiltinFunction,
         ],
     ) -> None:
         self.signature = signature
@@ -84,8 +80,6 @@ class StackTypesError(TypeException):
             return self.func_like.name
         elif isinstance(self.func_like, MemberFunctionName):
             return f"{self.func_like.type_name}:{self.func_like.func_name}"
-        elif isinstance(self.func_like, BuiltinFunction):
-            return self.func_like.name
         else:
             assert False
 
@@ -113,8 +107,8 @@ class ConditionTypeError(TypeException):
         *,
         file: Path,
         function: "Function",
-        type_stack: TypeStack,
-        condition_stack: TypeStack,
+        type_stack: List[VariableType],
+        condition_stack: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.condition_stack = condition_stack
@@ -137,9 +131,9 @@ class BranchTypeError(TypeException):
         *,
         file: Path,
         function: "Function",
-        type_stack: TypeStack,
-        if_stack: TypeStack,
-        else_stack: TypeStack,
+        type_stack: List[VariableType],
+        if_stack: List[VariableType],
+        else_stack: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.if_stack = if_stack
@@ -165,8 +159,8 @@ class LoopTypeError(TypeException):
         *,
         file: Path,
         function: "Function",
-        type_stack: TypeStack,
-        loop_stack: TypeStack,
+        type_stack: List[VariableType],
+        loop_stack: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.loop_stack = loop_stack
@@ -194,7 +188,7 @@ class GetFieldOfNonStructTypeError(TypeException):
         *,
         file: Path,
         function: "Function",
-        type_stack: TypeStack,
+        type_stack: List[VariableType],
         field_query: StructFieldQuery,
     ) -> None:
         self.type_stack = type_stack
@@ -220,7 +214,7 @@ class SetFieldOfNonStructTypeError(TypeException):
         *,
         file: Path,
         function: "Function",
-        type_stack: TypeStack,
+        type_stack: List[VariableType],
         field_update: StructFieldUpdate,
     ) -> None:
         self.type_stack = type_stack
@@ -246,8 +240,8 @@ class StructUpdateStackError(TypeException):
         *,
         file: Path,
         function: "Function",
-        type_stack: TypeStack,
-        type_stack_before: TypeStack,
+        type_stack: List[VariableType],
+        type_stack_before: List[VariableType],
         field_update: StructFieldUpdate,
     ) -> None:
         self.type_stack = type_stack
@@ -275,7 +269,7 @@ class StructUpdateTypeError(TypeException):
         *,
         file: Path,
         function: "Function",
-        type_stack: TypeStack,
+        type_stack: List[VariableType],
         struct: Struct,
         field_name: str,
         expected_type: VariableType,

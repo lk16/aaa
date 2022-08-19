@@ -1,8 +1,10 @@
 from pathlib import Path
+from typing import Dict
 
 from lark.lexer import Token
 
 from lang.models import AaaModel
+from lang.models.parse import Function
 
 
 class ProgramImport(AaaModel):
@@ -13,3 +15,8 @@ class ProgramImport(AaaModel):
 
     def identify(self) -> str:
         return self.imported_name
+
+
+class Builtins(AaaModel):
+    functions: Dict[str, Function]
+    path: Path

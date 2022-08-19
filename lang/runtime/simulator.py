@@ -46,21 +46,19 @@ from lang.models.instructions import (
     StandardLibraryCallKind,
     Swap,
 )
-from lang.models.parse import Function, TypeLiteral
+from lang.models.parse import Function
 from lang.models.runtime import CallStackItem
-from lang.runtime.debug import format_str
-from lang.runtime.program import Program
-from lang.typing.types import (
-    RootType,
-    Str,
+from lang.models.typing.var import (
     Variable,
-    VariableType,
     bool_var,
     int_var,
-    list_var,
     map_var,
     str_var,
+    vec_var,
 )
+from lang.models.typing.var_type import RootType, Str, VariableType
+from lang.runtime.debug import format_str
+from lang.runtime.program import Program
 
 
 class Simulator:
@@ -168,11 +166,35 @@ class Simulator:
     def top(self) -> Variable:
         return self.stack[-1]
 
-    def push(self, item: Variable) -> None:
+    def push_var(self, item: Variable) -> None:
         self.stack.append(item)
 
-    def pop(self) -> Variable:
+    def push_int(self, item: int) -> None:
+        self.push_var(int_var(item))
+
+    def push_str(self, item: str) -> None:
+        self.push_var(str_var(item))
+
+    def push_bool(self, item: bool) -> None:
+        self.push_var(bool_var(item))
+
+    def pop_var(self) -> Variable:
         return self.stack.pop()
+
+    def pop_int(self) -> int:
+        popped = self.stack.pop().value
+        assert isinstance(popped, int)
+        return popped
+
+    def pop_str(self) -> str:
+        popped = self.stack.pop().value
+        assert isinstance(popped, str)
+        return popped
+
+    def pop_bool(self) -> bool:
+        popped = self.stack.pop().value
+        assert isinstance(popped, bool)
+        return popped
 
     def get_function_argument(self, arg_name: str) -> Variable:
         return self.call_stack[-1].argument_values[arg_name]
@@ -234,7 +256,7 @@ class Simulator:
         argument_values: Dict[str, Variable] = {}
 
         for argument in reversed(function.arguments):
-            argument_values[argument.name] = self.pop()
+            argument_values[argument.name] = self.pop_var()
 
         self.call_stack.append(
             CallStackItem(
@@ -265,179 +287,155 @@ class Simulator:
 
     def instruction_push_int(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushInt)
-        self.push(int_var(instruction.value))
+        self.push_var(int_var(instruction.value))
         return self.get_instruction_pointer() + 1
 
     def instruction_plus(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Plus)
-        x: int | str = self.pop().value
-        y: int | str = self.pop().value
+        x = self.pop_int()
+        y = self.pop_int()
 
-        # TODO make different instruction for string concatenation
-
-        if type(x) is int:
-            total = int_var(y + x)  # type: ignore
-        else:
-            total = str_var(y + x)  # type: ignore
-
-        self.push(total)
+        self.push_int(y + x)
         return self.get_instruction_pointer() + 1
 
     def instruction_minus(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Minus)
-        x: int = self.pop().value
-        y: int = self.pop().value
-        self.push(int_var(y - x))
+        x = self.pop_int()
+        y = self.pop_int()
+
+        self.push_int(y - x)
         return self.get_instruction_pointer() + 1
 
     def instruction_multiply(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Multiply)
-        x: int = self.pop().value
-        y: int = self.pop().value
-        self.push(int_var(x * y))
+        x = self.pop_int()
+        y = self.pop_int()
+
+        self.push_int(x * y)
         return self.get_instruction_pointer() + 1
 
     def instruction_divide(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Divide)
-        x: int = self.pop().value
-        y: int = self.pop().value
+        x = self.pop_int()
+        y = self.pop_int()
 
         if x == 0:
-            self.push(int_var(0))
-            self.push(bool_var(False))
+            self.push_int(0)
+            self.push_bool(False)
         else:
-            self.push(int_var(y // x))
-            self.push(bool_var(True))
+            self.push_int(y // x)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_modulo(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Modulo)
-        x: int = self.pop().value
-        y: int = self.pop().value
+        x = self.pop_int()
+        y = self.pop_int()
 
         if x == 0:
-            self.push(int_var(0))
-            self.push(bool_var(False))
+            self.push_int(0)
+            self.push_bool(False)
         else:
-            self.push(int_var(y % x))
-            self.push(bool_var(True))
+            self.push_int(y % x)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_push_bool(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushBool)
-        self.push(bool_var(instruction.value))
+        self.push_bool(instruction.value)
         return self.get_instruction_pointer() + 1
 
     def instruction_and(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, And)
-        x: bool = self.pop().value
-        y: bool = self.pop().value
-        self.push(bool_var(x and y))
+        x = self.pop_bool()
+        y = self.pop_bool()
+
+        self.push_bool(x and y)
         return self.get_instruction_pointer() + 1
 
     def instruction_or(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Or)
-        x: bool = self.pop().value
-        y: bool = self.pop().value
-        self.push(bool_var(x or y))
+        x = self.pop_bool()
+        y = self.pop_bool()
+        self.push_bool(x or y)
         return self.get_instruction_pointer() + 1
 
     def instruction_not(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Not)
-        x: bool = self.pop().value
-        self.push(bool_var(not x))
+        x = self.pop_bool()
+        self.push_bool(not x)
         return self.get_instruction_pointer() + 1
 
     def instruction_equals(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Equals)
-        x = self.pop().value
-        y = self.pop().value
-        self.push(bool_var(x == y))
+        x = self.pop_int()
+        y = self.pop_int()
+        self.push_bool(x == y)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_less_than(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, IntLessThan)
-        x: int = self.pop().value
-        y: int = self.pop().value
-        self.push(bool_var(y < x))
+        x = self.pop_int()
+        y = self.pop_int()
+        self.push_bool(y < x)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_less_equals(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, IntLessEquals)
-        x: int = self.pop().value
-        y: int = self.pop().value
-        self.push(bool_var(y <= x))
+        x = self.pop_int()
+        y = self.pop_int()
+        self.push_bool(y <= x)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_greater_than(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, IntGreaterThan)
-        x: int = self.pop().value
-        y: int = self.pop().value
-        self.push(bool_var(y > x))
+        x = self.pop_int()
+        y = self.pop_int()
+        self.push_bool(y > x)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_greater_equals(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, IntGreaterEquals)
-        x: int = self.pop().value
-        y: int = self.pop().value
-        self.push(bool_var(y >= x))
+        x = self.pop_int()
+        y = self.pop_int()
+        self.push_bool(y >= x)
         return self.get_instruction_pointer() + 1
 
     def instruction_int_not_equal(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, IntNotEqual)
-        x = self.pop().value
-        y = self.pop().value
-        self.push(bool_var(y != x))
+        x = self.pop_int()
+        y = self.pop_int()
+        self.push_bool(y != x)
         return self.get_instruction_pointer() + 1
 
     def instruction_drop(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Drop)
-        self.pop()
+        self.pop_var()
         return self.get_instruction_pointer() + 1
 
     def instruction_dup(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Dup)
         x = self.top()
-        self.push(x)
+        self.push_var(x)
         return self.get_instruction_pointer() + 1
 
     def instruction_swap(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Swap)
-        x = self.pop()
-        y = self.pop()
-        self.push(x)
-        self.push(y)
+        x = self.pop_var()
+        y = self.pop_var()
+        self.push_var(x)
+        self.push_var(y)
         return self.get_instruction_pointer() + 1
 
     def instruction_over(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Over)
-        x = self.pop()
+        x = self.pop_var()
         y = self.top()
-        self.push(x)
-        self.push(y)
+        self.push_var(x)
+        self.push_var(y)
         return self.get_instruction_pointer() + 1
 
     def instruction_rot(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Rot)
-        x = self.pop()
-        y = self.pop()
-        z = self.pop()
-        self.push(y)
-        self.push(x)
-        self.push(z)
+        x = self.pop_var()
+        y = self.pop_var()
+        z = self.pop_var()
+        self.push_var(y)
+        self.push_var(x)
+        self.push_var(z)
         return self.get_instruction_pointer() + 1
 
     def instruction_print(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Print)
-        x_var = self.pop()
+        x_var = self.pop_var()
         print(x_var, end="")
         return self.get_instruction_pointer() + 1
 
     def instruction_push_string(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushString)
-        self.push(str_var(instruction.value))
+        self.push_str(instruction.value)
         return self.get_instruction_pointer() + 1
 
     def instruction_call_function(self, instruction: Instruction) -> int:
@@ -449,13 +447,13 @@ class Simulator:
         assert isinstance(instruction, PushFunctionArgument)
 
         arg_value = self.get_function_argument(instruction.arg_name)
-        self.push(arg_value)
+        self.push_var(arg_value)
         return self.get_instruction_pointer() + 1
 
     def instruction_jump_if_not(self, instruction: Instruction) -> int:
         assert isinstance(instruction, JumpIfNot)
 
-        x: bool = self.pop().value
+        x = self.pop_bool()
         if x:
             return self.get_instruction_pointer() + 1
         else:
@@ -466,12 +464,10 @@ class Simulator:
         return instruction.instruction_offset
 
     def instruction_nop(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Nop)
         return self.get_instruction_pointer() + 1
 
     def instruction_assert(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, Assert)
-        x: bool = self.pop().value
+        x = self.pop_bool()
 
         if not x:
             call_stack_copy = deepcopy(self.call_stack)
@@ -482,25 +478,28 @@ class Simulator:
     def instruction_map_push(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushMap)
         map_var = Variable(
-            RootType.MAPPING,
-            {},
-            type_params=[instruction.key_type, instruction.value_type],
+            type=VariableType(
+                root_type=RootType.MAPPING,
+                type_params=[instruction.key_type, instruction.value_type],
+            ),
+            value={},
         )
-        self.push(map_var)
+        self.push_var(map_var)
         return self.get_instruction_pointer() + 1
 
     def instruction_push_vec(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushVec)
         map_var = Variable(
-            RootType.VECTOR,
-            [],
-            type_params=[instruction.item_type],
+            type=VariableType(
+                root_type=RootType.VECTOR, type_params=[instruction.item_type]
+            ),
+            value=[],
         )
-        self.push(map_var)
+        self.push_var(map_var)
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_push(self) -> int:
-        x = self.pop()
+        x = self.pop_var()
         vec: List[Variable] = self.top().value
 
         vec.append(x)
@@ -510,20 +509,20 @@ class Simulator:
         vec: List[Variable] = self.top().value
 
         x = vec.pop()
-        self.push(x)
+        self.push_var(x)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_get(self) -> int:
-        x: int = self.pop().value
+        x = self.pop_int()
         vec: List[Variable] = self.top().value
 
-        self.push(vec[x])
+        self.push_var(vec[x])
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_set(self) -> int:
-        x: Any = self.pop()
-        index: int = self.pop().value
+        x: Any = self.pop_var()
+        index = self.pop_int()
         vec: List[Variable] = self.top().value
 
         vec[index] = x
@@ -532,13 +531,13 @@ class Simulator:
     def instruction_vec_size(self) -> int:
         vec: List[Variable] = self.top().value
 
-        self.push(int_var(len(vec)))
+        self.push_int(len(vec))
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_empty(self) -> int:
         vec: List[Variable] = self.top().value
 
-        self.push(bool_var(not bool(vec)))
+        self.push_bool(not bool(vec))
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_clear(self) -> int:
@@ -549,59 +548,53 @@ class Simulator:
 
     def instruction_vec_copy(self) -> int:
         vec_var = self.top()
-
-        copied = Variable(
-            vec_var.root_type(),
-            deepcopy(vec_var.value),
-            deepcopy(vec_var.type.type_params),
-        )
-
-        self.push(copied)
+        copied = deepcopy(vec_var)
+        self.push_var(copied)
         return self.get_instruction_pointer() + 1
 
     def instruction_map_get(self) -> int:
-        key = self.pop()
+        key = self.pop_var()
         map: Dict[Variable, Variable] = self.top().value
 
-        self.push(map[key])
+        self.push_var(map[key])
         return self.get_instruction_pointer() + 1
 
     def instruction_map_set(self) -> int:
-        value = self.pop()
-        key = self.pop()
+        value = self.pop_var()
+        key = self.pop_var()
         map: Dict[Variable, Variable] = self.top().value
 
         map[key] = value
         return self.get_instruction_pointer() + 1
 
     def instruction_map_has_key(self) -> int:
-        key = self.pop()
+        key = self.pop_var()
         map: Dict[Variable, Variable] = self.top().value
 
-        self.push(bool_var(key in map))
+        self.push_bool(key in map)
         return self.get_instruction_pointer() + 1
 
     def instruction_map_size(self) -> int:
         map: Dict[Variable, Variable] = self.top().value
 
-        self.push(int_var(len(map)))
+        self.push_int(len(map))
         return self.get_instruction_pointer() + 1
 
     def instruction_map_empty(self) -> int:
         map: Dict[Variable, Variable] = self.top().value
 
-        self.push(bool_var(not bool(map)))
+        self.push_bool(not bool(map))
         return self.get_instruction_pointer() + 1
 
     def instruction_map_pop(self) -> int:
-        key = self.pop()
+        key = self.pop_var()
         map: Dict[Variable, Variable] = self.top().value
 
-        self.push(map.pop(key))
+        self.push_var(map.pop(key))
         return self.get_instruction_pointer() + 1
 
     def instruction_map_drop(self) -> int:
-        key = self.pop()
+        key = self.pop_var()
         map: Dict[Variable, Variable] = self.top().value
 
         del map[key]
@@ -615,14 +608,8 @@ class Simulator:
 
     def instruction_map_copy(self) -> int:
         map_var = self.top()
-
-        copied = Variable(
-            map_var.root_type(),
-            deepcopy(map_var.value),
-            deepcopy(map_var.type.type_params),
-        )
-
-        self.push(copied)
+        copied = deepcopy(map_var)
+        self.push_var(copied)
         return self.get_instruction_pointer() + 1
 
     def instruction_map_keys(self) -> int:  # pragma: nocover
@@ -636,32 +623,34 @@ class Simulator:
 
         struct_fields: Dict[str, Variable] = {}
 
-        for field in instruction.type.fields:
-            assert isinstance(field.type.type, TypeLiteral)
-            var_type = VariableType.from_type_literal(field.type.type)
-            struct_fields[field.name] = Variable.zero_value(var_type)
+        # TODO move code to create zero value of struct out
+        for field_name, var_type in instruction.type.fields.items():
+            struct_fields[field_name] = Variable.zero_value(var_type)
 
         struct_var = Variable(
-            RootType.STRUCT, struct_fields, struct_name=instruction.type.name
+            type=VariableType(
+                root_type=RootType.STRUCT,
+                type_params=[],
+                name=instruction.type.name,
+            ),
+            value=struct_fields,
         )
-        self.push(struct_var)
+        self.push_var(struct_var)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_get_struct_field(self, instruction: Instruction) -> int:
-        assert isinstance(instruction, GetStructField)
-
-        field_name: str = self.pop().value
+        field_name = self.pop_str()
         struct_fields: Dict[str, Variable] = self.top().value
-        self.push(struct_fields[field_name])
+        self.push_var(struct_fields[field_name])
 
         return self.get_instruction_pointer() + 1
 
     def instruction_set_struct_field(self, instruction: Instruction) -> int:
         assert isinstance(instruction, SetStructField)
 
-        new_value: Variable = self.pop()
-        field_name: str = self.pop().value
+        new_value: Variable = self.pop_var()
+        field_name: str = self.pop_str()
         struct_fields: Dict[str, Variable] = self.top().value
         struct_fields[field_name] = new_value
 
@@ -672,32 +661,32 @@ class Simulator:
         return self.stdlib_funcs[instruction.kind]()
 
     def instruction_syscall_exit(self) -> int:
-        x: int = self.pop().value
+        x = self.pop_int()
         exit(x)
 
     def instruction_syscall_getcwd(self) -> int:
-        self.push(str_var(os.getcwd()))
+        self.push_str(os.getcwd())
 
         return self.get_instruction_pointer() + 1
 
     def instruction_syscall_read(self) -> int:
-        n: int = self.pop().value
-        fd: int = self.pop().value
+        n = self.pop_int()
+        fd = self.pop_int()
 
         try:
             read_data = os.read(fd, n).decode("utf-8")
         except OSError:
-            self.push(str_var(""))
-            self.push(bool_var(False))
+            self.push_str("")
+            self.push_bool(False)
         else:
-            self.push(str_var(read_data))
-            self.push(bool_var(True))
+            self.push_str(read_data)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_syscall_time(self) -> int:
         unix_timestamp = int(time.time())
-        self.push(int_var(unix_timestamp))
+        self.push_int(unix_timestamp)
 
         return self.get_instruction_pointer() + 1
 
@@ -709,33 +698,33 @@ class Simulator:
 
         env_vars_map = map_var(key_type=Str, value_type=Str, value=value)
 
-        self.push(env_vars_map)
+        self.push_var(env_vars_map)
         return self.get_instruction_pointer() + 1
 
     def instruction_getenv(self) -> int:
-        env_var_name: str = self.pop().value
+        env_var_name: str = self.pop_var().value
 
         try:
             env_var_value = os.environ[env_var_name]
         except KeyError:
-            self.push(str_var(""))
-            self.push(bool_var(False))
+            self.push_str("")
+            self.push_bool(False)
         else:
-            self.push(str_var(env_var_value))
-            self.push(bool_var(True))
+            self.push_str(env_var_value)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_setenv(self) -> int:
-        env_var_value: str = self.pop().value
-        env_var_name: str = self.pop().value
+        env_var_value = self.pop_str()
+        env_var_name = self.pop_str()
 
         os.environ[env_var_name] = env_var_value
 
         return self.get_instruction_pointer() + 1
 
     def instruction_unsetenv(self) -> int:
-        env_var_name: str = self.pop().value
+        env_var_name = self.pop_str()
 
         try:
             del os.environ[env_var_name]
@@ -745,76 +734,76 @@ class Simulator:
         return self.get_instruction_pointer() + 1
 
     def instruction_syscall_chdir(self) -> int:
-        dir_name: str = self.pop().value
+        dir_name = self.pop_str()
 
         try:
             os.chdir(dir_name)
         except OSError:
-            self.push(bool_var(False))
+            self.push_var(bool_var(False))
         else:
-            self.push(bool_var(True))
+            self.push_var(bool_var(True))
 
         return self.get_instruction_pointer() + 1
 
     def instruction_getpid(self) -> int:
         pid = os.getpid()
-        self.push(int_var(pid))
+        self.push_int(pid)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_getppid(self) -> int:
         ppid = os.getppid()
-        self.push(int_var(ppid))
+        self.push_int(ppid)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_open(self) -> int:
-        mode: int = self.pop().value
-        flags: int = self.pop().value
-        path: str = self.pop().value
+        mode = self.pop_int()
+        flags = self.pop_int()
+        path = self.pop_str()
 
         try:
             fd = os.open(path=path, flags=flags, mode=mode)
         except Exception:
-            self.push(int_var(0))
-            self.push(bool_var(False))
+            self.push_int(0)
+            self.push_bool(False)
         else:
-            self.push(int_var(fd))
-            self.push(bool_var(True))
+            self.push_int(fd)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_syscall_close(self) -> int:
-        fd: int = self.pop().value
+        fd = self.pop_int()
 
         try:
             os.close(fd)
         except Exception:
-            self.push(bool_var(False))
+            self.push_bool(False)
         else:
-            self.push(bool_var(True))
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_write(self) -> int:
-        data: str = self.pop().value
-        fd: int = self.pop().value
+        data = self.pop_str()
+        fd = self.pop_int()
 
         try:
             written = os.write(fd, bytes(data, encoding="utf-8"))
         except Exception:
-            self.push(int_var(0))
-            self.push(bool_var(False))
+            self.push_int(0)
+            self.push_bool(False)
         else:
-            self.push(int_var(written))
-            self.push(bool_var(True))
+            self.push_int(written)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_syscall_execve(self) -> int:
-        stack_env: Dict[Variable, Variable] = self.pop().value
-        stack_argv: List[Variable] = self.pop().value
-        path: str = self.pop().value
+        stack_env: Dict[Variable, Variable] = self.pop_var().value
+        stack_argv: List[Variable] = self.pop_var().value
+        path: str = self.pop_var().value
 
         env: Dict[str, str] = {
             key.value: value.value for (key, value) in stack_env.items()
@@ -826,67 +815,61 @@ class Simulator:
 
     def instruction_syscall_fork(self) -> int:
         pid = os.fork()
-        self.push(int_var(pid))
+        self.push_int(pid)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_waitpid(self) -> int:
-        options: int = self.pop().value
-        pid: int = self.pop().value
+        options = self.pop_int()
+        pid = self.pop_int()
 
         try:
             _, wait_status = os.waitpid(pid, options)
             exit_code = os.waitstatus_to_exitcode(wait_status)
         except OSError:
-            self.push(int_var(0))
-            self.push(bool_var(False))
+            self.push_int(0)
+            self.push_bool(False)
         else:
-            self.push(int_var(exit_code))
-            self.push(bool_var(True))
+            self.push_int(exit_code)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_strip(self) -> int:
-        string: str = self.pop().value
-        self.push(str_var(string.strip()))
+        string = self.pop_str()
+        self.push_str(string.strip())
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_split(self) -> int:
-        separator: str = self.pop().value
+        separator = self.pop_str()
         string: str = self.top().value
 
         split = string.split(separator)
 
-        split_var = list_var(
+        split_var = vec_var(
             item_type=Str, value=[str_var(split_item) for split_item in split]
         )
 
-        self.push(split_var)
+        self.push_var(split_var)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_syscall_fsync(self) -> int:
-        fd: int = self.pop().value
-
-        # TODO: is this still necessary if we run python with -u ?
-        if fd == 1:
-            sys.stdout.flush()
-        elif fd == 2:
-            sys.stderr.flush()
+        fd = self.pop_int()
 
         try:
             os.fsync(fd)
         except OSError:
-            self.push(bool_var(False))
+            self.push_bool(False)
         else:
-            self.push(bool_var(True))
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_substr(self) -> int:
-        end: int = self.pop().value
-        start: int = self.pop().value
+        end = self.pop_int()
+        start = self.pop_int()
         string: str = self.top().value
 
         if (
@@ -896,57 +879,57 @@ class Simulator:
             or end > len(string)
             or end < start
         ):
-            self.push(str_var(""))
-            self.push(bool_var(False))
+            self.push_str("")
+            self.push_bool(False)
         else:
-            self.push(str_var(string[start:end]))
-            self.push(bool_var(True))
+            self.push_str(string[start:end])
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_len(self) -> int:
         string: str = self.top().value
-        self.push(int_var(len(string)))
+        self.push_int(len(string))
         return self.get_instruction_pointer() + 1
 
     def instruction_str_upper(self) -> int:
         string: str = self.top().value
-        self.push(str_var(string.upper()))
+        self.push_str(string.upper())
         return self.get_instruction_pointer() + 1
 
     def instruction_str_lower(self) -> int:
         string: str = self.top().value
-        self.push(str_var(string.lower()))
+        self.push_str(string.lower())
         return self.get_instruction_pointer() + 1
 
     def instruction_str_find(self) -> int:
-        search: str = self.pop().value
+        search = self.pop_str()
         string: str = self.top().value
 
         index = string.find(search)
 
         if index == -1:
-            self.push(int_var(0))
-            self.push(bool_var(False))
+            self.push_int(0)
+            self.push_bool(False)
         else:
-            self.push(int_var(index))
-            self.push(bool_var(True))
+            self.push_int(index)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_find_after(self) -> int:
-        offset: int = self.pop().value
-        search: str = self.pop().value
+        offset = self.pop_int()
+        search = self.pop_str()
         string: str = self.top().value
 
         index = string.find(search, offset)
 
         if index == -1:
-            self.push(int_var(0))
-            self.push(bool_var(False))
+            self.push_int(0)
+            self.push_bool(False)
         else:
-            self.push(int_var(index))
-            self.push(bool_var(True))
+            self.push_int(index)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
@@ -956,37 +939,37 @@ class Simulator:
         try:
             integer = int(string)
         except ValueError:
-            self.push(int_var(0))
-            self.push(bool_var(False))
+            self.push_int(0)
+            self.push_bool(False)
         else:
-            self.push(int_var(integer))
-            self.push(bool_var(True))
+            self.push_int(integer)
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_join(self) -> int:
-        parts: List[Variable] = self.pop().value
+        parts: List[Variable] = self.pop_var().value
         string: str = self.top().value
 
         joined = string.join(part.value for part in parts)
 
-        self.push(str_var(joined))
+        self.push_str(joined)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_equals(self) -> int:
-        other: str = self.pop().value
+        other = self.pop_str()
         string: str = self.top().value
 
-        self.push(bool_var(string == other))
+        self.push_bool(string == other)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_contains(self) -> int:
-        other: str = self.pop().value
+        other = self.pop_str()
         string: str = self.top().value
 
-        self.push(bool_var(other in string))
+        self.push_bool(other in string)
 
         return self.get_instruction_pointer() + 1
 
@@ -994,29 +977,29 @@ class Simulator:
         string: str = self.top().value
 
         if string in ["true", "false"]:
-            self.push(bool_var(string == "true"))
-            self.push(bool_var(True))
+            self.push_bool(string == "true")
+            self.push_bool(True)
         else:
-            self.push(bool_var(False))
-            self.push(bool_var(False))
+            self.push_bool(False)
+            self.push_bool(False)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_replace(self) -> int:
-        replacement: str = self.pop().value
-        search: str = self.pop().value
+        replacement = self.pop_str()
+        search = self.pop_str()
         string: str = self.top().value
 
         replaced = string.replace(search, replacement)
-        self.push(str_var(replaced))
+        self.push_str(replaced)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_append(self) -> int:
-        suffix: str = self.pop().value
+        suffix = self.pop_str()
         string: str = self.top().value
 
         appeneded = string + suffix
-        self.push(str_var(appeneded))
+        self.push_str(appeneded)
 
         return self.get_instruction_pointer() + 1

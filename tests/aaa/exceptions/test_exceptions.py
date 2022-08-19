@@ -13,7 +13,6 @@ from lang.exceptions.naming import (
     CollidingIdentifier,
     UnknownArgumentType,
     UnknownIdentifier,
-    UnknownPlaceholderType,
     UnknownStructField,
 )
 from lang.exceptions.runtime import AaaAssertionFailure
@@ -95,7 +94,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             'fn main { 3 " " + . }',
             StackTypesError,
             "/foo/main.aaa:1:1 Function main has invalid stack types when calling +\n"
-            + "Expected stack top: str str\n"
+            + "Expected stack top: int int\n"
             + "       Found stack: int str\n",
             id="stack-types",
         ),
@@ -120,7 +119,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo return *a { nop }
             fn main { nop }
             """,
-            UnknownPlaceholderType,
+            UnknownArgumentType,
             "/foo/main.aaa:2:13: Function foo uses unknown placeholder a\n",
             id="unknown-placeholder-type",
         ),
@@ -337,9 +336,11 @@ def test_one_error(
                 """,
             },
             CyclicImportError,
-            "",
+            "Cyclic import dependency was detected:\n"
+            + "           /foo/main.aaa\n"
+            + "depends on /foo/foo.aaa\n"
+            + "depends on /foo/main.aaa\n",
             id="cyclic-import",
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             {

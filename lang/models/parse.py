@@ -1,19 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Union
+from typing import Dict, List, Optional
 
 from lark.lexer import Token
 
-from lang.models import AaaModel
-
-
-class AaaTreeNode(AaaModel):
-    class Config:
-        frozen = True
-
-
-class FunctionBodyItem(AaaTreeNode):
-    ...
+from lang.models import AaaTreeNode, FunctionBodyItem
+from lang.models.typing.var_type import VariableType
 
 
 class IntegerLiteral(FunctionBodyItem):
@@ -26,11 +18,6 @@ class StringLiteral(FunctionBodyItem):
 
 class BooleanLiteral(FunctionBodyItem):
     value: bool
-
-
-class TypeLiteral(FunctionBodyItem):
-    type_name: str
-    type_parameters: List[ParsedType]
 
 
 class Operator(FunctionBodyItem):
@@ -77,8 +64,11 @@ class MemberFunctionName(FunctionBodyItem):
     type_name: str
     func_name: str
 
-    def __str__(self) -> str:
+    def identify(self) -> str:
         return f"{self.type_name}:{self.func_name}"
+
+    def __str__(self) -> str:
+        return self.identify()
 
 
 class StructFieldQuery(FunctionBodyItem):
@@ -96,25 +86,17 @@ class FunctionBody(AaaTreeNode):
     items: List[FunctionBodyItem]
 
 
-class ParsedTypePlaceholder(AaaTreeNode):
-    name: str
-
-
-class ParsedType(AaaTreeNode):
-    type: Union[TypeLiteral, ParsedTypePlaceholder]  # TODO use inheritance instead
-
-
 class Argument(AaaTreeNode):
     name_token: Token
     name: str
-    type: ParsedType
+    type: VariableType
 
 
 class Function(AaaTreeNode):
     token: Token
     name: str | MemberFunctionName
     arguments: List[Argument]
-    return_types: List[ParsedType]
+    return_types: List[VariableType]
     body: FunctionBody
 
     def identify(self) -> str:
@@ -124,6 +106,15 @@ class Function(AaaTreeNode):
             return f"{self.name.type_name}:{self.name.func_name}"
         else:  # pragma: nocover
             assert False
+
+    def get_arg_type(self, name: str) -> Optional[VariableType]:
+        for argument in self.arguments:
+            if (argument.type.is_placeholder() and argument.type.name == name) or (
+                not argument.type.is_placeholder() and argument.name == name
+            ):
+                return argument.type
+
+        return None
 
 
 class ImportItem(AaaTreeNode):
@@ -140,31 +131,14 @@ class Import(AaaTreeNode):
 class Struct(AaaTreeNode):
     token: Token
     name: str
-    fields: List[Argument]
+    fields: Dict[str, VariableType]
 
     def identify(self) -> str:
         return self.name
-
-
-class BuiltinFunction(AaaTreeNode):
-    name: str
-    arguments: List[ParsedType]
-    return_types: List[ParsedType]
-
-    def identify(self) -> str:
-        return self.name
-
-
-class BuiltinFunctionArguments(AaaTreeNode):
-    value: List[ParsedType]
-
-
-class BuiltinFunctionReturnTypes(AaaTreeNode):
-    value: List[ParsedType]
 
 
 class ParsedBuiltinsFile(AaaTreeNode):
-    functions: List[BuiltinFunction]
+    functions: List[Function]
 
 
 class ParsedFile(AaaTreeNode):
@@ -180,6 +154,5 @@ Branch.update_forward_refs()
 BranchCondition.update_forward_refs()
 BranchIfBody.update_forward_refs()
 BranchElseBody.update_forward_refs()
-TypeLiteral.update_forward_refs()
 StructFieldUpdate.update_forward_refs()
 StructFieldQuery.update_forward_refs()

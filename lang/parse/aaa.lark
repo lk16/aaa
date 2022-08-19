@@ -17,8 +17,8 @@ COMMENT: "//" /[^\n]*/ "\n"
 SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
-identifier: /(?!(and|args|as|assert|bool|builtin_fn|drop|dup|else|false|fn|from|if|import|int|map|nop|not|or|over|return|rot|str|struct|swap|true|vec|while)(\W|\s))([a-z_]+)/
-member_function_name: /[a-z_]+/
+identifier.0: /[a-z_]+/
+member_function_name: /[a-z_]+/  // TODO use identifier instead
 
 integer: /[0-9]+/
 
@@ -32,14 +32,14 @@ _END:        /}(?=(\W|\s|$))/
 // ignored keywords
 _AS:         /as(?=(\W|\s))/
 _ARGS:       /args(?=(\W|\s))/
-_BUILTIN_FN: /builtin_fn(?=(\W|\s))/
+BUILTIN_FN:  /builtin_fn(?=(\W|\s))/
 _ELSE:       /else(?=(\W|\s))/
-FN:         /fn(?=(\W|\s))/
-FROM:       /from(?=(\W|\s))/
+FN:          /fn(?=(\W|\s))/
+FROM:        /from(?=(\W|\s))/
 _IMPORT:     /import(?=(\W|\s))/
 _IF:         /if(?=(\W|\s))/
 _RETURN:     /return(?=(\W|\s))/
-STRUCT:     /struct(?=(\W|\s))/
+STRUCT:      /struct(?=(\W|\s))/
 _WHILE:      /while(?=(\W|\s))/
 
 // keywords for builtin types
@@ -74,13 +74,10 @@ NOP:        /nop(?=(\W|\s))/
 builtins_file_root: builtin_function_definition+
 
 builtin_function_definition: ( \
-    _BUILTIN_FN string \
-    builtin_function_arguments? \
-    builtin_function_return_types? \
+    BUILTIN_FN string \
+    function_arguments? \
+    function_return_types? \
 )
-
-builtin_function_arguments: _ARGS return_types
-builtin_function_return_types: _RETURN return_types
 
 // --- regular source file + imports ---
 
@@ -128,7 +125,8 @@ return_types: type ("," type)* ","?
 
 // --- types and type placeholders ---
 
-!type_literal: (BOOL | INT | MAP | STR | VEC | identifier) type_params?
+_builtin_type.1: BOOL | INT | MAP | STR | VEC
+!type_literal: (_builtin_type | identifier) type_params?
 type_params: "[" type ("," type)* ","? "]"
 type_placeholder: "*" identifier
 
@@ -137,7 +135,7 @@ type: type_literal | type_placeholder
 // --- literals ---
 
 literal: boolean | integer | string
-!boolean: TRUE | FALSE
+!boolean.1: TRUE | FALSE
 
 // --- function body ---
 
@@ -175,7 +173,7 @@ loop_body: _BEGIN function_body
 
 // --- operators ---
 
-!operator:    AND
+!operator.1:  AND
             | ASSERT
             | DROP
             | DUP
@@ -197,3 +195,24 @@ loop_body: _BEGIN function_body
             | />=(?=\s)/
             | /<(?=\s)/
             | />(?=\s)/
+
+keyword:  boolean
+        | operator
+        | _ARGS
+        | _AS
+        | _BEGIN
+        | _ELSE
+        | _END
+        | _IF
+        | _IMPORT
+        | _RETURN
+        | _WHILE
+        | BOOL
+        | BUILTIN_FN
+        | FN
+        | FROM
+        | INT
+        | MAP
+        | STR
+        | STRUCT
+        | VEC

@@ -1,10 +1,11 @@
 import os
 import sys
+from copy import deepcopy
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
-from lark.exceptions import UnexpectedInput
+from lark.exceptions import UnexpectedInput, VisitError
 
 from lang.exceptions import AaaLoadException
 from lang.exceptions.import_ import (
@@ -18,38 +19,25 @@ from lang.exceptions.misc import (
     MainFunctionNotFound,
     MissingEnvironmentVariable,
 )
-from lang.exceptions.naming import CollidingIdentifier
-from lang.instructions.generator import InstructionGenerator
-from lang.models import AaaModel
+from lang.exceptions.naming import CollidingIdentifier, UnknownArgumentType
+from lang.instruction_generator import InstructionGenerator
 from lang.models.instructions import Instruction
 from lang.models.parse import (
-    BuiltinFunction,
     Function,
     MemberFunctionName,
     ParsedBuiltinsFile,
     ParsedFile,
-    ParsedTypePlaceholder,
     Struct,
-    TypeLiteral,
 )
-from lang.models.program import ProgramImport
+from lang.models.program import Builtins, ProgramImport
+from lang.models.typing.signature import Signature
 from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
-from lang.typing.checker import TypeChecker
-from lang.typing.types import Signature, SignatureItem, TypePlaceholder, VariableType
+from lang.type_checker import TypeChecker
 
 # Identifiable are things identified uniquely by a filepath and name
-Identifiable = Function | ProgramImport | Struct | BuiltinFunction
-
-
-# TODO move this out
-class Builtins(AaaModel):
-    functions: Dict[str, List[Tuple[BuiltinFunction, Signature]]]
-
-    @classmethod
-    def empty(cls) -> "Builtins":
-        return Builtins(functions={})
+Identifiable = Function | ProgramImport | Struct
 
 
 class Program:
@@ -57,9 +45,12 @@ class Program:
         self.entry_point_file = file.resolve()
         self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
         self.function_instructions: Dict[Path, Dict[str, List[Instruction]]] = {}
+        self.function_signatures: Dict[Path, Dict[str, Signature]] = {}
 
         # Used to detect cyclic import loops
         self.file_load_stack: List[Path] = []
+
+        # TODO don't load in __init__, but in separate function.
 
         self._builtins, self.file_load_errors = self._load_builtins()
 
@@ -76,7 +67,7 @@ class Program:
             return cls(file=saved_file)
 
     def _load_builtins(self) -> Tuple[Builtins, List[AaaLoadException]]:
-        builtins = Builtins.empty()
+        builtins = Builtins(path="", functions={})
 
         try:
             stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
@@ -84,6 +75,7 @@ class Program:
             return builtins, [MissingEnvironmentVariable("AAA_STDLIB_PATH")]
 
         builtins_file = stdlib_path / "builtins.aaa"
+        builtins.path = builtins_file
 
         try:
             parsed_file = self._parse_builtins_file(builtins_file)
@@ -91,34 +83,7 @@ class Program:
             return builtins, [FileReadError(builtins_file)]
 
         for function in parsed_file.functions:
-            if function.name not in builtins.functions:
-                builtins.functions[function.name] = []
-
-            # TODO make more DRY
-            arg_types: List[SignatureItem] = []
-            return_types: List[SignatureItem] = []
-
-            for argument in function.arguments:
-                if isinstance(argument.type, TypeLiteral):
-                    arg_types.append(VariableType.from_type_literal(argument.type))
-                elif isinstance(argument.type, ParsedTypePlaceholder):
-                    arg_types.append(TypePlaceholder(name=argument.type.name))
-                else:  # pragma: nocover
-                    assert False
-
-            for return_type in function.return_types:
-                if isinstance(return_type.type, TypeLiteral):
-                    return_types.append(
-                        VariableType.from_type_literal(return_type.type)
-                    )
-                elif isinstance(return_type.type, ParsedTypePlaceholder):
-                    return_types.append(TypePlaceholder(name=return_type.type.name))
-                else:  # pragma: nocover
-                    assert False
-
-            signature = Signature(arg_types=arg_types, return_types=return_types)
-
-            builtins.functions[function.name].append((function, signature))
+            builtins.functions[function.identify()] = function
 
         return builtins, []
 
@@ -141,7 +106,9 @@ class Program:
 
         if file in self.file_load_stack:
             return [
-                CyclicImportError(dependencies=self.file_load_stack, failed_import=file)
+                CyclicImportError(
+                    dependencies=deepcopy(self.file_load_stack), failed_import=file
+                )
             ]
 
         self.file_load_stack.append(file)
@@ -187,7 +154,10 @@ class Program:
         except UnexpectedInput as e:
             raise AaaParseException(file=file, parse_error=e)
 
-        return AaaTransformer().transform(tree)  # type: ignore
+        try:
+            return AaaTransformer(file).transform(tree)  # type: ignore
+        except VisitError as e:
+            raise e.orig_exc
 
     def _parse_builtins_file(self, file: Path) -> ParsedBuiltinsFile:
         code = file.read_text()
@@ -197,7 +167,7 @@ class Program:
         except UnexpectedInput as e:
             raise AaaParseException(file=file, parse_error=e)
 
-        return AaaTransformer().transform(tree)  # type: ignore
+        return AaaTransformer(file).transform(tree)  # type: ignore
 
     def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:
         identifiables: List[Union[Function, Struct]] = []
@@ -305,20 +275,9 @@ class Program:
         return errors
 
     def get_identifier(self, file: Path, name: str) -> Optional[Identifiable]:
-        # TODO refactor getting builtin identifiers
-        if name in self._builtins.functions:
-            tuples = self._builtins.functions[name]
-
-            # TODO make signatures unique
-            assert len(tuples) == 1
-
-            builtin_func, _ = tuples[0]
-            return builtin_func
-
         try:
             identified = self.identifiers[file][name]
         except KeyError:
-            # TODO just raise KeyError here?
             return None
 
         if isinstance(identified, Function):
@@ -344,6 +303,47 @@ class Program:
 
     def get_instructions(self, file: Path, name: str) -> List[Instruction]:
         return self.function_instructions[file][name]
+
+    def get_signature(self, file: Path, function: Function) -> Signature:
+        try:
+            return self.function_signatures[file][function.identify()]
+        except KeyError:
+            pass
+
+        placeholder_args: Set[str] = set()
+
+        for argument in function.arguments:
+            if argument.type.is_placeholder():
+                placeholder_args.add(argument.type.name)
+            else:
+                for type_param in argument.type.type_params:
+                    placeholder_args.add(type_param.name)
+
+        for return_type in function.return_types:
+            if (
+                return_type.is_placeholder()
+                and return_type.name not in placeholder_args
+            ):
+                raise UnknownArgumentType(
+                    file=file,
+                    function=function,
+                    var_type=return_type,
+                )
+
+        signature = Signature(
+            arg_types=[argument.type for argument in function.arguments],
+            return_types=function.return_types,
+        )
+
+        if file not in self.function_signatures:
+            self.function_signatures[file] = {}
+
+        self.function_signatures[file][function.identify()] = signature
+
+        return signature
+
+    def get_builtin_signature(self, function: Function) -> Signature:
+        return self.get_signature(self._builtins.path, function)
 
     def print_all_instructions(self) -> None:  # pragma: nocover
         for functions in self.function_instructions.values():

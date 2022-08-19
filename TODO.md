@@ -19,6 +19,8 @@ fn main {
 }
 ```
 
+## Structs
+- This does not crash: `./aaa.py cmd-full 'struct foo { bar as *a } fn main { foo drop }'`
 
 ### Containers
 - Better error handling for wrong number of type parameters

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from lang.models import AaaModel
 from lang.models.parse import Struct
-from lang.typing.types import VariableType
+from lang.models.typing.var_type import VariableType
 
 
 class StandardLibraryCallKind(Enum):
@@ -62,8 +62,7 @@ class StandardLibraryCallKind(Enum):
 
 
 class Instruction(AaaModel):
-    class Config:
-        arbitrary_types_allowed = True  # TODO fix
+    ...
 
 
 class PushInt(Instruction):

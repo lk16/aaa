@@ -5,7 +5,8 @@ import pytest
 from _pytest.fixtures import SubRequest
 
 from lang.exceptions import AaaLoadException
-from lang.runtime.program import Builtins, Program
+from lang.models.program import Builtins
+from lang.runtime.program import Program
 
 cached_builtins: Optional[Builtins] = None
 
