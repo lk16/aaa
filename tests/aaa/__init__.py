@@ -1,3 +1,4 @@
+import sys
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -57,5 +58,8 @@ def check_aaa_full_source_multi_file(
     if not expected_exception_types:
         assert expected_output == stdout.getvalue()
         assert "" == stderr.getvalue()
+
+    if sys.platform == "darwin":
+        directory = f"/private{directory}"
 
     return directory, exceptions
