@@ -80,6 +80,9 @@ export AAA_STDLIB_PATH=$(pwd)/stdlib
 
 # Run tests
 ./aaa.py runtests
+
+# Setup pre-commit hooks
+pre-commit install
 ```
 
 Now you can start running code in Aaa or develop the language!
