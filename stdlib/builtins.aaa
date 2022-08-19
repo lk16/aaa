@@ -38,7 +38,7 @@ builtin_fn "or"  args a as bool, b as bool return bool
 builtin_fn "vec:clear" args v as vec[*a]                            return vec[*a]
 builtin_fn "vec:copy"  args v as vec[*a]                            return vec[*a], vec[*a]
 builtin_fn "vec:empty" args v as vec[*a]                            return vec[*a], bool
-builtin_fn "vec:get"   args v as vec[*a], offset as  int            return vec[*a], *a
+builtin_fn "vec:get"   args v as vec[*a], offset as int             return vec[*a], *a
 builtin_fn "vec:pop"   args v as vec[*a]                            return vec[*a], *a
 builtin_fn "vec:push"  args v as vec[*a], item as *a                return vec[*a]
 builtin_fn "vec:set"   args v as vec[*a], offset as int, item as *a return vec[*a]

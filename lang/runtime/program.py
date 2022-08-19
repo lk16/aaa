@@ -313,8 +313,11 @@ class Program:
         placeholder_args: Set[str] = set()
 
         for argument in function.arguments:
-            if argument.type.is_placeholder:
+            if argument.type.is_placeholder():
                 placeholder_args.add(argument.type.name)
+            else:
+                for type_param in argument.type.type_params:
+                    placeholder_args.add(type_param.name)
 
         for return_type in function.return_types:
             if (
