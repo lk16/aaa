@@ -4,3 +4,4 @@ __pycache__
 *.code-workspace
 .envrc
 lark.pdf
+*.idea

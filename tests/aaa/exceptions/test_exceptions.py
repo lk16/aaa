@@ -1,3 +1,4 @@
+import sys
 from typing import Dict, Type
 
 import pytest
@@ -314,6 +315,9 @@ def test_one_error(
     code: str, expected_exception_type: Type[Exception], expected_exception_message: str
 ) -> None:
     tmp_dir, exceptions = check_aaa_full_source(code, "", [expected_exception_type])
+    if sys.platform == "darwin":
+        tmp_dir = f"/private{tmp_dir}"
+
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
 
@@ -370,6 +374,8 @@ def test_multi_file_errors(
     tmp_dir, exceptions = check_aaa_full_source_multi_file(
         files, "", [expected_exception_type]
     )
+    if sys.platform == "darwin":
+        tmp_dir = f"/private{tmp_dir}"
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
@@ -558,6 +564,8 @@ def test_colliding_identifier(
     tmp_dir, exceptions = check_aaa_full_source_multi_file(
         files, "", [CollidingIdentifier]
     )
+    if sys.platform == "darwin":
+        tmp_dir = f"/private{tmp_dir}"
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
