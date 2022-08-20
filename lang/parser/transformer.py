@@ -270,7 +270,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def struct_definition(
         self, token: Token, name: Identifier, field_list: List[Argument]
     ) -> Struct:
-        fields = {field.name: field.type for field in field_list}
+        fields = [(field.name, field.type) for field in field_list]
         return Struct(name=name.name, fields=fields, token=token)
 
     def struct_field_query_operator(self, token: Token) -> Token:

@@ -7,6 +7,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, List, Optional
 
+from lang.cross_referencer.cross_referencer import CrossReferencer
 from lang.parser.parser import Parser
 from lang.runtime.program import Program
 from lang.runtime.simulator import Simulator
@@ -66,8 +67,8 @@ def cmd_new(code: str) -> None:
         file = Path(temp_file.name)
         file.write_text(code)
 
-        parsed = Parser(file, stdlib_path).run()
-        print(parsed)
+        parser_output = Parser(file, stdlib_path).run()
+        CrossReferencer(parser_output).run()
 
 
 def runtests(*args: Any) -> None:

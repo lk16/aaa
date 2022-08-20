@@ -2,35 +2,35 @@
 
 ### Split steps
 
-#### Parse
+#### Parser
 - [x] create `Parser` with entrypoint `run()`
 - [x] find dependencies of each file, parse those too
 - [ ] detect cyclic imports (we could just allow them?!?)
-- [ ] return dict of filename to parse tree and list of encountered problems
-- [ ] move used exceptions to this package
-- [ ] check if imports are not from other steps
+- [x] return model with filename to parse tree and list of encountered problems
+- [x] move used exceptions to this package
+- [x] check if imports are not from other steps
 
-#### Cross Reference
+#### Cross Referencer
 - [ ] create `CrossReferencer` with entrypoint `run()`
 - [ ] resolve identifiers of functions/structs/arguments
 - [ ] find naming issues
 - [ ] return dict of (filename, identifier) to tree with references to other keys in the dict
 - [ ] ...
 
-#### Type Check
+#### Type Checker
 - [ ] refactor `TypeChecker` with entrypoint `run()`
 - [ ] check if there are no new type placeholders in return type
 - [ ] returns list of found problems only
 - [ ] ...
 
-#### Instruction Generation
+#### Instruction Generator
 - [ ] refactor `InstructionGenerator` with entrypoint `run()`
 - [ ] accepts return value of `CrossReferencer.run()`
 - [ ] replaces function values of the dict by a sequence of instructions
 - [ ] returns that
 - [ ] ...
 
-#### Simulation
+#### Simulator
 - [ ] refactor `Simulator` with entrypoint `run()`
 - [ ] accepts output of `InstructionGenerator.run()`
 - [ ] runs program

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from lark.lexer import Token
 
@@ -10,8 +10,7 @@ from lang.parser.exceptions import ParseException
 
 
 class AaaParseModel(AaaModel):
-    class Config:
-        frozen = True
+    ...
 
 
 class FunctionBodyItem(AaaParseModel):
@@ -103,6 +102,17 @@ class Function(AaaParseModel):
     return_types: List[TypeLiteral | TypePlaceholder]
     body: FunctionBody
 
+    # TODO create fields name and type_name instead of doing this
+    def get_name(self) -> str:
+        if isinstance(self.name, MemberFunctionName):
+            return self.name.func_name
+        return self.name
+
+    def get_type_name(self) -> str:
+        if isinstance(self.name, MemberFunctionName):
+            return self.name.type_name
+        return ""
+
 
 class ImportItem(AaaParseModel):
     origninal_name: str
@@ -118,7 +128,7 @@ class Import(AaaParseModel):
 class Struct(AaaParseModel):
     token: Token
     name: str
-    fields: Dict[str, TypeLiteral | TypePlaceholder]
+    fields: List[Tuple[str, TypeLiteral | TypePlaceholder]]
 
 
 class ParsedFile(AaaParseModel):
