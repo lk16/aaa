@@ -6,7 +6,6 @@ from typing import Dict, List
 from lark.lexer import Token
 
 from lang.models import AaaModel
-from lang.models.typing.var_type import VariableType
 from lang.parser.exceptions import ParseException
 
 
@@ -94,14 +93,14 @@ class FunctionBody(AaaParseModel):
 class Argument(AaaParseModel):
     name_token: Token
     name: str
-    type: VariableType
+    type: TypeLiteral | TypePlaceholder
 
 
 class Function(AaaParseModel):
     token: Token
     name: str | MemberFunctionName
     arguments: List[Argument]
-    return_types: List[VariableType]
+    return_types: List[TypeLiteral | TypePlaceholder]
     body: FunctionBody
 
 
@@ -119,13 +118,28 @@ class Import(AaaParseModel):
 class Struct(AaaParseModel):
     token: Token
     name: str
-    fields: Dict[str, VariableType]
+    fields: Dict[str, TypeLiteral | TypePlaceholder]
 
 
 class ParsedFile(AaaParseModel):
     functions: List[Function]
     imports: List[Import]
     structs: List[Struct]
+
+
+class TypeLiteral(AaaParseModel):
+    name: str
+    token: Token
+    params: List[TypeLiteral | TypePlaceholder]
+
+
+class TypeParams(AaaParseModel):
+    ...
+
+
+class TypePlaceholder(AaaParseModel):
+    name: str
+    token: Token
 
 
 LoopBody.update_forward_refs()
@@ -137,6 +151,10 @@ BranchIfBody.update_forward_refs()
 BranchElseBody.update_forward_refs()
 StructFieldUpdate.update_forward_refs()
 StructFieldQuery.update_forward_refs()
+Argument.update_forward_refs()
+Function.update_forward_refs()
+TypeLiteral.update_forward_refs()
+Struct.update_forward_refs()
 
 
 class ParserOutput(AaaModel):
