@@ -1,5 +1,37 @@
 # TODO
 
+### Split steps
+
+#### Parse
+- create `Parser` with entrypoint `run()`
+- find dependencies of each file, parse those too
+- detect cyclic imports
+- return dict of filename to parse tree
+
+#### Cross Reference
+- create `CrossReferencer` with entrypoint `run()`
+- resolve identifiers of functions/structs/arguments
+- find naming issues
+- return dict of (filename, identifier) to tree with references to other keys in the dict
+
+#### Type Check
+- refactor `TypeChecker` with entrypoint `run()`
+- check if there are no new type placeholders in return type
+- returns list of found problems only
+
+#### Instruction Generation
+- refactor `InstructionGenerator` with entrypoint `run()`
+- accepts return value of `CrossReferencer.run()`
+- replaces function values of the dict by a sequence of instructions
+- returns that
+
+#### Simulation
+- refactor `Simulator` with entrypoint `run()`
+- accepts output of `InstructionGenerator.run()`
+- runs program
+
+
+
 ### Member functions
 - make not returning the object the default
 
