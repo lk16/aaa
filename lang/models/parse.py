@@ -137,10 +137,6 @@ class Struct(AaaTreeNode):
         return self.name
 
 
-class ParsedBuiltinsFile(AaaTreeNode):
-    functions: List[Function]
-
-
 class ParsedFile(AaaTreeNode):
     functions: List[Function]
     imports: List[Import]

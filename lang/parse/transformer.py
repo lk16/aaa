@@ -25,7 +25,6 @@ from lang.models.parse import (
     LoopCondition,
     MemberFunctionName,
     Operator,
-    ParsedBuiltinsFile,
     ParsedFile,
     StringLiteral,
     Struct,
@@ -37,7 +36,7 @@ from lang.parse import aaa_keyword_parser
 
 
 @v_args(inline=True)
-class AaaTransformer(Transformer[Any, Any]):
+class AaaTransformer(Transformer[Any, ParsedFile]):
     def __init__(self, file: Path) -> None:
         self.file = file
         super().__init__()
@@ -118,7 +117,7 @@ class AaaTransformer(Transformer[Any, Any]):
         )
 
     @v_args(inline=False)
-    def builtins_file_root(self, args: List[Function]) -> ParsedBuiltinsFile:
+    def builtins_file_root(self, args: List[Function]) -> ParsedFile:
         functions: List[Function] = []
 
         for arg in args:
@@ -127,7 +126,7 @@ class AaaTransformer(Transformer[Any, Any]):
             else:  # pragma: nocover
                 assert False
 
-        return ParsedBuiltinsFile(functions=functions)
+        return ParsedFile(functions=functions, imports=[], structs=[])
 
     def function_body_item(
         self, function_body_item: FunctionBodyItem

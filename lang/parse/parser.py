@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict
 
 from lark.exceptions import UnexpectedInput, VisitError
 from lark.lark import Lark
 
 from lang.exceptions.misc import AaaParseException, MissingEnvironmentVariable
-from lang.models.parse import ParsedBuiltinsFile, ParsedFile
+from lang.models.parse import ParsedFile
 from lang.parse import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 
@@ -14,28 +14,18 @@ from lang.parse.transformer import AaaTransformer
 class Parser:
     def __init__(self, entrypoint: Path) -> None:
         self.entrypoint = entrypoint
-        self.parsed: Dict[Path, ParsedFile | ParsedBuiltinsFile] = {}
+        self.parsed: Dict[Path, ParsedFile] = {}
         self.parse_queue = [self.entrypoint]
 
-    # TODO get rid of ParsedBuiltinsFile
-    def run(self) -> Tuple[Dict[Path, ParsedFile], Dict[Path, ParsedBuiltinsFile]]:
+    def run(self) -> Dict[Path, ParsedFile]:
+        # TODO handle exceptions
+
         self._parse(self._get_builtins_path(), aaa_builtins_parser)
 
         for file in self.parse_queue:
             self._parse(file, aaa_source_parser)
 
-        parsed_files: Dict[Path, ParsedFile] = {}
-        parsed_builtin_files: Dict[Path, ParsedBuiltinsFile] = {}
-
-        for file, parsed in self.parsed.items():
-            if isinstance(parsed, ParsedFile):
-                parsed_files[file] = parsed
-            elif isinstance(parsed, ParsedBuiltinsFile):
-                parsed_builtin_files[file] = parsed
-            else:  # pragma: nocover
-                assert False
-
-        return parsed_files, parsed_builtin_files
+        return self.parsed
 
     def _get_builtins_path(self) -> Path:
         try:
@@ -54,16 +44,12 @@ class Parser:
             raise AaaParseException(file=file, parse_error=e)
 
         try:
-            parsed_file: ParsedFile | ParsedBuiltinsFile = AaaTransformer(
-                file
-            ).transform(tree)
+            parsed_file = AaaTransformer(file).transform(tree)
         except VisitError as e:
             raise e.orig_exc
 
         self.parsed[file] = parsed_file
-
-        if isinstance(parsed_file, ParsedFile):
-            self._enqueue_dependencies(file, parsed_file)
+        self._enqueue_dependencies(file, parsed_file)
 
     def _enqueue_dependencies(self, file: Path, parsed_file: ParsedFile) -> None:
         for import_ in parsed_file.imports:

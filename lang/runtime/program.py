@@ -22,13 +22,7 @@ from lang.exceptions.misc import (
 from lang.exceptions.naming import CollidingIdentifier, UnknownArgumentType
 from lang.instruction_generator import InstructionGenerator
 from lang.models.instructions import Instruction
-from lang.models.parse import (
-    Function,
-    MemberFunctionName,
-    ParsedBuiltinsFile,
-    ParsedFile,
-    Struct,
-)
+from lang.models.parse import Function, MemberFunctionName, ParsedFile, Struct
 from lang.models.program import Builtins, ProgramImport
 from lang.models.typing.signature import Signature
 from lang.parse import aaa_builtins_parser, aaa_source_parser
@@ -155,11 +149,12 @@ class Program:
             raise AaaParseException(file=file, parse_error=e)
 
         try:
-            return AaaTransformer(file).transform(tree)  # type: ignore
+            return AaaTransformer(file).transform(tree)
         except VisitError as e:
             raise e.orig_exc
 
-    def _parse_builtins_file(self, file: Path) -> ParsedBuiltinsFile:
+    def _parse_builtins_file(self, file: Path) -> ParsedFile:
+        # TODO merge with _parse_regular_file
         code = file.read_text()
 
         try:
@@ -167,7 +162,7 @@ class Program:
         except UnexpectedInput as e:
             raise AaaParseException(file=file, parse_error=e)
 
-        return AaaTransformer(file).transform(tree)  # type: ignore
+        return AaaTransformer(file).transform(tree)
 
     def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:
         identifiables: List[Union[Function, Struct]] = []
