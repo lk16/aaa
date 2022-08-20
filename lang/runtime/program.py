@@ -7,18 +7,13 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 from lark.exceptions import UnexpectedInput, VisitError
 
-from lang.exceptions import AaaLoadException
+from lang.exceptions import AaaException
 from lang.exceptions.import_ import (
     AbsoluteImportError,
     CyclicImportError,
-    FileReadError,
     ImportedItemNotFound,
 )
-from lang.exceptions.misc import (
-    AaaParseException,
-    MainFunctionNotFound,
-    MissingEnvironmentVariable,
-)
+from lang.exceptions.misc import MainFunctionNotFound
 from lang.exceptions.naming import CollidingIdentifier, UnknownArgumentType
 from lang.instruction_generator import InstructionGenerator
 from lang.models.instructions import Instruction
@@ -26,6 +21,7 @@ from lang.models.parse import Function, MemberFunctionName, ParsedFile, Struct
 from lang.models.program import Builtins, ProgramImport
 from lang.models.typing.signature import Signature
 from lang.parse import aaa_builtins_parser, aaa_source_parser
+from lang.parse.exceptions import FileReadError, ParseException
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
 from lang.type_checker import TypeChecker
@@ -60,14 +56,10 @@ class Program:
             saved_file.write_text(code)
             return cls(file=saved_file)
 
-    def _load_builtins(self) -> Tuple[Builtins, List[AaaLoadException]]:
+    def _load_builtins(self) -> Tuple[Builtins, List[AaaException]]:
         builtins = Builtins(path="", functions={})
 
-        try:
-            stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
-        except KeyError:
-            return builtins, [MissingEnvironmentVariable("AAA_STDLIB_PATH")]
-
+        stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
         builtins_file = stdlib_path / "builtins.aaa"
         builtins.path = builtins_file
 
@@ -95,7 +87,7 @@ class Program:
         print(f"Found {error_count} error{maybe_s}.", file=sys.stderr)
         exit(1)
 
-    def _load_file(self, file: Path) -> List[AaaLoadException]:
+    def _load_file(self, file: Path) -> List[AaaException]:
         # TODO make sure the file wasn't loaded already
 
         if file in self.file_load_stack:
@@ -112,7 +104,7 @@ class Program:
         except OSError:
             self.file_load_stack.pop()
             return [FileReadError(file)]
-        except AaaLoadException as e:
+        except AaaException as e:
             self.file_load_stack.pop()
             return [e]
 
@@ -125,7 +117,7 @@ class Program:
 
         try:
             self._load_file_identifiers(file, parsed_file)
-        except AaaLoadException as e:
+        except AaaException as e:
             self.file_load_stack.pop()
             return [e]
 
@@ -146,7 +138,7 @@ class Program:
         try:
             tree = aaa_source_parser.parse(code)
         except UnexpectedInput as e:
-            raise AaaParseException(file=file, parse_error=e)
+            raise ParseException(file=file, parse_error=e)
 
         try:
             return AaaTransformer(file).transform(tree)
@@ -160,7 +152,7 @@ class Program:
         try:
             tree = aaa_builtins_parser.parse(code)
         except UnexpectedInput as e:
-            raise AaaParseException(file=file, parse_error=e)
+            raise ParseException(file=file, parse_error=e)
 
         return AaaTransformer(file).transform(tree)
 
@@ -194,8 +186,8 @@ class Program:
 
     def _type_check_file(
         self, file: Path, parsed_file: ParsedFile
-    ) -> List[AaaLoadException]:
-        exceptions: List[AaaLoadException] = []
+    ) -> List[AaaException]:
+        exceptions: List[AaaException] = []
 
         if file == self.entry_point_file:
             main_found = False
@@ -210,7 +202,7 @@ class Program:
         for function in parsed_file.functions:
             try:
                 TypeChecker(file, function, self).check()
-            except AaaLoadException as e:
+            except AaaException as e:
                 exceptions.append(e)
 
         return exceptions
@@ -219,8 +211,8 @@ class Program:
         self,
         file: Path,
         parsed_file: ParsedFile,
-    ) -> List[AaaLoadException]:
-        errors: List[AaaLoadException] = []
+    ) -> List[AaaException]:
+        errors: List[AaaException] = []
 
         for import_ in parsed_file.imports:
             if import_.source.startswith("/"):

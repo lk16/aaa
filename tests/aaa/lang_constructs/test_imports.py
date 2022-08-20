@@ -2,7 +2,8 @@ from typing import Dict, List, Type
 
 import pytest
 
-from lang.exceptions.import_ import FileReadError, ImportedItemNotFound
+from lang.exceptions.import_ import ImportedItemNotFound
+from lang.parse.exceptions import FileReadError
 from tests.aaa import check_aaa_full_source_multi_file
 
 

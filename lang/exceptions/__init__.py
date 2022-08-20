@@ -10,15 +10,11 @@ class AaaException(Exception):
     ...
 
 
-class AaaLoadException(AaaException):
-    ...
-
-
 class AaaRuntimeException(AaaException):
     ...
 
 
-class NamingException(AaaLoadException):
+class NamingException(AaaException):
     ...
 
 

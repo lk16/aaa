@@ -5,9 +5,11 @@ from lark.exceptions import UnexpectedInput
 from lark.lexer import Token
 from lark.visitors import Transformer, v_args
 
-from lang.exceptions.misc import KeywordUsedAsIdentifier
-from lang.models import AaaTreeNode, FunctionBodyItem
-from lang.models.parse import (
+from lang.models.typing.var_type import RootType, VariableType
+from lang.parse import aaa_keyword_parser
+from lang.parse.exceptions import KeywordUsedAsIdentifier
+from lang.parse.models import (
+    AaaParseModel,
     Argument,
     BooleanLiteral,
     Branch,
@@ -16,6 +18,7 @@ from lang.models.parse import (
     BranchIfBody,
     Function,
     FunctionBody,
+    FunctionBodyItem,
     Identifier,
     Import,
     ImportItem,
@@ -31,8 +34,6 @@ from lang.models.parse import (
     StructFieldQuery,
     StructFieldUpdate,
 )
-from lang.models.typing.var_type import RootType, VariableType
-from lang.parse import aaa_keyword_parser
 
 
 @v_args(inline=True)
@@ -57,7 +58,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def boolean(self, token: Token) -> BooleanLiteral:
         return BooleanLiteral(value=token.value)
 
-    def branch(self, *args: List[AaaTreeNode]) -> Branch:
+    def branch(self, *args: List[AaaParseModel]) -> Branch:
         condition: FunctionBody
         if_body: FunctionBody
         else_body = FunctionBody(items=[])

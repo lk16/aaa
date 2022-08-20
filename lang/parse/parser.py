@@ -1,55 +1,61 @@
-import os
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 from lark.exceptions import UnexpectedInput, VisitError
 from lark.lark import Lark
 
-from lang.exceptions.misc import AaaParseException, MissingEnvironmentVariable
-from lang.models.parse import ParsedFile
 from lang.parse import aaa_builtins_parser, aaa_source_parser
+from lang.parse.exceptions import FileReadError, ParseException, ParserBaseException
+from lang.parse.models import ParsedFile, ParserOutput
 from lang.parse.transformer import AaaTransformer
 
 
 class Parser:
-    def __init__(self, entrypoint: Path) -> None:
+    def __init__(self, entrypoint: Path, builtins_path: Path) -> None:
         self.entrypoint = entrypoint
+        self.builtins_path = builtins_path
+
         self.parsed: Dict[Path, ParsedFile] = {}
         self.parse_queue = [self.entrypoint]
+        self.exceptions: List[ParserBaseException] = []
 
-    def run(self) -> Dict[Path, ParsedFile]:
-        # TODO handle exceptions
-
-        self._parse(self._get_builtins_path(), aaa_builtins_parser)
+    def run(self) -> ParserOutput:
+        self.parsed[self.builtins_path] = self._parse(
+            self.builtins_path, aaa_builtins_parser
+        )
 
         for file in self.parse_queue:
-            self._parse(file, aaa_source_parser)
+            try:
+                self.parsed[file] = self._parse(file, aaa_source_parser)
+            except ParserBaseException as e:
+                self.exceptions.append(e)
+            else:
+                self._enqueue_dependencies(file, self.parsed[file])
 
-        return self.parsed
+        return ParserOutput(
+            parsed=self.parsed,
+            builtins_path=self.builtins_path,
+            exceptions=self.exceptions,
+        )
 
-    def _get_builtins_path(self) -> Path:
+    def _parse(self, file: Path, parser: Lark) -> ParsedFile:
         try:
-            stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
-        except KeyError:
-            raise MissingEnvironmentVariable("AAA_STDLIB_PATH")
-
-        return stdlib_path / "builtins.aaa"
-
-    def _parse(self, file: Path, parser: Lark) -> None:
-        code = file.read_text()
+            code = file.read_text()
+        except OSError:
+            raise FileReadError(file)
 
         try:
             tree = parser.parse(code)
         except UnexpectedInput as e:
-            raise AaaParseException(file=file, parse_error=e)
+            raise ParseException(file=file, parse_error=e)
 
         try:
             parsed_file = AaaTransformer(file).transform(tree)
         except VisitError as e:
             raise e.orig_exc
 
-        self.parsed[file] = parsed_file
-        self._enqueue_dependencies(file, parsed_file)
+        assert isinstance(parsed_file, ParsedFile)
+        return parsed_file
 
     def _enqueue_dependencies(self, file: Path, parsed_file: ParsedFile) -> None:
         for import_ in parsed_file.imports:

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Union
 
-from lang.exceptions import AaaLoadException, error_location, format_typestack
+from lang.exceptions import AaaException, error_location, format_typestack
 from lang.models.parse import (
     Function,
     MemberFunctionName,
@@ -18,7 +18,7 @@ from lang.models.typing.signature import (
 from lang.models.typing.var_type import VariableType
 
 
-class TypeException(AaaLoadException):
+class TypeException(AaaException):
     def __init__(self, *, file: Path, function: Function) -> None:
         self.file = file
         self.function = function

@@ -1,10 +1,13 @@
 #!/usr/bin/env -S python3 -u
 
+import os
 import subprocess
 import sys
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, List, Optional
 
+from lang.parse.parser import Parser
 from lang.runtime.program import Program
 from lang.runtime.simulator import Simulator
 
@@ -46,6 +49,27 @@ def cmd_full(code: str, verbose_flag: Optional[str] = None) -> None:
     simulator.run()
 
 
+def cmd_new(code: str) -> None:
+    # TODO the other functions here should be refactored
+    # TODO This should be remove before the separate-steps branch is merged
+
+    try:
+        stdlib_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
+    except KeyError:
+        print(
+            "Environment variable AAA_STDLIB_PATH is not set. Cannot find standard library!",
+            file=sys.stderr,
+        )
+        exit(1)
+
+    with NamedTemporaryFile() as temp_file:
+        file = Path(temp_file.name)
+        file.write_text(code)
+
+        parsed = Parser(file, stdlib_path).run()
+        print(parsed)
+
+
 def runtests(*args: Any) -> None:
     if args:
         raise ArgParseError("runtests expects no flags or arguments.")
@@ -64,6 +88,7 @@ def runtests(*args: Any) -> None:
 
 COMMANDS: Dict[str, Callable[..., None]] = {
     "cmd": cmd,
+    "cmd-new": cmd_new,
     "cmd-full": cmd_full,
     "run": run,
     "runtests": runtests,
@@ -79,6 +104,7 @@ def show_usage(argv: List[str], error_message: str) -> None:
         f"Argument parsing failed: {error_message}\n\n"
         + "Available commands:\n"
         + f"{argv[0]} cmd CODE <-v>\n"
+        + f"{argv[0]} cmd-new CODE\n"
         + f"{argv[0]} cmd-full CODE <-v>\n"
         + f"{argv[0]} run FILE_PATH <-v>\n"
         + f"{argv[0]} runtests\n"

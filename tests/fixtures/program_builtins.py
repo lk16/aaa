@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from _pytest.fixtures import SubRequest
 
-from lang.exceptions import AaaLoadException
+from lang.exceptions import AaaException
 from lang.models.program import Builtins
 from lang.runtime.program import Program
 
@@ -36,7 +36,7 @@ def cache_program_builtins(request: SubRequest) -> Generator[None, None, None]:
     def load_cached_builtins(
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[Builtins, List[AaaLoadException]]:
+    ) -> Tuple[Builtins, List[AaaException]]:
         assert cached_builtins
         return cached_builtins, []
 

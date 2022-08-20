@@ -4,32 +4,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from pytest import MonkeyPatch
 
-from lang.exceptions.import_ import FileReadError
-from lang.exceptions.misc import MissingEnvironmentVariable
 from lang.models.instructions import Instruction
+from lang.parse.exceptions import FileReadError
 from lang.runtime.program import Program
 from lang.runtime.simulator import Simulator
 
 pytestmark = pytest.mark.no_builtins_cache
 
 BUILTINS_FILE_PATH = Path().cwd() / "stdlib/builtins.aaa"
-
-
-def test_program_load_builtins_without_stdlib_path_env_var(
-    monkeypatch: MonkeyPatch,
-) -> None:
-    monkeypatch.delenv("AAA_STDLIB_PATH")
-
-    program = Program.without_file("fn main { nop }")
-    assert len(program.file_load_errors) == 1
-    assert isinstance(program.file_load_errors[0], MissingEnvironmentVariable)
-
-    assert (
-        str(program.file_load_errors[0])
-        == f"Required environment variable AAA_STDLIB_PATH was not set."
-    )
 
 
 def test_program_load_builtins_file_not_found() -> None:

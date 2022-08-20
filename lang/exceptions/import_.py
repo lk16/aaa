@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import List
 
-from lang.exceptions import AaaLoadException, error_location
+from lang.exceptions import AaaException, error_location
 from lang.models.parse import Import
 
 
-class ImportException(AaaLoadException):
+class ImportException(AaaException):
     ...
 
 
@@ -46,14 +46,6 @@ class ImportedItemNotFound(ImportException):
             f"{self.where()}: Could not import "
             + f"{self.imported_item} from {self.import_.source}\n"
         )
-
-
-class FileReadError(ImportException):
-    def __init__(self, file: Path) -> None:
-        self.file = file
-
-    def __str__(self) -> str:
-        return f"{self.file}: Failed to open or read\n"
 
 
 class CyclicImportError(ImportException):
