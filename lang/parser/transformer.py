@@ -6,9 +6,9 @@ from lark.lexer import Token
 from lark.visitors import Transformer, v_args
 
 from lang.models.typing.var_type import RootType, VariableType
-from lang.parse import aaa_keyword_parser
-from lang.parse.exceptions import KeywordUsedAsIdentifier
-from lang.parse.models import (
+from lang.parser import aaa_keyword_parser
+from lang.parser.exceptions import KeywordUsedAsIdentifier
+from lang.parser.models import (
     AaaParseModel,
     Argument,
     BooleanLiteral,

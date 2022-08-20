@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from lang.models.instructions import Instruction
-from lang.parse.exceptions import FileReadError
+from lang.parser.exceptions import FileReadError
 from lang.runtime.program import Program
 from lang.runtime.simulator import Simulator
 

@@ -20,9 +20,9 @@ from lang.models.instructions import Instruction
 from lang.models.parse import Function, MemberFunctionName, ParsedFile, Struct
 from lang.models.program import Builtins, ProgramImport
 from lang.models.typing.signature import Signature
-from lang.parse import aaa_builtins_parser, aaa_source_parser
-from lang.parse.exceptions import FileReadError, ParseException
-from lang.parse.transformer import AaaTransformer
+from lang.parser import aaa_builtins_parser, aaa_source_parser
+from lang.parser.exceptions import FileReadError, ParseException
+from lang.parser.transformer import AaaTransformer
 from lang.runtime.debug import format_str
 from lang.type_checker import TypeChecker
 

@@ -1,6 +1,6 @@
 import pytest
 
-from lang.parse.exceptions import KeywordUsedAsIdentifier
+from lang.parser.exceptions import KeywordUsedAsIdentifier
 from tests.aaa import check_aaa_full_source
 
 AAA_KEYWORDS = [

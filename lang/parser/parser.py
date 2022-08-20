@@ -4,10 +4,10 @@ from typing import Dict, List
 from lark.exceptions import UnexpectedInput, VisitError
 from lark.lark import Lark
 
-from lang.parse import aaa_builtins_parser, aaa_source_parser
-from lang.parse.exceptions import FileReadError, ParseException, ParserBaseException
-from lang.parse.models import ParsedFile, ParserOutput
-from lang.parse.transformer import AaaTransformer
+from lang.parser import aaa_builtins_parser, aaa_source_parser
+from lang.parser.exceptions import FileReadError, ParseException, ParserBaseException
+from lang.parser.models import ParsedFile, ParserOutput
+from lang.parser.transformer import AaaTransformer
 
 
 class Parser:

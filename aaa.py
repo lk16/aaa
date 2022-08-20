@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, List, Optional
 
-from lang.parse.parser import Parser
+from lang.parser.parser import Parser
 from lang.runtime.program import Program
 from lang.runtime.simulator import Simulator
 

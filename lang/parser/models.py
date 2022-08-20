@@ -7,7 +7,7 @@ from lark.lexer import Token
 
 from lang.models import AaaModel
 from lang.models.typing.var_type import VariableType
-from lang.parse.exceptions import ParseException
+from lang.parser.exceptions import ParseException
 
 
 class AaaParseModel(AaaModel):

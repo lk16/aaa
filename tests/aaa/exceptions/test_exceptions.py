@@ -28,7 +28,7 @@ from lang.exceptions.typing import (
     StructUpdateStackError,
     StructUpdateTypeError,
 )
-from lang.parse.exceptions import FileReadError
+from lang.parser.exceptions import FileReadError
 from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
 
 
