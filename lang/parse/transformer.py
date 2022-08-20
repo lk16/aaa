@@ -33,7 +33,7 @@ from lang.models.parse import (
     StructFieldUpdate,
 )
 from lang.models.typing.var_type import RootType, VariableType
-from lang.parse.parser import aaa_keyword_parser
+from lang.parse import aaa_keyword_parser
 
 
 @v_args(inline=True)

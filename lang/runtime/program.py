@@ -31,7 +31,7 @@ from lang.models.parse import (
 )
 from lang.models.program import Builtins, ProgramImport
 from lang.models.typing.signature import Signature
-from lang.parse.parser import aaa_builtins_parser, aaa_source_parser
+from lang.parse import aaa_builtins_parser, aaa_source_parser
 from lang.parse.transformer import AaaTransformer
 from lang.runtime.debug import format_str
 from lang.type_checker import TypeChecker
