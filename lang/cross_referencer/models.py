@@ -46,7 +46,7 @@ class Import(AaaCrossReferenceModel):
     source_file: Path
     source_name: str
     imported_name: str
-    source: Unresolved | Struct | Function
+    source: Unresolved | Struct | Function  # TODO consider using Identifiable here
 
     def identify(self) -> str:
         return self.imported_name

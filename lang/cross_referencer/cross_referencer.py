@@ -23,13 +23,15 @@ class CrossReferencer:
                 identified = self.identifiers[file][name]
                 print(f"{file} {name} -> {type(identified).__name__}")
 
-        # TODO check imports
-
-        # TODO Resolve field types of structs
-
-        # TODO Resolve argument/return types of functions
-
-        # TODO resolve identifiers in functions
+        for file, file_identifiers in self.identifiers.items():
+            for identifiable in file_identifiers.values():
+                if isinstance(identifiable, Import):
+                    self._resolve_import(identifiable)
+                elif isinstance(identifiable, Struct):
+                    self._resolve_struct_fields(identifiable)
+                elif isinstance(identifiable, Function):
+                    self._resolve_function_arguments(identifiable)
+                    self._resolve_function_body(identifiable)
 
         # TODO handle exceptions
         ...
@@ -118,3 +120,32 @@ class CrossReferencer:
             Type(name=type.name, param_count=len(type.params), parsed=type)
             for type in types
         ]
+
+    def _resolve_import(self, import_: Import) -> None:
+        try:
+            source = self.identifiers[import_.source_file][import_.source_name]
+        except KeyError:
+            # TODO importing non-existing value (bad), or file was not parsed (verrry bad)
+            raise NotImplementedError
+
+        if isinstance(source, Type):
+            # There is no syntax that makes this possible currently
+            raise NotImplementedError
+
+        if isinstance(source, Import):
+            # TODO Indirect importing is forbidden
+            raise NotImplementedError
+
+        import_.source = source
+
+    def _resolve_struct_fields(self, struct: Struct) -> None:
+        # TODO
+        raise NotImplementedError
+
+    def _resolve_function_arguments(self, function: Function) -> None:
+        # TODO
+        raise NotImplementedError
+
+    def _resolve_function_body(self, function: Function) -> None:
+        # TODO
+        raise NotImplementedError
