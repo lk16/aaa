@@ -86,8 +86,18 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def branch_else_body(self, function_body: FunctionBody) -> BranchElseBody:
         return BranchElseBody(value=function_body)
 
+    def builtin_type_declaration(
+        self, token: Token, type_literal: TypeLiteral
+    ) -> TypeLiteral:
+        for param in type_literal.params:
+            if not isinstance(param, TypePlaceholder):
+                # TODO type_literal should only have params that are TypePlaceholder
+                raise NotImplementedError
+
+        return type_literal
+
     @v_args(inline=False)
-    def builtin_function_definition(self, args: List[Any]) -> Function:
+    def builtin_function_declaration(self, args: List[Any]) -> Function:
         name: str | MemberFunctionName = ""
         arguments: List[Argument] = []
         return_types: List[TypeLiteral | TypePlaceholder] = []
@@ -125,8 +135,19 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             token=token,
         )
 
-    def builtins_file_root(self, *functions: Function) -> ParsedFile:
-        return ParsedFile(functions=list(functions), imports=[], structs=[])
+    def builtins_file_root(self, *args: Function | TypeLiteral) -> ParsedFile:
+        functions: List[Function] = []
+        types: List[TypeLiteral] = []
+
+        for arg in args:
+            if isinstance(arg, Function):
+                functions.append(arg)
+            elif isinstance(arg, TypeLiteral):
+                types.append(arg)
+            else:  # pragma: nocover
+                assert False
+
+        return ParsedFile(functions=functions, imports=[], structs=[], types=types)
 
     def function_body_item(
         self, function_body_item: FunctionBodyItem
@@ -256,7 +277,9 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             else:  # pragma: nocover
                 assert False
 
-        return ParsedFile(functions=functions, imports=imports, structs=structs)
+        return ParsedFile(
+            functions=functions, imports=imports, structs=structs, types=[]
+        )
 
     def return_types(
         self, *types: TypeLiteral | TypePlaceholder

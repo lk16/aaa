@@ -30,17 +30,18 @@ _BEGIN:      /{(?=(\W|\s))/
 _END:        /}(?=(\W|\s|$))/
 
 // ignored keywords
-_AS:         /as(?=(\W|\s))/
-_ARGS:       /args(?=(\W|\s))/
-BUILTIN_FN:  /builtin_fn(?=(\W|\s))/
-_ELSE:       /else(?=(\W|\s))/
-FN:          /fn(?=(\W|\s))/
-FROM:        /from(?=(\W|\s))/
-_IMPORT:     /import(?=(\W|\s))/
-_IF:         /if(?=(\W|\s))/
-_RETURN:     /return(?=(\W|\s))/
-STRUCT:      /struct(?=(\W|\s))/
-_WHILE:      /while(?=(\W|\s))/
+_AS:          /as(?=(\W|\s))/
+_ARGS:        /args(?=(\W|\s))/
+BUILTIN_FN:   /builtin_fn(?=(\W|\s))/
+BUILTIN_TYPE: /builtin_type(?=(\W|\s))/
+_ELSE:        /else(?=(\W|\s))/
+FN:           /fn(?=(\W|\s))/
+FROM:         /from(?=(\W|\s))/
+_IMPORT:      /import(?=(\W|\s))/
+_IF:          /if(?=(\W|\s))/
+_RETURN:      /return(?=(\W|\s))/
+STRUCT:       /struct(?=(\W|\s))/
+_WHILE:       /while(?=(\W|\s))/
 
 // keywords for builtin types
 BOOL:       /bool(?=(\W|\s))/
@@ -71,9 +72,11 @@ NOP:        /nop(?=(\W|\s))/
 
 // --- builtin file rules ---
 
-builtins_file_root: builtin_function_definition+
+builtins_file_root: (builtin_function_declaration | builtin_type_declaration)+
 
-builtin_function_definition: ( \
+builtin_type_declaration: BUILTIN_TYPE type_literal
+
+builtin_function_declaration: ( \
     BUILTIN_FN (operator | identifier | struct_function_identifier) \
     function_arguments? \
     function_return_types? \

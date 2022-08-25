@@ -135,6 +135,7 @@ class ParsedFile(AaaParseModel):
     functions: List[Function]
     imports: List[Import]
     structs: List[Struct]
+    types: List[TypeLiteral]
 
 
 class TypeLiteral(AaaParseModel):
@@ -165,6 +166,7 @@ Argument.update_forward_refs()
 Function.update_forward_refs()
 TypeLiteral.update_forward_refs()
 Struct.update_forward_refs()
+ParsedFile.update_forward_refs()
 
 
 class ParserOutput(AaaModel):

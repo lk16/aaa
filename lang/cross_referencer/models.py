@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 from lang.models import AaaModel
 from lang.parser import models as parser
@@ -11,27 +11,20 @@ class AaaCrossReferenceModel(AaaModel):
     ...
 
 
-class Unresolved(AaaModel):
+class Unresolved(AaaCrossReferenceModel):
     ...
 
 
-class Type(AaaModel):
-    parsed: parser.TypeLiteral | parser.TypePlaceholder
-    name: str
-    is_placeholder: bool
-    params: List["Type"]
-
-
-class Struct(AaaModel):
+class Struct(AaaCrossReferenceModel):
     parsed: parser.Struct
-    fields: Dict[str, Type | Unresolved]
+    fields: Dict[str, Type | Struct | Unresolved]
     name: str
 
     def identify(self) -> str:
         return self.name
 
 
-class Function(AaaModel):
+class Function(AaaCrossReferenceModel):
     parsed: parser.Function
     name: str
     type_name: str
@@ -44,11 +37,11 @@ class Function(AaaModel):
         return self.name
 
 
-class FunctionBody(AaaModel):
+class FunctionBody(AaaCrossReferenceModel):
     ...
 
 
-class Import(AaaModel):
+class Import(AaaCrossReferenceModel):
     parsed: parser.ImportItem
     source_file: Path
     source_name: str
@@ -59,4 +52,14 @@ class Import(AaaModel):
         return self.imported_name
 
 
+class Type(AaaCrossReferenceModel):
+    parsed: parser.TypeLiteral
+    name: str
+    param_count: int
+
+    def identify(self) -> str:
+        return self.name
+
+
 Function.update_forward_refs()
+Struct.update_forward_refs()

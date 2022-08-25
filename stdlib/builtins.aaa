@@ -1,4 +1,13 @@
 
+// elementary types
+builtin_type bool
+builtin_type int
+builtin_type str
+
+// container types
+builtin_type map[*k, *v]
+builtin_type vec[*a]
+
 // stack operations
 builtin_fn drop args a as *a
 builtin_fn dup  args a as *a                   return *a, *a

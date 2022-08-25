@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import Dict, List
 
-from lang.cross_referencer.models import Function, Import, Struct, Unresolved
+from lang.cross_referencer.models import Function, Import, Struct, Type, Unresolved
 from lang.parser import models as parser
 
-Identifiable = Function | Import | Struct
+Identifiable = Function | Import | Struct | Type
 
 
 class CrossReferencer:
@@ -16,6 +16,14 @@ class CrossReferencer:
     def run(self) -> None:
         for file, parsed_file in self.parsed_files.items():
             self.identifiers[file] = self._load_identifiers(file, parsed_file)
+
+        # TODO remove: print values for debugging
+        for file in sorted(self.identifiers.keys()):
+            for name in sorted(self.identifiers[file].keys()):
+                identified = self.identifiers[file][name]
+                print(f"{file} {name} -> {type(identified).__name__}")
+
+        # TODO check imports
 
         # TODO Resolve field types of structs
 
@@ -29,8 +37,8 @@ class CrossReferencer:
     def _load_identifiers(
         self, file: Path, parsed_file: parser.ParsedFile
     ) -> Dict[str, Identifiable]:
-        # TODO add type-syntax to builtins and add builtin types
         identifiables_list: List[Identifiable] = []
+        identifiables_list += self._load_types(parsed_file.types)
         identifiables_list += self._load_structs(parsed_file.structs)
         identifiables_list += self._load_functions(parsed_file.functions)
         identifiables_list += self._load_imports(parsed_file.imports)
@@ -104,3 +112,9 @@ class CrossReferencer:
                 imports.append(import_)
 
         return imports
+
+    def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
+        return [
+            Type(name=type.name, param_count=len(type.params), parsed=type)
+            for type in types
+        ]
