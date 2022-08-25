@@ -1,62 +1,62 @@
 
 // stack operations
-builtin_fn "drop" args a as *a
-builtin_fn "dup"  args a as *a                   return *a, *a
-builtin_fn "over" args a as *a, b as *b          return *a, *b, *a
-builtin_fn "rot"  args a as *a, b as *b, c as *c return *b, *c, *a
-builtin_fn "swap" args a as *a, b as *b          return *b, *a
+builtin_fn drop args a as *a
+builtin_fn dup  args a as *a                   return *a, *a
+builtin_fn over args a as *a, b as *b          return *a, *b, *a
+builtin_fn rot  args a as *a, b as *b, c as *c return *b, *c, *a
+builtin_fn swap args a as *a, b as *b          return *b, *a
 
 // special operators
-builtin_fn "."      args a as *a
-builtin_fn "assert" args a as bool
-builtin_fn "nop"
+builtin_fn .      args a as *a
+builtin_fn assert args a as bool
+builtin_fn nop
 
 // integer arithmetic
-builtin_fn "-" args a as int, b as int return int
-builtin_fn "*" args a as int, b as int return int
-builtin_fn "+" args a as int, b as int return int
+builtin_fn - args a as int, b as int return int
+builtin_fn * args a as int, b as int return int
+builtin_fn + args a as int, b as int return int
 
 // TODO: return enum indicating success/failure instead of extra bool
-builtin_fn "/" args a as int, b as int return int, bool
-builtin_fn "%" args a as int, b as int return int, bool
+builtin_fn / args a as int, b as int return int, bool
+builtin_fn % args a as int, b as int return int, bool
 
 // TODO add bitwise operators
 
 // integer comparison
-builtin_fn "!=" args a as int, b as int return bool
-builtin_fn "<"  args a as int, b as int return bool
-builtin_fn "<=" args a as int, b as int return bool
-builtin_fn "="  args a as int, b as int return bool
-builtin_fn ">"  args a as int, b as int return bool
-builtin_fn ">=" args a as int, b as int return bool
+builtin_fn != args a as int, b as int return bool
+builtin_fn <  args a as int, b as int return bool
+builtin_fn <= args a as int, b as int return bool
+builtin_fn =  args a as int, b as int return bool
+builtin_fn >  args a as int, b as int return bool
+builtin_fn >= args a as int, b as int return bool
 
 // boolean operators
-builtin_fn "and" args a as bool, b as bool return bool
-builtin_fn "not" args a as bool            return bool
-builtin_fn "or"  args a as bool, b as bool return bool
+builtin_fn and args a as bool, b as bool return bool
+builtin_fn not args a as bool            return bool
+builtin_fn or  args a as bool, b as bool return bool
 
-builtin_fn "vec:clear" args v as vec[*a]                            return vec[*a]
-builtin_fn "vec:copy"  args v as vec[*a]                            return vec[*a], vec[*a]
-builtin_fn "vec:empty" args v as vec[*a]                            return vec[*a], bool
-builtin_fn "vec:get"   args v as vec[*a], offset as int             return vec[*a], *a
-builtin_fn "vec:pop"   args v as vec[*a]                            return vec[*a], *a
-builtin_fn "vec:push"  args v as vec[*a], item as *a                return vec[*a]
-builtin_fn "vec:set"   args v as vec[*a], offset as int, item as *a return vec[*a]
-builtin_fn "vec:size"  args v as vec[*a]                            return vec[*a], int
+builtin_fn vec:clear args v as vec[*a]                            return vec[*a]
+builtin_fn vec:copy  args v as vec[*a]                            return vec[*a], vec[*a]
+builtin_fn vec:empty args v as vec[*a]                            return vec[*a], bool
+builtin_fn vec:get   args v as vec[*a], offset as int             return vec[*a], *a
+builtin_fn vec:pop   args v as vec[*a]                            return vec[*a], *a
+builtin_fn vec:push  args v as vec[*a], item as *a                return vec[*a]
+builtin_fn vec:set   args v as vec[*a], offset as int, item as *a return vec[*a]
+builtin_fn vec:size  args v as vec[*a]                            return vec[*a], int
 
-builtin_fn "map:clear"   args m as map[*k, *v]                         return map[*k, *v]
-builtin_fn "map:copy"    args m as map[*k, *v]                         return map[*k, *v], map[*k, *v]
-builtin_fn "map:drop"    args m as map[*k, *v], key as *k              return map[*k, *v]
-builtin_fn "map:empty"   args m as map[*k, *v]                         return map[*k, *v], bool
-builtin_fn "map:get"     args m as map[*k, *v], key as *k              return map[*k, *v], *v
-builtin_fn "map:has_key" args m as map[*k, *v], key as *k              return map[*k, *v], bool
-builtin_fn "map:pop"     args m as map[*k, *v], key as *k              return map[*k, *v], *v
-builtin_fn "map:set"     args m as map[*k, *v], key as *k, value as *v return map[*k, *v]
-builtin_fn "map:size"    args m as map[*k, *v]                         return map[*k, *v], int
+builtin_fn map:clear   args m as map[*k, *v]                         return map[*k, *v]
+builtin_fn map:copy    args m as map[*k, *v]                         return map[*k, *v], map[*k, *v]
+builtin_fn map:drop    args m as map[*k, *v], key as *k              return map[*k, *v]
+builtin_fn map:empty   args m as map[*k, *v]                         return map[*k, *v], bool
+builtin_fn map:get     args m as map[*k, *v], key as *k              return map[*k, *v], *v
+builtin_fn map:has_key args m as map[*k, *v], key as *k              return map[*k, *v], bool
+builtin_fn map:pop     args m as map[*k, *v], key as *k              return map[*k, *v], *v
+builtin_fn map:set     args m as map[*k, *v], key as *k, value as *v return map[*k, *v]
+builtin_fn map:size    args m as map[*k, *v]                         return map[*k, *v], int
 
 // TODO: not implemented yet
-builtin_fn "map:keys"    args m as map[*k, *v]         return vec[*k]
-builtin_fn "map:values"  args m as map[*k, *v]         return vec[*v]
+builtin_fn map:keys    args m as map[*k, *v]         return vec[*k]
+builtin_fn map:values  args m as map[*k, *v]         return vec[*v]
 
 // TODO: rename vec:size and map:size to vec:len and map:len
 
@@ -69,26 +69,26 @@ builtin_fn "map:values"  args m as map[*k, *v]         return vec[*v]
 // TODO everything below should be moved to separate file in stdlib
 // Function and type names should not be reserved / builtin
 
-builtin_fn "environ" return map[str, str]
-builtin_fn "execve" args path as str, argv as vec[str], env as map[str, str]
-builtin_fn "exit" args code as int
-builtin_fn "fork" return int
-builtin_fn "getcwd" return str
-builtin_fn "getpid" return int
-builtin_fn "getppid" return int
-builtin_fn "setenv" args name as str, value as str
-builtin_fn "time" return int
-builtin_fn "unsetenv" args name as str
+builtin_fn environ return map[str, str]
+builtin_fn execve args path as str, argv as vec[str], env as map[str, str]
+builtin_fn exit args code as int
+builtin_fn fork return int
+builtin_fn getcwd return str
+builtin_fn getpid return int
+builtin_fn getppid return int
+builtin_fn setenv args name as str, value as str
+builtin_fn time return int
+builtin_fn unsetenv args name as str
 
 // TODO: return enum indicating success/failure instead of extra bool
-builtin_fn "chdir" args dir as str return bool
-builtin_fn "close" args fd as int return bool
-builtin_fn "fsync" args fd as int return bool
-builtin_fn "getenv" args name as str return str, bool
-builtin_fn "open" args path as str, flag as int, mode as int return int, bool
-builtin_fn "read" args fd as int, n as int return str, bool
-builtin_fn "waitpid" args pid as int, options as int return int, bool
-builtin_fn "write" args fd as int, data as str return int, bool
+builtin_fn chdir args dir as str return bool
+builtin_fn close args fd as int return bool
+builtin_fn fsync args fd as int return bool
+builtin_fn getenv args name as str return str, bool
+builtin_fn open args path as str, flag as int, mode as int return int, bool
+builtin_fn read args fd as int, n as int return str, bool
+builtin_fn waitpid args pid as int, options as int return int, bool
+builtin_fn write args fd as int, data as str return int, bool
 
 // TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
 // TODO: not implemented yet
@@ -97,23 +97,23 @@ builtin_fn "write" args fd as int, data as str return int, bool
 // builtin_fn "gettimeofday" return int, int  // note: not a system call
 // builtin_fn "chmod" args str, int return int
 
-builtin_fn "str:append"     args s as str, other as str                  return str, str
-builtin_fn "str:contains"   args s as str, other as str                  return str, bool
-builtin_fn "str:equals"     args s as str, other as str                  return str, bool
-builtin_fn "str:join"       args s as str, parts as vec[str]             return str, str
-builtin_fn "str:len"        args s as str                                return str, int
-builtin_fn "str:lower"      args s as str                                return str, str
-builtin_fn "str:replace"    args s as str, search as str, replace as str return str, str
-builtin_fn "str:split"      args s as str, sep as str                    return str, vec[str]
-builtin_fn "str:strip"      args s as str                                return str
-builtin_fn "str:upper"      args s as str                                return str, str
+builtin_fn str:append     args s as str, other as str                  return str, str
+builtin_fn str:contains   args s as str, other as str                  return str, bool
+builtin_fn str:equals     args s as str, other as str                  return str, bool
+builtin_fn str:join       args s as str, parts as vec[str]             return str, str
+builtin_fn str:len        args s as str                                return str, int
+builtin_fn str:lower      args s as str                                return str, str
+builtin_fn str:replace    args s as str, search as str, replace as str return str, str
+builtin_fn str:split      args s as str, sep as str                    return str, vec[str]
+builtin_fn str:strip      args s as str                                return str
+builtin_fn str:upper      args s as str                                return str, str
 
 // TODO: return enum indicating success/failure instead of extra bool
-builtin_fn "str:find_after" args s as str, other as str, offset as int   return str, int, bool
-builtin_fn "str:find"       args s as str, other as str                  return str, int, bool
-builtin_fn "str:substr"     args s as str, start as int, end as int      return str, str, bool
-builtin_fn "str:to_bool"    args s as str                                return str, bool, bool
-builtin_fn "str:to_int"     args s as str                                return str, int, bool
+builtin_fn str:find_after args s as str, other as str, offset as int   return str, int, bool
+builtin_fn str:find       args s as str, other as str                  return str, int, bool
+builtin_fn str:substr     args s as str, start as int, end as int      return str, str, bool
+builtin_fn str:to_bool    args s as str                                return str, bool, bool
+builtin_fn str:to_int     args s as str                                return str, int, bool
 
 // TODO: not implemented yet
 // builtin_fn "int:to_str"  args int  return int, str

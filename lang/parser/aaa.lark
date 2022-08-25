@@ -74,7 +74,7 @@ NOP:        /nop(?=(\W|\s))/
 builtins_file_root: builtin_function_definition+
 
 builtin_function_definition: ( \
-    BUILTIN_FN string \
+    BUILTIN_FN (operator | identifier | struct_function_identifier) \
     function_arguments? \
     function_return_types? \
 )
@@ -95,7 +95,7 @@ struct_definition: ( \
     _END \
 )
 
-struct_function_identifier: identifier ":" member_function_name
+struct_function_identifier: (identifier | type_literal) ":" member_function_name
 
 struct_field_query: string struct_field_query_operator
 !struct_field_query_operator: "?"

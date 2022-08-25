@@ -96,6 +96,12 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         for arg in args:
             if isinstance(arg, StringLiteral):
                 name = arg.value
+            elif isinstance(arg, Operator):
+                name = arg.value
+            elif isinstance(arg, Identifier):
+                name = arg.name
+            elif isinstance(arg, MemberFunctionName):
+                name = f"{arg.type_name}:{arg.func_name}"
             elif isinstance(arg, list):
                 for item in arg:
                     if isinstance(item, Argument):
