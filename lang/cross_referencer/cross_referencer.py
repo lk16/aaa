@@ -28,7 +28,7 @@ class CrossReferencer:
                 if isinstance(identifiable, Import):
                     self._resolve_import(identifiable)
                 elif isinstance(identifiable, Struct):
-                    self._resolve_struct_fields(identifiable)
+                    self._resolve_struct_fields(file, identifiable)
                 elif isinstance(identifiable, Function):
                     self._resolve_function_arguments(identifiable)
                     self._resolve_function_body(identifiable)
@@ -63,7 +63,7 @@ class CrossReferencer:
         return [
             Struct(
                 parsed=parsed_struct,
-                fields={name: Unresolved() for (name, _) in parsed_struct.fields},
+                fields={name: Unresolved() for name in parsed_struct.fields.keys()},
                 name=parsed_struct.name,
             )
             for parsed_struct in parsed_structs
@@ -122,14 +122,21 @@ class CrossReferencer:
         ]
 
     def _resolve_import(self, import_: Import) -> None:
+
         try:
-            source = self.identifiers[import_.source_file][import_.source_name]
+            source_file_identifiers = self.identifiers[import_.source_file]
+        except KeyError:
+            # TODO file was not parsed ?!?
+            raise NotImplementedError
+
+        try:
+            source = source_file_identifiers[import_.source_name]
         except KeyError:
             # TODO importing non-existing value (bad), or file was not parsed (verrry bad)
             raise NotImplementedError
 
         if isinstance(source, Type):
-            # There is no syntax that makes this possible currently
+            # TODO There is no syntax that makes this possible currently
             raise NotImplementedError
 
         if isinstance(source, Import):
@@ -138,9 +145,32 @@ class CrossReferencer:
 
         import_.source = source
 
-    def _resolve_struct_fields(self, struct: Struct) -> None:
-        # TODO
-        raise NotImplementedError
+    def _get_identifier(self, file: Path, name: str) -> Identifiable:
+
+        try:
+            self.identifiers[self.builtins_path][name]
+        except KeyError:
+            pass
+
+        identifier = self.identifiers[file][name]
+
+        if isinstance(identifier, Import):
+            assert not isinstance(identifier.source, Unresolved)
+            return identifier.source
+
+        return identifier
+
+    def _resolve_struct_fields(self, file: Path, struct: Struct) -> None:
+        for field_name in struct.fields:
+            type_name = struct.parsed.fields[field_name].name
+
+            identifier = self._get_identifier(file, type_name)
+
+            if not isinstance(identifier, (Struct, Type)):
+                # TODO unexpected identifier kind (import, function, ...)
+                raise NotImplementedError
+
+            struct.fields[field_name] = identifier
 
     def _resolve_function_arguments(self, function: Function) -> None:
         # TODO

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from lark.exceptions import UnexpectedInput
 from lark.lexer import Token
@@ -299,7 +299,18 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def struct_definition(
         self, token: Token, name: Identifier, field_list: List[Argument]
     ) -> Struct:
-        fields = [(field.name, field.type) for field in field_list]
+        fields: Dict[str, TypeLiteral] = {}
+        for field in field_list:
+            if field.name in fields:
+                # TODO duplciate field name
+                raise NotImplementedError
+
+            if isinstance(field.type, TypePlaceholder):
+                # TODO type placeholders as argument types are not supported (yet)
+                raise NotImplementedError
+
+            fields[field.name] = field.type
+
         return Struct(name=name.name, fields=fields, token=token)
 
     def struct_field_query_operator(self, token: Token) -> Token:

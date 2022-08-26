@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from lark.lexer import Token
 
@@ -128,7 +128,7 @@ class Import(AaaParseModel):
 class Struct(AaaParseModel):
     token: Token
     name: str
-    fields: List[Tuple[str, TypeLiteral | TypePlaceholder]]
+    fields: Dict[str, TypeLiteral]
 
 
 class ParsedFile(AaaParseModel):
