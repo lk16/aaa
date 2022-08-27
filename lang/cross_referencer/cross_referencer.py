@@ -1,10 +1,32 @@
 from pathlib import Path
 from typing import Dict, List
 
-from lang.cross_referencer.models import Function, Import, Struct, Type, Unresolved
+from lang.cross_referencer.models import (
+    BooleanLiteral,
+    Branch,
+    Function,
+    FunctionBody,
+    FunctionBodyItem,
+    Identifier,
+    IdentifierCallingFunction,
+    IdentifierUsingArgument,
+    Import,
+    IntegerLiteral,
+    Loop,
+    MemberFunctionName,
+    Operator,
+    StringLiteral,
+    Struct,
+    StructFieldQuery,
+    StructFieldUpdate,
+    Type,
+    TypePlaceholder,
+    Unresolved,
+    VariableType,
+)
 from lang.parser import models as parser
 
-Identifiable = Function | Import | Struct | Type
+Identifiable = Function | Import | Struct | Type | TypePlaceholder
 
 
 class CrossReferencer:
@@ -30,8 +52,10 @@ class CrossReferencer:
                 elif isinstance(identifiable, Struct):
                     self._resolve_struct_fields(file, identifiable)
                 elif isinstance(identifiable, Function):
-                    self._resolve_function_arguments(identifiable)
-                    self._resolve_function_body(identifiable)
+                    self._resolve_function_arguments(file, identifiable)
+                    identifiable.body = self._resolve_function_body_identifiers(
+                        file, identifiable, identifiable.parsed.body
+                    )
 
         # TODO handle exceptions
         ...
@@ -75,21 +99,14 @@ class CrossReferencer:
         functions: List[Function] = []
 
         for parsed_function in parsed_functions:
-            arguments: Dict[str, Unresolved] = {}
-
-            for parsed_argument in parsed_function.arguments:
-
-                if parsed_argument.name in arguments:
-                    # TODO naming conflict
-                    raise NotImplementedError
-
-                arguments[parsed_argument.name] = Unresolved()
-
             function = Function(
                 parsed=parsed_function,
                 name=parsed_function.get_name(),
                 type_name=parsed_function.get_type_name(),
-                arguments=arguments,
+                arguments={
+                    arg_name: Unresolved()
+                    for arg_name in parsed_function.arguments.keys()
+                },
                 body=Unresolved(),
             )
 
@@ -135,12 +152,9 @@ class CrossReferencer:
             # TODO importing non-existing value (bad), or file was not parsed (verrry bad)
             raise NotImplementedError
 
-        if isinstance(source, Type):
-            # TODO There is no syntax that makes this possible currently
-            raise NotImplementedError
-
-        if isinstance(source, Import):
-            # TODO Indirect importing is forbidden
+        if not isinstance(source, (Function, Struct)):
+            # TODO other things cannot be imported
+            # In particular: imports can't be imported as indirect importing is forbidden
             raise NotImplementedError
 
         import_.source = source
@@ -172,10 +186,115 @@ class CrossReferencer:
 
             struct.fields[field_name] = identifier
 
-    def _resolve_function_arguments(self, function: Function) -> None:
-        # TODO
-        raise NotImplementedError
+    def _get_or_create_function_type_placeholder(
+        self, file: Path, function: Function, parsed: parser.TypePlaceholder
+    ) -> TypePlaceholder:
+        type_placeholder = TypePlaceholder(
+            parsed=parsed, function=function, name=parsed.name
+        )
 
-    def _resolve_function_body(self, function: Function) -> None:
-        # TODO
-        raise NotImplementedError
+        file_identifiers = self.identifiers[file]
+
+        identifier = type_placeholder.identify()
+
+        if identifier not in file_identifiers:
+            file_identifiers[identifier] = type_placeholder
+
+        found = file_identifiers[identifier]
+        assert isinstance(found, TypePlaceholder)
+        return found
+
+    def _get_type_identifier(self, file: Path, name: str) -> Type:
+        type = self._get_identifier(file, name)
+
+        if not isinstance(type, Type):
+            # TODO handle
+            raise NotImplementedError
+
+        return type
+
+    def _resolve_function_arguments(self, file: Path, function: Function) -> None:
+        for arg_name, parsed_arg in function.parsed.arguments.items():
+            parsed_type = parsed_arg.type
+            type: Type | TypePlaceholder
+
+            if isinstance(parsed_type, parser.TypePlaceholder):
+                is_placeholder = True
+                type = self._get_or_create_function_type_placeholder(
+                    file, function, parsed_type
+                )
+                params: List[VariableType] = []
+
+            elif isinstance(parsed_type, parser.TypeLiteral):
+                is_placeholder = False
+                type = self._get_type_identifier(file, parsed_type.name)  # TODO
+
+                # TODO handle type params
+                assert len(parsed_type.params) == 0
+                params = []
+
+            else:  # pragma: nocover
+                assert False
+
+            function.arguments[arg_name] = VariableType(
+                parsed=parsed_type,
+                type=type,
+                name=arg_name,
+                params=params,
+                is_placeholder=is_placeholder,
+            )
+
+    def _resolve_function_body_identifiers(
+        self, file: Path, function: Function, parsed: parser.FunctionBody
+    ) -> FunctionBody:
+        items: List[FunctionBodyItem] = []
+
+        for parsed_item in parsed.items:
+            item: FunctionBodyItem
+
+            if isinstance(parsed_item, parser.Identifier):
+                if parsed_item.name in function.arguments:
+                    arg_type = function.arguments[parsed_item.name]
+                    item = Identifier(
+                        **parsed.dict(), kind=IdentifierUsingArgument(arg_type=arg_type)
+                    )
+                else:
+                    try:
+                        identifiable = self._get_identifier(file, parsed_item.name)
+                    except KeyError:
+                        # TODO calling non-existing function
+                        raise NotImplementedError
+
+                    if isinstance(identifiable, Function):
+                        item = Identifier(
+                            **parsed.dict(),
+                            kind=IdentifierCallingFunction(function=identifiable),
+                        )
+                    elif isinstance(identifiable, Struct):
+                        # TODO put struct literal on stack
+                        raise NotImplementedError
+                    else:  # pragma: nocover
+                        raise NotImplementedError
+
+            elif isinstance(parsed, parser.IntegerLiteral):
+                item = IntegerLiteral(**parsed.dict())
+            elif isinstance(parsed, parser.StringLiteral):
+                item = StringLiteral(**parsed.dict())
+            elif isinstance(parsed, parser.BooleanLiteral):
+                item = BooleanLiteral(**parsed.dict())
+            elif isinstance(parsed, parser.Operator):
+                item = Operator(**parsed.dict())
+            elif isinstance(parsed, parser.Loop):
+                item = Loop(**parsed.dict())
+            elif isinstance(parsed, parser.Branch):
+                item = Branch(**parsed.dict())
+            elif isinstance(parsed, parser.MemberFunctionName):
+                item = MemberFunctionName(**parsed.dict())
+            elif isinstance(parsed, parser.StructFieldQuery):
+                item = StructFieldQuery(**parsed.dict())
+            elif isinstance(parsed, parser.StructFieldUpdate):
+                item = StructFieldUpdate(**parsed.dict())
+
+            items.append(item)
+
+        return FunctionBody(items=items)

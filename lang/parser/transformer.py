@@ -43,8 +43,17 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         self.file = file
         super().__init__()
 
-    def argument_list(self, *arguments: Argument) -> List[Argument]:
-        return list(arguments)
+    def argument_list(self, *arguments: Argument) -> Dict[str, Argument]:
+        argument_dict: Dict[str, Argument] = {}
+
+        for argument in arguments:
+            if argument.name in argument_dict:
+                # Argument name collision
+                raise NotImplementedError
+
+                argument_dict[argument.name] = argument
+
+        return argument_dict
 
     @v_args(inline=False)
     def argument(
@@ -99,7 +108,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     @v_args(inline=False)
     def builtin_function_declaration(self, args: List[Any]) -> Function:
         name: str | MemberFunctionName = ""
-        arguments: List[Argument] = []
+        arguments: Dict[str, Argument] = {}
         return_types: List[TypeLiteral | TypePlaceholder] = []
         token: Token
 
@@ -112,11 +121,11 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 name = arg.name
             elif isinstance(arg, MemberFunctionName):
                 name = f"{arg.type_name}:{arg.func_name}"
+            elif isinstance(arg, dict):
+                arguments = arg
             elif isinstance(arg, list):
                 for item in arg:
-                    if isinstance(item, Argument):
-                        arguments.append(item)
-                    elif isinstance(item, (TypePlaceholder, TypeLiteral)):
+                    if isinstance(item, (TypePlaceholder, TypeLiteral)):
                         return_types.append(item)
                     else:  # pragma: nocover
                         assert False
@@ -161,7 +170,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def function_definition(self, args: List[Any]) -> Function:
         name: str | MemberFunctionName = ""
         body: FunctionBody
-        arguments: List[Argument] = []
+        arguments: Dict[str, Argument] = {}
         return_types: List[TypeLiteral | TypePlaceholder] = []
         token: Token
 
@@ -170,11 +179,11 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 name = arg.name
             elif isinstance(arg, FunctionBody):
                 body = arg
+            elif isinstance(arg, dict):
+                arguments = arg
             elif isinstance(arg, list):
                 for item in arg:
-                    if isinstance(item, Argument):
-                        arguments.append(item)
-                    elif isinstance(item, (TypeLiteral, TypePlaceholder)):
+                    if isinstance(item, (TypeLiteral, TypePlaceholder)):
                         return_types.append(item)
                     else:  # pragma: nocover
                         assert False

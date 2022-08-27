@@ -98,7 +98,7 @@ class Argument(AaaParseModel):
 class Function(AaaParseModel):
     token: Token
     name: str | MemberFunctionName
-    arguments: List[Argument]
+    arguments: Dict[str, Argument]
     return_types: List[TypeLiteral | TypePlaceholder]
     body: FunctionBody
 
