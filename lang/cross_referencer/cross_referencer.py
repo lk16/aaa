@@ -4,9 +4,11 @@ from typing import Dict, List
 from lang.cross_referencer.models import (
     BooleanLiteral,
     Branch,
+    CrossReferencerOutput,
     Function,
     FunctionBody,
     FunctionBodyItem,
+    Identifiable,
     Identifier,
     IdentifierCallingFunction,
     IdentifierUsingArgument,
@@ -26,8 +28,6 @@ from lang.cross_referencer.models import (
 )
 from lang.parser import models as parser
 
-Identifiable = Function | Import | Struct | Type | TypePlaceholder
-
 
 class CrossReferencer:
     def __init__(self, parser_output: parser.ParserOutput) -> None:
@@ -35,7 +35,7 @@ class CrossReferencer:
         self.builtins_path = parser_output.builtins_path
         self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
 
-    def run(self) -> None:
+    def run(self) -> CrossReferencerOutput:
         for file, parsed_file in self.parsed_files.items():
             self.identifiers[file] = self._load_identifiers(file, parsed_file)
 
@@ -59,6 +59,8 @@ class CrossReferencer:
 
         # TODO handle exceptions
         ...
+
+        return CrossReferencerOutput(identifiers=self.identifiers)
 
     def _load_identifiers(
         self, file: Path, parsed_file: parser.ParsedFile
@@ -276,24 +278,47 @@ class CrossReferencer:
                     else:  # pragma: nocover
                         raise NotImplementedError
 
-            elif isinstance(parsed, parser.IntegerLiteral):
-                item = IntegerLiteral(**parsed.dict())
-            elif isinstance(parsed, parser.StringLiteral):
-                item = StringLiteral(**parsed.dict())
-            elif isinstance(parsed, parser.BooleanLiteral):
-                item = BooleanLiteral(**parsed.dict())
-            elif isinstance(parsed, parser.Operator):
-                item = Operator(**parsed.dict())
-            elif isinstance(parsed, parser.Loop):
-                item = Loop(**parsed.dict())
-            elif isinstance(parsed, parser.Branch):
-                item = Branch(**parsed.dict())
-            elif isinstance(parsed, parser.MemberFunctionName):
-                item = MemberFunctionName(**parsed.dict())
-            elif isinstance(parsed, parser.StructFieldQuery):
-                item = StructFieldQuery(**parsed.dict())
-            elif isinstance(parsed, parser.StructFieldUpdate):
-                item = StructFieldUpdate(**parsed.dict())
+            elif isinstance(parsed_item, parser.IntegerLiteral):
+                item = IntegerLiteral(**parsed_item.dict())
+            elif isinstance(parsed_item, parser.StringLiteral):
+                item = StringLiteral(**parsed_item.dict())
+            elif isinstance(parsed_item, parser.BooleanLiteral):
+                item = BooleanLiteral(**parsed_item.dict())
+            elif isinstance(parsed_item, parser.Operator):
+                item = Operator(**parsed_item.dict())
+            elif isinstance(parsed_item, parser.Loop):
+                item = Loop(
+                    condition=self._resolve_function_body_identifiers(
+                        file, function, parsed_item.condition
+                    ),
+                    body=self._resolve_function_body_identifiers(
+                        file, function, parsed_item.body
+                    ),
+                )
+            elif isinstance(parsed_item, parser.Branch):
+                item = Branch(
+                    condition=self._resolve_function_body_identifiers(
+                        file, function, parsed_item.condition
+                    ),
+                    if_body=self._resolve_function_body_identifiers(
+                        file, function, parsed_item.if_body
+                    ),
+                    else_body=self._resolve_function_body_identifiers(
+                        file, function, parsed_item.else_body
+                    ),
+                )
+            elif isinstance(parsed_item, parser.MemberFunctionName):
+                item = MemberFunctionName(**parsed_item.dict())
+            elif isinstance(parsed_item, parser.StructFieldQuery):
+                item = StructFieldQuery(**parsed_item.dict())
+            elif isinstance(parsed_item, parser.StructFieldUpdate):
+                item = StructFieldUpdate(**parsed_item.dict())
+            elif isinstance(parsed_item, parser.FunctionBody):
+                item = self._resolve_function_body_identifiers(
+                    file, function, parsed_item
+                )
+            else:  # pragma: nocover
+                assert False
 
             items.append(item)
 

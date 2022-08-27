@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from lang.models import AaaModel
 from lang.parser import models as parser
 
+Identifiable = Union["Function", "Import", "Struct", "Type", "TypePlaceholder"]
+
 
 class AaaCrossReferenceModel(AaaModel):
-    ...
+    class Config:
+        frozen = False
 
 
 class Unresolved(AaaCrossReferenceModel):
@@ -39,7 +42,11 @@ class Function(AaaCrossReferenceModel):
         return self.name
 
 
-class FunctionBody(AaaCrossReferenceModel):
+class FunctionBodyItem(AaaCrossReferenceModel):
+    ...
+
+
+class FunctionBody(FunctionBodyItem):
     items: List[FunctionBodyItem]
 
 
@@ -78,10 +85,6 @@ class VariableType(AaaCrossReferenceModel):
     name: str
     params: List[VariableType]
     is_placeholder: bool
-
-
-class FunctionBodyItem(AaaCrossReferenceModel):
-    ...
 
 
 class IntegerLiteral(FunctionBodyItem, parser.IntegerLiteral):
@@ -139,3 +142,7 @@ class StructFieldUpdate(FunctionBodyItem, parser.StructFieldUpdate):
 Function.update_forward_refs()
 Struct.update_forward_refs()
 FunctionBody.update_forward_refs()
+
+
+class CrossReferencerOutput(AaaCrossReferenceModel):
+    identifiers: Dict[Path, Dict[str, Identifiable]]

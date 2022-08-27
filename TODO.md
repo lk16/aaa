@@ -11,11 +11,11 @@
 - [x] check if imports are not from other steps
 
 #### Cross Referencer
-- [ ] create `CrossReferencer` with entrypoint `run()`
-- [ ] resolve identifiers of functions/structs/arguments
-- [ ] find naming issues
-- [ ] return dict of (filename, identifier) to tree with references to other keys in the dict
-- [ ] ...
+- [x] create `CrossReferencer` with entrypoint `run()`
+- [x] resolve identifiers of functions/structs/arguments
+- [x] find naming issues
+- [ ] return types, structs and functions
+
 
 #### Type Checker
 - [ ] refactor `TypeChecker` with entrypoint `run()`
