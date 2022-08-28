@@ -51,7 +51,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 # Argument name collision
                 raise NotImplementedError
 
-                argument_dict[argument.name] = argument  # TODO this is dead code ?!?
+            argument_dict[argument.name] = argument
 
         return argument_dict
 
@@ -282,21 +282,13 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return StringLiteral(value=value)
 
     def struct_definition(
-        self, token: Token, name: Identifier, field_list: List[Argument]
+        self, token: Token, name: Identifier, fields: Dict[str, Argument]
     ) -> Struct:
-        fields: Dict[str, TypeLiteral] = {}
-        for field in field_list:
-            if field.name in fields:
-                # TODO duplciate field name
-                raise NotImplementedError
-
-            if isinstance(field.type, TypePlaceholder):
-                # TODO type placeholders as argument types are not supported (yet)
-                raise NotImplementedError
-
-            fields[field.name] = field.type
-
-        return Struct(name=name.name, fields=fields, token=token)
+        return Struct(
+            name=name.name,
+            fields={field_name: field.type for (field_name, field) in fields.items()},
+            token=token,
+        )
 
     def struct_field_query_operator(self, token: Token) -> Token:
         return token

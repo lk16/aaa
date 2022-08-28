@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from lang.cross_referencer.models import (
     BooleanLiteral,
@@ -45,6 +45,8 @@ class CrossReferencer:
                 identified = self.identifiers[file][name]
                 print(f"{file} {name} -> {type(identified).__name__}")
 
+        functions: List[Tuple[Path, Function]] = []
+
         for file, file_identifiers in self.identifiers.items():
             for identifiable in file_identifiers.values():
                 if isinstance(identifiable, Import):
@@ -52,10 +54,13 @@ class CrossReferencer:
                 elif isinstance(identifiable, Struct):
                     self._resolve_struct_fields(file, identifiable)
                 elif isinstance(identifiable, Function):
-                    self._resolve_function_arguments(file, identifiable)
-                    identifiable.body = self._resolve_function_body_identifiers(
-                        file, identifiable, identifiable.parsed.body
-                    )
+                    functions.append((file, identifiable))
+
+        for file, function in functions:
+            self._resolve_function_arguments(file, function)
+            function.body = self._resolve_function_body_identifiers(
+                file, function, function.parsed.body
+            )
 
         # TODO handle exceptions
         ...
@@ -162,13 +167,16 @@ class CrossReferencer:
         import_.source = source
 
     def _get_identifier(self, file: Path, name: str) -> Identifiable:
+        builtin_identifiers = self.identifiers[self.builtins_path]
+        file_identifiers = self.identifiers[file]
 
-        try:
-            self.identifiers[self.builtins_path][name]
-        except KeyError:
-            pass
-
-        identifier = self.identifiers[file][name]
+        if name in builtin_identifiers:
+            identifier = builtin_identifiers[name]
+        elif name in file_identifiers:
+            identifier = file_identifiers[name]
+        else:
+            # TODO identifier was not found, what do we do now?
+            raise NotImplementedError
 
         if isinstance(identifier, Import):
             assert not isinstance(identifier.source, Unresolved)
@@ -231,8 +239,10 @@ class CrossReferencer:
                 is_placeholder = False
                 type = self._get_type_identifier(file, parsed_type.name)  # TODO
 
-                # TODO handle type params
-                assert len(parsed_type.params) == 0
+                if len(parsed_type.params) != 0:
+                    # TODO handle type params
+                    raise NotImplementedError
+
                 params = []
 
             else:  # pragma: nocover
