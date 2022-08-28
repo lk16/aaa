@@ -18,7 +18,9 @@ SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
 identifier.0: /[a-z_]+/
-member_function_name: /[a-z_]+/  // TODO use identifier instead
+
+// same as identifier, but does not disallow builtin names / keywords as values
+member_function_name: /[a-z_]+/
 
 integer: /[0-9]+/
 

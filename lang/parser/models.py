@@ -70,7 +70,7 @@ class BranchElseBody(AaaParseModel):
 
 
 class MemberFunctionName(FunctionBodyItem):
-    type_name: str
+    struct_name: str
     func_name: str
 
 
@@ -97,21 +97,11 @@ class Argument(AaaParseModel):
 
 class Function(AaaParseModel):
     token: Token
-    name: str | MemberFunctionName
+    name: str
+    struct_name: str
     arguments: Dict[str, Argument]
     return_types: List[TypeLiteral | TypePlaceholder]
     body: FunctionBody
-
-    # TODO create fields name and type_name instead of doing this
-    def get_name(self) -> str:
-        if isinstance(self.name, MemberFunctionName):
-            return self.name.func_name
-        return self.name
-
-    def get_type_name(self) -> str:
-        if isinstance(self.name, MemberFunctionName):
-            return self.name.type_name
-        return ""
 
 
 class ImportItem(AaaParseModel):

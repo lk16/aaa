@@ -103,8 +103,8 @@ class CrossReferencer:
         for parsed_function in parsed_functions:
             function = Function(
                 parsed=parsed_function,
-                name=parsed_function.get_name(),
-                type_name=parsed_function.get_type_name(),
+                name=parsed_function.name,
+                struct_name=parsed_function.struct_name,
                 arguments={
                     arg_name: Unresolved()
                     for arg_name in parsed_function.arguments.keys()

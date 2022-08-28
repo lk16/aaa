@@ -32,13 +32,13 @@ class Struct(AaaCrossReferenceModel):
 class Function(AaaCrossReferenceModel):
     parsed: parser.Function
     name: str
-    type_name: str
+    struct_name: str
     arguments: Dict[str, VariableType | Unresolved]
     body: FunctionBody | Unresolved
 
     def identify(self) -> str:
-        if self.type_name:
-            return f"{self.type_name}:{self.name}"
+        if self.struct_name:
+            return f"{self.struct_name}:{self.name}"
         return self.name
 
 

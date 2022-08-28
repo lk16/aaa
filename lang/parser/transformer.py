@@ -107,7 +107,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
     @v_args(inline=False)
     def builtin_function_declaration(self, args: List[Any]) -> Function:
-        name: str | MemberFunctionName = ""
+        name: str
+        struct_name: str = ""
         arguments: Dict[str, Argument] = {}
         return_types: List[TypeLiteral | TypePlaceholder] = []
         token: Token
@@ -120,7 +121,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             elif isinstance(arg, Identifier):
                 name = arg.name
             elif isinstance(arg, MemberFunctionName):
-                name = f"{arg.type_name}:{arg.func_name}"
+                name = arg.func_name
+                struct_name = arg.struct_name
             elif isinstance(arg, dict):
                 arguments = arg
             elif isinstance(arg, list):
@@ -129,8 +131,6 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                         return_types.append(item)
                     else:  # pragma: nocover
                         assert False
-            elif isinstance(arg, MemberFunctionName):
-                name = arg
             elif isinstance(arg, Token):
                 token = arg
             else:  # pragma: nocover
@@ -138,6 +138,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
         return Function(
             name=name,
+            struct_name=struct_name,
             arguments=arguments,
             return_types=return_types,
             body=FunctionBody(items=[]),
@@ -168,7 +169,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
     @v_args(inline=False)
     def function_definition(self, args: List[Any]) -> Function:
-        name: str | MemberFunctionName = ""
+        name: str
+        struct_name: str = ""
         body: FunctionBody
         arguments: Dict[str, Argument] = {}
         return_types: List[TypeLiteral | TypePlaceholder] = []
@@ -188,7 +190,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                     else:  # pragma: nocover
                         assert False
             elif isinstance(arg, MemberFunctionName):
-                name = arg
+                name = arg.func_name
+                struct_name = arg.struct_name
             elif isinstance(arg, Token):
                 token = arg
             else:  # pragma: nocover
@@ -196,6 +199,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
         return Function(
             name=name,
+            struct_name=struct_name,
             arguments=arguments,
             return_types=return_types,
             body=body,
@@ -266,7 +270,9 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def member_function(
         self, parsed_type: TypeLiteral | TypePlaceholder, func_name: Identifier
     ) -> MemberFunctionName:
-        return MemberFunctionName(type_name=parsed_type.name, func_name=func_name.name)
+        return MemberFunctionName(
+            struct_name=parsed_type.name, func_name=func_name.name
+        )
 
     def operator(self, token: Token) -> Operator:
         return Operator(value=token.value)
@@ -343,7 +349,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def struct_function_identifier(
         self, type_name: Identifier, func_name: Identifier
     ) -> MemberFunctionName:
-        return MemberFunctionName(type_name=type_name.name, func_name=func_name.name)
+        return MemberFunctionName(struct_name=type_name.name, func_name=func_name.name)
 
     def type(
         self, type: TypeLiteral | TypePlaceholder
