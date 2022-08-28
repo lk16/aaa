@@ -307,7 +307,7 @@ class CrossReferencer:
                         file, function, parsed_item.else_body
                     ),
                 )
-            elif isinstance(parsed_item, parser.MemberFunctionName):
+            elif isinstance(parsed_item, parser.MemberFunctionLiteral):
                 item = MemberFunctionName(**parsed_item.dict())
             elif isinstance(parsed_item, parser.StructFieldQuery):
                 item = StructFieldQuery(**parsed_item.dict())

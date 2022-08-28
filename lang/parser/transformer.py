@@ -25,7 +25,7 @@ from lang.parser.models import (
     Loop,
     LoopBody,
     LoopCondition,
-    MemberFunctionName,
+    MemberFunctionLiteral,
     Operator,
     ParsedFile,
     StringLiteral,
@@ -120,7 +120,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 name = arg.value
             elif isinstance(arg, Identifier):
                 name = arg.name
-            elif isinstance(arg, MemberFunctionName):
+            elif isinstance(arg, MemberFunctionLiteral):
                 name = arg.func_name
                 struct_name = arg.struct_name
             elif isinstance(arg, dict):
@@ -189,7 +189,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                         return_types.append(item)
                     else:  # pragma: nocover
                         assert False
-            elif isinstance(arg, MemberFunctionName):
+            elif isinstance(arg, MemberFunctionLiteral):
                 name = arg.func_name
                 struct_name = arg.struct_name
             elif isinstance(arg, Token):
@@ -210,8 +210,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return args
 
     def function_name(
-        self, name: Union[Identifier, MemberFunctionName]
-    ) -> Union[Identifier, MemberFunctionName]:
+        self, name: Union[Identifier, MemberFunctionLiteral]
+    ) -> Union[Identifier, MemberFunctionLiteral]:
         return name
 
     def function_return_types(
@@ -266,11 +266,10 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def member_function_name(self, token: Token) -> Identifier:
         return Identifier(name=token.value, token=token)
 
-    # TODO the token and function name needs to be improved
-    def member_function(
+    def member_function_literal(
         self, parsed_type: TypeLiteral | TypePlaceholder, func_name: Identifier
-    ) -> MemberFunctionName:
-        return MemberFunctionName(
+    ) -> MemberFunctionLiteral:
+        return MemberFunctionLiteral(
             struct_name=parsed_type.name, func_name=func_name.name
         )
 
@@ -348,8 +347,10 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
     def struct_function_identifier(
         self, type_name: Identifier, func_name: Identifier
-    ) -> MemberFunctionName:
-        return MemberFunctionName(struct_name=type_name.name, func_name=func_name.name)
+    ) -> MemberFunctionLiteral:
+        return MemberFunctionLiteral(
+            struct_name=type_name.name, func_name=func_name.name
+        )
 
     def type(
         self, type: TypeLiteral | TypePlaceholder

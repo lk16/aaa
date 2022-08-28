@@ -127,7 +127,7 @@ class Branch(FunctionBodyItem, parser.Branch):
     ...
 
 
-class MemberFunctionName(FunctionBodyItem, parser.MemberFunctionName):
+class MemberFunctionName(FunctionBodyItem, parser.MemberFunctionLiteral):
     ...
 
 

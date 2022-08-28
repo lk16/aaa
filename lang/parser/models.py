@@ -69,7 +69,7 @@ class BranchElseBody(AaaParseModel):
     value: FunctionBody
 
 
-class MemberFunctionName(FunctionBodyItem):
+class MemberFunctionLiteral(FunctionBodyItem):
     struct_name: str
     func_name: str
 
