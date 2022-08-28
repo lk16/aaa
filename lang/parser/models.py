@@ -30,6 +30,7 @@ class BooleanLiteral(FunctionBodyItem):
 
 
 class Operator(FunctionBodyItem):
+    token: Token
     value: str
 
 

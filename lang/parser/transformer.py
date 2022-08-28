@@ -51,7 +51,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 # Argument name collision
                 raise NotImplementedError
 
-                argument_dict[argument.name] = argument
+                argument_dict[argument.name] = argument  # TODO this is dead code ?!?
 
         return argument_dict
 
@@ -107,43 +107,14 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
     @v_args(inline=False)
     def builtin_function_declaration(self, args: List[Any]) -> Function:
-        name: str
-        struct_name: str = ""
-        arguments: Dict[str, Argument] = {}
-        return_types: List[TypeLiteral | TypePlaceholder] = []
-        token: Token
+        for index, arg in enumerate(args):
+            if isinstance(arg, Operator):
+                args[index] = Identifier(token=arg.token, name=arg.value)
 
-        for arg in args:
-            if isinstance(arg, StringLiteral):
-                name = arg.value
-            elif isinstance(arg, Operator):
-                name = arg.value
-            elif isinstance(arg, Identifier):
-                name = arg.name
-            elif isinstance(arg, MemberFunctionLiteral):
-                name = arg.func_name
-                struct_name = arg.struct_name
-            elif isinstance(arg, dict):
-                arguments = arg
-            elif isinstance(arg, list):
-                for item in arg:
-                    if isinstance(item, (TypePlaceholder, TypeLiteral)):
-                        return_types.append(item)
-                    else:  # pragma: nocover
-                        assert False
-            elif isinstance(arg, Token):
-                token = arg
-            else:  # pragma: nocover
-                assert False
+        args.append(FunctionBody(items=[]))
 
-        return Function(
-            name=name,
-            struct_name=struct_name,
-            arguments=arguments,
-            return_types=return_types,
-            body=FunctionBody(items=[]),
-            token=token,
-        )
+        function: Function = self.function_definition(args)
+        return function
 
     def builtins_file_root(self, *args: Function | TypeLiteral) -> ParsedFile:
         functions: List[Function] = []
@@ -274,7 +245,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         )
 
     def operator(self, token: Token) -> Operator:
-        return Operator(value=token.value)
+        return Operator(value=token.value, token=token)
 
     def regular_file_root(self, *args: Function | Struct | Import) -> ParsedFile:
         functions: List[Function] = []
