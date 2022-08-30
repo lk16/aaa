@@ -33,6 +33,7 @@ from lang.parser.models import (
     StructFieldQuery,
     StructFieldUpdate,
     TypeLiteral,
+    TypeParameters,
 )
 
 DUMMY_TOKEN = Token(type_="", value="")  # type: ignore
@@ -150,6 +151,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         body: FunctionBody
         arguments: Dict[str, Argument] = {}
         return_types: List[TypeLiteral] = []
+        type_params: List[TypeLiteral] = []
         token: Token
 
         for arg in args:
@@ -169,15 +171,18 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 name = arg
             elif isinstance(arg, Token):
                 token = arg
+            elif isinstance(arg, TypeParameters):
+                arg = type_params
             else:  # pragma: nocover
                 assert False
 
         return Function(
+            token=token,
             name=name,
             arguments=arguments,
+            type_params=type_params,
             return_types=return_types,
             body=body,
-            token=token,
         )
 
     def function_arguments(self, args: List[Argument]) -> List[Argument]:
@@ -327,14 +332,15 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def type_literal(
         self,
         identifier: Identifier,
-        params: Optional[List[TypeLiteral]] = None,
+        params: Optional[TypeParameters] = None,
     ) -> TypeLiteral:
-        return TypeLiteral(
-            token=identifier.token, identifier=identifier, params=params or []
-        )
+        if not params:
+            params = TypeParameters(token=DUMMY_TOKEN, value=[])
 
-    def type_params(self, *args: TypeLiteral) -> List[TypeLiteral]:
-        return list(args)
+        return TypeLiteral(token=identifier.token, identifier=identifier, params=params)
+
+    def type_params(self, *type_literals: TypeLiteral) -> TypeParameters:
+        return TypeParameters(token=type_literals[0].token, value=list(type_literals))
 
     def builtin_type(self, token: Token) -> Identifier:
         return Identifier(name=str(token), token=token)

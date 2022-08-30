@@ -93,6 +93,7 @@ class Argument(AaaParseModel):
 
 class Function(AaaParseModel):
     name: MemberFunctionLiteral | Identifier
+    type_params: List[TypeLiteral]
     arguments: Dict[str, Argument]
     return_types: List[TypeLiteral]
     body: FunctionBody
@@ -122,7 +123,11 @@ class ParsedFile(AaaParseModel):
 
 class TypeLiteral(AaaParseModel):
     identifier: Identifier
-    params: List[TypeLiteral]
+    params: TypeParameters
+
+
+class TypeParameters(AaaParseModel):
+    value: List[TypeLiteral]
 
 
 LoopBody.update_forward_refs()

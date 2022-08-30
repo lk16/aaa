@@ -151,7 +151,11 @@ class CrossReferencer:
 
     def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
         return [
-            Type(name=type.identifier.name, param_count=len(type.params), parsed=type)
+            Type(
+                name=type.identifier.name,
+                param_count=len(type.params.value),
+                parsed=type,
+            )
             for type in types
         ]
 
@@ -239,7 +243,7 @@ class CrossReferencer:
                     file, parsed_type.identifier.name
                 )  # TODO
 
-                if len(parsed_type.params) != 0:
+                if len(parsed_type.params.value) != 0:
                     # TODO handle type params
                     raise NotImplementedError
 
