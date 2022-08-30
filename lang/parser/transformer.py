@@ -172,7 +172,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             elif isinstance(arg, Token):
                 token = arg
             elif isinstance(arg, TypeParameters):
-                arg = type_params
+                type_params = arg.value
             else:  # pragma: nocover
                 assert False
 

@@ -32,6 +32,7 @@ class Struct(AaaCrossReferenceModel):
 class Function(AaaCrossReferenceModel):
     parsed: parser.Function
     name: str
+    type_params: Dict[str, Type | Unresolved]
     struct_name: str
     arguments: Dict[str, VariableType | Unresolved]
     body: FunctionBody | Unresolved

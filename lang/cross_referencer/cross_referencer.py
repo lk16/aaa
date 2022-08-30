@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 from lang.cross_referencer.models import (
     BooleanLiteral,
@@ -56,6 +56,7 @@ class CrossReferencer:
                     functions.append((file, identifiable))
 
         for file, function in functions:
+            self._resolve_function_type_params(file, function)
             self._resolve_function_arguments(file, function)
             function.body = self._resolve_function_body_identifiers(
                 file, function, function.parsed.body
@@ -123,6 +124,10 @@ class CrossReferencer:
                 arguments={
                     arg_name: Unresolved()
                     for arg_name in parsed_function.arguments.keys()
+                },
+                type_params={
+                    type_param.identifier.name: Unresolved()
+                    for type_param in parsed_function.type_params
                 },
                 body=Unresolved(),
             )
@@ -210,12 +215,6 @@ class CrossReferencer:
 
             struct.fields[field_name] = identifier
 
-    def _get_or_create_function_type_param(
-        self, file: Path, function: Function, parsed: Any
-    ) -> Any:
-        # TODO this
-        raise NotImplementedError
-
     def _get_type_identifier(self, file: Path, name: str) -> Type:
         type = self._get_identifier(file, name)
 
@@ -225,19 +224,34 @@ class CrossReferencer:
 
         return type
 
+    def _resolve_function_type_params(self, file: Path, function: Function) -> None:
+        for param_name in function.type_params:
+            type_literal = next(
+                param
+                for param in function.parsed.type_params
+                if param.identifier.name == param_name
+            )
+            type = Type(parsed=type_literal, name=param_name, param_count=0)
+
+            # TODO raise exception if self.identifiers[file][param_name] exists
+
+            function.type_params[param_name] = type
+
     def _resolve_function_arguments(self, file: Path, function: Function) -> None:
         for arg_name, parsed_arg in function.parsed.arguments.items():
             parsed_type = parsed_arg.type
+            arg_type_name = parsed_arg.type.identifier.name
             type: Type
 
-            if False:  # TODO figure out if we are a placeholder or not
-                is_placeholder = True
-                type = self._get_or_create_function_type_placeholder(
-                    file, function, parsed_type
-                )
-                params: List[VariableType] = []
+            if arg_type_name in function.type_params:
+                found_type = function.type_params[arg_type_name]
 
-            elif isinstance(parsed_type, parser.TypeLiteral):
+                assert isinstance(found_type, Type)
+                type = found_type
+
+                params: List[VariableType] = []
+                is_placeholder = True
+            else:
                 is_placeholder = False
                 type = self._get_type_identifier(
                     file, parsed_type.identifier.name
@@ -248,9 +262,6 @@ class CrossReferencer:
                     raise NotImplementedError
 
                 params = []
-
-            else:  # pragma: nocover
-                assert False
 
             function.arguments[arg_name] = VariableType(
                 parsed=parsed_type,
