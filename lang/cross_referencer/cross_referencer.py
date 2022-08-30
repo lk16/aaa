@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from lang.cross_referencer.models import (
     BooleanLiteral,
@@ -22,7 +22,6 @@ from lang.cross_referencer.models import (
     StructFieldQuery,
     StructFieldUpdate,
     Type,
-    TypePlaceholder,
     Unresolved,
     VariableType,
 )
@@ -95,7 +94,7 @@ class CrossReferencer:
             Struct(
                 parsed=parsed_struct,
                 fields={name: Unresolved() for name in parsed_struct.fields.keys()},
-                name=parsed_struct.name,
+                name=parsed_struct.identifier.name,
             )
             for parsed_struct in parsed_structs
         ]
@@ -106,10 +105,21 @@ class CrossReferencer:
         functions: List[Function] = []
 
         for parsed_function in parsed_functions:
+
+            # TODO make helper functions on parser.Function
+            if isinstance(parsed_function.name, parser.Identifier):
+                name = parsed_function.name.name
+                struct_name = ""
+            elif isinstance(parsed_function.name, parser.MemberFunctionLiteral):
+                name = parsed_function.name.func_name.name
+                struct_name = parsed_function.name.struct_name.identifier.name
+            else:  # pragma: nocover
+                assert False
+
             function = Function(
                 parsed=parsed_function,
-                name=parsed_function.name,
-                struct_name=parsed_function.struct_name,
+                name=name,
+                struct_name=struct_name,
                 arguments={
                     arg_name: Unresolved()
                     for arg_name in parsed_function.arguments.keys()
@@ -141,7 +151,7 @@ class CrossReferencer:
 
     def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
         return [
-            Type(name=type.name, param_count=len(type.params), parsed=type)
+            Type(name=type.identifier.name, param_count=len(type.params), parsed=type)
             for type in types
         ]
 
@@ -186,7 +196,7 @@ class CrossReferencer:
 
     def _resolve_struct_fields(self, file: Path, struct: Struct) -> None:
         for field_name in struct.fields:
-            type_name = struct.parsed.fields[field_name].name
+            type_name = struct.parsed.fields[field_name].identifier.name
 
             identifier = self._get_identifier(file, type_name)
 
@@ -196,23 +206,11 @@ class CrossReferencer:
 
             struct.fields[field_name] = identifier
 
-    def _get_or_create_function_type_placeholder(
-        self, file: Path, function: Function, parsed: parser.TypePlaceholder
-    ) -> TypePlaceholder:
-        type_placeholder = TypePlaceholder(
-            parsed=parsed, function=function, name=parsed.name
-        )
-
-        file_identifiers = self.identifiers[file]
-
-        identifier = type_placeholder.identify()
-
-        if identifier not in file_identifiers:
-            file_identifiers[identifier] = type_placeholder
-
-        found = file_identifiers[identifier]
-        assert isinstance(found, TypePlaceholder)
-        return found
+    def _get_or_create_function_type_param(
+        self, file: Path, function: Function, parsed: Any
+    ) -> Any:
+        # TODO this
+        raise NotImplementedError
 
     def _get_type_identifier(self, file: Path, name: str) -> Type:
         type = self._get_identifier(file, name)
@@ -226,9 +224,9 @@ class CrossReferencer:
     def _resolve_function_arguments(self, file: Path, function: Function) -> None:
         for arg_name, parsed_arg in function.parsed.arguments.items():
             parsed_type = parsed_arg.type
-            type: Type | TypePlaceholder
+            type: Type
 
-            if isinstance(parsed_type, parser.TypePlaceholder):
+            if False:  # TODO figure out if we are a placeholder or not
                 is_placeholder = True
                 type = self._get_or_create_function_type_placeholder(
                     file, function, parsed_type
@@ -237,7 +235,9 @@ class CrossReferencer:
 
             elif isinstance(parsed_type, parser.TypeLiteral):
                 is_placeholder = False
-                type = self._get_type_identifier(file, parsed_type.name)  # TODO
+                type = self._get_type_identifier(
+                    file, parsed_type.identifier.name
+                )  # TODO
 
                 if len(parsed_type.params) != 0:
                     # TODO handle type params

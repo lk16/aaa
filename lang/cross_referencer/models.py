@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from lang.models import AaaModel
 from lang.parser import models as parser
 
-Identifiable = Union["Function", "Import", "Struct", "Type", "TypePlaceholder"]
+Identifiable = Union["Function", "Import", "Struct", "Type"]
 
 
 class AaaCrossReferenceModel(AaaModel):
@@ -70,18 +70,9 @@ class Type(AaaCrossReferenceModel):
         return self.name
 
 
-class TypePlaceholder(AaaCrossReferenceModel):
-    parsed: parser.TypePlaceholder
-    function: Function
-    name: str
-
-    def identify(self) -> str:
-        return self.function.identify() + f":{self.name}"
-
-
 class VariableType(AaaCrossReferenceModel):
-    parsed: parser.TypeLiteral | parser.TypePlaceholder
-    type: Type | TypePlaceholder
+    parsed: parser.TypeLiteral
+    type: Type
     name: str
     params: List[VariableType]
     is_placeholder: bool

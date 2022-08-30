@@ -10,7 +10,7 @@ from lang.parser.exceptions import ParseException
 
 
 class AaaParseModel(AaaModel):
-    ...
+    token: Token
 
 
 class FunctionBodyItem(AaaParseModel):
@@ -30,7 +30,6 @@ class BooleanLiteral(FunctionBodyItem):
 
 
 class Operator(FunctionBodyItem):
-    token: Token
     value: str
 
 
@@ -48,7 +47,6 @@ class LoopBody(AaaParseModel):
 
 
 class Identifier(FunctionBodyItem):
-    token: Token
     name: str
 
 
@@ -58,30 +56,28 @@ class Branch(FunctionBodyItem):
     else_body: FunctionBody
 
 
-class BranchCondition(AaaParseModel):
+class BranchCondition(AaaParseModel):  # TODO use inheritance
     value: FunctionBody
 
 
-class BranchIfBody(AaaParseModel):
+class BranchIfBody(AaaParseModel):  # TODO use inheritance
     value: FunctionBody
 
 
-class BranchElseBody(AaaParseModel):
+class BranchElseBody(AaaParseModel):  # TODO use inheritance
     value: FunctionBody
 
 
 class MemberFunctionLiteral(FunctionBodyItem):
-    struct_name: str
-    func_name: str
+    struct_name: TypeLiteral
+    func_name: Identifier
 
 
 class StructFieldQuery(FunctionBodyItem):
-    operator_token: Token
     field_name: StringLiteral
 
 
 class StructFieldUpdate(FunctionBodyItem):
-    operator_token: Token
     field_name: StringLiteral
     new_value_expr: FunctionBody
 
@@ -91,17 +87,14 @@ class FunctionBody(AaaParseModel):
 
 
 class Argument(AaaParseModel):
-    name_token: Token
-    name: str
-    type: TypeLiteral | TypePlaceholder
+    identifier: Identifier
+    type: TypeLiteral
 
 
 class Function(AaaParseModel):
-    token: Token
-    name: str
-    struct_name: str
+    name: MemberFunctionLiteral | Identifier
     arguments: Dict[str, Argument]
-    return_types: List[TypeLiteral | TypePlaceholder]
+    return_types: List[TypeLiteral]
     body: FunctionBody
 
 
@@ -111,14 +104,12 @@ class ImportItem(AaaParseModel):
 
 
 class Import(AaaParseModel):
-    token: Token
     source: str
     imported_items: List[ImportItem]
 
 
 class Struct(AaaParseModel):
-    token: Token
-    name: str
+    identifier: Identifier
     fields: Dict[str, TypeLiteral]
 
 
@@ -130,18 +121,8 @@ class ParsedFile(AaaParseModel):
 
 
 class TypeLiteral(AaaParseModel):
-    name: str
-    token: Token
-    params: List[TypeLiteral | TypePlaceholder]
-
-
-class TypeParams(AaaParseModel):
-    ...
-
-
-class TypePlaceholder(AaaParseModel):
-    name: str
-    token: Token
+    identifier: Identifier
+    params: List[TypeLiteral]
 
 
 LoopBody.update_forward_refs()
@@ -158,6 +139,7 @@ Function.update_forward_refs()
 TypeLiteral.update_forward_refs()
 Struct.update_forward_refs()
 ParsedFile.update_forward_refs()
+MemberFunctionLiteral.update_forward_refs()
 
 
 class ParserOutput(AaaModel):

@@ -141,7 +141,7 @@ class Program:
             raise ParseException(file=file, parse_error=e)
 
         try:
-            return AaaTransformer(file).transform(tree)
+            return AaaTransformer(file).transform(tree)  # type: ignore  # TODO fix before merging
         except VisitError as e:
             raise e.orig_exc
 
@@ -154,7 +154,7 @@ class Program:
         except UnexpectedInput as e:
             raise ParseException(file=file, parse_error=e)
 
-        return AaaTransformer(file).transform(tree)
+        return AaaTransformer(file).transform(tree)  # type: ignore  # TODO fix before merging
 
     def _load_file_identifiers(self, file: Path, parsed_file: ParsedFile) -> None:
         identifiables: List[Union[Function, Struct]] = []
