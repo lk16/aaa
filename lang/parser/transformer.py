@@ -51,7 +51,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         for argument in arguments:
             name = argument.identifier.name
 
-            if argument.identifier.name in argument_dict:
+            if name in argument_dict:
                 # Argument name collision
                 raise NotImplementedError
 
