@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from lark.lexer import Token
 
@@ -97,6 +97,18 @@ class Function(AaaParseModel):
     arguments: Dict[str, Argument]
     return_types: List[TypeLiteral]
     body: FunctionBody
+
+    def get_names(self) -> Tuple[str, str]:
+        if isinstance(self.name, Identifier):
+            struct_name = ""
+            func_name = self.name.name
+        elif isinstance(self.name, MemberFunctionLiteral):
+            struct_name = self.name.struct_name.identifier.name
+            func_name = self.name.func_name.name
+        else:  # pragma: nocover
+            assert False
+
+        return struct_name, func_name
 
 
 class ImportItem(AaaParseModel):

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List, Union
 
+from lang.cross_referencer.exceptions import CrossReferenceBaseException
 from lang.models import AaaModel
 from lang.parser import models as parser
 
@@ -138,3 +139,4 @@ FunctionBody.update_forward_refs()
 
 class CrossReferencerOutput(AaaCrossReferenceModel):
     identifiers: Dict[Path, Dict[str, Identifiable]]
+    exceptions: List[CrossReferenceBaseException]

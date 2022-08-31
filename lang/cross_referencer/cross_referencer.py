@@ -1,6 +1,11 @@
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from lang.cross_referencer.exceptions import (
+    CrossReferenceBaseException,
+    ImportedItemNotFound,
+    IndirectImportException,
+)
 from lang.cross_referencer.models import (
     BooleanLiteral,
     Branch,
@@ -33,23 +38,18 @@ class CrossReferencer:
         self.parsed_files = parser_output.parsed
         self.builtins_path = parser_output.builtins_path
         self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
+        self.exceptions: List[CrossReferenceBaseException] = []
 
     def run(self) -> CrossReferencerOutput:
         for file, parsed_file in self.parsed_files.items():
             self.identifiers[file] = self._load_identifiers(file, parsed_file)
-
-        # TODO remove: print values for debugging
-        for file in sorted(self.identifiers.keys()):
-            for name in sorted(self.identifiers[file].keys()):
-                identified = self.identifiers[file][name]
-                print(f"{file} {name} -> {type(identified).__name__}")
 
         functions: List[Tuple[Path, Function]] = []
 
         for file, file_identifiers in self.identifiers.items():
             for identifiable in file_identifiers.values():
                 if isinstance(identifiable, Import):
-                    self._resolve_import(identifiable)
+                    self._resolve_import(file, identifiable)
                 elif isinstance(identifiable, Struct):
                     self._resolve_struct_fields(file, identifiable)
                 elif isinstance(identifiable, Function):
@@ -62,10 +62,9 @@ class CrossReferencer:
                 file, function, function.parsed.body
             )
 
-        # TODO handle exceptions
-        ...
-
-        return CrossReferencerOutput(identifiers=self.identifiers)
+        return CrossReferencerOutput(
+            identifiers=self.identifiers, exceptions=self.exceptions
+        )
 
     def _load_identifiers(
         self, file: Path, parsed_file: parser.ParsedFile
@@ -74,7 +73,7 @@ class CrossReferencer:
         identifiables_list += self._load_types(parsed_file.types)
         identifiables_list += self._load_structs(parsed_file.structs)
         identifiables_list += self._load_functions(parsed_file.functions)
-        identifiables_list += self._load_imports(parsed_file.imports)
+        identifiables_list += self._load_imports(file, parsed_file.imports)
 
         identifiers: Dict[str, Identifiable] = {}
         for identifiable in identifiables_list:
@@ -89,8 +88,6 @@ class CrossReferencer:
         return identifiers
 
     def _load_structs(self, parsed_structs: List[parser.Struct]) -> List[Struct]:
-        # TODO detect field name conflict within struct
-
         return [
             Struct(
                 parsed=parsed_struct,
@@ -106,21 +103,12 @@ class CrossReferencer:
         functions: List[Function] = []
 
         for parsed_function in parsed_functions:
-
-            # TODO make helper functions on parser.Function
-            if isinstance(parsed_function.name, parser.Identifier):
-                name = parsed_function.name.name
-                struct_name = ""
-            elif isinstance(parsed_function.name, parser.MemberFunctionLiteral):
-                name = parsed_function.name.func_name.name
-                struct_name = parsed_function.name.struct_name.identifier.name
-            else:  # pragma: nocover
-                assert False
+            struct_name, func_name = parsed_function.get_names()
 
             function = Function(
                 parsed=parsed_function,
-                name=name,
                 struct_name=struct_name,
+                name=func_name,
                 arguments={
                     arg_name: Unresolved()
                     for arg_name in parsed_function.arguments.keys()
@@ -136,15 +124,19 @@ class CrossReferencer:
 
         return functions
 
-    def _load_imports(self, parsed_imports: List[parser.Import]) -> List[Import]:
+    def _load_imports(
+        self, file: Path, parsed_imports: List[parser.Import]
+    ) -> List[Import]:
         imports: List[Import] = []
 
         for parsed_import in parsed_imports:
             for imported_item in parsed_import.imported_items:
 
+                source_file = file.parent / f"{parsed_import.source}.aaa"
+
                 import_ = Import(
                     parsed=imported_item,
-                    source_file=...,  # TODO compute from file containing import
+                    source_file=source_file,
                     source_name=imported_item.origninal_name,
                     imported_name=imported_item.imported_name,
                     source=Unresolved(),
@@ -164,19 +156,19 @@ class CrossReferencer:
             for type in types
         ]
 
-    def _resolve_import(self, import_: Import) -> None:
-
-        try:
-            source_file_identifiers = self.identifiers[import_.source_file]
-        except KeyError:
-            # TODO file was not parsed ?!?
-            raise NotImplementedError
+    def _resolve_import(self, file: Path, import_: Import) -> None:
+        # Should not raise, the file should be parsed already at this point
+        source_file_identifiers = self.identifiers[import_.source_file]
 
         try:
             source = source_file_identifiers[import_.source_name]
         except KeyError:
-            # TODO importing non-existing value (bad), or file was not parsed (verrry bad)
-            raise NotImplementedError
+            self.exceptions.append(ImportedItemNotFound(file=file, import_=import_))
+            return
+
+        if isinstance(source, Import):
+            self.exceptions.append(IndirectImportException(file=file, import_=import_))
+            return
 
         if not isinstance(source, (Function, Struct)):
             # TODO other things cannot be imported
