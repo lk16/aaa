@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
-from lang.cross_referencer.exceptions import CrossReferenceBaseException
+if TYPE_CHECKING:
+    from lang.cross_referencer.exceptions import CrossReferenceBaseException
+
 from lang.models import AaaModel
 from lang.parser import models as parser
 

@@ -1,10 +1,14 @@
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from lark.lexer import Token
+
 from lang.cross_referencer.exceptions import (
+    CollidingIdentifier,
     CrossReferenceBaseException,
     ImportedItemNotFound,
     IndirectImportException,
+    UnknownIdentifier,
 )
 from lang.cross_referencer.models import (
     BooleanLiteral,
@@ -80,8 +84,12 @@ class CrossReferencer:
             identifier = identifiable.identify()
 
             if identifier in identifiers:
-                # TODO naming collision within same file
-                raise NotImplementedError
+                self.exceptions.append(
+                    CollidingIdentifier(
+                        file=file, colliding=identifiable, found=identifiers[identifier]
+                    )
+                )
+                continue
 
             identifiers[identifier] = identifiable
 
@@ -177,44 +185,41 @@ class CrossReferencer:
 
         import_.source = source
 
-    def _get_identifier(self, file: Path, name: str) -> Identifiable:
+    def _get_identifier(self, file: Path, name: str, token: Token) -> Identifiable:
         builtin_identifiers = self.identifiers[self.builtins_path]
         file_identifiers = self.identifiers[file]
 
         if name in builtin_identifiers:
-            identifier = builtin_identifiers[name]
+            found = builtin_identifiers[name]
         elif name in file_identifiers:
-            identifier = file_identifiers[name]
+            found = file_identifiers[name]
         else:
-            # TODO identifier was not found, what do we do now?
-            raise NotImplementedError
+            raise UnknownIdentifier(file=file, name=name, token=token)
 
-        if isinstance(identifier, Import):
-            assert not isinstance(identifier.source, Unresolved)
-            return identifier.source
+        if isinstance(found, Import):
+            assert not isinstance(found.source, (Unresolved, Import))
+            return found.source
 
-        return identifier
+        return found
 
     def _resolve_struct_fields(self, file: Path, struct: Struct) -> None:
         for field_name in struct.fields:
-            type_name = struct.parsed.fields[field_name].identifier.name
+            type_identifier = struct.parsed.fields[field_name].identifier
+            type_name = type_identifier.name
+            type_token = type_identifier.token
 
-            identifier = self._get_identifier(file, type_name)
+            try:
+                struct.fields[field_name]
+                identifier = self._get_identifier(file, type_name, type_token)
+            except UnknownIdentifier as e:
+                self.exceptions.append(e)
+                continue
 
             if not isinstance(identifier, (Struct, Type)):
                 # TODO unexpected identifier kind (import, function, ...)
                 raise NotImplementedError
 
             struct.fields[field_name] = identifier
-
-    def _get_type_identifier(self, file: Path, name: str) -> Type:
-        type = self._get_identifier(file, name)
-
-        if not isinstance(type, Type):
-            # TODO handle
-            raise NotImplementedError
-
-        return type
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
         for param_name in function.type_params:
@@ -245,9 +250,20 @@ class CrossReferencer:
                 is_placeholder = True
             else:
                 is_placeholder = False
-                type = self._get_type_identifier(
-                    file, parsed_type.identifier.name
-                )  # TODO
+
+                try:
+                    identifier = self._get_identifier(
+                        file, parsed_type.identifier.name, parsed_type.identifier.token
+                    )
+                except UnknownIdentifier as e:
+                    self.exceptions.append(e)
+                    continue
+
+                if not isinstance(identifier, Type):
+                    # TODO handle
+                    raise NotImplementedError
+
+                type = identifier
 
                 if len(parsed_type.params.value) != 0:
                     # TODO handle type params
@@ -279,8 +295,10 @@ class CrossReferencer:
                     )
                 else:
                     try:
-                        identifiable = self._get_identifier(file, parsed_item.name)
-                    except KeyError:
+                        identifiable = self._get_identifier(
+                            file, parsed_item.name, parsed_item.token
+                        )
+                    except UnknownIdentifier:
                         # TODO calling non-existing function
                         raise NotImplementedError
 
