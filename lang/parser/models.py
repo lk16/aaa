@@ -56,16 +56,20 @@ class Branch(FunctionBodyItem):
     else_body: FunctionBody
 
 
-class BranchCondition(AaaParseModel):  # TODO use inheritance
-    value: FunctionBody
+class FunctionBody(AaaParseModel):
+    items: List[FunctionBodyItem]
 
 
-class BranchIfBody(AaaParseModel):  # TODO use inheritance
-    value: FunctionBody
+class BranchCondition(FunctionBody):
+    ...
 
 
-class BranchElseBody(AaaParseModel):  # TODO use inheritance
-    value: FunctionBody
+class BranchIfBody(FunctionBody):
+    ...
+
+
+class BranchElseBody(FunctionBody):
+    ...
 
 
 class MemberFunctionLiteral(FunctionBodyItem):
@@ -80,10 +84,6 @@ class StructFieldQuery(FunctionBodyItem):
 class StructFieldUpdate(FunctionBodyItem):
     field_name: StringLiteral
     new_value_expr: FunctionBody
-
-
-class FunctionBody(AaaParseModel):
-    items: List[FunctionBodyItem]
 
 
 class Argument(AaaParseModel):

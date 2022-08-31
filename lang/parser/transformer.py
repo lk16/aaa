@@ -72,11 +72,11 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
         for arg in args:
             if isinstance(arg, BranchCondition):
-                condition = arg.value
+                condition = arg
             elif isinstance(arg, BranchIfBody):
-                if_body = arg.value
+                if_body = arg
             elif isinstance(arg, BranchElseBody):
-                else_body = arg.value
+                else_body = arg
             else:  # pragma: nocover
                 assert False
 
@@ -90,15 +90,15 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def branch_condition(
         self, token: Token, function_body: FunctionBody
     ) -> BranchCondition:
-        return BranchCondition(token=token, value=function_body)
+        return BranchCondition(token=token, items=function_body.items)
 
     def branch_if_body(self, token: Token, function_body: FunctionBody) -> BranchIfBody:
-        return BranchIfBody(token=token, value=function_body)
+        return BranchIfBody(token=token, items=function_body.items)
 
     def branch_else_body(
         self, else_token: Token, begin_token: Token, function_body: FunctionBody
     ) -> BranchElseBody:
-        return BranchElseBody(token=begin_token, value=function_body)
+        return BranchElseBody(token=begin_token, items=function_body.items)
 
     def builtin_type_declaration(
         self, token: Token, type_literal: TypeLiteral
