@@ -25,7 +25,7 @@ class Struct(AaaCrossReferenceModel):
     # TODO use Type for Struct as well
 
     parsed: parser.Struct
-    fields: Dict[str, Type | Struct | Unresolved]
+    fields: Dict[str, Identifiable | Unresolved]
     name: str
 
     def identify(self) -> str:
@@ -59,7 +59,7 @@ class Import(AaaCrossReferenceModel):
     source_file: Path
     source_name: str
     imported_name: str
-    source: Unresolved | Struct | Function  # TODO consider using Identifiable here
+    source: Identifiable
 
     def identify(self) -> str:
         return self.imported_name

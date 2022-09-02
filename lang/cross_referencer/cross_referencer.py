@@ -1,5 +1,6 @@
+import typing
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, TypeVar
 
 from lark.lexer import Token
 
@@ -36,79 +37,101 @@ from lang.cross_referencer.models import (
 )
 from lang.parser import models as parser
 
+IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
+
 
 class CrossReferencer:
     def __init__(self, parser_output: parser.ParserOutput) -> None:
         self.parsed_files = parser_output.parsed
         self.builtins_path = parser_output.builtins_path
-        self.identifiers: Dict[Path, Dict[str, Identifiable]] = {}
+        self.identifiers: IdentifiablesDict = {}
         self.exceptions: List[CrossReferenceBaseException] = []
 
     def run(self) -> CrossReferencerOutput:
-        for file, parsed_file in self.parsed_files.items():
-            self.identifiers[file] = self._load_identifiers(file, parsed_file)
+        identifiers_list = self._load_identifiers()
+        self.identifiers, colissions = self._detect_duplicate_identifiers(
+            identifiers_list
+        )
+        self.exceptions += colissions
 
-        functions: List[Tuple[Path, Function]] = []
+        for file, identifier, import_ in self._get_identifiers_by_type(Import):
+            try:
+                self._resolve_import(file, import_)
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+                del self.identifiers[(file, identifier)]
 
-        for file, file_identifiers in self.identifiers.items():
-            for identifiable in file_identifiers.values():
-                if isinstance(identifiable, Import):
-                    self._resolve_import(file, identifiable)
-                elif isinstance(identifiable, Struct):
-                    self._resolve_struct_fields(file, identifiable)
-                elif isinstance(identifiable, Function):
-                    functions.append((file, identifiable))
+        for file, identifier, struct in self._get_identifiers_by_type(Struct):
+            try:
+                self._resolve_struct_fields(file, struct)
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+                del self.identifiers[(file, identifier)]
 
-        for file, function in functions:
-            self._resolve_function_type_params(file, function)
-            self._resolve_function_arguments(file, function)
-            function.body = self._resolve_function_body_identifiers(
-                file, function, function.parsed.body
-            )
+        for file, identifier, function in self._get_identifiers_by_type(Function):
+            try:
+                self._resolve_function_type_params(file, function)
+                self._resolve_function_arguments(file, function)
+                function.body = self._resolve_function_body_identifiers(
+                    file, function, function.parsed.body
+                )
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+                del self.identifiers[(file, identifier)]
 
         return CrossReferencerOutput(
             identifiers=self.identifiers, exceptions=self.exceptions
         )
 
-    def _load_identifiers(
-        self, file: Path, parsed_file: parser.ParsedFile
-    ) -> Dict[str, Identifiable]:
-        identifiables_list: List[Identifiable] = []
-        identifiables_list += self._load_types(parsed_file.types)
-        identifiables_list += self._load_structs(parsed_file.structs)
-        identifiables_list += self._load_functions(parsed_file.functions)
-        identifiables_list += self._load_imports(file, parsed_file.imports)
+    def _load_identifiers(self) -> List[Tuple[Path, Identifiable]]:
+        identifiables_list: List[Tuple[Path, Identifiable]] = []
+        for file, parsed_file in self.parsed_files.items():
+            identifiables_list += self._load_types(file, parsed_file.types)
+            identifiables_list += self._load_structs(file, parsed_file.structs)
+            identifiables_list += self._load_functions(file, parsed_file.functions)
+            identifiables_list += self._load_imports(file, parsed_file.imports)
+        return identifiables_list
 
-        identifiers: Dict[str, Identifiable] = {}
-        for identifiable in identifiables_list:
-            identifier = identifiable.identify()
+    def _detect_duplicate_identifiers(
+        self, identifiables_list: List[Tuple[Path, Identifiable]]
+    ) -> Tuple[IdentifiablesDict, List[CollidingIdentifier]]:
+        identifiers: IdentifiablesDict = {}
+        collisions: List[CollidingIdentifier] = []
 
-            if identifier in identifiers:
-                self.exceptions.append(
+        for file, identifiable in identifiables_list:
+            key = (file, identifiable.identify())
+
+            if key in identifiers:
+                collisions.append(
                     CollidingIdentifier(
-                        file=file, colliding=identifiable, found=identifiers[identifier]
+                        file=file, colliding=identifiable, found=identifiers[key]
                     )
                 )
                 continue
 
-            identifiers[identifier] = identifiable
+            identifiers[key] = identifiable
 
-        return identifiers
+        return identifiers, collisions
 
-    def _load_structs(self, parsed_structs: List[parser.Struct]) -> List[Struct]:
-        return [
-            Struct(
+    def _load_structs(
+        self, file: Path, parsed_structs: List[parser.Struct]
+    ) -> List[Tuple[Path, Struct]]:
+        structs: List[Tuple[Path, Struct]] = []
+
+        for parsed_struct in parsed_structs:
+            struct = Struct(
                 parsed=parsed_struct,
                 fields={name: Unresolved() for name in parsed_struct.fields.keys()},
                 name=parsed_struct.identifier.name,
             )
-            for parsed_struct in parsed_structs
-        ]
+
+            structs.append((file, struct))
+        return structs
 
     def _load_functions(
-        self, parsed_functions: List[parser.Function]
-    ) -> List[Function]:
-        functions: List[Function] = []
+        self, file: Path, parsed_functions: List[parser.Function]
+    ) -> List[Tuple[Path, Function]]:
+        functions: List[Tuple[Path, Function]] = []
 
         for parsed_function in parsed_functions:
             struct_name, func_name = parsed_function.get_names()
@@ -128,14 +151,14 @@ class CrossReferencer:
                 body=Unresolved(),
             )
 
-            functions.append(function)
+            functions.append((file, function))
 
         return functions
 
     def _load_imports(
         self, file: Path, parsed_imports: List[parser.Import]
-    ) -> List[Import]:
-        imports: List[Import] = []
+    ) -> List[Tuple[Path, Import]]:
+        imports: List[Tuple[Path, Import]] = []
 
         for parsed_import in parsed_imports:
             for imported_item in parsed_import.imported_items:
@@ -150,49 +173,47 @@ class CrossReferencer:
                     source=Unresolved(),
                 )
 
-                imports.append(import_)
+                imports.append((file, import_))
 
         return imports
 
-    def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
+    def _load_types(
+        self, file: Path, types: List[parser.TypeLiteral]
+    ) -> List[Tuple[Path, Type]]:
         return [
-            Type(
-                name=type.identifier.name,
-                param_count=len(type.params.value),
-                parsed=type,
+            (
+                file,
+                Type(
+                    name=type.identifier.name,
+                    param_count=len(type.params.value),
+                    parsed=type,
+                ),
             )
             for type in types
         ]
 
     def _resolve_import(self, file: Path, import_: Import) -> None:
-        # Should not raise, the file should be parsed already at this point
-        source_file_identifiers = self.identifiers[import_.source_file]
+
+        key = (import_.source_file, import_.source_name)
 
         try:
-            source = source_file_identifiers[import_.source_name]
+            source = self.identifiers[key]
         except KeyError:
-            self.exceptions.append(ImportedItemNotFound(file=file, import_=import_))
-            return
+            raise ImportedItemNotFound(file=file, import_=import_)
 
         if isinstance(source, Import):
-            self.exceptions.append(IndirectImportException(file=file, import_=import_))
-            return
-
-        if not isinstance(source, (Function, Struct)):
-            # TODO other things cannot be imported
-            # In particular: imports can't be imported as indirect importing is forbidden
-            raise NotImplementedError
+            raise IndirectImportException(file=file, import_=import_)
 
         import_.source = source
 
     def _get_identifier(self, file: Path, name: str, token: Token) -> Identifiable:
-        builtin_identifiers = self.identifiers[self.builtins_path]
-        file_identifiers = self.identifiers[file]
+        builtins_key = (self.builtins_path, name)
+        key = (file, name)
 
-        if name in builtin_identifiers:
-            found = builtin_identifiers[name]
-        elif name in file_identifiers:
-            found = file_identifiers[name]
+        if builtins_key in self.identifiers:
+            found = self.identifiers[builtins_key]
+        elif key in self.identifiers:
+            found = self.identifiers[key]
         else:
             raise UnknownIdentifier(file=file, name=name, token=token)
 
@@ -202,24 +223,26 @@ class CrossReferencer:
 
         return found
 
+    T = TypeVar("T")
+
+    def _get_identifiers_by_type(
+        self, type: typing.Type[T]
+    ) -> List[Tuple[Path, str, T]]:
+        return [
+            (file, identifier, identifiable)
+            for (file, identifier), identifiable in self.identifiers.items()
+            if isinstance(identifiable, type)
+        ]
+
     def _resolve_struct_fields(self, file: Path, struct: Struct) -> None:
         for field_name in struct.fields:
             type_identifier = struct.parsed.fields[field_name].identifier
             type_name = type_identifier.name
             type_token = type_identifier.token
 
-            try:
-                struct.fields[field_name]
-                identifier = self._get_identifier(file, type_name, type_token)
-            except UnknownIdentifier as e:
-                self.exceptions.append(e)
-                continue
-
-            if not isinstance(identifier, (Struct, Type)):
-                # TODO unexpected identifier kind (import, function, ...)
-                raise NotImplementedError
-
-            struct.fields[field_name] = identifier
+            struct.fields[field_name] = self._get_identifier(
+                file, type_name, type_token
+            )
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
         for param_name in function.type_params:
@@ -230,7 +253,10 @@ class CrossReferencer:
             )
             type = Type(parsed=type_literal, name=param_name, param_count=0)
 
-            # TODO raise exception if self.identifiers[file][param_name] exists
+            if (file, param_name) in self.identifiers:
+                # TODO param name is not allowed
+                # Another identifier in the same file has this name.
+                raise NotImplementedError
 
             function.type_params[param_name] = type
 
@@ -245,19 +271,14 @@ class CrossReferencer:
 
                 assert isinstance(found_type, Type)
                 type = found_type
-
                 params: List[VariableType] = []
                 is_placeholder = True
             else:
                 is_placeholder = False
 
-                try:
-                    identifier = self._get_identifier(
-                        file, parsed_type.identifier.name, parsed_type.identifier.token
-                    )
-                except UnknownIdentifier as e:
-                    self.exceptions.append(e)
-                    continue
+                identifier = self._get_identifier(
+                    file, parsed_type.identifier.name, parsed_type.identifier.token
+                )
 
                 if not isinstance(identifier, Type):
                     # TODO handle
