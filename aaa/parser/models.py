@@ -5,10 +5,11 @@ from typing import Dict, List, Sequence, Tuple
 
 from lark.lexer import Token
 
+from aaa import AaaModel
 from aaa.parser.exceptions import ParserBaseException
 
 
-class AaaParseModel:  # TODO inherit from Aaa base model without pydantic
+class AaaParseModel(AaaModel):
     def __init__(self, *, token: Token) -> None:
         self.token = token
 
@@ -222,7 +223,7 @@ class TypeParameters(AaaParseModel):
         self.value = value
 
 
-class ParserOutput:  # TODO inherit from Aaa base model without pydantic
+class ParserOutput(AaaModel):
     def __init__(
         self,
         *,

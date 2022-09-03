@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Sequence, Tuple, Union
 
+from aaa import AaaModel
+
 if TYPE_CHECKING:
     from aaa.cross_referencer.exceptions import CrossReferenceBaseException
 
@@ -13,7 +15,7 @@ Identifiable = Union["Function", "Import", "Struct", "Type"]
 IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
-class AaaCrossReferenceModel:  # TODO inherit from Aaa base model without pydantic
+class AaaCrossReferenceModel(AaaModel):
     ...
 
 
@@ -204,7 +206,7 @@ class StructFieldUpdate(FunctionBodyItem, parser.StructFieldUpdate):
         super().__init__(**vars(parsed))
 
 
-class CrossReferencerOutput(AaaCrossReferenceModel):
+class CrossReferencerOutput(AaaModel):
     def __init__(
         self,
         *,

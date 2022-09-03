@@ -3,6 +3,10 @@ from pathlib import Path
 from lark.lexer import Token
 
 
+class AaaModel:
+    ...
+
+
 class AaaException(Exception):
     ...
 
