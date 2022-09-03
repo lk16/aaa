@@ -169,6 +169,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                         assert False
             elif isinstance(arg, MemberFunctionLiteral):
                 name = arg
+                type_params = arg.struct_name.params.value
             elif isinstance(arg, Token):
                 token = arg
             elif isinstance(arg, TypeParameters):
