@@ -9,6 +9,8 @@ from aaa.cross_referencer.exceptions import (
     CrossReferenceBaseException,
     ImportedItemNotFound,
     IndirectImportException,
+    InvalidType,
+    InvalidTypeParameter,
     UnknownIdentifier,
 )
 from aaa.cross_referencer.models import (
@@ -22,6 +24,7 @@ from aaa.cross_referencer.models import (
     IdentifiablesDict,
     Identifier,
     IdentifierCallingFunction,
+    IdentifierCallingStruct,
     IdentifierUsingArgument,
     Import,
     IntegerLiteral,
@@ -279,8 +282,7 @@ class CrossReferencer:
                 # type_params should already be resolved
                 assert not isinstance(type, Unresolved)
 
-                # TODO using something that's not a type as type_param
-                raise NotImplementedError
+                raise InvalidTypeParameter(file=file, identifiable=type)
 
             if arg_type_name in function.type_params:
                 params: List[VariableType] = []
@@ -330,8 +332,7 @@ class CrossReferencer:
                 )
 
                 if not isinstance(identifier, Type):
-                    # TODO handle
-                    raise NotImplementedError
+                    raise InvalidType(file=file, identifiable=identifier)
 
                 params.append(
                     VariableType(
@@ -363,13 +364,9 @@ class CrossReferencer:
                         kind=IdentifierUsingArgument(arg_type=arg_type),
                     )
                 else:
-                    try:
-                        identifiable = self._get_identifier(
-                            file, parsed_item.name, parsed_item.token
-                        )
-                    except UnknownIdentifier:
-                        # TODO calling non-existing function
-                        raise NotImplementedError
+                    identifiable = self._get_identifier(
+                        file, parsed_item.name, parsed_item.token
+                    )
 
                     if isinstance(identifiable, Function):
                         item = Identifier(
@@ -377,8 +374,10 @@ class CrossReferencer:
                             kind=IdentifierCallingFunction(function=identifiable),
                         )
                     elif isinstance(identifiable, Struct):
-                        # TODO put struct literal on stack
-                        raise NotImplementedError
+                        item = Identifier(
+                            parsed=parsed_item,
+                            kind=IdentifierCallingStruct(struct=identifiable),
+                        )
                     else:  # pragma: nocover
                         raise NotImplementedError
 

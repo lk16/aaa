@@ -7,7 +7,17 @@ from aaa.cross_referencer.models import Function, Identifiable, Import, Struct, 
 
 
 class CrossReferenceBaseException(AaaException):
-    ...
+    def describe(self, item: Identifiable) -> str:
+        if isinstance(item, Struct):
+            return f"struct {item.identify()}"
+        elif isinstance(item, Function):
+            return f"function {item.identify()}"
+        elif isinstance(item, Import):
+            return f"imported object {item.identify()}"
+        elif isinstance(item, Type):
+            return f"type {item.identify()}"
+        else:  # pragma: nocover
+            assert False
 
 
 class ImportedItemNotFound(CrossReferenceBaseException):
@@ -59,18 +69,6 @@ class CollidingIdentifier(CrossReferenceBaseException):
         self.found = found
         self.file = file
 
-    def describe(self, item: Identifiable) -> str:
-        if isinstance(item, Struct):
-            return f"struct {item.identify()}"
-        elif isinstance(item, Function):
-            return f"function {item.identify()}"
-        elif isinstance(item, Import):
-            return f"imported object {item.identify()}"
-        elif isinstance(item, Type):
-            return f"type {item.name}"
-        else:  # pragma: nocover
-            assert False
-
     def where(self, item: Identifiable) -> str:
         return error_location(self.file, item.parsed.token)
 
@@ -95,3 +93,29 @@ class UnknownIdentifier(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return f"{self.where()}: Usage of unknown identifier {self.name}\n"
+
+
+class InvalidTypeParameter(CrossReferenceBaseException):
+    def __init__(self, *, file: Path, identifiable: Identifiable) -> None:
+        self.file = file
+        self.identifiable = identifiable
+
+    def where(self) -> str:
+        return error_location(self.file, self.identifiable.parsed.token)
+
+    def __str__(self) -> str:
+        return f"{self.where()}: Cannot use {self.describe(self.identifiable)} as type parameter\n"
+
+
+class InvalidType(CrossReferenceBaseException):
+    def __init__(self, *, file: Path, identifiable: Identifiable) -> None:
+        self.file = file
+        self.identifiable = identifiable
+
+    def where(self) -> str:
+        return error_location(self.file, self.identifiable.parsed.token)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.where()}: Cannot use {self.describe(self.identifiable)} as type\n"
+        )

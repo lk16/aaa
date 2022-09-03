@@ -166,8 +166,13 @@ class IdentifierUsingArgument(IdentifierKind):
 
 
 class IdentifierCallingFunction(IdentifierKind):
-    def __init__(self, *function: Function) -> None:
+    def __init__(self, *, function: Function) -> None:
         self.function = function
+
+
+class IdentifierCallingStruct(IdentifierKind):
+    def __init__(self, *, struct: Struct) -> None:
+        self.struct = struct
 
 
 class Identifier(FunctionBodyItem, parser.Identifier):
