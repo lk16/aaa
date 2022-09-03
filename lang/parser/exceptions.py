@@ -3,7 +3,7 @@ from pathlib import Path
 from lark.exceptions import UnexpectedInput
 from lark.lexer import Token
 
-from lang.exceptions import AaaException
+from lang import AaaException
 
 
 class ParserBaseException(AaaException):

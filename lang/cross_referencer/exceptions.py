@@ -2,8 +2,8 @@ from pathlib import Path
 
 from lark.lexer import Token
 
+from lang import AaaException, error_location
 from lang.cross_referencer.models import Function, Identifiable, Import, Struct, Type
-from lang.exceptions import AaaException, error_location
 
 
 class CrossReferenceBaseException(AaaException):
