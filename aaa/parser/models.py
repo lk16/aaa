@@ -5,7 +5,7 @@ from typing import Dict, List, Sequence, Tuple
 
 from lark.lexer import Token
 
-from lang.parser.exceptions import ParserBaseException
+from aaa.parser.exceptions import ParserBaseException
 
 
 class AaaParseModel:  # TODO inherit from Aaa base model without pydantic

@@ -4,14 +4,14 @@ from typing import List, Tuple, TypeVar
 
 from lark.lexer import Token
 
-from lang.cross_referencer.exceptions import (
+from aaa.cross_referencer.exceptions import (
     CollidingIdentifier,
     CrossReferenceBaseException,
     ImportedItemNotFound,
     IndirectImportException,
     UnknownIdentifier,
 )
-from lang.cross_referencer.models import (
+from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
     CrossReferencerOutput,
@@ -36,7 +36,7 @@ from lang.cross_referencer.models import (
     Unresolved,
     VariableType,
 )
-from lang.parser import models as parser
+from aaa.parser import models as parser
 
 
 class CrossReferencer:

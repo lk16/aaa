@@ -5,9 +5,9 @@ from lark.exceptions import UnexpectedInput
 from lark.lexer import Token
 from lark.visitors import Transformer, v_args
 
-from lang.parser import aaa_keyword_parser
-from lang.parser.exceptions import KeywordUsedAsIdentifier
-from lang.parser.models import (
+from aaa.parser import aaa_keyword_parser
+from aaa.parser.exceptions import KeywordUsedAsIdentifier
+from aaa.parser.models import (
     AaaParseModel,
     Argument,
     BooleanLiteral,

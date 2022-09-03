@@ -8,8 +8,8 @@ from tempfile import NamedTemporaryFile
 import click
 from click import ClickException
 
-from lang.cross_referencer.cross_referencer import CrossReferencer
-from lang.parser.parser import Parser
+from aaa.cross_referencer.cross_referencer import CrossReferencer
+from aaa.parser.parser import Parser
 
 
 @click.group()

@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Sequence, Tuple, Union
 
 if TYPE_CHECKING:
-    from lang.cross_referencer.exceptions import CrossReferenceBaseException
+    from aaa.cross_referencer.exceptions import CrossReferenceBaseException
 
-from lang.parser import models as parser
+from aaa.parser import models as parser
 
 Identifiable = Union["Function", "Import", "Struct", "Type"]
 
