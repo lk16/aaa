@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 from aaa.parser import models as parser
 
-Identifiable = Union["Function", "Import", "Struct", "Type"]
+Identifiable = Union["Function", "Import", "Type"]
 
 IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
@@ -21,24 +21,6 @@ class AaaCrossReferenceModel(AaaModel):
 
 class Unresolved(AaaCrossReferenceModel):
     ...
-
-
-class Struct(AaaCrossReferenceModel):
-    # TODO use Type for Struct as well
-
-    def __init__(
-        self,
-        *,
-        parsed: parser.Struct,
-        fields: Dict[str, Identifiable | Unresolved],
-        name: str,
-    ) -> None:
-        self.parsed = parsed
-        self.fields = fields
-        self.name = name
-
-    def identify(self) -> str:
-        return self.name
 
 
 class Function(AaaCrossReferenceModel):
@@ -98,13 +80,15 @@ class Type(AaaCrossReferenceModel):
     def __init__(
         self,
         *,
-        parsed: parser.TypeLiteral,
+        parsed: parser.TypeLiteral | parser.Struct,
         name: str,
         param_count: int,
+        fields: Dict[str, Identifiable | Unresolved],
     ) -> None:
         self.parsed = parsed
         self.name = name
         self.param_count = param_count
+        self.fields = fields
 
     def identify(self) -> str:
         return self.name
@@ -170,9 +154,9 @@ class IdentifierCallingFunction(IdentifierKind):
         self.function = function
 
 
-class IdentifierCallingStruct(IdentifierKind):
-    def __init__(self, *, struct: Struct) -> None:
-        self.struct = struct
+class IdentifierCallingType(IdentifierKind):
+    def __init__(self, *, type: Type) -> None:
+        self.type = type
 
 
 class Identifier(FunctionBodyItem, parser.Identifier):

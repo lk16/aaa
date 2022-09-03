@@ -24,7 +24,7 @@ from aaa.cross_referencer.models import (
     IdentifiablesDict,
     Identifier,
     IdentifierCallingFunction,
-    IdentifierCallingStruct,
+    IdentifierCallingType,
     IdentifierUsingArgument,
     Import,
     IntegerLiteral,
@@ -32,7 +32,6 @@ from aaa.cross_referencer.models import (
     MemberFunctionName,
     Operator,
     StringLiteral,
-    Struct,
     StructFieldQuery,
     StructFieldUpdate,
     Type,
@@ -63,9 +62,9 @@ class CrossReferencer:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
 
-        for file, identifier, struct in self._get_identifiers_by_type(Struct):
+        for file, identifier, type in self._get_identifiers_by_type(Type):
             try:
-                self._resolve_struct_fields(file, struct)
+                self._resolve_type_fields(file, type)
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
@@ -89,7 +88,7 @@ class CrossReferencer:
         identifiables_list: List[Tuple[Path, Identifiable]] = []
         for file, parsed_file in self.parsed_files.items():
             identifiables_list += self._load_types(file, parsed_file.types)
-            identifiables_list += self._load_structs(file, parsed_file.structs)
+            identifiables_list += self._load_struct_types(file, parsed_file.structs)
             identifiables_list += self._load_functions(file, parsed_file.functions)
             identifiables_list += self._load_imports(file, parsed_file.imports)
         return identifiables_list
@@ -115,20 +114,21 @@ class CrossReferencer:
 
         return identifiers, collisions
 
-    def _load_structs(
+    def _load_struct_types(
         self, file: Path, parsed_structs: List[parser.Struct]
-    ) -> List[Tuple[Path, Struct]]:
-        structs: List[Tuple[Path, Struct]] = []
+    ) -> List[Tuple[Path, Type]]:
+        types: List[Tuple[Path, Type]] = []
 
         for parsed_struct in parsed_structs:
-            struct = Struct(
+            type = Type(
                 parsed=parsed_struct,
                 fields={name: Unresolved() for name in parsed_struct.fields.keys()},
                 name=parsed_struct.identifier.name,
+                param_count=0,
             )
 
-            structs.append((file, struct))
-        return structs
+            types.append((file, type))
+        return types
 
     def _load_functions(
         self, file: Path, parsed_functions: List[parser.Function]
@@ -189,6 +189,7 @@ class CrossReferencer:
                     name=type.identifier.name,
                     param_count=len(type.params.value),
                     parsed=type,
+                    fields={},
                 ),
             )
             for type in types
@@ -236,15 +237,16 @@ class CrossReferencer:
             if isinstance(identifiable, type)
         ]
 
-    def _resolve_struct_fields(self, file: Path, struct: Struct) -> None:
-        for field_name in struct.fields:
-            type_identifier = struct.parsed.fields[field_name].identifier
-            type_name = type_identifier.name
-            type_token = type_identifier.token
+    def _resolve_type_fields(self, file: Path, type: Type) -> None:
+        for field_name in type.fields:
+            if isinstance(type.parsed, parser.Struct):
+                type_identifier = type.parsed.fields[field_name].identifier
+                type_name = type_identifier.name
+                type_token = type_identifier.token
 
-            struct.fields[field_name] = self._get_identifier(
-                file, type_name, type_token
-            )
+                type.fields[field_name] = self._get_identifier(
+                    file, type_name, type_token
+                )
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
         for param_name in function.type_params:
@@ -252,7 +254,7 @@ class CrossReferencer:
 
             assert type_literal
 
-            type = Type(parsed=type_literal, name=param_name, param_count=0)
+            type = Type(parsed=type_literal, name=param_name, param_count=0, fields={})
 
             if (file, param_name) in self.identifiers:
                 # Another identifier in the same file has this name.
@@ -373,10 +375,10 @@ class CrossReferencer:
                             parsed=parsed_item,
                             kind=IdentifierCallingFunction(function=identifiable),
                         )
-                    elif isinstance(identifiable, Struct):
+                    elif isinstance(identifiable, Type):
                         item = Identifier(
                             parsed=parsed_item,
-                            kind=IdentifierCallingStruct(struct=identifiable),
+                            kind=IdentifierCallingType(type=identifiable),
                         )
                     else:  # pragma: nocover
                         raise NotImplementedError

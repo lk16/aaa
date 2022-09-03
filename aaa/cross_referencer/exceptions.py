@@ -3,14 +3,12 @@ from pathlib import Path
 from lark.lexer import Token
 
 from aaa import AaaException, error_location
-from aaa.cross_referencer.models import Function, Identifiable, Import, Struct, Type
+from aaa.cross_referencer.models import Function, Identifiable, Import, Type
 
 
 class CrossReferenceBaseException(AaaException):
     def describe(self, item: Identifiable) -> str:
-        if isinstance(item, Struct):
-            return f"struct {item.identify()}"
-        elif isinstance(item, Function):
+        if isinstance(item, Function):
             return f"function {item.identify()}"
         elif isinstance(item, Import):
             return f"imported object {item.identify()}"
