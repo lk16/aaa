@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from lark.lexer import Token
 
@@ -164,6 +164,12 @@ class Function(AaaParseModel):
             assert False
 
         return struct_name, func_name
+
+    def get_type_param(self, name: str) -> Optional[TypeLiteral]:
+        for type_param in self.type_params:
+            if type_param.identifier.name == name:
+                return type_param
+        return None
 
 
 class ImportItem(AaaParseModel):

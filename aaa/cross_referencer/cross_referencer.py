@@ -245,13 +245,9 @@ class CrossReferencer:
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
         for param_name in function.type_params:
+            type_literal = function.parsed.get_type_param(param_name)
 
-            # TODO prevent this next(...)
-            type_literal = next(
-                param
-                for param in function.parsed.type_params
-                if param.identifier.name == param_name
-            )
+            assert type_literal
 
             type = Type(parsed=type_literal, name=param_name, param_count=0)
 
