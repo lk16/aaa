@@ -270,75 +270,84 @@ class CrossReferencer:
         for arg_name, parsed_arg in function.parsed.arguments.items():
             parsed_type = parsed_arg.type
             arg_type_name = parsed_arg.type.identifier.name
-            type: Type
+            type: Identifiable | Unresolved
 
             if arg_type_name in function.type_params:
-                is_placeholder = True
-                found_type = function.type_params[arg_type_name]
-
-                assert isinstance(found_type, Type)
-                type = found_type
-                params: List[VariableType] = []
+                type = function.type_params[arg_type_name]
             else:
-                is_placeholder = False
-
-                identifier = self._get_identifier(
+                type = self._get_identifier(
                     file, parsed_type.identifier.name, parsed_type.identifier.token
                 )
 
-                if not isinstance(identifier, Type):
-                    # TODO handle
-                    raise NotImplementedError
+            if not isinstance(type, Type):
+                # type_params should already be resolved
+                assert not isinstance(type, Unresolved)
 
-                type = identifier
+                # TODO using something that's not a type as type_param
+                raise NotImplementedError
 
-                # TODO move loading params to separate function
-                params = []
-                for param in parsed_type.params.value:
-                    assert len(param.params.value) == 0
-
-                    param_name = param.identifier.name
-                    if param_name in function.type_params:
-                        param_type = function.type_params[param_name]
-                        assert isinstance(param_type, Type)
-
-                        params.append(
-                            VariableType(
-                                type=param_type,
-                                name=param_name,
-                                is_placeholder=True,
-                                parsed=param,
-                                params=[],
-                            )
-                        )
-                    else:
-                        identifier = self._get_identifier(
-                            file,
-                            parsed_type.identifier.name,
-                            parsed_type.identifier.token,
-                        )
-
-                        if not isinstance(identifier, Type):
-                            # TODO handle
-                            raise NotImplementedError
-
-                        params.append(
-                            VariableType(
-                                type=identifier,
-                                name=param_name,
-                                is_placeholder=False,
-                                parsed=param,
-                                params=[],
-                            )
-                        )
+            if arg_type_name in function.type_params:
+                params: List[VariableType] = []
+            else:
+                params = self._resolve_function_argument_params(
+                    file, function, parsed_type
+                )
 
             function.arguments[arg_name] = VariableType(
                 parsed=parsed_type,
                 type=type,
                 name=arg_name,
                 params=params,
-                is_placeholder=is_placeholder,
+                is_placeholder=arg_type_name in function.type_params,
             )
+
+    def _resolve_function_argument_params(
+        self,
+        file: Path,
+        function: Function,
+        parsed_type: parser.TypeLiteral,
+    ) -> List[VariableType]:
+        params: List[VariableType] = []
+
+        for param in parsed_type.params.value:
+            assert len(param.params.value) == 0
+
+            param_name = param.identifier.name
+            if param_name in function.type_params:
+                param_type = function.type_params[param_name]
+                assert isinstance(param_type, Type)
+
+                params.append(
+                    VariableType(
+                        type=param_type,
+                        name=param_name,
+                        is_placeholder=True,
+                        parsed=param,
+                        params=[],
+                    )
+                )
+            else:
+                identifier = self._get_identifier(
+                    file,
+                    parsed_type.identifier.name,
+                    parsed_type.identifier.token,
+                )
+
+                if not isinstance(identifier, Type):
+                    # TODO handle
+                    raise NotImplementedError
+
+                params.append(
+                    VariableType(
+                        type=identifier,
+                        name=param_name,
+                        is_placeholder=False,
+                        parsed=param,
+                        params=[],
+                    )
+                )
+
+        return params
 
     def _resolve_function_body_identifiers(
         self, file: Path, function: Function, parsed: parser.FunctionBody
