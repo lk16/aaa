@@ -1,15 +1,13 @@
 #!/usr/bin/env -S python3 -u
 
-import os
 import subprocess
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, gettempdir
 
 import click
 from click import ClickException
 
-from aaa.cross_referencer.cross_referencer import CrossReferencer
-from aaa.parser.parser import Parser
+from aaa.run import Runner
 
 
 @click.group()
@@ -20,19 +18,12 @@ def cli() -> None:
 @cli.command()
 @click.argument("code", type=str)
 def cmd(code: str) -> None:
-    try:
-        stdlib_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
-    except KeyError as e:
-        raise ClickException(
-            "Environment variable AAA_STDLIB_PATH is not set. Cannot find standard library!",
-        ) from e
-
-    with NamedTemporaryFile() as temp_file:
-        file = Path(temp_file.name)
+    with NamedTemporaryFile(delete=False) as temp_file:
+        file = Path(gettempdir()) / temp_file.name
         file.write_text(code)
+        exit_code = Runner(file).run()
 
-        parser_output = Parser(file, stdlib_path).run()
-        CrossReferencer(parser_output).run()
+    exit(exit_code)
 
 
 @cli.command()
