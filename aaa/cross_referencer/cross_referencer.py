@@ -245,17 +245,23 @@ class CrossReferencer:
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
         for param_name in function.type_params:
+
+            # TODO prevent this next(...)
             type_literal = next(
                 param
                 for param in function.parsed.type_params
                 if param.identifier.name == param_name
             )
+
             type = Type(parsed=type_literal, name=param_name, param_count=0)
 
             if (file, param_name) in self.identifiers:
-                # TODO param name is not allowed
                 # Another identifier in the same file has this name.
-                raise NotImplementedError
+                raise CollidingIdentifier(
+                    file=file,
+                    colliding=type,
+                    found=self.identifiers[(file, param_name)],
+                )
 
             function.type_params[param_name] = type
 
