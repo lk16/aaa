@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 from lark.lexer import Token
 
-from lang.models import AaaModel
-from lang.parser.exceptions import ParseException
+from lang.parser.exceptions import ParserBaseException
 
 
 class AaaParseModel:  # TODO inherit from Aaa base model without pydantic
@@ -85,7 +84,7 @@ class Branch(FunctionBodyItem):
 
 
 class FunctionBody(AaaParseModel):
-    def __init__(self, *, items: List[FunctionBodyItem], token: Token) -> None:
+    def __init__(self, *, items: Sequence[FunctionBodyItem], token: Token) -> None:
         self.items = items
         super().__init__(token=token)
 
@@ -223,13 +222,13 @@ class TypeParameters(AaaParseModel):
         self.value = value
 
 
-class ParserOutput(AaaModel):
+class ParserOutput:  # TODO inherit from Aaa base model without pydantic
     def __init__(
         self,
         *,
         parsed: Dict[Path, ParsedFile],
         builtins_path: Path,
-        exceptions: List[ParseException],
+        exceptions: List[ParserBaseException],
     ) -> None:
         self.parsed = parsed
         self.builtins_path = builtins_path

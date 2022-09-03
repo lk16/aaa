@@ -1,6 +1,6 @@
 import typing
 from pathlib import Path
-from typing import Dict, List, Tuple, TypeVar
+from typing import List, Tuple, TypeVar
 
 from lark.lexer import Token
 
@@ -19,6 +19,7 @@ from lang.cross_referencer.models import (
     FunctionBody,
     FunctionBodyItem,
     Identifiable,
+    IdentifiablesDict,
     Identifier,
     IdentifierCallingFunction,
     IdentifierUsingArgument,
@@ -36,8 +37,6 @@ from lang.cross_referencer.models import (
     VariableType,
 )
 from lang.parser import models as parser
-
-IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
 class CrossReferencer:
@@ -168,7 +167,7 @@ class CrossReferencer:
                 import_ = Import(
                     parsed=imported_item,
                     source_file=source_file,
-                    source_name=imported_item.origninal_name,
+                    source_name=imported_item.original_name,
                     imported_name=imported_item.imported_name,
                     source=Unresolved(),
                 )
@@ -311,8 +310,11 @@ class CrossReferencer:
             if isinstance(parsed_item, parser.Identifier):
                 if parsed_item.name in function.arguments:
                     arg_type = function.arguments[parsed_item.name]
+                    assert not isinstance(arg_type, Unresolved)
+
                     item = Identifier(
-                        **parsed.dict(), kind=IdentifierUsingArgument(arg_type=arg_type)
+                        parsed=parsed_item,
+                        kind=IdentifierUsingArgument(arg_type=arg_type),
                     )
                 else:
                     try:
@@ -325,7 +327,7 @@ class CrossReferencer:
 
                     if isinstance(identifiable, Function):
                         item = Identifier(
-                            **parsed.dict(),
+                            parsed=parsed_item,
                             kind=IdentifierCallingFunction(function=identifiable),
                         )
                     elif isinstance(identifiable, Struct):
@@ -335,15 +337,16 @@ class CrossReferencer:
                         raise NotImplementedError
 
             elif isinstance(parsed_item, parser.IntegerLiteral):
-                item = IntegerLiteral(**parsed_item.dict())
+                item = IntegerLiteral(parsed=parsed_item)
             elif isinstance(parsed_item, parser.StringLiteral):
-                item = StringLiteral(**parsed_item.dict())
+                item = StringLiteral(parsed=parsed_item)
             elif isinstance(parsed_item, parser.BooleanLiteral):
-                item = BooleanLiteral(**parsed_item.dict())
+                item = BooleanLiteral(parsed=parsed_item)
             elif isinstance(parsed_item, parser.Operator):
-                item = Operator(**parsed_item.dict())
+                item = Operator(parsed=parsed_item)
             elif isinstance(parsed_item, parser.Loop):
                 item = Loop(
+                    parsed=parsed_item,
                     condition=self._resolve_function_body_identifiers(
                         file, function, parsed_item.condition
                     ),
@@ -353,6 +356,7 @@ class CrossReferencer:
                 )
             elif isinstance(parsed_item, parser.Branch):
                 item = Branch(
+                    parsed=parsed_item,
                     condition=self._resolve_function_body_identifiers(
                         file, function, parsed_item.condition
                     ),
@@ -364,11 +368,11 @@ class CrossReferencer:
                     ),
                 )
             elif isinstance(parsed_item, parser.MemberFunctionLiteral):
-                item = MemberFunctionName(**parsed_item.dict())
+                item = MemberFunctionName(parsed=parsed_item)
             elif isinstance(parsed_item, parser.StructFieldQuery):
-                item = StructFieldQuery(**parsed_item.dict())
+                item = StructFieldQuery(parsed=parsed_item)
             elif isinstance(parsed_item, parser.StructFieldUpdate):
-                item = StructFieldUpdate(**parsed_item.dict())
+                item = StructFieldUpdate(parsed=parsed_item)
             elif isinstance(parsed_item, parser.FunctionBody):
                 item = self._resolve_function_body_identifiers(
                     file, function, parsed_item

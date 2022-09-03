@@ -212,7 +212,9 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             imported_name = original_name
 
         return ImportItem(
-            origninal_name=original_name.name, imported_name=imported_name.name
+            origninal_name=original_name.name,
+            imported_name=imported_name.name,
+            token=original_name.token,
         )
 
     def import_items(self, *import_items: ImportItem) -> List[ImportItem]:
@@ -250,7 +252,9 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def member_function_literal(
         self, struct_name: TypeLiteral, func_name: Identifier
     ) -> MemberFunctionLiteral:
-        return MemberFunctionLiteral(struct_name=struct_name, func_name=func_name)
+        return MemberFunctionLiteral(
+            struct_name=struct_name, func_name=func_name, token=struct_name.token
+        )
 
     def operator(self, token: Token) -> Operator:
         return Operator(value=token.value, token=token)
@@ -310,7 +314,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def struct_field_query(
         self, field_name: StringLiteral, token: Token
     ) -> StructFieldQuery:
-        return StructFieldQuery(field_name=field_name, operator_token=token)
+        return StructFieldQuery(field_name=field_name, token=token)
 
     def struct_field_update_operator(self, token: Token) -> Token:
         return token
@@ -319,7 +323,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         self, field_name: StringLiteral, new_value_expr: FunctionBody, token: Token
     ) -> StructFieldUpdate:
         return StructFieldUpdate(
-            field_name=field_name, new_value_expr=new_value_expr, operator_token=token
+            field_name=field_name, new_value_expr=new_value_expr, token=token
         )
 
     def struct_function_identifier(
