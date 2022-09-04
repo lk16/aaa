@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, Union
 
 from aaa import AaaModel
 
@@ -31,7 +31,7 @@ class Function(AaaCrossReferenceModel):
         name: str,
         type_params: Dict[str, Type] | Unresolved,
         struct_name: str,
-        arguments: List[VariableType] | Unresolved,
+        arguments: List[Argument] | Unresolved,
         return_types: List[VariableType] | Unresolved,
         body: FunctionBody | Unresolved,
     ) -> None:
@@ -47,6 +47,20 @@ class Function(AaaCrossReferenceModel):
         if self.struct_name:
             return f"{self.struct_name}:{self.name}"
         return self.name
+
+    def get_argument(self, name: str) -> Optional[Argument]:
+        assert not isinstance(self.arguments, Unresolved)
+
+        for argument in self.arguments:
+            if name == argument.name:
+                return argument
+        return None
+
+
+class Argument(AaaCrossReferenceModel):
+    def __init__(self, *, type: VariableType, name: str) -> None:
+        self.type = type
+        self.name = name
 
 
 class FunctionBodyItem(AaaCrossReferenceModel, parser.FunctionBodyItem):

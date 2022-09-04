@@ -14,6 +14,7 @@ from aaa.cross_referencer.exceptions import (
     UnknownIdentifier,
 )
 from aaa.cross_referencer.models import (
+    Argument,
     BooleanLiteral,
     Branch,
     CrossReferencerOutput,
@@ -294,15 +295,18 @@ class CrossReferencer:
                     file, function, parsed_type
                 )
 
-            function.arguments.append(
-                VariableType(
+            argument = Argument(
+                name=parsed_arg.identifier.name,
+                type=VariableType(
                     parsed=parsed_type,
                     type=type,
                     name=parsed_type.identifier.name,
                     params=params,
                     is_placeholder=arg_type_name in function.type_params,
-                )
+                ),
             )
+
+            function.arguments.append(argument)
 
     def _resolve_function_argument_params(
         self,
@@ -362,13 +366,10 @@ class CrossReferencer:
             item: FunctionBodyItem
 
             if isinstance(parsed_item, parser.Identifier):
-                if parsed_item.name in function.arguments:
-                    arg_type = next(
-                        argument
-                        for argument in function.arguments
-                        if argument.name == parsed_item.name
-                    )
+                argument = function.get_argument(parsed_item.name)
 
+                if argument:
+                    arg_type = argument.type
                     assert not isinstance(arg_type, Unresolved)
 
                     item = Identifier(
