@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from typing import Sequence
 
@@ -14,7 +15,8 @@ class Runner:
 
     def _print_exceptions(self) -> None:
         for exception in self.exceptions:
-            print(str(exception))
+            print(str(exception), end="", file=sys.stderr)
+        print(f"Found {len(self.exceptions)} errors.", file=sys.stderr)
 
     def run(self) -> int:
         try:

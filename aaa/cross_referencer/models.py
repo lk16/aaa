@@ -29,9 +29,10 @@ class Function(AaaCrossReferenceModel):
         *,
         parsed: parser.Function,
         name: str,
-        type_params: Dict[str, Type | Unresolved],
+        type_params: Dict[str, Type] | Unresolved,
         struct_name: str,
-        arguments: Dict[str, VariableType | Unresolved],
+        arguments: List[VariableType] | Unresolved,
+        return_types: List[VariableType] | Unresolved,
         body: FunctionBody | Unresolved,
     ) -> None:
         self.parsed = parsed
@@ -39,6 +40,7 @@ class Function(AaaCrossReferenceModel):
         self.type_params = type_params
         self.struct_name = struct_name
         self.arguments = arguments
+        self.return_types = return_types
         self.body = body
 
     def identify(self) -> str:

@@ -141,7 +141,7 @@ class Function(AaaParseModel):
         *,
         name: MemberFunctionLiteral | Identifier,
         type_params: List[TypeLiteral],
-        arguments: Dict[str, Argument],
+        arguments: List[Argument],
         return_types: List[TypeLiteral],
         body: FunctionBody,
         token: Token,

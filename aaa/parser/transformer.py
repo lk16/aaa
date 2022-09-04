@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from lark.exceptions import UnexpectedInput
 from lark.lexer import Token
@@ -45,19 +45,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         self.file = file
         super().__init__()
 
-    def arguments(self, *arguments: Argument) -> Dict[str, Argument]:
-        argument_dict: Dict[str, Argument] = {}
-
-        for argument in arguments:
-            name = argument.identifier.name
-
-            if name in argument_dict:
-                # Argument name collision
-                raise NotImplementedError
-
-            argument_dict[name] = argument
-
-        return argument_dict
+    def arguments(self, *arguments: Argument) -> List[Argument]:
+        return list(arguments)
 
     def argument(self, identifier: Identifier, type: TypeLiteral) -> Argument:
         return Argument(token=identifier.token, identifier=identifier, type=type)
@@ -149,7 +138,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def function_definition(self, args: List[Any]) -> Function:
         name: MemberFunctionLiteral | Identifier
         body: FunctionBody
-        arguments: Dict[str, Argument] = {}
+        arguments: List[Argument] = []
         return_types: List[TypeLiteral] = []
         type_params: List[TypeLiteral] = []
         token: Token
@@ -159,12 +148,12 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 name = arg
             elif isinstance(arg, FunctionBody):
                 body = arg
-            elif isinstance(arg, dict):
-                arguments = arg
             elif isinstance(arg, list):
                 for item in arg:
                     if isinstance(item, (TypeLiteral)):
                         return_types.append(item)
+                    elif isinstance(item, Argument):
+                        arguments.append(item)
                     else:  # pragma: nocover
                         assert False
             elif isinstance(arg, MemberFunctionLiteral):
@@ -301,12 +290,12 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         struct_token: Token,
         identifier: Identifier,
         begin_token: Token,
-        fields: Dict[str, Argument],
+        fields: List[Argument],
     ) -> Struct:
         return Struct(
             token=struct_token,
             identifier=identifier,
-            fields={field_name: field.type for (field_name, field) in fields.items()},
+            fields={field.identifier.name: field.type for field in fields},
         )
 
     def struct_field_query_operator(self, token: Token) -> Token:

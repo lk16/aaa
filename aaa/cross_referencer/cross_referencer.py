@@ -142,14 +142,9 @@ class CrossReferencer:
                 parsed=parsed_function,
                 struct_name=struct_name,
                 name=func_name,
-                arguments={
-                    arg_name: Unresolved()
-                    for arg_name in parsed_function.arguments.keys()
-                },
-                type_params={
-                    type_param.identifier.name: Unresolved()
-                    for type_param in parsed_function.type_params
-                },
+                arguments=Unresolved(),
+                type_params=Unresolved(),
+                return_types=Unresolved(),
                 body=Unresolved(),
             )
 
@@ -249,7 +244,11 @@ class CrossReferencer:
                 )
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
-        for param_name in function.type_params:
+        function.type_params = {}
+
+        for parsed_type_param in function.parsed.type_params:
+            param_name = parsed_type_param.identifier.name
+
             type_literal = function.parsed.get_type_param(param_name)
 
             assert type_literal
@@ -267,8 +266,10 @@ class CrossReferencer:
             function.type_params[param_name] = type
 
     def _resolve_function_arguments(self, file: Path, function: Function) -> None:
+        assert not isinstance(function.type_params, Unresolved)
+        function.arguments = []
 
-        for arg_name, parsed_arg in function.parsed.arguments.items():
+        for parsed_arg in function.parsed.arguments:
             parsed_type = parsed_arg.type
             arg_type_name = parsed_arg.type.identifier.name
             type: Identifiable | Unresolved
@@ -293,12 +294,14 @@ class CrossReferencer:
                     file, function, parsed_type
                 )
 
-            function.arguments[arg_name] = VariableType(
-                parsed=parsed_type,
-                type=type,
-                name=arg_name,
-                params=params,
-                is_placeholder=arg_type_name in function.type_params,
+            function.arguments.append(
+                VariableType(
+                    parsed=parsed_type,
+                    type=type,
+                    name=parsed_type.identifier.name,
+                    params=params,
+                    is_placeholder=arg_type_name in function.type_params,
+                )
             )
 
     def _resolve_function_argument_params(
@@ -307,6 +310,7 @@ class CrossReferencer:
         function: Function,
         parsed_type: parser.TypeLiteral,
     ) -> List[VariableType]:
+        assert not isinstance(function.type_params, Unresolved)
         params: List[VariableType] = []
 
         for param in parsed_type.params.value:
@@ -351,6 +355,7 @@ class CrossReferencer:
     def _resolve_function_body_identifiers(
         self, file: Path, function: Function, parsed: parser.FunctionBody
     ) -> FunctionBody:
+        assert not isinstance(function.arguments, Unresolved)
         items: List[FunctionBodyItem] = []
 
         for parsed_item in parsed.items:
@@ -358,7 +363,12 @@ class CrossReferencer:
 
             if isinstance(parsed_item, parser.Identifier):
                 if parsed_item.name in function.arguments:
-                    arg_type = function.arguments[parsed_item.name]
+                    arg_type = next(
+                        argument
+                        for argument in function.arguments
+                        if argument.name == parsed_item.name
+                    )
+
                     assert not isinstance(arg_type, Unresolved)
 
                     item = Identifier(
