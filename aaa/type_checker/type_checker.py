@@ -16,16 +16,23 @@ from aaa.cross_referencer.models import (
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
+    Type,
     Unresolved,
     VariableType,
 )
-from aaa.type_checker.exceptions import FunctionTypeError, StackTypesError
+from aaa.parser.models import TypeLiteral, TypeParameters
+from aaa.type_checker.exceptions import (
+    ConditionTypeError,
+    FunctionTypeError,
+    StackTypesError,
+)
 from aaa.type_checker.models import Signature
 
 
 class TypeChecker:
     def __init__(self, cross_referencer_output: CrossReferencerOutput) -> None:
         self.identifiers = cross_referencer_output.identifiers
+        self.builtins_path = cross_referencer_output.builtins_path
         self.signatures: Dict[Tuple[Path, str], Signature] = {}
 
     def run(self) -> None:
@@ -39,14 +46,16 @@ class TypeChecker:
                     return_types=function.return_types,
                 )
 
-        for (file, func_name), function in self.identifiers.items():
+        for (file, _), function in self.identifiers.items():
             if isinstance(function, Function):
                 self.function = function
-                self._check(file, func_name, function)
+                self._check(file, function)
 
-    def _check(self, file: Path, func_name: str, function: Function) -> None:
+    def _check(self, file: Path, function: Function) -> None:
+        key = (file, function.identify())
+        expected_return_types = self.signatures[key].return_types
+
         computed_return_types = self._check_function(function, [])
-        expected_return_types = self.signatures[(file, func_name)].return_types
 
         if computed_return_types != expected_return_types:
 
@@ -59,6 +68,8 @@ class TypeChecker:
 
     def _check_and_apply_signature(
         self,
+        file: Path,
+        function: Function,
         type_stack: List[VariableType],
         signature: Signature,
         func_like: Union[Operator, Function, MemberFunctionName],
@@ -68,26 +79,26 @@ class TypeChecker:
 
         if len(stack) < arg_count:
             raise StackTypesError(
-                file=self.file,
-                function=self.function,
+                file=file,
+                function=function,
                 signature=signature,
                 type_stack=type_stack,
                 func_like=func_like,
             )
 
         placeholder_types: Dict[str, VariableType] = {}
-        expected_types = signature.arg_types
+        expected_types = signature.arguments
         types = stack[len(stack) - arg_count :]
 
         for expected_type, type in zip(expected_types, types, strict=True):
             match_result = self._match_signature_items(
-                expected_type, type, placeholder_types
+                file, function, expected_type, type, placeholder_types
             )
 
             if not match_result:
                 raise StackTypesError(
-                    file=self.file,
-                    function=self.function,
+                    file=file,
+                    function=function,
                     signature=signature,
                     type_stack=type_stack,
                     func_like=func_like,
@@ -97,72 +108,54 @@ class TypeChecker:
 
         for return_type in signature.return_types:
             stack.append(
-                self._update_return_type(deepcopy(return_type), placeholder_types)
+                self._update_return_type(
+                    file, function, deepcopy(return_type), placeholder_types
+                )
             )
 
         return stack
 
     def _match_signature_items(
         self,
+        file: Path,
+        function: Function,
         expected_type: VariableType,
         type: VariableType,
         placeholder_types: Dict[str, VariableType],
     ) -> bool:
-        if expected_type.root_type == RootType.PLACEHOLDER:
-            if expected_type.name in placeholder_types:
-                return placeholder_types[expected_type.name] == type
-
-            placeholder_types[expected_type.name] = type
-            return True
-
-        else:
-            if expected_type.root_type == RootType.PLACEHOLDER:
-                return False
-
-            if expected_type.root_type != type.root_type:
-                return False
-
-            if len(type.type_params) != len(expected_type.type_params):
-                return False
-
-            for expected_param, param in zip(
-                expected_type.type_params, type.type_params
-            ):
-                match_result = self._match_signature_items(
-                    expected_param,
-                    param,
-                    placeholder_types,
-                )
-
-                if not match_result:
-                    return False
-
-            return True
+        # TODO
+        raise NotImplementedError
 
     def _update_return_type(
-        self, return_type: VariableType, placeholder_types: Dict[str, VariableType]
+        self,
+        file: Path,
+        function: Function,
+        return_type: VariableType,
+        placeholder_types: Dict[str, VariableType],
     ) -> VariableType:
-        if return_type.root_type == RootType.PLACEHOLDER:
-            if return_type.name not in placeholder_types:
-                raise NotImplementedError
-
-            return placeholder_types[return_type.name]
-
-        elif isinstance(return_type, VariableType):
-            for i, param in enumerate(return_type.type_params):
-                return_type.type_params[i] = self._update_return_type(
-                    param, placeholder_types
-                )
-
-            return return_type
-
-        else:  # pragma: nocover
-            assert False
+        # TODO
+        raise NotImplementedError
 
     def _check_integer_literal(
         self, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        return type_stack + [Int]
+        int_type = self.identifiers[(self.builtins_path, "int")]
+
+        assert isinstance(int_type, Type)
+
+        int_var_type = VariableType(
+            parsed=TypeLiteral(
+                identifier=DUMMY_TOKEN,
+                params=TypeParameters(value=[], token=DUMMY_TOKEN),
+                token=DUMMY_TOKEN,
+            ),
+            type=self.identifiers[(self.builtins_path, "int")],
+            name="int",
+            params=[],
+            is_placeholder=False,
+        )
+
+        return type_stack + [int_var_type]
 
     def _check_string_literal(
         self, type_stack: List[VariableType]
@@ -174,20 +167,17 @@ class TypeChecker:
     ) -> List[VariableType]:
         return type_stack + [Bool]
 
-    def _check_operator(
-        self, operator: Operator, type_stack: List[VariableType]
-    ) -> List[VariableType]:
-        function = self.program._builtins.functions[operator.value]
-        signature = self.program.get_builtin_signature(function)
-        return self._check_and_apply_signature(copy(type_stack), signature, operator)
-
     def _check_parsed_type(
         self, var_type: VariableType, type_stack: List[VariableType]
     ) -> List[VariableType]:
         return type_stack + [var_type]
 
     def _check_condition(
-        self, function_body: FunctionBody, type_stack: List[VariableType]
+        self,
+        file: Path,
+        function: Function,
+        function_body: FunctionBody,
+        type_stack: List[VariableType],
     ) -> None:
         # Condition is a special type of function body:
         # It should push exactly one boolean and not modify the type stack under it
@@ -200,8 +190,8 @@ class TypeChecker:
             and condition_stack[-1].root_type == RootType.BOOL
         ):
             raise ConditionTypeError(
-                file=self.file,
-                function=self.function,
+                file=file,
+                function=function,
                 type_stack=type_stack,
                 condition_stack=condition_stack,
             )

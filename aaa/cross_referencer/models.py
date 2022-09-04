@@ -216,7 +216,9 @@ class CrossReferencerOutput(AaaModel):
         self,
         *,
         identifiers: IdentifiablesDict,
+        builtins_path: Path,
         exceptions: List[CrossReferenceBaseException],
     ) -> None:
         self.identifiers = identifiers
         self.exceptions = exceptions
+        self.builtins_path = builtins_path

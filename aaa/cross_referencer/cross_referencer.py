@@ -82,7 +82,9 @@ class CrossReferencer:
                 del self.identifiers[(file, identifier)]
 
         return CrossReferencerOutput(
-            identifiers=self.identifiers, exceptions=self.exceptions
+            identifiers=self.identifiers,
+            builtins_path=self.builtins_path,
+            exceptions=self.exceptions,
         )
 
     def _load_identifiers(self) -> List[Tuple[Path, Identifiable]]:
