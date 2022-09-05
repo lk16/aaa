@@ -151,8 +151,8 @@ class Loop(FunctionBodyItem, parser.Loop):
     def __init__(
         self, *, condition: FunctionBody, body: FunctionBody, parsed: parser.Loop
     ) -> None:
-        self.condition = condition
-        self.body = body
+        self.condition: FunctionBody = condition
+        self.body: FunctionBody = body
         super().__init__(**vars(parsed))
 
 
@@ -190,9 +190,9 @@ class Branch(FunctionBodyItem, parser.Branch):
         else_body: FunctionBody,
         parsed: parser.Branch,
     ) -> None:
-        self.condition = condition
-        self.if_body = if_body
-        self.else_body = else_body
+        self.condition: FunctionBody = condition
+        self.if_body: FunctionBody = if_body
+        self.else_body: FunctionBody = else_body
         super().__init__(**vars(parsed))
 
 

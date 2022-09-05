@@ -304,8 +304,8 @@ class StructUpdateTypeError(TypeException):
         type_stack: List[VariableType],
         struct_type: Type,
         field_name: str,
-        expected_type: Type,
-        found_type: Type,
+        expected_type: VariableType,
+        found_type: VariableType,
         field_update: StructFieldUpdate,
     ) -> None:
         self.type_stack = type_stack

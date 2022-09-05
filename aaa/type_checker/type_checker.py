@@ -2,6 +2,7 @@ from copy import copy, deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Tuple, Union
 
+from aaa.cross_referencer.exceptions import CollidingIdentifier
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
@@ -9,6 +10,7 @@ from aaa.cross_referencer.models import (
     Function,
     FunctionBody,
     Identifier,
+    IdentifierKind,
     IntegerLiteral,
     Loop,
     MemberFunctionName,
@@ -20,13 +22,34 @@ from aaa.cross_referencer.models import (
     Unresolved,
     VariableType,
 )
-from aaa.parser.models import TypeLiteral, TypeParameters
+from aaa.parser import models as parser
 from aaa.type_checker.exceptions import (
+    BranchTypeError,
     ConditionTypeError,
     FunctionTypeError,
+    InvalidMainSignuture,
+    LoopTypeError,
+    SetFieldOfNonStructTypeError,
     StackTypesError,
+    StructUpdateStackError,
+    StructUpdateTypeError,
 )
-from aaa.type_checker.models import Signature
+from aaa.type_checker.models import (
+    Signature,
+    StructQuerySignature,
+    StructUpdateSignature,
+)
+
+DUMMY_TOKEN = Token(type_="", value="")  # type: ignore
+
+DUMMY_TYPE_LITERAL = parser.TypeLiteral(
+    identifier=Identifier(
+        kind=IdentifierKind(),
+        parsed=parser.Identifier(name="str", token=DUMMY_TOKEN),
+    ),
+    params=parser.TypeParameters(value=[], token=DUMMY_TOKEN),
+    token=DUMMY_TOKEN,
+)
 
 
 class TypeChecker:
@@ -55,7 +78,7 @@ class TypeChecker:
         key = (file, function.identify())
         expected_return_types = self.signatures[key].return_types
 
-        computed_return_types = self._check_function(function, [])
+        computed_return_types = self._check_function(file, function, [])
 
         if computed_return_types != expected_return_types:
 
@@ -136,36 +159,42 @@ class TypeChecker:
         # TODO
         raise NotImplementedError
 
-    def _check_integer_literal(
-        self, type_stack: List[VariableType]
-    ) -> List[VariableType]:
-        int_type = self.identifiers[(self.builtins_path, "int")]
+    def _get_builtin_var_type(self, type_name: str) -> VariableType:
+        type = self.identifiers[(self.builtins_path, type_name)]
 
-        assert isinstance(int_type, Type)
+        assert isinstance(type, Type)
 
-        int_var_type = VariableType(
-            parsed=TypeLiteral(
-                identifier=DUMMY_TOKEN,
-                params=TypeParameters(value=[], token=DUMMY_TOKEN),
-                token=DUMMY_TOKEN,
-            ),
-            type=self.identifiers[(self.builtins_path, "int")],
-            name="int",
+        return VariableType(
+            parsed=DUMMY_TYPE_LITERAL,
+            type=type,
+            name=type_name,
             params=[],
             is_placeholder=False,
         )
 
-        return type_stack + [int_var_type]
+    def _get_bool_var_type(self) -> VariableType:
+        return self._get_builtin_var_type("bool")
+
+    def _get_str_var_type(self) -> VariableType:
+        return self._get_builtin_var_type("str")
+
+    def _get_int_var_type(self) -> VariableType:
+        return self._get_builtin_var_type("int")
+
+    def _check_integer_literal(
+        self, type_stack: List[VariableType]
+    ) -> List[VariableType]:
+        return type_stack + [self._get_int_var_type()]
 
     def _check_string_literal(
         self, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        return type_stack + [Str]
+        return type_stack + [self._get_str_var_type()]
 
     def _check_boolean_literal(
         self, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        return type_stack + [Bool]
+        return type_stack + [self._get_bool_var_type()]
 
     def _check_parsed_type(
         self, var_type: VariableType, type_stack: List[VariableType]
@@ -181,14 +210,11 @@ class TypeChecker:
     ) -> None:
         # Condition is a special type of function body:
         # It should push exactly one boolean and not modify the type stack under it
-        condition_stack = self._check_function_body(function_body, copy(type_stack))
+        condition_stack = self._check_function_body(
+            file, function, function_body, copy(type_stack)
+        )
 
-        if not (
-            len(condition_stack) == len(type_stack) + 1
-            and condition_stack[:-1] == type_stack
-            and isinstance(condition_stack[-1], VariableType)
-            and condition_stack[-1].root_type == RootType.BOOL
-        ):
+        if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
                 file=file,
                 function=function,
@@ -197,21 +223,29 @@ class TypeChecker:
             )
 
     def _check_branch(
-        self, branch: Branch, type_stack: List[VariableType]
+        self,
+        file: Path,
+        function: Function,
+        branch: Branch,
+        type_stack: List[VariableType],
     ) -> List[VariableType]:
-        self._check_condition(branch.condition, copy(type_stack))
+        self._check_condition(file, function, branch.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
-        if_stack = self._check_function_body(branch.if_body, copy(type_stack))
-        else_stack = self._check_function_body(branch.else_body, copy(type_stack))
+        if_stack = self._check_function_body(
+            file, function, branch.if_body, copy(type_stack)
+        )
+        else_stack = self._check_function_body(
+            file, function, branch.else_body, copy(type_stack)
+        )
 
         # Regardless whether the if- or else- branch is taken,
         # afterwards the stack should be the same.
         if if_stack != else_stack:
             raise BranchTypeError(
-                file=self.file,
-                function=self.function,
+                file=file,
+                function=function,
                 type_stack=type_stack,
                 if_stack=if_stack,
                 else_stack=else_stack,
@@ -221,18 +255,20 @@ class TypeChecker:
         return if_stack
 
     def _check_loop(
-        self, loop: Loop, type_stack: List[VariableType]
+        self, file: Path, function: Function, loop: Loop, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        self._check_condition(loop.condition, copy(type_stack))
+        self._check_condition(file, function, loop.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
-        loop_stack = self._check_function_body(loop.body, copy(type_stack))
+        loop_stack = self._check_function_body(
+            file, function, loop.body, copy(type_stack)
+        )
 
         if loop_stack != type_stack:
             raise LoopTypeError(
-                file=self.file,
-                function=self.function,
+                file=file,
+                function=function,
                 type_stack=type_stack,
                 loop_stack=loop_stack,
             )
@@ -240,54 +276,12 @@ class TypeChecker:
         # we can return either one, since they are the same
         return loop_stack
 
-    def _check_identifier(
-        self, identifier: Identifier, type_stack: List[VariableType]
-    ) -> List[VariableType]:
-        arg_type = self.function.get_arg_type(identifier.name)
-
-        if arg_type is not None:
-            # If it's a function argument, just push the type.
-            return copy(type_stack) + [arg_type]
-
-        # If it's not a function argument, we must be calling a function.
-
-        try:
-            builtin_function = self.program._builtins.functions[identifier.name]
-        except KeyError:
-            pass
-        else:
-            signature = self.program.get_builtin_signature(builtin_function)
-            return self._check_and_apply_signature(
-                copy(type_stack), signature, builtin_function
-            )
-
-        identified = self.program.get_identifier(self.file, identifier.name)
-
-        if not identified:
-            raise UnknownIdentifier(
-                file=self.file, function=self.function, identifier=identifier
-            )
-
-        if isinstance(identified, Function):
-            signature = self.program.get_signature(self.file, identified)
-            return self._check_and_apply_signature(
-                copy(type_stack), signature, identified
-            )
-
-        elif isinstance(identified, Struct):
-            return copy(type_stack) + [
-                VariableType(
-                    root_type=RootType.STRUCT,
-                    type_params=[],
-                    name=identified.name,
-                )
-            ]
-
-        else:  # pragma: nocover
-            assert False
-
     def _check_function_body(
-        self, function_body: FunctionBody, type_stack: List[VariableType]
+        self,
+        file: Path,
+        function: Function,
+        function_body: FunctionBody,
+        type_stack: List[VariableType],
     ) -> List[VariableType]:
 
         stack = copy(type_stack)
@@ -295,59 +289,37 @@ class TypeChecker:
             if isinstance(child_node, BooleanLiteral):
                 stack = self._check_boolean_literal(copy(stack))
             elif isinstance(child_node, Branch):
-                stack = self._check_branch(child_node, copy(stack))
-            elif isinstance(child_node, Identifier):
-                stack = self._check_identifier(child_node, copy(stack))
+                stack = self._check_branch(file, function, child_node, copy(stack))
             elif isinstance(child_node, IntegerLiteral):
                 stack = self._check_integer_literal(copy(stack))
             elif isinstance(child_node, Loop):
-                stack = self._check_loop(child_node, copy(stack))
+                stack = self._check_loop(file, function, child_node, copy(stack))
             elif isinstance(child_node, MemberFunctionName):
-                stack = self._check_member_function_call(child_node, copy(stack))
-            elif isinstance(child_node, Operator):
-                stack = self._check_operator(child_node, copy(stack))
+                raise NotImplementedError
+                # TODO or remove if we will treat member functions as functions
             elif isinstance(child_node, StringLiteral):
                 stack = self._check_string_literal(copy(stack))
             elif isinstance(child_node, VariableType):
                 stack = self._check_parsed_type(child_node, copy(stack))
             elif isinstance(child_node, StructFieldQuery):
-                stack = self._check_type_struct_field_query(child_node, copy(stack))
+                stack = self._check_type_struct_field_query(
+                    file, function, child_node, copy(stack)
+                )
             elif isinstance(child_node, StructFieldUpdate):
-                stack = self._check_type_struct_field_update(child_node, copy(stack))
+                stack = self._check_type_struct_field_update(
+                    file, function, child_node, copy(stack)
+                )
             else:  # pragma nocover
                 assert False
 
         return stack
 
-    def _check_member_function_call(
-        self, member_function_name: MemberFunctionName, type_stack: List[VariableType]
-    ) -> List[VariableType]:
-        key = member_function_name.identify()
-
-        builtin_function = self.program._builtins.functions.get(key)
-
-        if builtin_function:
-            # All builtin member functions should be listed in the builtins file
-            # so this should not raise a KeyError.
-            signature = self.program.get_builtin_signature(builtin_function)
-        else:
-            file_identifiers = self.program.identifiers[self.file]
-
-            try:
-                function = file_identifiers[key]
-            except KeyError as e:
-                raise NotImplementedError from e
-
-            assert isinstance(function, Function)
-            signature = self.program.get_signature(self.file, function)
-
-        return self._check_and_apply_signature(
-            type_stack, signature, member_function_name
-        )
-
     def _check_function(
-        self, function: Function, type_stack: List[VariableType]
+        self, file: Path, function: Function, type_stack: List[VariableType]
     ) -> List[VariableType]:
+        assert not isinstance(function.arguments, Unresolved)
+        assert not isinstance(function.return_types, Unresolved)
+
         if function.name == "main":
             if not all(
                 [
@@ -356,12 +328,12 @@ class TypeChecker:
                 ]
             ):
                 raise InvalidMainSignuture(
-                    file=self.file,
-                    function=self.function,
+                    file=file,
+                    function=function,
                 )
 
         if isinstance(function.name, MemberFunctionName):
-            signature = self.program.get_signature(self.file, function)
+            signature = self.program.get_signature(file, function)
             struct = self.program.identifiers[self.file][function.name.type_name]
             assert isinstance(struct, Struct)
 
@@ -380,59 +352,67 @@ class TypeChecker:
                 or signature.return_types[0].name != struct.name
             ):
                 raise InvalidMemberFunctionSignature(
-                    file=self.file,
+                    file=file,
                     function=function,
                     struct=struct,
                     signature=signature,
                 )
 
         for arg_offset, arg in enumerate(function.arguments):
-            colliding_identifier = self.program.get_identifier(self.file, arg.name)
+            colliding_identifier = self.program.get_identifier(file, arg.name)
 
             if colliding_identifier:
                 raise CollidingIdentifier(
-                    file=self.file,
+                    file=file,
                     colliding=arg,
                     found=colliding_identifier,
                 )
 
             if arg.name == function.name:
-                raise CollidingIdentifier(file=self.file, colliding=arg, found=function)
+                raise CollidingIdentifier(file=file, colliding=arg, found=function)
 
             for preceding_arg in function.arguments[:arg_offset]:
                 if arg.name == preceding_arg.name:
                     raise CollidingIdentifier(
-                        file=self.file,
+                        file=file,
                         colliding=arg,
                         found=preceding_arg,
                     )
 
-        return self._check_function_body(function.body, type_stack)
+        return self._check_function_body(file, function, function.body, type_stack)
 
     def _get_struct_field_type(
-        self, node: StructFieldQuery | StructFieldUpdate, struct: Struct
+        self,
+        file: Path,
+        function: Function,
+        node: StructFieldQuery | StructFieldUpdate,
+        struct_type: Type,
     ) -> VariableType:
         field_name = node.field_name.value
 
         try:
-            return struct.fields[field_name]
+            return struct_type.fields[field_name]
         except KeyError as e:
             raise UnknownStructField(
-                file=self.file,
-                function=self.function,
-                struct=struct,
+                file=file,
+                function=function,
+                struct=struct_type,
                 field_name=field_name,
             ) from e
 
     def _check_type_struct_field_query(
-        self, field_query: StructFieldQuery, type_stack: List[VariableType]
+        self,
+        file: Path,
+        function: Function,
+        field_query: StructFieldQuery,
+        type_stack: List[VariableType],
     ) -> List[VariableType]:
         type_stack = self._check_string_literal(copy(type_stack))
 
         if len(type_stack) < 2:
             raise StackTypesError(
-                file=self.file,
-                function=self.function,
+                file=file,
+                function=function,
                 signature=StructQuerySignature(),
                 type_stack=type_stack,
                 func_like=field_query,
@@ -445,9 +425,9 @@ class TypeChecker:
 
         if struct_type.root_type != RootType.STRUCT:
             raise GetFieldOfNonStructTypeError(
-                file=self.file,
+                file=file,
                 type_stack=type_stack,
-                function=self.function,
+                function=function,
                 field_query=field_query,
             )
 
@@ -457,26 +437,30 @@ class TypeChecker:
         struct = self.program.identifiers[self.file][struct_name]
         assert isinstance(struct, Struct)
 
-        field_type = self._get_struct_field_type(field_query, struct)
+        field_type = self._get_struct_field_type(file, function, field_query, struct)
 
         type_stack.pop()
         type_stack.append(field_type)
         return type_stack
 
     def _check_type_struct_field_update(
-        self, field_update: StructFieldUpdate, type_stack: List[VariableType]
+        self,
+        file: Path,
+        function: Function,
+        field_update: StructFieldUpdate,
+        type_stack: List[VariableType],
     ) -> List[VariableType]:
         type_stack = self._check_string_literal(copy(type_stack))
 
         type_stack_before = type_stack
         type_stack = self._check_function_body(
-            field_update.new_value_expr, copy(type_stack_before)
+            file, function, field_update.new_value_expr, copy(type_stack_before)
         )
 
         if len(type_stack) < 3:
             raise StackTypesError(
-                file=self.file,
-                function=self.function,
+                file=file,
+                function=function,
                 signature=StructUpdateSignature(),
                 type_stack=type_stack,
                 func_like=field_update,
@@ -491,8 +475,8 @@ class TypeChecker:
             ]
         ):
             raise StructUpdateStackError(
-                file=self.file,
-                function=self.function,
+                file=file,
+                function=function,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
                 field_update=field_update,
@@ -502,9 +486,9 @@ class TypeChecker:
 
         if struct_type.root_type != RootType.STRUCT:
             raise SetFieldOfNonStructTypeError(
-                file=self.file,
+                file=file,
                 type_stack=type_stack,
-                function=self.function,
+                function=function,
                 field_update=field_update,
             )
 
@@ -512,14 +496,14 @@ class TypeChecker:
         struct = self.program.identifiers[self.file][struct_name]
         assert isinstance(struct, Struct)
 
-        field_type = self._get_struct_field_type(field_update, struct)
+        field_type = self._get_struct_field_type(file, function, field_update, struct)
 
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
-                file=self.file,
-                function=self.function,
+                file=file,
+                function=function,
                 type_stack=type_stack,
-                struct=struct,
+                struct_type=struct,
                 field_name=field_update.field_name.value,
                 found_type=update_expr_type,
                 expected_type=field_selector_type,
