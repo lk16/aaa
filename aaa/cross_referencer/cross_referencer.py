@@ -242,9 +242,26 @@ class CrossReferencer:
                 type_name = type_identifier.name
                 type_token = type_identifier.token
 
-                type.fields[field_name] = self._get_identifier(
-                    file, type_name, type_token
+                field_type = self._get_identifier(file, type_name, type_token)
+
+                if not isinstance(field_type, Type):
+                    # TODO field is import/function/...
+                    raise NotImplementedError
+
+                # TODO handle params
+                assert field_type.param_count == 0
+
+                assert isinstance(field_type.parsed, Type)
+
+                field_var_type = VariableType(
+                    parsed=field_type.parsed,
+                    type=field_type,
+                    name=field_type.name,
+                    params=[],
+                    is_placeholder=False,
                 )
+
+                type.fields[field_name] = field_var_type
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
         function.type_params = {}

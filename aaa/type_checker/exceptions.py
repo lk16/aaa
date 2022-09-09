@@ -209,12 +209,15 @@ class LoopTypeError(TypeCheckerException):
         )
 
 
-class InvalidMainSignuture(TypeException):
+class InvalidMainSignuture(TypeCheckerException):
+    def where(self) -> str:
+        return error_location(self.file, self.function.parsed.token)
+
     def __str__(self) -> str:
         return f"{self.where()} Main function should have no arguments and no return types\n"
 
 
-class GetFieldOfNonStructTypeError(TypeException):
+class GetFieldOfNonStructTypeError(TypeCheckerException):
     def __init__(
         self,
         *,
@@ -240,7 +243,7 @@ class GetFieldOfNonStructTypeError(TypeException):
         )
 
 
-class SetFieldOfNonStructTypeError(TypeException):
+class SetFieldOfNonStructTypeError(TypeCheckerException):
     def __init__(
         self,
         *,
@@ -266,7 +269,7 @@ class SetFieldOfNonStructTypeError(TypeException):
         )
 
 
-class StructUpdateStackError(TypeException):
+class StructUpdateStackError(TypeCheckerException):
     def __init__(
         self,
         *,
@@ -295,7 +298,7 @@ class StructUpdateStackError(TypeException):
         )
 
 
-class StructUpdateTypeError(TypeException):
+class StructUpdateTypeError(TypeCheckerException):
     def __init__(
         self,
         *,
@@ -332,7 +335,7 @@ class StructUpdateTypeError(TypeException):
         )
 
 
-class InvalidMemberFunctionSignature(TypeException):
+class InvalidMemberFunctionSignature(TypeCheckerException):
     def __init__(
         self,
         *,
@@ -373,3 +376,17 @@ class InvalidMemberFunctionSignature(TypeException):
             )
 
         return formatted
+
+
+class UnknownStructField(TypeCheckerException):
+    def __init__(
+        self, file: Path, function: Function, struct_type: Type, field_name: str
+    ) -> None:
+        self.file = file
+        self.function = function
+        self.struct_type = struct_type
+        self.field_name = field_name
+
+    def __str__(self) -> str:
+        # TODO
+        raise NotImplementedError

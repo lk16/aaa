@@ -2,7 +2,8 @@ from copy import copy, deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Tuple, Union
 
-from aaa.cross_referencer.exceptions import CollidingIdentifier
+from lark.lexer import Token
+
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
@@ -28,11 +29,12 @@ from aaa.type_checker.exceptions import (
     ConditionTypeError,
     FunctionTypeError,
     InvalidMainSignuture,
+    InvalidMemberFunctionSignature,
     LoopTypeError,
-    SetFieldOfNonStructTypeError,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
+    UnknownStructField,
 )
 from aaa.type_checker.models import (
     Signature,
@@ -332,53 +334,32 @@ class TypeChecker:
                     function=function,
                 )
 
-        if isinstance(function.name, MemberFunctionName):
-            signature = self.program.get_signature(file, function)
-            struct = self.program.identifiers[self.file][function.name.type_name]
-            assert isinstance(struct, Struct)
+        if function.struct_name != "":
+            signature = self.signatures[(file, function.identify())]
+            struct_type = self.identifiers[(file, function.struct_name)]
+
+            assert isinstance(struct_type, Type)
 
             if TYPE_CHECKING:  # pragma: nocover
-                assert isinstance(signature.arg_types[0], VariableType)
+                assert isinstance(signature.arguments[0], VariableType)
                 assert isinstance(signature.return_types[0], VariableType)
 
             # A memberfunction on a type foo needs to have foo as
             # type of thefirst argument and first return type
             if (
-                len(signature.arg_types) == 0
-                or signature.arg_types[0].root_type != RootType.STRUCT
-                or signature.arg_types[0].name != struct.name
+                len(signature.arguments) == 0
+                or signature.arguments[0].type != struct_type
                 or len(signature.return_types) == 0
-                or signature.return_types[0].root_type != RootType.STRUCT
-                or signature.return_types[0].name != struct.name
+                or signature.return_types[0].type != struct_type
             ):
                 raise InvalidMemberFunctionSignature(
                     file=file,
                     function=function,
-                    struct=struct,
+                    struct_type=struct_type,
                     signature=signature,
                 )
 
-        for arg_offset, arg in enumerate(function.arguments):
-            colliding_identifier = self.program.get_identifier(file, arg.name)
-
-            if colliding_identifier:
-                raise CollidingIdentifier(
-                    file=file,
-                    colliding=arg,
-                    found=colliding_identifier,
-                )
-
-            if arg.name == function.name:
-                raise CollidingIdentifier(file=file, colliding=arg, found=function)
-
-            for preceding_arg in function.arguments[:arg_offset]:
-                if arg.name == preceding_arg.name:
-                    raise CollidingIdentifier(
-                        file=file,
-                        colliding=arg,
-                        found=preceding_arg,
-                    )
-
+        assert not isinstance(function.body, Unresolved)
         return self._check_function_body(file, function, function.body, type_stack)
 
     def _get_struct_field_type(
@@ -391,14 +372,17 @@ class TypeChecker:
         field_name = node.field_name.value
 
         try:
-            return struct_type.fields[field_name]
+            field_type = struct_type.fields[field_name]
         except KeyError as e:
             raise UnknownStructField(
                 file=file,
                 function=function,
-                struct=struct_type,
+                struct_type=struct_type,
                 field_name=field_name,
             ) from e
+
+        assert not isinstance(field_type, Unresolved)
+        return field_type
 
     def _check_type_struct_field_query(
         self,
@@ -418,26 +402,14 @@ class TypeChecker:
                 func_like=field_query,
             )
 
-        struct_type, field_selector_type = type_stack[-2:]
+        struct_var_type, field_selector_type = type_stack[-2:]
 
         # This is enforced by the parser
-        assert field_selector_type.root_type == RootType.STRING
+        assert field_selector_type == self._get_str_var_type()
 
-        if struct_type.root_type != RootType.STRUCT:
-            raise GetFieldOfNonStructTypeError(
-                file=file,
-                type_stack=type_stack,
-                function=function,
-                field_query=field_query,
-            )
-
-        struct_name = struct_type.name
-
-        # These should not raise, they are enforced by the Program class
-        struct = self.program.identifiers[self.file][struct_name]
-        assert isinstance(struct, Struct)
-
-        field_type = self._get_struct_field_type(file, function, field_query, struct)
+        field_type = self._get_struct_field_type(
+            file, function, field_query, struct_var_type.type
+        )
 
         type_stack.pop()
         type_stack.append(field_type)
@@ -466,7 +438,8 @@ class TypeChecker:
                 func_like=field_update,
             )
 
-        struct_type, field_selector_type, update_expr_type = type_stack[-3:]
+        struct_var_type, field_selector_type, update_expr_type = type_stack[-3:]
+        struct_type = struct_var_type.type
 
         if not all(
             [
@@ -482,28 +455,16 @@ class TypeChecker:
                 field_update=field_update,
             )
 
-        struct_name = struct_type.name
-
-        if struct_type.root_type != RootType.STRUCT:
-            raise SetFieldOfNonStructTypeError(
-                file=file,
-                type_stack=type_stack,
-                function=function,
-                field_update=field_update,
-            )
-
-        # These should not raise, they are enforced by the Program class
-        struct = self.program.identifiers[self.file][struct_name]
-        assert isinstance(struct, Struct)
-
-        field_type = self._get_struct_field_type(file, function, field_update, struct)
+        field_type = self._get_struct_field_type(
+            file, function, field_update, struct_type
+        )
 
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
                 file=file,
                 function=function,
                 type_stack=type_stack,
-                struct_type=struct,
+                struct_type=struct_type,
                 field_name=field_update.field_name.value,
                 found_type=update_expr_type,
                 expected_type=field_selector_type,

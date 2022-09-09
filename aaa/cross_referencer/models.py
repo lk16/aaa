@@ -42,6 +42,7 @@ class Function(AaaCrossReferenceModel):
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
+        # TODO add file: Path field
 
     def identify(self) -> str:
         if self.struct_name:
@@ -99,7 +100,7 @@ class Type(AaaCrossReferenceModel):
         parsed: parser.TypeLiteral | parser.Struct,
         name: str,
         param_count: int,
-        fields: Dict[str, Identifiable | Unresolved],
+        fields: Dict[str, VariableType | Unresolved],
     ) -> None:
         self.parsed = parsed
         self.name = name
@@ -209,6 +210,7 @@ class StructFieldQuery(FunctionBodyItem, parser.StructFieldQuery):
 class StructFieldUpdate(FunctionBodyItem, parser.StructFieldUpdate):
     def __init__(self, *, parsed: parser.StructFieldUpdate) -> None:
         super().__init__(**vars(parsed))
+        self.new_value_expr: FunctionBody
 
 
 class CrossReferencerOutput(AaaModel):
