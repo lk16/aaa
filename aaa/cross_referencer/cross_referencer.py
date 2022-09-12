@@ -87,28 +87,30 @@ class CrossReferencer:
             exceptions=self.exceptions,
         )
 
-    def _load_identifiers(self) -> List[Tuple[Path, Identifiable]]:
-        identifiables_list: List[Tuple[Path, Identifiable]] = []
+    def _load_identifiers(self) -> List[Identifiable]:
+        identifiables: List[Identifiable] = []
         for file, parsed_file in self.parsed_files.items():
-            identifiables_list += self._load_types(file, parsed_file.types)
-            identifiables_list += self._load_struct_types(file, parsed_file.structs)
-            identifiables_list += self._load_functions(file, parsed_file.functions)
-            identifiables_list += self._load_imports(file, parsed_file.imports)
-        return identifiables_list
+            identifiables += self._load_types(file, parsed_file.types)
+            identifiables += self._load_struct_types(file, parsed_file.structs)
+            identifiables += self._load_functions(file, parsed_file.functions)
+            identifiables += self._load_imports(file, parsed_file.imports)
+        return identifiables
 
     def _detect_duplicate_identifiers(
-        self, identifiables_list: List[Tuple[Path, Identifiable]]
+        self, identifiables: List[Identifiable]
     ) -> Tuple[IdentifiablesDict, List[CollidingIdentifier]]:
         identifiers: IdentifiablesDict = {}
         collisions: List[CollidingIdentifier] = []
 
-        for file, identifiable in identifiables_list:
-            key = (file, identifiable.identify())
+        for identifiable in identifiables:
+            key = identifiable.identify()
 
             if key in identifiers:
                 collisions.append(
                     CollidingIdentifier(
-                        file=file, colliding=identifiable, found=identifiers[key]
+                        file=identifiable.file,
+                        colliding=identifiable,
+                        found=identifiers[key],
                     )
                 )
                 continue
@@ -119,24 +121,22 @@ class CrossReferencer:
 
     def _load_struct_types(
         self, file: Path, parsed_structs: List[parser.Struct]
-    ) -> List[Tuple[Path, Type]]:
-        types: List[Tuple[Path, Type]] = []
-
-        for parsed_struct in parsed_structs:
-            type = Type(
+    ) -> List[Type]:
+        return [
+            Type(
                 parsed=parsed_struct,
                 fields={name: Unresolved() for name in parsed_struct.fields.keys()},
                 name=parsed_struct.identifier.name,
                 param_count=0,
+                file=file,
             )
-
-            types.append((file, type))
-        return types
+            for parsed_struct in parsed_structs
+        ]
 
     def _load_functions(
         self, file: Path, parsed_functions: List[parser.Function]
-    ) -> List[Tuple[Path, Function]]:
-        functions: List[Tuple[Path, Function]] = []
+    ) -> List[Function]:
+        functions: List[Function] = []
 
         for parsed_function in parsed_functions:
             struct_name, func_name = parsed_function.get_names()
@@ -149,16 +149,17 @@ class CrossReferencer:
                 type_params=Unresolved(),
                 return_types=Unresolved(),
                 body=Unresolved(),
+                file=file,
             )
 
-            functions.append((file, function))
+            functions.append(function)
 
         return functions
 
     def _load_imports(
         self, file: Path, parsed_imports: List[parser.Import]
-    ) -> List[Tuple[Path, Import]]:
-        imports: List[Tuple[Path, Import]] = []
+    ) -> List[Import]:
+        imports: List[Import] = []
 
         for parsed_import in parsed_imports:
             for imported_item in parsed_import.imported_items:
@@ -171,24 +172,21 @@ class CrossReferencer:
                     source_name=imported_item.original_name,
                     imported_name=imported_item.imported_name,
                     source=Unresolved(),
+                    file=file,
                 )
 
-                imports.append((file, import_))
+                imports.append(import_)
 
         return imports
 
-    def _load_types(
-        self, file: Path, types: List[parser.TypeLiteral]
-    ) -> List[Tuple[Path, Type]]:
+    def _load_types(self, file: Path, types: List[parser.TypeLiteral]) -> List[Type]:
         return [
-            (
-                file,
-                Type(
-                    name=type.identifier.name,
-                    param_count=len(type.params.value),
-                    parsed=type,
-                    fields={},
-                ),
+            Type(
+                name=type.identifier.name,
+                param_count=len(type.params.value),
+                parsed=type,
+                fields={},
+                file=file,
             )
             for type in types
         ]
@@ -251,7 +249,7 @@ class CrossReferencer:
                 # TODO handle params
                 assert field_type.param_count == 0
 
-                assert isinstance(field_type.parsed, Type)
+                assert isinstance(field_type.parsed, parser.TypeLiteral)
 
                 field_var_type = VariableType(
                     parsed=field_type.parsed,
@@ -259,6 +257,7 @@ class CrossReferencer:
                     name=field_type.name,
                     params=[],
                     is_placeholder=False,
+                    file=file,
                 )
 
                 type.fields[field_name] = field_var_type
@@ -273,7 +272,13 @@ class CrossReferencer:
 
             assert type_literal
 
-            type = Type(parsed=type_literal, name=param_name, param_count=0, fields={})
+            type = Type(
+                parsed=type_literal,
+                name=param_name,
+                param_count=0,
+                fields={},
+                file=file,
+            )
 
             if (file, param_name) in self.identifiers:
                 # Another identifier in the same file has this name.
@@ -316,12 +321,14 @@ class CrossReferencer:
 
             argument = Argument(
                 name=parsed_arg.identifier.name,
+                file=file,
                 type=VariableType(
                     parsed=parsed_type,
                     type=type,
                     name=parsed_type.identifier.name,
                     params=params,
                     is_placeholder=arg_type_name in function.type_params,
+                    file=file,
                 ),
             )
 
@@ -351,6 +358,7 @@ class CrossReferencer:
                         is_placeholder=True,
                         parsed=param,
                         params=[],
+                        file=file,
                     )
                 )
             else:
@@ -370,6 +378,7 @@ class CrossReferencer:
                         is_placeholder=False,
                         parsed=param,
                         params=[],
+                        file=file,
                     )
                 )
 
@@ -459,4 +468,4 @@ class CrossReferencer:
 
             items.append(item)
 
-        return FunctionBody(items=items)
+        return FunctionBody(items=items, file=file)

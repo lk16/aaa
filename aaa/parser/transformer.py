@@ -49,15 +49,17 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return list(arguments)
 
     def argument(self, identifier: Identifier, type: TypeLiteral) -> Argument:
-        return Argument(token=identifier.token, identifier=identifier, type=type)
+        return Argument(
+            token=identifier.token, identifier=identifier, type=type, file=self.file
+        )
 
     def boolean(self, token: Token) -> BooleanLiteral:
-        return BooleanLiteral(token=token, value=token.value)
+        return BooleanLiteral(token=token, value=token.value, file=self.file)
 
     def branch(self, *args: List[AaaParseModel]) -> Branch:
         condition: FunctionBody
         if_body: FunctionBody
-        else_body = FunctionBody(token=DUMMY_TOKEN, items=[])
+        else_body = FunctionBody(token=DUMMY_TOKEN, items=[], file=self.file)
 
         for arg in args:
             if isinstance(arg, BranchCondition):
@@ -74,20 +76,23 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             condition=condition,
             if_body=if_body,
             else_body=else_body,
+            file=self.file,
         )
 
     def branch_condition(
         self, token: Token, function_body: FunctionBody
     ) -> BranchCondition:
-        return BranchCondition(token=token, items=function_body.items)
+        return BranchCondition(token=token, items=function_body.items, file=self.file)
 
     def branch_if_body(self, token: Token, function_body: FunctionBody) -> BranchIfBody:
-        return BranchIfBody(token=token, items=function_body.items)
+        return BranchIfBody(token=token, items=function_body.items, file=self.file)
 
     def branch_else_body(
         self, else_token: Token, begin_token: Token, function_body: FunctionBody
     ) -> BranchElseBody:
-        return BranchElseBody(token=begin_token, items=function_body.items)
+        return BranchElseBody(
+            token=begin_token, items=function_body.items, file=self.file
+        )
 
     def builtin_type_declaration(
         self, token: Token, type_literal: TypeLiteral
@@ -98,9 +103,11 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def builtin_function_declaration(self, args: List[Any]) -> Function:
         for index, arg in enumerate(args):
             if isinstance(arg, Operator):
-                args[index] = Identifier(token=arg.token, name=arg.value)
+                args[index] = Identifier(
+                    token=arg.token, name=arg.value, file=self.file
+                )
 
-        args.append(FunctionBody(token=DUMMY_TOKEN, items=[]))
+        args.append(FunctionBody(token=DUMMY_TOKEN, items=[], file=self.file))
 
         function: Function = self.function_definition(args)
         return function
@@ -123,6 +130,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             imports=[],
             structs=[],
             types=types,
+            file=self.file,
         )
 
     def function_body_item(
@@ -132,7 +140,9 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
     def function_body(self, *function_body_items: FunctionBodyItem) -> FunctionBody:
         token = function_body_items[0].token
-        return FunctionBody(token=token, items=list(function_body_items))
+        return FunctionBody(
+            token=token, items=list(function_body_items), file=self.file
+        )
 
     @v_args(inline=False)
     def function_definition(self, args: List[Any]) -> Function:
@@ -173,6 +183,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             type_params=type_params,
             return_types=return_types,
             body=body,
+            file=self.file,
         )
 
     def function_arguments(self, args: List[Argument]) -> List[Argument]:
@@ -190,7 +201,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         try:
             aaa_keyword_parser.parse(f"{token.value} ")
         except UnexpectedInput:
-            return Identifier(name=token.value, token=token)
+            return Identifier(name=token.value, token=token, file=self.file)
         else:
             # We're getting a keyword where we're expecting an identifier
             raise KeywordUsedAsIdentifier(token=token, file=self.file)
@@ -205,6 +216,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             origninal_name=original_name.name,
             imported_name=imported_name.name,
             token=original_name.token,
+            file=self.file,
         )
 
     def import_items(self, *import_items: ImportItem) -> List[ImportItem]:
@@ -213,10 +225,15 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def import_statement(
         self, token: Token, source: StringLiteral, imported_items: List[ImportItem]
     ) -> Import:
-        return Import(source=source.value, imported_items=imported_items, token=token)
+        return Import(
+            source=source.value,
+            imported_items=imported_items,
+            token=token,
+            file=self.file,
+        )
 
     def integer(self, token: Token) -> IntegerLiteral:
-        return IntegerLiteral(token=token, value=int(token.value))
+        return IntegerLiteral(token=token, value=int(token.value), file=self.file)
 
     def literal(
         self, literal: Union[IntegerLiteral, BooleanLiteral, StringLiteral]
@@ -226,28 +243,36 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def loop(
         self, condition: LoopCondition, begin_token: Token, body: LoopBody
     ) -> Loop:
-        return Loop(token=condition.token, condition=condition.value, body=body.value)
+        return Loop(
+            token=condition.token,
+            condition=condition.value,
+            body=body.value,
+            file=self.file,
+        )
 
     def loop_condition(
         self, token: Token, function_body: FunctionBody
     ) -> LoopCondition:
-        return LoopCondition(token=token, value=function_body)
+        return LoopCondition(token=token, value=function_body, file=self.file)
 
     def loop_body(self, function_body: FunctionBody) -> LoopBody:
-        return LoopBody(token=function_body.token, value=function_body)
+        return LoopBody(token=function_body.token, value=function_body, file=self.file)
 
     def member_function_name(self, token: Token) -> Identifier:
-        return Identifier(name=token.value, token=token)
+        return Identifier(name=token.value, token=token, file=self.file)
 
     def member_function_literal(
         self, struct_name: TypeLiteral, func_name: Identifier
     ) -> MemberFunctionLiteral:
         return MemberFunctionLiteral(
-            struct_name=struct_name, func_name=func_name, token=struct_name.token
+            struct_name=struct_name,
+            func_name=func_name,
+            token=struct_name.token,
+            file=self.file,
         )
 
     def operator(self, token: Token) -> Operator:
-        return Operator(value=token.value, token=token)
+        return Operator(value=token.value, token=token, file=self.file)
 
     def regular_file_root(self, *args: Function | Struct | Import) -> ParsedFile:
         functions: List[Function] = []
@@ -270,6 +295,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             imports=imports,
             structs=structs,
             types=[],
+            file=self.file,
         )
 
     def return_types(self, *types: TypeLiteral) -> List[TypeLiteral]:
@@ -283,7 +309,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         value = value.replace("\\n", "\n")
         value = value.replace('\\"', '"')
 
-        return StringLiteral(token=token, value=value)
+        return StringLiteral(token=token, value=value, file=self.file)
 
     def struct_definition(
         self,
@@ -296,6 +322,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             token=struct_token,
             identifier=identifier,
             fields={field.identifier.name: field.type for field in fields},
+            file=self.file,
         )
 
     def struct_field_query_operator(self, token: Token) -> Token:
@@ -304,7 +331,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def struct_field_query(
         self, field_name: StringLiteral, token: Token
     ) -> StructFieldQuery:
-        return StructFieldQuery(field_name=field_name, token=token)
+        return StructFieldQuery(field_name=field_name, token=token, file=self.file)
 
     def struct_field_update_operator(self, token: Token) -> Token:
         return token
@@ -313,14 +340,20 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         self, field_name: StringLiteral, new_value_expr: FunctionBody, token: Token
     ) -> StructFieldUpdate:
         return StructFieldUpdate(
-            field_name=field_name, new_value_expr=new_value_expr, token=token
+            field_name=field_name,
+            new_value_expr=new_value_expr,
+            token=token,
+            file=self.file,
         )
 
     def struct_function_identifier(
         self, type_name: TypeLiteral, func_name: Identifier
     ) -> MemberFunctionLiteral:
         return MemberFunctionLiteral(
-            token=type_name.token, struct_name=type_name, func_name=func_name
+            token=type_name.token,
+            struct_name=type_name,
+            func_name=func_name,
+            file=self.file,
         )
 
     def type_literal(
@@ -329,12 +362,16 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         params: Optional[TypeParameters] = None,
     ) -> TypeLiteral:
         if not params:
-            params = TypeParameters(token=DUMMY_TOKEN, value=[])
+            params = TypeParameters(token=DUMMY_TOKEN, value=[], file=self.file)
 
-        return TypeLiteral(token=identifier.token, identifier=identifier, params=params)
+        return TypeLiteral(
+            token=identifier.token, identifier=identifier, params=params, file=self.file
+        )
 
     def type_params(self, *type_literals: TypeLiteral) -> TypeParameters:
-        return TypeParameters(token=type_literals[0].token, value=list(type_literals))
+        return TypeParameters(
+            token=type_literals[0].token, value=list(type_literals), file=self.file
+        )
 
     def builtin_type(self, token: Token) -> Identifier:
-        return Identifier(name=str(token), token=token)
+        return Identifier(name=str(token), token=token, file=self.file)

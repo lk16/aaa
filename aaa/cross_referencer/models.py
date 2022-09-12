@@ -34,6 +34,7 @@ class Function(AaaCrossReferenceModel):
         arguments: List[Argument] | Unresolved,
         return_types: List[VariableType] | Unresolved,
         body: FunctionBody | Unresolved,
+        file: Path,
     ) -> None:
         self.parsed = parsed
         self.name = name
@@ -42,12 +43,12 @@ class Function(AaaCrossReferenceModel):
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
-        # TODO add file: Path field
+        self.file = file
 
-    def identify(self) -> str:
+    def identify(self) -> Tuple[Path, str]:
         if self.struct_name:
-            return f"{self.struct_name}:{self.name}"
-        return self.name
+            return (self.file, f"{self.struct_name}:{self.name}")
+        return (self.file, self.name)
 
     def get_argument(self, name: str) -> Optional[Argument]:
         assert not isinstance(self.arguments, Unresolved)
@@ -59,9 +60,10 @@ class Function(AaaCrossReferenceModel):
 
 
 class Argument(AaaCrossReferenceModel):
-    def __init__(self, *, type: VariableType, name: str) -> None:
+    def __init__(self, *, type: VariableType, name: str, file: Path) -> None:
         self.type = type
         self.name = name
+        self.file = file
 
 
 class FunctionBodyItem(AaaCrossReferenceModel, parser.FunctionBodyItem):
@@ -69,8 +71,9 @@ class FunctionBodyItem(AaaCrossReferenceModel, parser.FunctionBodyItem):
 
 
 class FunctionBody(FunctionBodyItem, parser.FunctionBody):
-    def __init__(self, *, items: Sequence[FunctionBodyItem]) -> None:
+    def __init__(self, *, items: Sequence[FunctionBodyItem], file: Path) -> None:
         self.items = items
+        self.file = file
 
 
 class Import(AaaCrossReferenceModel):
@@ -82,15 +85,17 @@ class Import(AaaCrossReferenceModel):
         source_name: str,
         imported_name: str,
         source: Identifiable | Unresolved,
+        file: Path,
     ) -> None:
         self.parsed = parsed
         self.source_file = source_file
         self.source_name = source_name
         self.imported_name = imported_name
         self.source = source
+        self.file = file
 
-    def identify(self) -> str:
-        return self.imported_name
+    def identify(self) -> Tuple[Path, str]:
+        return (self.file, self.imported_name)
 
 
 class Type(AaaCrossReferenceModel):
@@ -101,14 +106,16 @@ class Type(AaaCrossReferenceModel):
         name: str,
         param_count: int,
         fields: Dict[str, VariableType | Unresolved],
+        file: Path,
     ) -> None:
         self.parsed = parsed
         self.name = name
         self.param_count = param_count
         self.fields = fields
+        self.file = file
 
-    def identify(self) -> str:
-        return self.name
+    def identify(self) -> Tuple[Path, str]:
+        return (self.file, self.name)
 
 
 class VariableType(AaaCrossReferenceModel):
@@ -120,12 +127,14 @@ class VariableType(AaaCrossReferenceModel):
         name: str,
         params: List[VariableType],
         is_placeholder: bool,
+        file: Path,
     ) -> None:
         self.parsed = parsed
         self.type = type
         self.name = name
         self.params = params
         self.is_placeholder = is_placeholder
+        self.file = file
 
 
 class IntegerLiteral(FunctionBodyItem, parser.IntegerLiteral):
@@ -150,7 +159,11 @@ class Operator(FunctionBodyItem, parser.Operator):
 
 class Loop(FunctionBodyItem, parser.Loop):
     def __init__(
-        self, *, condition: FunctionBody, body: FunctionBody, parsed: parser.Loop
+        self,
+        *,
+        condition: FunctionBody,
+        body: FunctionBody,
+        parsed: parser.Loop,
     ) -> None:
         self.condition: FunctionBody = condition
         self.body: FunctionBody = body

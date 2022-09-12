@@ -6,6 +6,7 @@ from typing import Sequence
 from aaa import AaaException
 from aaa.cross_referencer.cross_referencer import CrossReferencer
 from aaa.parser.parser import Parser
+from aaa.type_checker.type_checker import TypeChecker
 
 
 class Runner:
@@ -38,5 +39,7 @@ class Runner:
         if self.exceptions:
             self._print_exceptions()
             return 1
+
+        TypeChecker(cross_referencer_output).run()
 
         return 0

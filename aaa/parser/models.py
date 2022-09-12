@@ -10,7 +10,8 @@ from aaa.parser.exceptions import ParserBaseException
 
 
 class AaaParseModel(AaaModel):
-    def __init__(self, *, token: Token) -> None:
+    def __init__(self, *, file: Path, token: Token) -> None:
+        self.file = file
         self.token = token
 
 
@@ -19,54 +20,54 @@ class FunctionBodyItem(AaaParseModel):
 
 
 class IntegerLiteral(FunctionBodyItem):
-    def __init__(self, *, value: int, token: Token) -> None:
+    def __init__(self, *, value: int, file: Path, token: Token) -> None:
         self.value = value
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class StringLiteral(FunctionBodyItem):
-    def __init__(self, *, value: str, token: Token) -> None:
+    def __init__(self, *, value: str, file: Path, token: Token) -> None:
         self.value = value
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class BooleanLiteral(FunctionBodyItem):
-    def __init__(self, *, value: bool, token: Token) -> None:
+    def __init__(self, *, value: bool, file: Path, token: Token) -> None:
         self.value = value
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class Operator(FunctionBodyItem):
-    def __init__(self, *, value: str, token: Token) -> None:
+    def __init__(self, *, value: str, file: Path, token: Token) -> None:
         self.value = value
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class Loop(FunctionBodyItem):
     def __init__(
-        self, *, condition: FunctionBody, body: FunctionBody, token: Token
+        self, *, condition: FunctionBody, body: FunctionBody, file: Path, token: Token
     ) -> None:
         self.condition = condition
         self.body = body
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class LoopCondition(AaaParseModel):
-    def __init__(self, *, value: FunctionBody, token: Token) -> None:
+    def __init__(self, *, value: FunctionBody, file: Path, token: Token) -> None:
         self.value = value
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class LoopBody(AaaParseModel):
-    def __init__(self, *, value: FunctionBody, token: Token) -> None:
+    def __init__(self, *, value: FunctionBody, file: Path, token: Token) -> None:
         self.value = value
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class Identifier(FunctionBodyItem):
-    def __init__(self, *, name: str, token: Token) -> None:
+    def __init__(self, *, name: str, file: Path, token: Token) -> None:
         self.name = name
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class Branch(FunctionBodyItem):
@@ -76,18 +77,21 @@ class Branch(FunctionBodyItem):
         condition: FunctionBody,
         if_body: FunctionBody,
         else_body: FunctionBody,
+        file: Path,
         token: Token,
     ) -> None:
         self.condition = condition
         self.if_body = if_body
         self.else_body = else_body
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class FunctionBody(AaaParseModel):
-    def __init__(self, *, items: Sequence[FunctionBodyItem], token: Token) -> None:
+    def __init__(
+        self, *, items: Sequence[FunctionBodyItem], file: Path, token: Token
+    ) -> None:
         self.items = items
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class BranchCondition(FunctionBody):
@@ -104,35 +108,45 @@ class BranchElseBody(FunctionBody):
 
 class MemberFunctionLiteral(FunctionBodyItem):
     def __init__(
-        self, *, struct_name: TypeLiteral, func_name: Identifier, token: Token
+        self,
+        *,
+        struct_name: TypeLiteral,
+        func_name: Identifier,
+        file: Path,
+        token: Token,
     ) -> None:
         self.struct_name = struct_name
         self.func_name = func_name
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class StructFieldQuery(FunctionBodyItem):
-    def __init__(self, *, field_name: StringLiteral, token: Token) -> None:
+    def __init__(self, *, field_name: StringLiteral, file: Path, token: Token) -> None:
         self.field_name = field_name
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class StructFieldUpdate(FunctionBodyItem):
     def __init__(
-        self, *, field_name: StringLiteral, new_value_expr: FunctionBody, token: Token
+        self,
+        *,
+        field_name: StringLiteral,
+        new_value_expr: FunctionBody,
+        file: Path,
+        token: Token,
     ) -> None:
         self.field_name = field_name
         self.new_value_expr = new_value_expr
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class Argument(AaaParseModel):
     def __init__(
-        self, *, identifier: Identifier, type: TypeLiteral, token: Token
+        self, *, identifier: Identifier, type: TypeLiteral, file: Path, token: Token
     ) -> None:
         self.identifier = identifier
         self.type = type
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class Function(AaaParseModel):
@@ -144,6 +158,7 @@ class Function(AaaParseModel):
         arguments: List[Argument],
         return_types: List[TypeLiteral],
         body: FunctionBody,
+        file: Path,
         token: Token,
     ) -> None:
         self.name = name
@@ -151,7 +166,7 @@ class Function(AaaParseModel):
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
     def get_names(self) -> Tuple[str, str]:
         if isinstance(self.name, Identifier):
@@ -174,28 +189,34 @@ class Function(AaaParseModel):
 
 class ImportItem(AaaParseModel):
     def __init__(
-        self, *, origninal_name: str, imported_name: str, token: Token
+        self, *, origninal_name: str, imported_name: str, file: Path, token: Token
     ) -> None:
         self.original_name = origninal_name
         self.imported_name = imported_name
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class Import(AaaParseModel):
     def __init__(
-        self, *, source: str, imported_items: List[ImportItem], token: Token
+        self, *, source: str, imported_items: List[ImportItem], file: Path, token: Token
     ) -> None:
         self.source = source
         self.imported_items = imported_items
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class Struct(AaaParseModel):
     def __init__(
-        self, *, identifier: Identifier, fields: Dict[str, TypeLiteral], token: Token
+        self,
+        *,
+        identifier: Identifier,
+        fields: Dict[str, TypeLiteral],
+        file: Path,
+        token: Token,
     ) -> None:
         self.identifier = identifier
         self.fields = fields
+        super().__init__(file=file, token=token)
 
 
 class ParsedFile(AaaParseModel):
@@ -206,27 +227,34 @@ class ParsedFile(AaaParseModel):
         imports: List[Import],
         structs: List[Struct],
         types: List[TypeLiteral],
+        file: Path,
         token: Token,
     ) -> None:
         self.functions = functions
         self.imports = imports
         self.structs = structs
         self.types = types
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class TypeLiteral(AaaParseModel):
     def __init__(
-        self, *, identifier: Identifier, params: TypeParameters, token: Token
+        self,
+        *,
+        identifier: Identifier,
+        params: TypeParameters,
+        file: Path,
+        token: Token,
     ) -> None:
         self.identifier = identifier
         self.params = params
-        super().__init__(token=token)
+        super().__init__(file=file, token=token)
 
 
 class TypeParameters(AaaParseModel):
-    def __init__(self, *, value: List[TypeLiteral], token: Token) -> None:
+    def __init__(self, *, value: List[TypeLiteral], file: Path, token: Token) -> None:
         self.value = value
+        super().__init__(file=file, token=token)
 
 
 class ParserOutput(AaaModel):

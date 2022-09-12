@@ -47,10 +47,11 @@ DUMMY_TOKEN = Token(type_="", value="")  # type: ignore
 DUMMY_TYPE_LITERAL = parser.TypeLiteral(
     identifier=Identifier(
         kind=IdentifierKind(),
-        parsed=parser.Identifier(name="str", token=DUMMY_TOKEN),
+        parsed=parser.Identifier(name="str", token=DUMMY_TOKEN, file=Path("/dev/null")),
     ),
-    params=parser.TypeParameters(value=[], token=DUMMY_TOKEN),
+    params=parser.TypeParameters(value=[], token=DUMMY_TOKEN, file=Path("/dev/null")),
     token=DUMMY_TOKEN,
+    file=Path("/dev/null"),
 )
 
 
@@ -77,7 +78,7 @@ class TypeChecker:
                 self._check(file, function)
 
     def _check(self, file: Path, function: Function) -> None:
-        key = (file, function.identify())
+        key = function.identify()
         expected_return_types = self.signatures[key].return_types
 
         computed_return_types = self._check_function(file, function, [])
@@ -172,6 +173,7 @@ class TypeChecker:
             name=type_name,
             params=[],
             is_placeholder=False,
+            file=self.builtins_path,
         )
 
     def _get_bool_var_type(self) -> VariableType:
@@ -335,7 +337,7 @@ class TypeChecker:
                 )
 
         if function.struct_name != "":
-            signature = self.signatures[(file, function.identify())]
+            signature = self.signatures[function.identify()]
             struct_type = self.identifiers[(file, function.struct_name)]
 
             assert isinstance(struct_type, Type)
