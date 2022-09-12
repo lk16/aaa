@@ -99,9 +99,12 @@ class CrossReferencer:
 
                 assert not isinstance(identifiable.return_types, Unresolved)
                 for return_type in identifiable.return_types:
-                    print(
-                        f"- return type {return_type.type.file}:{return_type.type.name}"
-                    )
+                    if return_type.is_placeholder:
+                        print(f"- return placeholder type {return_type.type.name}")
+                    else:
+                        print(
+                            f"- return type {return_type.type.file}:{return_type.type.name}"
+                        )
 
             else:
                 print(f"{file}:{identifier} {type(identifiable).__name__}")
@@ -327,20 +330,15 @@ class CrossReferencer:
 
             if arg_type_name in function.type_params:
                 type = function.type_params[arg_type_name]
+                params: List[VariableType] = []
             else:
                 type = self._get_identifier(
                     file, parsed_type.identifier.name, parsed_type.identifier.token
                 )
 
-            if not isinstance(type, Type):
-                # type_params should already be resolved
-                assert not isinstance(type, Unresolved)
+                if not isinstance(type, Type):
+                    raise InvalidTypeParameter(file=file, identifiable=type)
 
-                raise InvalidTypeParameter(file=file, identifiable=type)
-
-            if arg_type_name in function.type_params:
-                params: List[VariableType] = []
-            else:
                 params = self._resolve_function_argument_params(
                     file, function, parsed_type
                 )
@@ -411,8 +409,70 @@ class CrossReferencer:
         return params
 
     def _resolve_function_return_types(self, file: Path, function: Function) -> None:
-        # TODO
-        raise NotImplementedError
+        assert not isinstance(function.type_params, Unresolved)
+        function.return_types = []
+
+        for parsed_return_type in function.parsed.return_types:
+            return_type_name = parsed_return_type.identifier.name
+            type: Identifiable | Unresolved
+
+            if return_type_name in function.type_params:
+                type = function.type_params[return_type_name]
+                params: List[VariableType] = []
+            else:
+                type = self._get_identifier(
+                    file,
+                    parsed_return_type.identifier.name,
+                    parsed_return_type.identifier.token,
+                )
+
+                if not isinstance(type, Type):
+                    raise InvalidTypeParameter(file=file, identifiable=type)
+
+                params = []
+                for parsed_param in parsed_return_type.params.value:
+                    param_name = parsed_param.identifier.name
+
+                    if param_name in function.type_params:
+                        param_var_type = VariableType(
+                            file=file,
+                            is_placeholder=True,
+                            name=param_name,
+                            params=[],
+                            parsed=parsed_param,
+                            type=function.type_params[param_name],
+                        )
+                    else:
+                        identifier = self._get_identifier(
+                            file,
+                            parsed_param.identifier.name,
+                            parsed_param.identifier.token,
+                        )
+
+                        if not isinstance(identifier, Type):
+                            raise InvalidType(file=file, identifiable=identifier)
+
+                        param_var_type = VariableType(
+                            file=file,
+                            is_placeholder=False,
+                            name=param_name,
+                            params=[],
+                            parsed=parsed_param,
+                            type=identifier,
+                        )
+
+                    params.append(param_var_type)
+
+            return_type = VariableType(
+                parsed=parsed_return_type,
+                type=type,
+                name=return_type_name,
+                params=params,
+                is_placeholder=return_type_name in function.type_params,
+                file=file,
+            )
+
+            function.return_types.append(return_type)
 
     def _resolve_function_body_identifiers(
         self, file: Path, function: Function, parsed: parser.FunctionBody

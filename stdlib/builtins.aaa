@@ -64,8 +64,8 @@ builtin_fn map[K, V]:set     args m as map[K, V], key as K, value as V return ma
 builtin_fn map[K, V]:size    args m as map[K, V]                       return map[K, V], int
 
 // TODO: not implemented yet
-builtin_fn map:keys          args m as map[K, V]                       return vec[K]
-builtin_fn map:values        args m as map[K, V]                       return vec[V]
+builtin_fn map[K, V]:keys          args m as map[K, V]                       return vec[K]
+builtin_fn map[K, V]:values        args m as map[K, V]                       return vec[V]
 
 // TODO: rename vec:size and map:size to vec:len and map:len
 
