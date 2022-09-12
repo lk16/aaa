@@ -63,9 +63,9 @@ class CrossReferencer:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
 
-        for file, identifier, type in self._get_identifiers_by_type(Type):
+        for file, identifier, type_ in self._get_identifiers_by_type(Type):
             try:
-                self._resolve_type_fields(file, type)
+                self._resolve_type_fields(file, type_)
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
@@ -74,12 +74,38 @@ class CrossReferencer:
             try:
                 self._resolve_function_type_params(file, function)
                 self._resolve_function_arguments(file, function)
+                self._resolve_function_return_types(file, function)
                 function.body = self._resolve_function_body_identifiers(
                     file, function, function.parsed.body
                 )
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
+
+        # TODO remove debug print
+        for (file, identifier), identifiable in self.identifiers.items():
+
+            if isinstance(identifiable, Function):
+                print(f"function {file}:{identifier}")
+
+                assert not isinstance(identifiable.arguments, Unresolved)
+                for arg in identifiable.arguments:
+                    if arg.type.is_placeholder:
+                        print(f"- arg {arg.name} of placeholder type {arg.type.name}")
+                    else:
+                        print(
+                            f"- arg {arg.name} of type {arg.type.file}:{arg.type.name}"
+                        )
+
+                assert not isinstance(identifiable.return_types, Unresolved)
+                for return_type in identifiable.return_types:
+                    print(
+                        f"- return type {return_type.type.file}:{return_type.type.name}"
+                    )
+
+            else:
+                print(f"{file}:{identifier} {type(identifiable).__name__}")
+            print("\n")
 
         return CrossReferencerOutput(
             identifiers=self.identifiers,
@@ -383,6 +409,10 @@ class CrossReferencer:
                 )
 
         return params
+
+    def _resolve_function_return_types(self, file: Path, function: Function) -> None:
+        # TODO
+        raise NotImplementedError
 
     def _resolve_function_body_identifiers(
         self, file: Path, function: Function, parsed: parser.FunctionBody
