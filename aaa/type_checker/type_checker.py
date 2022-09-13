@@ -334,9 +334,9 @@ class TypeChecker:
                     function=function,
                 )
 
-        if function.struct_name != "":
+        if function.is_member_function():
             signature = self.signatures[function.identify()]
-            struct_type = self.identifiers[(file, function.struct_name)]
+            struct_type = self.identifiers[function.identify()]
 
             assert isinstance(struct_type, Type)
 
@@ -370,6 +370,8 @@ class TypeChecker:
         struct_type: Type,
     ) -> VariableType:
         field_name = node.field_name.value
+
+        assert not isinstance(struct_type.fields, Unresolved)
 
         try:
             field_type = struct_type.fields[field_name]

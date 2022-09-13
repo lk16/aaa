@@ -20,6 +20,9 @@ class Unresolved(AaaCrossReferenceModel):
 
 
 class Identifiable(AaaCrossReferenceModel):
+    def __init__(self) -> None:
+        self.parsed: parser.AaaParseModel
+
     def identify(self) -> Tuple[Path, str]:
         return (self.file(), self.name())
 
@@ -39,14 +42,12 @@ class Function(Identifiable):
         *,
         parsed: parser.Function,
         type_params: Dict[str, Type] | Unresolved,
-        struct_name: str,
         arguments: List[Argument] | Unresolved,
         return_types: List[VariableType] | Unresolved,
         body: FunctionBody | Unresolved,
     ) -> None:
-        self.parsed = parsed
+        self.parsed: parser.Function = parsed
         self.type_params = type_params
-        self.struct_name = struct_name
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
@@ -68,6 +69,10 @@ class Function(Identifiable):
 
     def file(self) -> Path:
         return self.parsed.file
+
+    def is_member_function(self) -> bool:
+        struct_name, _ = self.parsed.get_names()
+        return struct_name != ""
 
 
 class Argument(AaaCrossReferenceModel):
@@ -116,11 +121,11 @@ class Type(Identifiable):
         *,
         parsed: parser.TypeLiteral | parser.Struct,
         param_count: int,
-        fields: Dict[str, VariableType | Unresolved],
+        fields: Dict[str, VariableType] | Unresolved,
     ) -> None:
-        self.parsed = parsed
+        self.parsed: parser.TypeLiteral | parser.Struct = parsed
         self.param_count = param_count
-        self.fields = fields  # TODO change to Dict[str, VariableType] | Unresolved
+        self.fields = fields
 
     def name(self) -> str:
         return self.parsed.identifier.name

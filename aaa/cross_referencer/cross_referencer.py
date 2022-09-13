@@ -107,6 +107,8 @@ class CrossReferencer:
                         )
 
             elif isinstance(identifiable, Type):
+                assert not isinstance(identifiable.fields, Unresolved)
+
                 for field_name, field_var_type in identifiable.fields.items():
                     assert not isinstance(field_var_type, Unresolved)
                     print(
@@ -128,8 +130,8 @@ class CrossReferencer:
         identifiables: List[Identifiable] = []
         for file, parsed_file in self.parsed_files.items():
             identifiables += self._load_types(file, parsed_file.types)
-            identifiables += self._load_struct_types(file, parsed_file.structs)
-            identifiables += self._load_functions(file, parsed_file.functions)
+            identifiables += self._load_struct_types(parsed_file.structs)
+            identifiables += self._load_functions(parsed_file.functions)
             identifiables += self._load_imports(file, parsed_file.imports)
         return identifiables
 
@@ -156,38 +158,25 @@ class CrossReferencer:
 
         return identifiers, collisions
 
-    def _load_struct_types(
-        self, file: Path, parsed_structs: List[parser.Struct]
-    ) -> List[Type]:
+    def _load_struct_types(self, parsed_structs: List[parser.Struct]) -> List[Type]:
         return [
-            Type(
-                parsed=parsed_struct,
-                fields={name: Unresolved() for name in parsed_struct.fields.keys()},
-                param_count=0,
-            )
+            Type(parsed=parsed_struct, fields=Unresolved(), param_count=0)
             for parsed_struct in parsed_structs
         ]
 
     def _load_functions(
-        self, file: Path, parsed_functions: List[parser.Function]
+        self, parsed_functions: List[parser.Function]
     ) -> List[Function]:
-        functions: List[Function] = []
-
-        for parsed_function in parsed_functions:
-            struct_name, func_name = parsed_function.get_names()
-
-            function = Function(
+        return [
+            Function(
                 parsed=parsed_function,
-                struct_name=struct_name,
                 arguments=Unresolved(),
                 type_params=Unresolved(),
                 return_types=Unresolved(),
                 body=Unresolved(),
             )
-
-            functions.append(function)
-
-        return functions
+            for parsed_function in parsed_functions
+        ]
 
     def _load_imports(
         self, file: Path, parsed_imports: List[parser.Import]
@@ -264,9 +253,14 @@ class CrossReferencer:
         ]
 
     def _resolve_type_fields(self, file: Path, type: Type) -> None:
-        for field_name in type.fields:
-            if isinstance(type.parsed, parser.Struct):
-                type_identifier = type.parsed.fields[field_name].identifier
+        type.fields = {}
+
+        if isinstance(type.parsed, parser.TypeLiteral):
+            # Do nothing, type literals have no fields.
+            pass
+        elif isinstance(type.parsed, parser.Struct):
+            for field_name, parsed_field in type.parsed.fields.items():
+                type_identifier = parsed_field.identifier
                 type_name = type_identifier.name
                 type_token = type_identifier.token
 
@@ -289,6 +283,9 @@ class CrossReferencer:
                 )
 
                 type.fields[field_name] = field_var_type
+
+        else:  # pragma: nocover
+            assert False
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
         function.type_params = {}
