@@ -111,7 +111,7 @@ class Type(AaaCrossReferenceModel):
         self.parsed = parsed
         self.name = name
         self.param_count = param_count
-        self.fields = fields
+        self.fields = fields  # TODO change to Dict[str, VariableType] | Unresolved
         self.file = file
 
     def identify(self) -> Tuple[Path, str]:

@@ -85,9 +85,9 @@ class CrossReferencer:
         # TODO remove debug print
         for (file, identifier), identifiable in self.identifiers.items():
 
-            if isinstance(identifiable, Function):
-                print(f"function {file}:{identifier}")
+            print(f"{type(identifiable).__name__} {file}:{identifier}")
 
+            if isinstance(identifiable, Function):
                 assert not isinstance(identifiable.arguments, Unresolved)
                 for arg in identifiable.arguments:
                     if arg.type.is_placeholder:
@@ -106,8 +106,16 @@ class CrossReferencer:
                             f"- return type {return_type.type.file}:{return_type.type.name}"
                         )
 
+            elif isinstance(identifiable, Type):
+                for field_name, field_var_type in identifiable.fields.items():
+                    assert not isinstance(field_var_type, Unresolved)
+                    print(
+                        f"- field {field_name} of type {field_var_type.file}:{field_var_type.name}"
+                    )
+
             else:
-                print(f"{file}:{identifier} {type(identifiable).__name__}")
+                # TODO add debug print for import
+                raise NotImplementedError
             print("\n")
 
         return CrossReferencerOutput(
