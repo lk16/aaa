@@ -501,7 +501,21 @@ class CrossReferencer:
             elif isinstance(parsed_item, parser.BooleanLiteral):
                 item = BooleanLiteral(parsed=parsed_item)
             elif isinstance(parsed_item, parser.Operator):
-                item = Operator(parsed=parsed_item)
+                # TODO refactor coverting Operator to Identifier
+                identifiable = self._get_identifier(
+                    file, str(parsed_item.token), parsed_item.token
+                )
+
+                assert isinstance(identifiable, Function)
+
+                item = Identifier(
+                    parsed=parser.Identifier(
+                        file=parsed_item.file,
+                        token=parsed_item.token,
+                        name=str(parsed_item),
+                    ),
+                    kind=IdentifierCallingFunction(function=identifiable),
+                )
             elif isinstance(parsed_item, parser.Loop):
                 item = Loop(
                     parsed=parsed_item,

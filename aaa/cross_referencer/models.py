@@ -154,6 +154,17 @@ class VariableType(AaaCrossReferenceModel):
     def file(self) -> Path:
         return self.type.file()
 
+    def __repr__(self) -> str:
+        output = self.name()
+
+        if self.params:
+            output += "["
+            for param in self.params:
+                output += repr(param)
+            output += "]"
+
+        return output
+
 
 class IntegerLiteral(FunctionBodyItem, parser.IntegerLiteral):
     def __init__(self, *, parsed: parser.IntegerLiteral) -> None:

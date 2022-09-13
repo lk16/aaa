@@ -11,7 +11,10 @@ from aaa.cross_referencer.models import (
     Function,
     FunctionBody,
     Identifier,
+    IdentifierCallingFunction,
+    IdentifierCallingType,
     IdentifierKind,
+    IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
     MemberFunctionName,
@@ -78,6 +81,10 @@ class TypeChecker:
                 self._check(file, function)
 
     def _check(self, file: Path, function: Function) -> None:
+        if file == self.builtins_path:
+            # builtins can't be type checked
+            return
+
         key = function.identify()
         expected_return_types = self.signatures[key].return_types
 
@@ -311,10 +318,39 @@ class TypeChecker:
                 stack = self._check_type_struct_field_update(
                     file, function, child_node, copy(stack)
                 )
+            elif isinstance(child_node, Identifier):
+                stack = self._check_identifier(file, function, child_node, type_stack)
             else:  # pragma nocover
+                breakpoint()
+                ...
                 assert False
 
         return stack
+
+    def _check_identifier(
+        self,
+        file: Path,
+        function: Function,
+        identifier: Identifier,
+        type_stack: List[VariableType],
+    ) -> List[VariableType]:
+        if isinstance(identifier.kind, IdentifierUsingArgument):
+            # Push argument on stack
+            return type_stack + [identifier.kind.arg_type]
+
+        elif isinstance(identifier.kind, IdentifierCallingFunction):
+            # Function was called, apply signature of called function
+            called_function = identifier.kind.function
+            signature = self.signatures[called_function.identify()]
+            return self._check_and_apply_signature(
+                file, function, type_stack, signature, called_function
+            )
+            ...
+        elif isinstance(identifier.kind, IdentifierCallingType):
+            # TODO should identifier.kind.type be VariableType instead of Type?
+            raise NotImplementedError
+        else:  # pragma: nocover
+            assert False
 
     def _check_function(
         self, file: Path, function: Function, type_stack: List[VariableType]

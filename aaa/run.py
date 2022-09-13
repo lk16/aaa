@@ -40,9 +40,6 @@ class Runner:
             self._print_exceptions()
             return 1
 
-        print("WARNING: TypeChecker is disabled for debugging.")
-        return 0
-
         TypeChecker(cross_referencer_output).run()
 
         return 0
