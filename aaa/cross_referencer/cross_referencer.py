@@ -91,26 +91,26 @@ class CrossReferencer:
                 assert not isinstance(identifiable.arguments, Unresolved)
                 for arg in identifiable.arguments:
                     if arg.type.is_placeholder:
-                        print(f"- arg {arg.name} of placeholder type {arg.type.name}")
+                        print(f"- arg {arg.name} of placeholder type {arg.type.name()}")
                     else:
                         print(
-                            f"- arg {arg.name} of type {arg.type.file}:{arg.type.name}"
+                            f"- arg {arg.name} of type {arg.type.file()}:{arg.type.name()}"
                         )
 
                 assert not isinstance(identifiable.return_types, Unresolved)
                 for return_type in identifiable.return_types:
                     if return_type.is_placeholder:
-                        print(f"- return placeholder type {return_type.type.name}")
+                        print(f"- return placeholder type {return_type.type.name()}")
                     else:
                         print(
-                            f"- return type {return_type.type.file}:{return_type.type.name}"
+                            f"- return type {return_type.type.file()}:{return_type.type.name()}"
                         )
 
             elif isinstance(identifiable, Type):
                 for field_name, field_var_type in identifiable.fields.items():
                     assert not isinstance(field_var_type, Unresolved)
                     print(
-                        f"- field {field_name} of type {field_var_type.file}:{field_var_type.name}"
+                        f"- field {field_name} of type {field_var_type.file()}:{field_var_type.name()}"
                     )
 
             else:
@@ -145,7 +145,7 @@ class CrossReferencer:
             if key in identifiers:
                 collisions.append(
                     CollidingIdentifier(
-                        file=identifiable.file,
+                        file=identifiable.file(),
                         colliding=identifiable,
                         found=identifiers[key],
                     )
@@ -163,9 +163,7 @@ class CrossReferencer:
             Type(
                 parsed=parsed_struct,
                 fields={name: Unresolved() for name in parsed_struct.fields.keys()},
-                name=parsed_struct.identifier.name,
                 param_count=0,
-                file=file,
             )
             for parsed_struct in parsed_structs
         ]
@@ -181,12 +179,10 @@ class CrossReferencer:
             function = Function(
                 parsed=parsed_function,
                 struct_name=struct_name,
-                name=func_name,
                 arguments=Unresolved(),
                 type_params=Unresolved(),
                 return_types=Unresolved(),
                 body=Unresolved(),
-                file=file,
             )
 
             functions.append(function)
@@ -209,7 +205,6 @@ class CrossReferencer:
                     source_name=imported_item.original_name,
                     imported_name=imported_item.imported_name,
                     source=Unresolved(),
-                    file=file,
                 )
 
                 imports.append(import_)
@@ -219,11 +214,9 @@ class CrossReferencer:
     def _load_types(self, file: Path, types: List[parser.TypeLiteral]) -> List[Type]:
         return [
             Type(
-                name=type.identifier.name,
                 param_count=len(type.params.value),
                 parsed=type,
                 fields={},
-                file=file,
             )
             for type in types
         ]
@@ -291,10 +284,8 @@ class CrossReferencer:
                 field_var_type = VariableType(
                     parsed=field_type.parsed,
                     type=field_type,
-                    name=field_type.name,
                     params=[],
                     is_placeholder=False,
-                    file=file,
                 )
 
                 type.fields[field_name] = field_var_type
@@ -311,10 +302,8 @@ class CrossReferencer:
 
             type = Type(
                 parsed=type_literal,
-                name=param_name,
                 param_count=0,
                 fields={},
-                file=file,
             )
 
             if (file, param_name) in self.identifiers:
@@ -357,10 +346,8 @@ class CrossReferencer:
                 type=VariableType(
                     parsed=parsed_type,
                     type=type,
-                    name=parsed_type.identifier.name,
                     params=params,
                     is_placeholder=arg_type_name in function.type_params,
-                    file=file,
                 ),
             )
 
@@ -386,11 +373,9 @@ class CrossReferencer:
                 params.append(
                     VariableType(
                         type=param_type,
-                        name=param_name,
                         is_placeholder=True,
                         parsed=param,
                         params=[],
-                        file=file,
                     )
                 )
             else:
@@ -406,11 +391,9 @@ class CrossReferencer:
                 params.append(
                     VariableType(
                         type=identifier,
-                        name=param_name,
                         is_placeholder=False,
                         parsed=param,
                         params=[],
-                        file=file,
                     )
                 )
 
@@ -443,9 +426,7 @@ class CrossReferencer:
 
                     if param_name in function.type_params:
                         param_var_type = VariableType(
-                            file=file,
                             is_placeholder=True,
-                            name=param_name,
                             params=[],
                             parsed=parsed_param,
                             type=function.type_params[param_name],
@@ -461,9 +442,7 @@ class CrossReferencer:
                             raise InvalidType(file=file, identifiable=identifier)
 
                         param_var_type = VariableType(
-                            file=file,
                             is_placeholder=False,
-                            name=param_name,
                             params=[],
                             parsed=parsed_param,
                             type=identifier,
@@ -474,10 +453,8 @@ class CrossReferencer:
             return_type = VariableType(
                 parsed=parsed_return_type,
                 type=type,
-                name=return_type_name,
                 params=params,
                 is_placeholder=return_type_name in function.type_params,
-                file=file,
             )
 
             function.return_types.append(return_type)

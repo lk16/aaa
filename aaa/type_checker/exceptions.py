@@ -359,7 +359,7 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
 
         if (
             len(self.signature.arguments) == 0
-            or str(self.signature.arguments[0]) != self.struct_type.name
+            or str(self.signature.arguments[0]) != self.struct_type.name()
         ):
             formatted += (
                 f"Expected arg types: {self.struct_type.name} ...\n"
@@ -368,7 +368,7 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
 
         if (
             len(self.signature.return_types) == 0
-            or str(self.signature.return_types[0]) != self.struct_type.name
+            or str(self.signature.return_types[0]) != self.struct_type.name()
         ):
             formatted += (
                 f"Expected return types: {self.struct_type.name} ...\n"

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 from aaa import AaaModel
 
@@ -9,10 +9,6 @@ if TYPE_CHECKING:
     from aaa.cross_referencer.exceptions import CrossReferenceBaseException
 
 from aaa.parser import models as parser
-
-Identifiable = Union["Function", "Import", "Type"]
-
-IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
 class AaaCrossReferenceModel(AaaModel):
@@ -23,32 +19,37 @@ class Unresolved(AaaCrossReferenceModel):
     ...
 
 
-class Function(AaaCrossReferenceModel):
+class Identifiable(AaaCrossReferenceModel):
+    def identify(self) -> Tuple[Path, str]:
+        return (self.file(), self.name())
+
+    def file(self) -> Path:
+        raise NotImplementedError
+
+    def name(self) -> str:
+        raise NotImplementedError
+
+
+IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
+
+
+class Function(Identifiable):
     def __init__(
         self,
         *,
         parsed: parser.Function,
-        name: str,
         type_params: Dict[str, Type] | Unresolved,
         struct_name: str,
         arguments: List[Argument] | Unresolved,
         return_types: List[VariableType] | Unresolved,
         body: FunctionBody | Unresolved,
-        file: Path,
     ) -> None:
         self.parsed = parsed
-        self.name = name
         self.type_params = type_params
         self.struct_name = struct_name
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
-        self.file = file
-
-    def identify(self) -> Tuple[Path, str]:
-        if self.struct_name:
-            return (self.file, f"{self.struct_name}:{self.name}")
-        return (self.file, self.name)
 
     def get_argument(self, name: str) -> Optional[Argument]:
         assert not isinstance(self.arguments, Unresolved)
@@ -57,6 +58,16 @@ class Function(AaaCrossReferenceModel):
             if name == argument.name:
                 return argument
         return None
+
+    def name(self) -> str:
+        struct_name, func_name = self.parsed.get_names()
+
+        if struct_name:
+            return f"{struct_name}:{func_name}"
+        return func_name
+
+    def file(self) -> Path:
+        return self.parsed.file
 
 
 class Argument(AaaCrossReferenceModel):
@@ -76,7 +87,7 @@ class FunctionBody(FunctionBodyItem, parser.FunctionBody):
         self.file = file
 
 
-class Import(AaaCrossReferenceModel):
+class Import(Identifiable):
     def __init__(
         self,
         *,
@@ -85,37 +96,37 @@ class Import(AaaCrossReferenceModel):
         source_name: str,
         imported_name: str,
         source: Identifiable | Unresolved,
-        file: Path,
     ) -> None:
         self.parsed = parsed
         self.source_file = source_file
         self.source_name = source_name
         self.imported_name = imported_name
         self.source = source
-        self.file = file
 
-    def identify(self) -> Tuple[Path, str]:
-        return (self.file, self.imported_name)
+    def name(self) -> str:
+        return self.imported_name
+
+    def file(self) -> Path:
+        return self.parsed.file
 
 
-class Type(AaaCrossReferenceModel):
+class Type(Identifiable):
     def __init__(
         self,
         *,
         parsed: parser.TypeLiteral | parser.Struct,
-        name: str,
         param_count: int,
         fields: Dict[str, VariableType | Unresolved],
-        file: Path,
     ) -> None:
         self.parsed = parsed
-        self.name = name
         self.param_count = param_count
         self.fields = fields  # TODO change to Dict[str, VariableType] | Unresolved
-        self.file = file
 
-    def identify(self) -> Tuple[Path, str]:
-        return (self.file, self.name)
+    def name(self) -> str:
+        return self.parsed.identifier.name
+
+    def file(self) -> Path:
+        return self.parsed.file
 
 
 class VariableType(AaaCrossReferenceModel):
@@ -124,17 +135,19 @@ class VariableType(AaaCrossReferenceModel):
         *,
         parsed: parser.TypeLiteral,
         type: Type,
-        name: str,
         params: List[VariableType],
         is_placeholder: bool,
-        file: Path,
     ) -> None:
         self.parsed = parsed
         self.type = type
-        self.name = name
         self.params = params
         self.is_placeholder = is_placeholder
-        self.file = file
+
+    def name(self) -> str:
+        return self.type.name()
+
+    def file(self) -> Path:
+        return self.type.file()
 
 
 class IntegerLiteral(FunctionBodyItem, parser.IntegerLiteral):

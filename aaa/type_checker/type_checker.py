@@ -170,10 +170,8 @@ class TypeChecker:
         return VariableType(
             parsed=DUMMY_TYPE_LITERAL,
             type=type,
-            name=type_name,
             params=[],
             is_placeholder=False,
-            file=self.builtins_path,
         )
 
     def _get_bool_var_type(self) -> VariableType:
@@ -324,7 +322,7 @@ class TypeChecker:
         assert not isinstance(function.arguments, Unresolved)
         assert not isinstance(function.return_types, Unresolved)
 
-        if function.name == "main":
+        if function.name() == "main":
             if not all(
                 [
                     len(function.arguments) == 0,
