@@ -17,6 +17,8 @@ class Runner:
     def _print_exceptions(self) -> None:
         for exception in self.exceptions:
             print(str(exception), end="", file=sys.stderr)
+            print()
+
         print(f"Found {len(self.exceptions)} errors.", file=sys.stderr)
 
     def run(self) -> int:
@@ -25,6 +27,7 @@ class Runner:
         except KeyError:
             print("Environment variable AAA_STDLIB_PATH is not set.")
             print("Cannot find standard library!")
+            return 1
 
         parser_output = Parser(self.entrypoint, stdlib_path).run()
         self.exceptions = parser_output.exceptions
@@ -40,6 +43,12 @@ class Runner:
             self._print_exceptions()
             return 1
 
-        TypeChecker(cross_referencer_output).run()
+        type_checker_output = TypeChecker(cross_referencer_output).run()
+
+        self.exceptions = type_checker_output.exceptions
+
+        if self.exceptions:
+            self._print_exceptions()
+            return 1
 
         return 0

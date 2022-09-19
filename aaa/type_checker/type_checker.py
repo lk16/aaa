@@ -37,12 +37,14 @@ from aaa.type_checker.exceptions import (
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
+    TypeCheckerException,
     UnknownStructField,
 )
 from aaa.type_checker.models import (
     Signature,
     StructQuerySignature,
     StructUpdateSignature,
+    TypeCheckerOutput,
 )
 
 DUMMY_TOKEN = Token(type_="", value="")  # type: ignore
@@ -63,8 +65,9 @@ class TypeChecker:
         self.identifiers = cross_referencer_output.identifiers
         self.builtins_path = cross_referencer_output.builtins_path
         self.signatures: Dict[Tuple[Path, str], Signature] = {}
+        self.exceptions: List[TypeCheckerException] = []
 
-    def run(self) -> None:
+    def run(self) -> TypeCheckerOutput:
         for (file, func_name), function in self.identifiers.items():
             if isinstance(function, Function):
                 assert not isinstance(function.arguments, Unresolved)
@@ -78,7 +81,13 @@ class TypeChecker:
         for (file, _), function in self.identifiers.items():
             if isinstance(function, Function):
                 self.function = function
-                self._check(file, function)
+
+                try:
+                    self._check(file, function)
+                except TypeCheckerException as e:
+                    self.exceptions.append(e)
+
+        return TypeCheckerOutput(exceptions=self.exceptions)
 
     def _check(self, file: Path, function: Function) -> None:
         if file == self.builtins_path:
@@ -321,8 +330,6 @@ class TypeChecker:
             elif isinstance(child_node, Identifier):
                 stack = self._check_identifier(file, function, child_node, type_stack)
             else:  # pragma nocover
-                breakpoint()
-                ...
                 assert False
 
         return stack

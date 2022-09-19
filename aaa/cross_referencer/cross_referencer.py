@@ -31,7 +31,6 @@ from aaa.cross_referencer.models import (
     IntegerLiteral,
     Loop,
     MemberFunctionName,
-    Operator,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,

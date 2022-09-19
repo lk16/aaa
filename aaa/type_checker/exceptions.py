@@ -53,8 +53,7 @@ class FunctionTypeError(TypeCheckerException):
         super().__init__(file=file, function=function)
 
     def where(self) -> str:
-        # TODO
-        raise NotImplementedError
+        return error_location(self.file, self.function.parsed.token)
 
     def __str__(self) -> str:
         expected = format_typestack(self.expected_return_types)
@@ -73,7 +72,7 @@ class StackTypesError(TypeCheckerException):
         *,
         file: Path,
         function: "Function",
-        signature: Union[Signature, StructQuerySignature, StructUpdateSignature],
+        signature: Union["Signature", "StructQuerySignature", "StructUpdateSignature"],
         type_stack: List[VariableType],
         func_like: Union[
             Operator,
@@ -92,7 +91,6 @@ class StackTypesError(TypeCheckerException):
         if isinstance(self.func_like, Operator):
             return self.func_like.value
         elif isinstance(self.func_like, Function):
-            assert isinstance(self.func_like.name, str)
             return self.func_like.name()
         elif isinstance(self.func_like, MemberFunctionName):
             return f"{self.func_like.struct_name.identifier.name}:{self.func_like.func_name.name}"
@@ -110,8 +108,7 @@ class StackTypesError(TypeCheckerException):
             assert False
 
     def where(self) -> str:
-        # TODO
-        raise NotImplementedError
+        return error_location(self.file, self.function.parsed.token)
 
     def __str__(self) -> str:
         return (
@@ -342,7 +339,7 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
         file: Path,
         function: Function,
         struct_type: Type,
-        signature: Signature,
+        signature: "Signature",
     ) -> None:
         self.struct_type = struct_type
         self.signature = signature
