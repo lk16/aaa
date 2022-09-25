@@ -99,6 +99,7 @@ class TypeChecker:
 
             raise FunctionTypeError(
                 file=file,
+                token=function.token,
                 function=function,
                 expected_return_types=expected_return_types,
                 computed_return_types=computed_return_types,
@@ -118,6 +119,7 @@ class TypeChecker:
         if len(stack) < arg_count:
             raise StackTypesError(
                 file=file,
+                token=func_like.token,
                 function=function,
                 signature=signature,
                 type_stack=type_stack,
@@ -136,6 +138,7 @@ class TypeChecker:
             if not match_result:
                 raise StackTypesError(
                     file=file,
+                    token=func_like.token,
                     function=function,
                     signature=signature,
                     type_stack=type_stack,
@@ -231,6 +234,7 @@ class TypeChecker:
         if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
                 file=file,
+                token=function_body.token,
                 function=function,
                 type_stack=type_stack,
                 condition_stack=condition_stack,
@@ -259,6 +263,7 @@ class TypeChecker:
         if if_stack != else_stack:
             raise BranchTypeError(
                 file=file,
+                token=branch.token,
                 function=function,
                 type_stack=type_stack,
                 if_stack=if_stack,
@@ -282,6 +287,7 @@ class TypeChecker:
         if loop_stack != type_stack:
             raise LoopTypeError(
                 file=file,
+                token=loop.token,
                 function=function,
                 type_stack=type_stack,
                 loop_stack=loop_stack,
@@ -348,7 +354,6 @@ class TypeChecker:
             return self._check_and_apply_signature(
                 file, function, type_stack, signature, called_function
             )
-            ...
         elif isinstance(identifier.kind, IdentifierCallingType):
             # TODO should identifier.kind.type be VariableType instead of Type?
             raise NotImplementedError
@@ -370,6 +375,7 @@ class TypeChecker:
             ):
                 raise InvalidMainSignuture(
                     file=file,
+                    token=function.token,
                     function=function,
                 )
 
@@ -393,6 +399,7 @@ class TypeChecker:
             ):
                 raise InvalidMemberFunctionSignature(
                     file=file,
+                    token=function.token,
                     function=function,
                     struct_type=struct_type,
                     signature=signature,
@@ -417,6 +424,7 @@ class TypeChecker:
         except KeyError as e:
             raise UnknownStructField(
                 file=file,
+                token=node.token,
                 function=function,
                 struct_type=struct_type,
                 field_name=field_name,
@@ -437,6 +445,7 @@ class TypeChecker:
         if len(type_stack) < 2:
             raise StackTypesError(
                 file=file,
+                token=field_query.token,
                 function=function,
                 signature=StructQuerySignature(),
                 type_stack=type_stack,
@@ -473,6 +482,7 @@ class TypeChecker:
         if len(type_stack) < 3:
             raise StackTypesError(
                 file=file,
+                token=field_update.token,
                 function=function,
                 signature=StructUpdateSignature(),
                 type_stack=type_stack,
@@ -490,10 +500,10 @@ class TypeChecker:
         ):
             raise StructUpdateStackError(
                 file=file,
+                token=field_update.token,
                 function=function,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
-                field_update=field_update,
             )
 
         field_type = self._get_struct_field_type(
@@ -503,13 +513,13 @@ class TypeChecker:
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
                 file=file,
+                token=field_update.new_value_expr.token,
                 function=function,
                 type_stack=type_stack,
                 struct_type=struct_type,
                 field_name=field_update.field_name.value,
                 found_type=update_expr_type,
                 expected_type=field_selector_type,
-                field_update=field_update,
             )
 
         # drop field_selector and update value

@@ -43,9 +43,6 @@ class Runner:
             self._print_exceptions()
             return 1
 
-        print("WARNING: TypeChecker is skipped")
-        return 0
-
         type_checker_output = TypeChecker(cross_referencer_output).run()
 
         self.exceptions = type_checker_output.exceptions

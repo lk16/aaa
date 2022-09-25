@@ -7,6 +7,8 @@ from aaa.cross_referencer.models import Function, Identifiable, Import, Type
 
 
 class CrossReferenceBaseException(AaaException):
+    # TODO move file and token fields here
+
     def describe(self, item: Identifiable) -> str:
         if isinstance(item, Function):
             return f"function {item.identify()}"

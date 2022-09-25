@@ -170,6 +170,16 @@ class VariableType(AaaCrossReferenceModel):
 
         return output
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, VariableType):
+            return False
+
+        # NOTE: Type instances are unique, we can use identity here
+        if self.type is not other.type:
+            return False
+
+        return self.params == other.params
+
 
 class IntegerLiteral(FunctionBodyItem):
     def __init__(self, *, parsed: parser.IntegerLiteral) -> None:
