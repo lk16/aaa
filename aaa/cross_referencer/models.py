@@ -63,7 +63,8 @@ class Function(Identifiable):
 
         if self.struct_name:
             name = f"{self.struct_name}:{self.func_name}"
-        name = self.func_name
+        else:
+            name = self.func_name
 
         super().__init__(file=parsed.file, token=parsed.token, name=name)
 
