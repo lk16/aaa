@@ -71,11 +71,11 @@ class CrossReferencer:
 
         for file, identifier, function in self._get_identifiers_by_type(Function):
             try:
-                self._resolve_function_type_params(file, function)
-                self._resolve_function_arguments(file, function)
-                self._resolve_function_return_types(file, function)
-                self._resolve_function_body(file, function)
-                self._resolve_function_body_identifiers(file, function)
+                self._resolve_function_type_params(function)
+                self._resolve_function_arguments(function)
+                self._resolve_function_return_types(function)
+                self._resolve_function_body(function)
+                self._resolve_function_body_identifiers(function)
 
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
@@ -127,11 +127,11 @@ class CrossReferencer:
 
     def _load_identifiers(self) -> List[Identifiable]:
         identifiables: List[Identifiable] = []
-        for file, parsed_file in self.parsed_files.items():
-            identifiables += self._load_types(file, parsed_file.types)
+        for parsed_file in self.parsed_files.values():
+            identifiables += self._load_types(parsed_file.types)
             identifiables += self._load_struct_types(parsed_file.structs)
             identifiables += self._load_functions(parsed_file.functions)
-            identifiables += self._load_imports(file, parsed_file.imports)
+            identifiables += self._load_imports(parsed_file.imports)
         return identifiables
 
     def _detect_duplicate_identifiers(
@@ -177,15 +177,13 @@ class CrossReferencer:
             for parsed_function in parsed_functions
         ]
 
-    def _load_imports(
-        self, file: Path, parsed_imports: List[parser.Import]
-    ) -> List[Import]:
+    def _load_imports(self, parsed_imports: List[parser.Import]) -> List[Import]:
         imports: List[Import] = []
 
         for parsed_import in parsed_imports:
             for imported_item in parsed_import.imported_items:
 
-                source_file = file.parent / f"{parsed_import.source}.aaa"
+                source_file = imported_item.file.parent / f"{parsed_import.source}.aaa"
 
                 import_ = Import(
                     parsed=imported_item,
@@ -199,7 +197,7 @@ class CrossReferencer:
 
         return imports
 
-    def _load_types(self, file: Path, types: List[parser.TypeLiteral]) -> List[Type]:
+    def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
         return [
             Type(
                 param_count=len(type.params.value),
@@ -279,7 +277,7 @@ class CrossReferencer:
 
             type.fields[field_name] = field_var_type
 
-    def _resolve_function_type_params(self, file: Path, function: Function) -> None:
+    def _resolve_function_type_params(self, function: Function) -> None:
         function.type_params = {}
 
         for parsed_type_param in function.parsed_type_params:
@@ -295,17 +293,17 @@ class CrossReferencer:
                 fields={},
             )
 
-            if (file, param_name) in self.identifiers:
+            if (function.file, param_name) in self.identifiers:
                 # Another identifier in the same file has this name.
                 raise CollidingIdentifier(
-                    file=file,
+                    file=function.file,
                     colliding=type,
-                    found=self.identifiers[(file, param_name)],
+                    found=self.identifiers[(function.file, param_name)],
                 )
 
             function.type_params[param_name] = type
 
-    def _resolve_function_arguments(self, file: Path, function: Function) -> None:
+    def _resolve_function_arguments(self, function: Function) -> None:
         assert not isinstance(function.type_params, Unresolved)
         function.arguments = []
 
@@ -319,19 +317,21 @@ class CrossReferencer:
                 params: List[VariableType] = []
             else:
                 type = self._get_identifier(
-                    file, parsed_type.identifier.name, parsed_type.identifier.token
+                    function.file,
+                    parsed_type.identifier.name,
+                    parsed_type.identifier.token,
                 )
 
                 if not isinstance(type, Type):
-                    raise InvalidTypeParameter(file=file, identifiable=type)
+                    raise InvalidTypeParameter(file=function.file, identifiable=type)
 
                 params = self._resolve_function_argument_params(
-                    file, function, parsed_type
+                    function.file, function, parsed_type
                 )
 
             argument = Argument(
                 name=parsed_arg.identifier.name,
-                file=file,
+                file=function.file,
                 type=VariableType(
                     parsed=parsed_type,
                     type=type,
@@ -388,7 +388,7 @@ class CrossReferencer:
 
         return params
 
-    def _resolve_function_return_types(self, file: Path, function: Function) -> None:
+    def _resolve_function_return_types(self, function: Function) -> None:
         assert not isinstance(function.type_params, Unresolved)
         function.return_types = []
 
@@ -401,13 +401,13 @@ class CrossReferencer:
                 params: List[VariableType] = []
             else:
                 type = self._get_identifier(
-                    file,
+                    function.file,
                     parsed_return_type.identifier.name,
                     parsed_return_type.identifier.token,
                 )
 
                 if not isinstance(type, Type):
-                    raise InvalidTypeParameter(file=file, identifiable=type)
+                    raise InvalidTypeParameter(file=function.file, identifiable=type)
 
                 params = []
                 for parsed_param in parsed_return_type.params.value:
@@ -422,13 +422,15 @@ class CrossReferencer:
                         )
                     else:
                         identifier = self._get_identifier(
-                            file,
+                            function.file,
                             parsed_param.identifier.name,
                             parsed_param.identifier.token,
                         )
 
                         if not isinstance(identifier, Type):
-                            raise InvalidType(file=file, identifiable=identifier)
+                            raise InvalidType(
+                                file=function.file, identifiable=identifier
+                            )
 
                         param_var_type = VariableType(
                             is_placeholder=False,
@@ -448,7 +450,7 @@ class CrossReferencer:
 
             function.return_types.append(return_type)
 
-    def _resolve_function_body(self, file: Path, function: Function) -> None:
+    def _resolve_function_body(self, function: Function) -> None:
         def resolve_body(parsed_body: parser.FunctionBody) -> FunctionBody:
             return FunctionBody(
                 items=[resolve_item(item) for item in parsed_body.items],
@@ -500,9 +502,7 @@ class CrossReferencer:
 
         function.body = resolve_body(function.parsed_body)
 
-    def _resolve_function_body_identifiers(
-        self, file: Path, function: Function
-    ) -> None:
+    def _resolve_function_body_identifiers(self, function: Function) -> None:
         def resolve_identifier(identifier: Identifier) -> None:
             argument = function.get_argument(identifier.name)
 
@@ -513,7 +513,7 @@ class CrossReferencer:
                 identifier.kind = IdentifierUsingArgument(arg_type=arg_type)
             else:
                 identifiable = self._get_identifier(
-                    file, identifier.name, identifier.token
+                    function.file, identifier.name, identifier.token
                 )
 
                 if isinstance(identifiable, Function):
