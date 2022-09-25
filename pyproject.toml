@@ -17,6 +17,9 @@ pytest-cov = "^3.0.0"
 pre-commit = "^2.17.0"
 mypy = "^0.971"
 
+[tool.poetry.group.dev.dependencies]
+types-click = "^7.1.8"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

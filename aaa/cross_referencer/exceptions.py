@@ -29,7 +29,7 @@ class ImportedItemNotFound(CrossReferenceBaseException):
         self.file = file
 
     def where(self) -> str:
-        return error_location(self.file, self.import_.parsed.token)
+        return error_location(self.file, self.import_.token)
 
     def __str__(self) -> str:
         return (
@@ -49,7 +49,7 @@ class IndirectImportException(CrossReferenceBaseException):
         self.import_ = import_
 
     def where(self) -> str:
-        return error_location(self.file, self.import_.parsed.token)
+        return error_location(self.file, self.import_.token)
 
     def __str__(self) -> str:
         return f"{self.where()}: Indirect imports are forbidden.\n"
@@ -68,7 +68,7 @@ class CollidingIdentifier(CrossReferenceBaseException):
         self.file = file
 
     def where(self, item: Identifiable) -> str:
-        return error_location(self.file, item.parsed.token)
+        return error_location(self.file, item.token)
 
     def __str__(self) -> str:
         lhs_where = self.where(self.colliding)
@@ -99,7 +99,7 @@ class InvalidTypeParameter(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def where(self) -> str:
-        return error_location(self.file, self.identifiable.parsed.token)
+        return error_location(self.file, self.identifiable.token)
 
     def __str__(self) -> str:
         return f"{self.where()}: Cannot use {self.describe(self.identifiable)} as type parameter\n"
@@ -111,7 +111,7 @@ class InvalidType(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def where(self) -> str:
-        return error_location(self.file, self.identifiable.parsed.token)
+        return error_location(self.file, self.identifiable.token)
 
     def __str__(self) -> str:
         return (

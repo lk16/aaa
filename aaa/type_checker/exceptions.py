@@ -36,7 +36,7 @@ class TypeException(TypeCheckerException):
         self.function = function
 
     def where(self) -> str:
-        return error_location(self.file, self.function.parsed.token)
+        return error_location(self.file, self.function.token)
 
 
 class FunctionTypeError(TypeCheckerException):
@@ -53,14 +53,14 @@ class FunctionTypeError(TypeCheckerException):
         super().__init__(file=file, function=function)
 
     def where(self) -> str:
-        return error_location(self.file, self.function.parsed.token)
+        return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
         expected = format_typestack(self.expected_return_types)
         found = format_typestack(self.computed_return_types)
 
         return (
-            f"{self.where()}: Function {self.function.name()} returns wrong type(s)\n"
+            f"{self.where()}: Function {self.function.name} returns wrong type(s)\n"
             + f"expected return types: {expected}\n"
             + f"   found return types: {found}\n"
         )
@@ -91,7 +91,7 @@ class StackTypesError(TypeCheckerException):
         if isinstance(self.func_like, Operator):
             return self.func_like.value
         elif isinstance(self.func_like, Function):
-            return self.func_like.name()
+            return self.func_like.name
         elif isinstance(self.func_like, MemberFunctionName):
             return f"{self.func_like.struct_name.identifier.name}:{self.func_like.func_name.name}"
         else:
@@ -108,11 +108,11 @@ class StackTypesError(TypeCheckerException):
             assert False
 
     def where(self) -> str:
-        return error_location(self.file, self.function.parsed.token)
+        return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
         return (
-            f"{self.where()} Function {self.function.name()} has invalid stack types when calling {self.func_like_name()}\n"
+            f"{self.where()} Function {self.function.name} has invalid stack types when calling {self.func_like_name()}\n"
             + f"Expected stack top: {self.format_typestack()}\n"
             + f"       Found stack: {format_typestack(self.type_stack)}\n"
         )
@@ -140,7 +140,7 @@ class ConditionTypeError(TypeCheckerException):
         stack_after = format_typestack(self.condition_stack)
 
         return (
-            f"{self.where()} Function {self.function.name()} has a condition type error\n"
+            f"{self.where()} Function {self.function.name} has a condition type error\n"
             + f"stack before: {stack_before}\n"
             + f" stack after: {stack_after}\n"
         )
@@ -171,7 +171,7 @@ class BranchTypeError(TypeCheckerException):
         else_stack = format_typestack(self.else_stack)
 
         return (
-            f"{self.where()} Function {self.function.name()} has inconsistent stacks for branches\n"
+            f"{self.where()} Function {self.function.name} has inconsistent stacks for branches\n"
             + f"           before: {before_stack}\n"
             + f"  after if-branch: {if_stack}\n"
             + f"after else-branch: {else_stack}\n"
@@ -200,7 +200,7 @@ class LoopTypeError(TypeCheckerException):
         after_stack = format_typestack(self.loop_stack)
 
         return (
-            f"{self.where()} Function {self.function.name()} has a stack modification inside loop body\n"
+            f"{self.where()} Function {self.function.name} has a stack modification inside loop body\n"
             + f"before loop: {before_stack}\n"
             + f" after loop: {after_stack}\n"
         )
@@ -208,7 +208,7 @@ class LoopTypeError(TypeCheckerException):
 
 class InvalidMainSignuture(TypeCheckerException):
     def where(self) -> str:
-        return error_location(self.file, self.function.parsed.token)
+        return error_location(self.file, self.function.token)
 
     def __str__(self) -> str:
         return f"{self.where()} Main function should have no arguments and no return types\n"
@@ -234,7 +234,7 @@ class GetFieldOfNonStructTypeError(TypeCheckerException):
         stack = format_typestack(self.type_stack)
 
         return (
-            f"{self.where()} Function {self.function.name()} tries to get field of non-struct value\n"
+            f"{self.where()} Function {self.function.name} tries to get field of non-struct value\n"
             + f"  Type stack: {stack}\n"
             + "Expected top: <struct type> str \n"
         )
@@ -260,7 +260,7 @@ class SetFieldOfNonStructTypeError(TypeCheckerException):
         stack = format_typestack(self.type_stack)
 
         return (
-            f"{self.where()} Function {self.function.name()} tries to set field of non-struct value\n"
+            f"{self.where()} Function {self.function.name} tries to set field of non-struct value\n"
             + f"  Type stack: {stack}\n"
             + "Expected top: <struct type> str <type of field to update>\n"
         )
@@ -289,7 +289,7 @@ class StructUpdateStackError(TypeCheckerException):
         found_stack = format_typestack(self.type_stack)
 
         return (
-            f"{self.where()} Function {self.function.name()} modifies stack incorrectly when updating struct field\n"
+            f"{self.where()} Function {self.function.name} modifies stack incorrectly when updating struct field\n"
             + f"  Expected: {expected_stack} <new field value> \n"
             + f"    Found: {found_stack}\n"
         )
@@ -321,8 +321,8 @@ class StructUpdateTypeError(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"{self.where()} Function {self.function.name()} tries to update struct field with wrong type\n"
-            + f"Attempt to set field {self.field_name} of {self.struct_type.name()} to wrong type in {self.function.name()}\n"
+            f"{self.where()} Function {self.function.name} tries to update struct field with wrong type\n"
+            + f"Attempt to set field {self.field_name} of {self.struct_type.name} to wrong type in {self.function.name}\n"
             + f"Expected type: {self.expected_type}\n"
             + f"   Found type: {self.found_type}\n"
             + "\n"
@@ -349,26 +349,26 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
     def __str__(self) -> str:
         _, member_func_name = self.function.identify()
 
-        line = self.function.parsed.token.line
-        col = self.function.parsed.token.column
+        line = self.function.token.line
+        col = self.function.token.column
 
         formatted = f"{self.file}:{line}:{col} Function {member_func_name} has invalid member-function signature\n\n"
 
         if (
             len(self.signature.arguments) == 0
-            or str(self.signature.arguments[0]) != self.struct_type.name()
+            or str(self.signature.arguments[0]) != self.struct_type.name
         ):
             formatted += (
-                f"Expected arg types: {self.struct_type.name()} ...\n"
+                f"Expected arg types: {self.struct_type.name} ...\n"
                 + f"   Found arg types: {' '.join(str(arg) for arg in self.signature.arguments)}\n"
             )
 
         if (
             len(self.signature.return_types) == 0
-            or str(self.signature.return_types[0]) != self.struct_type.name()
+            or str(self.signature.return_types[0]) != self.struct_type.name
         ):
             formatted += (
-                f"Expected return types: {self.struct_type.name()} ...\n"
+                f"Expected return types: {self.struct_type.name} ...\n"
                 + f"   Found return types: {' '.join(str(ret) for ret in self.signature.return_types)}\n"
             )
 

@@ -13,7 +13,6 @@ from aaa.cross_referencer.models import (
     Identifier,
     IdentifierCallingFunction,
     IdentifierCallingType,
-    IdentifierKind,
     IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
@@ -50,10 +49,7 @@ from aaa.type_checker.models import (
 DUMMY_TOKEN = Token(type_="", value="")  # type: ignore
 
 DUMMY_TYPE_LITERAL = parser.TypeLiteral(
-    identifier=Identifier(
-        kind=IdentifierKind(),
-        parsed=parser.Identifier(name="str", token=DUMMY_TOKEN, file=Path("/dev/null")),
-    ),
+    identifier=parser.Identifier(name="str", token=DUMMY_TOKEN, file=Path("/dev/null")),
     params=parser.TypeParameters(value=[], token=DUMMY_TOKEN, file=Path("/dev/null")),
     token=DUMMY_TOKEN,
     file=Path("/dev/null"),
@@ -365,7 +361,7 @@ class TypeChecker:
         assert not isinstance(function.arguments, Unresolved)
         assert not isinstance(function.return_types, Unresolved)
 
-        if function.name() == "main":
+        if function.name == "main":
             if not all(
                 [
                     len(function.arguments) == 0,

@@ -74,9 +74,9 @@ class CrossReferencer:
                 self._resolve_function_type_params(file, function)
                 self._resolve_function_arguments(file, function)
                 self._resolve_function_return_types(file, function)
-                function.body = self._resolve_function_body_identifiers(
-                    file, function, function.parsed.body
-                )
+                self._resolve_function_body(file, function)
+                self._resolve_function_body_identifiers(file, function)
+
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
@@ -90,19 +90,19 @@ class CrossReferencer:
                 assert not isinstance(identifiable.arguments, Unresolved)
                 for arg in identifiable.arguments:
                     if arg.type.is_placeholder:
-                        print(f"- arg {arg.name} of placeholder type {arg.type.name()}")
+                        print(f"- arg {arg.name} of placeholder type {arg.type.name}")
                     else:
                         print(
-                            f"- arg {arg.name} of type {arg.type.file()}:{arg.type.name()}"
+                            f"- arg {arg.name} of type {arg.type.file}:{arg.type.name}"
                         )
 
                 assert not isinstance(identifiable.return_types, Unresolved)
                 for return_type in identifiable.return_types:
                     if return_type.is_placeholder:
-                        print(f"- return placeholder type {return_type.type.name()}")
+                        print(f"- return placeholder type {return_type.type.name}")
                     else:
                         print(
-                            f"- return type {return_type.type.file()}:{return_type.type.name()}"
+                            f"- return type {return_type.type.file}:{return_type.type.name}"
                         )
 
             elif isinstance(identifiable, Type):
@@ -111,7 +111,7 @@ class CrossReferencer:
                 for field_name, field_var_type in identifiable.fields.items():
                     assert not isinstance(field_var_type, Unresolved)
                     print(
-                        f"- field {field_name} of type {field_var_type.file()}:{field_var_type.name()}"
+                        f"- field {field_name} of type {field_var_type.file}:{field_var_type.name}"
                     )
 
             else:
@@ -146,7 +146,7 @@ class CrossReferencer:
             if key in identifiers:
                 collisions.append(
                     CollidingIdentifier(
-                        file=identifiable.file(),
+                        file=identifiable.file,
                         colliding=identifiable,
                         found=identifiers[key],
                     )
@@ -254,45 +254,38 @@ class CrossReferencer:
     def _resolve_type_fields(self, file: Path, type: Type) -> None:
         type.fields = {}
 
-        if isinstance(type.parsed, parser.TypeLiteral):
-            # Do nothing, type literals have no fields.
-            pass
-        elif isinstance(type.parsed, parser.Struct):
-            for field_name, parsed_field in type.parsed.fields.items():
-                type_identifier = parsed_field.identifier
-                type_name = type_identifier.name
-                type_token = type_identifier.token
+        for field_name, parsed_field in type.parsed_field_types.items():
+            type_identifier = parsed_field.identifier
+            type_name = type_identifier.name
+            type_token = type_identifier.token
 
-                field_type = self._get_identifier(file, type_name, type_token)
+            field_type = self._get_identifier(file, type_name, type_token)
 
-                if not isinstance(field_type, Type):
-                    # TODO field is import/function/...
-                    raise NotImplementedError
+            if not isinstance(field_type, Type):
+                # TODO field is import/function/...
+                raise NotImplementedError
 
-                # TODO handle params
-                assert field_type.param_count == 0
+            # TODO handle params
+            assert field_type.param_count == 0
 
-                assert isinstance(field_type.parsed, parser.TypeLiteral)
+            assert isinstance(parsed_field, parser.TypeLiteral)
 
-                field_var_type = VariableType(
-                    parsed=field_type.parsed,
-                    type=field_type,
-                    params=[],
-                    is_placeholder=False,
-                )
+            field_var_type = VariableType(
+                parsed=parsed_field,
+                type=field_type,
+                params=[],
+                is_placeholder=False,
+            )
 
-                type.fields[field_name] = field_var_type
-
-        else:  # pragma: nocover
-            assert False
+            type.fields[field_name] = field_var_type
 
     def _resolve_function_type_params(self, file: Path, function: Function) -> None:
         function.type_params = {}
 
-        for parsed_type_param in function.parsed.type_params:
+        for parsed_type_param in function.parsed_type_params:
             param_name = parsed_type_param.identifier.name
 
-            type_literal = function.parsed.get_type_param(param_name)
+            type_literal = function.get_parsed_type_param(param_name)
 
             assert type_literal
 
@@ -316,7 +309,7 @@ class CrossReferencer:
         assert not isinstance(function.type_params, Unresolved)
         function.arguments = []
 
-        for parsed_arg in function.parsed.arguments:
+        for parsed_arg in function.parsed_arguments:
             parsed_type = parsed_arg.type
             arg_type_name = parsed_arg.type.identifier.name
             type: Identifiable | Unresolved
@@ -399,7 +392,7 @@ class CrossReferencer:
         assert not isinstance(function.type_params, Unresolved)
         function.return_types = []
 
-        for parsed_return_type in function.parsed.return_types:
+        for parsed_return_type in function.parsed_return_types:
             return_type_name = parsed_return_type.identifier.name
             type: Identifiable | Unresolved
 
@@ -455,50 +448,20 @@ class CrossReferencer:
 
             function.return_types.append(return_type)
 
-    def _resolve_function_body_identifiers(
-        self, file: Path, function: Function, parsed: parser.FunctionBody
-    ) -> FunctionBody:
-        assert not isinstance(function.arguments, Unresolved)
-        items: List[FunctionBodyItem] = []
+    def _resolve_function_body(self, file: Path, function: Function) -> None:
+        def resolve_body(parsed_body: parser.FunctionBody) -> FunctionBody:
+            return FunctionBody(
+                items=[resolve_item(item) for item in parsed_body.items],
+                parsed=parsed_body,
+            )
 
-        for parsed_item in parsed.items:
-            item: FunctionBodyItem
-
-            if isinstance(parsed_item, parser.Identifier):
-                argument = function.get_argument(parsed_item.name)
-
-                if argument:
-                    arg_type = argument.type
-                    assert not isinstance(arg_type, Unresolved)
-
-                    item = Identifier(
-                        parsed=parsed_item,
-                        kind=IdentifierUsingArgument(arg_type=arg_type),
-                    )
-                else:
-                    identifiable = self._get_identifier(
-                        file, parsed_item.name, parsed_item.token
-                    )
-
-                    if isinstance(identifiable, Function):
-                        item = Identifier(
-                            parsed=parsed_item,
-                            kind=IdentifierCallingFunction(function=identifiable),
-                        )
-                    elif isinstance(identifiable, Type):
-                        item = Identifier(
-                            parsed=parsed_item,
-                            kind=IdentifierCallingType(type=identifiable),
-                        )
-                    else:  # pragma: nocover
-                        raise NotImplementedError
-
-            elif isinstance(parsed_item, parser.IntegerLiteral):
-                item = IntegerLiteral(parsed=parsed_item)
+        def resolve_item(parsed_item: parser.FunctionBodyItem) -> FunctionBodyItem:
+            if isinstance(parsed_item, parser.IntegerLiteral):
+                return IntegerLiteral(parsed=parsed_item)
             elif isinstance(parsed_item, parser.StringLiteral):
-                item = StringLiteral(parsed=parsed_item)
+                return StringLiteral(parsed=parsed_item)
             elif isinstance(parsed_item, parser.BooleanLiteral):
-                item = BooleanLiteral(parsed=parsed_item)
+                return BooleanLiteral(parsed=parsed_item)
             elif isinstance(parsed_item, parser.Operator):
                 # TODO refactor coverting Operator to Identifier
                 identifiable = self._get_identifier(
@@ -507,7 +470,7 @@ class CrossReferencer:
 
                 assert isinstance(identifiable, Function)
 
-                item = Identifier(
+                return Identifier(
                     parsed=parser.Identifier(
                         file=parsed_item.file,
                         token=parsed_item.token,
@@ -516,41 +479,72 @@ class CrossReferencer:
                     kind=IdentifierCallingFunction(function=identifiable),
                 )
             elif isinstance(parsed_item, parser.Loop):
-                item = Loop(
+                return Loop(
+                    condition=resolve_body(parsed_item.condition),
+                    body=resolve_body(parsed_item.body),
                     parsed=parsed_item,
-                    condition=self._resolve_function_body_identifiers(
-                        file, function, parsed_item.condition
-                    ),
-                    body=self._resolve_function_body_identifiers(
-                        file, function, parsed_item.body
-                    ),
                 )
+            elif isinstance(parsed_item, parser.Identifier):
+                return Identifier(kind=Unresolved(), parsed=parsed_item)
             elif isinstance(parsed_item, parser.Branch):
-                item = Branch(
+                return Branch(
+                    condition=resolve_body(parsed_item.condition),
+                    if_body=resolve_body(parsed_item.if_body),
+                    else_body=resolve_body(parsed_item.else_body),
                     parsed=parsed_item,
-                    condition=self._resolve_function_body_identifiers(
-                        file, function, parsed_item.condition
-                    ),
-                    if_body=self._resolve_function_body_identifiers(
-                        file, function, parsed_item.if_body
-                    ),
-                    else_body=self._resolve_function_body_identifiers(
-                        file, function, parsed_item.else_body
-                    ),
                 )
             elif isinstance(parsed_item, parser.MemberFunctionLiteral):
-                item = MemberFunctionName(parsed=parsed_item)
+                return MemberFunctionName(parsed=parsed_item)
             elif isinstance(parsed_item, parser.StructFieldQuery):
-                item = StructFieldQuery(parsed=parsed_item)
+                return StructFieldQuery(parsed=parsed_item)
             elif isinstance(parsed_item, parser.StructFieldUpdate):
-                item = StructFieldUpdate(parsed=parsed_item)
-            elif isinstance(parsed_item, parser.FunctionBody):
-                item = self._resolve_function_body_identifiers(
-                    file, function, parsed_item
+                return StructFieldUpdate(
+                    parsed=parsed_item,
+                    new_value_expr=resolve_body(parsed_item.new_value_expr),
                 )
             else:  # pragma: nocover
                 assert False
 
-            items.append(item)
+        function.body = resolve_body(function.parsed_body)
 
-        return FunctionBody(items=items, file=file)
+    def _resolve_function_body_identifiers(
+        self, file: Path, function: Function
+    ) -> None:
+        def resolve_identifier(identifier: Identifier) -> None:
+            argument = function.get_argument(identifier.name)
+
+            if argument:
+                arg_type = argument.type
+                assert not isinstance(arg_type, Unresolved)
+
+                identifier.kind = IdentifierUsingArgument(arg_type=arg_type)
+            else:
+                identifiable = self._get_identifier(
+                    file, identifier.name, identifier.token
+                )
+
+                if isinstance(identifiable, Function):
+                    identifier.kind = IdentifierCallingFunction(function=identifiable)
+                elif isinstance(identifiable, Type):
+                    identifier.kind = IdentifierCallingType(type=identifiable)
+                else:  # pragma: nocover
+                    raise NotImplementedError
+
+        def resolve(function_body: FunctionBody) -> None:
+            for item in function_body.items:
+                if isinstance(item, Loop):
+                    resolve(item.condition)
+                    resolve(item.body)
+                elif isinstance(item, Branch):
+                    resolve(item.condition)
+                    resolve(item.if_body)
+                    resolve(item.else_body)
+                elif isinstance(item, StructFieldUpdate):
+                    resolve(item.new_value_expr)
+                elif isinstance(item, Identifier):
+                    resolve_identifier(item)
+
+        assert not isinstance(function.arguments, Unresolved)
+        assert not isinstance(function.body, Unresolved)
+
+        resolve(function.body)

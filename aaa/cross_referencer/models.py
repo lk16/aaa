@@ -1,36 +1,41 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from aaa import AaaModel
 
 if TYPE_CHECKING:
     from aaa.cross_referencer.exceptions import CrossReferenceBaseException
 
+from lark.lexer import Token
+
 from aaa.parser import models as parser
+from aaa.parser.transformer import DUMMY_TOKEN
 
 
 class AaaCrossReferenceModel(AaaModel):
-    ...
+    def __init__(self, *, file: Path, token: Token) -> None:
+        self.file = file
+        self.token = token
 
 
 class Unresolved(AaaCrossReferenceModel):
-    ...
+    def __init__(self) -> None:
+        super().__init__(file=Path("/dev/null"), token=DUMMY_TOKEN)
 
 
 class Identifiable(AaaCrossReferenceModel):
-    def __init__(self) -> None:
-        self.parsed: parser.AaaParseModel
+    def __init__(self, *, file: Path, token: Token, name: str) -> None:
+        self.__name = name
+        super().__init__(file=file, token=token)
 
     def identify(self) -> Tuple[Path, str]:
-        return (self.file(), self.name())
+        return (self.file, self.__name)
 
-    def file(self) -> Path:
-        raise NotImplementedError
-
+    @property
     def name(self) -> str:
-        raise NotImplementedError
+        return self.__name
 
 
 IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
@@ -46,11 +51,21 @@ class Function(Identifiable):
         return_types: List[VariableType] | Unresolved,
         body: FunctionBody | Unresolved,
     ) -> None:
-        self.parsed: parser.Function = parsed
         self.type_params = type_params
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
+        self.struct_name, self.func_name = parsed.get_names()
+        self.parsed_type_params = parsed.type_params
+        self.parsed_arguments = parsed.arguments
+        self.parsed_return_types = parsed.return_types
+        self.parsed_body = parsed.body
+
+        if self.struct_name:
+            name = f"{self.struct_name}:{self.func_name}"
+        name = self.func_name
+
+        super().__init__(file=parsed.file, token=parsed.token, name=name)
 
     def get_argument(self, name: str) -> Optional[Argument]:
         assert not isinstance(self.arguments, Unresolved)
@@ -60,36 +75,33 @@ class Function(Identifiable):
                 return argument
         return None
 
-    def name(self) -> str:
-        struct_name, func_name = self.parsed.get_names()
-
-        if struct_name:
-            return f"{struct_name}:{func_name}"
-        return func_name
-
-    def file(self) -> Path:
-        return self.parsed.file
-
     def is_member_function(self) -> bool:
-        struct_name, _ = self.parsed.get_names()
-        return struct_name != ""
+        return self.struct_name != ""
+
+    def get_parsed_type_param(self, name: str) -> Optional[parser.TypeLiteral]:
+        for parsed_type_param in self.parsed_type_params:
+            if parsed_type_param.identifier.name == name:
+                return parsed_type_param
+        return None
 
 
 class Argument(AaaCrossReferenceModel):
     def __init__(self, *, type: VariableType, name: str, file: Path) -> None:
         self.type = type
         self.name = name
-        self.file = file
+        super().__init__(file=file, token=type.token)
 
 
-class FunctionBodyItem(AaaCrossReferenceModel, parser.FunctionBodyItem):
+class FunctionBodyItem(AaaCrossReferenceModel):
     ...
 
 
-class FunctionBody(FunctionBodyItem, parser.FunctionBody):
-    def __init__(self, *, items: Sequence[FunctionBodyItem], file: Path) -> None:
+class FunctionBody(FunctionBodyItem):
+    def __init__(
+        self, *, parsed: parser.FunctionBody, items: List[FunctionBodyItem]
+    ) -> None:
         self.items = items
-        self.file = file
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
 class Import(Identifiable):
@@ -102,17 +114,11 @@ class Import(Identifiable):
         imported_name: str,
         source: Identifiable | Unresolved,
     ) -> None:
-        self.parsed = parsed
         self.source_file = source_file
         self.source_name = source_name
         self.imported_name = imported_name
         self.source = source
-
-    def name(self) -> str:
-        return self.imported_name
-
-    def file(self) -> Path:
-        return self.parsed.file
+        super().__init__(file=parsed.file, token=parsed.token, name=self.imported_name)
 
 
 class Type(Identifiable):
@@ -123,15 +129,18 @@ class Type(Identifiable):
         param_count: int,
         fields: Dict[str, VariableType] | Unresolved,
     ) -> None:
-        self.parsed: parser.TypeLiteral | parser.Struct = parsed
         self.param_count = param_count
         self.fields = fields
+        self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
 
-    def name(self) -> str:
-        return self.parsed.identifier.name
+        if isinstance(parsed, parser.Struct):
+            self.parsed_field_types = parsed.fields
 
-    def file(self) -> Path:
-        return self.parsed.file
+        super().__init__(
+            file=parsed.file,
+            token=parsed.token,
+            name=parsed.identifier.name,
+        )
 
 
 class VariableType(AaaCrossReferenceModel):
@@ -143,19 +152,14 @@ class VariableType(AaaCrossReferenceModel):
         params: List[VariableType],
         is_placeholder: bool,
     ) -> None:
-        self.parsed = parsed
         self.type = type
         self.params = params
         self.is_placeholder = is_placeholder
-
-    def name(self) -> str:
-        return self.type.name()
-
-    def file(self) -> Path:
-        return self.type.file()
+        self.name = self.type.name
+        super().__init__(file=parsed.file, token=parsed.token)
 
     def __repr__(self) -> str:
-        output = self.name()
+        output = self.name
 
         if self.params:
             output += "["
@@ -166,27 +170,31 @@ class VariableType(AaaCrossReferenceModel):
         return output
 
 
-class IntegerLiteral(FunctionBodyItem, parser.IntegerLiteral):
+class IntegerLiteral(FunctionBodyItem):
     def __init__(self, *, parsed: parser.IntegerLiteral) -> None:
-        super().__init__(**vars(parsed))
+        self.value = parsed.value
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
 class StringLiteral(FunctionBodyItem, parser.StringLiteral):
     def __init__(self, *, parsed: parser.StringLiteral) -> None:
-        super().__init__(**vars(parsed))
+        self.value = parsed.value
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
 class BooleanLiteral(FunctionBodyItem, parser.BooleanLiteral):
     def __init__(self, *, parsed: parser.BooleanLiteral) -> None:
-        super().__init__(**vars(parsed))
+        self.value = parsed.value
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
 class Operator(FunctionBodyItem, parser.Operator):
     def __init__(self, *, parsed: parser.Operator) -> None:
-        super().__init__(**vars(parsed))
+        self.value = parsed.value
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
-class Loop(FunctionBodyItem, parser.Loop):
+class Loop(FunctionBodyItem):
     def __init__(
         self,
         *,
@@ -194,12 +202,12 @@ class Loop(FunctionBodyItem, parser.Loop):
         body: FunctionBody,
         parsed: parser.Loop,
     ) -> None:
-        self.condition: FunctionBody = condition
-        self.body: FunctionBody = body
-        super().__init__(**vars(parsed))
+        self.condition = condition
+        self.body = body
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
-class IdentifierKind(AaaCrossReferenceModel):
+class IdentifierKind(AaaModel):
     ...
 
 
@@ -218,13 +226,16 @@ class IdentifierCallingType(IdentifierKind):
         self.type = type
 
 
-class Identifier(FunctionBodyItem, parser.Identifier):
-    def __init__(self, *, kind: IdentifierKind, parsed: parser.Identifier) -> None:
+class Identifier(FunctionBodyItem):
+    def __init__(
+        self, *, kind: IdentifierKind | Unresolved, parsed: parser.Identifier
+    ) -> None:
         self.kind = kind
-        super().__init__(**vars(parsed))
+        self.name = parsed.name
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
-class Branch(FunctionBodyItem, parser.Branch):
+class Branch(FunctionBodyItem):
     def __init__(
         self,
         *,
@@ -233,26 +244,32 @@ class Branch(FunctionBodyItem, parser.Branch):
         else_body: FunctionBody,
         parsed: parser.Branch,
     ) -> None:
-        self.condition: FunctionBody = condition
-        self.if_body: FunctionBody = if_body
-        self.else_body: FunctionBody = else_body
-        super().__init__(**vars(parsed))
+        self.condition = condition
+        self.if_body = if_body
+        self.else_body = else_body
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
-class MemberFunctionName(FunctionBodyItem, parser.MemberFunctionLiteral):
+class MemberFunctionName(FunctionBodyItem):
     def __init__(self, *, parsed: parser.MemberFunctionLiteral) -> None:
-        super().__init__(**vars(parsed))
+        self.struct_name = parsed.struct_name
+        self.func_name = parsed.func_name
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
-class StructFieldQuery(FunctionBodyItem, parser.StructFieldQuery):
+class StructFieldQuery(FunctionBodyItem):
     def __init__(self, *, parsed: parser.StructFieldQuery) -> None:
-        super().__init__(**vars(parsed))
+        self.field_name = parsed.field_name
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
-class StructFieldUpdate(FunctionBodyItem, parser.StructFieldUpdate):
-    def __init__(self, *, parsed: parser.StructFieldUpdate) -> None:
-        super().__init__(**vars(parsed))
-        self.new_value_expr: FunctionBody
+class StructFieldUpdate(FunctionBodyItem):
+    def __init__(
+        self, *, parsed: parser.StructFieldUpdate, new_value_expr: FunctionBody
+    ) -> None:
+        self.field_name = parsed.field_name
+        self.new_value_expr = new_value_expr
+        super().__init__(file=parsed.file, token=parsed.token)
 
 
 class CrossReferencerOutput(AaaModel):
