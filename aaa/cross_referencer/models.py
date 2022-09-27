@@ -291,6 +291,7 @@ class CrossReferencerOutput(AaaModel):
         builtins_path: Path,
         exceptions: List[CrossReferenceBaseException],
     ) -> None:
+        # TODO enforce somehow via typing that there is no Unresolved in instances of this type
         self.identifiers = identifiers
         self.exceptions = exceptions
         self.builtins_path = builtins_path
