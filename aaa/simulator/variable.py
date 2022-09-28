@@ -1,17 +1,15 @@
-from typing import Any
+from typing import Any, Dict, List
 
 from aaa import AaaModel
-from aaa.cross_referencer.models import Type
 
 
 class Variable(AaaModel):
-    def __init__(self, type: Type, value: Any):
-        self.type = type
+    def __init__(self, value: Any):
         self.value = value
 
     def __str__(self) -> str:  # pragma: nocover
         return (
-            f"<struct {self.type.name}>"
+            f"<struct>"
             + "{"
             + ", ".join(
                 repr(key) + ": " + repr(value) for key, value in self.value.items()
@@ -23,51 +21,39 @@ class Variable(AaaModel):
         return str(self)
 
     def __hash__(self) -> int:
-        # NOTE: this will fail for VECTOR and MAPPING
+        # NOTE: this will fail for list and dict-style values
         return hash(self.value)
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, Variable)
-            and self.type == self.type
-            and self.value == other.value
-        )  # type: ignore
+        return isinstance(other, Variable) and self.value == other.value
 
 
 class IntVar(Variable):
-    def __init__(self, type: Type, value: int):
-        assert type.name == "int"
-        super().__init__(type=type, value=value)
+    def __init__(self, value: int) -> None:
+        super().__init__(value=value)
 
 
 class StrVar(Variable):
-    def __init__(self, type: Type, value: str):
-        assert type.name == "str"
-        super().__init__(type=type, value=value)
+    def __init__(self, value: str) -> None:
+        super().__init__(value=value)
 
 
 class BoolVar(Variable):
-    def __init__(self, type: Type, value: bool):
-        assert type.name == "bool"
-        super().__init__(type=type, value=value)
+    def __init__(self, value: bool) -> None:
+        super().__init__(value=value)
 
 
 class VecVar(Variable):
-    def __init__(self, type: Type, item_type: Type):
-        assert type.name == "vec"
-        self.item_type = item_type
-        super().__init__(type=type, value=[])
+    def __init__(self, value: List[Any]) -> None:
+        super().__init__(value=value)
 
     def __str__(self) -> str:  # pragma: nocover
         return repr(self.value)
 
 
 class MapVar(Variable):
-    def __init__(self, type: Type, key_type: Type, value_type: Type):
-        assert type.name == "map"
-        self.key_type = key_type
-        self.value_type = value_type
-        super().__init__(type=type, value={})
+    def __init__(self, value: Dict[Any, Any]) -> None:
+        super().__init__(value=value)
 
     def __str__(self) -> str:  # pragma: nocover
         return repr(self.value)

@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Type
 
-from aaa.simulator.exceptions import AaaRuntimeException, AaaAssertionFailure
+from aaa.cross_referencer.models import Function, Unresolved, VariableType
 from aaa.instruction_generator.models import (
     And,
     Assert,
@@ -46,11 +46,10 @@ from aaa.instruction_generator.models import (
     StandardLibraryCallKind,
     Swap,
 )
-from aaa.cross_referencer.models import Function, Unresolved
-from aaa.simulator.models import CallStackItem
-from aaa.simulator.variable import MapVar, Variable
 from aaa.simulator.debug import format_str
-from aaa.simulator.variable import BoolVar, IntVar, StrVar
+from aaa.simulator.exceptions import AaaAssertionFailure, AaaRuntimeException
+from aaa.simulator.models import CallStackItem
+from aaa.simulator.variable import BoolVar, IntVar, MapVar, StrVar, Variable, VecVar
 
 
 class Simulator:
@@ -171,19 +170,13 @@ class Simulator:
         self.stack.append(item)
 
     def push_int(self, item: int) -> None:
-        int_type = self.types[(self.builtins_path, "int")]
-        int_var = IntVar(int_type, item)
-        self.push_var(int_var)
+        self.push_var(IntVar(item))
 
     def push_str(self, item: str) -> None:
-        str_type = self.types[(self.builtins_path, "str")]
-        str_var = StrVar(str_type, item)
-        self.push_var(str_var)
+        self.push_var(StrVar(item))
 
     def push_bool(self, item: bool) -> None:
-        bool_type = self.types[(self.builtins_path, "bool")]
-        bool_var = BoolVar(bool_type, item)
-        self.push_var(bool_var)
+        self.push_var(BoolVar(item))
 
     def pop_var(self) -> Variable:
         return self.stack.pop()
@@ -485,25 +478,12 @@ class Simulator:
 
     def instruction_map_push(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushMap)
-
-        map_type = self.types[(self.builtins_path, "map")]
-        map_var = MapVar(
-            key_type=instruction.key_type,
-            value_type=instruction.value_type,
-            value={},
-        )
-        self.push_var(map_var)
+        self.push_var(MapVar({}))
         return self.get_instruction_pointer() + 1
 
     def instruction_push_vec(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushVec)
-        map_var = Variable(
-            var_type=VariableType(
-                root_type=RootType.VECTOR, type_params=[instruction.item_type]
-            ),
-            value=[],
-        )
-        self.push_var(map_var)
+        self.push_var(VecVar([]))
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_push(self) -> int:
@@ -631,18 +611,17 @@ class Simulator:
 
         struct_fields: Dict[str, Variable] = {}
 
-        # TODO move code to create zero value of struct out
-        for field_name, var_type in instruction.type.fields.items():
-            struct_fields[field_name] = Variable.zero_value(var_type)
+        assert not isinstance(instruction.type.type.fields, Unresolved)
 
-        struct_var = Variable(
-            var_type=VariableType(
-                root_type=RootType.STRUCT,
-                type_params=[],
-                name=instruction.type.name,
-            ),
-            value=struct_fields,
-        )
+        # TODO move code to create zero value of struct out
+
+        def get_zero_var(var_type: VariableType) -> Variable:
+            raise NotImplementedError
+
+        for field_name, var_type in instruction.type.type.fields.items():
+            struct_fields[field_name] = get_zero_var(var_type)
+
+        struct_var = Variable(value=struct_fields)
         self.push_var(struct_var)
 
         return self.get_instruction_pointer() + 1
@@ -700,11 +679,11 @@ class Simulator:
 
     def instruction_environ(self) -> int:
         value = {
-            str_var(env_var_name): str_var(env_var_value)
+            StrVar(env_var_name): StrVar(env_var_value)
             for env_var_name, env_var_value in os.environ.items()
         }
 
-        env_vars_map = map_var(key_type=Str, value_type=Str, value=value)
+        env_vars_map = MapVar(value=value)
 
         self.push_var(env_vars_map)
         return self.get_instruction_pointer() + 1
@@ -747,9 +726,9 @@ class Simulator:
         try:
             os.chdir(dir_name)
         except OSError:
-            self.push_var(bool_var(False))
+            self.push_var(BoolVar(False))
         else:
-            self.push_var(bool_var(True))
+            self.push_var(BoolVar(True))
 
         return self.get_instruction_pointer() + 1
 
@@ -855,9 +834,7 @@ class Simulator:
 
         split = string.split(separator)
 
-        split_var = vec_var(
-            item_type=Str, value=[str_var(split_item) for split_item in split]
-        )
+        split_var = VecVar(value=[StrVar(split_item) for split_item in split])
 
         self.push_var(split_var)
 
