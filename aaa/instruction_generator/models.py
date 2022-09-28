@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 from aaa import AaaModel
-from aaa.cross_referencer.models import VariableType
+from aaa.cross_referencer.models import Type, VariableType
 
 
 class StandardLibraryCallKind(Enum):
@@ -238,5 +238,10 @@ class SetStructField(Instruction):
 
 
 class InstructionGeneratorOutput:
-    def __init__(self, instructions: Dict[Tuple[Path, str], List[Instruction]]) -> None:
+    def __init__(
+        self,
+        instructions: Dict[Tuple[Path, str], List[Instruction]],
+        types: Dict[Tuple[Path, str], Type],
+    ) -> None:
         self.instructions = instructions
+        self.types = types

@@ -120,7 +120,13 @@ class CrossReferencer:
             print("\n")
 
         return CrossReferencerOutput(
-            identifiers=self.identifiers,
+            functions={
+                k: v for (k, v) in self.identifiers.items() if isinstance(v, Function)
+            },
+            types={k: v for (k, v) in self.identifiers.items() if isinstance(v, Type)},
+            imports={
+                k: v for (k, v) in self.identifiers.items() if isinstance(v, Import)
+            },
             builtins_path=self.builtins_path,
             exceptions=self.exceptions,
         )
@@ -266,8 +272,6 @@ class CrossReferencer:
             # TODO handle params
             assert field_type.param_count == 0
 
-            assert isinstance(parsed_field, parser.TypeLiteral)
-
             field_var_type = VariableType(
                 parsed=parsed_field,
                 type=field_type,
@@ -357,7 +361,6 @@ class CrossReferencer:
             param_name = param.identifier.name
             if param_name in function.type_params:
                 param_type = function.type_params[param_name]
-                assert isinstance(param_type, Type)
 
                 params.append(
                     VariableType(

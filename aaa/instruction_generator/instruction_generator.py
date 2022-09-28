@@ -141,18 +141,19 @@ STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
 
 class InstructionGenerator:
     def __init__(self, cross_reference_output: CrossReferencerOutput) -> None:
-        self.identifiers = cross_reference_output.identifiers
+        self.functions = cross_reference_output.functions
+        self.types = cross_reference_output.types
         self.builtins_path = cross_reference_output.builtins_path
         self.instructions_dict: Dict[Tuple[Path, str], List[Instruction]] = {}
 
     def run(self) -> InstructionGeneratorOutput:
-        for function in self.identifiers.values():
-            if isinstance(function, Function):
-                self.instructions_dict[
-                    function.identify()
-                ] = self.generate_instructions(function)
+        for function in self.functions.values():
+            instructions = self.generate_instructions(function)
+            self.instructions_dict[function.identify()] = instructions
 
-        return InstructionGeneratorOutput(instructions=self.instructions_dict)
+        return InstructionGeneratorOutput(
+            instructions=self.instructions_dict, types=self.types
+        )
 
     def generate_instructions(self, function: Function) -> List[Instruction]:
         assert not isinstance(function.body, Unresolved)

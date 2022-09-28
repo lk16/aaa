@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from lark.lexer import Token
 
@@ -58,30 +58,28 @@ DUMMY_TYPE_LITERAL = parser.TypeLiteral(
 
 class TypeChecker:
     def __init__(self, cross_referencer_output: CrossReferencerOutput) -> None:
-        self.identifiers = cross_referencer_output.identifiers
+        self.functions = cross_referencer_output.functions
+        self.types = cross_referencer_output.types
+        self.imports = cross_referencer_output.imports
         self.builtins_path = cross_referencer_output.builtins_path
         self.signatures: Dict[Tuple[Path, str], Signature] = {}
         self.exceptions: List[TypeCheckerException] = []
 
     def run(self) -> TypeCheckerOutput:
-        for function in self.identifiers.values():
-            if isinstance(function, Function):
-                assert not isinstance(function.arguments, Unresolved)
-                assert not isinstance(function.return_types, Unresolved)
+        for function in self.functions.values():
+            assert not isinstance(function.arguments, Unresolved)
+            assert not isinstance(function.return_types, Unresolved)
 
-                self.signatures[function.identify()] = Signature(
-                    arguments=[arg.type for arg in function.arguments],
-                    return_types=function.return_types,
-                )
+            self.signatures[function.identify()] = Signature(
+                arguments=[arg.type for arg in function.arguments],
+                return_types=function.return_types,
+            )
 
-        for function in self.identifiers.values():
-            if isinstance(function, Function):
-                self.function = function
-
-                try:
-                    self._check(function)
-                except TypeCheckerException as e:
-                    self.exceptions.append(e)
+        for function in self.functions.values():
+            try:
+                self._check(function)
+            except TypeCheckerException as e:
+                self.exceptions.append(e)
 
         return TypeCheckerOutput(exceptions=self.exceptions)
 
@@ -209,9 +207,7 @@ class TypeChecker:
         return return_type
 
     def _get_builtin_var_type(self, type_name: str) -> VariableType:
-        type = self.identifiers[(self.builtins_path, type_name)]
-
-        assert isinstance(type, Type)
+        type = self.types[(self.builtins_path, type_name)]
 
         return VariableType(
             parsed=DUMMY_TYPE_LITERAL,
@@ -404,13 +400,7 @@ class TypeChecker:
 
         if function.is_member_function():
             signature = self.signatures[function.identify()]
-            struct_type = self.identifiers[function.identify()]
-
-            assert isinstance(struct_type, Type)
-
-            if TYPE_CHECKING:  # pragma: nocover
-                assert isinstance(signature.arguments[0], VariableType)
-                assert isinstance(signature.return_types[0], VariableType)
+            struct_type = self.types[(function.file, function.struct_name)]
 
             # A memberfunction on a type foo needs to have foo as
             # type of thefirst argument and first return type
