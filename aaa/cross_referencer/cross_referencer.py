@@ -82,7 +82,22 @@ class CrossReferencer:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
 
-        # TODO remove debug print
+        return CrossReferencerOutput(
+            functions={
+                k: v for (k, v) in self.identifiers.items() if isinstance(v, Function)
+            },
+            types={k: v for (k, v) in self.identifiers.items() if isinstance(v, Type)},
+            imports={
+                k: v for (k, v) in self.identifiers.items() if isinstance(v, Import)
+            },
+            builtins_path=self.builtins_path,
+            entrypoint=self.entrypoint,
+            exceptions=self.exceptions,
+        )
+
+    def print_values(self) -> None:
+        # TODO use this function with a commandline switch
+
         for (file, identifier), identifiable in self.identifiers.items():
 
             print(f"{type(identifiable).__name__} {file}:{identifier}")
@@ -119,19 +134,6 @@ class CrossReferencer:
                 # TODO add debug print for import
                 raise NotImplementedError
             print("\n")
-
-        return CrossReferencerOutput(
-            functions={
-                k: v for (k, v) in self.identifiers.items() if isinstance(v, Function)
-            },
-            types={k: v for (k, v) in self.identifiers.items() if isinstance(v, Type)},
-            imports={
-                k: v for (k, v) in self.identifiers.items() if isinstance(v, Import)
-            },
-            builtins_path=self.builtins_path,
-            entrypoint=self.entrypoint,
-            exceptions=self.exceptions,
-        )
 
     def _load_identifiers(self) -> List[Identifiable]:
         identifiables: List[Identifiable] = []

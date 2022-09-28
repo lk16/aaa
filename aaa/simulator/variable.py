@@ -32,15 +32,24 @@ class IntVar(Variable):
     def __init__(self, value: int) -> None:
         super().__init__(value=value)
 
+    def __str__(self) -> str:
+        return str(self.value)
+
 
 class StrVar(Variable):
     def __init__(self, value: str) -> None:
         super().__init__(value=value)
 
+    def __str__(self) -> str:
+        return str(self.value)
+
 
 class BoolVar(Variable):
     def __init__(self, value: bool) -> None:
         super().__init__(value=value)
+
+    def __str__(self) -> str:
+        return str(self.value).lower()
 
 
 class VecVar(Variable):

@@ -54,7 +54,9 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         )
 
     def boolean(self, token: Token) -> BooleanLiteral:
-        return BooleanLiteral(token=token, value=token.value, file=self.file)
+        assert token.value in ["true", "false"]
+        value = token.value == "true"
+        return BooleanLiteral(token=token, value=value, file=self.file)
 
     def branch(self, *args: List[AaaParseModel]) -> Branch:
         condition: FunctionBody

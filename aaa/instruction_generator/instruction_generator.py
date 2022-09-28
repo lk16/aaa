@@ -210,6 +210,9 @@ class InstructionGenerator:
             called_function = identifier.kind.function
 
             if called_function.file == self.builtins_path:
+                if called_function.name in OPERATOR_INSTRUCTIONS:
+                    return [OPERATOR_INSTRUCTIONS[called_function.name]]
+
                 return [
                     StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[called_function.name])
                 ]

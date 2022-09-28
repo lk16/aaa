@@ -5,7 +5,9 @@ from typing import Sequence
 
 from aaa import AaaException
 from aaa.cross_referencer.cross_referencer import CrossReferencer
+from aaa.instruction_generator.instruction_generator import InstructionGenerator
 from aaa.parser.parser import Parser
+from aaa.simulator.simulator import Simulator
 from aaa.type_checker.type_checker import TypeChecker
 
 
@@ -50,5 +52,11 @@ class Runner:
         if self.exceptions:
             self._print_exceptions()
             return 1
+
+        instruction_generator = InstructionGenerator(cross_referencer_output)
+        instruction_generator_output = instruction_generator.run()
+
+        simulator = Simulator(instruction_generator_output, False)
+        simulator.run(True)
 
         return 0
