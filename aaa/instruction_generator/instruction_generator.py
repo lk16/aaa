@@ -144,6 +144,7 @@ class InstructionGenerator:
         self.functions = cross_reference_output.functions
         self.types = cross_reference_output.types
         self.builtins_path = cross_reference_output.builtins_path
+        self.entrypoint = cross_reference_output.entrypoint
         self.instructions_dict: Dict[Tuple[Path, str], List[Instruction]] = {}
 
     def run(self) -> InstructionGeneratorOutput:
@@ -152,7 +153,11 @@ class InstructionGenerator:
             self.instructions_dict[function.identify()] = instructions
 
         return InstructionGeneratorOutput(
-            instructions=self.instructions_dict, types=self.types
+            instructions=self.instructions_dict,
+            types=self.types,
+            functions=self.functions,
+            entrypoint=self.entrypoint,
+            builtins_path=self.builtins_path,
         )
 
     def generate_instructions(self, function: Function) -> List[Instruction]:

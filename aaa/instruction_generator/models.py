@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 from aaa import AaaModel
-from aaa.cross_referencer.models import Type, VariableType
+from aaa.cross_referencer.models import Function, Type, VariableType
 
 
 class StandardLibraryCallKind(Enum):
@@ -242,6 +242,12 @@ class InstructionGeneratorOutput:
         self,
         instructions: Dict[Tuple[Path, str], List[Instruction]],
         types: Dict[Tuple[Path, str], Type],
+        functions: Dict[Tuple[Path, str], Function],
+        entrypoint: Path,
+        builtins_path: Path,
     ) -> None:
         self.instructions = instructions
         self.types = types
+        self.functions = functions
+        self.entrypoint = entrypoint
+        self.builtins_path = builtins_path

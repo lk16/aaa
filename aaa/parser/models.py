@@ -256,9 +256,11 @@ class ParserOutput(AaaModel):
         self,
         *,
         parsed: Dict[Path, ParsedFile],
+        entrypoint: Path,
         builtins_path: Path,
         exceptions: List[ParserBaseException],
     ) -> None:
         self.parsed = parsed
+        self.entrypoint = entrypoint
         self.builtins_path = builtins_path
         self.exceptions = exceptions

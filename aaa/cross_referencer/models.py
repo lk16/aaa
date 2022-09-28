@@ -291,11 +291,13 @@ class CrossReferencerOutput(AaaModel):
         functions: Dict[Tuple[Path, str], Function],
         imports: Dict[Tuple[Path, str], Import],
         builtins_path: Path,
+        entrypoint: Path,
         exceptions: List[CrossReferenceBaseException],
     ) -> None:
         # TODO enforce somehow via typing that there is no Unresolved in instances of this type
         self.types = types
         self.functions = functions
         self.imports = imports
-        self.exceptions = exceptions
         self.builtins_path = builtins_path
+        self.entrypoint = entrypoint
+        self.exceptions = exceptions

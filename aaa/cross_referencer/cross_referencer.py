@@ -45,6 +45,7 @@ class CrossReferencer:
     def __init__(self, parser_output: parser.ParserOutput) -> None:
         self.parsed_files = parser_output.parsed
         self.builtins_path = parser_output.builtins_path
+        self.entrypoint = parser_output.entrypoint
         self.identifiers: IdentifiablesDict = {}
         self.exceptions: List[CrossReferenceBaseException] = []
 
@@ -128,6 +129,7 @@ class CrossReferencer:
                 k: v for (k, v) in self.identifiers.items() if isinstance(v, Import)
             },
             builtins_path=self.builtins_path,
+            entrypoint=self.entrypoint,
             exceptions=self.exceptions,
         )
 

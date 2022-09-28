@@ -35,6 +35,7 @@ class Parser:
         return ParserOutput(
             parsed=self.parsed,
             builtins_path=self.builtins_path,
+            entrypoint=self.entrypoint,
             exceptions=self.exceptions,
         )
 
