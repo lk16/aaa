@@ -5,3 +5,4 @@ __pycache__
 .envrc
 lark.pdf
 *.idea
+*.prof
