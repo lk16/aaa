@@ -9,5 +9,5 @@ def test_getpid() -> None:
     def mock_getpid() -> int:
         return TEST_PID
 
-    with patch("lang.runtime.simulator.os.getpid", mock_getpid):
+    with patch("aaa.simulator.simulator.os.getpid", mock_getpid):
         check_aaa_main("getpid .", f"{TEST_PID}", [])

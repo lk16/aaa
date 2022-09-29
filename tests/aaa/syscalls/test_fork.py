@@ -9,5 +9,5 @@ def test_fork() -> None:
     def mock_fork() -> int:
         return TEST_PID
 
-    with patch("lang.runtime.simulator.os.fork", mock_fork):
+    with patch("aaa.simulator.simulator.os.fork", mock_fork):
         check_aaa_main("fork .", f"{TEST_PID}", [])

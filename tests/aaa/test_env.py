@@ -16,7 +16,7 @@ TEST_ENV_VARS = {
 def test_environ() -> None:
     runner = Runner.without_file("fn main { environ . }")
 
-    with patch("lang.runtime.simulator.os.environ", TEST_ENV_VARS):
+    with patch("aaa.simulator.simulator.os.environ", TEST_ENV_VARS):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 
@@ -36,7 +36,7 @@ def test_environ() -> None:
 def test_getenv(code: str, expected_output: str) -> None:
     runner = Runner.without_file(code)
 
-    with patch("lang.runtime.simulator.os.environ", TEST_ENV_VARS):
+    with patch("aaa.simulator.simulator.os.environ", TEST_ENV_VARS):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 
@@ -48,7 +48,7 @@ def test_setenv() -> None:
 
     env_vars = copy(TEST_ENV_VARS)
 
-    with patch("lang.runtime.simulator.os.environ", env_vars):
+    with patch("aaa.simulator.simulator.os.environ", env_vars):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 
@@ -65,7 +65,7 @@ def test_unsetenv() -> None:
 
     env_vars = copy(TEST_ENV_VARS)
 
-    with patch("lang.runtime.simulator.os.environ", env_vars):
+    with patch("aaa.simulator.simulator.os.environ", env_vars):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 

@@ -14,7 +14,7 @@ def test_write_ok() -> None:
 
     runner = Runner.without_file('fn main { 1 "hello world\\n" write . . }')
 
-    with patch("lang.runtime.simulator.os.write", mock_write):
+    with patch("aaa.simulator.simulator.os.write", mock_write):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 
@@ -27,7 +27,7 @@ def test_write_fail() -> None:
 
     runner = Runner.without_file('fn main { 4 "hello world\\n" write . . }')
 
-    with patch("lang.runtime.simulator.os.write", mock_write):
+    with patch("aaa.simulator.simulator.os.write", mock_write):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 

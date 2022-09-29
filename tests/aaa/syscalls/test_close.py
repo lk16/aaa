@@ -13,7 +13,7 @@ def test_close_ok() -> None:
 
     runner = Runner.without_file("fn main { 2 close . }")
 
-    with patch("lang.runtime.simulator.os.close", mock_close):
+    with patch("aaa.simulator.simulator.os.close", mock_close):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 
@@ -26,7 +26,7 @@ def test_close_fail() -> None:
 
     runner = Runner.without_file("fn main { 3 close . }")
 
-    with patch("lang.runtime.simulator.os.close", mock_close):
+    with patch("aaa.simulator.simulator.os.close", mock_close):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 

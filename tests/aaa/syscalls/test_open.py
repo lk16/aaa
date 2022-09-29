@@ -13,7 +13,7 @@ def test_open_ok() -> None:
 
     runner = Runner.without_file('fn main { "foo.txt" 0 511 open . . }')
 
-    with patch("lang.runtime.simulator.os.open", mock_open):
+    with patch("aaa.simulator.simulator.os.open", mock_open):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 
@@ -26,7 +26,7 @@ def test_open_fail() -> None:
 
     runner = Runner.without_file('fn main { "foo.txt" 0 511 open . drop }')
 
-    with patch("lang.runtime.simulator.os.open", mock_open):
+    with patch("aaa.simulator.simulator.os.open", mock_open):
         with redirect_stdout(StringIO()) as stdout:
             runner.run()
 

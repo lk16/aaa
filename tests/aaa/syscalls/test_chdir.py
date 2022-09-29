@@ -25,5 +25,5 @@ def test_chdir(code: str, expected_output: str) -> None:
         # We should never reach this
         raise NotImplementedError
 
-    with patch("lang.runtime.simulator.os.chdir", mock_chdir):
+    with patch("aaa.simulator.simulator.os.chdir", mock_chdir):
         check_aaa_main(code, expected_output, [])
