@@ -119,3 +119,7 @@ class InvalidType(CrossReferenceBaseException):
         return (
             f"{self.where()}: Cannot use {self.describe(self.identifiable)} as type\n"
         )
+
+
+class MainFunctionNotFound(CrossReferenceBaseException):
+    ...  # TODO implement and use
