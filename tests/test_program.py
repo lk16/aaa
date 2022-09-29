@@ -19,7 +19,9 @@ def test_program_load_builtins_ok() -> None:
 def test_program_implements_all_instructions() -> None:
     instruction_types = {
         obj
-        for _, obj in inspect.getmembers(sys.modules["lang.models.instructions"])
+        for _, obj in inspect.getmembers(
+            sys.modules["aaa.instruction_generator.models"]
+        )
         if inspect.isclass(obj)
         and issubclass(obj, Instruction)
         and obj is not Instruction
