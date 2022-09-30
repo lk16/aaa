@@ -39,9 +39,9 @@ fn max
 }
 
 
-fn dup_twice
-    args a as *a
-    return *a, *a, *a
+fn dup_twice [A]
+    args a as A
+    return A, A, A
 {
     a dup dup
 }

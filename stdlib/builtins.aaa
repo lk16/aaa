@@ -16,7 +16,7 @@ builtin_fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
 builtin_fn swap[A, B]   args a as A, b as B         return B, A
 
 // special operators
-builtin_fn .[A]   args a as A
+builtin_fn . [A]  args a as A
 builtin_fn assert args a as bool
 builtin_fn nop
 

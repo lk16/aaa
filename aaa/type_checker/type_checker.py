@@ -1,4 +1,4 @@
-from copy import copy, deepcopy
+from copy import copy
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -136,9 +136,7 @@ class TypeChecker:
 
         for return_type in signature.return_types:
             stack.append(
-                self._update_return_type(
-                    function, deepcopy(return_type), placeholder_types
-                )
+                self._update_return_type(function, return_type, placeholder_types)
             )
 
         return stack

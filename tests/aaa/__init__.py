@@ -45,7 +45,27 @@ def check_aaa_full_source_multi_file(
 
     exception_types = list(map(type, runner.exceptions))
 
-    assert exception_types == expected_exception_types
+    if exception_types != expected_exception_types:
+        # If we reach this code, some test for Aaa code is broken.
+        # We print some info useful for debuging.
+
+        error = (
+            "\n"
+            + "Expected exception types: "
+            + " ".join(exc_type.__name__ for exc_type in expected_exception_types)
+            + "\n"
+            + "     Got exception types: "
+            + " ".join(exc_type.__name__ for exc_type in exception_types)
+            + "\n"
+        )
+
+        if runner.exceptions:
+            error += "\nException(s):\n"
+
+            for exception in runner.exceptions:
+                error += f"{exception}\n"
+
+        assert False, error
 
     if not expected_exception_types:
         assert expected_output == stdout.getvalue()

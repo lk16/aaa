@@ -118,6 +118,7 @@ member_function_literal: type_literal ":" member_function_name
 
 function_definition: ( \
     FN function_name \
+    type_params? \
     function_arguments? \
     function_return_types? \
     BEGIN function_body _END \
@@ -189,18 +190,18 @@ loop_body: function_body
             | OVER
             | ROT
             | SWAP
-            | /-(?=(\W|\s))/
-            | /!=(?=(\W|\s))/
-            | /\.(?=(\W|\s))/
-            | /\*(?=(\W|\s))/
-            | /\/(?=(\W|\s))/
-            | /%(?=(\W|\s))/
-            | /\+(?=(\W|\s))/
-            | /<=(?=(\W|\s))/
-            | /=(?=(\W|\s))/
-            | />=(?=(\W|\s))/
-            | /<(?=(\W|\s))/
-            | />(?=(\W|\s))/
+            | /-(?=\s)/
+            | /!=(?=\s)/
+            | /\.(?=\s)/
+            | /\*(?=\s)/
+            | /\/(?=\s)/
+            | /%(?=\s)/
+            | /\+(?=\s)/
+            | /<=(?=\s)/
+            | /=(?=\s)/
+            | />=(?=\s)/
+            | /<(?=\s)/
+            | />(?=\s)/
 
 keyword:  boolean
         | operator
