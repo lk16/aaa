@@ -44,15 +44,6 @@ from aaa.type_checker.models import (
     TypeCheckerOutput,
 )
 
-DUMMY_TOKEN = Token(type_="", value="")  # type: ignore
-
-DUMMY_TYPE_LITERAL = parser.TypeLiteral(
-    identifier=parser.Identifier(name="str", token=DUMMY_TOKEN, file=Path("/dev/null")),
-    params=parser.TypeParameters(value=[], token=DUMMY_TOKEN, file=Path("/dev/null")),
-    token=DUMMY_TOKEN,
-    file=Path("/dev/null"),
-)
-
 
 class TypeChecker:
     def __init__(self, cross_referencer_output: CrossReferencerOutput) -> None:
@@ -131,6 +122,7 @@ class TypeChecker:
             )
 
             if not match_result:
+
                 raise StackTypesError(
                     file=function.file,
                     token=called_function_token,
@@ -166,7 +158,7 @@ class TypeChecker:
             return True
 
         else:
-            if expected_type is not type:
+            if expected_type.type is not type.type:
                 return False
 
             if len(type.params) != len(expected_type.params):
@@ -207,8 +199,23 @@ class TypeChecker:
     def _get_builtin_var_type(self, type_name: str) -> VariableType:
         type = self.types[(self.builtins_path, type_name)]
 
+        # TODO get rid of dummy_token and dummy_type_literal
+
+        dummy_token = Token(type_="", value="")  # type: ignore
+
+        dummy_type_literal = parser.TypeLiteral(
+            identifier=parser.Identifier(
+                name=type_name, token=dummy_token, file=self.builtins_path
+            ),
+            params=parser.TypeParameters(
+                value=[], token=dummy_token, file=self.builtins_path
+            ),
+            token=dummy_token,
+            file=Path(self.builtins_path),
+        )
+
         return VariableType(
-            parsed=DUMMY_TYPE_LITERAL,
+            parsed=dummy_type_literal,
             type=type,
             params=[],
             is_placeholder=False,

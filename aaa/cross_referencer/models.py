@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 from lark.lexer import Token
 
 from aaa.parser import models as parser
-from aaa.parser.transformer import DUMMY_TOKEN
 
 
 class AaaCrossReferenceModel(AaaModel):
@@ -20,9 +19,8 @@ class AaaCrossReferenceModel(AaaModel):
         self.token = token
 
 
-class Unresolved(AaaCrossReferenceModel):
-    def __init__(self) -> None:
-        super().__init__(file=Path("/dev/null"), token=DUMMY_TOKEN)
+class Unresolved(AaaModel):
+    ...
 
 
 class Identifiable(AaaCrossReferenceModel):
