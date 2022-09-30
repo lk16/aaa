@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 from lark.lexer import Token
 
@@ -16,8 +16,6 @@ from aaa.cross_referencer.models import (
     IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
-    MemberFunctionName,
-    Operator,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -104,11 +102,11 @@ class TypeChecker:
         self,
         function: Function,
         type_stack: List[VariableType],
-        signature: Signature,
-        func_like: Union[Operator, Function, MemberFunctionName],
+        called_function: Function,
+        called_function_token: Token,
     ) -> List[VariableType]:
 
-        signature = self.signatures[function.identify()]
+        signature = self.signatures[called_function.identify()]
 
         stack = copy(type_stack)
         arg_count = len(signature.arguments)
@@ -116,11 +114,11 @@ class TypeChecker:
         if len(stack) < arg_count:
             raise StackTypesError(
                 file=function.file,
-                token=func_like.token,
+                token=called_function_token,
                 function=function,
                 signature=signature,
                 type_stack=type_stack,
-                func_like=func_like,
+                func_like=called_function,
             )
 
         placeholder_types: Dict[str, VariableType] = {}
@@ -135,11 +133,11 @@ class TypeChecker:
             if not match_result:
                 raise StackTypesError(
                     file=function.file,
-                    token=func_like.token,
+                    token=called_function_token,
                     function=function,
                     signature=signature,
                     type_stack=type_stack,
-                    func_like=func_like,
+                    func_like=called_function,
                 )
 
         stack = stack[: len(stack) - arg_count]
@@ -334,9 +332,6 @@ class TypeChecker:
                 stack = self._check_integer_literal(copy(stack))
             elif isinstance(child_node, Loop):
                 stack = self._check_loop(function, child_node, copy(stack))
-            elif isinstance(child_node, MemberFunctionName):
-                raise NotImplementedError
-                # TODO or remove if we will treat member functions as functions
             elif isinstance(child_node, StringLiteral):
                 stack = self._check_string_literal(copy(stack))
             elif isinstance(child_node, VariableType):
@@ -350,7 +345,7 @@ class TypeChecker:
                     function, child_node, copy(stack)
                 )
             elif isinstance(child_node, Identifier):
-                stack = self._check_identifier(function, child_node, type_stack)
+                stack = self._check_identifier(function, child_node, copy(stack))
             else:  # pragma nocover
                 assert False
 
@@ -369,9 +364,8 @@ class TypeChecker:
         elif isinstance(identifier.kind, IdentifierCallingFunction):
             # Function was called, apply signature of called function
             called_function = identifier.kind.function
-            signature = self.signatures[called_function.identify()]
             return self._check_function_call(
-                function, type_stack, signature, called_function
+                function, type_stack, called_function, identifier.token
             )
         elif isinstance(identifier.kind, IdentifierCallingType):
             # TODO should identifier.kind.type be VariableType instead of Type?

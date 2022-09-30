@@ -30,7 +30,6 @@ from aaa.cross_referencer.models import (
     Import,
     IntegerLiteral,
     Loop,
-    MemberFunctionName,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -496,7 +495,14 @@ class CrossReferencer:
                     parsed=parsed_item,
                 )
             elif isinstance(parsed_item, parser.MemberFunctionLiteral):
-                return MemberFunctionName(parsed=parsed_item)
+                return Identifier(
+                    kind=Unresolved(),
+                    parsed=parser.Identifier(
+                        name=f"{parsed_item.struct_name}:{parsed_item.func_name}",
+                        file=parsed_item.file,
+                        token=parsed_item.token,
+                    ),
+                )
             elif isinstance(parsed_item, parser.StructFieldQuery):
                 return StructFieldQuery(parsed=parsed_item)
             elif isinstance(parsed_item, parser.StructFieldUpdate):

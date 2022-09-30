@@ -6,8 +6,6 @@ from lark.lexer import Token
 from aaa import AaaException, error_location
 from aaa.cross_referencer.models import (
     Function,
-    MemberFunctionName,
-    Operator,
     StructFieldQuery,
     StructFieldUpdate,
     Type,
@@ -75,9 +73,7 @@ class StackTypesError(TypeCheckerException):
         signature: Union["Signature", "StructQuerySignature", "StructUpdateSignature"],
         type_stack: List[VariableType],
         func_like: Union[
-            Operator,
             Function,
-            MemberFunctionName,
             StructFieldUpdate,
             StructFieldQuery,
         ],
@@ -88,12 +84,8 @@ class StackTypesError(TypeCheckerException):
         super().__init__(file=file, token=token, function=function)
 
     def func_like_name(self) -> str:
-        if isinstance(self.func_like, Operator):
-            return self.func_like.value
-        elif isinstance(self.func_like, Function):
+        if isinstance(self.func_like, Function):
             return self.func_like.name
-        elif isinstance(self.func_like, MemberFunctionName):
-            return f"{self.func_like.struct_name.identifier.name}:{self.func_like.func_name.name}"
         else:
             assert False
 

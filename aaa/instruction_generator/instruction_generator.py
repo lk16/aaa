@@ -13,8 +13,6 @@ from aaa.cross_referencer.models import (
     IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
-    MemberFunctionName,
-    Operator,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -179,9 +177,6 @@ class InstructionGenerator:
     ) -> List[Instruction]:
         return [PushBool(value=boolean_literal.value)]
 
-    def instructions_for_operator(self, operator: Operator) -> List[Instruction]:
-        return [OPERATOR_INSTRUCTIONS[operator.value]]
-
     def instructions_for_loop(self, loop: Loop, offset: int) -> List[Instruction]:
         condition_instructions = self.instructions_for_function_body(
             loop.condition, offset
@@ -281,12 +276,6 @@ class InstructionGenerator:
                 instructions += self.instructions_for_integer_literal(child)
             elif isinstance(child, Loop):
                 instructions += self.instructions_for_loop(child, child_offset)
-            elif isinstance(child, MemberFunctionName):
-                instructions += self.instructions_for_member_function(
-                    child, child_offset
-                )
-            elif isinstance(child, Operator):
-                instructions += self.instructions_for_operator(child)
             elif isinstance(child, StringLiteral):
                 instructions += self.instructions_for_string_literal(child)
             elif isinstance(child, StructFieldQuery):
@@ -299,12 +288,6 @@ class InstructionGenerator:
                 assert False
 
         return instructions
-
-    def instructions_for_member_function(
-        self, member_function_name: MemberFunctionName, offset: int
-    ) -> List[Instruction]:
-        # TODO consider handling as Identifier
-        raise NotImplementedError
 
     def instructions_for_struct_field_query(
         self, field_query: StructFieldQuery

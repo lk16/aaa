@@ -199,12 +199,6 @@ class BooleanLiteral(FunctionBodyItem, parser.BooleanLiteral):
         super().__init__(file=parsed.file, token=parsed.token)
 
 
-class Operator(FunctionBodyItem, parser.Operator):
-    def __init__(self, *, parsed: parser.Operator) -> None:
-        self.value = parsed.value
-        super().__init__(file=parsed.file, token=parsed.token)
-
-
 class Loop(FunctionBodyItem):
     def __init__(
         self,
@@ -258,13 +252,6 @@ class Branch(FunctionBodyItem):
         self.condition = condition
         self.if_body = if_body
         self.else_body = else_body
-        super().__init__(file=parsed.file, token=parsed.token)
-
-
-class MemberFunctionName(FunctionBodyItem):
-    def __init__(self, *, parsed: parser.MemberFunctionLiteral) -> None:
-        self.struct_name = parsed.struct_name
-        self.func_name = parsed.func_name
         super().__init__(file=parsed.file, token=parsed.token)
 
 

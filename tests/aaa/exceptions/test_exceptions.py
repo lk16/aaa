@@ -88,7 +88,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             'fn main { 3 " " + . }',
             StackTypesError,
-            "/foo/main.aaa:1:11 Function main has invalid stack types when calling +\n"
+            "/foo/main.aaa:1:17 Function main has invalid stack types when calling +\n"
             + "Expected stack top: int int\n"
             + "       Found stack: int str\n",
             id="stack-types",
@@ -97,7 +97,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "fn main { drop }",
             StackTypesError,
             "/foo/main.aaa:1:11 Function main has invalid stack types when calling drop\n"
-            + "Expected stack top: *a\n"
+            + "Expected stack top: A\n"
             + "       Found stack: \n",
             id="stack-types-underflow",
         ),
@@ -106,7 +106,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { bar }
             """,
             UnknownIdentifier,
-            "/foo/main.aaa:2:23: Function main uses unknown identifier bar\n",
+            "/foo/main.aaa:2:23: Usage of unknown identifier bar\n",
             id="unknown-function",
         ),
         pytest.param(
@@ -122,7 +122,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main args a as int { nop }",
             InvalidMainSignuture,
-            "/foo/main.aaa:1:1 Main function should have no arguments and no return types\n",
+            "/foo/main.aaa:1:23 Main function should have no arguments and no return types\n",
             id="invalid-main-signature-argument",
         ),
         pytest.param(
