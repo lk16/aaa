@@ -1,3 +1,4 @@
+import os
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -50,5 +51,5 @@ def check_aaa_full_source_multi_file(
         assert expected_output == stdout.getvalue()
         assert "" == stderr.getvalue()
 
-    directory = gettempdir()
-    return directory, runner.exceptions
+    full_temp_dir = os.path.join(gettempdir(), directory)
+    return full_temp_dir, runner.exceptions

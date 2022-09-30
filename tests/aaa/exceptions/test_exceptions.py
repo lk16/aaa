@@ -33,7 +33,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             'fn main { if true { 3 } else { "" } }',
             BranchTypeError,
-            "/foo/main.aaa:1:1 Function main has inconsistent stacks for branches\n"
+            "/foo/main.aaa:1:11 Function main has inconsistent stacks for branches\n"
             + "           before: \n"
             + "  after if-branch: int\n"
             + "after else-branch: str\n",
@@ -42,7 +42,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { if 3 true { nop } }",
             ConditionTypeError,
-            "/foo/main.aaa:1:1 Function main has a condition type error\n"
+            "/foo/main.aaa:1:11 Function main has a condition type error\n"
             + "stack before: \n"
             + " stack after: int bool\n",
             id="condition-type-branch",
@@ -50,7 +50,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { while 3 true { nop } }",
             ConditionTypeError,
-            "/foo/main.aaa:1:1 Function main has a condition type error\n"
+            "/foo/main.aaa:1:17 Function main has a condition type error\n"
             + "stack before: \n"
             + " stack after: int bool\n",
             id="condition-type-loop",
@@ -62,8 +62,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:13: function foo collides with:\n"
-            + "/foo/main.aaa:2:13: function foo\n",
+            "/foo/main.aaa:3:20: function foo collides with:\n"
+            + "/foo/main.aaa:2:20: function foo\n",
             id="funcname-funcname-collision",
         ),
         pytest.param(
@@ -72,7 +72,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             FunctionTypeError,
-            "/foo/main.aaa:2:13: Function bar returns wrong type(s)\n"
+            "/foo/main.aaa:2:20: Function bar returns wrong type(s)\n"
             + "expected return types: \n"
             + "   found return types: int\n",
             id="function-type",
@@ -80,7 +80,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { while true { 0 } }",
             LoopTypeError,
-            "/foo/main.aaa:1:1 Function main has a stack modification inside loop body\n"
+            "/foo/main.aaa:1:11 Function main has a stack modification inside loop body\n"
             + "before loop: \n"
             + " after loop: int\n",
             id="loop-type",
@@ -88,7 +88,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             'fn main { 3 " " + . }',
             StackTypesError,
-            "/foo/main.aaa:1:1 Function main has invalid stack types when calling +\n"
+            "/foo/main.aaa:1:11 Function main has invalid stack types when calling +\n"
             + "Expected stack top: int int\n"
             + "       Found stack: int str\n",
             id="stack-types",
@@ -96,7 +96,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { drop }",
             StackTypesError,
-            "/foo/main.aaa:1:1 Function main has invalid stack types when calling drop\n"
+            "/foo/main.aaa:1:11 Function main has invalid stack types when calling drop\n"
             + "Expected stack top: *a\n"
             + "       Found stack: \n",
             id="stack-types-underflow",

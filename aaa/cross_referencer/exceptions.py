@@ -11,11 +11,11 @@ class CrossReferenceBaseException(AaaException):
 
     def describe(self, item: Identifiable) -> str:
         if isinstance(item, Function):
-            return f"function {item.identify()}"
+            return f"function {item.name}"
         elif isinstance(item, Import):
-            return f"imported object {item.identify()}"
+            return f"imported object {item.name}"
         elif isinstance(item, Type):
-            return f"type {item.identify()}"
+            return f"type {item.name}"
         else:  # pragma: nocover
             assert False
 
