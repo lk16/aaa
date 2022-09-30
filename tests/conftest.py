@@ -1,3 +1,3 @@
 pytest_plugins = [
-    "tests.fixtures.environment",
+    "tests.fixtures.stdlib_path",
 ]

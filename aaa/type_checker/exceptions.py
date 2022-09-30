@@ -352,5 +352,4 @@ class UnknownStructField(TypeCheckerException):
         super().__init__(file=file, token=token, function=function)
 
     def __str__(self) -> str:
-        # TODO
-        raise NotImplementedError
+        return f"{self.where()} Usage of unknown field {self.field_name} of struct {self.struct_type.name}"

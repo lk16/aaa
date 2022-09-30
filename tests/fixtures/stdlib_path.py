@@ -5,12 +5,11 @@ from unittest.mock import patch
 
 import pytest
 
+from aaa.run import Runner
+
 
 @pytest.fixture(autouse=True, scope="session")
 def setup_test_environment() -> Generator[None, None, None]:
-    env_vars = {
-        "AAA_STDLIB_PATH": str(Path.cwd() / "stdlib"),
-    }
-
-    with patch.dict(os.environ, env_vars):
+    stdlib_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
+    with patch.object(Runner, "_get_stdlib_path", return_value=stdlib_path):
         yield

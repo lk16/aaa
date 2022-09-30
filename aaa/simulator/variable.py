@@ -43,6 +43,15 @@ class StrVar(Variable):
     def __str__(self) -> str:
         return str(self.value)
 
+    def __repr__(self) -> str:
+        escaped = (
+            self.value.replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("'", "\\'")
+            .replace('"', '\\"')
+        )
+        return f'"{escaped}"'
+
 
 class BoolVar(Variable):
     def __init__(self, value: bool) -> None:
@@ -65,4 +74,13 @@ class MapVar(Variable):
         super().__init__(value=value)
 
     def __str__(self) -> str:  # pragma: nocover
-        return repr(self.value)
+        return repr(self)
+
+    def __repr__(self) -> str:
+        return (
+            "{"
+            + ", ".join(
+                f"{repr(key)}: {repr(value)}" for (key, value) in self.value.items()
+            )
+            + "}"
+        )

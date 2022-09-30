@@ -13,6 +13,10 @@ from aaa.simulator.simulator import Simulator
 from aaa.type_checker.type_checker import TypeChecker
 
 
+class RunnerException(AaaException):
+    ...
+
+
 class Runner:
     def __init__(self, entrypoint: Path) -> None:
         self.entrypoint = entrypoint
@@ -32,13 +36,17 @@ class Runner:
 
         print(f"Found {len(self.exceptions)} errors.", file=sys.stderr)
 
-    def run(self) -> int:
+    def _get_stdlib_path(self) -> Path:
         try:
-            stdlib_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
-        except KeyError:
-            print("Environment variable AAA_STDLIB_PATH is not set.")
-            print("Cannot find standard library!")
-            return 1
+            return Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
+        except KeyError as e:
+            raise RunnerException(
+                "Environment variable AAA_STDLIB_PATH is not set.\n"
+                + "Cannot find standard library!"
+            ) from e
+
+    def run(self) -> int:
+        stdlib_path = self._get_stdlib_path()
 
         parser_output = Parser(self.entrypoint, stdlib_path).run()
         self.exceptions = parser_output.exceptions
