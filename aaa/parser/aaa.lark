@@ -28,7 +28,7 @@ integer: /[0-9]+/
 string: ESCAPED_STRING
 
 // block delimiters
-BEGIN:      /{(?=(\W|\s))/
+BEGIN:       /{(?=(\W|\s))/
 _END:        /}(?=(\W|\s|$))/
 
 // ignored keywords
@@ -36,14 +36,14 @@ _AS:          /as(?=(\W|\s))/
 _ARGS:        /args(?=(\W|\s))/
 BUILTIN_FN:   /builtin_fn(?=(\W|\s))/
 BUILTIN_TYPE: /builtin_type(?=(\W|\s))/
-ELSE:        /else(?=(\W|\s))/
+ELSE:         /else(?=(\W|\s))/
 FN:           /fn(?=(\W|\s))/
 FROM:         /from(?=(\W|\s))/
 _IMPORT:      /import(?=(\W|\s))/
-IF:          /if(?=(\W|\s))/
+IF:           /if(?=(\W|\s))/
 _RETURN:      /return(?=(\W|\s))/
 STRUCT:       /struct(?=(\W|\s))/
-WHILE:       /while(?=(\W|\s))/
+WHILE:        /while(?=(\W|\s))/
 
 // keywords for builtin types
 BOOL:       /bool(?=(\W|\s))/
@@ -76,17 +76,22 @@ NOP:        /nop(?=(\W|\s))/
 
 builtins_file_root: (builtin_function_declaration | builtin_type_declaration)+
 
-builtin_type_declaration: BUILTIN_TYPE type_literal
+builtin_type_declaration: BUILTIN_TYPE _type_literal
 
 builtin_function_declaration: ( \
     BUILTIN_FN \
-    ( \
-        (operator | identifier) type_params? \
-        | struct_function_identifier \
-    ) \
-    function_arguments? \
-    function_return_types? \
+    builtin_function_name \
+    [function_arguments] \
+    [function_return_types] \
 )
+
+builtin_function_name: ( \
+    (operator | identifier | builtin_type) \
+    [type_params] \
+    [":" member_function_name] \
+)
+
+// TODO replace ? with [] in this file
 
 // --- regular source file + imports ---
 
@@ -104,7 +109,7 @@ struct_definition: ( \
     _END \
 )
 
-struct_function_identifier: type_literal ":" member_function_name
+struct_function_identifier: _type_literal ":" member_function_name
 
 struct_field_query: string struct_field_query_operator
 !struct_field_query_operator: "?"
@@ -112,7 +117,7 @@ struct_field_query: string struct_field_query_operator
 struct_field_update: string BEGIN function_body _END struct_field_update_operator
 !struct_field_update_operator: "!"
 
-member_function_literal: type_literal ":" member_function_name
+member_function_literal: _type_literal ":" member_function_name
 
 // --- functions, arguments, return types ---
 
@@ -128,16 +133,16 @@ function_name: struct_function_identifier | identifier
 
 function_arguments: _ARGS arguments
 arguments: argument ("," argument)* ","?
-argument: identifier _AS type_literal
+argument: identifier _AS _type_literal
 
 function_return_types: _RETURN return_types
-return_types: type_literal ("," type_literal)* ","?
+return_types: _type_literal ("," _type_literal)* ","?
 
 // --- type literals ---
 
 builtin_type.1: BOOL | INT | MAP | STR | VEC
-!type_literal: (builtin_type | identifier) type_params?
-type_params: "[" type_literal ("," type_literal)* ","? "]"
+_type_literal: (builtin_type | identifier) type_params?
+type_params: "[" _type_literal ("," _type_literal)* ","? "]"
 
 // --- literals ---
 
@@ -153,8 +158,8 @@ function_body_item: ( \
     | branch
     | loop
     | operator
-    | identifier
-    | type_literal
+    | (identifier type_params?)
+    | (builtin_type type_params?)
     | struct_field_query
     | struct_field_update
     | literal \

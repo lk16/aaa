@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from lark.lexer import Token
 
@@ -249,6 +249,24 @@ class TypeParameters(AaaParseModel):
     def __init__(self, *, value: List[TypeLiteral], file: Path, token: Token) -> None:
         self.value = value
         super().__init__(file=file, token=token)
+
+
+class BuiltinType(FunctionBodyItem):
+    def __init__(self, *, name: str, file: Path, token: Token) -> None:
+        self.name = name
+        super().__init__(file=file, token=token)
+
+
+class BuiltinFunctionName(AaaParseModel):
+    def __init__(
+        self,
+        func_name: Identifier,
+        type_params: TypeParameters,
+        struct_name: Optional[Identifier | BuiltinType],
+    ) -> None:
+        self.func_name = func_name
+        self.type_params = type_params
+        self.struct_name = struct_name
 
 
 class ParserOutput(AaaModel):

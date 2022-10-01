@@ -15,6 +15,8 @@ from aaa.parser.models import (
     BranchCondition,
     BranchElseBody,
     BranchIfBody,
+    BuiltinFunctionName,
+    BuiltinType,
     Function,
     FunctionBody,
     FunctionBodyItem,
@@ -97,22 +99,32 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         )
 
     def builtin_type_declaration(
-        self, token: Token, type_literal: TypeLiteral
+        self,
+        token: Token,
+        identifier: Identifier,
+        params: Optional[TypeParameters] = None,
     ) -> TypeLiteral:
-        return type_literal
+        return self.type_literal(identifier, params)
 
-    @v_args(inline=False)
-    def builtin_function_declaration(self, args: List[Any]) -> Function:
-        for index, arg in enumerate(args):
-            if isinstance(arg, Operator):
-                args[index] = Identifier(
-                    token=arg.token, name=arg.value, file=self.file
-                )
+    def builtin_function_declaration(
+        self,
+        token: Token,
+        builtin_function_name: BuiltinFunctionName,
+        arguments: Optional[List[Argument]],
+        return_types: Optional[List[TypeLiteral]],
+    ) -> Function:
+        arguments = arguments or []
+        return_types = return_types or []
 
-        args.append(FunctionBody(token=DUMMY_TOKEN, items=[], file=self.file))
-
-        function: Function = self.function_definition(args)
-        return function
+        return Function(
+            name=name,
+            type_params=type_params.value,
+            arguments=arguments,
+            return_types=return_types,
+            body=empty_body,
+            file=self.file,
+            token=token,
+        )
 
     def builtins_file_root(self, *args: Function | TypeLiteral) -> ParsedFile:
         functions: List[Function] = []
@@ -375,5 +387,31 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             token=type_literals[0].token, value=list(type_literals), file=self.file
         )
 
-    def builtin_type(self, token: Token) -> Identifier:
-        return Identifier(name=str(token), token=token, file=self.file)
+    def builtin_type(self, token: Token) -> BuiltinType:
+        return BuiltinType(name=str(token), token=token, file=self.file)
+
+    def builtin_function_name(
+        self,
+        name: Operator | Identifier | BuiltinType,
+        type_params: Optional[TypeParameters],
+        member_function_name: Optional[Identifier],
+    ) -> BuiltinFunctionName:
+        if isinstance(name, Operator):
+            name = Identifier(name=name.value, file=name.file, token=name.token)
+
+        empty_type_params = TypeParameters(value=[], file=self.file, token=DUMMY_TOKEN)
+
+        type_params = type_params or empty_type_params
+
+        if member_function_name:
+            return BuiltinFunctionName(
+                struct_name=name,
+                type_params=type_params,
+                func_name=member_function_name,
+            )
+
+        return BuiltinFunctionName(
+            struct_name=None,
+            type_params=type_params,
+            func_name=name,
+        )
