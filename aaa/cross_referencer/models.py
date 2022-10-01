@@ -53,7 +53,13 @@ class Function(Identifiable):
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
-        self.struct_name, self.func_name = parsed.get_names()
+
+        if parsed.struct_name:
+            self.struct_name = parsed.struct_name.name
+        else:
+            self.struct_name = ""
+
+        self.func_name = parsed.func_name.name
         self.parsed_type_params = parsed.type_params
         self.parsed_arguments = parsed.arguments
         self.parsed_return_types = parsed.return_types

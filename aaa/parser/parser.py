@@ -28,6 +28,8 @@ class Parser:
             try:
                 self.parsed[file] = self._parse(file, aaa_source_parser)
             except ParserBaseException as e:
+                # TODO check if identifiers are not keywords
+                # TODO check if identifiers are not operators
                 self.exceptions.append(e)
             else:
                 self._enqueue_dependencies(file, self.parsed[file])

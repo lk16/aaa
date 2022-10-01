@@ -494,11 +494,18 @@ class CrossReferencer:
                     else_body=resolve_body(parsed_item.else_body),
                     parsed=parsed_item,
                 )
-            elif isinstance(parsed_item, parser.MemberFunctionLiteral):
+            elif isinstance(parsed_item, parser.FunctionName):
+                if parsed_item.struct_name:
+                    name = (
+                        f"{parsed_item.struct_name.name}:{parsed_item.func_name.name}"
+                    )
+                else:
+                    name = parsed_item.func_name.name
+
                 return Identifier(
                     kind=Unresolved(),
                     parsed=parser.Identifier(
-                        name=f"{parsed_item.struct_name}:{parsed_item.func_name}",
+                        name=name,
                         file=parsed_item.file,
                         token=parsed_item.token,
                     ),

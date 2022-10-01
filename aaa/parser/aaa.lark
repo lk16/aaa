@@ -17,11 +17,6 @@ COMMENT: "//" /[^\n]*/ "\n"
 SHEBANG: "#!" /[^\n]*/ "\n"
 %ignore SHEBANG
 
-identifier.0: /[a-zA-Z_]+/
-
-// same as identifier, but does not disallow builtin names / keywords as values
-member_function_name: /[a-zA-Z_]+/
-
 integer: /[0-9]+/
 
 %import common.ESCAPED_STRING
@@ -76,30 +71,22 @@ NOP:        /nop(?=(\W|\s))/
 
 builtins_file_root: (builtin_function_declaration | builtin_type_declaration)+
 
-builtin_type_declaration: BUILTIN_TYPE _type_literal
+builtin_type_declaration: BUILTIN_TYPE type_literal
 
 builtin_function_declaration: ( \
     BUILTIN_FN \
-    builtin_function_name \
-    [function_arguments] \
-    [function_return_types] \
+    function_name \
+    [_ARGS arguments] \
+    [_RETURN return_types] \
 )
-
-builtin_function_name: ( \
-    (operator | identifier | builtin_type) \
-    [type_params] \
-    [":" member_function_name] \
-)
-
-// TODO replace ? with [] in this file
 
 // --- regular source file + imports ---
 
 regular_file_root: (function_definition | import_statement | struct_definition)+
 
 import_statement: FROM string _IMPORT import_items
-import_items: import_item ("," import_item)* ","?
-import_item: identifier (_AS identifier)?
+import_items: import_item ("," import_item)* [","]
+import_item: identifier [_AS identifier]
 
 // --- structs ---
 
@@ -109,7 +96,6 @@ struct_definition: ( \
     _END \
 )
 
-struct_function_identifier: _type_literal ":" member_function_name
 
 struct_field_query: string struct_field_query_operator
 !struct_field_query_operator: "?"
@@ -117,49 +103,38 @@ struct_field_query: string struct_field_query_operator
 struct_field_update: string BEGIN function_body _END struct_field_update_operator
 !struct_field_update_operator: "!"
 
-member_function_literal: _type_literal ":" member_function_name
-
 // --- functions, arguments, return types ---
 
 function_definition: ( \
     FN function_name \
-    type_params? \
-    function_arguments? \
-    function_return_types? \
+    [_ARGS arguments] \
+    [_RETURN return_types] \
     BEGIN function_body _END \
 )
 
-function_name: struct_function_identifier | identifier
+type_literal: identifier [type_params]
+type_params: "[" type_literal ("," type_literal)* [","] "]"
 
-function_arguments: _ARGS arguments
-arguments: argument ("," argument)* ","?
-argument: identifier _AS _type_literal
+function_name: type_literal [":" identifier]
 
-function_return_types: _RETURN return_types
-return_types: _type_literal ("," _type_literal)* ","?
+arguments: argument ("," argument)* [","]
+argument: identifier _AS type_literal
 
-// --- type literals ---
-
-builtin_type.1: BOOL | INT | MAP | STR | VEC
-_type_literal: (builtin_type | identifier) type_params?
-type_params: "[" _type_literal ("," _type_literal)* ","? "]"
+return_types: type_literal ("," type_literal)* [","]
 
 // --- literals ---
 
 literal: boolean | integer | string
-!boolean.1: TRUE | FALSE
+!boolean: TRUE | FALSE
 
 // --- function body ---
 
 function_body: function_body_item+
 
 function_body_item: ( \
-      member_function_literal
+      function_name
     | branch
     | loop
-    | operator
-    | (identifier type_params?)
-    | (builtin_type type_params?)
     | struct_field_query
     | struct_field_update
     | literal \
@@ -170,7 +145,7 @@ function_body_item: ( \
 branch: ( \
     branch_condition \
     branch_if_body \
-    branch_else_body? \
+    [branch_else_body] \
 )
 
 branch_condition: IF function_body
@@ -183,18 +158,22 @@ loop: loop_condition BEGIN loop_body _END
 !loop_condition: WHILE function_body
 loop_body: function_body
 
-// --- operators ---
-
-!operator.1:  AND
+identifier:   /[a-zA-Z_]+/
+            | AND
             | ASSERT
+            | BOOL
             | DROP
             | DUP
+            | INT
+            | MAP
             | NOP
             | NOT
             | OR
             | OVER
             | ROT
+            | STR
             | SWAP
+            | VEC
             | /-(?=\s)/
             | /!=(?=\s)/
             | /\.(?=\s)/
@@ -207,24 +186,3 @@ loop_body: function_body
             | />=(?=\s)/
             | /<(?=\s)/
             | />(?=\s)/
-
-keyword:  boolean
-        | operator
-        | _ARGS
-        | _AS
-        | BEGIN
-        | ELSE
-        | _END
-        | IF
-        | _IMPORT
-        | _RETURN
-        | WHILE
-        | BOOL
-        | BUILTIN_FN
-        | FN
-        | FROM
-        | INT
-        | MAP
-        | STR
-        | STRUCT
-        | VEC

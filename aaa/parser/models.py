@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from lark.lexer import Token
 
@@ -106,20 +106,6 @@ class BranchElseBody(FunctionBody):
     ...
 
 
-class MemberFunctionLiteral(FunctionBodyItem):
-    def __init__(
-        self,
-        *,
-        struct_name: TypeLiteral,
-        func_name: Identifier,
-        file: Path,
-        token: Token,
-    ) -> None:
-        self.struct_name = struct_name
-        self.func_name = func_name
-        super().__init__(file=file, token=token)
-
-
 class StructFieldQuery(FunctionBodyItem):
     def __init__(self, *, field_name: StringLiteral, file: Path, token: Token) -> None:
         self.field_name = field_name
@@ -153,7 +139,8 @@ class Function(AaaParseModel):
     def __init__(
         self,
         *,
-        name: MemberFunctionLiteral | Identifier,
+        struct_name: Optional[Identifier],
+        func_name: Identifier,
         type_params: List[TypeLiteral],
         arguments: List[Argument],
         return_types: List[TypeLiteral],
@@ -161,24 +148,13 @@ class Function(AaaParseModel):
         file: Path,
         token: Token,
     ) -> None:
-        self.name = name
+        self.struct_name = struct_name
+        self.func_name = func_name
         self.type_params = type_params
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
         super().__init__(file=file, token=token)
-
-    def get_names(self) -> Tuple[str, str]:
-        if isinstance(self.name, Identifier):
-            struct_name = ""
-            func_name = self.name.name
-        elif isinstance(self.name, MemberFunctionLiteral):
-            struct_name = self.name.struct_name.identifier.name
-            func_name = self.name.func_name.name
-        else:  # pragma: nocover
-            assert False
-
-        return struct_name, func_name
 
 
 class ImportItem(AaaParseModel):
@@ -251,22 +227,19 @@ class TypeParameters(AaaParseModel):
         super().__init__(file=file, token=token)
 
 
-class BuiltinType(FunctionBodyItem):
-    def __init__(self, *, name: str, file: Path, token: Token) -> None:
-        self.name = name
-        super().__init__(file=file, token=token)
-
-
-class BuiltinFunctionName(AaaParseModel):
+class FunctionName(AaaParseModel):
     def __init__(
         self,
         func_name: Identifier,
         type_params: TypeParameters,
-        struct_name: Optional[Identifier | BuiltinType],
+        struct_name: Optional[Identifier],
+        file: Path,
+        token: Token,
     ) -> None:
         self.func_name = func_name
         self.type_params = type_params
         self.struct_name = struct_name
+        super().__init__(file=file, token=token)
 
 
 class ParserOutput(AaaModel):
