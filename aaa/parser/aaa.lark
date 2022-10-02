@@ -132,12 +132,12 @@ literal: boolean | integer | string
 function_body: function_body_item+
 
 function_body_item: ( \
-      function_name
+      literal
+    | function_name
     | branch
     | loop
     | struct_field_query
-    | struct_field_update
-    | literal \
+    | struct_field_update \
 )
 
 // --- branch ---
