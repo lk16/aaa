@@ -111,13 +111,12 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             """
-            fn foo return *a { nop }
+            fn foo return A { nop }
             fn main { nop }
             """,
-            Exception,
-            "/foo/main.aaa:2:13: Function foo uses unknown placeholder a\n",
+            UnknownIdentifier,
+            "/foo/main.aaa:2:27: Usage of unknown identifier A\n",
             id="unknown-placeholder-type",
-            marks=pytest.mark.skip(),  # TODO find out which exception this raises
         ),
         pytest.param(
             "fn main args a as int { nop }",
