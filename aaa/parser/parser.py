@@ -12,7 +12,7 @@ from aaa.parser.transformer import AaaTransformer
 
 class Parser:
     def __init__(self, entrypoint: Path, builtins_path: Path) -> None:
-        self.entrypoint = entrypoint
+        self.entrypoint = entrypoint.resolve()
         self.builtins_path = builtins_path
 
         self.parsed: Dict[Path, ParsedFile] = {}

@@ -133,7 +133,7 @@ function_body: function_body_item+
 
 function_body_item: ( \
       literal
-    | function_name
+    | function_name  // includes identifier
     | branch
     | loop
     | struct_field_query
