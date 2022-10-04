@@ -219,7 +219,6 @@ class InstructionGenerator:
             ]
 
         if isinstance(identifier.kind, IdentifierCallingType):
-            # TODO need Variable type for identifier.kind.type
             # TODO handle builtin types nicely / update PushStruct instruction
             raise NotImplementedError
 

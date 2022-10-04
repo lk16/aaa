@@ -231,16 +231,21 @@ class IdentifierCallingFunction(IdentifierKind):
 
 
 class IdentifierCallingType(IdentifierKind):
-    def __init__(self, *, type: Type) -> None:
-        self.type = type
+    def __init__(self, *, var_type: VariableType) -> None:
+        self.var_type = var_type
 
 
 class Identifier(FunctionBodyItem):
     def __init__(
-        self, *, kind: IdentifierKind | Unresolved, parsed: parser.Identifier
+        self,
+        *,
+        kind: IdentifierKind | Unresolved,
+        type_params: List[Identifier],
+        parsed: parser.Identifier,
     ) -> None:
         self.kind = kind
         self.name = parsed.name
+        self.type_params = type_params
         super().__init__(file=parsed.file, token=parsed.token)
 
 

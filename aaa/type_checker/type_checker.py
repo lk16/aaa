@@ -373,8 +373,7 @@ class TypeChecker:
                 function, type_stack, called_function, identifier.token
             )
         elif isinstance(identifier.kind, IdentifierCallingType):
-            # TODO should identifier.kind.type be VariableType instead of Type?
-            raise NotImplementedError
+            return type_stack + [identifier.kind.var_type]
         else:  # pragma: nocover
             assert False
 

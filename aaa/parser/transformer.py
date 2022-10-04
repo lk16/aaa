@@ -334,12 +334,16 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return token
 
     def struct_field_update(
-        self, field_name: StringLiteral, new_value_expr: FunctionBody, token: Token
+        self,
+        field_name: StringLiteral,
+        new_value_expr_token: Token,
+        new_value_expr: FunctionBody,
+        update_operator_token: Token,
     ) -> StructFieldUpdate:
         return StructFieldUpdate(
             field_name=field_name,
             new_value_expr=new_value_expr,
-            token=token,
+            token=update_operator_token,
             file=self.file,
         )
 

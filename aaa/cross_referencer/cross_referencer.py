@@ -38,6 +38,7 @@ from aaa.cross_referencer.models import (
     VariableType,
 )
 from aaa.parser import models as parser
+from aaa.parser.transformer import DUMMY_TOKEN
 
 
 class CrossReferencer:
@@ -477,6 +478,7 @@ class CrossReferencer:
                         token=parsed_item.token,
                         name=parsed_item.value,
                     ),
+                    type_params=[],
                     kind=Unresolved(),
                 )
             elif isinstance(parsed_item, parser.Loop):
@@ -485,8 +487,6 @@ class CrossReferencer:
                     body=resolve_body(parsed_item.body),
                     parsed=parsed_item,
                 )
-            elif isinstance(parsed_item, parser.Identifier):
-                return Identifier(kind=Unresolved(), parsed=parsed_item)
             elif isinstance(parsed_item, parser.Branch):
                 return Branch(
                     condition=resolve_body(parsed_item.condition),
@@ -504,6 +504,14 @@ class CrossReferencer:
 
                 return Identifier(
                     kind=Unresolved(),
+                    type_params=[  # TODO this is hacky
+                        Identifier(
+                            kind=Unresolved(),
+                            type_params=[],
+                            parsed=type_literal.identifier,
+                        )
+                        for type_literal in parsed_item.type_params.value
+                    ],
                     parsed=parser.Identifier(
                         name=name,
                         file=parsed_item.file,
@@ -523,6 +531,38 @@ class CrossReferencer:
         function.body = resolve_body(function.parsed_body)
 
     def _resolve_function_body_identifiers(self, function: Function) -> None:
+        def resolve_param_type(identifier: Identifier) -> VariableType:
+            assert not identifier.type_params
+
+            # TODO remove dummy_type_literal
+            dummy_type_literal = parser.TypeLiteral(
+                identifier=parser.Identifier(
+                    name=identifier.name,
+                    file=Path("/dev/null"),
+                    token=DUMMY_TOKEN,
+                ),
+                params=parser.TypeParameters(
+                    value=[], file=Path("/dev/null"), token=DUMMY_TOKEN
+                ),
+                file=Path("/dev/null"),
+                token=DUMMY_TOKEN,
+            )
+
+            type = self._get_identifier(
+                function.file, identifier.name, identifier.token
+            )
+
+            if not isinstance(type, Type):
+                # TODO
+                raise NotImplementedError
+
+            return VariableType(
+                parsed=dummy_type_literal,
+                type=type,
+                is_placeholder=False,  # TODO this may not be true
+                params=[],
+            )
+
         def resolve_identifier(identifier: Identifier) -> None:
             argument = function.get_argument(identifier.name)
 
@@ -539,7 +579,31 @@ class CrossReferencer:
                 if isinstance(identifiable, Function):
                     identifier.kind = IdentifierCallingFunction(function=identifiable)
                 elif isinstance(identifiable, Type):
-                    identifier.kind = IdentifierCallingType(type=identifiable)
+
+                    # TODO remove dummy_type_literal
+                    dummy_type_literal = parser.TypeLiteral(
+                        identifier=parser.Identifier(
+                            name=identifier.name,
+                            file=Path("/dev/null"),
+                            token=DUMMY_TOKEN,
+                        ),
+                        params=parser.TypeParameters(
+                            value=[], file=Path("/dev/null"), token=DUMMY_TOKEN
+                        ),
+                        file=Path("/dev/null"),
+                        token=DUMMY_TOKEN,
+                    )
+
+                    var_type = VariableType(
+                        type=identifiable,
+                        is_placeholder=False,  # TODO this may not be true
+                        params=[
+                            resolve_param_type(param)
+                            for param in identifier.type_params
+                        ],
+                        parsed=dummy_type_literal,
+                    )
+                    identifier.kind = IdentifierCallingType(var_type=var_type)
                 else:  # pragma: nocover
                     raise NotImplementedError
 
@@ -556,6 +620,8 @@ class CrossReferencer:
                     resolve(item.new_value_expr)
                 elif isinstance(item, Identifier):
                     resolve_identifier(item)
+                elif isinstance(item, FunctionBody):
+                    resolve(item)
 
         assert not isinstance(function.arguments, Unresolved)
         assert not isinstance(function.body, Unresolved)
