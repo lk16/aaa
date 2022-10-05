@@ -611,14 +611,38 @@ class Simulator:
 
         struct_fields: Dict[str, Variable] = {}
 
-        assert not isinstance(instruction.type.type.fields, Unresolved)
+        assert not isinstance(instruction.var_type.type.fields, Unresolved)
 
         # TODO move code to create zero value of struct out
 
         def get_zero_var(var_type: VariableType) -> Variable:
-            raise NotImplementedError
+            if (
+                var_type.name in ["bool", "int", "map", "str", "vec"]
+                and var_type.type is self.types[(self.builtins_path, var_type.name)]
+            ):
+                if var_type.name == "int":
+                    return IntVar(0)
+                elif var_type.name == "str":
+                    return StrVar("")
+                elif var_type.name == "bool":
+                    return BoolVar(False)
+                elif var_type.name == "vec":
+                    return VecVar([])
+                elif var_type.name == "map":
+                    return MapVar({})
+                else:  # pragma: nocover
+                    assert False
 
-        for field_name, var_type in instruction.type.type.fields.items():
+            assert not isinstance(var_type.type.fields, Unresolved)
+
+            return Variable(
+                {
+                    field_name: get_zero_var(field_var_type)
+                    for field_name, field_var_type in var_type.type.fields.items()
+                }
+            )
+
+        for field_name, var_type in instruction.var_type.type.fields.items():
             struct_fields[field_name] = get_zero_var(var_type)
 
         struct_var = Variable(value=struct_fields)

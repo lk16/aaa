@@ -105,11 +105,13 @@ class CrossReferencer:
             if isinstance(identifiable, Function):
                 assert not isinstance(identifiable.arguments, Unresolved)
                 for arg in identifiable.arguments:
-                    if arg.type.is_placeholder:
-                        print(f"- arg {arg.name} of placeholder type {arg.type.name}")
+                    if arg.var_type.is_placeholder:
+                        print(
+                            f"- arg {arg.name} of placeholder type {arg.var_type.name}"
+                        )
                     else:
                         print(
-                            f"- arg {arg.name} of type {arg.type.file}:{arg.type.name}"
+                            f"- arg {arg.name} of type {arg.var_type.file}:{arg.var_type.name}"
                         )
 
                 assert not isinstance(identifiable.return_types, Unresolved)
@@ -340,7 +342,7 @@ class CrossReferencer:
             argument = Argument(
                 name=parsed_arg.identifier.name,
                 file=function.file,
-                type=VariableType(
+                var_type=VariableType(
                     parsed=parsed_type,
                     type=type,
                     params=params,
@@ -567,7 +569,7 @@ class CrossReferencer:
             argument = function.get_argument(identifier.name)
 
             if argument:
-                arg_type = argument.type
+                arg_type = argument.var_type
                 assert not isinstance(arg_type, Unresolved)
 
                 identifier.kind = IdentifierUsingArgument(arg_type=arg_type)

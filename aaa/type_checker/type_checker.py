@@ -60,7 +60,7 @@ class TypeChecker:
             assert not isinstance(function.return_types, Unresolved)
 
             self.signatures[function.identify()] = Signature(
-                arguments=[arg.type for arg in function.arguments],
+                arguments=[arg.var_type for arg in function.arguments],
                 return_types=function.return_types,
             )
 
@@ -144,25 +144,25 @@ class TypeChecker:
     def _match_signature_items(
         self,
         function: Function,
-        expected_type: VariableType,
-        type: VariableType,
+        expected_var_type: VariableType,
+        var_type: VariableType,
         placeholder_types: Dict[str, VariableType],
     ) -> bool:
-        if expected_type.is_placeholder:
-            if expected_type.name in placeholder_types:
-                return placeholder_types[expected_type.name] == type
+        if expected_var_type.is_placeholder:
+            if expected_var_type.name in placeholder_types:
+                return placeholder_types[expected_var_type.name] == var_type
 
-            placeholder_types[expected_type.name] = type
+            placeholder_types[expected_var_type.name] = var_type
             return True
 
         else:
-            if expected_type.type is not type.type:
+            if expected_var_type.type is not var_type.type:
                 return False
 
-            if len(type.params) != len(expected_type.params):
+            if len(var_type.params) != len(expected_var_type.params):
                 return False
 
-            for expected_param, param in zip(expected_type.params, type.params):
+            for expected_param, param in zip(expected_var_type.params, var_type.params):
                 match_result = self._match_signature_items(
                     function,
                     expected_param,

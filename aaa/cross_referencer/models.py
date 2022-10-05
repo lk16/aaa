@@ -91,10 +91,10 @@ class Function(Identifiable):
 
 
 class Argument(AaaCrossReferenceModel):
-    def __init__(self, *, type: VariableType, name: str, file: Path) -> None:
-        self.type = type
+    def __init__(self, *, var_type: VariableType, name: str, file: Path) -> None:
+        self.var_type = var_type
         self.name = name
-        super().__init__(file=file, token=type.token)
+        super().__init__(file=file, token=var_type.token)
 
 
 class FunctionBodyItem(AaaCrossReferenceModel):

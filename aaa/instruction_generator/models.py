@@ -225,8 +225,8 @@ class StandardLibraryCall(Instruction):
 
 
 class PushStruct(Instruction):
-    def __init__(self, type: VariableType) -> None:
-        self.type = type
+    def __init__(self, var_type: VariableType) -> None:
+        self.var_type = var_type
 
 
 class GetStructField(Instruction):

@@ -48,7 +48,10 @@ from aaa.instruction_generator.models import (
     PushBool,
     PushFunctionArgument,
     PushInt,
+    PushMap,
     PushString,
+    PushStruct,
+    PushVec,
     Rot,
     SetStructField,
     StandardLibraryCall,
@@ -212,13 +215,35 @@ class InstructionGenerator:
                     StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[called_function.name])
                 ]
 
-            return [
-                CallFunction(
-                    func_name=called_function.func_name, file=called_function.file
-                )
-            ]
+            file, name = called_function.identify()
+            return [CallFunction(func_name=name, file=file)]
 
         if isinstance(identifier.kind, IdentifierCallingType):
+            var_type = identifier.kind.var_type
+            type = var_type.type
+            type_params = var_type.params
+
+            if type.file == self.builtins_path:
+                if type.name == "int":
+                    return [PushInt(0)]
+                elif type.name == "str":
+                    return [PushString("")]
+                elif type.name == "bool":
+                    return [PushBool(False)]
+                elif type.name == "vec":
+                    if len(type_params) != 1:
+                        # TODO handle invalid number of type params earlier
+                        raise NotImplementedError
+                    return [PushVec(item_type=type_params[0])]
+                elif type.name == "map":
+                    if len(type_params) != 2:
+                        # TODO handle invalid number of type params earlier
+                        raise NotImplementedError
+                    return [PushMap(key_type=type_params[0], value_type=type_params[1])]
+                else:  # pragma: nocover
+                    raise NotImplementedError
+
+            return [PushStruct(var_type)]
             # TODO handle builtin types nicely / update PushStruct instruction
             raise NotImplementedError
 
