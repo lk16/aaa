@@ -122,4 +122,9 @@ class InvalidType(CrossReferenceBaseException):
 
 
 class MainFunctionNotFound(CrossReferenceBaseException):
-    ...  # TODO implement and use
+    def __init__(self, file: Path) -> None:
+        self.file = file
+        super().__init__()
+
+    def __str__(self) -> str:
+        return f"{self.file}: No main function found"

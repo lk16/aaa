@@ -5,6 +5,7 @@ import pytest
 from aaa.cross_referencer.exceptions import (
     CollidingIdentifier,
     ImportedItemNotFound,
+    InvalidTypeParameter,
     MainFunctionNotFound,
     UnknownIdentifier,
 )
@@ -14,15 +15,13 @@ from aaa.type_checker.exceptions import (
     BranchTypeError,
     ConditionTypeError,
     FunctionTypeError,
-    GetFieldOfNonStructTypeError,
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     LoopTypeError,
-    SetFieldOfNonStructTypeError,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
-    UnknownStructField,
+    UnknownField,
 )
 from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
 
@@ -42,7 +41,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { if 3 true { nop } }",
             ConditionTypeError,
-            "/foo/main.aaa:1:11 Function main has a condition type error\n"
+            "/foo/main.aaa:1:14 Function main has a condition type error\n"
             + "stack before: \n"
             + " stack after: int bool\n",
             id="condition-type-branch",
@@ -62,8 +61,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:20: function foo collides with:\n"
-            + "/foo/main.aaa:2:20: function foo\n",
+            "/foo/main.aaa:3:13: function foo collides with:\n"
+            + "/foo/main.aaa:2:13: function foo\n",
             id="funcname-funcname-collision",
         ),
         pytest.param(
@@ -72,7 +71,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             FunctionTypeError,
-            "/foo/main.aaa:2:20: Function bar returns wrong type(s)\n"
+            "/foo/main.aaa:2:13: Function bar returns wrong type(s)\n"
             + "expected return types: \n"
             + "   found return types: int\n",
             id="function-type",
@@ -121,7 +120,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main args a as int { nop }",
             InvalidMainSignuture,
-            "/foo/main.aaa:1:23 Main function should have no arguments and no return types\n",
+            "/foo/main.aaa:1:1 Main function should have no arguments and no return types\n",
             id="invalid-main-signature-argument",
         ),
         pytest.param(
@@ -150,23 +149,12 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             """
-            fn foo { 3 "a" ? }
-            fn main { nop }
-            """,
-            GetFieldOfNonStructTypeError,
-            "/foo/main.aaa:2:28 Function foo tries to get field of non-struct value\n"
-            + "  Type stack: int str\n"
-            + "Expected top: <struct type> str \n",
-            id="get-field-of-non-struct",
-        ),
-        pytest.param(
-            """
             struct bar { x as int }
             fn foo { bar "y" ? . drop }
             fn main { nop }
             """,
-            UnknownStructField,
-            "/foo/main.aaa:3:13: Function foo tries to use non-existing field y of struct bar\n",
+            UnknownField,
+            "/foo/main.aaa:3:30: Usage of unknown field y of type bar",
             id="unknown-struct-field-get",
         ),
         pytest.param(
@@ -175,8 +163,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { bar "y" { 3 } ! drop }
             fn main { nop }
             """,
-            UnknownStructField,
-            "/foo/main.aaa:3:13: Function foo tries to use non-existing field y of struct bar\n",
+            UnknownField,
+            "/foo/main.aaa:3:36: Usage of unknown field y of type bar",
             id="unknown-struct-field-set",
         ),
         pytest.param(
@@ -184,10 +172,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { 5 "x" { 3 } ! drop }
             fn main { nop }
             """,
-            SetFieldOfNonStructTypeError,
-            "/foo/main.aaa:2:34 Function foo tries to set field of non-struct value\n"
-            + "  Type stack: int str int\n"
-            + "Expected top: <struct type> str <type of field to update>\n",
+            UnknownField,
+            "/foo/main.aaa:2:34: Usage of unknown field x of type int",
             id="set-field-of-non-struct",
         ),
         pytest.param(
@@ -197,7 +183,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             StructUpdateStackError,
-            "/foo/main.aaa:3:40 Function foo modifies stack incorrectly when updating struct field\n"
+            "/foo/main.aaa:3:32 Function foo modifies stack incorrectly when updating struct field\n"
             + "  Expected: bar str <new field value> \n"
             + "    Found: bar str int int\n",
             id="struct-update-stack-error",
@@ -209,7 +195,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             StructUpdateTypeError,
-            "/foo/main.aaa:3:40 Function foo tries to update struct field with wrong type\n"
+            "/foo/main.aaa:3:32 Function foo tries to update struct field with wrong type\n"
             + "Attempt to set field x of bar to wrong type in foo\n"
             + "Expected type: str"
             + "\n   Found type: bool\n"
@@ -264,8 +250,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             struct main { x as int }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:13: struct main collides with:\n"
-            + "/foo/main.aaa:2:13: function main\n",
+            "/foo/main.aaa:2:13: function main collides with:\n"
+            + "/foo/main.aaa:3:13: type main\n",
             id="struct-name-collision",
         ),
         pytest.param(
@@ -291,7 +277,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args b as bar { nop }
             """,
             UnknownIdentifier,
-            "/foo/main.aaa:3:13: Function foo has argument with unknown type bar\n",
+            "/foo/main.aaa:3:30: Usage of unknown identifier bar\n",
             id="unknown-argument-type",
         ),
         pytest.param(
@@ -299,9 +285,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             fn foo args m as main { nop }
             """,
-            UnknownIdentifier,
-            "/foo/main.aaa:3:13: Function foo has argument with unknown type main\n",
-            id="function-name-as-argument-type",
+            InvalidTypeParameter,
+            "/foo/main.aaa:2:13: Cannot use function main as type parameter\n",
+            id="invalid-type-parameter",
         ),
     ],
 )
@@ -331,7 +317,7 @@ def test_one_error(
                 """,
             },
             ImportedItemNotFound,
-            "/foo/main.aaa:2:17: Could not import six from five\n",
+            "/foo/main.aaa:2:36: Could not import six from /foo/five.aaa\n",
             id="imported-item-not-found",
         ),
         pytest.param(
@@ -541,7 +527,6 @@ def test_colliding_identifier(
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
-
     exception_message = exception_message.replace(tmp_dir, "/foo")
 
     print(repr(exception_message))

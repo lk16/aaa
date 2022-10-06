@@ -11,6 +11,7 @@ from aaa.cross_referencer.exceptions import (
     IndirectImportException,
     InvalidType,
     InvalidTypeParameter,
+    MainFunctionNotFound,
     UnknownIdentifier,
 )
 from aaa.cross_referencer.models import (
@@ -81,6 +82,11 @@ class CrossReferencer:
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
+
+        try:
+            self._resolve_main_function()
+        except MainFunctionNotFound as e:
+            self.exceptions.append(e)
 
         return CrossReferencerOutput(
             functions={
@@ -629,3 +635,14 @@ class CrossReferencer:
         assert not isinstance(function.body, Unresolved)
 
         resolve(function.body)
+
+    def _resolve_main_function(self) -> None:
+        # TODO move to type_checker
+
+        try:
+            main = self.identifiers[(self.entrypoint, "main")]
+        except KeyError as e:
+            raise MainFunctionNotFound(self.entrypoint) from e
+
+        if not isinstance(main, Function):
+            raise MainFunctionNotFound(self.entrypoint)

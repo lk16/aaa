@@ -191,52 +191,6 @@ class InvalidMainSignuture(TypeCheckerException):
         return f"{self.where()} Main function should have no arguments and no return types\n"
 
 
-class GetFieldOfNonStructTypeError(TypeCheckerException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        token: Token,
-        function: "Function",
-        type_stack: List[VariableType],
-        field_query: StructFieldQuery,
-    ) -> None:
-        self.type_stack = type_stack
-        self.field_query = field_query
-        super().__init__(file=file, token=token, function=function)
-
-    def __str__(self) -> str:
-        stack = format_typestack(self.type_stack)
-
-        return (
-            f"{self.where()} Function {self.function.name} tries to get field of non-struct value\n"
-            + f"  Type stack: {stack}\n"
-            + "Expected top: <struct type> str \n"
-        )
-
-
-class SetFieldOfNonStructTypeError(TypeCheckerException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        token: Token,
-        function: "Function",
-        type_stack: List[VariableType],
-    ) -> None:
-        self.type_stack = type_stack
-        super().__init__(file=file, token=token, function=function)
-
-    def __str__(self) -> str:
-        stack = format_typestack(self.type_stack)
-
-        return (
-            f"{self.where()} Function {self.function.name} tries to set field of non-struct value\n"
-            + f"  Type stack: {stack}\n"
-            + "Expected top: <struct type> str <type of field to update>\n"
-        )
-
-
 class StructUpdateStackError(TypeCheckerException):
     def __init__(
         self,
@@ -338,7 +292,7 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
         return formatted
 
 
-class UnknownStructField(TypeCheckerException):
+class UnknownField(TypeCheckerException):
     def __init__(
         self,
         file: Path,
@@ -352,4 +306,4 @@ class UnknownStructField(TypeCheckerException):
         super().__init__(file=file, token=token, function=function)
 
     def __str__(self) -> str:
-        return f"{self.where()} Usage of unknown field {self.field_name} of struct {self.struct_type.name}"
+        return f"{self.where()}: Usage of unknown field {self.field_name} of type {self.struct_type.name}"

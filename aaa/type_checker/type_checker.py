@@ -35,7 +35,7 @@ from aaa.type_checker.exceptions import (
     StructUpdateStackError,
     StructUpdateTypeError,
     TypeCheckerException,
-    UnknownStructField,
+    UnknownField,
 )
 from aaa.type_checker.models import (
     Signature,
@@ -432,7 +432,7 @@ class TypeChecker:
         try:
             field_type = struct_type.fields[field_name]
         except KeyError as e:
-            raise UnknownStructField(
+            raise UnknownField(
                 file=function.file,
                 token=node.token,
                 function=function,
