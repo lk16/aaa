@@ -81,29 +81,17 @@ class Branch(FunctionBodyItem):
         token: Token,
     ) -> None:
         self.condition = condition
-        self.if_body = if_body
-        self.else_body = else_body
+        self.if_body = if_body  # TODO rename to if_block
+        self.else_body = else_body  # TODO rename to else_block
         super().__init__(file=file, token=token)
 
 
-class FunctionBody(AaaParseModel):
+class FunctionBody(AaaParseModel):  # TODO rename to Block
     def __init__(
         self, *, items: List[FunctionBodyItem], file: Path, token: Token
     ) -> None:
         self.items = items
         super().__init__(file=file, token=token)
-
-
-class BranchCondition(FunctionBody):
-    ...
-
-
-class BranchIfBody(FunctionBody):
-    ...
-
-
-class BranchElseBody(FunctionBody):
-    ...
 
 
 class StructFieldQuery(FunctionBodyItem):

@@ -5,13 +5,9 @@ from lark.lexer import Token
 from lark.visitors import Transformer, v_args
 
 from aaa.parser.models import (
-    AaaParseModel,
     Argument,
     BooleanLiteral,
     Branch,
-    BranchCondition,
-    BranchElseBody,
-    BranchIfBody,
     Function,
     FunctionBody,
     FunctionBodyItem,
@@ -55,42 +51,26 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         value = token.value == "true"
         return BooleanLiteral(token=token, value=value, file=self.file)
 
-    def branch(self, *args: List[AaaParseModel]) -> Branch:
-        condition: FunctionBody
-        if_body: FunctionBody
-        else_body = FunctionBody(token=DUMMY_TOKEN, items=[], file=self.file)
-
-        for arg in args:
-            if isinstance(arg, BranchCondition):
-                condition = arg
-            elif isinstance(arg, BranchIfBody):
-                if_body = arg
-            elif isinstance(arg, BranchElseBody):
-                else_body = arg
-            else:  # pragma: nocover
-                assert False
+    def branch(
+        self,
+        if_token: Token,
+        condition: FunctionBody,
+        if_body_begin_token: Token,
+        if_body: FunctionBody,
+        else_token: Optional[Token],
+        else_body_begin_token: Optional[Token],
+        else_body: Optional[FunctionBody],
+    ) -> Branch:
+        else_body = else_body or FunctionBody(
+            token=DUMMY_TOKEN, items=[], file=self.file
+        )
 
         return Branch(
-            token=condition.token,
+            token=if_token,
             condition=condition,
             if_body=if_body,
             else_body=else_body,
             file=self.file,
-        )
-
-    def branch_condition(
-        self, token: Token, function_body: FunctionBody
-    ) -> BranchCondition:
-        return BranchCondition(token=token, items=function_body.items, file=self.file)
-
-    def branch_if_body(self, token: Token, function_body: FunctionBody) -> BranchIfBody:
-        return BranchIfBody(token=token, items=function_body.items, file=self.file)
-
-    def branch_else_body(
-        self, else_token: Token, begin_token: Token, function_body: FunctionBody
-    ) -> BranchElseBody:
-        return BranchElseBody(
-            token=begin_token, items=function_body.items, file=self.file
         )
 
     def builtin_function_declaration(

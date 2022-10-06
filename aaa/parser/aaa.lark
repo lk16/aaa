@@ -143,14 +143,10 @@ function_body_item: ( \
 // --- branch ---
 
 branch: ( \
-    branch_condition \
-    branch_if_body \
-    [branch_else_body] \
+    IF function_body \
+    BEGIN function_body _END \
+    [ELSE BEGIN function_body _END] \
 )
-
-branch_condition: IF function_body
-branch_if_body: BEGIN function_body _END
-branch_else_body: ELSE BEGIN function_body _END
 
 // --- loop ---
 
