@@ -3,7 +3,14 @@ from pathlib import Path
 from lark.lexer import Token
 
 from aaa import AaaException, error_location
-from aaa.cross_referencer.models import Function, Identifiable, Import, Type
+from aaa.cross_referencer.models import (
+    ArgumentIdentifiable,
+    Function,
+    Identifiable,
+    Import,
+    Type,
+    Unresolved,
+)
 
 
 class CrossReferenceBaseException(AaaException):
@@ -13,9 +20,12 @@ class CrossReferenceBaseException(AaaException):
         if isinstance(item, Function):
             return f"function {item.name}"
         elif isinstance(item, Import):
-            return f"imported object {item.name}"
+            assert not isinstance(item.source, (Import, Unresolved))
+            return self.describe(item.source)
         elif isinstance(item, Type):
             return f"type {item.name}"
+        elif isinstance(item, ArgumentIdentifiable):
+            return f"function argument {item.name}"
         else:  # pragma: nocover
             assert False
 
@@ -128,3 +138,13 @@ class MainFunctionNotFound(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return f"{self.file}: No main function found"
+
+
+class MainIsNotAFunction(CrossReferenceBaseException):
+    def __init__(self, file: Path, identifiable: Identifiable) -> None:
+        self.file = file
+        self.identifiable = identifiable
+        super().__init__()
+
+    def __str__(self) -> str:
+        return f"{self.file}: Found {self.describe(self.identifiable)} instead of function main."

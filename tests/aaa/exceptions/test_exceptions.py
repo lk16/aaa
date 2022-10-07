@@ -7,6 +7,7 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     InvalidTypeParameter,
     MainFunctionNotFound,
+    MainIsNotAFunction,
     UnknownIdentifier,
 )
 from aaa.parser.exceptions import FileReadError
@@ -183,7 +184,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             StructUpdateStackError,
-            "/foo/main.aaa:3:32 Function foo modifies stack incorrectly when updating struct field\n"
+            "/foo/main.aaa:3:40 Function foo modifies stack incorrectly when updating struct field\n"
             + "  Expected: bar str <new field value> \n"
             + "    Found: bar str int int\n",
             id="struct-update-stack-error",
@@ -247,11 +248,21 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             """
             fn main { nop }
-            struct main { x as int }
+            fn bar { nop }
+            struct bar { x as int }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:2:13: function main collides with:\n"
-            + "/foo/main.aaa:3:13: type main\n",
+            "/foo/main.aaa:3:13: function bar collides with:\n"
+            + "/foo/main.aaa:4:13: bar main\n",
+            id="struct-name-collision",
+        ),
+        pytest.param(
+            """
+            struct main { x as int }
+            """,
+            MainIsNotAFunction,
+            "/foo/main.aaa:3:13: function bar collides with:\n"
+            + "/foo/main.aaa:4:13: bar main\n",
             id="struct-name-collision",
         ),
         pytest.param(
@@ -355,7 +366,7 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:3:29: function argument bar collides with:\n"
+            "/foo/main.aaa:3:36: function argument bar collides with:\n"
             + "/foo/main.aaa:2:17: function bar\n",
             id="argname-other-func-name",
         ),
@@ -366,7 +377,7 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:2:29: function argument foo collides with:\n"
+            "/foo/main.aaa:2:36: function argument foo collides with:\n"
             + "/foo/main.aaa:2:17: function foo\n",
             id="argname-same-funcname",
         ),
@@ -389,8 +400,8 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:3:29: function argument bar collides with:\n"
-            + "/foo/main.aaa:2:17: struct bar\n",
+            "/foo/main.aaa:3:36: function argument bar collides with:\n"
+            + "/foo/main.aaa:2:17: type bar\n",
             id="argname-struct",
         ),
         pytest.param(
@@ -404,7 +415,7 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:29: function argument five collides with:\n"
+            "/foo/main.aaa:3:37: function argument five collides with:\n"
             + "/foo/main.aaa:2:16: function five\n",
             id="argname-import",
         ),
@@ -428,8 +439,8 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:2:17: struct foo collides with:\n"
-            + "/foo/main.aaa:3:17: function foo\n",
+            "/foo/main.aaa:3:17: function foo collides with:\n"
+            + "/foo/main.aaa:2:17: type foo\n",
             id="funcname-struct",
         ),
         pytest.param(

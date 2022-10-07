@@ -12,10 +12,12 @@ from aaa.cross_referencer.exceptions import (
     InvalidType,
     InvalidTypeParameter,
     MainFunctionNotFound,
+    MainIsNotAFunction,
     UnknownIdentifier,
 )
 from aaa.cross_referencer.models import (
     Argument,
+    ArgumentIdentifiable,
     BooleanLiteral,
     Branch,
     CrossReferencerOutput,
@@ -71,10 +73,16 @@ class CrossReferencer:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
 
+        try:
+            self._resolve_main_function()
+        except CrossReferenceBaseException as e:
+            self.exceptions.append(e)
+
         for file, identifier, function in self._get_identifiers_by_type(Function):
             try:
                 self._resolve_function_type_params(function)
                 self._resolve_function_arguments(function)
+                self._check_argument_identifier_collision(function)
                 self._resolve_function_return_types(function)
                 self._resolve_function_body(function)
                 self._resolve_function_body_identifiers(function)
@@ -82,11 +90,6 @@ class CrossReferencer:
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
-
-        try:
-            self._resolve_main_function()
-        except MainFunctionNotFound as e:
-            self.exceptions.append(e)
 
         return CrossReferencerOutput(
             functions={
@@ -403,6 +406,25 @@ class CrossReferencer:
 
         return params
 
+    def _check_argument_identifier_collision(self, function: Function) -> None:
+        assert not isinstance(function.arguments, Unresolved)
+
+        for argument in function.arguments:
+            key = (function.file, argument.name)
+
+            try:
+                found = self.identifiers[key]
+            except KeyError:
+                pass
+            else:
+                raise CollidingIdentifier(
+                    file=argument.file,
+                    colliding=ArgumentIdentifiable(
+                        file=argument.file, token=argument.token, name=argument.name
+                    ),
+                    found=found,
+                )
+
     def _resolve_function_return_types(self, function: Function) -> None:
         assert not isinstance(function.type_params, Unresolved)
         function.return_types = []
@@ -645,4 +667,4 @@ class CrossReferencer:
             raise MainFunctionNotFound(self.entrypoint) from e
 
         if not isinstance(main, Function):
-            raise MainFunctionNotFound(self.entrypoint)
+            raise MainIsNotAFunction(self.entrypoint, main)

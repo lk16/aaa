@@ -81,12 +81,12 @@ class Branch(FunctionBodyItem):
         token: Token,
     ) -> None:
         self.condition = condition
-        self.if_body = if_body  # TODO rename to if_block
-        self.else_body = else_body  # TODO rename to else_block
+        self.if_body = if_body
+        self.else_body = else_body
         super().__init__(file=file, token=token)
 
 
-class FunctionBody(AaaParseModel):  # TODO rename to Block
+class FunctionBody(AaaParseModel):
     def __init__(
         self, *, items: List[FunctionBodyItem], file: Path, token: Token
     ) -> None:

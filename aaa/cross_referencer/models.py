@@ -279,6 +279,11 @@ class StructFieldUpdate(FunctionBodyItem):
         super().__init__(file=parsed.file, token=parsed.token)
 
 
+class ArgumentIdentifiable(Identifiable):
+    # NOTE: used for argument name collision with CollidingIdentifier
+    ...
+
+
 class CrossReferencerOutput(AaaModel):
     def __init__(
         self,
