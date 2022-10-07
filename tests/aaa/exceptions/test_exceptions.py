@@ -253,7 +253,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             CollidingIdentifier,
             "/foo/main.aaa:3:13: function bar collides with:\n"
-            + "/foo/main.aaa:4:13: bar main\n",
+            + "/foo/main.aaa:4:13: type bar\n",
             id="struct-name-collision",
         ),
         pytest.param(
@@ -261,8 +261,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             struct main { x as int }
             """,
             MainIsNotAFunction,
-            "/foo/main.aaa:3:13: function bar collides with:\n"
-            + "/foo/main.aaa:4:13: bar main\n",
+            "/foo/main.aaa: Found type main instead of function main",
             id="struct-name-collision",
         ),
         pytest.param(
@@ -416,7 +415,7 @@ def test_multi_file_errors(
                 """,
             },
             "/foo/main.aaa:3:37: function argument five collides with:\n"
-            + "/foo/main.aaa:2:16: function five\n",
+            + "/foo/main.aaa:2:36: function five\n",
             id="argname-import",
         ),
         pytest.param(
@@ -454,8 +453,8 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:17: function five collides with:\n"
-            + "/foo/main.aaa:2:17: imported identifier five\n",
+            "/foo/main.aaa:2:36: imported identifier five collides with:\n"
+            + "/foo/main.aaa:3:17: function five\n",
             id="funcname-import",
         ),
         pytest.param(
@@ -466,8 +465,8 @@ def test_multi_file_errors(
                 fn main { nop }
                 """,
             },
-            "/foo/main.aaa:3:17: struct foo collides with:\n"
-            + "/foo/main.aaa:2:17: function foo\n",
+            "/foo/main.aaa:2:17: function foo collides with:\n"
+            + "/foo/main.aaa:3:17: type foo\n",
             id="struct-funcname",
         ),
         pytest.param(
@@ -478,8 +477,8 @@ def test_multi_file_errors(
                 fn main { nop }
                 """,
             },
-            "/foo/main.aaa:3:17: struct foo collides with:\n"
-            + "/foo/main.aaa:2:17: struct foo\n",
+            "/foo/main.aaa:3:17: type foo collides with:\n"
+            + "/foo/main.aaa:2:17: type foo\n",
             id="struct-struct",
         ),
         pytest.param(
@@ -493,8 +492,8 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:17: struct five collides with:\n"
-            + "/foo/main.aaa:2:17: imported identifier five\n",
+            "/foo/main.aaa:2:36: imported identifier five collides with:\n"
+            + "/foo/main.aaa:3:17: type five\n",
             id="struct-import",
         ),
         pytest.param(
@@ -508,8 +507,8 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:29: function argument bar collides with:\n"
-            + "/foo/main.aaa:2:16: function five\n",
+            "/foo/main.aaa:3:36: function argument bar collides with:\n"
+            + "/foo/main.aaa:2:36: function five\n",
             id="argname-import-renamed",
         ),
         pytest.param(
@@ -523,8 +522,8 @@ def test_multi_file_errors(
                 fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:17: imported identifier foo collides with:\n"
-            + "/foo/main.aaa:2:17: function five\n",
+            "/foo/main.aaa:3:36: imported identifier foo collides with:\n"
+            + "/foo/main.aaa:2:36: function five\n",
             id="import-import",
         ),
     ],

@@ -20,7 +20,9 @@ class CrossReferenceBaseException(AaaException):
         if isinstance(item, Function):
             return f"function {item.name}"
         elif isinstance(item, Import):
-            assert not isinstance(item.source, (Import, Unresolved))
+            if isinstance(item.source, Unresolved):
+                return f"imported identifier {item.imported_name}"
+
             return self.describe(item.source)
         elif isinstance(item, Type):
             return f"type {item.name}"
@@ -147,4 +149,4 @@ class MainIsNotAFunction(CrossReferenceBaseException):
         super().__init__()
 
     def __str__(self) -> str:
-        return f"{self.file}: Found {self.describe(self.identifiable)} instead of function main."
+        return f"{self.file}: Found {self.describe(self.identifiable)} instead of function main"
