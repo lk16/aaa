@@ -221,7 +221,7 @@ class CrossReferencer:
     def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
         return [
             Type(
-                param_count=len(type.params.value),
+                param_count=len(type.params),
                 parsed=type,
                 fields={},
             )
@@ -286,7 +286,7 @@ class CrossReferencer:
 
             params: List[VariableType] = []
 
-            for parsed_param in parsed_field.params.value:
+            for parsed_param in parsed_field.params:
                 param_type = self._get_identifier(
                     file, parsed_param.identifier.name, parsed_param.identifier.token
                 )
@@ -295,7 +295,7 @@ class CrossReferencer:
                     # TODO param_type is import/function/...
                     raise NotImplementedError
 
-                assert len(parsed_param.params.value) == 0
+                assert len(parsed_param.params) == 0
 
                 params.append(
                     VariableType(
@@ -389,8 +389,8 @@ class CrossReferencer:
         assert not isinstance(function.type_params, Unresolved)
         params: List[VariableType] = []
 
-        for param in parsed_type.params.value:
-            assert len(param.params.value) == 0
+        for param in parsed_type.params:
+            assert len(param.params) == 0
 
             param_name = param.identifier.name
             if param_name in function.type_params:
@@ -466,7 +466,7 @@ class CrossReferencer:
                     raise InvalidTypeParameter(file=function.file, identifiable=type)
 
                 params = []
-                for parsed_param in parsed_return_type.params.value:
+                for parsed_param in parsed_return_type.params:
                     param_name = parsed_param.identifier.name
 
                     if param_name in function.type_params:
@@ -559,7 +559,7 @@ class CrossReferencer:
                             type_params=[],
                             parsed=type_literal.identifier,
                         )
-                        for type_literal in parsed_item.type_params.value
+                        for type_literal in parsed_item.type_params
                     ],
                     parsed=parser.Identifier(
                         name=name,
@@ -590,9 +590,7 @@ class CrossReferencer:
                     file=Path("/dev/null"),
                     token=DUMMY_TOKEN,
                 ),
-                params=parser.TypeParameters(
-                    value=[], file=Path("/dev/null"), token=DUMMY_TOKEN
-                ),
+                params=[],
                 file=Path("/dev/null"),
                 token=DUMMY_TOKEN,
             )
@@ -636,9 +634,7 @@ class CrossReferencer:
                             file=Path("/dev/null"),
                             token=DUMMY_TOKEN,
                         ),
-                        params=parser.TypeParameters(
-                            value=[], file=Path("/dev/null"), token=DUMMY_TOKEN
-                        ),
+                        params=[],
                         file=Path("/dev/null"),
                         token=DUMMY_TOKEN,
                     )

@@ -205,9 +205,7 @@ class TypeChecker:
             identifier=parser.Identifier(
                 name=type_name, token=dummy_token, file=self.builtins_path
             ),
-            params=parser.TypeParameters(
-                value=[], token=dummy_token, file=self.builtins_path
-            ),
+            params=[],
             token=dummy_token,
             file=Path(self.builtins_path),
         )

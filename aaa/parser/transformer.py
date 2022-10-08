@@ -26,7 +26,6 @@ from aaa.parser.models import (
     StructFieldQuery,
     StructFieldUpdate,
     TypeLiteral,
-    TypeParameters,
 )
 
 DUMMY_TOKEN = Token(type_="", value="")  # type: ignore
@@ -87,7 +86,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return Function(
             struct_name=builtin_function_name.struct_name,
             func_name=builtin_function_name.func_name,
-            type_params=builtin_function_name.type_params.value,
+            type_params=builtin_function_name.type_params,
             arguments=arguments,
             return_types=return_types,
             body=empty_body,
@@ -172,7 +171,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             token=token,
             struct_name=name.struct_name,
             func_name=name.func_name,
-            type_params=name.type_params.value,
+            type_params=name.type_params,
             arguments=arguments,
             return_types=return_types,
             body=body,
@@ -185,9 +184,9 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def type_literal(
         self,
         identifier: Identifier,
-        params: Optional[TypeParameters],
+        params: Optional[List[TypeLiteral]],
     ) -> TypeLiteral:
-        params = params or TypeParameters(value=[], file=self.file, token=DUMMY_TOKEN)
+        params = params or []
 
         return TypeLiteral(
             identifier=identifier, params=params, file=self.file, token=identifier.token
@@ -327,5 +326,5 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             file=self.file,
         )
 
-    def type_params(self, *params: TypeLiteral) -> TypeParameters:
-        return TypeParameters(token=params[0].token, value=list(params), file=self.file)
+    def type_params(self, *params: TypeLiteral) -> List[TypeLiteral]:
+        return list(params)
