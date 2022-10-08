@@ -11,6 +11,7 @@ from aaa.cross_referencer.exceptions import (
     InvalidTypeParameter,
     MainFunctionNotFound,
     MainIsNotAFunction,
+    UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
 from aaa.cross_referencer.models import (
@@ -392,6 +393,14 @@ class CrossReferencer:
             if not isinstance(type, Type):
                 raise InvalidTypeParameter(file=function.file, identifiable=type)
 
+            if len(parsed_type.params) != type.param_count:
+                raise UnexpectedTypeParameterCount(
+                    file=function.file,
+                    token=parsed_arg.identifier.token,
+                    expected_param_count=type.param_count,
+                    found_param_count=len(parsed_type.params),
+                )
+
             params = self._lookup_function_params(function, parsed_type)
 
         return Argument(
@@ -631,6 +640,14 @@ class CrossReferencer:
                         ],
                         parsed=dummy_type_literal,
                     )
+
+                    if len(identifier.type_params) != identifiable.param_count:
+                        raise UnexpectedTypeParameterCount(
+                            file=function.file,
+                            token=identifier.token,
+                            expected_param_count=identifiable.param_count,
+                            found_param_count=len(identifier.type_params),
+                        )
 
                     identifier.kind = IdentifierCallingType(var_type=var_type)
                 else:  # pragma: nocover

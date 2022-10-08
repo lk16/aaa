@@ -150,3 +150,27 @@ class MainIsNotAFunction(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return f"{self.file}: Found {self.describe(self.identifiable)} instead of function main"
+
+
+class UnexpectedTypeParameterCount(CrossReferenceBaseException):
+    def __init__(
+        self,
+        file: Path,
+        token: Token,
+        expected_param_count: int,
+        found_param_count: int,
+    ) -> None:
+        self.file = file
+        self.token = token
+        self.expected_param_count = expected_param_count
+        self.found_param_count = found_param_count
+
+    def where(self) -> str:
+        return error_location(self.file, self.token)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.where()}: Unexpected number of type parameters\n"
+            + f"Expected parameter count: {self.expected_param_count}\n"
+            + f"   Found parameter count: {self.found_param_count}"
+        )
