@@ -63,6 +63,8 @@ class Parser:
         return parsed_file
 
     def _enqueue_dependencies(self, file: Path, parsed_file: ParsedFile) -> None:
+        # TODO improve imports: prevent absolute paths, directory traversal attack, ...
+
         for import_ in parsed_file.imports:
             dependency = (file.parent / f"{import_.source}.aaa").resolve()
 

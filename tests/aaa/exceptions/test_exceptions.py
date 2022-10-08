@@ -126,27 +126,17 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             "fn main { 5 }",
-            InvalidMainSignuture,
-            "",
-            id="invalid-main-signature-return-type",
-            marks=pytest.mark.skip,
+            FunctionTypeError,
+            "/foo/main.aaa:1:1: Function main returns wrong type(s)\n"
+            + "expected return types: \n"
+            + "   found return types: int\n",
+            id="invalid-main-signature-return-type\n",
         ),
         pytest.param(
             "fn main args a as int { 5 }",
             InvalidMainSignuture,
-            "",
+            "/foo/main.aaa:1:1 Main function should have no arguments and no return types\n",
             id="invalid-main-signature-both",
-            marks=pytest.mark.skip,
-        ),
-        pytest.param(
-            """
-            from "/foo" import bar
-            fn main { nop }
-            """,
-            Exception,
-            "/foo/main.aaa:2:13: Absolute imports are forbidden",
-            id="absolute-import",
-            marks=pytest.mark.skip(),  # TODO find exception for this
         ),
         pytest.param(
             """
@@ -277,9 +267,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { false assert }
             """,
             AaaAssertionFailure,
-            "",
+            "Assertion failure\n",
             id="assertion-failure",
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
