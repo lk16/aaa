@@ -86,6 +86,10 @@ class StackTypesError(TypeCheckerException):
     def func_like_name(self) -> str:
         if isinstance(self.func_like, Function):
             return self.func_like.name
+        elif isinstance(self.func_like, StructFieldQuery):
+            return "?"
+        elif isinstance(self.func_like, StructFieldUpdate):
+            return "!"
         else:
             assert False
 
