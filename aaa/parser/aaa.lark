@@ -22,50 +22,39 @@ integer: /[0-9]+/
 %import common.ESCAPED_STRING
 string: ESCAPED_STRING
 
-// block delimiters
-BEGIN:       /{(?=(\W|\s))/
-_END:        /}(?=(\W|\s|$))/
 
-// ignored keywords
-_AS:          /as(?=(\W|\s))/
-_ARGS:        /args(?=(\W|\s))/
-BUILTIN_FN:   /builtin_fn(?=(\W|\s))/
-BUILTIN_TYPE: /builtin_type(?=(\W|\s))/
-ELSE:         /else(?=(\W|\s))/
-FN:           /fn(?=(\W|\s))/
-FROM:         /from(?=(\W|\s))/
-_IMPORT:      /import(?=(\W|\s))/
-IF:           /if(?=(\W|\s))/
-_RETURN:      /return(?=(\W|\s))/
-STRUCT:       /struct(?=(\W|\s))/
-WHILE:        /while(?=(\W|\s))/
+// top-level block key words
+BUILTIN_FN:   "builtin_fn"
+BUILTIN_TYPE: "builtin_type"
+FN:           "fn"
+_IMPORT:      "import"
+STRUCT:       "struct"
+
+// block delimiters
+BEGIN:         "{"
+_END:          "}"
+
+// function keywords
+_AS:          "as"
+_ARGS:        "args"
+_RETURN:      "return"
+
+// control flow keywords
+ELSE:         "else"
+FROM:         "from"
+IF:           "if"
+WHILE:        "while"
 
 // keywords for builtin types
-BOOL:       /bool(?=(\W|\s))/
-INT:        /int(?=(\W|\s))/
-MAP:        /map(?=(\W|\s))/
-STR:        /str(?=(\W|\s))/
-VEC:        /vec(?=(\W|\s))/
+BOOL:       "bool"
+INT:        "int"
+MAP:        "map"
+STR:        "str"
+VEC:        "vec"
 
 // keywords for builtin constants
-FALSE:      /false(?=(\W|\s))/
-TRUE:       /true(?=(\W|\s))/
-
-// keywords for builtin boolean operations
-AND:        /and(?=(\W|\s))/
-NOT:        /not(?=(\W|\s))/
-OR:         /or(?=(\W|\s))/
-
-// keywords for builtin stack operations
-DUP:        /dup(?=(\W|\s))/
-DROP:       /drop(?=(\W|\s))/
-OVER:       /over(?=(\W|\s))/
-ROT:        /rot(?=(\W|\s))/
-SWAP:       /swap(?=(\W|\s))/
-
-// keywords for builtin misscellaneous operations
-ASSERT:     /assert(?=(\W|\s))/
-NOP:        /nop(?=(\W|\s))/
+FALSE:      "false"
+TRUE:       "true"
 
 // --- builtin file rules ---
 
@@ -155,21 +144,6 @@ loop: WHILE function_body BEGIN function_body _END
 // --- identifier ---
 
 identifier:   /[a-zA-Z_]+/
-            | AND
-            | ASSERT
-            | BOOL
-            | DROP
-            | DUP
-            | INT
-            | MAP
-            | NOP
-            | NOT
-            | OR
-            | OVER
-            | ROT
-            | STR
-            | SWAP
-            | VEC
             | /-(?=\s)/
             | /!=(?=\s)/
             | /\.(?=\s)/
