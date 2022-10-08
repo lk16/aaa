@@ -78,7 +78,7 @@ class CrossReferencer:
 
         for file, identifier, function in self._get_identifiers_by_type(Function):
             try:
-                self._resolve_function_type_params(function)
+                self._resolve_function_params(function)
                 self._check_function_argument_collision(function)
                 self._resolve_function_arguments(function)
                 self._check_argument_identifier_collision(function)
@@ -275,71 +275,79 @@ class CrossReferencer:
             if isinstance(identifiable, type)
         ]
 
-    def _resolve_type_fields(self, type: Type) -> None:
-        type.fields = {}
+    def _resolve_type_field(self, parsed_field: parser.TypeLiteral) -> VariableType:
+        type_identifier = parsed_field.identifier
+        field_type = self._get_identifiable(type_identifier)
 
-        for field_name, parsed_field in type.parsed_field_types.items():
-            type_identifier = parsed_field.identifier
-            field_type = self._get_identifiable(type_identifier)
+        if not isinstance(field_type, Type):
+            # TODO field is import/function/...
+            raise NotImplementedError
 
-            if not isinstance(field_type, Type):
-                # TODO field is import/function/...
+        params: List[VariableType] = []
+
+        for parsed_param in parsed_field.params:
+            param_type = self._get_identifiable(parsed_param.identifier)
+
+            if not isinstance(param_type, Type):
+                # TODO param_type is import/function/...
                 raise NotImplementedError
 
-            params: List[VariableType] = []
+            assert len(parsed_param.params) == 0
 
-            for parsed_param in parsed_field.params:
-                param_type = self._get_identifiable(parsed_param.identifier)
-
-                if not isinstance(param_type, Type):
-                    # TODO param_type is import/function/...
-                    raise NotImplementedError
-
-                assert len(parsed_param.params) == 0
-
-                params.append(
-                    VariableType(
-                        parsed=parsed_param,
-                        type=param_type,
-                        params=[],
-                        is_placeholder=False,
-                    )
+            params.append(
+                VariableType(
+                    parsed=parsed_param,
+                    type=param_type,
+                    params=[],
+                    is_placeholder=False,
                 )
-
-            field_var_type = VariableType(
-                parsed=parsed_field,
-                type=field_type,
-                params=params,
-                is_placeholder=False,
             )
 
-            type.fields[field_name] = field_var_type
+        return VariableType(
+            parsed=parsed_field,
+            type=field_type,
+            params=params,
+            is_placeholder=False,
+        )
 
-    def _resolve_function_type_params(self, function: Function) -> None:
-        function.type_params = {}
+    def _resolve_type_fields(self, type: Type) -> None:
+        type.fields = {
+            field_name: self._resolve_type_field(parsed_field)
+            for field_name, parsed_field in type.parsed_field_types.items()
+        }
 
-        for parsed_type_param in function.parsed_type_params:
-            param_name = parsed_type_param.identifier.name
+    def _resolve_function_param(
+        self, function: Function, parsed_type_param: parser.TypeLiteral
+    ) -> Type:
+        param_name = parsed_type_param.identifier.name
 
-            type_literal = function.get_parsed_type_param(param_name)
+        type_literal = function.get_parsed_type_param(param_name)
 
-            assert type_literal
+        assert type_literal
 
-            type = Type(
-                parsed=type_literal,
-                param_count=0,
-                fields={},
+        type = Type(
+            parsed=type_literal,
+            param_count=0,
+            fields={},
+        )
+
+        if (function.file, param_name) in self.identifiers:
+            # Another identifier in the same file has this name.
+            raise CollidingIdentifier(
+                file=function.file,
+                colliding=type,
+                found=self.identifiers[(function.file, param_name)],
             )
 
-            if (function.file, param_name) in self.identifiers:
-                # Another identifier in the same file has this name.
-                raise CollidingIdentifier(
-                    file=function.file,
-                    colliding=type,
-                    found=self.identifiers[(function.file, param_name)],
-                )
+        return type
 
-            function.type_params[param_name] = type
+    def _resolve_function_params(self, function: Function) -> None:
+        function.type_params = {
+            parsed_type_param.identifier.name: self._resolve_function_param(
+                function, parsed_type_param
+            )
+            for parsed_type_param in function.parsed_type_params
+        }
 
     def _check_function_argument_collision(self, function: Function) -> None:
         arg_count = len(function.parsed_arguments)
@@ -367,40 +375,43 @@ class CrossReferencer:
                         found=rhs_identifiable,
                     )
 
-    def _resolve_function_arguments(self, function: Function) -> None:
+    def _resolve_function_argument(
+        self, function: Function, parsed_arg: parser.Argument
+    ) -> Argument:
         assert not isinstance(function.type_params, Unresolved)
-        function.arguments = []
+        parsed_type = parsed_arg.type
+        arg_type_name = parsed_arg.type.identifier.name
+        type: Identifiable | Unresolved
 
-        for parsed_arg in function.parsed_arguments:
-            parsed_type = parsed_arg.type
-            arg_type_name = parsed_arg.type.identifier.name
-            type: Identifiable | Unresolved
+        if arg_type_name in function.type_params:
+            type = function.type_params[arg_type_name]
+            params: List[VariableType] = []
+        else:
+            type = self._get_identifiable(parsed_type.identifier)
 
-            if arg_type_name in function.type_params:
-                type = function.type_params[arg_type_name]
-                params: List[VariableType] = []
-            else:
-                type = self._get_identifiable(parsed_type.identifier)
+            if not isinstance(type, Type):
+                raise InvalidTypeParameter(file=function.file, identifiable=type)
 
-                if not isinstance(type, Type):
-                    raise InvalidTypeParameter(file=function.file, identifiable=type)
+            params = self._lookup_function_params(function, parsed_type)
 
-                params = self._resolve_function_argument_params(function, parsed_type)
+        return Argument(
+            name=parsed_arg.identifier.name,
+            file=function.file,
+            var_type=VariableType(
+                parsed=parsed_type,
+                type=type,
+                params=params,
+                is_placeholder=arg_type_name in function.type_params,
+            ),
+        )
 
-            argument = Argument(
-                name=parsed_arg.identifier.name,
-                file=function.file,
-                var_type=VariableType(
-                    parsed=parsed_type,
-                    type=type,
-                    params=params,
-                    is_placeholder=arg_type_name in function.type_params,
-                ),
-            )
+    def _resolve_function_arguments(self, function: Function) -> None:
+        function.arguments = [
+            self._resolve_function_argument(function, parsed_arg)
+            for parsed_arg in function.parsed_arguments
+        ]
 
-            function.arguments.append(argument)
-
-    def _resolve_function_argument_param(
+    def _lookup_function_param(
         self, function: Function, param: parser.TypeLiteral
     ) -> VariableType:
         assert not isinstance(function.type_params, Unresolved)
@@ -423,17 +434,16 @@ class CrossReferencer:
             type=param_type,
             is_placeholder=is_placeholder,
             parsed=param,
-            params=self._resolve_function_argument_params(function, param),
+            params=self._lookup_function_params(function, param),
         )
 
-    def _resolve_function_argument_params(
+    def _lookup_function_params(
         self,
         function: Function,
         parsed_type: parser.TypeLiteral,
     ) -> List[VariableType]:
         return [
-            self._resolve_function_argument_param(function, param)
-            for param in parsed_type.params
+            self._lookup_function_param(function, param) for param in parsed_type.params
         ]
 
     def _check_argument_identifier_collision(self, function: Function) -> None:
@@ -472,33 +482,7 @@ class CrossReferencer:
                 if not isinstance(type, Type):
                     raise InvalidTypeParameter(file=function.file, identifiable=type)
 
-                params = []
-                for parsed_param in parsed_return_type.params:
-                    param_name = parsed_param.identifier.name
-
-                    if param_name in function.type_params:
-                        param_var_type = VariableType(
-                            is_placeholder=True,
-                            params=[],
-                            parsed=parsed_param,
-                            type=function.type_params[param_name],
-                        )
-                    else:
-                        identifier = self._get_identifiable(parsed_param.identifier)
-
-                        if not isinstance(identifier, Type):
-                            raise InvalidType(
-                                file=function.file, identifiable=identifier
-                            )
-
-                        param_var_type = VariableType(
-                            is_placeholder=False,
-                            params=[],
-                            parsed=parsed_param,
-                            type=identifier,
-                        )
-
-                    params.append(param_var_type)
+                params = self._lookup_function_params(function, parsed_return_type)
 
             return_type = VariableType(
                 parsed=parsed_return_type,
@@ -647,6 +631,7 @@ class CrossReferencer:
                         ],
                         parsed=dummy_type_literal,
                     )
+
                     identifier.kind = IdentifierCallingType(var_type=var_type)
                 else:  # pragma: nocover
                     raise NotImplementedError
