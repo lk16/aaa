@@ -434,8 +434,8 @@ class CrossReferencer:
             else:
                 identifier = self._get_identifier(
                     file,
-                    parsed_type.identifier.name,
-                    parsed_type.identifier.token,
+                    param.identifier.name,
+                    param.identifier.token,
                 )
 
                 if not isinstance(identifier, Type):
@@ -446,7 +446,9 @@ class CrossReferencer:
                         type=identifier,
                         is_placeholder=False,
                         parsed=param,
-                        params=[],
+                        params=self._resolve_function_argument_params(
+                            file, function, param
+                        ),
                     )
                 )
 
