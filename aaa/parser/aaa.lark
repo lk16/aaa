@@ -150,9 +150,9 @@ branch: ( \
 
 // --- loop ---
 
-loop: loop_condition BEGIN loop_body _END
-!loop_condition: WHILE function_body
-loop_body: function_body
+loop: WHILE function_body BEGIN function_body _END
+
+// --- identifier ---
 
 identifier:   /[a-zA-Z_]+/
             | AND

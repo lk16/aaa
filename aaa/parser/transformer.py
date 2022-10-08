@@ -17,8 +17,6 @@ from aaa.parser.models import (
     ImportItem,
     IntegerLiteral,
     Loop,
-    LoopBody,
-    LoopCondition,
     Operator,
     ParsedFile,
     StringLiteral,
@@ -227,22 +225,13 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return literal
 
     def loop(
-        self, condition: LoopCondition, begin_token: Token, body: LoopBody
+        self,
+        while_token: Token,
+        condition: FunctionBody,
+        begin_token: Token,
+        body: FunctionBody,
     ) -> Loop:
-        return Loop(
-            token=condition.token,
-            condition=condition.value,
-            body=body.value,
-            file=self.file,
-        )
-
-    def loop_condition(
-        self, token: Token, function_body: FunctionBody
-    ) -> LoopCondition:
-        return LoopCondition(token=token, value=function_body, file=self.file)
-
-    def loop_body(self, function_body: FunctionBody) -> LoopBody:
-        return LoopBody(token=function_body.token, value=function_body, file=self.file)
+        return Loop(token=while_token, condition=condition, body=body, file=self.file)
 
     def member_function_name(self, token: Token) -> Identifier:
         return Identifier(name=token.value, token=token, file=self.file)

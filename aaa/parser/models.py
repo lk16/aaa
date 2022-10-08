@@ -52,18 +52,6 @@ class Loop(FunctionBodyItem):
         super().__init__(file=file, token=token)
 
 
-class LoopCondition(AaaParseModel):
-    def __init__(self, *, value: FunctionBody, file: Path, token: Token) -> None:
-        self.value = value
-        super().__init__(file=file, token=token)
-
-
-class LoopBody(AaaParseModel):
-    def __init__(self, *, value: FunctionBody, file: Path, token: Token) -> None:
-        self.value = value
-        super().__init__(file=file, token=token)
-
-
 class Identifier(FunctionBodyItem):
     def __init__(self, *, name: str, file: Path, token: Token) -> None:
         self.name = name
