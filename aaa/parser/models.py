@@ -209,7 +209,7 @@ class TypeLiteral(AaaParseModel):
         super().__init__(file=file, token=token)
 
 
-class TypeParameters(AaaParseModel):
+class TypeParameters(AaaParseModel):  # TODO replace with List[TypeLiteral]
     def __init__(self, *, value: List[TypeLiteral], file: Path, token: Token) -> None:
         self.value = value
         super().__init__(file=file, token=token)

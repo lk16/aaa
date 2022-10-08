@@ -284,13 +284,32 @@ class CrossReferencer:
                 # TODO field is import/function/...
                 raise NotImplementedError
 
-            # TODO handle params
-            assert field_type.param_count == 0
+            params: List[VariableType] = []
+
+            for parsed_param in parsed_field.params.value:
+                param_type = self._get_identifier(
+                    file, parsed_param.identifier.name, parsed_param.identifier.token
+                )
+
+                if not isinstance(param_type, Type):
+                    # TODO param_type is import/function/...
+                    raise NotImplementedError
+
+                assert len(parsed_param.params.value) == 0
+
+                params.append(
+                    VariableType(
+                        parsed=parsed_param,
+                        type=param_type,
+                        params=[],
+                        is_placeholder=False,
+                    )
+                )
 
             field_var_type = VariableType(
                 parsed=parsed_field,
                 type=field_type,
-                params=[],
+                params=params,
                 is_placeholder=False,
             )
 
