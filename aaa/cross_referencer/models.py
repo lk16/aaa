@@ -168,8 +168,7 @@ class VariableType(AaaCrossReferenceModel):
 
         if self.params:
             output += "["
-            for param in self.params:
-                output += repr(param)
+            output += ", ".join(repr(param) for param in self.params)
             output += "]"
 
         return output
