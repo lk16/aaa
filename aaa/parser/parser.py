@@ -4,7 +4,6 @@ from typing import Dict, List
 from lark.exceptions import UnexpectedInput, VisitError
 from lark.lark import Lark
 
-from aaa.parser import aaa_builtins_parser, aaa_source_parser
 from aaa.parser.exceptions import FileReadError, ParseException, ParserBaseException
 from aaa.parser.models import ParsedFile, ParserOutput
 from aaa.parser.transformer import AaaTransformer
@@ -20,13 +19,16 @@ class Parser:
         self.exceptions: List[ParserBaseException] = []
 
     def run(self) -> ParserOutput:
+        builtins_parser = self._get_builtins_parser()
+        source_parser = self._get_source_parser()
+
         self.parsed[self.builtins_path] = self._parse(
-            self.builtins_path, aaa_builtins_parser
+            self.builtins_path, builtins_parser
         )
 
         for file in self.parse_queue:
             try:
-                self.parsed[file] = self._parse(file, aaa_source_parser)
+                self.parsed[file] = self._parse(file, source_parser)
             except ParserBaseException as e:
                 # TODO check if identifiers are not keywords
                 # TODO check if identifiers are not operators
@@ -66,3 +68,23 @@ class Parser:
 
             if dependency not in self.parsed:
                 self.parse_queue.append(dependency)
+
+    def _get_builtins_parser(self) -> Lark:
+        grammar_path = Path(__file__).parent / "aaa.lark"
+
+        return Lark(
+            open(grammar_path).read(),
+            start="builtins_file_root",
+            maybe_placeholders=True,
+            parser="lalr",
+        )
+
+    def _get_source_parser(self) -> Lark:
+        grammar_path = Path(__file__).parent / "aaa.lark"
+
+        return Lark(
+            open(grammar_path).read(),
+            start="regular_file_root",
+            maybe_placeholders=True,
+            parser="lalr",
+        )
