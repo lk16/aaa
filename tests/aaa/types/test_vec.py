@@ -15,7 +15,11 @@ from tests.aaa import check_aaa_main
         ),
         pytest.param("vec[vec[int]] .", "[]", [], id="print-nested-zero-items"),
         pytest.param(
-            "vec[vec[int]] vec[int] vec:push .", "[[]]", [], id="print-nested-one-item"
+            "vec[vec[int]] vec[int] vec:push .",
+            "[[]]",
+            [],
+            id="print-nested-one-item",
+            marks=pytest.mark.skip,
         ),
         pytest.param('vec[int] 5 vec:push vec:pop . " " . .', "5 []", [], id="pop-ok"),
         pytest.param(
@@ -71,6 +75,7 @@ from tests.aaa import check_aaa_main
             "[[5]]",
             [],
             id="nested-one-item",
+            marks=pytest.mark.skip,
         ),
     ],
 )
