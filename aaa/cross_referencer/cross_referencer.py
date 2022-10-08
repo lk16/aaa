@@ -61,14 +61,14 @@ class CrossReferencer:
 
         for file, identifier, import_ in self._get_identifiers_by_type(Import):
             try:
-                self._resolve_import(file, import_)
+                self._resolve_import(import_)
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
 
         for file, identifier, type_ in self._get_identifiers_by_type(Type):
             try:
-                self._resolve_type_fields(file, type_)
+                self._resolve_type_fields(type_)
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
@@ -229,17 +229,17 @@ class CrossReferencer:
             for type in types
         ]
 
-    def _resolve_import(self, file: Path, import_: Import) -> None:
+    def _resolve_import(self, import_: Import) -> None:
 
         key = (import_.source_file, import_.source_name)
 
         try:
             source = self.identifiers[key]
         except KeyError:
-            raise ImportedItemNotFound(file=file, import_=import_)
+            raise ImportedItemNotFound(file=import_.file, import_=import_)
 
         if isinstance(source, Import):
-            raise IndirectImportException(file=file, import_=import_)
+            raise IndirectImportException(file=import_.file, import_=import_)
 
         import_.source = source
 
@@ -271,7 +271,7 @@ class CrossReferencer:
             if isinstance(identifiable, type)
         ]
 
-    def _resolve_type_fields(self, file: Path, type: Type) -> None:
+    def _resolve_type_fields(self, type: Type) -> None:
         type.fields = {}
 
         for field_name, parsed_field in type.parsed_field_types.items():
@@ -279,7 +279,7 @@ class CrossReferencer:
             type_name = type_identifier.name
             type_token = type_identifier.token
 
-            field_type = self._get_identifier(file, type_name, type_token)
+            field_type = self._get_identifier(type.file, type_name, type_token)
 
             if not isinstance(field_type, Type):
                 # TODO field is import/function/...
@@ -289,7 +289,9 @@ class CrossReferencer:
 
             for parsed_param in parsed_field.params:
                 param_type = self._get_identifier(
-                    file, parsed_param.identifier.name, parsed_param.identifier.token
+                    type.file,
+                    parsed_param.identifier.name,
+                    parsed_param.identifier.token,
                 )
 
                 if not isinstance(param_type, Type):
@@ -390,9 +392,7 @@ class CrossReferencer:
                 if not isinstance(type, Type):
                     raise InvalidTypeParameter(file=function.file, identifiable=type)
 
-                params = self._resolve_function_argument_params(
-                    function.file, function, parsed_type
-                )
+                params = self._resolve_function_argument_params(function, parsed_type)
 
             argument = Argument(
                 name=parsed_arg.identifier.name,
@@ -407,52 +407,48 @@ class CrossReferencer:
 
             function.arguments.append(argument)
 
+    def _resolve_function_argument_param(
+        self, function: Function, param: parser.TypeLiteral
+    ) -> VariableType:
+        assert not isinstance(function.type_params, Unresolved)
+        assert len(param.params) == 0
+
+        param_name = param.identifier.name
+        if param_name in function.type_params:
+            param_type = function.type_params[param_name]
+
+            return VariableType(
+                type=param_type,
+                is_placeholder=True,
+                parsed=param,
+                params=[],
+            )
+        else:
+            identifier = self._get_identifier(
+                function.file,
+                param.identifier.name,
+                param.identifier.token,
+            )
+
+            if not isinstance(identifier, Type):
+                raise InvalidType(file=identifier.file, identifiable=identifier)
+
+            return VariableType(
+                type=identifier,
+                is_placeholder=False,
+                parsed=param,
+                params=self._resolve_function_argument_params(function, param),
+            )
+
     def _resolve_function_argument_params(
         self,
-        file: Path,
         function: Function,
         parsed_type: parser.TypeLiteral,
     ) -> List[VariableType]:
-        assert not isinstance(function.type_params, Unresolved)
-        params: List[VariableType] = []
-
-        for param in parsed_type.params:
-            assert len(param.params) == 0
-
-            param_name = param.identifier.name
-            if param_name in function.type_params:
-                param_type = function.type_params[param_name]
-
-                params.append(
-                    VariableType(
-                        type=param_type,
-                        is_placeholder=True,
-                        parsed=param,
-                        params=[],
-                    )
-                )
-            else:
-                identifier = self._get_identifier(
-                    file,
-                    param.identifier.name,
-                    param.identifier.token,
-                )
-
-                if not isinstance(identifier, Type):
-                    raise InvalidType(file=file, identifiable=identifier)
-
-                params.append(
-                    VariableType(
-                        type=identifier,
-                        is_placeholder=False,
-                        parsed=param,
-                        params=self._resolve_function_argument_params(
-                            file, function, param
-                        ),
-                    )
-                )
-
-        return params
+        return [
+            self._resolve_function_argument_param(function, param)
+            for param in parsed_type.params
+        ]
 
     def _check_argument_identifier_collision(self, function: Function) -> None:
         assert not isinstance(function.arguments, Unresolved)
