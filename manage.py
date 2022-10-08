@@ -32,7 +32,7 @@ def run(path: str) -> None:
 def runtests() -> None:
     commands = [
         "pre-commit run --all-files mypy",
-        "pytest --cov=lang --cov-report=term-missing --pdb -x --lf --nf",
+        "pytest --cov=aaa --cov-report=term-missing --pdb -x --lf --nf",
     ]
 
     for command in commands:
