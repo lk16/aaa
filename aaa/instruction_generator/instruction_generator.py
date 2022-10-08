@@ -231,24 +231,15 @@ class InstructionGenerator:
                 elif type.name == "bool":
                     return [PushBool(False)]
                 elif type.name == "vec":
-                    if len(type_params) != 1:
-                        # TODO handle invalid number of type params earlier
-                        raise NotImplementedError
                     return [PushVec(item_type=type_params[0])]
                 elif type.name == "map":
-                    if len(type_params) != 2:
-                        # TODO handle invalid number of type params earlier
-                        raise NotImplementedError
                     return [PushMap(key_type=type_params[0], value_type=type_params[1])]
                 else:  # pragma: nocover
                     raise NotImplementedError
 
             return [PushStruct(var_type)]
-            # TODO handle builtin types nicely / update PushStruct instruction
-            raise NotImplementedError
 
         if isinstance(identifier.kind, IdentifierUsingArgument):
-            # TODO use argument type
             return [PushFunctionArgument(arg_name=identifier.name)]
 
         assert False  # pragma: nocover
