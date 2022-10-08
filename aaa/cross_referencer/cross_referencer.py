@@ -81,6 +81,7 @@ class CrossReferencer:
         for file, identifier, function in self._get_identifiers_by_type(Function):
             try:
                 self._resolve_function_type_params(function)
+                self._check_function_argument_collision(function)
                 self._resolve_function_arguments(function)
                 self._check_argument_identifier_collision(function)
                 self._resolve_function_return_types(function)
@@ -340,6 +341,32 @@ class CrossReferencer:
                 )
 
             function.type_params[param_name] = type
+
+    def _check_function_argument_collision(self, function: Function) -> None:
+        arg_count = len(function.parsed_arguments)
+
+        for i in range(arg_count):
+            lhs_arg = function.parsed_arguments[i]
+            for j in range(i + 1, arg_count):
+                rhs_arg = function.parsed_arguments[j]
+
+                if lhs_arg.identifier.name == rhs_arg.identifier.name:
+                    lhs_identifiable = ArgumentIdentifiable(
+                        file=lhs_arg.file,
+                        token=lhs_arg.token,
+                        name=lhs_arg.identifier.name,
+                    )
+                    rhs_identifiable = ArgumentIdentifiable(
+                        file=rhs_arg.file,
+                        token=rhs_arg.token,
+                        name=rhs_arg.identifier.name,
+                    )
+
+                    raise CollidingIdentifier(
+                        file=function.file,
+                        colliding=lhs_identifiable,
+                        found=rhs_identifiable,
+                    )
 
     def _resolve_function_arguments(self, function: Function) -> None:
         assert not isinstance(function.type_params, Unresolved)

@@ -387,8 +387,8 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:2:41: function argument bar collides with:\n"
-            + "/foo/main.aaa:2:29: function argument bar\n",
+            "/foo/main.aaa:2:29: function argument bar collides with:\n"
+            + "/foo/main.aaa:2:41: function argument bar\n",
             id="argname-argname",
         ),
         pytest.param(
