@@ -45,7 +45,6 @@ from tests.aaa import check_aaa_full_source
             "",
             [MainFunctionNotFound],
             id="no-main",
-            marks=pytest.mark.skip,
         ),
     ],
 )

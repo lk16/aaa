@@ -2,6 +2,7 @@ from typing import List, Type
 
 import pytest
 
+from aaa.simulator.exceptions import AaaAssertionFailure
 from tests.aaa import check_aaa_main
 
 
@@ -14,9 +15,8 @@ from tests.aaa import check_aaa_main
         pytest.param(
             "false assert",
             "",
-            [NotImplementedError],
+            [AaaAssertionFailure],
             id="assert-false",
-            marks=pytest.mark.skip,
         ),
         pytest.param("1 drop", "", [], id="drop"),
         pytest.param("1 dup . .", "11", [], id="dup"),
