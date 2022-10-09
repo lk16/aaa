@@ -23,7 +23,7 @@ integer: /[0-9]+/
 string: ESCAPED_STRING
 
 
-// top-level block key words
+// top-level block keywords
 BUILTIN_FN:   "builtin_fn"
 BUILTIN_TYPE: "builtin_type"
 FN:           "fn"
