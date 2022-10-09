@@ -69,14 +69,33 @@ fn map[K, V]:values        args m as map[K, V]                       return vec[
 
 // TODO: rename vec:size and map:size to vec:len and map:len
 
-// struct field operations: are roughly like below
-// except *b depends on the value of the str argument
+// string functions
+fn str:append     args s as str, other as str                  return str, str
+fn str:contains   args s as str, other as str                  return str, bool
+fn str:equals     args s as str, other as str                  return str, bool
+fn str:join       args s as str, parts as vec[str]             return str, str
+fn str:len        args s as str                                return str, int
+fn str:lower      args s as str                                return str, str
+fn str:replace    args s as str, search as str, replace as str return str, str
+fn str:split      args s as str, sep as str                    return str, vec[str]
+fn str:strip      args s as str                                return str
+fn str:upper      args s as str                                return str, str
 
-// fn ? args *a, str     return *a, *b
-// fn ! args *a, str, *b return *a
+// TODO: return enum indicating success/failure instead of extra bool
+fn str:find_after args s as str, other as str, offset as int   return str, int, bool
+fn str:find       args s as str, other as str                  return str, int, bool
+fn str:substr     args s as str, start as int, end as int      return str, str, bool
+fn str:to_bool    args s as str                                return str, bool, bool
+fn str:to_int     args s as str                                return str, int, bool
+
+// TODO: not implemented yet
+// fn int:to_str  args int  return int, str
+// fn bool:to_str args bool return bool, str
 
 // TODO everything below should be moved to separate file in stdlib
 // Function and type names should not be reserved / builtin
+
+// Syscall list: http://faculty.nps.edu/cseagle/assembly/sys_call.html
 
 fn environ return map[str, str]
 fn execve args path as str, argv as vec[str], env as map[str, str]
@@ -100,30 +119,3 @@ fn read args fd as int, n as int return str, bool
 fn waitpid args pid as int, options as int return int, bool
 fn write args fd as int, data as str return int, bool
 fn unlink args path as str return bool
-
-// TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
-// TODO: not implemented yet
-// fn link args str, str return int
-// fn chmod args str, int return int
-
-fn str:append     args s as str, other as str                  return str, str
-fn str:contains   args s as str, other as str                  return str, bool
-fn str:equals     args s as str, other as str                  return str, bool
-fn str:join       args s as str, parts as vec[str]             return str, str
-fn str:len        args s as str                                return str, int
-fn str:lower      args s as str                                return str, str
-fn str:replace    args s as str, search as str, replace as str return str, str
-fn str:split      args s as str, sep as str                    return str, vec[str]
-fn str:strip      args s as str                                return str
-fn str:upper      args s as str                                return str, str
-
-// TODO: return enum indicating success/failure instead of extra bool
-fn str:find_after args s as str, other as str, offset as int   return str, int, bool
-fn str:find       args s as str, other as str                  return str, int, bool
-fn str:substr     args s as str, start as int, end as int      return str, str, bool
-fn str:to_bool    args s as str                                return str, bool, bool
-fn str:to_int     args s as str                                return str, int, bool
-
-// TODO: not implemented yet
-// fn int:to_str  args int  return int, str
-// fn bool:to_str args bool return bool, str

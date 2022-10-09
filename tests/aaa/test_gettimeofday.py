@@ -5,7 +5,7 @@ from unittest.mock import patch
 from aaa.run import Runner
 
 MOCK_SEC = 123456789
-MOCK_NANO_SEC = 987654328
+MOCK_NANO_SEC = 987654328  # NOTE: not ending in 1 because of float rounding errors
 
 
 def test_gettimeofday() -> None:
