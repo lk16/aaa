@@ -9,13 +9,13 @@ Stack-based language, like forth.
 ### Examples
 ```sh
 # Run code from a shell argument. This prints "aaa\n".
-./aaa.py cmd '"a" 0 while dup 3 < { over . 1 + } drop drop "\n" .'
+./manage.py cmd 'fn main { "a" 0 while dup 3 < { over . 1 + } drop drop "\n" . }'
 
 # Run code from a file. Implements the famous fizzbuzz interview question.
-./aaa.py run examples/fizzbuzz.aaa
+./manage.py run examples/fizzbuzz.aaa
 
 # Run unit tests
-./aaa.py runtests
+./manage.py runtests
 ```
 
 ### Aaa features
@@ -76,10 +76,10 @@ poetry shell
 export AAA_STDLIB_PATH=$(pwd)/stdlib
 
 # Run hello world program
-./aaa.py cmd '"Hello world\n" .'
+./manage.py cmd 'fn main { "Hello world\n" . }'
 
 # Run tests
-./aaa.py runtests
+./manage.py runtests
 
 # Setup pre-commit hooks
 pre-commit install

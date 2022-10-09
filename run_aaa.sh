@@ -10,5 +10,5 @@ old_cwd=$(pwd)
 aaa_file=$(readlink -f $1)
 
 cd $aaa_repo_root
-poetry run ./aaa.py run $aaa_file
+poetry run ./manage.py run $aaa_file
 cd $old_cwd

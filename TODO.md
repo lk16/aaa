@@ -1,43 +1,5 @@
 # TODO
 
-### Split steps
-
-#### Parser
-- [x] create `Parser` with entrypoint `run()`
-- [x] find dependencies of each file, parse those too
-- [ ] detect cyclic imports (we could just allow them?!?)
-- [x] return model with filename to parse tree and list of encountered problems
-- [x] move used exceptions to this package
-- [x] check if imports are not from other steps
-
-#### Cross Referencer
-- [x] create `CrossReferencer` with entrypoint `run()`
-- [x] resolve identifiers of functions/structs/arguments
-- [x] find naming issues
-- [ ] return types, structs and functions
-
-
-#### Type Checker
-- [ ] refactor `TypeChecker` with entrypoint `run()`
-- [ ] check if there are no new type placeholders in return type
-- [ ] returns list of found problems only
-- [ ] ...
-
-#### Instruction Generator
-- [ ] refactor `InstructionGenerator` with entrypoint `run()`
-- [ ] accepts return value of `CrossReferencer.run()`
-- [ ] replaces function values of the dict by a sequence of instructions
-- [ ] returns that
-- [ ] ...
-
-#### Simulator
-- [ ] refactor `Simulator` with entrypoint `run()`
-- [ ] accepts output of `InstructionGenerator.run()`
-- [ ] runs program
-- [ ] ...
-
-
-
 ### Member functions
 - make not returning the object the default
 
@@ -57,19 +19,12 @@ fn main {
 }
 ```
 
-## Structs
-- This does not crash: `./aaa.py cmd-full 'struct foo { bar as *a } fn main { foo drop }'`
-
 ### Containers
-- Better error handling for wrong number of type parameters
-    - this crashes: `./aaa.py cmd-full 'fn main { nop } fn foo args b as vec { nop }'`
-- Member functions should always return the type they operate on as first return value
 - Check that key type is hashable (currently: not a `vec`, `map` or `set`)
 - Add member functions:
     - `map:keys`
     - `map:values`
     - `map:items`
-    - `map:drop`
 - Add `set` container and member functions
 
 ### Instruction optimization
@@ -83,9 +38,6 @@ fn main {
 - Consider adding buffer type
 - Add basic time-related functions: time, gettimeofday
 - Add network-related functions: socket, bind, listen, accept, ...
-
-### Structs
-- Allow type params for struct
 
 ### Language features
 - negative `int` literals
