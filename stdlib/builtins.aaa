@@ -119,3 +119,20 @@ fn read args fd as int, n as int return str, bool
 fn waitpid args pid as int, options as int return int, bool
 fn write args fd as int, data as str return int, bool
 fn unlink args path as str return bool
+
+// network syscalls TODO implement
+
+// for comparison: https://github.com/lk16/aaa/blob/use-c/c/httpserver.c
+
+// https://docs.python.org/3/library/socket.html#socket.socket
+fn socket args family as int, type_ as int, protocol as int return int, bool
+
+// https://docs.python.org/3/library/socket.html#socket.socket.bind
+fn bind args fd as int, ip_addr as str, port as int return int, bool
+
+// https://docs.python.org/3/library/socket.html#socket.socket.listen
+fn listen args fd as int, backlog as int return int, bool
+
+// https://docs.python.org/3/library/socket.html#socket.socket.listen
+// TODO return address / second return value of socket.listen as well
+fn accept args fd as int return int, bool
