@@ -147,6 +147,7 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
             StandardLibraryCallKind.SYSCALL_WAITPID: self.instruction_waitpid,
             StandardLibraryCallKind.SYSCALL_WRITE: self.instruction_write,
+            StandardLibraryCallKind.SYSCALL_UNLINK: self.instruction_unlink,
             StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
             StandardLibraryCallKind.VEC_CLEAR: self.instruction_vec_clear,
             StandardLibraryCallKind.VEC_COPY: self.instruction_vec_copy,
@@ -1007,5 +1008,17 @@ class Simulator:
 
         appeneded = string + suffix
         self.push_str(appeneded)
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_unlink(self) -> int:
+        path = self.pop_str()
+
+        try:
+            os.unlink(path)
+        except OSError:
+            self.push_bool(False)
+        else:
+            self.push_bool(True)
 
         return self.get_instruction_pointer() + 1

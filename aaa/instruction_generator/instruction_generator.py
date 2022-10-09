@@ -126,6 +126,7 @@ STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
     "str:to_int": StandardLibraryCallKind.STR_TO_INT,
     "str:upper": StandardLibraryCallKind.STR_UPPER,
     "time": StandardLibraryCallKind.SYSCALL_TIME,
+    "unlink": StandardLibraryCallKind.SYSCALL_UNLINK,
     "unsetenv": StandardLibraryCallKind.UNSETENV,
     "vec:clear": StandardLibraryCallKind.VEC_CLEAR,
     "vec:copy": StandardLibraryCallKind.VEC_COPY,
