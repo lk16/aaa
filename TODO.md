@@ -36,7 +36,6 @@ fn main {
 ### Support syscalls
 - Add binary or/and/not integer operations
 - Consider adding buffer type
-- Add basic time-related functions: time, gettimeofday
 - Add network-related functions: socket, bind, listen, accept, ...
 
 ### Language features
