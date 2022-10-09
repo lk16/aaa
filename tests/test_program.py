@@ -2,13 +2,9 @@ import inspect
 import sys
 from pathlib import Path
 
-import pytest
-
 from aaa.instruction_generator.models import Instruction, InstructionGeneratorOutput
 from aaa.run import Runner
 from aaa.simulator.simulator import Simulator
-
-pytestmark = pytest.mark.no_builtins_cache
 
 
 def test_program_load_builtins_ok() -> None:
