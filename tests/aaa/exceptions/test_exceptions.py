@@ -55,7 +55,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + " stack after: int bool\n",
             id="condition-type-loop",
         ),
-        pytest.param(  # TODO try other combinations
+        pytest.param(
             """
             fn foo { nop }
             fn foo { nop }

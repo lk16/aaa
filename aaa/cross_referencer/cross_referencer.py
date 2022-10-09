@@ -509,6 +509,13 @@ class CrossReferencer:
                 parsed=parsed_body,
             )
 
+        def resolve_param(type_literal: parser.TypeLiteral) -> Identifier:
+            return Identifier(
+                kind=Unresolved(),
+                type_params=[resolve_param(param) for param in type_literal.params],
+                parsed=type_literal.identifier,
+            )
+
         def resolve_item(parsed_item: parser.FunctionBodyItem) -> FunctionBodyItem:
             if isinstance(parsed_item, parser.IntegerLiteral):
                 return IntegerLiteral(parsed=parsed_item)
@@ -549,13 +556,8 @@ class CrossReferencer:
 
                 return Identifier(
                     kind=Unresolved(),
-                    type_params=[  # TODO this is hacky
-                        Identifier(
-                            kind=Unresolved(),
-                            type_params=[],
-                            parsed=type_literal.identifier,
-                        )
-                        for type_literal in parsed_item.type_params
+                    type_params=[
+                        resolve_param(param) for param in parsed_item.type_params
                     ],
                     parsed=parser.Identifier(
                         name=name,
@@ -577,8 +579,6 @@ class CrossReferencer:
 
     def _resolve_function_body_identifiers(self, function: Function) -> None:
         def resolve_param_type(identifier: Identifier) -> VariableType:
-            assert not identifier.type_params
-
             # TODO remove dummy_type_literal
             dummy_type_literal = parser.TypeLiteral(
                 identifier=parser.Identifier(
@@ -601,7 +601,10 @@ class CrossReferencer:
                 parsed=dummy_type_literal,
                 type=type,
                 is_placeholder=False,  # TODO this may not be true
-                params=[],
+                params=[
+                    resolve_param_type(sub_param)
+                    for sub_param in identifier.type_params
+                ],
             )
 
         def resolve_identifier(identifier: Identifier) -> None:

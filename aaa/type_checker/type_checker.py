@@ -122,7 +122,6 @@ class TypeChecker:
             )
 
             if not match_result:
-
                 raise StackTypesError(
                     file=function.file,
                     token=called_function_token,
