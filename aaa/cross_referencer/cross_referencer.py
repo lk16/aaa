@@ -8,8 +8,10 @@ from aaa.cross_referencer.exceptions import (
     CrossReferenceBaseException,
     ImportedItemNotFound,
     IndirectImportException,
+    InvalidArgument,
     InvalidType,
     InvalidTypeParameter,
+    KeywordUsedAsIdentifier,
     MainFunctionNotFound,
     MainIsNotAFunction,
     UnexpectedTypeParameterCount,
@@ -42,6 +44,36 @@ from aaa.cross_referencer.models import (
 )
 from aaa.parser import models as parser
 from aaa.parser.transformer import DUMMY_TOKEN
+
+AAA_KEYWORDS = {
+    "and",
+    "args",
+    "as",
+    "assert",
+    "bool",
+    "drop",
+    "dup",
+    "else",
+    "false",
+    "fn",
+    "from",
+    "if",
+    "import",
+    "int",
+    "map",
+    "nop",
+    "not",
+    "or",
+    "over",
+    "return",
+    "rot",
+    "str",
+    "struct",
+    "swap",
+    "true",
+    "vec",
+    "while",
+}
 
 
 class CrossReferencer:
@@ -166,6 +198,12 @@ class CrossReferencer:
 
         for identifiable in identifiables:
             key = identifiable.identify()
+            file, name = key
+
+            if name in AAA_KEYWORDS and file != self.builtins_path:
+                raise KeywordUsedAsIdentifier(
+                    token=identifiable.token, file=identifiable.file
+                )
 
             if key in identifiers:
                 collisions.append(
@@ -390,8 +428,13 @@ class CrossReferencer:
         else:
             type = self._get_identifiable(parsed_type.identifier)
 
+            if parsed_arg.identifier.name in AAA_KEYWORDS:
+                raise KeywordUsedAsIdentifier(
+                    token=parsed_arg.identifier.token, file=parsed_arg.identifier.file
+                )
+
             if not isinstance(type, Type):
-                raise InvalidTypeParameter(file=function.file, identifiable=type)
+                raise InvalidArgument(used=parsed_arg.type, found=type)
 
             if len(parsed_type.params) != type.param_count:
                 raise UnexpectedTypeParameterCount(

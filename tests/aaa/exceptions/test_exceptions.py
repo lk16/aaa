@@ -5,7 +5,7 @@ import pytest
 from aaa.cross_referencer.exceptions import (
     CollidingIdentifier,
     ImportedItemNotFound,
-    InvalidTypeParameter,
+    InvalidArgument,
     MainFunctionNotFound,
     MainIsNotAFunction,
     UnknownIdentifier,
@@ -284,8 +284,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             fn foo args m as main { nop }
             """,
-            InvalidTypeParameter,
-            "/foo/main.aaa:2:13: Cannot use function main as type parameter\n",
+            InvalidArgument,
+            "/foo/main.aaa:3:30: Cannot use main as argument\n"
+            + "/foo/main.aaa:2:13: function main collides\n",
             id="invalid-type-parameter",
         ),
     ],

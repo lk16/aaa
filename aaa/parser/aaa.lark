@@ -44,13 +44,6 @@ FROM:        "from"
 IF:          "if"
 WHILE:       "while"
 
-// keywords for builtin types
-BOOL:        "bool"
-INT:         "int"
-MAP:         "map"
-STR:         "str"
-VEC:         "vec"
-
 // keywords for builtin constants
 FALSE:       "false"
 TRUE:        "true"

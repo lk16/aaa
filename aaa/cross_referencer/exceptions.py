@@ -11,6 +11,7 @@ from aaa.cross_referencer.models import (
     Type,
     Unresolved,
 )
+from aaa.parser.models import TypeLiteral
 
 
 class CrossReferenceBaseException(AaaException):
@@ -116,6 +117,21 @@ class InvalidTypeParameter(CrossReferenceBaseException):
         return f"{self.where()}: Cannot use {self.describe(self.identifiable)} as type parameter\n"
 
 
+class InvalidArgument(CrossReferenceBaseException):
+    def __init__(self, *, used: TypeLiteral, found: Identifiable) -> None:
+        self.used = used
+        self.found = found
+
+    def __str__(self) -> str:
+        used_loc = error_location(self.used.file, self.used.token)
+        found_loc = error_location(self.found.file, self.found.token)
+
+        return (
+            f"{used_loc}: Cannot use {self.used.identifier.name} as argument\n"
+            + f"{found_loc}: {self.describe(self.found)} collides\n"
+        )
+
+
 class InvalidType(CrossReferenceBaseException):
     def __init__(self, *, file: Path, identifiable: Identifiable) -> None:
         self.file = file
@@ -171,3 +187,15 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
             + f"Expected parameter count: {self.expected_param_count}\n"
             + f"   Found parameter count: {self.found_param_count}"
         )
+
+
+class KeywordUsedAsIdentifier(CrossReferenceBaseException):
+    def __init__(self, *, token: Token, file: Path) -> None:
+        self.token = token
+        self.file = file
+
+    def where(self) -> str:
+        return f"{self.file}:{self.token.line}:{self.token.column}"
+
+    def __str__(self) -> str:
+        return f'{self.where()}: Can\'t use keyword "{self.token.value}" as identifier.'
