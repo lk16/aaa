@@ -40,7 +40,6 @@ fn main {
 - Add network-related functions: socket, bind, listen, accept, ...
 
 ### Language features
-- negative `int` literals
 - `float` type
 - rust-like enums
 - return early (`return`)

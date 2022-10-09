@@ -9,6 +9,7 @@ from tests.aaa import check_aaa_main
     ["code", "expected_output", "expected_exception_types"],
     [
         pytest.param("1 .", "1", [], id="print"),
+        pytest.param("-1 .", "-1", [], id="print-negative"),
         pytest.param("int .", "0", [], id="print-zero-value"),
         pytest.param("1 2 + .", "3", [], id="add-basic"),
         pytest.param("2 3 * .", "6", [], id="multiply-basic"),
