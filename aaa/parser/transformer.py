@@ -70,10 +70,10 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             file=self.file,
         )
 
-    def builtin_function_declaration(
+    def function_declaration(
         self,
         token: Token,
-        builtin_function_name: FunctionName,
+        function_name: FunctionName,
         arguments: Optional[List[Argument]],
         return_types: Optional[List[TypeLiteral]],
     ) -> Function:
@@ -82,9 +82,9 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         empty_body = FunctionBody(items=[], file=self.file, token=DUMMY_TOKEN)
 
         return Function(
-            struct_name=builtin_function_name.struct_name,
-            func_name=builtin_function_name.func_name,
-            type_params=builtin_function_name.type_params,
+            struct_name=function_name.struct_name,
+            func_name=function_name.func_name,
+            type_params=function_name.type_params,
             arguments=arguments,
             return_types=return_types,
             body=empty_body,
@@ -92,7 +92,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             token=token,
         )
 
-    def builtin_type_declaration(
+    def type_declaration(
         self,
         token: Token,
         type_literal: TypeLiteral,
@@ -155,26 +155,12 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
     def function_definition(
         self,
-        token: Token,
-        name: FunctionName,
-        arguments: Optional[List[Argument]],
-        return_types: Optional[List[TypeLiteral]],
+        function_declaration: Function,
         body_begin_token: Token,
         body: FunctionBody,
     ) -> Function:
-        arguments = arguments or []
-        return_types = return_types or []
-
-        return Function(
-            token=token,
-            struct_name=name.struct_name,
-            func_name=name.func_name,
-            type_params=name.type_params,
-            arguments=arguments,
-            return_types=return_types,
-            body=body,
-            file=self.file,
-        )
+        function_declaration.body = body
+        return function_declaration
 
     def identifier(self, token: Token) -> Identifier:
         return Identifier(name=token.value, token=token, file=self.file)

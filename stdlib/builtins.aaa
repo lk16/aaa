@@ -1,129 +1,129 @@
 
 // elementary types
-builtin_type bool
-builtin_type int
-builtin_type str
+type bool
+type int
+type str
 
 // container types
-builtin_type map[K, V]
-builtin_type vec[T]
+type map[K, V]
+type vec[T]
 
 // stack operations
-builtin_fn drop[A]      args a as A
-builtin_fn dup[A]       args a as A                 return A, A
-builtin_fn over[A, B]   args a as A, b as B         return A, B, A
-builtin_fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
-builtin_fn swap[A, B]   args a as A, b as B         return B, A
+fn drop[A]      args a as A
+fn dup[A]       args a as A                 return A, A
+fn over[A, B]   args a as A, b as B         return A, B, A
+fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
+fn swap[A, B]   args a as A, b as B         return B, A
 
 // special operators
-builtin_fn . [A]  args a as A
-builtin_fn assert args a as bool
-builtin_fn nop
+fn . [A]  args a as A
+fn assert args a as bool
+fn nop
 
 // integer arithmetic
-builtin_fn - args a as int, b as int return int
-builtin_fn * args a as int, b as int return int
-builtin_fn + args a as int, b as int return int
+fn - args a as int, b as int return int
+fn * args a as int, b as int return int
+fn + args a as int, b as int return int
 
 // TODO: return enum indicating success/failure instead of extra bool
-builtin_fn / args a as int, b as int return int, bool
-builtin_fn % args a as int, b as int return int, bool
+fn / args a as int, b as int return int, bool
+fn % args a as int, b as int return int, bool
 
 // TODO add bitwise operators
 
 // integer comparison
-builtin_fn != args a as int, b as int return bool
-builtin_fn <  args a as int, b as int return bool
-builtin_fn <= args a as int, b as int return bool
-builtin_fn =  args a as int, b as int return bool
-builtin_fn >  args a as int, b as int return bool
-builtin_fn >= args a as int, b as int return bool
+fn != args a as int, b as int return bool
+fn <  args a as int, b as int return bool
+fn <= args a as int, b as int return bool
+fn =  args a as int, b as int return bool
+fn >  args a as int, b as int return bool
+fn >= args a as int, b as int return bool
 
 // boolean operators
-builtin_fn and args a as bool, b as bool return bool
-builtin_fn not args a as bool            return bool
-builtin_fn or  args a as bool, b as bool return bool
+fn and args a as bool, b as bool return bool
+fn not args a as bool            return bool
+fn or  args a as bool, b as bool return bool
 
-builtin_fn vec[T]:clear args v as vec[T]                           return vec[T]
-builtin_fn vec[T]:copy  args v as vec[T]                           return vec[T], vec[T]
-builtin_fn vec[T]:empty args v as vec[T]                           return vec[T], bool
-builtin_fn vec[T]:get   args v as vec[T], offset as int            return vec[T], T
-builtin_fn vec[T]:pop   args v as vec[T]                           return vec[T], T
-builtin_fn vec[T]:push  args v as vec[T], item as T                return vec[T]
-builtin_fn vec[T]:set   args v as vec[T], offset as int, item as T return vec[T]
-builtin_fn vec[T]:size  args v as vec[T]                           return vec[T], int
+fn vec[T]:clear args v as vec[T]                           return vec[T]
+fn vec[T]:copy  args v as vec[T]                           return vec[T], vec[T]
+fn vec[T]:empty args v as vec[T]                           return vec[T], bool
+fn vec[T]:get   args v as vec[T], offset as int            return vec[T], T
+fn vec[T]:pop   args v as vec[T]                           return vec[T], T
+fn vec[T]:push  args v as vec[T], item as T                return vec[T]
+fn vec[T]:set   args v as vec[T], offset as int, item as T return vec[T]
+fn vec[T]:size  args v as vec[T]                           return vec[T], int
 
-builtin_fn map[K, V]:clear   args m as map[K, V]                       return map[K, V]
-builtin_fn map[K, V]:copy    args m as map[K, V]                       return map[K, V], map[K, V]
-builtin_fn map[K, V]:drop    args m as map[K, V], key as K             return map[K, V]
-builtin_fn map[K, V]:empty   args m as map[K, V]                       return map[K, V], bool
-builtin_fn map[K, V]:get     args m as map[K, V], key as K             return map[K, V], V
-builtin_fn map[K, V]:has_key args m as map[K, V], key as K             return map[K, V], bool
-builtin_fn map[K, V]:pop     args m as map[K, V], key as K             return map[K, V], V
-builtin_fn map[K, V]:set     args m as map[K, V], key as K, value as V return map[K, V]
-builtin_fn map[K, V]:size    args m as map[K, V]                       return map[K, V], int
+fn map[K, V]:clear   args m as map[K, V]                       return map[K, V]
+fn map[K, V]:copy    args m as map[K, V]                       return map[K, V], map[K, V]
+fn map[K, V]:drop    args m as map[K, V], key as K             return map[K, V]
+fn map[K, V]:empty   args m as map[K, V]                       return map[K, V], bool
+fn map[K, V]:get     args m as map[K, V], key as K             return map[K, V], V
+fn map[K, V]:has_key args m as map[K, V], key as K             return map[K, V], bool
+fn map[K, V]:pop     args m as map[K, V], key as K             return map[K, V], V
+fn map[K, V]:set     args m as map[K, V], key as K, value as V return map[K, V]
+fn map[K, V]:size    args m as map[K, V]                       return map[K, V], int
 
 // TODO: not implemented yet
-builtin_fn map[K, V]:keys          args m as map[K, V]                       return vec[K]
-builtin_fn map[K, V]:values        args m as map[K, V]                       return vec[V]
+fn map[K, V]:keys          args m as map[K, V]                       return vec[K]
+fn map[K, V]:values        args m as map[K, V]                       return vec[V]
 
 // TODO: rename vec:size and map:size to vec:len and map:len
 
 // struct field operations: are roughly like below
 // except *b depends on the value of the str argument
 
-// builtin_fn "?" args *a, str     return *a, *b
-// builtin_fn "!" args *a, str, *b return *a
+// fn "?" args *a, str     return *a, *b
+// fn "!" args *a, str, *b return *a
 
 // TODO everything below should be moved to separate file in stdlib
 // Function and type names should not be reserved / builtin
 
-builtin_fn environ return map[str, str]
-builtin_fn execve args path as str, argv as vec[str], env as map[str, str]
-builtin_fn exit args code as int
-builtin_fn fork return int
-builtin_fn getcwd return str
-builtin_fn getpid return int
-builtin_fn getppid return int
-builtin_fn setenv args name as str, value as str
-builtin_fn time return int
-builtin_fn unsetenv args name as str
+fn environ return map[str, str]
+fn execve args path as str, argv as vec[str], env as map[str, str]
+fn exit args code as int
+fn fork return int
+fn getcwd return str
+fn getpid return int
+fn getppid return int
+fn setenv args name as str, value as str
+fn time return int
+fn unsetenv args name as str
 
 // TODO: return enum indicating success/failure instead of extra bool
-builtin_fn chdir args dir as str return bool
-builtin_fn close args fd as int return bool
-builtin_fn fsync args fd as int return bool
-builtin_fn getenv args name as str return str, bool
-builtin_fn open args path as str, flag as int, mode as int return int, bool
-builtin_fn read args fd as int, n as int return str, bool
-builtin_fn waitpid args pid as int, options as int return int, bool
-builtin_fn write args fd as int, data as str return int, bool
+fn chdir args dir as str return bool
+fn close args fd as int return bool
+fn fsync args fd as int return bool
+fn getenv args name as str return str, bool
+fn open args path as str, flag as int, mode as int return int, bool
+fn read args fd as int, n as int return str, bool
+fn waitpid args pid as int, options as int return int, bool
+fn write args fd as int, data as str return int, bool
 
 // TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
 // TODO: not implemented yet
-// builtin_fn "link" args str, str return int
-// builtin_fn "unlink" args str return int
-// builtin_fn "gettimeofday" return int, int  // note: not a system call
-// builtin_fn "chmod" args str, int return int
+// fn "link" args str, str return int
+// fn "unlink" args str return int
+// fn "gettimeofday" return int, int  // note: not a system call
+// fn "chmod" args str, int return int
 
-builtin_fn str:append     args s as str, other as str                  return str, str
-builtin_fn str:contains   args s as str, other as str                  return str, bool
-builtin_fn str:equals     args s as str, other as str                  return str, bool
-builtin_fn str:join       args s as str, parts as vec[str]             return str, str
-builtin_fn str:len        args s as str                                return str, int
-builtin_fn str:lower      args s as str                                return str, str
-builtin_fn str:replace    args s as str, search as str, replace as str return str, str
-builtin_fn str:split      args s as str, sep as str                    return str, vec[str]
-builtin_fn str:strip      args s as str                                return str
-builtin_fn str:upper      args s as str                                return str, str
+fn str:append     args s as str, other as str                  return str, str
+fn str:contains   args s as str, other as str                  return str, bool
+fn str:equals     args s as str, other as str                  return str, bool
+fn str:join       args s as str, parts as vec[str]             return str, str
+fn str:len        args s as str                                return str, int
+fn str:lower      args s as str                                return str, str
+fn str:replace    args s as str, search as str, replace as str return str, str
+fn str:split      args s as str, sep as str                    return str, vec[str]
+fn str:strip      args s as str                                return str
+fn str:upper      args s as str                                return str, str
 
 // TODO: return enum indicating success/failure instead of extra bool
-builtin_fn str:find_after args s as str, other as str, offset as int   return str, int, bool
-builtin_fn str:find       args s as str, other as str                  return str, int, bool
-builtin_fn str:substr     args s as str, start as int, end as int      return str, str, bool
-builtin_fn str:to_bool    args s as str                                return str, bool, bool
-builtin_fn str:to_int     args s as str                                return str, int, bool
+fn str:find_after args s as str, other as str, offset as int   return str, int, bool
+fn str:find       args s as str, other as str                  return str, int, bool
+fn str:substr     args s as str, start as int, end as int      return str, str, bool
+fn str:to_bool    args s as str                                return str, bool, bool
+fn str:to_int     args s as str                                return str, int, bool
 
 // TODO: not implemented yet
-// builtin_fn "int:to_str"  args int  return int, str
-// builtin_fn "bool:to_str" args bool return bool, str
+// fn "int:to_str"  args int  return int, str
+// fn "bool:to_str" args bool return bool, str

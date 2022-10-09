@@ -24,50 +24,40 @@ string: ESCAPED_STRING
 
 
 // top-level block keywords
-BUILTIN_FN:   "builtin_fn"
-BUILTIN_TYPE: "builtin_type"
-FN:           "fn"
-_IMPORT:      "import"
-STRUCT:       "struct"
+FN:         "fn"
+_IMPORT:    "import"
+STRUCT:     "struct"
+TYPE:       "type"
 
 // block delimiters
-BEGIN:         "{"
-_END:          "}"
+BEGIN:       "{"
+_END:        "}"
 
 // function keywords
-_AS:          "as"
-_ARGS:        "args"
-_RETURN:      "return"
+_AS:         "as"
+_ARGS:       "args"
+_RETURN:     "return"
 
 // control flow keywords
-ELSE:         "else"
-FROM:         "from"
-IF:           "if"
-WHILE:        "while"
+ELSE:        "else"
+FROM:        "from"
+IF:          "if"
+WHILE:       "while"
 
 // keywords for builtin types
-BOOL:       "bool"
-INT:        "int"
-MAP:        "map"
-STR:        "str"
-VEC:        "vec"
+BOOL:        "bool"
+INT:         "int"
+MAP:         "map"
+STR:         "str"
+VEC:         "vec"
 
 // keywords for builtin constants
-FALSE:      "false"
-TRUE:       "true"
+FALSE:       "false"
+TRUE:        "true"
 
 // --- builtin file rules ---
 
-builtins_file_root: (builtin_function_declaration | builtin_type_declaration)+
-
-builtin_type_declaration: BUILTIN_TYPE type_literal
-
-builtin_function_declaration: ( \
-    BUILTIN_FN \
-    function_name \
-    [_ARGS arguments] \
-    [_RETURN return_types] \
-)
+builtins_file_root: (function_declaration | type_declaration)+
 
 // --- regular source file + imports ---
 
@@ -77,14 +67,15 @@ import_statement: FROM string _IMPORT import_items
 import_items: import_item ("," import_item)* [","]
 import_item: identifier [_AS identifier]
 
-// --- structs ---
+// --- structs and types ---
+
+type_declaration: TYPE type_literal
 
 struct_definition: ( \
     STRUCT identifier \
     BEGIN arguments \
     _END \
 )
-
 
 struct_field_query: string struct_field_query_operator
 !struct_field_query_operator: "?"
@@ -94,10 +85,14 @@ struct_field_update: string BEGIN function_body _END struct_field_update_operato
 
 // --- functions, arguments, return types ---
 
-function_definition: ( \
+function_declaration: ( \
     FN function_name \
     [_ARGS arguments] \
     [_RETURN return_types] \
+)
+
+function_definition: ( \
+    function_declaration \
     BEGIN function_body _END \
 )
 
