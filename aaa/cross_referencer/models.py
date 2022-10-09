@@ -1,15 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
-
-from aaa import AaaModel
-
-if TYPE_CHECKING:
-    from aaa.cross_referencer.exceptions import CrossReferenceBaseException
+from typing import Dict, List, Optional, Tuple
 
 from lark.lexer import Token
 
+from aaa import AaaModel
 from aaa.parser import models as parser
 
 
@@ -292,11 +288,9 @@ class CrossReferencerOutput(AaaModel):
         imports: Dict[Tuple[Path, str], Import],
         builtins_path: Path,
         entrypoint: Path,
-        exceptions: List[CrossReferenceBaseException],
     ) -> None:
         self.types = types
         self.functions = functions
         self.imports = imports
         self.builtins_path = builtins_path
         self.entrypoint = entrypoint
-        self.exceptions = exceptions

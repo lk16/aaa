@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 
 from lark.lexer import Token
 
+from aaa import AaaRunnerException
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
@@ -41,7 +42,6 @@ from aaa.type_checker.models import (
     Signature,
     StructQuerySignature,
     StructUpdateSignature,
-    TypeCheckerOutput,
 )
 
 
@@ -54,7 +54,7 @@ class TypeChecker:
         self.signatures: Dict[Tuple[Path, str], Signature] = {}
         self.exceptions: List[TypeCheckerException] = []
 
-    def run(self) -> TypeCheckerOutput:
+    def run(self) -> None:
         for function in self.functions.values():
             assert not isinstance(function.arguments, Unresolved)
             assert not isinstance(function.return_types, Unresolved)
@@ -70,7 +70,8 @@ class TypeChecker:
             except TypeCheckerException as e:
                 self.exceptions.append(e)
 
-        return TypeCheckerOutput(exceptions=self.exceptions)
+        if self.exceptions:
+            raise AaaRunnerException(self.exceptions)
 
     def _check(self, function: Function) -> None:
         if function.file == self.builtins_path:

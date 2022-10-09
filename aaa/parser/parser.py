@@ -4,6 +4,7 @@ from typing import Dict, List
 from lark.exceptions import UnexpectedInput, VisitError
 from lark.lark import Lark
 
+from aaa import AaaRunnerException
 from aaa.parser.exceptions import FileReadError, ParseException, ParserBaseException
 from aaa.parser.models import ParsedFile, ParserOutput
 from aaa.parser.transformer import AaaTransformer
@@ -36,11 +37,13 @@ class Parser:
             else:
                 self._enqueue_dependencies(file, self.parsed[file])
 
+        if self.exceptions:
+            raise AaaRunnerException(self.exceptions)
+
         return ParserOutput(
             parsed=self.parsed,
             builtins_path=self.builtins_path,
             entrypoint=self.entrypoint,
-            exceptions=self.exceptions,
         )
 
     def _parse(self, file: Path, parser: Lark) -> ParsedFile:

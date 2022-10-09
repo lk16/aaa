@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Sequence
 
 from lark.lexer import Token
 
@@ -17,6 +18,11 @@ class AaaModel:
 
 class AaaException(Exception):
     ...
+
+
+class AaaRunnerException(AaaException):
+    def __init__(self, exceptions: Sequence[AaaException]) -> None:
+        self.exceptions = exceptions
 
 
 def error_location(file: Path, token: Token) -> str:

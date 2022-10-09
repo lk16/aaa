@@ -5,6 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Type
 
+from aaa import AaaRunnerException
 from aaa.cross_referencer.models import Function, Unresolved, VariableType
 from aaa.instruction_generator.models import (
     And,
@@ -239,11 +240,7 @@ class Simulator:
         try:
             self.call_function(self.entrypoint, "main")
         except AaaRuntimeException as e:  # pragma: nocover
-            print(e, file=sys.stderr)
-            if raise_:  # This is for testing. TODO find better solution
-                raise e
-            else:
-                exit(1)
+            raise AaaRunnerException([e])
 
     def call_function(self, file: Path, func_name: str) -> None:
         # TODO use an actual Function as argument

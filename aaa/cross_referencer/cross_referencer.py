@@ -2,6 +2,7 @@ import typing
 from pathlib import Path
 from typing import List, Tuple, TypeVar
 
+from aaa import AaaRunnerException
 from aaa.cross_referencer.exceptions import (
     CollidingIdentifier,
     CrossReferenceBaseException,
@@ -91,6 +92,9 @@ class CrossReferencer:
                 self.exceptions.append(e)
                 del self.identifiers[(file, identifier)]
 
+        if self.exceptions:
+            raise AaaRunnerException(self.exceptions)
+
         return CrossReferencerOutput(
             functions={
                 k: v for (k, v) in self.identifiers.items() if isinstance(v, Function)
@@ -101,7 +105,6 @@ class CrossReferencer:
             },
             builtins_path=self.builtins_path,
             entrypoint=self.entrypoint,
-            exceptions=self.exceptions,
         )
 
     def print_values(self) -> None:
