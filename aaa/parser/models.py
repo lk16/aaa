@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -146,6 +147,7 @@ class Import(AaaParseModel):
         self, *, source: str, imported_items: List[ImportItem], file: Path, token: Token
     ) -> None:
         self.source = source
+        self.source_file = file.parent / (source.replace(".", os.sep) + ".aaa")
         self.imported_items = imported_items
         super().__init__(file=file, token=token)
 

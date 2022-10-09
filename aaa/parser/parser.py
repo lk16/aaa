@@ -31,11 +31,9 @@ class Parser:
             try:
                 self.parsed[file] = self._parse(file, source_parser)
             except ParserBaseException as e:
-                # TODO check if identifiers are not keywords
-                # TODO check if identifiers are not operators
                 self.exceptions.append(e)
             else:
-                self._enqueue_dependencies(file, self.parsed[file])
+                self._enqueue_dependencies(self.parsed[file])
 
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
@@ -65,14 +63,10 @@ class Parser:
         assert isinstance(parsed_file, ParsedFile)
         return parsed_file
 
-    def _enqueue_dependencies(self, file: Path, parsed_file: ParsedFile) -> None:
-        # TODO improve imports: prevent absolute paths, directory traversal attack, ...
-
+    def _enqueue_dependencies(self, parsed_file: ParsedFile) -> None:
         for import_ in parsed_file.imports:
-            dependency = (file.parent / f"{import_.source}.aaa").resolve()
-
-            if dependency not in self.parsed:
-                self.parse_queue.append(dependency)
+            if import_.source_file not in self.parsed:
+                self.parse_queue.append(import_.source_file)
 
     def _get_builtins_parser(self) -> Lark:
         grammar_path = Path(__file__).parent / "aaa.lark"
