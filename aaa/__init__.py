@@ -5,7 +5,7 @@ from lark.lexer import Token
 
 
 class AaaModel:
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         return (
             f"{type(self).__qualname__}("
             + ", ".join(
@@ -26,11 +26,4 @@ class AaaRunnerException(AaaException):
 
 
 def error_location(file: Path, token: Token) -> str:
-    cwd = Path.cwd()
-
-    if cwd in file.parents:
-        nicer_file = file.relative_to(cwd)
-    else:
-        nicer_file = file
-
-    return f"{nicer_file}:{token.line}:{token.column}"
+    return f"{file}:{token.line}:{token.column}"

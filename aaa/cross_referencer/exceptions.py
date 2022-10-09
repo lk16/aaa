@@ -81,12 +81,9 @@ class CollidingIdentifier(CrossReferenceBaseException):
         self.found = found
         self.file = file
 
-    def where(self, item: Identifiable) -> str:
-        return error_location(self.file, item.token)
-
     def __str__(self) -> str:
-        lhs_where = self.where(self.colliding)
-        rhs_where = self.where(self.found)
+        lhs_where = error_location(self.file, self.colliding.token)
+        rhs_where = error_location(self.file, self.found.token)
 
         return (
             f"{lhs_where}: {self.describe(self.colliding)} collides with:\n"

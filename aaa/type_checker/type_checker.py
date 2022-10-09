@@ -183,6 +183,7 @@ class TypeChecker:
     ) -> VariableType:
         if return_type.is_placeholder:
             if return_type.name not in placeholder_types:
+                # TODO
                 raise NotImplementedError
 
             return placeholder_types[return_type.name]
