@@ -38,4 +38,5 @@ jobs:
     - name: Run tests
       run: |
         poetry install
-        poetry run pytest --cov=lang --cov-report=term-missing -x -vv
+        export AAA_STDLIB_PATH=$(pwd)/stdlib
+        poetry run pytest --cov=aaa --cov-report=term-missing -x -vv
