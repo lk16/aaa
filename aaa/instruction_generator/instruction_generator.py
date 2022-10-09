@@ -94,6 +94,7 @@ STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
     "fsync": StandardLibraryCallKind.SYSCALL_FSYNC,
     "getcwd": StandardLibraryCallKind.SYSCALL_GETCWD,
     "getenv": StandardLibraryCallKind.GETENV,
+    "gettimeofday": StandardLibraryCallKind.GETTIMEOFDAY,
     "getpid": StandardLibraryCallKind.SYSCALL_GETPID,
     "getppid": StandardLibraryCallKind.SYSCALL_GETPPID,
     "map:clear": StandardLibraryCallKind.MAP_CLEAR,

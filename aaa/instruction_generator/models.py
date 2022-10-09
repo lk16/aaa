@@ -9,6 +9,7 @@ from aaa.cross_referencer.models import Function, Type, VariableType
 class StandardLibraryCallKind(Enum):
     ENVIRON = "ENVIRON"
     GETENV = "GETENV"
+    GETTIMEOFDAY = "GETTIMEOFDAY"
     MAP_CLEAR = "MAP_CLEAR"
     MAP_COPY = "MAP_COPY"
     MAP_DROP = "MAP_DROP"

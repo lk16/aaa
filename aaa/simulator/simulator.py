@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 import time
@@ -106,6 +107,7 @@ class Simulator:
         self.stdlib_funcs: Dict[StandardLibraryCallKind, Callable[[], int]] = {
             StandardLibraryCallKind.ENVIRON: self.instruction_environ,
             StandardLibraryCallKind.GETENV: self.instruction_getenv,
+            StandardLibraryCallKind.GETTIMEOFDAY: self.instruction_gettimeofday,
             StandardLibraryCallKind.MAP_CLEAR: self.instruction_map_clear,
             StandardLibraryCallKind.MAP_COPY: self.instruction_map_copy,
             StandardLibraryCallKind.MAP_DROP: self.instruction_map_drop,
@@ -1021,4 +1023,13 @@ class Simulator:
         else:
             self.push_bool(True)
 
+        return self.get_instruction_pointer() + 1
+
+    def instruction_gettimeofday(self) -> int:
+        timestamp = time.time()
+        sec = math.floor(timestamp)
+        nano_sec = math.floor((timestamp - sec) * 1_000_000_000)
+
+        self.push_int(sec)
+        self.push_int(nano_sec)
         return self.get_instruction_pointer() + 1

@@ -83,6 +83,7 @@ fn execve args path as str, argv as vec[str], env as map[str, str]
 fn exit args code as int
 fn fork return int
 fn getcwd return str
+fn gettimeofday return int, int
 fn getpid return int
 fn getppid return int
 fn setenv args name as str, value as str
@@ -103,7 +104,6 @@ fn unlink args path as str return bool
 // TODO add more syscalls, see http://faculty.nps.edu/cseagle/assembly/sys_call.html
 // TODO: not implemented yet
 // fn link args str, str return int
-// fn gettimeofday return int, int  // note: not a system call
 // fn chmod args str, int return int
 
 fn str:append     args s as str, other as str                  return str, str
