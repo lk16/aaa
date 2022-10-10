@@ -85,6 +85,8 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
 }
 
 STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
+    "accept": StandardLibraryCallKind.SYSCALL_ACCEPT,
+    "bind": StandardLibraryCallKind.SYSCALL_BIND,
     "chdir": StandardLibraryCallKind.SYSCALL_CHDIR,
     "close": StandardLibraryCallKind.SYSCALL_CLOSE,
     "environ": StandardLibraryCallKind.ENVIRON,
@@ -94,9 +96,10 @@ STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
     "fsync": StandardLibraryCallKind.SYSCALL_FSYNC,
     "getcwd": StandardLibraryCallKind.SYSCALL_GETCWD,
     "getenv": StandardLibraryCallKind.GETENV,
-    "gettimeofday": StandardLibraryCallKind.GETTIMEOFDAY,
     "getpid": StandardLibraryCallKind.SYSCALL_GETPID,
     "getppid": StandardLibraryCallKind.SYSCALL_GETPPID,
+    "gettimeofday": StandardLibraryCallKind.GETTIMEOFDAY,
+    "listen": StandardLibraryCallKind.SYSCALL_LISTEN,
     "map:clear": StandardLibraryCallKind.MAP_CLEAR,
     "map:copy": StandardLibraryCallKind.MAP_COPY,
     "map:drop": StandardLibraryCallKind.MAP_DROP,
@@ -111,6 +114,7 @@ STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
     "open": StandardLibraryCallKind.SYSCALL_OPEN,
     "read": StandardLibraryCallKind.SYSCALL_READ,
     "setenv": StandardLibraryCallKind.SETENV,
+    "socket": StandardLibraryCallKind.SYSCALL_SOCKET,
     "str:append": StandardLibraryCallKind.STR_APPEND,
     "str:contains": StandardLibraryCallKind.STR_CONTAINS,
     "str:equals": StandardLibraryCallKind.STR_EQUALS,

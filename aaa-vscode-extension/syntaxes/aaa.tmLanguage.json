@@ -61,7 +61,7 @@
 			"patterns": [
 				{
 					"name": "constant.character.escape.aaa",
-					"match": "\\\\(n|\\\\|\")"
+					"match": "\\\\(n|r|\\\\|\")"
 				}
 			]
 		},

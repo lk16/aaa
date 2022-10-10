@@ -1,0 +1,62 @@
+
+fn main {
+    2  // AF_INET
+    1  // SOCK_STREAM
+    0  // protocol
+    socket
+    if not dup {
+        "socket failed\n" .
+        1 exit
+    }
+    drop
+
+    dup  // file descriptor
+    "0.0.0.0"
+    8080
+    bind
+
+    if not dup {
+        "bind failed\n" .
+        1 exit
+    }
+    drop
+
+    dup  // file descriptor
+    5    // backlog
+    listen
+
+    if not dup {
+        "listen failed\n" .
+        1 exit
+    }
+    drop
+
+
+    while true {
+
+        dup // file descriptor
+        accept
+
+        // stack: int str int int bool
+
+        if not dup {
+            "accept failed\n" .
+            1 exit
+        }
+        drop
+
+        // stack: int str int int
+
+        // use client fd
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 27\r\n\r\n{\"message\": \"Hello world!\"}"
+        write
+
+        drop  // write ok-value
+        drop  // write byte count
+
+        drop  // client port
+        drop  // client ip
+    }
+
+    drop
+}

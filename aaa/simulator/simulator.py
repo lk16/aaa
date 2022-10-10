@@ -4,6 +4,7 @@ import sys
 import time
 from copy import deepcopy
 from pathlib import Path
+from socket import socket
 from typing import Any, Callable, Dict, List, Type
 
 from aaa import AaaRunnerException
@@ -159,6 +160,10 @@ class Simulator:
             StandardLibraryCallKind.VEC_PUSH: self.instruction_vec_push,
             StandardLibraryCallKind.VEC_SET: self.instruction_vec_set,
             StandardLibraryCallKind.VEC_SIZE: self.instruction_vec_size,
+            StandardLibraryCallKind.SYSCALL_SOCKET: self.instruction_syscall_socket,
+            StandardLibraryCallKind.SYSCALL_BIND: self.instruction_syscall_bind,
+            StandardLibraryCallKind.SYSCALL_LISTEN: self.instruction_syscall_listen,
+            StandardLibraryCallKind.SYSCALL_ACCEPT: self.instruction_syscall_accept,
         }
 
         self.function_instructions = instruction_generator_output.instructions
@@ -1032,4 +1037,72 @@ class Simulator:
 
         self.push_int(sec)
         self.push_int(nano_sec)
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_socket(self) -> int:
+        protocol = self.pop_int()
+        type = self.pop_int()
+        family = self.pop_int()
+
+        try:
+            sock = socket(family=family, type=type, proto=protocol)
+        except OSError:
+            self.push_int(0)  # TODO HACK We are lying here. Fix when we have unions
+            self.push_bool(False)
+        else:
+
+            self.push_int(sock.detach())
+            self.push_bool(True)
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_bind(self) -> int:
+        port = self.pop_int()
+        ip_addr = self.pop_str()
+        fd = self.pop_int()
+
+        try:
+            sock = socket(fileno=fd)
+            sock.bind((ip_addr, port))
+        except OSError:
+            self.push_bool(False)
+        else:
+            sock.detach()
+            self.push_bool(True)
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_listen(self) -> int:
+        backlog = self.pop_int()
+        fd = self.pop_int()
+
+        try:
+            sock = socket(fileno=fd)
+            sock.listen(backlog)
+        except OSError:
+            self.push_bool(False)
+        else:
+            sock.detach()
+            self.push_bool(True)
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_accept(self) -> int:
+        fd = self.pop_int()
+
+        try:
+            sock = socket(fileno=fd)
+            client_sock, (addr, port) = sock.accept()
+        except OSError:
+            self.push_str("")
+            self.push_int(0)
+            self.push_int(0)
+            self.push_bool(False)
+        else:
+            sock.detach()
+            self.push_str(addr)
+            self.push_int(port)
+            self.push_int(client_sock.detach())
+            self.push_bool(True)
+
         return self.get_instruction_pointer() + 1

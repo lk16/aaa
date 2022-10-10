@@ -16,6 +16,12 @@ Stack-based language, like forth.
 
 # Run unit tests
 ./manage.py runtests
+
+# Run bare-bones HTTP server in Aaa
+./manage.py run examples/http_server.aaa
+
+# Send request from different shell
+curl http://localhost:8080
 ```
 
 ### Aaa features

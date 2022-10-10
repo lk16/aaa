@@ -256,8 +256,10 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         assert len(token.value) >= 2
 
         value = token.value[1:-1]
+        # TODO add more escape sequences and tests
         value = value.replace("\\\\", "\\")
         value = value.replace("\\n", "\n")
+        value = value.replace("\\r", "\r")
         value = value.replace('\\"', '"')
 
         return StringLiteral(token=token, value=value, file=self.file)
