@@ -70,7 +70,7 @@ fn map[K, V]:values        args m as map[K, V]                       return vec[
 // TODO: rename vec:size and map:size to vec:len and map:len
 
 // string functions
-fn str:append     args s as str, other as str                  return str, str
+fn str:append     args s as str, other as str                  return str, str  // TODO return only the concatenated string
 fn str:contains   args s as str, other as str                  return str, bool
 fn str:equals     args s as str, other as str                  return str, bool
 fn str:join       args s as str, parts as vec[str]             return str, str

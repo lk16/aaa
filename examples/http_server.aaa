@@ -31,13 +31,9 @@ fn main {
     }
     drop
 
-
     while true {
-
         dup // file descriptor
         accept
-
-        // stack: int str int int bool
 
         if not dup {
             "accept failed\n" .
@@ -45,12 +41,26 @@ fn main {
         }
         drop
 
-        // stack: int str int int
+        // client fd (pushed by accept) is popped by write
 
-        // use client fd
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 27\r\n\r\n{\"message\": \"Hello world!\"}"
+        // build response literal
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: application/json\r\n"
+        "Content-Length: 27\r\n"
+        "\r\n"
+        "{\"message\": \"Hello world!\"}"
+
+        str:append swap drop
+        str:append swap drop
+        str:append swap drop
+        str:append swap drop
+
         write
 
+        if not dup {
+            "write failed\n" .
+            1 exit
+        }
         drop  // write ok-value
         drop  // write byte count
 
