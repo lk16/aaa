@@ -7,6 +7,7 @@ import click
 from click import ClickException
 
 from aaa.run import Runner
+from aaa.run_tests import TestRunner
 
 
 @click.group()
@@ -39,6 +40,13 @@ def runtests() -> None:
         proc = subprocess.run(command.split())
         if proc.returncode != 0:
             raise ClickException(f'Command "{command}" failed.')
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True))
+def test(path: str) -> None:
+    exit_code = TestRunner(Path(path)).run()
+    exit(exit_code)
 
 
 if __name__ == "__main__":

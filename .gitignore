@@ -6,4 +6,4 @@ __pycache__
 lark.pdf
 *.idea
 *.prof
-server.aaa
+foo/*
