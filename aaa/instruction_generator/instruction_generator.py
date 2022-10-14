@@ -73,7 +73,6 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     ">": IntGreaterThan(),
     ">=": IntGreaterEquals(),
     "and": And(),
-    "assert": Assert(),
     "drop": Drop(),
     "dup": Dup(),
     "nop": Nop(),
@@ -217,6 +216,8 @@ class InstructionGenerator:
             if called_function.file == self.builtins_path:
                 if called_function.name in OPERATOR_INSTRUCTIONS:
                     return [OPERATOR_INSTRUCTIONS[called_function.name]]
+                if called_function.name == "assert":
+                    return [Assert(identifier.file, identifier.token)]
 
                 return [
                     StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[called_function.name])

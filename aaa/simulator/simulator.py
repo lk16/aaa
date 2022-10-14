@@ -474,11 +474,14 @@ class Simulator:
         return self.get_instruction_pointer() + 1
 
     def instruction_assert(self, instruction: Instruction) -> int:
+        assert isinstance(instruction, Assert)
         x = self.pop_bool()
 
         if not x:
             call_stack_copy = deepcopy(self.call_stack)
-            raise AaaAssertionFailure(call_stack_copy)
+            raise AaaAssertionFailure(
+                instruction.file, instruction.token, call_stack_copy
+            )
 
         return self.get_instruction_pointer() + 1
 
