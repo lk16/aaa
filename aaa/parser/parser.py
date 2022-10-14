@@ -50,7 +50,6 @@ class Parser:
         )
 
     def _parse(self, file: Path, parser: Lark) -> ParsedFile:
-        print(f"parsing {file}")
         try:
             code = file.read_text()
         except OSError:
