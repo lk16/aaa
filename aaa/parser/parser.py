@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from lark.exceptions import UnexpectedInput, VisitError
 from lark.lark import Lark
@@ -11,11 +11,16 @@ from aaa.parser.transformer import AaaTransformer
 
 
 class Parser:
-    def __init__(self, entrypoint: Path, builtins_path: Path) -> None:
+    def __init__(
+        self,
+        entrypoint: Path,
+        builtins_path: Path,
+        parsed_files: Optional[Dict[Path, ParsedFile]] = None,
+    ) -> None:
         self.entrypoint = entrypoint.resolve()
         self.builtins_path = builtins_path
 
-        self.parsed: Dict[Path, ParsedFile] = {}
+        self.parsed: Dict[Path, ParsedFile] = parsed_files or {}
         self.parse_queue = [self.entrypoint]
         self.exceptions: List[ParserBaseException] = []
 
@@ -45,6 +50,7 @@ class Parser:
         )
 
     def _parse(self, file: Path, parser: Lark) -> ParsedFile:
+        print(f"parsing {file}")
         try:
             code = file.read_text()
         except OSError:
