@@ -1,0 +1,61 @@
+
+
+fn main {
+    2  // AF_INET
+    1  // SOCK_STREAM
+    0  // protocol
+    socket
+    if not dup {
+        "socket failed\n" .
+        1 exit
+    }
+    drop
+
+    // stack: int
+    dup
+
+    // stack: int int
+    "icanhazip.com"
+    80
+    connect
+
+    // stack: int bool
+    if not dup {
+        "connect failed\n" .
+        1 exit
+    }
+    drop
+
+    // stack: int
+    dup
+    // stack: int int
+
+    "GET / HTTP/1.1\r\nHost: icanhazip.com\r\nUser-Agent: curl/7.68.0\r\nAccept: */*\r\n\r\n"
+    write
+
+    // stack: int int bool
+
+    if not dup {
+        "write failed\n" .
+        1 exit
+    }
+    drop
+    // stack: int int
+
+    drop
+    // stack: int
+
+    2048
+    read
+
+    // stack: str bool
+
+    if not dup {
+        "read failed\n" .
+        1 exit
+    }
+    drop
+
+    // stack: str
+    .
+}

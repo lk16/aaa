@@ -124,8 +124,8 @@ class Simulator:
             StandardLibraryCallKind.STR_APPEND: self.instruction_str_append,
             StandardLibraryCallKind.STR_CONTAINS: self.instruction_str_contains,
             StandardLibraryCallKind.STR_EQUALS: self.instruction_str_equals,
-            StandardLibraryCallKind.STR_FIND: self.instruction_str_find,
             StandardLibraryCallKind.STR_FIND_AFTER: self.instruction_str_find_after,
+            StandardLibraryCallKind.STR_FIND: self.instruction_str_find,
             StandardLibraryCallKind.STR_JOIN: self.instruction_str_join,
             StandardLibraryCallKind.STR_LEN: self.instruction_str_len,
             StandardLibraryCallKind.STR_LOWER: self.instruction_str_lower,
@@ -136,8 +136,11 @@ class Simulator:
             StandardLibraryCallKind.STR_TO_BOOL: self.instruction_str_to_bool,
             StandardLibraryCallKind.STR_TO_INT: self.instruction_str_to_int,
             StandardLibraryCallKind.STR_UPPER: self.instruction_str_upper,
+            StandardLibraryCallKind.SYSCALL_ACCEPT: self.instruction_syscall_accept,
+            StandardLibraryCallKind.SYSCALL_BIND: self.instruction_syscall_bind,
             StandardLibraryCallKind.SYSCALL_CHDIR: self.instruction_syscall_chdir,
             StandardLibraryCallKind.SYSCALL_CLOSE: self.instruction_syscall_close,
+            StandardLibraryCallKind.SYSCALL_CONNECT: self.instruction_syscall_connect,
             StandardLibraryCallKind.SYSCALL_EXECVE: self.instruction_syscall_execve,
             StandardLibraryCallKind.SYSCALL_EXIT: self.instruction_syscall_exit,
             StandardLibraryCallKind.SYSCALL_FORK: self.instruction_syscall_fork,
@@ -145,12 +148,14 @@ class Simulator:
             StandardLibraryCallKind.SYSCALL_GETCWD: self.instruction_syscall_getcwd,
             StandardLibraryCallKind.SYSCALL_GETPID: self.instruction_getpid,
             StandardLibraryCallKind.SYSCALL_GETPPID: self.instruction_getppid,
+            StandardLibraryCallKind.SYSCALL_LISTEN: self.instruction_syscall_listen,
             StandardLibraryCallKind.SYSCALL_OPEN: self.instruction_open,
             StandardLibraryCallKind.SYSCALL_READ: self.instruction_syscall_read,
+            StandardLibraryCallKind.SYSCALL_SOCKET: self.instruction_syscall_socket,
             StandardLibraryCallKind.SYSCALL_TIME: self.instruction_syscall_time,
+            StandardLibraryCallKind.SYSCALL_UNLINK: self.instruction_unlink,
             StandardLibraryCallKind.SYSCALL_WAITPID: self.instruction_waitpid,
             StandardLibraryCallKind.SYSCALL_WRITE: self.instruction_write,
-            StandardLibraryCallKind.SYSCALL_UNLINK: self.instruction_unlink,
             StandardLibraryCallKind.UNSETENV: self.instruction_unsetenv,
             StandardLibraryCallKind.VEC_CLEAR: self.instruction_vec_clear,
             StandardLibraryCallKind.VEC_COPY: self.instruction_vec_copy,
@@ -160,10 +165,6 @@ class Simulator:
             StandardLibraryCallKind.VEC_PUSH: self.instruction_vec_push,
             StandardLibraryCallKind.VEC_SET: self.instruction_vec_set,
             StandardLibraryCallKind.VEC_SIZE: self.instruction_vec_size,
-            StandardLibraryCallKind.SYSCALL_SOCKET: self.instruction_syscall_socket,
-            StandardLibraryCallKind.SYSCALL_BIND: self.instruction_syscall_bind,
-            StandardLibraryCallKind.SYSCALL_LISTEN: self.instruction_syscall_listen,
-            StandardLibraryCallKind.SYSCALL_ACCEPT: self.instruction_syscall_accept,
         }
 
         self.function_instructions = instruction_generator_output.instructions
@@ -1103,6 +1104,22 @@ class Simulator:
             self.push_str(addr)
             self.push_int(port)
             self.push_int(client_sock.detach())
+            self.push_bool(True)
+
+        return self.get_instruction_pointer() + 1
+
+    def instruction_syscall_connect(self) -> int:
+        port = self.pop_int()
+        ip_addr = self.pop_str()
+        fd = self.pop_int()
+
+        try:
+            sock = socket(fileno=fd)
+            sock.connect((ip_addr, port))
+        except OSError:
+            self.push_bool(False)
+        else:
+            sock.detach()
             self.push_bool(True)
 
         return self.get_instruction_pointer() + 1

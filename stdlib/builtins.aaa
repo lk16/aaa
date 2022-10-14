@@ -123,3 +123,4 @@ fn socket args family as int, type_ as int, protocol as int return int, bool
 fn unlink args path as str return bool
 fn waitpid args pid as int, options as int return int, bool
 fn write args fd as int, data as str return int, bool
+fn connect args fd as int, ip_addr as str, port as int return bool

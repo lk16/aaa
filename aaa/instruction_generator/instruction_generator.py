@@ -89,6 +89,7 @@ STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
     "bind": StandardLibraryCallKind.SYSCALL_BIND,
     "chdir": StandardLibraryCallKind.SYSCALL_CHDIR,
     "close": StandardLibraryCallKind.SYSCALL_CLOSE,
+    "connect": StandardLibraryCallKind.SYSCALL_CONNECT,
     "environ": StandardLibraryCallKind.ENVIRON,
     "execve": StandardLibraryCallKind.SYSCALL_EXECVE,
     "exit": StandardLibraryCallKind.SYSCALL_EXIT,
