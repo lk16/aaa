@@ -267,7 +267,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { false assert }
             """,
             AaaAssertionFailure,
-            "Assertion failure\n",
+            "/foo/main.aaa:2:29: Assertion failure, stacktrace:\n- main\n",
             id="assertion-failure",
         ),
         pytest.param(
