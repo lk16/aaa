@@ -56,10 +56,15 @@ class TestRunner:
         imports = ""
         main_body = ""
 
-        for test_function in test_functions:
+        test_count = len(test_functions)
+
+        for test_number, test_function in enumerate(test_functions, start=1):
             from_ = str(test_function.file)
             func_name = test_function.func_name.name
             imports += f'from "{from_}" import {func_name}\n'
+            main_body += (
+                f'     "[{test_number}/{test_count}] {from_}::{func_name}\\n" .\n'
+            )
             main_body += f"     {func_name}\n"
 
         return imports + "\nfn main{\n" + main_body + "}\n"
