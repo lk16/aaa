@@ -195,6 +195,11 @@ class InvalidMainSignuture(TypeCheckerException):
         return f"{self.where()} Main function should have no arguments and no return types\n"
 
 
+class InvalidTestSignuture(TypeCheckerException):
+    def __str__(self) -> str:
+        return f"{self.where()} Test function {self.function.name} should have no arguments and no return types\n"
+
+
 class StructUpdateStackError(TypeCheckerException):
     def __init__(
         self,

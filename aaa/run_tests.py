@@ -17,9 +17,6 @@ class TestRunner:
         parsed_files = self._get_parsed_test_files()
         test_functions = self._get_test_functions(parsed_files)
         main_file_code = self._build_main_test_file(test_functions)
-
-        # TODO make sure test functions don't take any arguments and don't return any values
-
         return Runner.without_file(main_file_code, parsed_files).run()
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:

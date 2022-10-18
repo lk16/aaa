@@ -31,6 +31,7 @@ from aaa.type_checker.exceptions import (
     FunctionTypeError,
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
+    InvalidTestSignuture,
     LoopTypeError,
     StackTypesError,
     StructUpdateStackError,
@@ -390,6 +391,23 @@ class TypeChecker:
                 ]
             ):
                 raise InvalidMainSignuture(
+                    file=function.file,
+                    token=function.token,
+                    function=function,
+                )
+
+        if (
+            function.struct_name == ""
+            and function.func_name.startswith("test_")
+            and function.file.name.startswith("test_")
+        ):
+            if not all(
+                [
+                    len(function.arguments) == 0,
+                    len(function.return_types) == 0,
+                ]
+            ):
+                raise InvalidTestSignuture(
                     file=function.file,
                     token=function.token,
                     function=function,
