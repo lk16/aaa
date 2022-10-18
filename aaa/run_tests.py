@@ -46,22 +46,33 @@ class TestRunner:
 
         return test_functions
 
-    def _build_main_test_file(self, test_functions: List[Function]) -> str:
-        # TODO prevent naming collision (hash file name + function name)
+    def _get_test_func_alias(self, test_number: int) -> str:
+        alias = str(test_number)
 
-        # TODO tests crash after first failing test
+        # Replace digits with letters, because digits
+        # can't be part of identifiers (such as aliases)
+        for i in range(10):
+            alias = alias.replace(str(i), chr(ord("a") + i))
+
+        return f"test_{alias}"
+
+    def _build_main_test_file(self, test_functions: List[Function]) -> str:
         imports = ""
         main_body = ""
 
         test_count = len(test_functions)
 
-        for test_number, test_function in enumerate(test_functions, start=1):
+        for test_number, test_function in enumerate(test_functions, start=0):
             from_ = str(test_function.file)
             func_name = test_function.func_name.name
-            imports += f'from "{from_}" import {func_name}\n'
+
+            # Functions are aliased to prevent naming collisions
+            func_alias = self._get_test_func_alias(test_number)
+
+            imports += f'from "{from_}" import {func_name} as {func_alias}\n'
             main_body += (
-                f'     "[{test_number}/{test_count}] {from_}::{func_name}\\n" .\n'
+                f'     "[{test_number+1}/{test_count}] {from_}::{func_name}\\n" .\n'
             )
-            main_body += f"     {func_name}\n"
+            main_body += f"     {func_alias}\n"
 
         return imports + "\nfn main{\n" + main_body + "}\n"
