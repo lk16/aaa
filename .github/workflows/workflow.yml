@@ -42,4 +42,5 @@ jobs:
         poetry run pytest --cov=aaa --cov-report=term-missing -x -vv
     - name: Run aaa tests
       run: |
+        export AAA_STDLIB_PATH=$(pwd)/stdlib
         poetry run ./manage.py test stdlib/
