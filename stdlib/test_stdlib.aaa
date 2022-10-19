@@ -1,0 +1,115 @@
+
+fn test_drop {
+    1 drop
+}
+
+fn test_dup {
+    1 dup
+    1 = assert
+    1 = assert
+}
+
+fn test_over {
+    1 2 over
+    1 = assert
+    2 = assert
+    1 = assert
+}
+
+fn test_rot {
+    1 2 3 rot
+    1 = assert
+    3 = assert
+    2 = assert
+}
+
+fn test_swap {
+    1 2 swap
+    1 = assert
+    2 = assert
+}
+
+fn test_nop {
+    nop
+}
+
+fn test_subtract {
+    3 2 -
+    1 = assert
+}
+
+fn test_mutiply {
+    3 2 *
+    6 = assert
+}
+
+fn test_add {
+    3 2 +
+    5 = assert
+}
+
+fn test_divide_nonzero {
+    7 3 /
+    assert
+    2 = assert
+}
+
+fn test_divide_zero {
+    7 0 /
+    not assert
+    0 = assert
+}
+
+fn test_modulo_nonzero {
+    7 3 %
+    assert
+    1 = assert
+}
+
+fn test_modulo_zero {
+    7 0 %
+    not assert
+    0 = assert
+}
+
+fn test_and_true_true {
+    true true and assert
+}
+
+fn test_and_true_false {
+    true false and not assert
+}
+
+fn test_and_false_true {
+    false true and not assert
+}
+
+fn test_and_false_false {
+    false false and not assert
+}
+
+fn test_or_true_true {
+    true true or assert
+}
+
+fn test_or_true_false {
+    true false or assert
+}
+
+fn test_or_false_true {
+    false true or assert
+}
+
+fn test_or_false_false {
+    false false and not assert
+}
+
+fn test_not_true {
+    true not not assert
+}
+
+fn test_not_false {
+    false not assert
+}
+
+// TODO add missing tests

@@ -35,8 +35,11 @@ jobs:
       run:
         poetry add pre-commit &&
         poetry run pre-commit run --all-files
-    - name: Run tests
+    - name: Run python tests
       run: |
         poetry install
         export AAA_STDLIB_PATH=$(pwd)/stdlib
         poetry run pytest --cov=aaa --cov-report=term-missing -x -vv
+    - name: Run aaa tests
+      run: |
+        poetry run ./manage.py test stdlib/

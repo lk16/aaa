@@ -34,6 +34,7 @@ def runtests() -> None:
     commands = [
         "pre-commit run --all-files mypy",
         "pytest --cov=aaa --cov-report=term-missing --pdb -x --lf --nf",
+        "./manage.py test stdlib/",
     ]
 
     for command in commands:
