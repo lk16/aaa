@@ -1,8 +1,11 @@
 import os
+import sys
 from glob import glob
 from pathlib import Path
 from typing import Dict, List
 
+from aaa import AaaException
+from aaa.parser.exceptions import ParseException
 from aaa.parser.models import Function, ParsedFile
 from aaa.parser.parser import Parser
 from aaa.run import Runner
@@ -12,25 +15,38 @@ class TestRunner:
     def __init__(self, path: Path) -> None:
         self.path = path
         self.builtins_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
+        self.exceptions: List[AaaException] = []
 
     def run(self) -> int:
         parsed_files = self._get_parsed_test_files()
         test_functions = self._get_test_functions(parsed_files)
         main_file_code = self._build_main_test_file(test_functions)
+
+        if self.exceptions:
+            for exception in self.exceptions:
+                print(str(exception), file=sys.stderr)
+
+            print(f"Found {len(self.exceptions)} error(s).", file=sys.stderr)
+            return 1
+
         return Runner.without_file(main_file_code, parsed_files).run()
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.path, recursive=True)
         test_files = {(self.path / path).resolve() for path in glob_paths}
 
-        return {
-            test_file: self._parse_file(test_file) for test_file in sorted(test_files)
-        }
+        parsed_files: Dict[Path, ParsedFile] = {}
+
+        for test_file in sorted(test_files):
+            try:
+                parsed_files[test_file] = self._parse_file(test_file)
+            except ParseException as e:
+                self.exceptions.append(e)
+
+        return parsed_files
 
     def _parse_file(self, file: Path) -> ParsedFile:
         parser = Parser(file, self.builtins_path)
-
-        # TODO handle parse errors gracefully
         return parser._parse(file, parser._get_source_parser())
 
     def _get_test_functions(
