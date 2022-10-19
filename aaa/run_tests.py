@@ -77,6 +77,7 @@ class TestRunner:
         main_body = ""
 
         test_count = len(test_functions)
+        test_count_digits = len(str(test_count))
 
         for test_number, test_function in enumerate(test_functions, start=0):
             from_ = str(test_function.file)
@@ -86,9 +87,8 @@ class TestRunner:
             func_alias = self._get_test_func_alias(test_number)
 
             imports += f'from "{from_}" import {func_name} as {func_alias}\n'
-            main_body += (
-                f'     "[{test_number+1}/{test_count}] {from_}::{func_name}\\n" .\n'
-            )
+            main_body += f'     "[{test_number+1:>{test_count_digits}}/{test_count}] '
+            main_body += f'{from_}::{func_name}\\n" .\n'
             main_body += f"     {func_alias}\n"
 
         return imports + "\nfn main{\n" + main_body + "}\n"
