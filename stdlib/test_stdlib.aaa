@@ -72,44 +72,138 @@ fn test_modulo_zero {
     0 = assert
 }
 
+fn test_int_equal_false {
+    2 3 =
+    not assert
+}
+
+fn test_int_equal_true {
+    3 3 =
+    assert
+}
+
+fn test_int_greater_true {
+    3 2 >
+    assert
+}
+
+fn test_int_greater_false_different {
+    2 3 >
+    not assert
+}
+
+fn test_int_greater_false_same {
+    2 2 >
+    not assert
+}
+
+fn test_int_less_true {
+    2 3 <
+    assert
+}
+
+fn test_int_less_false_different {
+    3 2 <
+    not assert
+}
+
+fn test_int_less_false_same {
+    2 2 <
+    not assert
+}
+
+fn test_int_less_equal_true_different {
+    2 3 <=
+    assert
+}
+
+fn test_int_less_equal_true_same {
+    2 2 <=
+    assert
+}
+
+fn test_int_less_equal_false {
+    3 2 <=
+    not assert
+}
+
+fn test_int_greater_equal_false {
+    2 3 >=
+    not assert
+}
+
+fn test_int_greater_equal_true_same {
+    2 2 >=
+    assert
+}
+
+fn test_int_greater_equal_true_different {
+    3 2 >=
+    assert
+}
+
+fn test_int_unequal_true {
+    2 3 !=
+    assert
+}
+
+fn test_int_unequal_false {
+    2 2 !=
+    not assert
+}
+
 fn test_and_true_true {
-    true true and assert
+    true true and
+    assert
 }
 
 fn test_and_true_false {
-    true false and not assert
+    true false and
+    not assert
 }
 
 fn test_and_false_true {
-    false true and not assert
+    false true and
+    not assert
 }
 
 fn test_and_false_false {
-    false false and not assert
+    false false and
+    not assert
 }
 
 fn test_or_true_true {
-    true true or assert
+    true true or
+    assert
 }
 
 fn test_or_true_false {
-    true false or assert
+    true false or
+    assert
 }
 
 fn test_or_false_true {
-    false true or assert
+    false true or
+    assert
 }
 
 fn test_or_false_false {
-    false false and not assert
+    false false and
+    not assert
 }
 
 fn test_not_true {
-    true not not assert
+    true not
+    not assert
 }
 
 fn test_not_false {
-    false not assert
+    false not
+    assert
 }
 
-// TODO add missing tests
+// TODO add tests for vec[T]
+
+// TODO add tests for map[K, V]
+
+// TODO add tests for str
