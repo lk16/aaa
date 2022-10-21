@@ -115,11 +115,9 @@ class Simulator:
             StandardLibraryCallKind.MAP_EMPTY: self.instruction_map_empty,
             StandardLibraryCallKind.MAP_GET: self.instruction_map_get,
             StandardLibraryCallKind.MAP_HAS_KEY: self.instruction_map_has_key,
-            StandardLibraryCallKind.MAP_KEYS: self.instruction_map_keys,
             StandardLibraryCallKind.MAP_POP: self.instruction_map_pop,
             StandardLibraryCallKind.MAP_SET: self.instruction_map_set,
             StandardLibraryCallKind.MAP_SIZE: self.instruction_map_size,
-            StandardLibraryCallKind.MAP_VALUES: self.instruction_map_values,
             StandardLibraryCallKind.SETENV: self.instruction_setenv,
             StandardLibraryCallKind.STR_APPEND: self.instruction_str_append,
             StandardLibraryCallKind.STR_CONTAINS: self.instruction_str_contains,
@@ -608,12 +606,6 @@ class Simulator:
         copied = deepcopy(map_var)
         self.push_var(copied)
         return self.get_instruction_pointer() + 1
-
-    def instruction_map_keys(self) -> int:  # pragma: nocover
-        raise NotImplementedError
-
-    def instruction_map_values(self) -> int:  # pragma: nocover
-        raise NotImplementedError
 
     def instruction_push_struct(self, instruction: Instruction) -> int:
         assert isinstance(instruction, PushStruct)
