@@ -417,13 +417,10 @@ class TypeChecker:
             signature = self.signatures[function.identify()]
             struct_type = self.types[(function.file, function.struct_name)]
 
-            # A memberfunction on a type foo needs to have foo as
-            # type of thefirst argument and first return type
+            # A memberfunction on a type foo needs to take a foo object as the first argument
             if (
                 len(signature.arguments) == 0
                 or signature.arguments[0].type != struct_type
-                or len(signature.return_types) == 0
-                or signature.return_types[0].type != struct_type
             ):
                 raise InvalidMemberFunctionSignature(
                     file=function.file,

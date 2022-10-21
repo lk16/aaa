@@ -44,15 +44,16 @@ fn and args a as bool, b as bool return bool
 fn not args a as bool            return bool
 fn or  args a as bool, b as bool return bool
 
-fn vec[T]:clear args v as vec[T]                           return vec[T]
-fn vec[T]:copy  args v as vec[T]                           return vec[T], vec[T]
-fn vec[T]:empty args v as vec[T]                           return vec[T], bool
-fn vec[T]:get   args v as vec[T], offset as int            return vec[T], T
-fn vec[T]:pop   args v as vec[T]                           return vec[T], T
-fn vec[T]:push  args v as vec[T], item as T                return vec[T]
-fn vec[T]:set   args v as vec[T], offset as int, item as T return vec[T]
-fn vec[T]:size  args v as vec[T]                           return vec[T], int
+fn vec[T]:clear args v as vec[T]
+fn vec[T]:copy  args v as vec[T]                           return vec[T]
+fn vec[T]:empty args v as vec[T]                           return bool
+fn vec[T]:get   args v as vec[T], offset as int            return T
+fn vec[T]:pop   args v as vec[T]                           return T
+fn vec[T]:push  args v as vec[T], item as T
+fn vec[T]:set   args v as vec[T], offset as int, item as T
+fn vec[T]:size  args v as vec[T]                           return int
 
+// TODO remove all first map[K, V] return values
 fn map[K, V]:clear   args m as map[K, V]                       return map[K, V]
 fn map[K, V]:copy    args m as map[K, V]                       return map[K, V], map[K, V]
 fn map[K, V]:drop    args m as map[K, V], key as K             return map[K, V]
@@ -70,6 +71,8 @@ fn map[K, V]:values        args m as map[K, V]                       return vec[
 // TODO: rename vec:size and map:size to vec:len and map:len
 
 // string functions
+
+// TODO remove all first str return values
 fn str:append     args s as str, other as str                  return str, str  // TODO return only the concatenated string
 fn str:contains   args s as str, other as str                  return str, bool
 fn str:equals     args s as str, other as str                  return str, bool

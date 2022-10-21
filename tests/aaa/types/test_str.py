@@ -49,7 +49,7 @@ from tests.aaa import check_aaa_main
         pytest.param('"123" str:to_int . . drop', "true123", [], id="to_int-ok"),
         pytest.param('"1x23" str:to_int . . drop', "false0", [], id="to_int-fail"),
         pytest.param(
-            '"." vec[str] "a" vec:push "b" vec:push str:join . drop',
+            '"." vec[str] dup "a" vec:push dup "b" vec:push str:join . drop',
             "a.b",
             [],
             id="join",

@@ -289,15 +289,6 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
                 + f"   Found arg types: {' '.join(str(arg) for arg in self.signature.arguments)}\n"
             )
 
-        if (
-            len(self.signature.return_types) == 0
-            or str(self.signature.return_types[0]) != self.struct_type.name
-        ):
-            formatted += (
-                f"Expected return types: {self.struct_type.name} ...\n"
-                + f"   Found return types: {' '.join(str(ret) for ret in self.signature.return_types)}\n"
-            )
-
         return formatted
 
 

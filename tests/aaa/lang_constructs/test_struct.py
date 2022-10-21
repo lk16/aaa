@@ -58,7 +58,7 @@ from tests.aaa import check_aaa_full_source
             id="set-get-str",
         ),
         pytest.param(
-            'struct foo { x as vec[int] } fn main { foo "x" ? 5 vec:push drop "x" ? . drop }',
+            'struct foo { x as vec[int] } fn main { foo "x" ? 5 vec:push "x" ? . drop }',
             "[5]",
             [],
             id="set-get-vec",

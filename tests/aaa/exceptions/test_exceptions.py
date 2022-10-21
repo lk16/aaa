@@ -204,23 +204,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:13 Function bar:foo has invalid member-function signature\n"
             + "\n"
             + "Expected arg types: bar ...\n"
-            + "   Found arg types: \n"
-            + "Expected return types: bar ...\n"
-            + "   Found return types: \n",
+            + "   Found arg types: \n",
             id="member-func-without-arg-or-return-type",
-        ),
-        pytest.param(
-            """
-            struct bar { x as int }
-            fn bar:foo args b as bar { nop }
-            fn main { nop }
-            """,
-            InvalidMemberFunctionSignature,
-            "/foo/main.aaa:3:13 Function bar:foo has invalid member-function signature\n"
-            + "\n"
-            + "Expected return types: bar ...\n"
-            + "   Found return types: \n",
-            id="member-func-without-return-type",
         ),
         pytest.param(
             """

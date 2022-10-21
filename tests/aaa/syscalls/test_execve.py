@@ -10,5 +10,5 @@ def test_execve() -> None:
 
     with patch("aaa.simulator.simulator.os.execve", mock_execve):
         check_aaa_main(
-            '"/bin/foo" vec[str] "/bin/foo" vec:push map[str, str] execve', "", []
+            '"/bin/foo" vec[str] dup "/bin/foo" vec:push map[str, str] execve', "", []
         )

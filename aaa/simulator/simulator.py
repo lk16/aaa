@@ -497,13 +497,13 @@ class Simulator:
 
     def instruction_vec_push(self) -> int:
         x = self.pop_var()
-        vec: List[Variable] = self.top().value
+        vec: List[Variable] = self.pop_var().value
 
         vec.append(x)
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_pop(self) -> int:
-        vec: List[Variable] = self.top().value
+        vec: List[Variable] = self.pop_var().value
 
         x = vec.pop()
         self.push_var(x)
@@ -512,7 +512,7 @@ class Simulator:
 
     def instruction_vec_get(self) -> int:
         x = self.pop_int()
-        vec: List[Variable] = self.top().value
+        vec: List[Variable] = self.pop_var().value
 
         self.push_var(vec[x])
         return self.get_instruction_pointer() + 1
@@ -520,31 +520,31 @@ class Simulator:
     def instruction_vec_set(self) -> int:
         x: Any = self.pop_var()
         index = self.pop_int()
-        vec: List[Variable] = self.top().value
+        vec: List[Variable] = self.pop_var().value
 
         vec[index] = x
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_size(self) -> int:
-        vec: List[Variable] = self.top().value
+        vec: List[Variable] = self.pop_var().value
 
         self.push_int(len(vec))
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_empty(self) -> int:
-        vec: List[Variable] = self.top().value
+        vec: List[Variable] = self.pop_var().value
 
         self.push_bool(not bool(vec))
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_clear(self) -> int:
-        vec: List[Variable] = self.top().value
+        vec: List[Variable] = self.pop_var().value
 
         vec.clear()
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_copy(self) -> int:
-        vec_var = self.top()
+        vec_var = self.pop_var()
         copied = deepcopy(vec_var)
         self.push_var(copied)
         return self.get_instruction_pointer() + 1
