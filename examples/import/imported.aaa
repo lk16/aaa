@@ -6,5 +6,9 @@ args
 return
     int
 {
-    if x y > { x else y }
+    if x y > {
+        x
+    } else {
+        y
+    }
 }

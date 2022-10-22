@@ -3,62 +3,63 @@ struct int_pair {
     y as int,
 }
 
-fn int_pair:sum args p as int_pair return int_pair, int {
+fn int_pair:sum args p as int_pair return int {
     p "x" ?
     p "y" ?
-    swap drop
     +
 }
 
-fn int_pair:set_zero args p as int_pair return int_pair {
-    p
-    "x" { 0 } !
-    "y" { p "x" ? swap drop } !
+fn int_pair:set_zero args p as int_pair {
+    p "x" { 0 } !
+    p "y" { p "x" ? } !
 }
 
-fn int_pair:print args p as int_pair return int_pair {
+fn int_pair:print args p as int_pair {
     "x,y = " .
-    p
-    "x" ? .
+    p "x" ? .
     "," .
-    "y" ? .
+    p "y" ? .
     "\n" .
 }
 
 fn main {
     int_pair
     "x = " .
-    "x" ? .
+    dup "x" ? .
     "\n" .
     // should print "x = 0\n"
 
     "y = " .
-    "y" ? .
+    dup "y" ? .
     "\n" .
     // should print "y = 0\n"
 
-    "x" { 3 } !
-    "y" { 4 } !
+    dup "x" { 3 } !
+    dup "y" { 4 } !
 
     "x = " .
-    "x" ? .
+    dup "x" ? .
     "\n" .
     // should print "x = 3\n"
 
     "y = " .
-    "y" ? .
+    dup "y" ? .
     "\n" .
     // should print "y = 4\n"
 
+    dup
     int_pair:sum .
     "\n" .
     // should print "7\n"
 
+    dup
     int_pair:print
     // should print "x,y = 3,4\n"
 
+    dup
     int_pair:set_zero
 
+    dup
     int_pair:print
     // should print "x,y = 0,0\n"
 

@@ -8,7 +8,10 @@ Stack-based language, like forth.
 
 ### Examples
 ```sh
-# Run code from a shell argument. This prints "aaa\n".
+# Run the obligatory hello world example
+./manage.py cmd 'fn main { "Hello world\n" . }'
+
+# Print "aaa\n" using a loop to count to 3
 ./manage.py cmd 'fn main { "a" 0 while dup 3 < { over . 1 + } drop drop "\n" . }'
 
 # Run code from a file. Implements the famous fizzbuzz interview question.

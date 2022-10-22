@@ -43,18 +43,7 @@ fn main {
 
         // client fd (pushed by accept) is popped by write
 
-        // build response literal
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n"
-        "Content-Length: 27\r\n"
-        "\r\n"
-        "{\"message\": \"Hello world!\"}"
-
-        str:append swap drop
-        str:append swap drop
-        str:append swap drop
-        str:append swap drop
-
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 27\r\n\r\n{\"message\": \"Hello world!\"}"
         write
 
         if not dup {

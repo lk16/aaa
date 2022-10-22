@@ -1,15 +1,13 @@
 
 fn run_process args input as str {
-    if input "" = not {
+    if input "" str:equals not {
 
         1 fsync drop
         2 fsync drop
 
-        input
-        " " str:split 0 vec:get swap
+        input " " str:split dup 0 vec:get swap
         environ
         execve
-        drop
     }
 }
 
@@ -19,7 +17,7 @@ fn main {
         "> " .
         0 1024 read drop str:strip
 
-        if dup "exit" = {
+        if dup "exit" str:equals {
             0 exit
         }
 

@@ -87,8 +87,8 @@ fn str:to_bool    args s as str                                return bool, bool
 fn str:to_int     args s as str                                return int, bool
 
 // TODO: not implemented yet
-// fn int:to_str  args int  return int, str
-// fn bool:to_str args bool return bool, str
+// fn int:to_str  args int  return str
+// fn bool:to_str args bool return str
 
 // TODO everything below should be moved to separate file in stdlib
 // Function and type names should not be reserved / builtin

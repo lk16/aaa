@@ -653,7 +653,7 @@ class Simulator:
 
     def instruction_get_struct_field(self, instruction: Instruction) -> int:
         field_name = self.pop_str()
-        struct_fields: Dict[str, Variable] = self.top().value
+        struct_fields: Dict[str, Variable] = self.pop_var().value
         self.push_var(struct_fields[field_name])
 
         return self.get_instruction_pointer() + 1
@@ -663,7 +663,7 @@ class Simulator:
 
         new_value: Variable = self.pop_var()
         field_name: str = self.pop_str()
-        struct_fields: Dict[str, Variable] = self.top().value
+        struct_fields: Dict[str, Variable] = self.pop_var().value
         struct_fields[field_name] = new_value
 
         return self.get_instruction_pointer() + 1

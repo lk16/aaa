@@ -484,9 +484,8 @@ class TypeChecker:
             function, field_query, struct_var_type.type
         )
 
-        type_stack.pop()
-        type_stack.append(field_type)
-        return type_stack
+        # pop struct and field name, push field
+        return type_stack[:-2] + [field_type]
 
     def _check_type_struct_field_update(
         self,
@@ -542,5 +541,5 @@ class TypeChecker:
                 expected_type=field_selector_type,
             )
 
-        # drop field_selector and update value
-        return type_stack[:-2]
+        # pop struct, field name and new value
+        return type_stack[:-3]
