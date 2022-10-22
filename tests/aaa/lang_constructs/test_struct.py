@@ -64,7 +64,7 @@ from tests.aaa import check_aaa_full_source
             id="set-get-vec",
         ),
         pytest.param(
-            'struct foo { x as map[int, str] } fn main { foo "x" ? 5 "five" map:set drop "x" ? . drop }',
+            'struct foo { x as map[int, str] } fn main { foo "x" ? 5 "five" map:set "x" ? . drop }',
             '{5: "five"}',
             [],
             id="set-get-map",

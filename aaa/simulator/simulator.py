@@ -549,7 +549,7 @@ class Simulator:
 
     def instruction_map_get(self) -> int:
         key = self.pop_var()
-        map: Dict[Variable, Variable] = self.top().value
+        map: Dict[Variable, Variable] = self.pop_var().value
 
         self.push_var(map[key])
         return self.get_instruction_pointer() + 1
@@ -557,46 +557,46 @@ class Simulator:
     def instruction_map_set(self) -> int:
         value = self.pop_var()
         key = self.pop_var()
-        map: Dict[Variable, Variable] = self.top().value
+        map: Dict[Variable, Variable] = self.pop_var().value
 
         map[key] = value
         return self.get_instruction_pointer() + 1
 
     def instruction_map_has_key(self) -> int:
         key = self.pop_var()
-        map: Dict[Variable, Variable] = self.top().value
+        map: Dict[Variable, Variable] = self.pop_var().value
 
         self.push_bool(key in map)
         return self.get_instruction_pointer() + 1
 
     def instruction_map_size(self) -> int:
-        map: Dict[Variable, Variable] = self.top().value
+        map: Dict[Variable, Variable] = self.pop_var().value
 
         self.push_int(len(map))
         return self.get_instruction_pointer() + 1
 
     def instruction_map_empty(self) -> int:
-        map: Dict[Variable, Variable] = self.top().value
+        map: Dict[Variable, Variable] = self.pop_var().value
 
         self.push_bool(not bool(map))
         return self.get_instruction_pointer() + 1
 
     def instruction_map_pop(self) -> int:
         key = self.pop_var()
-        map: Dict[Variable, Variable] = self.top().value
+        map: Dict[Variable, Variable] = self.pop_var().value
 
         self.push_var(map.pop(key))
         return self.get_instruction_pointer() + 1
 
     def instruction_map_drop(self) -> int:
         key = self.pop_var()
-        map: Dict[Variable, Variable] = self.top().value
+        map: Dict[Variable, Variable] = self.pop_var().value
 
         del map[key]
         return self.get_instruction_pointer() + 1
 
     def instruction_map_clear(self) -> int:
-        map: Dict[Variable, Variable] = self.top().value
+        map: Dict[Variable, Variable] = self.pop_var().value
 
         map.clear()
         return self.get_instruction_pointer() + 1
