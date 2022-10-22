@@ -68,24 +68,23 @@ fn map[K, V]:size    args m as map[K, V]                       return int
 
 // string functions
 
-// TODO remove all first str return values
-fn str:append     args s as str, other as str                  return str, str  // TODO return only the concatenated string
-fn str:contains   args s as str, other as str                  return str, bool
-fn str:equals     args s as str, other as str                  return str, bool
-fn str:join       args s as str, parts as vec[str]             return str, str
-fn str:len        args s as str                                return str, int
-fn str:lower      args s as str                                return str, str
-fn str:replace    args s as str, search as str, replace as str return str, str
-fn str:split      args s as str, sep as str                    return str, vec[str]
+fn str:append     args s as str, other as str                  return str
+fn str:contains   args s as str, other as str                  return bool
+fn str:equals     args s as str, other as str                  return bool
+fn str:join       args s as str, parts as vec[str]             return str
+fn str:len        args s as str                                return int
+fn str:lower      args s as str                                return str
+fn str:replace    args s as str, search as str, replace as str return str
+fn str:split      args s as str, sep as str                    return vec[str]
 fn str:strip      args s as str                                return str
-fn str:upper      args s as str                                return str, str
+fn str:upper      args s as str                                return str
 
 // TODO: return enum indicating success/failure instead of extra bool
-fn str:find_after args s as str, other as str, offset as int   return str, int, bool
-fn str:find       args s as str, other as str                  return str, int, bool
-fn str:substr     args s as str, start as int, end as int      return str, str, bool
-fn str:to_bool    args s as str                                return str, bool, bool
-fn str:to_int     args s as str                                return str, int, bool
+fn str:find_after args s as str, other as str, offset as int   return int, bool
+fn str:find       args s as str, other as str                  return int, bool
+fn str:substr     args s as str, start as int, end as int      return str, bool
+fn str:to_bool    args s as str                                return bool, bool
+fn str:to_int     args s as str                                return int, bool
 
 // TODO: not implemented yet
 // fn int:to_str  args int  return int, str
