@@ -16,6 +16,16 @@ from aaa.cross_referencer.models import (
     Unresolved,
 )
 
+MAIN_FUNCTION = """int main(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
+    struct aaa_stack stack;
+    aaa_stack_init(&stack);
+    aaa_main(&stack);
+    aaa_stack_free(&stack);
+}"""
+
 
 class Transpiler:
     def __init__(
@@ -31,59 +41,19 @@ class Transpiler:
         self.output_file.write_text(code)
 
     def _generate_c_file(self) -> str:
-        headers = """
-#include <malloc.h>
-#include <assert.h>
-"""
-
-        aaa_types = """
-enum aaa_kind {
-    AAA_INTEGER,
-    AAA_BOOLEAN,
-    AAA_STRING,
-    // TODO add more
-};
-
-struct aaa_variable {
-    enum aaa_kind kind;
-    union {
-        int integer;
-        char *string; // TODO worry about memory leaks
-    };
-};
-
-struct aaa_stack {
-    unsigned size;
-    unsigned max_size;
-    struct aaa_variable *data;
-};
-
-void aaa_stack_init(struct aaa_stack *stack) {
-    stack->size = 0;
-    stack->max_size = 1024;
-    stack->data = malloc(1024 * sizeof(struct aaa_stack));
-}
-
-void aaa_stack_free(struct aaa_stack *stack) {
-    free(stack->data);
-}
-
-void aaa_stack_push_int(struct aaa_stack *stack, int value) {
-    assert(stack->size < stack->max_size);
-
-    struct aaa_variable *top = stack->data + stack->size;
-    top->kind = AAA_INTEGER;
-    top->integer = value;
-
-    stack->size++;
-}
-        """
+        includes = '#include "aaa.h"\n'
 
         # TODO generate forward declaration of types
 
         # TODO generate type definitions
 
-        # TODO generate forward declarations of functions
+        forward_func_declarations = ""
+
+        for function in self.functions.values():
+            if function.file == self.builtins_path:
+                continue
+            func_name = self._generate_c_function_name(function)
+            forward_func_declarations += f"void {func_name}(struct aaa_stack *stack);\n"
 
         content = ""
 
@@ -93,26 +63,14 @@ void aaa_stack_push_int(struct aaa_stack *stack, int value) {
             content += self._generate_c_function(function)
             content += "\n"
 
-        main_function = """
-int main(int argc, char **argv) {
-    (void)argc;
-    (void)argv;
-
-    struct aaa_stack stack;
-    aaa_stack_init(&stack);
-    aaa_main(&stack);
-    aaa_stack_free(&stack);
-}
-        """
-
         return (
-            headers.strip()
-            + "\n\n"
-            + aaa_types.strip()
-            + "\n\n"
-            + content.strip()
-            + "\n\n"
-            + main_function.strip()
+            includes
+            + "\n"
+            + forward_func_declarations
+            + "\n"
+            + content
+            + "\n"
+            + MAIN_FUNCTION
             + "\n"
         )
 
