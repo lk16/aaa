@@ -30,6 +30,14 @@ def run(path: str) -> None:
 
 
 @cli.command()
+@click.argument("source_file", type=click.Path(exists=True))
+@click.argument("output_file")
+def transpile(source_file: str, output_file: str) -> None:
+    exit_code = Runner(Path(source_file)).transpile(Path(output_file))
+    exit(exit_code)
+
+
+@cli.command()
 def runtests() -> None:
     commands = [
         "pre-commit run --all-files mypy",

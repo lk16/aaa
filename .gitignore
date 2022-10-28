@@ -6,4 +6,5 @@ __pycache__
 lark.pdf
 *.idea
 *.prof
-foo/*
+generated.c
+a.out

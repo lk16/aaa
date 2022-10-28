@@ -11,6 +11,7 @@ from aaa.parser.models import ParsedFile
 from aaa.parser.parser import Parser
 from aaa.simulator.exceptions import AaaRuntimeException
 from aaa.simulator.simulator import Simulator
+from aaa.transpiler.transpiler import Transpiler
 from aaa.type_checker.type_checker import TypeChecker
 
 
@@ -59,6 +60,26 @@ class Runner:
             TypeChecker(cross_referencer_output).run()
             instruction_gen_output = InstructionGenerator(cross_referencer_output).run()
             Simulator(instruction_gen_output, False).run()
+        except AaaRunnerException as e:
+            self.exceptions = e.exceptions
+            self._print_exceptions(e)
+            return 1
+        except AaaException as e:
+            self.exceptions = [e]
+            self._print_exceptions(AaaRunnerException([e]))
+            return 1
+
+        return 0
+
+    def transpile(self, output_file: Path) -> int:
+        try:
+            stdlib_path = self._get_stdlib_path()
+
+            parser_output = Parser(
+                self.entrypoint, stdlib_path, self.parsed_files
+            ).run()
+            cross_referencer_output = CrossReferencer(parser_output).run()
+            Transpiler(cross_referencer_output, output_file).run()
         except AaaRunnerException as e:
             self.exceptions = e.exceptions
             self._print_exceptions(e)
