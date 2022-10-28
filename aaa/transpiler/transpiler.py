@@ -8,6 +8,7 @@ from aaa.cross_referencer.models import (
     FunctionBody,
     FunctionBodyItem,
     Identifier,
+    IdentifierCallingFunction,
     IntegerLiteral,
     Loop,
     StringLiteral,
@@ -87,11 +88,20 @@ class Transpiler:
         func_name = self._generate_c_function_name(function)
 
         content = f"void {func_name}(struct aaa_stack *stack) {{\n"
-        for item in function.body.items:
-            content += self._generate_c_function_body_item(item, 1)
+        content += self._generate_c_function_body(function.body, 1)
         content += "}\n"
 
         return content
+
+    def _generate_c_function_body(
+        self, function_body: FunctionBody, indent_level: int
+    ) -> str:
+        code = ""
+
+        for item in function_body.items:
+            code += self._generate_c_function_body_item(item, indent_level)
+
+        return code
 
     def _generate_c_function_body_item(
         self, item: FunctionBodyItem, indent_level: int
@@ -103,13 +113,15 @@ class Transpiler:
         elif isinstance(item, IntegerLiteral):
             return f"{indentation}aaa_stack_push_int(stack, {item.value});\n"
         elif isinstance(item, StringLiteral):
-            return f"{indentation}// WARNING: StringLiteral is not implemented yet\n"
+            # TODO this is horrible
+            string_value = repr(item.value).replace("'", '"')
+            return f"{indentation}aaa_stack_push_str(stack, {string_value});\n"
         elif isinstance(item, BooleanLiteral):
             return f"{indentation}// WARNING: BooleanLiteral is not implemented yet\n"
         elif isinstance(item, Loop):
-            return f"{indentation}// WARNING: Loop is not implemented yet\n"
+            return self._generate_c_loop(item, indent_level)
         elif isinstance(item, Identifier):
-            return f"{indentation}// WARNING: Identifier is not implemented yet\n"
+            return self._generate_c_identifier_code(item, indent_level)
         elif isinstance(item, Branch):
             return f"{indentation}// WARNING: Branch is not implemented yet\n"
         elif isinstance(item, StructFieldQuery):
@@ -120,3 +132,43 @@ class Transpiler:
             )
         else:  # pragma: nocover
             assert False
+
+    def _generate_c_loop(self, loop: Loop, indent_level: int) -> str:
+        indentation = "    " * indent_level
+
+        code = f"{indentation}while (1) {{\n"
+        code += self._generate_c_function_body(loop.condition, indent_level + 1)
+        code += f"{indentation}    if (!aaa_stack_pop_bool(stack)) {{\n"
+        code += f"{indentation}        break;\n"
+        code += f"{indentation}    }}\n"
+        code += self._generate_c_function_body(loop.body, indent_level + 1)
+        code += f"{indentation}}}\n"
+
+        return code
+
+    def _generate_c_identifier_code(
+        self, identifier: Identifier, indent_level: int
+    ) -> str:
+        indentation = "    " * indent_level
+
+        if isinstance(identifier.kind, IdentifierCallingFunction):
+            called = identifier.kind.function
+
+            if called.file == self.builtins_path:
+
+                aaa_c_builtin_funcs = {
+                    ".": "aaa_stack_print",
+                    "+": "aaa_stack_plus",
+                    "<": "aaa_stack_less",
+                    "drop": "aaa_stack_drop",
+                    "dup": "aaa_stack_dup",
+                }
+
+                try:
+                    aaa_c_builtin_func = aaa_c_builtin_funcs[called.name]
+                except KeyError:
+                    pass
+                else:
+                    return f"{indentation}{aaa_c_builtin_func}(stack);\n"
+
+        return f"{indentation}// WARNING: Identifier {identifier.name} is not implemented yet\n"

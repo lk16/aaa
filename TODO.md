@@ -1,7 +1,14 @@
 # TODO
 
-### Member functions
-- make not returning the object the default
+### Transpiling to C
+
+```sh
+./manage.py transpile examples/one_to_ten.aaa generated.c
+
+gcc -Wall -Wextra -o generated -std=c99 -g \
+-I ./aaa/transpiler/ \
+generated.c aaa/transpiler/aaa.c
+```
 
 ### Tests
 - add tests for all instructions

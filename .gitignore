@@ -7,4 +7,4 @@ lark.pdf
 *.idea
 *.prof
 generated.c
-a.out
+generated
