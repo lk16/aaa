@@ -9,6 +9,7 @@ from aaa.cross_referencer.models import (
     FunctionBodyItem,
     Identifier,
     IdentifierCallingFunction,
+    IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
     StringLiteral,
@@ -81,6 +82,9 @@ class Transpiler:
 
     def _generate_c_function(self, function: Function) -> str:
         assert not isinstance(function.body, Unresolved)
+        assert not isinstance(function.arguments, Unresolved)
+
+        indentation = "    "
 
         if not function.body:
             return f"// WARNING: no body for function {function.identify()}\n"
@@ -88,6 +92,13 @@ class Transpiler:
         func_name = self._generate_c_function_name(function)
 
         content = f"void {func_name}(struct aaa_stack *stack) {{\n"
+
+        if function.arguments:
+            content += f"{indentation}// load arguments\n"
+            for arg in reversed(function.arguments):
+                content += f"{indentation}struct aaa_variable {arg.name} = *aaa_stack_pop(stack);\n"
+            content += "\n"
+
         content += self._generate_c_function_body(function.body, 1)
         content += "}\n"
 
@@ -123,7 +134,7 @@ class Transpiler:
         elif isinstance(item, Identifier):
             return self._generate_c_identifier_code(item, indent_level)
         elif isinstance(item, Branch):
-            return f"{indentation}// WARNING: Branch is not implemented yet\n"
+            return self._generate_c_branch(item, indent_level)
         elif isinstance(item, StructFieldQuery):
             return f"{indentation}// WARNING: StructFieldQuery is not implemented yet\n"
         elif isinstance(item, StructFieldUpdate):
@@ -163,8 +174,10 @@ class Transpiler:
                     "%": "aaa_stack_modulo",
                     "+": "aaa_stack_plus",
                     "<": "aaa_stack_less",
+                    "=": "aaa_stack_equals",
                     "drop": "aaa_stack_drop",
                     "dup": "aaa_stack_dup",
+                    "or": "aaa_stack_or",
                 }
 
                 try:
@@ -177,4 +190,22 @@ class Transpiler:
 
             return f"{indentation}{c_func_name}(stack);\n"
 
+        if isinstance(identifier.kind, IdentifierUsingArgument):
+            return f"{indentation}aaa_stack_push_variable(stack, &{identifier.name});\n"
+
         return f"{indentation}// WARNING: Identifier {identifier.name} is not implemented yet\n"
+
+    def _generate_c_branch(self, branch: Branch, indent_level: int) -> str:
+        indentation = "    " * indent_level
+
+        code = self._generate_c_function_body(branch.condition, indent_level)
+        code += f"{indentation}if (aaa_stack_pop_bool(stack)) {{\n"
+        code += self._generate_c_function_body(branch.if_body, indent_level + 1)
+
+        if branch.else_body.items:
+            code += f"{indentation}}} else {{\n"
+            code += self._generate_c_function_body(branch.else_body, indent_level + 1)
+
+        code += f"{indentation}}}\n"
+
+        return code

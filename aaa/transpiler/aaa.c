@@ -35,7 +35,13 @@ static struct aaa_variable *aaa_stack_push(struct aaa_stack *stack) {
     return aaa_stack_top(stack);
 }
 
-static struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
+void aaa_stack_push_variable(struct aaa_stack *stack, struct aaa_variable *variable) {
+    struct aaa_variable *top = aaa_stack_push(stack);
+    *top = *variable;
+}
+
+
+struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
     if (stack->size == 0) {
         fprintf(stderr, "Aaa stack underflow\n");
         abort();
@@ -133,4 +139,15 @@ void aaa_stack_modulo(struct aaa_stack *stack) {
         aaa_stack_push_int(stack, lhs % rhs);
         aaa_stack_push_bool(stack, true);
     }
+}
+
+void aaa_stack_equals(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_bool(stack, lhs == rhs);
+}
+void aaa_stack_or(struct aaa_stack *stack) {
+    bool rhs = aaa_stack_pop_bool(stack);
+    bool lhs = aaa_stack_pop_bool(stack);
+    aaa_stack_push_bool(stack, lhs || rhs);
 }
