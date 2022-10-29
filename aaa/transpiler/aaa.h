@@ -35,3 +35,4 @@ void aaa_stack_plus(struct aaa_stack *stack);
 void aaa_stack_print(struct aaa_stack *stack);
 void aaa_stack_less(struct aaa_stack *stack);
 void aaa_stack_drop(struct aaa_stack *stack);
+void aaa_stack_modulo(struct aaa_stack *stack);

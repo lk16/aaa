@@ -154,10 +154,13 @@ class Transpiler:
         if isinstance(identifier.kind, IdentifierCallingFunction):
             called = identifier.kind.function
 
+            c_func_name = ""
+
             if called.file == self.builtins_path:
 
                 aaa_c_builtin_funcs = {
                     ".": "aaa_stack_print",
+                    "%": "aaa_stack_modulo",
                     "+": "aaa_stack_plus",
                     "<": "aaa_stack_less",
                     "drop": "aaa_stack_drop",
@@ -165,10 +168,13 @@ class Transpiler:
                 }
 
                 try:
-                    aaa_c_builtin_func = aaa_c_builtin_funcs[called.name]
+                    c_func_name = aaa_c_builtin_funcs[called.name]
                 except KeyError:
-                    pass
-                else:
-                    return f"{indentation}{aaa_c_builtin_func}(stack);\n"
+                    return f"{indentation}// WARNING: Builtin function {identifier.name} is not implemented yet\n"
+
+            else:
+                c_func_name = self._generate_c_function_name(called)
+
+            return f"{indentation}{c_func_name}(stack);\n"
 
         return f"{indentation}// WARNING: Identifier {identifier.name} is not implemented yet\n"

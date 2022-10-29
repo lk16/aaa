@@ -121,3 +121,16 @@ void aaa_stack_less(struct aaa_stack *stack) {
     int lhs = aaa_stack_pop_int(stack);
     aaa_stack_push_bool(stack, lhs < rhs);
 }
+
+void aaa_stack_modulo(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+
+    if (rhs == 0) {
+        aaa_stack_push_int(stack, 0);
+        aaa_stack_push_bool(stack, false);
+    } else {
+        aaa_stack_push_int(stack, lhs % rhs);
+        aaa_stack_push_bool(stack, true);
+    }
+}
