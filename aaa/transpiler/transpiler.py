@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 
 from aaa.cross_referencer.models import (
@@ -24,9 +26,22 @@ MAIN_FUNCTION = """int main(int argc, char **argv) {
 
     struct aaa_stack stack;
     aaa_stack_init(&stack);
-    aaa_main(&stack);
+    aaa_user_main(&stack);
     aaa_stack_free(&stack);
 }"""
+
+AAA_C_BUILTIN_FUNCS = {
+    ".": "aaa_stack_print",
+    "%": "aaa_stack_modulo",
+    "+": "aaa_stack_plus",
+    "<": "aaa_stack_less",
+    "=": "aaa_stack_equals",
+    "drop": "aaa_stack_drop",
+    "dup": "aaa_stack_dup",
+    "or": "aaa_stack_or",
+}
+
+C_IDENTATION = " " * 4
 
 
 class Transpiler:
@@ -38,9 +53,30 @@ class Transpiler:
         self.functions = cross_referencer_output.functions
         self.builtins_path = cross_referencer_output.builtins_path
 
-    def run(self) -> None:
+    def run(self, compile: bool, run_binary: bool) -> int:
         code = self._generate_c_file()
         self.output_file.write_text(code)
+
+        if run_binary and not compile:
+            print("Can't run binary without (re-)compiling!", file=sys.stderr)
+            return 1
+
+        if compile:
+            exit_code = os.system(
+                "gcc -Wall -Wextra -I ./aaa/transpiler/ -o generated -std=c99 -g "
+                + f"{self.output_file} aaa/transpiler/aaa.c"
+            )
+
+            if exit_code != 0:
+                return exit_code
+
+        if run_binary:
+            return os.system("./generated")
+
+        return 0
+
+    def _indent(self, indent: int) -> str:
+        return C_IDENTATION * indent
 
     def _generate_c_file(self) -> str:
         includes = '#include "aaa.h"\n'
@@ -78,7 +114,7 @@ class Transpiler:
 
     def _generate_c_function_name(self, function: Function) -> str:
         # TODO improve c function name generation a lot
-        return "aaa_" + function.name.replace(":", "__")
+        return "aaa_user_" + function.name.replace(":", "__")
 
     def _generate_c_function(self, function: Function) -> str:
         assert not isinstance(function.body, Unresolved)
@@ -105,19 +141,19 @@ class Transpiler:
         return content
 
     def _generate_c_function_body(
-        self, function_body: FunctionBody, indent_level: int
+        self, function_body: FunctionBody, indent: int
     ) -> str:
         code = ""
 
         for item in function_body.items:
-            code += self._generate_c_function_body_item(item, indent_level)
+            code += self._generate_c_function_body_item(item, indent)
 
         return code
 
     def _generate_c_function_body_item(
-        self, item: FunctionBodyItem, indent_level: int
+        self, item: FunctionBodyItem, indent: int
     ) -> str:
-        indentation = "    " * indent_level
+        indentation = self._indent(indent)
 
         if isinstance(item, FunctionBody):
             return f"{indentation}// WARNING: FunctionBody is not implemented yet\n"
@@ -130,11 +166,11 @@ class Transpiler:
         elif isinstance(item, BooleanLiteral):
             return f"{indentation}// WARNING: BooleanLiteral is not implemented yet\n"
         elif isinstance(item, Loop):
-            return self._generate_c_loop(item, indent_level)
+            return self._generate_c_loop(item, indent)
         elif isinstance(item, Identifier):
-            return self._generate_c_identifier_code(item, indent_level)
+            return self._generate_c_identifier_code(item, indent)
         elif isinstance(item, Branch):
-            return self._generate_c_branch(item, indent_level)
+            return self._generate_c_branch(item, indent)
         elif isinstance(item, StructFieldQuery):
             return f"{indentation}// WARNING: StructFieldQuery is not implemented yet\n"
         elif isinstance(item, StructFieldUpdate):
@@ -144,44 +180,30 @@ class Transpiler:
         else:  # pragma: nocover
             assert False
 
-    def _generate_c_loop(self, loop: Loop, indent_level: int) -> str:
-        indentation = "    " * indent_level
+    def _generate_c_loop(self, loop: Loop, indent: int) -> str:
+        condition_code = self._generate_c_function_body(loop.condition, indent + 1)
+        body_code = self._generate_c_function_body(loop.body, indent + 1)
 
-        code = f"{indentation}while (1) {{\n"
-        code += self._generate_c_function_body(loop.condition, indent_level + 1)
-        code += f"{indentation}    if (!aaa_stack_pop_bool(stack)) {{\n"
-        code += f"{indentation}        break;\n"
-        code += f"{indentation}    }}\n"
-        code += self._generate_c_function_body(loop.body, indent_level + 1)
-        code += f"{indentation}}}\n"
+        return (
+            f"{self._indent(indent)}while (1) {{\n"
+            + condition_code
+            + f"{self._indent(indent+1)}if (!aaa_stack_pop_bool(stack)) {{\n"
+            + f"{self._indent(indent+2)}break;\n"
+            + f"{self._indent(indent+1)}}}\n"
+            + body_code
+            + f"{self._indent(indent)}}}\n"
+        )
 
-        return code
-
-    def _generate_c_identifier_code(
-        self, identifier: Identifier, indent_level: int
-    ) -> str:
-        indentation = "    " * indent_level
+    def _generate_c_identifier_code(self, identifier: Identifier, indent: int) -> str:
+        indentation = self._indent(indent)
 
         if isinstance(identifier.kind, IdentifierCallingFunction):
             called = identifier.kind.function
-
             c_func_name = ""
 
             if called.file == self.builtins_path:
-
-                aaa_c_builtin_funcs = {
-                    ".": "aaa_stack_print",
-                    "%": "aaa_stack_modulo",
-                    "+": "aaa_stack_plus",
-                    "<": "aaa_stack_less",
-                    "=": "aaa_stack_equals",
-                    "drop": "aaa_stack_drop",
-                    "dup": "aaa_stack_dup",
-                    "or": "aaa_stack_or",
-                }
-
                 try:
-                    c_func_name = aaa_c_builtin_funcs[called.name]
+                    c_func_name = AAA_C_BUILTIN_FUNCS[called.name]
                 except KeyError:
                     return f"{indentation}// WARNING: Builtin function {identifier.name} is not implemented yet\n"
 
@@ -195,17 +217,18 @@ class Transpiler:
 
         return f"{indentation}// WARNING: Identifier {identifier.name} is not implemented yet\n"
 
-    def _generate_c_branch(self, branch: Branch, indent_level: int) -> str:
-        indentation = "    " * indent_level
+    def _generate_c_branch(self, branch: Branch, indent: int) -> str:
+        indentation = self._indent(indent)
 
-        code = self._generate_c_function_body(branch.condition, indent_level)
-        code += f"{indentation}if (aaa_stack_pop_bool(stack)) {{\n"
-        code += self._generate_c_function_body(branch.if_body, indent_level + 1)
+        condition_code = self._generate_c_function_body(branch.condition, indent)
+        if_code = self._generate_c_function_body(branch.if_body, indent + 1)
+        else_code = self._generate_c_function_body(branch.else_body, indent + 1)
 
-        if branch.else_body.items:
-            code += f"{indentation}}} else {{\n"
-            code += self._generate_c_function_body(branch.else_body, indent_level + 1)
-
-        code += f"{indentation}}}\n"
-
-        return code
+        return (
+            condition_code
+            + f"{indentation}if (aaa_stack_pop_bool(stack)) {{\n"
+            + if_code
+            + f"{indentation}}} else {{\n"
+            + else_code
+            + f"{indentation}}}\n"
+        )

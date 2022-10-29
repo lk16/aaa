@@ -146,6 +146,7 @@ void aaa_stack_equals(struct aaa_stack *stack) {
     int lhs = aaa_stack_pop_int(stack);
     aaa_stack_push_bool(stack, lhs == rhs);
 }
+
 void aaa_stack_or(struct aaa_stack *stack) {
     bool rhs = aaa_stack_pop_bool(stack);
     bool lhs = aaa_stack_pop_bool(stack);

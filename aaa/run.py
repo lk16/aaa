@@ -71,7 +71,7 @@ class Runner:
 
         return 0
 
-    def transpile(self, output_file: Path) -> int:
+    def transpile(self, output_file: Path, compile: bool, run: bool) -> int:
         try:
             stdlib_path = self._get_stdlib_path()
 
@@ -79,7 +79,9 @@ class Runner:
                 self.entrypoint, stdlib_path, self.parsed_files
             ).run()
             cross_referencer_output = CrossReferencer(parser_output).run()
-            Transpiler(cross_referencer_output, output_file).run()
+            return Transpiler(cross_referencer_output, output_file).run(
+                compile=compile, run_binary=run
+            )
         except AaaRunnerException as e:
             self.exceptions = e.exceptions
             self._print_exceptions(e)
