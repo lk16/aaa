@@ -4,6 +4,13 @@
 
 #include "aaa.h"
 
+static void aaa_variable_check_kind(struct aaa_variable *var, enum aaa_kind kind) {
+    if (var->kind != kind) {
+        fprintf(stderr, "Aaa type error\n");
+        abort();
+    }
+}
+
 void aaa_stack_init(struct aaa_stack *stack) {
     stack->size = 0;
     stack->max_size = 1024;
@@ -14,95 +21,76 @@ void aaa_stack_free(struct aaa_stack *stack) {
     free(stack->data);
 }
 
-void aaa_stack_push_int(struct aaa_stack *stack, int value) {
+static struct aaa_variable *aaa_stack_top(struct aaa_stack *stack) {
+    return stack->data + stack->size - 1;
+}
+
+static struct aaa_variable *aaa_stack_push(struct aaa_stack *stack) {
     if (stack->size >= stack->max_size) {
         fprintf(stderr, "Aaa stack overflow\n");
         abort();
     }
 
-    struct aaa_variable *top = stack->data + stack->size;
+    stack->size++;
+    return aaa_stack_top(stack);
+}
+
+static struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
+    if (stack->size == 0) {
+        fprintf(stderr, "Aaa stack underflow\n");
+        abort();
+    }
+
+    struct aaa_variable *popped = aaa_stack_top(stack);
+    stack->size--;
+    return popped;
+}
+
+void aaa_stack_push_int(struct aaa_stack *stack, int value) {
+    struct aaa_variable *top = aaa_stack_push(stack);
     top->kind = AAA_INTEGER;
     top->integer = value;
-
-    stack->size++;
 }
 
 void aaa_stack_push_str(struct aaa_stack *stack, const char *value) {
-    if (stack->size >= stack->max_size) {
-        fprintf(stderr, "Aaa stack overflow\n");
-        abort();
-    }
-
-    struct aaa_variable *top = stack->data + stack->size;
+    struct aaa_variable *top = aaa_stack_push(stack);
     top->kind = AAA_STRING;
     top->string = value;
+}
 
-    stack->size++;
+void aaa_stack_push_bool(struct aaa_stack *stack, bool value) {
+    struct aaa_variable *top = aaa_stack_push(stack);
+    top->kind = AAA_BOOLEAN;
+    top->boolean = value;
 }
 
 bool aaa_stack_pop_bool(struct aaa_stack *stack) {
-    if (stack->size == 0) {
-        fprintf(stderr, "Aaa stack underflow\n");
-        abort();
-    }
-
-    struct aaa_variable *top = stack->data + stack->size - 1;
-
-    if (top->kind != AAA_BOOLEAN) {
-        fprintf(stderr, "Type error\n");
-        abort();
-    }
-
-    stack->size--;
-
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    aaa_variable_check_kind(top, AAA_BOOLEAN);
     return top->boolean;
 }
 
+static int aaa_stack_pop_int(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    aaa_variable_check_kind(top, AAA_INTEGER);
+    return top->integer;
+}
+
 void aaa_stack_dup(struct aaa_stack *stack) {
-    if (stack->size >= stack->max_size) {
-        fprintf(stderr, "Aaa stack overflow\n");
-        abort();
-    }
+    struct aaa_variable *top = aaa_stack_top(stack);
+    struct aaa_variable *dupped = aaa_stack_push(stack);
 
-    if (stack->size == 0) {
-        fprintf(stderr, "Aaa stack underflow\n");
-        abort();
-    }
-
-    stack->data[stack->size] = stack->data[stack->size - 1];
-    stack->size++;
+    *dupped = *top;
 }
 
 void aaa_stack_plus(struct aaa_stack *stack) {
-    if (stack->size == 0) {
-        fprintf(stderr, "Aaa stack underflow\n");
-        abort();
-    }
-
-    struct aaa_variable *top = stack->data + stack->size - 1;
-    struct aaa_variable *below = stack->data + stack->size - 2;
-
-    if (top->kind != AAA_INTEGER) {
-        fprintf(stderr, "Type error\n");
-        abort();
-    }
-
-    if (below->kind != AAA_INTEGER) {
-        fprintf(stderr, "Type error\n");
-        abort();
-    }
-
-    below->integer += top->integer;
-    stack->size--;
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_int(stack, lhs + rhs);
 }
 
 void aaa_stack_print(struct aaa_stack *stack) {
-    if (stack->size == 0) {
-        fprintf(stderr, "Aaa stack underflow\n");
-        abort();
-    }
-
-    struct aaa_variable *top = stack->data + stack->size - 1;
+    struct aaa_variable *top = aaa_stack_pop(stack);
 
     switch(top->kind) {
         case AAA_BOOLEAN:
@@ -122,36 +110,14 @@ void aaa_stack_print(struct aaa_stack *stack) {
             fprintf(stderr, "Unhandled variable kind\n");
             abort();
     }
-
-    stack->size--;
 }
 
 void aaa_stack_drop(struct aaa_stack *stack) {
-    stack->size--;
+    aaa_stack_pop(stack);
 }
 
 void aaa_stack_less(struct aaa_stack *stack) {
-    if (stack->size == 0) {
-        fprintf(stderr, "Aaa stack underflow\n");
-        abort();
-    }
-
-    struct aaa_variable *top = stack->data + stack->size - 1;
-    struct aaa_variable *below = stack->data + stack->size - 2;
-
-    if (top->kind != AAA_INTEGER) {
-        fprintf(stderr, "Type error\n");
-        abort();
-    }
-
-    if (below->kind != AAA_INTEGER) {
-        fprintf(stderr, "Type error\n");
-        abort();
-    }
-
-    bool less = below->integer < top->integer;
-    below->kind = AAA_BOOLEAN;
-    below->boolean = less;
-
-    stack->size--;
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_bool(stack, lhs < rhs);
 }
