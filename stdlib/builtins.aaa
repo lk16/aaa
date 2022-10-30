@@ -112,6 +112,7 @@ fn accept args fd as int return str, int, int, bool
 fn bind args fd as int, ip_addr as str, port as int return bool
 fn chdir args dir as str return bool
 fn close args fd as int return bool
+fn connect args fd as int, ip_addr as str, port as int return bool
 fn fsync args fd as int return bool
 fn getenv args name as str return str, bool
 fn listen args fd as int, backlog as int return bool
@@ -121,4 +122,3 @@ fn socket args family as int, type_ as int, protocol as int return int, bool
 fn unlink args path as str return bool
 fn waitpid args pid as int, options as int return int, bool
 fn write args fd as int, data as str return int, bool
-fn connect args fd as int, ip_addr as str, port as int return bool

@@ -36,9 +36,15 @@ AAA_C_BUILTIN_FUNCS = {
     "+": "aaa_stack_plus",
     "<": "aaa_stack_less",
     "=": "aaa_stack_equals",
+    "connect": "aaa_stack_connect",
     "drop": "aaa_stack_drop",
     "dup": "aaa_stack_dup",
+    "exit": "aaa_stack_exit",
+    "not": "aaa_stack_not",
     "or": "aaa_stack_or",
+    "read": "aaa_stack_read",
+    "socket": "aaa_stack_socket",
+    "write": "aaa_stack_write",
 }
 
 C_IDENTATION = " " * 4
@@ -107,7 +113,6 @@ class Transpiler:
             + forward_func_declarations
             + "\n"
             + content
-            + "\n"
             + MAIN_FUNCTION
             + "\n"
         )
@@ -224,11 +229,15 @@ class Transpiler:
         if_code = self._generate_c_function_body(branch.if_body, indent + 1)
         else_code = self._generate_c_function_body(branch.else_body, indent + 1)
 
-        return (
+        code = (
             condition_code
             + f"{indentation}if (aaa_stack_pop_bool(stack)) {{\n"
             + if_code
-            + f"{indentation}}} else {{\n"
-            + else_code
-            + f"{indentation}}}\n"
         )
+
+        if branch.else_body.items:
+            code += f"{indentation}}} else {{\n" + else_code
+
+        code += f"{indentation}}}\n"
+
+        return code

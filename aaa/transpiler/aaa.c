@@ -1,6 +1,11 @@
 #include <malloc.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <arpa/inet.h>
 
 #include "aaa.h"
 
@@ -82,6 +87,12 @@ static int aaa_stack_pop_int(struct aaa_stack *stack) {
     return top->integer;
 }
 
+static const char *aaa_stack_pop_str(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    aaa_variable_check_kind(top, AAA_STRING);
+    return top->string;
+}
+
 void aaa_stack_dup(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_top(stack);
     struct aaa_variable *dupped = aaa_stack_push(stack);
@@ -151,4 +162,88 @@ void aaa_stack_or(struct aaa_stack *stack) {
     bool rhs = aaa_stack_pop_bool(stack);
     bool lhs = aaa_stack_pop_bool(stack);
     aaa_stack_push_bool(stack, lhs || rhs);
+}
+
+void aaa_stack_socket(struct aaa_stack *stack) {
+    int protocol = aaa_stack_pop_int(stack);
+    int type = aaa_stack_pop_int(stack);
+    int family = aaa_stack_pop_int(stack);
+
+    int fd = socket(family, type, protocol);
+
+    if (fd < 0) {
+        aaa_stack_push_int(stack, 0);
+        aaa_stack_push_bool(stack, false);
+    } else {
+        aaa_stack_push_int(stack, fd);
+        aaa_stack_push_bool(stack, true);
+    }
+}
+
+void aaa_stack_not(struct aaa_stack *stack) {
+    bool value = aaa_stack_pop_bool(stack);
+    aaa_stack_push_bool(stack, !value);
+}
+
+void aaa_stack_exit(struct aaa_stack *stack) {
+    int code = aaa_stack_pop_int(stack);
+    exit(code);
+}
+
+void aaa_stack_write(struct aaa_stack *stack) {
+    const char *data = aaa_stack_pop_str(stack);
+    int fd = aaa_stack_pop_int(stack);
+
+    // TODO make string smarter so we keep its length cached
+    int written = write(fd, data, strlen(data));
+
+    if (written < 0) {
+        aaa_stack_push_int(stack, 0);
+        aaa_stack_push_bool(stack, false);
+    } else {
+        aaa_stack_push_int(stack, written);
+        aaa_stack_push_bool(stack, true);
+    }
+}
+
+void aaa_stack_connect(struct aaa_stack *stack) {
+    int port = aaa_stack_pop_int(stack);
+    const char *ip_addr_str = aaa_stack_pop_str(stack);
+    int fd = aaa_stack_pop_int(stack);
+
+    struct sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(port);
+
+    int success = inet_pton(AF_INET, ip_addr_str, &(server_address.sin_addr));
+    if (success <= 0) {
+        aaa_stack_push_bool(stack, false);
+        return;
+    }
+
+    success = connect(fd, (struct sockaddr*) &server_address, sizeof(server_address));
+
+    if (success == 0) {
+        aaa_stack_push_bool(stack, true);
+    } else {
+        aaa_stack_push_bool(stack, false);
+    }
+}
+
+void aaa_stack_read(struct aaa_stack *stack) {
+    int n = aaa_stack_pop_int(stack);
+    int fd = aaa_stack_pop_int(stack);
+
+    char *buff = malloc((n + 1) * sizeof(char));
+
+    int bytes_read = read(fd, buff, n);
+    buff[bytes_read + 1] = '\0';
+
+    aaa_stack_push_str(stack, buff);
+
+    if (bytes_read < 0) {
+        aaa_stack_push_bool(stack, false);
+    } else {
+        aaa_stack_push_bool(stack, true);
+    }
 }
