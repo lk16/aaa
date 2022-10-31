@@ -36,14 +36,18 @@ AAA_C_BUILTIN_FUNCS = {
     "+": "aaa_stack_plus",
     "<": "aaa_stack_less",
     "=": "aaa_stack_equals",
+    "accept": "aaa_stack_accept",
+    "bind": "aaa_stack_bind",
     "connect": "aaa_stack_connect",
     "drop": "aaa_stack_drop",
     "dup": "aaa_stack_dup",
     "exit": "aaa_stack_exit",
+    "listen": "aaa_stack_listen",
     "not": "aaa_stack_not",
     "or": "aaa_stack_or",
     "read": "aaa_stack_read",
     "socket": "aaa_stack_socket",
+    "swap": "aaa_stack_swap",
     "write": "aaa_stack_write",
 }
 
@@ -166,10 +170,13 @@ class Transpiler:
             return f"{indentation}aaa_stack_push_int(stack, {item.value});\n"
         elif isinstance(item, StringLiteral):
             # TODO this is horrible
-            string_value = repr(item.value).replace("'", '"')
+            string_value = '"' + repr(item.value)[1:-1].replace('"', '\\"') + '"'
             return f"{indentation}aaa_stack_push_str(stack, {string_value});\n"
         elif isinstance(item, BooleanLiteral):
-            return f"{indentation}// WARNING: BooleanLiteral is not implemented yet\n"
+            bool_value = "true"
+            if not item.value:
+                bool_value = "false"
+            return f"{indentation}aaa_stack_push_bool(stack, {bool_value});\n"
         elif isinstance(item, Loop):
             return self._generate_c_loop(item, indent)
         elif isinstance(item, Identifier):

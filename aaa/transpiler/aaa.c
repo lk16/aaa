@@ -103,6 +103,15 @@ void aaa_stack_dup(struct aaa_stack *stack) {
     *dupped = *top;
 }
 
+void aaa_stack_swap(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_top(stack);
+    struct aaa_variable *below = top - 1;
+
+    struct aaa_variable temp = *top;
+    *top = *below;
+    *below = temp;
+}
+
 void aaa_stack_plus(struct aaa_stack *stack) {
     int rhs = aaa_stack_pop_int(stack);
     int lhs = aaa_stack_pop_int(stack);
@@ -215,9 +224,16 @@ void aaa_stack_connect(struct aaa_stack *stack) {
     int fd = aaa_stack_pop_int(stack);
 
     struct addrinfo* addr_info = NULL;
+
+    // prevent buffer overflow
+    if (port >= 65536 || port < 0) {
+        aaa_stack_push_bool(stack, false);
+        return;
+    }
+
     char service[6];
 
-    sprintf(service, "%d", port);
+    snprintf(service, 6, "%d", port);
 
     if (getaddrinfo(domain_name, service, NULL, &addr_info) != 0) {
         aaa_stack_push_bool(stack, false);
@@ -251,5 +267,91 @@ void aaa_stack_read(struct aaa_stack *stack) {
         aaa_stack_push_bool(stack, false);
     } else {
         aaa_stack_push_bool(stack, true);
+    }
+}
+
+
+void aaa_stack_bind(struct aaa_stack *stack) {
+    int port = aaa_stack_pop_int(stack);
+    const char *host = aaa_stack_pop_str(stack);
+    int fd = aaa_stack_pop_int(stack);
+
+    struct addrinfo* addr_info = NULL;
+
+    // prevent buffer overflow
+    if (port >= 65536 || port < 0) {
+        aaa_stack_push_bool(stack, false);
+        return;
+    }
+
+    char service[6];
+
+    snprintf(service, 6, "%d", port);
+
+    if (getaddrinfo(host, service, NULL, &addr_info) != 0) {
+        aaa_stack_push_bool(stack, false);
+        return;
+    }
+
+    int bind_status = bind(fd, (struct sockaddr*) addr_info->ai_addr, sizeof(*addr_info));
+
+    freeaddrinfo(addr_info);
+
+    if (bind_status == 0) {
+        aaa_stack_push_bool(stack, true);
+    } else {
+        aaa_stack_push_bool(stack, false);
+    }
+}
+
+void aaa_stack_listen(struct aaa_stack *stack) {
+    int backlog = aaa_stack_pop_int(stack);
+    int fd = aaa_stack_pop_int(stack);
+
+    if (listen(fd, backlog) == 0) {
+        aaa_stack_push_bool(stack, true);
+    } else {
+        aaa_stack_push_bool(stack, false);
+    }
+}
+
+void aaa_stack_accept(struct aaa_stack *stack) {
+    int fd = aaa_stack_pop_int(stack);
+
+    struct sockaddr_in client_socket;
+    socklen_t client_socket_len = sizeof(struct sockaddr_in);
+
+    int client_socket_fd = accept(fd, (struct sockaddr *) &client_socket, &client_socket_len);
+
+    if (client_socket_fd != -1) {
+        char *client_ip_addr = malloc((INET6_ADDRSTRLEN + 1) * sizeof(char));
+        int client_port;
+
+        switch (client_socket.sin_family) {
+            case AF_INET: {
+                struct sockaddr_in *sin = (struct sockaddr_in*) &client_socket;
+                inet_ntop(AF_INET, &sin->sin_addr, client_ip_addr, INET6_ADDRSTRLEN);
+                client_port = sin->sin_port;
+                break;
+            }
+            case AF_INET6: {
+                struct sockaddr_in6 *sin = (struct sockaddr_in6*) &client_socket;
+                inet_ntop(AF_INET6, &sin->sin6_addr, client_ip_addr, INET6_ADDRSTRLEN);
+                client_port = sin->sin6_port;
+                break;
+            }
+            default:
+                abort();
+        }
+
+        aaa_stack_push_str(stack, client_ip_addr);
+        aaa_stack_push_int(stack, client_port);
+        aaa_stack_push_int(stack, client_socket_fd);
+        aaa_stack_push_bool(stack, true);
+    } else {
+        aaa_stack_push_str(stack, "");
+        aaa_stack_push_int(stack, 0);
+        aaa_stack_push_int(stack, 0);
+        aaa_stack_push_bool(stack, false);
     }
 }

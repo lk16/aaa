@@ -79,6 +79,7 @@ class Runner:
                 self.entrypoint, stdlib_path, self.parsed_files
             ).run()
             cross_referencer_output = CrossReferencer(parser_output).run()
+            TypeChecker(cross_referencer_output).run()
             return Transpiler(cross_referencer_output, output_file).run(
                 compile=compile, run_binary=run
             )

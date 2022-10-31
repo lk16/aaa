@@ -53,8 +53,12 @@ fn main {
         drop  // write ok-value
         drop  // write byte count
 
-        drop  // client port
-        drop  // client ip
+        swap
+        "Sent response to: " .
+        . // client ip
+        ":" .
+        . // client port
+        "\n" .
     }
 
     drop

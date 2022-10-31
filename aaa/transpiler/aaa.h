@@ -29,8 +29,10 @@ void aaa_stack_free(struct aaa_stack *stack);
 
 void aaa_stack_push_int(struct aaa_stack *stack, int value);
 void aaa_stack_push_str(struct aaa_stack *stack, const char *value);
+void aaa_stack_push_bool(struct aaa_stack *stack, bool value);
 bool aaa_stack_pop_bool(struct aaa_stack *stack);
 void aaa_stack_dup(struct aaa_stack *stack);
+void aaa_stack_swap(struct aaa_stack *stack);
 void aaa_stack_plus(struct aaa_stack *stack);
 void aaa_stack_print(struct aaa_stack *stack);
 void aaa_stack_less(struct aaa_stack *stack);
@@ -46,3 +48,6 @@ void aaa_stack_exit(struct aaa_stack *stack);
 void aaa_stack_write(struct aaa_stack *stack);
 void aaa_stack_connect(struct aaa_stack *stack);
 void aaa_stack_read(struct aaa_stack *stack);
+void aaa_stack_bind(struct aaa_stack *stack);
+void aaa_stack_listen(struct aaa_stack *stack);
+void aaa_stack_accept(struct aaa_stack *stack);
