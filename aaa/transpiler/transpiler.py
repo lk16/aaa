@@ -69,7 +69,7 @@ class Transpiler:
 
         if compile:
             exit_code = os.system(
-                "gcc -Wall -Wextra -I ./aaa/transpiler/ -o generated -std=c99 -g "
+                "gcc -Wall -Wextra -I ./aaa/transpiler/ -o generated -std=gnu99 -g "
                 + f"{self.output_file} aaa/transpiler/aaa.c"
             )
 

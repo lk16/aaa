@@ -6,6 +6,9 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include "aaa.h"
 
@@ -208,20 +211,22 @@ void aaa_stack_write(struct aaa_stack *stack) {
 
 void aaa_stack_connect(struct aaa_stack *stack) {
     int port = aaa_stack_pop_int(stack);
-    const char *ip_addr_str = aaa_stack_pop_str(stack);
+    const char *domain_name = aaa_stack_pop_str(stack);
     int fd = aaa_stack_pop_int(stack);
 
-    struct sockaddr_in server_address;
-    server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(port);
+    struct addrinfo* addr_info = NULL;
+    char service[6];
 
-    int success = inet_pton(AF_INET, ip_addr_str, &(server_address.sin_addr));
-    if (success <= 0) {
+    sprintf(service, "%d", port);
+
+    if (getaddrinfo(domain_name, service, NULL, &addr_info) != 0) {
         aaa_stack_push_bool(stack, false);
         return;
     }
 
-    success = connect(fd, (struct sockaddr*) &server_address, sizeof(server_address));
+    int success = connect(fd, (struct sockaddr*) addr_info->ai_addr, sizeof(*addr_info));
+
+    freeaddrinfo(addr_info);
 
     if (success == 0) {
         aaa_stack_push_bool(stack, true);
@@ -234,10 +239,11 @@ void aaa_stack_read(struct aaa_stack *stack) {
     int n = aaa_stack_pop_int(stack);
     int fd = aaa_stack_pop_int(stack);
 
+    // TODO we create a C-string here, consider using a new buffer type
     char *buff = malloc((n + 1) * sizeof(char));
 
     int bytes_read = read(fd, buff, n);
-    buff[bytes_read + 1] = '\0';
+    buff[bytes_read] = '\0';
 
     aaa_stack_push_str(stack, buff);
 
