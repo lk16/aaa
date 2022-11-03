@@ -12,6 +12,7 @@ from aaa.cross_referencer.models import (
     FunctionBodyItem,
     Identifier,
     IdentifierCallingFunction,
+    IdentifierCallingType,
     IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
@@ -114,11 +115,13 @@ class Transpiler:
         content += "    aaa_stack_init(&stack);\n"
         content += f"    {aaa_user_main_name}(&stack);\n"
         content += "    aaa_stack_free(&stack);\n"
+        content += "    return 0;\n"
         content += "}\n"
 
         return includes + "\n" + forward_func_declarations + "\n" + content
 
     def _generate_c_function_name(self, function: Function) -> str:
+        # hash file and name to prevent naming collisions
         hash_input = f"{function.file} {function.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"aaa_user_{hash}"
@@ -130,7 +133,8 @@ class Transpiler:
         indentation = "    "
 
         if not function.body:
-            return f"// WARNING: no body for function {function.identify()}\n"
+            # TODO better handling
+            raise ValueError(f"No body for function {function.identify()}")
 
         func_name = self._generate_c_function_name(function)
 
@@ -164,7 +168,7 @@ class Transpiler:
         indentation = self._indent(indent)
 
         if isinstance(item, FunctionBody):
-            return f"{indentation}// WARNING: FunctionBody is not implemented yet\n"
+            return self._generate_c_function_body(item, indent)
         elif isinstance(item, IntegerLiteral):
             return f"{indentation}aaa_stack_push_int(stack, {item.value});\n"
         elif isinstance(item, StringLiteral):
@@ -183,11 +187,11 @@ class Transpiler:
         elif isinstance(item, Branch):
             return self._generate_c_branch(item, indent)
         elif isinstance(item, StructFieldQuery):
-            return f"{indentation}// WARNING: StructFieldQuery is not implemented yet\n"
+            # TODO
+            return self._generate_c_not_implemented("StructFieldQuery", indent)
         elif isinstance(item, StructFieldUpdate):
-            return (
-                f"{indentation}// WARNING: StructFieldUpdate is not implemented yet\n"
-            )
+            # TODO
+            return self._generate_c_not_implemented("StructFieldUpdate", indent)
         else:  # pragma: nocover
             assert False
 
@@ -216,7 +220,8 @@ class Transpiler:
                 try:
                     c_func_name = AAA_C_BUILTIN_FUNCS[called.name]
                 except KeyError:
-                    return f"{indentation}// WARNING: Builtin function {identifier.name} is not implemented yet\n"
+                    # TODO
+                    return self._generate_c_not_implemented(identifier.name, indent)
 
             else:
                 c_func_name = self._generate_c_function_name(called)
@@ -226,7 +231,11 @@ class Transpiler:
         if isinstance(identifier.kind, IdentifierUsingArgument):
             return f"{indentation}aaa_stack_push_variable(stack, &{identifier.name});\n"
 
-        return f"{indentation}// WARNING: Identifier {identifier.name} is not implemented yet\n"
+        if isinstance(identifier.kind, IdentifierCallingType):
+            # TODO
+            return self._generate_c_not_implemented("IdentifierCallingType", indent)
+
+        assert False
 
     def _generate_c_branch(self, branch: Branch, indent: int) -> str:
         indentation = self._indent(indent)
@@ -247,3 +256,8 @@ class Transpiler:
         code += f"{indentation}}}\n"
 
         return code
+
+    def _generate_c_not_implemented(self, unimplemented: str, indent: int) -> str:
+        indentation = self._indent(indent)
+
+        return f"{indentation}aaa_stack_not_implemented(stack, {unimplemented});\n"

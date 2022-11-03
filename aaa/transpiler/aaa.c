@@ -19,6 +19,12 @@ static void aaa_variable_check_kind(struct aaa_variable *var, enum aaa_kind kind
     }
 }
 
+void aaa_stack_not_implemented(struct aaa_stack *stack, const char *aaa_func_name) {
+    (void)stack;
+    fprintf(stderr, "%s is not implemented yet!\n", aaa_func_name);
+    abort();
+}
+
 void aaa_stack_init(struct aaa_stack *stack) {
     stack->size = 0;
     stack->max_size = 1024;

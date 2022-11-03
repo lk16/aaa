@@ -27,6 +27,8 @@ struct aaa_stack {
 void aaa_stack_init(struct aaa_stack *stack);
 void aaa_stack_free(struct aaa_stack *stack);
 
+void aaa_stack_not_implemented(struct aaa_stack *stack, const char *aaa_func_name);
+
 void aaa_stack_push_int(struct aaa_stack *stack, int value);
 void aaa_stack_push_str(struct aaa_stack *stack, const char *value);
 void aaa_stack_push_bool(struct aaa_stack *stack, bool value);

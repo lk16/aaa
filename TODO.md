@@ -1,6 +1,8 @@
 # TODO
 
 ### Transpiling to C
+- Transpile not implemented cases to a warning with `abort()`
+- Port tests to transpiler
 - Implement missing stdlib functions
 - Add transpiling to `README.md`
 
