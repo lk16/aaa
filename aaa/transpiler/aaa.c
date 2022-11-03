@@ -25,6 +25,20 @@ void aaa_stack_not_implemented(struct aaa_stack *stack, const char *aaa_func_nam
     abort();
 }
 
+static void aaa_stack_prevent_underflow(const struct aaa_stack *stack, size_t pop_count) {
+    if (stack->size < pop_count) {
+        fprintf(stderr, "Aaa stack underflow\n");
+        abort();
+    }
+}
+
+static void aaa_stack_prevent_overflow(const struct aaa_stack *stack, size_t push_count) {
+     if (stack->size + push_count >= stack->max_size) {
+        fprintf(stderr, "Aaa stack overflow\n");
+        abort();
+    }
+}
+
 void aaa_stack_init(struct aaa_stack *stack) {
     stack->size = 0;
     stack->max_size = 1024;
@@ -40,10 +54,7 @@ static struct aaa_variable *aaa_stack_top(struct aaa_stack *stack) {
 }
 
 static struct aaa_variable *aaa_stack_push(struct aaa_stack *stack) {
-    if (stack->size >= stack->max_size) {
-        fprintf(stderr, "Aaa stack overflow\n");
-        abort();
-    }
+    aaa_stack_prevent_overflow(stack, 1);
 
     stack->size++;
     return aaa_stack_top(stack);
@@ -56,10 +67,7 @@ void aaa_stack_push_variable(struct aaa_stack *stack, struct aaa_variable *varia
 
 
 struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
-    if (stack->size == 0) {
-        fprintf(stderr, "Aaa stack underflow\n");
-        abort();
-    }
+    aaa_stack_prevent_underflow(stack, 1);
 
     struct aaa_variable *popped = aaa_stack_top(stack);
     stack->size--;
@@ -110,6 +118,8 @@ void aaa_stack_dup(struct aaa_stack *stack) {
 }
 
 void aaa_stack_swap(struct aaa_stack *stack) {
+    aaa_stack_prevent_underflow(stack, 2);
+
     struct aaa_variable *top = aaa_stack_top(stack);
     struct aaa_variable *below = top - 1;
 
@@ -118,10 +128,68 @@ void aaa_stack_swap(struct aaa_stack *stack) {
     *below = temp;
 }
 
+void aaa_stack_assert(struct aaa_stack *stack) {
+    bool value = aaa_stack_pop_bool(stack);
+
+    if (!value) {
+        printf("Assertion failure!\n");
+        abort();
+    }
+}
+
+void aaa_stack_over(struct aaa_stack *stack) {
+    aaa_stack_prevent_underflow(stack, 2);
+    aaa_stack_push(stack);
+
+    struct aaa_variable *top = aaa_stack_top(stack);
+    struct aaa_variable *original = top - 2;
+
+    *original = *top;
+}
+
+void aaa_stack_rot(struct aaa_stack *stack) {
+    aaa_stack_prevent_underflow(stack, 3);
+
+    struct aaa_variable *c = aaa_stack_top(stack);
+    struct aaa_variable *b = c - 1;
+    struct aaa_variable *a = c - 2;
+
+    struct aaa_variable tmp = *a;
+    *a = *b;
+    *b = *c;
+    *c = tmp;
+}
+
+
 void aaa_stack_plus(struct aaa_stack *stack) {
     int rhs = aaa_stack_pop_int(stack);
     int lhs = aaa_stack_pop_int(stack);
     aaa_stack_push_int(stack, lhs + rhs);
+}
+
+void aaa_stack_minus(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_int(stack, lhs - rhs);
+}
+
+void aaa_stack_multiply(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_int(stack, lhs * rhs);
+}
+
+void aaa_stack_divide(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+
+    if (rhs == 0) {
+        aaa_stack_push_int(stack, 0);
+        aaa_stack_push_bool(stack, false);
+    } else {
+        aaa_stack_push_int(stack, lhs / rhs);
+        aaa_stack_push_bool(stack, true);
+    }
 }
 
 void aaa_stack_print(struct aaa_stack *stack) {
@@ -157,10 +225,28 @@ void aaa_stack_less(struct aaa_stack *stack) {
     aaa_stack_push_bool(stack, lhs < rhs);
 }
 
+void aaa_stack_less_equal(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_bool(stack, lhs <= rhs);
+}
+
+void aaa_stack_unequal(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_bool(stack, lhs != rhs);
+}
+
 void aaa_stack_greater(struct aaa_stack *stack) {
     int rhs = aaa_stack_pop_int(stack);
     int lhs = aaa_stack_pop_int(stack);
     aaa_stack_push_bool(stack, lhs > rhs);
+}
+
+void aaa_stack_greater_equal(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_bool(stack, lhs >= rhs);
 }
 
 void aaa_stack_modulo(struct aaa_stack *stack) {
@@ -186,6 +272,12 @@ void aaa_stack_or(struct aaa_stack *stack) {
     bool rhs = aaa_stack_pop_bool(stack);
     bool lhs = aaa_stack_pop_bool(stack);
     aaa_stack_push_bool(stack, lhs || rhs);
+}
+
+void aaa_stack_and(struct aaa_stack *stack) {
+    bool rhs = aaa_stack_pop_bool(stack);
+    bool lhs = aaa_stack_pop_bool(stack);
+    aaa_stack_push_bool(stack, lhs && rhs);
 }
 
 void aaa_stack_socket(struct aaa_stack *stack) {
@@ -366,4 +458,8 @@ void aaa_stack_accept(struct aaa_stack *stack) {
         aaa_stack_push_int(stack, 0);
         aaa_stack_push_bool(stack, false);
     }
+}
+
+void aaa_stack_nop(struct aaa_stack *stack) {
+    (void)stack;
 }

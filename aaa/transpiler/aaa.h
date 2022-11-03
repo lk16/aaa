@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 
 enum aaa_kind {
     AAA_INTEGER,
@@ -19,8 +20,8 @@ struct aaa_variable {
 };
 
 struct aaa_stack {
-    unsigned size;
-    unsigned max_size;
+    size_t size;
+    size_t max_size;
     struct aaa_variable *data;
 };
 
@@ -54,3 +55,14 @@ void aaa_stack_read(struct aaa_stack *stack);
 void aaa_stack_bind(struct aaa_stack *stack);
 void aaa_stack_listen(struct aaa_stack *stack);
 void aaa_stack_accept(struct aaa_stack *stack);
+void aaa_stack_assert(struct aaa_stack *stack);
+void aaa_stack_over(struct aaa_stack *stack);
+void aaa_stack_rot(struct aaa_stack *stack);
+void aaa_stack_nop(struct aaa_stack *stack);
+void aaa_stack_minus(struct aaa_stack *stack);
+void aaa_stack_multiply(struct aaa_stack *stack);
+void aaa_stack_divide(struct aaa_stack *stack);
+void aaa_stack_less_equal(struct aaa_stack *stack);
+void aaa_stack_greater_equal(struct aaa_stack *stack);
+void aaa_stack_unequal(struct aaa_stack *stack);
+void aaa_stack_and(struct aaa_stack *stack);
