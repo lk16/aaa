@@ -1,5 +1,6 @@
 import os
 import sys
+from hashlib import sha256
 from pathlib import Path
 
 from aaa.cross_referencer.models import (
@@ -20,22 +21,13 @@ from aaa.cross_referencer.models import (
     Unresolved,
 )
 
-MAIN_FUNCTION = """int main(int argc, char **argv) {
-    (void)argc;
-    (void)argv;
-
-    struct aaa_stack stack;
-    aaa_stack_init(&stack);
-    aaa_user_main(&stack);
-    aaa_stack_free(&stack);
-}"""
-
 AAA_C_BUILTIN_FUNCS = {
     ".": "aaa_stack_print",
     "%": "aaa_stack_modulo",
     "+": "aaa_stack_plus",
     "<": "aaa_stack_less",
     "=": "aaa_stack_equals",
+    ">": "aaa_stack_greater",
     "accept": "aaa_stack_accept",
     "bind": "aaa_stack_bind",
     "connect": "aaa_stack_connect",
@@ -62,6 +54,7 @@ class Transpiler:
         self.types = cross_referencer_output.types
         self.functions = cross_referencer_output.functions
         self.builtins_path = cross_referencer_output.builtins_path
+        self.entrypoint = cross_referencer_output.entrypoint
 
     def run(self, compile: bool, run_binary: bool) -> int:
         code = self._generate_c_file()
@@ -111,19 +104,24 @@ class Transpiler:
             content += self._generate_c_function(function)
             content += "\n"
 
-        return (
-            includes
-            + "\n"
-            + forward_func_declarations
-            + "\n"
-            + content
-            + MAIN_FUNCTION
-            + "\n"
-        )
+        aaa_user_main_func = self.functions[(self.entrypoint, "main")]
+        aaa_user_main_name = self._generate_c_function_name(aaa_user_main_func)
+
+        content += "int main(int argc, char **argv) {\n"
+        content += "    (void)argc;\n"
+        content += "    (void)argv;\n"
+        content += "    struct aaa_stack stack;\n"
+        content += "    aaa_stack_init(&stack);\n"
+        content += f"    {aaa_user_main_name}(&stack);\n"
+        content += "    aaa_stack_free(&stack);\n"
+        content += "}\n"
+
+        return includes + "\n" + forward_func_declarations + "\n" + content
 
     def _generate_c_function_name(self, function: Function) -> str:
-        # TODO improve c function name generation a lot
-        return "aaa_user_" + function.name.replace(":", "__")
+        hash_input = f"{function.file} {function.name}"
+        hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
+        return f"aaa_user_{hash}"
 
     def _generate_c_function(self, function: Function) -> str:
         assert not isinstance(function.body, Unresolved)
@@ -136,7 +134,8 @@ class Transpiler:
 
         func_name = self._generate_c_function_name(function)
 
-        content = f"void {func_name}(struct aaa_stack *stack) {{\n"
+        content = f"// Generated from: {function.file} {function.name}\n"
+        content += f"void {func_name}(struct aaa_stack *stack) {{\n"
 
         if function.arguments:
             content += f"{indentation}// load arguments\n"
@@ -197,7 +196,7 @@ class Transpiler:
         body_code = self._generate_c_function_body(loop.body, indent + 1)
 
         return (
-            f"{self._indent(indent)}while (1) {{\n"
+            f"{self._indent(indent)}while (true) {{\n"
             + condition_code
             + f"{self._indent(indent+1)}if (!aaa_stack_pop_bool(stack)) {{\n"
             + f"{self._indent(indent+2)}break;\n"

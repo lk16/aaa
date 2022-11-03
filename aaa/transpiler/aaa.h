@@ -36,6 +36,7 @@ void aaa_stack_swap(struct aaa_stack *stack);
 void aaa_stack_plus(struct aaa_stack *stack);
 void aaa_stack_print(struct aaa_stack *stack);
 void aaa_stack_less(struct aaa_stack *stack);
+void aaa_stack_greater(struct aaa_stack *stack);
 void aaa_stack_drop(struct aaa_stack *stack);
 void aaa_stack_modulo(struct aaa_stack *stack);
 struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack);

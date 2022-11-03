@@ -151,6 +151,12 @@ void aaa_stack_less(struct aaa_stack *stack) {
     aaa_stack_push_bool(stack, lhs < rhs);
 }
 
+void aaa_stack_greater(struct aaa_stack *stack) {
+    int rhs = aaa_stack_pop_int(stack);
+    int lhs = aaa_stack_pop_int(stack);
+    aaa_stack_push_bool(stack, lhs > rhs);
+}
+
 void aaa_stack_modulo(struct aaa_stack *stack) {
     int rhs = aaa_stack_pop_int(stack);
     int lhs = aaa_stack_pop_int(stack);
