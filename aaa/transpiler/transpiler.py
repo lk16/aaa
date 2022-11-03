@@ -1,4 +1,4 @@
-import os
+import subprocess
 import sys
 from hashlib import sha256
 from pathlib import Path
@@ -77,16 +77,27 @@ class Transpiler:
             return 1
 
         if compile:
-            exit_code = os.system(
-                "gcc -Wall -Wextra -I ./aaa/transpiler/ -o generated -std=gnu99 -g "
-                + f"{self.output_file} aaa/transpiler/aaa.c"
-            )
+            exit_code = subprocess.run(
+                [
+                    "gcc",
+                    "-Wall",
+                    "-Wextra",
+                    "-I",
+                    "./aaa/transpiler/",
+                    "-o",
+                    "generated",
+                    "-std=gnu99",
+                    "-g",
+                    str(self.output_file),
+                    "aaa/transpiler/aaa.c",
+                ]
+            ).returncode
 
             if exit_code != 0:
                 return exit_code
 
         if run_binary:
-            return os.system("./generated")
+            return subprocess.run(["./generated"]).returncode
 
         return 0
 
