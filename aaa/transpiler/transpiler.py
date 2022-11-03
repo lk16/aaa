@@ -260,4 +260,4 @@ class Transpiler:
     def _generate_c_not_implemented(self, unimplemented: str, indent: int) -> str:
         indentation = self._indent(indent)
 
-        return f"{indentation}aaa_stack_not_implemented(stack, {unimplemented});\n"
+        return f'{indentation}aaa_stack_not_implemented(stack, "{unimplemented}");\n'

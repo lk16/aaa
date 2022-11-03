@@ -16,11 +16,11 @@ class TestRunner:
         self.path = path
         self.builtins_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
         self.exceptions: List[AaaException] = []
+        self.parsed_files: Dict[Path, ParsedFile] = {}
+        self.test_functions: List[Function] = []
 
     def run(self) -> int:
-        parsed_files = self._get_parsed_test_files()
-        test_functions = self._get_test_functions(parsed_files)
-        main_file_code = self._build_main_test_file(test_functions)
+        main_file_code = self.build_main_test_file()
 
         if self.exceptions:
             for exception in self.exceptions:
@@ -29,7 +29,7 @@ class TestRunner:
             print(f"Found {len(self.exceptions)} error(s).", file=sys.stderr)
             return 1
 
-        return Runner.without_file(main_file_code, parsed_files).run()
+        return Runner.without_file(main_file_code, self.parsed_files).run()
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.path, recursive=True)
@@ -49,13 +49,10 @@ class TestRunner:
         parser = Parser(file, self.builtins_path)
         return parser._parse(file, parser._get_source_parser())
 
-    def _get_test_functions(
-        self, parsed_files: Dict[Path, ParsedFile]
-    ) -> List[Function]:
-
+    def _get_test_functions(self) -> List[Function]:
         test_functions: List[Function] = []
 
-        for parsed_file in parsed_files.values():
+        for parsed_file in self.parsed_files.values():
             for function in parsed_file.functions:
                 if function.is_test():
                     test_functions.append(function)
@@ -72,14 +69,19 @@ class TestRunner:
 
         return f"test_{alias}"
 
-    def _build_main_test_file(self, test_functions: List[Function]) -> str:
+    def build_main_test_file(
+        self,
+    ) -> str:
+        self.parsed_files = self._get_parsed_test_files()
+        self.test_functions = self._get_test_functions()
+
         imports = ""
         main_body = ""
 
-        test_count = len(test_functions)
+        test_count = len(self.test_functions)
         test_count_digits = len(str(test_count))
 
-        for test_number, test_function in enumerate(test_functions, start=0):
+        for test_number, test_function in enumerate(self.test_functions, start=0):
             from_ = str(test_function.file)
             func_name = test_function.func_name.name
 

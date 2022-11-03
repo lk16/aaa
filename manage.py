@@ -2,6 +2,7 @@
 
 import subprocess
 from pathlib import Path
+from tempfile import NamedTemporaryFile, gettempdir
 
 import click
 from click import ClickException
@@ -58,6 +59,23 @@ def runtests() -> None:
 @click.argument("path", type=click.Path(exists=True))
 def test(path: str) -> None:
     exit_code = TestRunner(Path(path)).run()
+    exit(exit_code)
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True))
+@click.argument("output_file")
+@click.option("-c", "--compile", is_flag=True, default=False)
+@click.option("-r", "--run", is_flag=True, default=False)
+def transpile_tests(path: str, output_file: str, compile: bool, run: bool) -> None:
+    main_test_code = TestRunner(Path(path)).build_main_test_file()
+
+    main_test_file = Path(gettempdir()) / NamedTemporaryFile(delete=False).name
+    main_test_file.write_text(main_test_code)
+
+    exit_code = Runner(main_test_file).transpile(
+        Path(output_file), compile=compile, run=run
+    )
     exit(exit_code)
 
 
