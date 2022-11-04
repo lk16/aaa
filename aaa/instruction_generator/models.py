@@ -165,6 +165,10 @@ class Print(Instruction):
     ...
 
 
+class Repr(Instruction):
+    ...
+
+
 class PushString(Instruction):
     def __init__(self, value: str) -> None:
         self.value = value

@@ -52,6 +52,7 @@ from aaa.instruction_generator.models import (
     PushString,
     PushStruct,
     PushVec,
+    Repr,
     Rot,
     SetStructField,
     StandardLibraryCall,
@@ -79,6 +80,7 @@ OPERATOR_INSTRUCTIONS: Dict[str, Instruction] = {
     "not": Not(),
     "or": Or(),
     "over": Over(),
+    "repr": Repr(),
     "rot": Rot(),
     "swap": Swap(),
 }

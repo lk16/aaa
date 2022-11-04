@@ -43,6 +43,7 @@ from aaa.instruction_generator.models import (
     PushString,
     PushStruct,
     PushVec,
+    Repr,
     Rot,
     SetStructField,
     StandardLibraryCall,
@@ -98,6 +99,7 @@ class Simulator:
             PushString: self.instruction_push_string,
             PushStruct: self.instruction_push_struct,
             PushVec: self.instruction_push_vec,
+            Repr: self.instruction_repr,
             Rot: self.instruction_rot,
             Swap: self.instruction_swap,
             StandardLibraryCall: self.instruction_stdandard_library_call,
@@ -436,6 +438,11 @@ class Simulator:
     def instruction_print(self, instruction: Instruction) -> int:
         x_var = self.pop_var()
         print(x_var, end="")
+        return self.get_instruction_pointer() + 1
+
+    def instruction_repr(self, instruction: Instruction) -> int:
+        x_var = self.pop_var()
+        self.push_str(repr(x_var))
         return self.get_instruction_pointer() + 1
 
     def instruction_push_string(self, instruction: Instruction) -> int:
