@@ -42,7 +42,7 @@ static void aaa_stack_prevent_overflow(const struct aaa_stack *stack, size_t pus
 void aaa_stack_init(struct aaa_stack *stack) {
     stack->size = 0;
     stack->max_size = 1024;
-    stack->data = malloc(stack->max_size * sizeof(struct aaa_stack));
+    stack->data = malloc(stack->max_size * sizeof(*stack->data));
 }
 
 void aaa_stack_free(struct aaa_stack *stack) {
@@ -159,7 +159,6 @@ void aaa_stack_rot(struct aaa_stack *stack) {
     *b = *c;
     *c = tmp;
 }
-
 
 void aaa_stack_plus(struct aaa_stack *stack) {
     int rhs = aaa_stack_pop_int(stack);
