@@ -437,6 +437,9 @@ class Simulator:
 
     def instruction_print(self, instruction: Instruction) -> int:
         x_var = self.pop_var()
+
+        # NOTE: this is the same as print(repr(x_var), end="")
+        # Which means it prints the same string as the repr instruction would push
         print(x_var, end="")
         return self.get_instruction_pointer() + 1
 
