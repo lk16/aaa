@@ -1,4 +1,8 @@
 
+fn todo {
+    "TODO not implemented\n" .
+}
+
 fn test_drop {
     1 drop
 }
@@ -202,7 +206,126 @@ fn test_not_false {
     assert
 }
 
-// TODO add tests for vec[T]
+fn test_vec_print_zero_items {
+    vec[int] repr
+    "[]" str:equals assert
+}
+
+fn test_vec_print_one_item {
+    vec[int] dup 1 vec:push repr
+    "[1]" str:equals assert
+}
+
+fn test_vec_print_two_items {
+    vec[int]
+    dup 1 vec:push
+    dup 2 vec:push
+    repr
+    "[1, 2]" str:equals assert
+}
+
+fn test_vec_print_nested_zero_items {
+    vec[vec[int]] repr
+    "[]" str:equals assert
+}
+
+fn test_vec_print_nested_one_item {
+    vec[vec[int]]
+    dup vec[int] vec:push repr
+    "[[]]" str:equals assert
+}
+
+fn test_vec_pop_ok {
+    vec[int]
+    dup 5 vec:push
+    dup vec:pop
+    5 = assert
+    repr "[]" str:equals assert // TODO use vector equality
+}
+
+fn test_vec_pop_fail {
+    todo
+}
+
+fn test_vec_get_ok {
+    vec[int]
+    dup 5 vec:push
+    dup 0 vec:get
+    5 = assert
+    repr "[5]" str:equals assert
+}
+
+fn test_vec_get_fail {
+    todo
+}
+
+fn test_set_ok {
+    vec[int]
+    dup 5 vec:push
+    dup 0 7 vec:set
+    dup vec:pop
+    7 = assert
+    repr "[]" str:equals assert
+}
+
+fn test_set_fail {
+    todo
+}
+
+fn test_vec_size_zero_items {
+    vec[int] vec:size
+    0 = assert
+}
+
+fn test_vec_size_one_item {
+    vec[int]
+    dup 5 vec:push
+    vec:size
+    1 = assert
+}
+
+fn test_vec_empty_false {
+    vec[int]
+    dup 5 vec:push
+    vec:empty
+    not assert
+}
+
+fn test_vec_empty_true {
+    vec[int] vec:empty
+    assert
+}
+
+fn test_vec_clear {
+    vec[int]
+    dup 5 vec:push
+    dup vec:clear
+    repr "[]" str:equals assert
+}
+
+fn test_vec_copy {
+    todo
+}
+
+fn test_vec_dup {
+    vec[int]
+    dup 5 vec:push
+    dup
+    dup vec:clear
+    vec:size
+    0 = assert
+    vec:size
+    0 = assert
+}
+
+fn test_vec_nested_one_item {
+    vec[vec[int]]
+    dup
+    vec[int]
+    dup 5 vec:push
+    vec:push
+    repr "[[5]]" str:equals assert
+}
 
 // TODO add tests for map[K, V]
 

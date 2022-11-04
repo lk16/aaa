@@ -1,11 +1,12 @@
 # TODO
 
 ### Transpiling to C
-- Implement `repr`
-- Update python tests to use `repr` instead of `.`
-- Port remaining tests to `test_builtins.aaa`
-- Implement missing stdlib functions
-- Add transpiling to `README.md`
+- [x] Implement `repr`
+- [ ] Update python tests to use `repr` instead of `.`
+- [ ] Port remaining tests to `test_builtins.aaa`
+- [ ] Move all tests for `.` to one python file
+- [ ] Implement missing stdlib functions in `aaa.c`
+- [ ] Add transpiling to `README.md`
 
 
 ### Tests
