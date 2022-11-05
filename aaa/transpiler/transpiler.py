@@ -24,17 +24,17 @@ from aaa.cross_referencer.models import (
 
 AAA_C_BUILTIN_FUNCS = {
     "-": "aaa_stack_minus",
+    "!=": "aaa_stack_unequal",
     ".": "aaa_stack_print",
     "*": "aaa_stack_multiply",
     "/": "aaa_stack_divide",
     "%": "aaa_stack_modulo",
     "+": "aaa_stack_plus",
     "<": "aaa_stack_less",
+    "<=": "aaa_stack_less_equal",
     "=": "aaa_stack_equals",
     ">": "aaa_stack_greater",
-    "<=": "aaa_stack_less_equal",
     ">=": "aaa_stack_greater_equal",
-    "!=": "aaa_stack_unequal",
     "accept": "aaa_stack_accept",
     "and": "aaa_stack_and",
     "assert": "aaa_stack_assert",
@@ -44,13 +44,15 @@ AAA_C_BUILTIN_FUNCS = {
     "dup": "aaa_stack_dup",
     "exit": "aaa_stack_exit",
     "listen": "aaa_stack_listen",
-    "not": "aaa_stack_not",
     "nop": "aaa_stack_nop",
+    "not": "aaa_stack_not",
     "or": "aaa_stack_or",
     "over": "aaa_stack_over",
     "read": "aaa_stack_read",
+    "repr": "aaa_stack_repr",
     "rot": "aaa_stack_rot",
     "socket": "aaa_stack_socket",
+    "str:equals": "aaa_stack_str_equals",
     "swap": "aaa_stack_swap",
     "write": "aaa_stack_write",
 }
@@ -254,6 +256,22 @@ class Transpiler:
             return f"{indentation}aaa_stack_push_variable(stack, &{identifier.name});\n"
 
         if isinstance(identifier.kind, IdentifierCallingType):
+            var_type = identifier.kind.var_type
+
+            if var_type.type.file == self.builtins_path:
+                if var_type.name == "int":
+                    return f"{indentation}aaa_stack_push_int(stack, 0);"
+                elif var_type.name == "str":
+                    return f'{indentation}aaa_stack_push_str(stack, "");'
+                elif var_type.name == "bool":
+                    return f"{indentation}aaa_stack_push_bool(stack, false);"
+                elif var_type.name == "vec":
+                    return self._generate_c_not_implemented("vec zero value", indent)
+                elif var_type.name == "map":
+                    return self._generate_c_not_implemented("map zero value", indent)
+                else:  # pragma: nocover
+                    assert False
+
             # TODO
             return self._generate_c_not_implemented("IdentifierCallingType", indent)
 

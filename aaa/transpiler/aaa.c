@@ -191,6 +191,34 @@ void aaa_stack_divide(struct aaa_stack *stack) {
     }
 }
 
+void aaa_stack_repr(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_pop(stack);
+
+    switch(top->kind) {
+        case AAA_BOOLEAN:
+            if (top->boolean) {
+                aaa_stack_push_str(stack, "true");
+            } else {
+                aaa_stack_push_str(stack, "false");
+            }
+            break;
+        case AAA_INTEGER:
+            (void)0;
+            size_t buff_size = snprintf(NULL, 0, "%d", top->integer);
+            char *buff = malloc(buff_size + 1);
+            snprintf(buff, buff_size + 1, "%d", top->integer);
+            aaa_stack_push_str(stack, buff);
+            break;
+        case AAA_STRING:
+            fprintf(stderr, "Printing string repr is not implemented\n");
+            abort();
+            break;
+        default:
+            fprintf(stderr, "Unhandled variable kind\n");
+            abort();
+    }
+}
+
 void aaa_stack_print(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
 
@@ -461,4 +489,11 @@ void aaa_stack_accept(struct aaa_stack *stack) {
 
 void aaa_stack_nop(struct aaa_stack *stack) {
     (void)stack;
+}
+
+void aaa_stack_str_equals(struct aaa_stack *stack) {
+    const char *lhs = aaa_stack_pop_str(stack);
+    const char *rhs = aaa_stack_pop_str(stack);
+    bool equal = strcmp(lhs, rhs) == 0;
+    aaa_stack_push_bool(stack, equal);
 }
