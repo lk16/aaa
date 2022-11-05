@@ -327,6 +327,128 @@ fn test_vec_nested_one_item {
     repr "[[5]]" str:equals assert
 }
 
-// TODO add tests for map[K, V]
+fn test_map_print_zero_items {
+    map[int, int] repr
+    "{}" str:equals assert
+}
+
+fn test_map_print_nested {
+    map[int, map[int, int]] repr
+    "{}" str:equals assert
+}
+
+fn test_map_print_one_item {
+    map[str, int]
+    dup "one" 1 map:set
+    repr
+    "{\"one\": 1}" str:equals assert
+}
+
+fn test_map_get_set {
+    map[str, int]
+    dup "one" 1 map:set
+    "one" map:get
+    1 = assert
+}
+
+fn test_map_get_set_update {
+    map[str, int]
+    dup "one" 1 map:set
+    dup "one" 2 map:set
+    "one" map:get
+    2 = assert
+}
+
+fn test_map_get_fail {
+    todo
+}
+
+fn test_map_has_key_true {
+    map[str, int]
+    dup "one" 1 map:set
+    "one" map:has_key
+    assert
+}
+
+fn test_map_has_key_false {
+    map[str, int]
+    dup "one" 1 map:set
+    "two" map:has_key
+    not assert
+}
+
+fn test_map_size_one_item {
+    map[str, int]
+    dup "one" 1 map:set
+    map:size
+    1 = assert
+}
+
+fn test_map_size_zero_items {
+    map[str, int]
+    map:size
+    0 = assert
+}
+
+fn test_map_empty_false {
+    map[str, int]
+    dup "one" 1 map:set
+    map:empty
+    not assert
+}
+
+fn test_map_empty_true {
+    map[str, int]
+    map:empty
+    assert
+}
+
+fn test_map_clear {
+    map[str, int]
+    dup "one" 1 map:set
+    dup map:clear
+    map:size
+    0 = assert
+}
+
+fn test_map_copy {
+    todo
+}
+
+fn test_map_dup {
+    map[str, int]
+    dup "one" 1 map:set
+    dup
+    map:clear
+    dup
+    map:size
+    0 = assert
+    map:size
+    0 = assert
+}
+
+fn test_map_pop_ok {
+    map[str, int]
+    dup "one" 1 map:set
+    "one" map:pop
+    1 = assert
+}
+
+fn test_map_pop_fail {
+    todo
+}
+
+fn test_map_drop_ok {
+    map[str, int]
+    dup "one" 1 map:set
+    dup "one" map:drop
+    repr
+    "{}" str:equals assert
+}
+
+fn test_map_drop_fail {
+    todo
+}
+
 
 // TODO add tests for str
