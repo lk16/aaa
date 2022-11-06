@@ -260,13 +260,13 @@ class Transpiler:
 
             if var_type.type.file == self.builtins_path:
                 if var_type.name == "int":
-                    return f"{indentation}aaa_stack_push_int(stack, 0);"
+                    return f"{indentation}aaa_stack_push_int(stack, 0);\n"
                 elif var_type.name == "str":
-                    return f'{indentation}aaa_stack_push_str(stack, "");'
+                    return f'{indentation}aaa_stack_push_str(stack, "");\n'
                 elif var_type.name == "bool":
-                    return f"{indentation}aaa_stack_push_bool(stack, false);"
+                    return f"{indentation}aaa_stack_push_bool(stack, false);\n"
                 elif var_type.name == "vec":
-                    return self._generate_c_not_implemented("vec zero value", indent)
+                    return f"{indentation}aaa_stack_push_vec(stack);\n"
                 elif var_type.name == "map":
                     return self._generate_c_not_implemented("map zero value", indent)
                 else:  # pragma: nocover

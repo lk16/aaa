@@ -7,6 +7,7 @@ enum aaa_kind {
     AAA_INTEGER,
     AAA_BOOLEAN,
     AAA_STRING,
+    AAA_VECTOR,
     // TODO add more
 };
 
@@ -16,6 +17,7 @@ struct aaa_variable {
         int integer;
         bool boolean;
         const char *string; // TODO worry about memory leaks
+        struct aaa_vector *vector;
     };
 };
 
@@ -68,3 +70,32 @@ void aaa_stack_greater_equal(struct aaa_stack *stack);
 void aaa_stack_unequal(struct aaa_stack *stack);
 void aaa_stack_and(struct aaa_stack *stack);
 void aaa_stack_str_equals(struct aaa_stack *stack);
+void aaa_stack_push_vec(struct aaa_stack *stack);
+
+struct aaa_vector {
+    size_t size;
+    size_t max_size;
+    struct aaa_variable *data;
+};
+
+void aaa_vector_init(struct aaa_vector *vec);
+void aaa_vector_free(struct aaa_vector *vec);
+
+void aaa_vector_clear(struct aaa_vector *vec);
+void aaa_vector_copy(struct aaa_vector *vec, struct aaa_vector *copy);
+bool aaa_vector_empty(const struct aaa_vector *vec);
+struct aaa_variable *aaa_vector_get(struct aaa_vector *vec, size_t offset);
+void aaa_vector_pop(struct aaa_vector *vec, struct aaa_variable *popped);
+void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed);
+void aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *value);
+size_t aaa_vector_size(const struct aaa_vector *vec);
+
+
+struct aaa_buffer {
+    size_t max_size;
+    char *data;
+    size_t size;
+};
+
+void aaa_buffer_init(struct aaa_buffer *buff);
+void aaa_buff_append(struct aaa_buffer *buff, const char *str);

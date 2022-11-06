@@ -19,6 +19,79 @@ static void aaa_variable_check_kind(struct aaa_variable *var, enum aaa_kind kind
     }
 }
 
+static char *aaa_variable_repr(struct aaa_variable *var);
+
+static char *aaa_vec_repr(const struct aaa_vector *vec) {
+    struct aaa_buffer buff;
+    aaa_buffer_init(&buff);
+    aaa_buff_append(&buff, "[");
+
+    for (size_t i=0; i<vec->size; i++) {
+        struct aaa_variable *item = vec->data + i;
+
+        char *item_repr = aaa_variable_repr(item);
+        aaa_buff_append(&buff, item_repr);
+
+        if (i != vec->size - 1) {
+            aaa_buff_append(&buff, ", ");
+        }
+    }
+    aaa_buff_append(&buff, "]");
+
+    return buff.data;
+}
+
+static char *aaa_variable_repr(struct aaa_variable *var) {
+    switch(var->kind) {
+        case AAA_BOOLEAN:
+            if (var->boolean) {
+                return "true";
+            } else {
+                return "false";
+            }
+        case AAA_INTEGER:
+            (void)0;
+            size_t buff_size = snprintf(NULL, 0, "%d", var->integer);
+            char *buff = malloc(buff_size + 1);
+            snprintf(buff, buff_size + 1, "%d", var->integer);
+            return buff;
+        case AAA_STRING:
+            fprintf(stderr, "aaa_variable_repr Printing string repr is not implemented\n");
+            abort();
+            break;
+        case AAA_VECTOR:
+            return aaa_vec_repr(var->vector);
+        default:
+            fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
+            abort();
+    }
+}
+
+void aaa_buffer_init(struct aaa_buffer *buff) {
+    buff->max_size = 1024;
+    buff->data = malloc(buff->max_size * sizeof(char));
+    buff->size = 0;
+    buff->data[buff->size] = '\0';
+}
+
+void aaa_buff_append(struct aaa_buffer *buff, const char *str) {
+    size_t len = strlen(str);
+
+    while (buff->size + len + 1 > buff->max_size) {
+        char *new_data = malloc(2 * buff->max_size * sizeof(char));
+        memcpy(new_data, buff->data, buff->max_size);
+        free(buff->data);
+        buff->data = new_data;
+        buff->max_size *= 2;
+    }
+
+    memcpy(buff->data + buff->size, str, len);
+    buff->size += len;
+    buff->data[buff->size] = '\0';
+}
+
+
+
 void aaa_stack_not_implemented(struct aaa_stack *stack, const char *aaa_func_name) {
     (void)stack;
     fprintf(stderr, "%s is not implemented yet!\n", aaa_func_name);
@@ -193,53 +266,21 @@ void aaa_stack_divide(struct aaa_stack *stack) {
 
 void aaa_stack_repr(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-
-    switch(top->kind) {
-        case AAA_BOOLEAN:
-            if (top->boolean) {
-                aaa_stack_push_str(stack, "true");
-            } else {
-                aaa_stack_push_str(stack, "false");
-            }
-            break;
-        case AAA_INTEGER:
-            (void)0;
-            size_t buff_size = snprintf(NULL, 0, "%d", top->integer);
-            char *buff = malloc(buff_size + 1);
-            snprintf(buff, buff_size + 1, "%d", top->integer);
-            aaa_stack_push_str(stack, buff);
-            break;
-        case AAA_STRING:
-            fprintf(stderr, "Printing string repr is not implemented\n");
-            abort();
-            break;
-        default:
-            fprintf(stderr, "Unhandled variable kind\n");
-            abort();
-    }
+    char *repr = aaa_variable_repr(top);
+    aaa_stack_push_str(stack, repr);
 }
 
 void aaa_stack_print(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
 
-    switch(top->kind) {
-        case AAA_BOOLEAN:
-            if (top->boolean) {
-                printf("%s", "true");
-            } else {
-                printf("%s", "false");
-            }
-            break;
-        case AAA_INTEGER:
-            printf("%d", top->integer);
-            break;
-        case AAA_STRING:
-            printf("%s", top->string);
-            break;
-        default:
-            fprintf(stderr, "Unhandled variable kind\n");
-            abort();
+    char *printed;
+
+    if (top->kind == AAA_STRING) {
+        printed = top->string;
+    } else {
+        printed = aaa_variable_repr(top);
     }
+    printf("%s", printed);
 }
 
 void aaa_stack_drop(struct aaa_stack *stack) {
@@ -496,4 +537,87 @@ void aaa_stack_str_equals(struct aaa_stack *stack) {
     const char *rhs = aaa_stack_pop_str(stack);
     bool equal = strcmp(lhs, rhs) == 0;
     aaa_stack_push_bool(stack, equal);
+}
+
+void aaa_vector_init(struct aaa_vector *vec) {
+    vec->size = 0;
+    vec->max_size = 16;
+    vec->data = malloc(vec->max_size * sizeof(*vec->data));
+}
+void aaa_vector_free(struct aaa_vector *vec) {
+    free(vec->data);
+}
+
+void aaa_vector_clear(struct aaa_vector *vec) {
+    vec->size = 0;
+}
+
+void aaa_vector_copy(struct aaa_vector *vec, struct aaa_vector *copy) {
+    (void)vec;
+    (void)copy;
+
+    fprintf(stderr, "aaa_vector_copy is not implemented yet!\n");
+    abort();
+}
+
+bool aaa_vector_empty(const struct aaa_vector *vec) {
+    return vec->size == 0;
+}
+
+struct aaa_variable *aaa_vector_get(struct aaa_vector *vec, size_t offset) {
+    if (offset >= vec->size) {
+        fprintf(stderr, "aaa_vector_get out of range\n");
+        abort();
+    }
+
+    return vec->data + offset;
+}
+
+void aaa_vector_pop(struct aaa_vector *vec, struct aaa_variable *popped) {
+    if (vec->size == 0) {
+        fprintf(stderr, "aaa_vector_pop out of range\n");
+        abort();
+    }
+
+
+    *popped = vec->data[vec->size - 1];
+    vec->size--;
+}
+
+static void aaa_vector_resize(struct aaa_vector *vec, size_t new_size) {
+    struct aaa_variable *new_data = malloc(new_size * sizeof(*new_data));
+    memcpy(new_data, vec->data, vec->max_size * sizeof(*vec->data));
+    free(vec->data);
+    vec->data = new_data;
+    vec->size = new_size;
+}
+
+void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed) {
+    if(vec->size == vec->max_size) {
+        aaa_vector_resize(vec, 2 * vec->size);
+    }
+
+    vec->data[vec->size] = *pushed;
+    vec->size++;
+}
+
+
+void aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *value) {
+    if (offset >= vec->size) {
+        fprintf(stderr, "aaa_vector_set out of range\n");
+        abort();
+    }
+
+    vec->data[offset] = *value;
+}
+
+size_t aaa_vector_size(const struct aaa_vector *vec) {
+    return vec->size;
+}
+
+void aaa_stack_push_vec(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_push(stack);
+    top->kind = AAA_VECTOR;
+    top->vector = malloc(sizeof(struct aaa_vector));
+    aaa_vector_init(top->vector);
 }
