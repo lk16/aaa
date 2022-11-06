@@ -183,6 +183,13 @@ static const char *aaa_stack_pop_str(struct aaa_stack *stack) {
     return top->string;
 }
 
+struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    aaa_variable_check_kind(top, AAA_VECTOR);
+    return top->vector;
+}
+
+
 void aaa_stack_dup(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_top(stack);
     struct aaa_variable *dupped = aaa_stack_push(stack);
@@ -273,7 +280,7 @@ void aaa_stack_repr(struct aaa_stack *stack) {
 void aaa_stack_print(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
 
-    char *printed;
+    const char *printed;
 
     if (top->kind == AAA_STRING) {
         printed = top->string;
@@ -564,13 +571,13 @@ bool aaa_vector_empty(const struct aaa_vector *vec) {
     return vec->size == 0;
 }
 
-struct aaa_variable *aaa_vector_get(struct aaa_vector *vec, size_t offset) {
+void aaa_vector_get(struct aaa_vector *vec, size_t offset, struct aaa_variable *result) {
     if (offset >= vec->size) {
         fprintf(stderr, "aaa_vector_get out of range\n");
         abort();
     }
 
-    return vec->data + offset;
+    *result = vec->data[offset];
 }
 
 void aaa_vector_pop(struct aaa_vector *vec, struct aaa_variable *popped) {
@@ -620,4 +627,24 @@ void aaa_stack_push_vec(struct aaa_stack *stack) {
     top->kind = AAA_VECTOR;
     top->vector = malloc(sizeof(struct aaa_vector));
     aaa_vector_init(top->vector);
+}
+
+void aaa_stack_vec_push(struct aaa_stack *stack) {
+    struct aaa_variable *pushed = aaa_stack_pop(stack);
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+
+    aaa_vector_push(vec, pushed);
+}
+
+void aaa_stack_vec_pop(struct aaa_stack *stack) {
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+    struct aaa_variable *top = aaa_stack_push(stack);
+    aaa_vector_pop(vec, top);
+}
+
+void aaa_stack_vec_get(struct aaa_stack *stack) {
+    int offset = aaa_stack_pop_int(stack);
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+    struct aaa_variable *top = aaa_stack_push(stack);
+    aaa_vector_get(vec, offset, top);
 }

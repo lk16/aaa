@@ -36,6 +36,7 @@ void aaa_stack_push_int(struct aaa_stack *stack, int value);
 void aaa_stack_push_str(struct aaa_stack *stack, const char *value);
 void aaa_stack_push_bool(struct aaa_stack *stack, bool value);
 bool aaa_stack_pop_bool(struct aaa_stack *stack);
+struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack);
 void aaa_stack_dup(struct aaa_stack *stack);
 void aaa_stack_swap(struct aaa_stack *stack);
 void aaa_stack_plus(struct aaa_stack *stack);
@@ -71,6 +72,9 @@ void aaa_stack_unequal(struct aaa_stack *stack);
 void aaa_stack_and(struct aaa_stack *stack);
 void aaa_stack_str_equals(struct aaa_stack *stack);
 void aaa_stack_push_vec(struct aaa_stack *stack);
+void aaa_stack_vec_push(struct aaa_stack *stack);
+void aaa_stack_vec_pop(struct aaa_stack *stack);
+void aaa_stack_vec_get(struct aaa_stack *stack);
 
 struct aaa_vector {
     size_t size;
@@ -84,7 +88,7 @@ void aaa_vector_free(struct aaa_vector *vec);
 void aaa_vector_clear(struct aaa_vector *vec);
 void aaa_vector_copy(struct aaa_vector *vec, struct aaa_vector *copy);
 bool aaa_vector_empty(const struct aaa_vector *vec);
-struct aaa_variable *aaa_vector_get(struct aaa_vector *vec, size_t offset);
+void aaa_vector_get(struct aaa_vector *vec, size_t offset, struct aaa_variable *result);
 void aaa_vector_pop(struct aaa_vector *vec, struct aaa_variable *popped);
 void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed);
 void aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *value);
