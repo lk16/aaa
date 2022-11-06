@@ -648,3 +648,28 @@ void aaa_stack_vec_get(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_push(stack);
     aaa_vector_get(vec, offset, top);
 }
+
+void aaa_stack_vec_set(struct aaa_stack *stack) {
+    struct aaa_variable *value = aaa_stack_pop(stack);
+    int offset = aaa_stack_pop_int(stack);
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+
+    aaa_vector_set(vec, offset, value);
+}
+
+void aaa_stack_vec_size(struct aaa_stack *stack) {
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+    int size = aaa_vector_size(vec);
+    aaa_stack_push_int(stack, size);
+}
+
+void aaa_stack_vec_empty(struct aaa_stack *stack) {
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+    int empty = aaa_vector_empty(vec);
+    aaa_stack_push_bool(stack, empty);
+}
+
+void aaa_stack_vec_clear(struct aaa_stack *stack) {
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+    aaa_vector_clear(vec);
+}

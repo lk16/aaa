@@ -54,9 +54,13 @@ AAA_C_BUILTIN_FUNCS = {
     "socket": "aaa_stack_socket",
     "str:equals": "aaa_stack_str_equals",
     "swap": "aaa_stack_swap",
+    "vec:clear": "aaa_stack_vec_clear",
+    "vec:empty": "aaa_stack_vec_empty",
     "vec:get": "aaa_stack_vec_get",
     "vec:pop": "aaa_stack_vec_pop",
     "vec:push": "aaa_stack_vec_push",
+    "vec:set": "aaa_stack_vec_set",
+    "vec:size": "aaa_stack_vec_size",
     "write": "aaa_stack_write",
 }
 
