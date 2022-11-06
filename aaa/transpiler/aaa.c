@@ -42,7 +42,7 @@ static char *aaa_vec_repr(const struct aaa_vector *vec) {
 }
 
 static char *aaa_variable_repr(struct aaa_variable *var) {
-    switch(var->kind) {
+    switch (var->kind) {
         case AAA_BOOLEAN:
             if (var->boolean) {
                 return "true";
@@ -63,6 +63,34 @@ static char *aaa_variable_repr(struct aaa_variable *var) {
             return aaa_vec_repr(var->vector);
         default:
             fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
+            abort();
+    }
+}
+
+static size_t aaa_variable_hash(struct aaa_variable *var) {
+    switch (var->kind) {
+        case AAA_BOOLEAN:
+            if (var->boolean) {
+                return 1;
+            } else {
+                return 0;
+            }
+        case AAA_INTEGER:
+            return (var->integer ^ 0x123456789) + (var->integer << 13) + (var->integer >> 17);
+        case AAA_STRING:
+            (void)0;
+            size_t hash = 0;
+            char *c = var->string;
+            while (c) {
+                hash = (hash * 123457) + c;
+                c++;
+            }
+            return hash;
+        case AAA_VECTOR:
+            fprintf(stderr, "Cannot hash a vector!\n");
+            abort();
+        default:
+            fprintf(stderr, "aaa_variable_hash Unhandled variable kind\n");
             abort();
     }
 }
@@ -672,4 +700,102 @@ void aaa_stack_vec_empty(struct aaa_stack *stack) {
 void aaa_stack_vec_clear(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
     aaa_vector_clear(vec);
+}
+
+void aaa_map_init(struct aaa_map *map) {
+    map->size = 0;
+    map->bucket_count = 16;
+    map->buckets = malloc(map->bucket_count * sizeof(*map->buckets));
+    for (size_t b=0; b<map->bucket_count; b++) {
+        map->buckets[b] = NULL;
+    }
+}
+
+void aaa_map_free(struct aaa_map *map) {
+    aaa_map_clear(map);
+    free(map->buckets);
+}
+
+void aaa_map_clear(struct aaa_map *map) {
+    for (size_t b=0; b<map->bucket_count; b++) {
+        struct aaa_map_item *item = map->buckets[b];
+        struct aaa_map_item *next;
+
+        while(item) {
+            next = item->next;
+            free(item);
+            item = next;
+        }
+    }
+    map->size = 0;
+}
+
+static struct aaa_variable *aaa_map_lookup(struct aaa_map *map, struct aaa_variable *key) {
+    size_t hash = aaa_variable_hash(key);
+    size_t bucket = hash % map->bucket_count;
+    struct aaa_map_item *item = map->buckets[bucket];
+
+    while (item) {
+        if (item->hash == hash) {
+            // TODO if item->key equals key return key
+            fprintf(stderr, "aaa_map_lookup aaa_variable equality check is not implemented yet!\n");
+            abort();
+        }
+        item = item->next;
+    }
+    return NULL;
+}
+
+void aaa_map_copy(struct aaa_map *map, struct aaa_map *copy) {
+    (void)map;
+    (void)copy;
+
+    fprintf(stderr, "aaa_map_copy is not implemented yet!\n");
+    abort();
+}
+
+void aaa_map_drop(struct aaa_map *map, const struct aaa_variable *key) {
+    (void)map;
+
+    fprintf(stderr, "aaa_map_drop is not implemented yet!\n");
+    abort();
+}
+
+bool aaa_map_empty(const struct aaa_map *map) {
+    return map->size == 0;
+}
+
+struct aaa_variable *aaa_map_get(struct aaa_map *map, const struct aaa_variable *key) {
+    struct aaa_variable *value = aaa_map_lookup(map, key);
+
+    fprintf(stderr, "aaa_map_get not finding the requested key is not implemented yet!\n");
+    abort();
+
+    return value;
+}
+
+bool aaa_map_has_key(struct aaa_map *map, const struct aaa_variable *key) {
+    struct aaa_variable *value = aaa_map_lookup(map, key);
+    return value != NULL;
+}
+
+struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable *key) {
+    (void) map;
+
+    fprintf(stderr, "aaa_map_pop is not implemented yet!\n");
+    abort();
+
+}
+
+void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key, const struct aaa_variable *value) {
+    (void) map;
+    (void) key;
+    (void) value;
+
+    fprintf(stderr, "aaa_map_set is not implemented yet!\n");
+    abort();
+}
+
+size_t aaa_map_size(const struct aaa_map *map) {
+    return map->size;
 }
