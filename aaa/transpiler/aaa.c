@@ -12,14 +12,14 @@
 
 #include "aaa.h"
 
-static void aaa_variable_check_kind(struct aaa_variable *var, enum aaa_kind kind) {
+static void aaa_variable_check_kind(const struct aaa_variable *var, enum aaa_kind kind) {
     if (var->kind != kind) {
         fprintf(stderr, "Aaa type error\n");
         abort();
     }
 }
 
-static char *aaa_variable_repr(struct aaa_variable *var);
+static char *aaa_variable_repr(const struct aaa_variable *var);
 
 static char *aaa_vec_repr(const struct aaa_vector *vec) {
     struct aaa_buffer buff;
@@ -41,7 +41,7 @@ static char *aaa_vec_repr(const struct aaa_vector *vec) {
     return buff.data;
 }
 
-static char *aaa_variable_repr(struct aaa_variable *var) {
+static char *aaa_variable_repr(const struct aaa_variable *var) {
     switch (var->kind) {
         case AAA_BOOLEAN:
             if (var->boolean) {
@@ -67,7 +67,7 @@ static char *aaa_variable_repr(struct aaa_variable *var) {
     }
 }
 
-static size_t aaa_variable_hash(struct aaa_variable *var) {
+static size_t aaa_variable_hash(const struct aaa_variable *var) {
     switch (var->kind) {
         case AAA_BOOLEAN:
             if (var->boolean) {
@@ -80,9 +80,9 @@ static size_t aaa_variable_hash(struct aaa_variable *var) {
         case AAA_STRING:
             (void)0;
             size_t hash = 0;
-            char *c = var->string;
+            const char *c = var->string;
             while (c) {
-                hash = (hash * 123457) + c;
+                hash = (hash * 123457) + *c;
                 c++;
             }
             return hash;
@@ -91,6 +91,38 @@ static size_t aaa_variable_hash(struct aaa_variable *var) {
             abort();
         default:
             fprintf(stderr, "aaa_variable_hash Unhandled variable kind\n");
+            abort();
+    }
+}
+
+static bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variable *rhs) {
+    if (lhs->kind != rhs->kind) {
+        return false;
+    }
+
+    switch (lhs->kind) {
+        case AAA_BOOLEAN:
+            return lhs->boolean == rhs->boolean;
+        case AAA_INTEGER:
+            return lhs->integer == rhs->integer;
+        case AAA_STRING:
+            return strcmp(lhs->string, rhs->string) == 0;
+        case AAA_VECTOR:
+            // TODO use vector equality function when present
+            if (lhs->vector->size != rhs->vector->size) {
+                return false;
+            }
+            for (size_t i=0; i<lhs->vector->size; i++) {
+                struct aaa_variable *lhs_item = NULL, *rhs_item = NULL;
+                aaa_vector_get(lhs->vector, i, lhs_item);
+                aaa_vector_get(rhs->vector, i, rhs_item);
+                if (!aaa_variable_equals(lhs_item, rhs_item)) {
+                    return false;
+                }
+            }
+            return true;
+        default:
+            fprintf(stderr, "aaa_variable_equals Unhandled variable kind\n");
             abort();
     }
 }
@@ -117,8 +149,6 @@ void aaa_buff_append(struct aaa_buffer *buff, const char *str) {
     buff->size += len;
     buff->data[buff->size] = '\0';
 }
-
-
 
 void aaa_stack_not_implemented(struct aaa_stack *stack, const char *aaa_func_name) {
     (void)stack;
@@ -165,7 +195,6 @@ void aaa_stack_push_variable(struct aaa_stack *stack, struct aaa_variable *varia
     struct aaa_variable *top = aaa_stack_push(stack);
     *top = *variable;
 }
-
 
 struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
     aaa_stack_prevent_underflow(stack, 1);
@@ -216,7 +245,6 @@ struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
     aaa_variable_check_kind(top, AAA_VECTOR);
     return top->vector;
 }
-
 
 void aaa_stack_dup(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_top(stack);
@@ -477,7 +505,6 @@ void aaa_stack_read(struct aaa_stack *stack) {
     }
 }
 
-
 void aaa_stack_bind(struct aaa_stack *stack) {
     int port = aaa_stack_pop_int(stack);
     const char *host = aaa_stack_pop_str(stack);
@@ -614,7 +641,6 @@ void aaa_vector_pop(struct aaa_vector *vec, struct aaa_variable *popped) {
         abort();
     }
 
-
     *popped = vec->data[vec->size - 1];
     vec->size--;
 }
@@ -635,7 +661,6 @@ void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed) {
     vec->data[vec->size] = *pushed;
     vec->size++;
 }
-
 
 void aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *value) {
     if (offset >= vec->size) {
@@ -730,22 +755,6 @@ void aaa_map_clear(struct aaa_map *map) {
     map->size = 0;
 }
 
-static struct aaa_variable *aaa_map_lookup(struct aaa_map *map, struct aaa_variable *key) {
-    size_t hash = aaa_variable_hash(key);
-    size_t bucket = hash % map->bucket_count;
-    struct aaa_map_item *item = map->buckets[bucket];
-
-    while (item) {
-        if (item->hash == hash) {
-            // TODO if item->key equals key return key
-            fprintf(stderr, "aaa_map_lookup aaa_variable equality check is not implemented yet!\n");
-            abort();
-        }
-        item = item->next;
-    }
-    return NULL;
-}
-
 void aaa_map_copy(struct aaa_map *map, struct aaa_map *copy) {
     (void)map;
     (void)copy;
@@ -755,10 +764,7 @@ void aaa_map_copy(struct aaa_map *map, struct aaa_map *copy) {
 }
 
 void aaa_map_drop(struct aaa_map *map, const struct aaa_variable *key) {
-    (void)map;
-
-    fprintf(stderr, "aaa_map_drop is not implemented yet!\n");
-    abort();
+    aaa_map_pop(map, key);
 }
 
 bool aaa_map_empty(const struct aaa_map *map) {
@@ -766,34 +772,65 @@ bool aaa_map_empty(const struct aaa_map *map) {
 }
 
 struct aaa_variable *aaa_map_get(struct aaa_map *map, const struct aaa_variable *key) {
-    struct aaa_variable *value = aaa_map_lookup(map, key);
+    size_t hash = aaa_variable_hash(key);
+    size_t bucket = hash % map->bucket_count;
+    struct aaa_map_item *item = map->buckets[bucket];
 
-    fprintf(stderr, "aaa_map_get not finding the requested key is not implemented yet!\n");
-    abort();
+    while (item) {
+        if (item->hash == hash && aaa_variable_equals(key, &item->key)) {
+            return &item->value;
+        }
+        item = item->next;
+    }
 
-    return value;
+    return NULL;
 }
 
 bool aaa_map_has_key(struct aaa_map *map, const struct aaa_variable *key) {
-    struct aaa_variable *value = aaa_map_lookup(map, key);
-    return value != NULL;
+    return aaa_map_get(map, key) != NULL;
 }
 
 struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable *key) {
-    (void) map;
+    size_t hash = aaa_variable_hash(key);
+    size_t bucket = hash % map->bucket_count;
+    struct aaa_map_item **item_addr = &map->buckets[bucket];
+    struct aaa_map_item *popped = NULL;
 
-    fprintf(stderr, "aaa_map_pop is not implemented yet!\n");
-    abort();
+    while (1) {
+        struct aaa_map_item *item = *item_addr;
+        if (!item) {
+            return NULL;
+        }
 
+        if (item->hash == hash && aaa_variable_equals(key, &item->key)) {
+            popped = item;
+            *item_addr = item->next;
+        }
+    }
+
+    if (popped) {
+        map->size--;
+        return &popped->value;
+    }
+
+    return NULL;
 }
 
-void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key, const struct aaa_variable *value) {
-    (void) map;
-    (void) key;
-    (void) value;
+void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key, const struct aaa_variable *new_value) {
+    struct aaa_variable *value = aaa_map_get(map, key);
 
-    fprintf(stderr, "aaa_map_set is not implemented yet!\n");
-    abort();
+    if (value) {
+        *value = *new_value;
+        return;
+    }
+
+    struct aaa_map_item *item = malloc(sizeof(*item));
+    item->key = *key;
+    item->value = *value;
+    item->hash = aaa_variable_hash(key);
+    size_t bucket_id = item->hash % map->bucket_count;
+    item->next = map->buckets[bucket_id];
+    map->buckets[bucket_id] = item;
 }
 
 size_t aaa_map_size(const struct aaa_map *map) {
