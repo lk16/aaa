@@ -8,7 +8,7 @@ enum aaa_kind {
     AAA_BOOLEAN,
     AAA_STRING,
     AAA_VECTOR,
-    // TODO add more
+    AAA_MAP,
 };
 
 struct aaa_variable {
@@ -18,6 +18,7 @@ struct aaa_variable {
         bool boolean;
         const char *string; // TODO worry about memory leaks
         struct aaa_vector *vector;
+        struct aaa_map *map;
     };
 };
 
@@ -36,7 +37,6 @@ void aaa_stack_push_int(struct aaa_stack *stack, int value);
 void aaa_stack_push_str(struct aaa_stack *stack, const char *value);
 void aaa_stack_push_bool(struct aaa_stack *stack, bool value);
 bool aaa_stack_pop_bool(struct aaa_stack *stack);
-struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack);
 void aaa_stack_dup(struct aaa_stack *stack);
 void aaa_stack_swap(struct aaa_stack *stack);
 void aaa_stack_plus(struct aaa_stack *stack);
@@ -79,6 +79,14 @@ void aaa_stack_vec_set(struct aaa_stack *stack);
 void aaa_stack_vec_size(struct aaa_stack *stack);
 void aaa_stack_vec_empty(struct aaa_stack *stack);
 void aaa_stack_vec_clear(struct aaa_stack *stack);
+void aaa_stack_push_map(struct aaa_stack *stack);
+void aaa_stack_map_set(struct aaa_stack *stack);
+void aaa_stack_map_get(struct aaa_stack *stack);
+void aaa_stack_map_has_key(struct aaa_stack *stack);
+void aaa_stack_map_size(struct aaa_stack *stack);
+void aaa_stack_map_empty(struct aaa_stack *stack);
+void aaa_stack_map_clear(struct aaa_stack *stack);
+void aaa_stack_map_pop(struct aaa_stack *stack);
 
 struct aaa_vector {
     size_t size;
@@ -105,7 +113,7 @@ struct aaa_buffer {
 };
 
 void aaa_buffer_init(struct aaa_buffer *buff);
-void aaa_buff_append(struct aaa_buffer *buff, const char *str);
+void aaa_buffer_append(struct aaa_buffer *buff, const char *str);
 
 struct aaa_map_item {
     struct aaa_variable key, value;

@@ -24,19 +24,49 @@ static char *aaa_variable_repr(const struct aaa_variable *var);
 static char *aaa_vec_repr(const struct aaa_vector *vec) {
     struct aaa_buffer buff;
     aaa_buffer_init(&buff);
-    aaa_buff_append(&buff, "[");
+    aaa_buffer_append(&buff, "[");
 
     for (size_t i=0; i<vec->size; i++) {
         struct aaa_variable *item = vec->data + i;
 
         char *item_repr = aaa_variable_repr(item);
-        aaa_buff_append(&buff, item_repr);
+        aaa_buffer_append(&buff, item_repr);
 
         if (i != vec->size - 1) {
-            aaa_buff_append(&buff, ", ");
+            aaa_buffer_append(&buff, ", ");
         }
     }
-    aaa_buff_append(&buff, "]");
+    aaa_buffer_append(&buff, "]");
+
+    return buff.data;
+}
+
+static char *aaa_map_repr(const struct aaa_map *map) {
+    struct aaa_buffer buff;
+    aaa_buffer_init(&buff);
+    aaa_buffer_append(&buff, "{");
+    bool is_first = true;
+
+    for (size_t i=0; i<map->bucket_count; i++) {
+        struct aaa_map_item *item = map->buckets[i];
+
+        while (item) {
+            if (is_first) {
+                is_first = false;
+            } else {
+                aaa_buffer_append(&buff, ", ");
+            }
+
+            const char *key_repr = aaa_variable_repr(&item->key);
+            const char *value_repr = aaa_variable_repr(&item->value);
+            aaa_buffer_append(&buff, key_repr);
+            aaa_buffer_append(&buff, ": ");
+            aaa_buffer_append(&buff, value_repr);
+
+            item = item->next;
+        }
+    }
+    aaa_buffer_append(&buff, "}");
 
     return buff.data;
 }
@@ -52,15 +82,42 @@ static char *aaa_variable_repr(const struct aaa_variable *var) {
         case AAA_INTEGER:
             (void)0;
             size_t buff_size = snprintf(NULL, 0, "%d", var->integer);
-            char *buff = malloc(buff_size + 1);
-            snprintf(buff, buff_size + 1, "%d", var->integer);
-            return buff;
+            char *int_buff = malloc(buff_size + 1);
+            snprintf(int_buff, buff_size + 1, "%d", var->integer);
+            return int_buff;
         case AAA_STRING:
-            fprintf(stderr, "aaa_variable_repr Printing string repr is not implemented\n");
-            abort();
-            break;
+            (void)0;
+            struct aaa_buffer buff;
+            aaa_buffer_init(&buff);
+            aaa_buffer_append(&buff, "\"");
+            const char *c = var->string;
+
+            while (*c) {
+                switch (*c) {
+                    case '\a': aaa_buffer_append(&buff, "\\a"); break;
+                    case '\b': aaa_buffer_append(&buff, "\\b"); break;
+                    case '\f': aaa_buffer_append(&buff, "\\f"); break;
+                    case '\n': aaa_buffer_append(&buff, "\\n"); break;
+                    case '\r': aaa_buffer_append(&buff, "\\r"); break;
+                    case '\t': aaa_buffer_append(&buff, "\\t"); break;
+                    case '\v': aaa_buffer_append(&buff, "\\v"); break;
+                    case '\\': aaa_buffer_append(&buff, "\\\\"); break;
+                    case '\'': aaa_buffer_append(&buff, "\\'"); break;
+                    case '\"': aaa_buffer_append(&buff, "\\\""); break;
+                    default:
+                        (void)0;
+                        char str[2] = "\0";
+                        str[0] = *c;
+                        aaa_buffer_append(&buff, str);
+                }
+                c++;
+            }
+            aaa_buffer_append(&buff, "\"");
+            return buff.data;
         case AAA_VECTOR:
             return aaa_vec_repr(var->vector);
+        case AAA_MAP:
+            return aaa_map_repr(var->map);
         default:
             fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
             abort();
@@ -81,7 +138,7 @@ static size_t aaa_variable_hash(const struct aaa_variable *var) {
             (void)0;
             size_t hash = 0;
             const char *c = var->string;
-            while (c) {
+            while (*c) {
                 hash = (hash * 123457) + *c;
                 c++;
             }
@@ -134,7 +191,7 @@ void aaa_buffer_init(struct aaa_buffer *buff) {
     buff->data[buff->size] = '\0';
 }
 
-void aaa_buff_append(struct aaa_buffer *buff, const char *str) {
+void aaa_buffer_append(struct aaa_buffer *buff, const char *str) {
     size_t len = strlen(str);
 
     while (buff->size + len + 1 > buff->max_size) {
@@ -240,10 +297,16 @@ static const char *aaa_stack_pop_str(struct aaa_stack *stack) {
     return top->string;
 }
 
-struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
+static struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
     aaa_variable_check_kind(top, AAA_VECTOR);
     return top->vector;
+}
+
+static struct aaa_map *aaa_stack_pop_map(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    aaa_variable_check_kind(top, AAA_MAP);
+    return top->map;
 }
 
 void aaa_stack_dup(struct aaa_stack *stack) {
@@ -678,7 +741,7 @@ size_t aaa_vector_size(const struct aaa_vector *vec) {
 void aaa_stack_push_vec(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_push(stack);
     top->kind = AAA_VECTOR;
-    top->vector = malloc(sizeof(struct aaa_vector));
+    top->vector = malloc(sizeof(*top->vector));
     aaa_vector_init(top->vector);
 }
 
@@ -826,13 +889,89 @@ void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key, const stru
 
     struct aaa_map_item *item = malloc(sizeof(*item));
     item->key = *key;
-    item->value = *value;
+    item->value = *new_value;
     item->hash = aaa_variable_hash(key);
     size_t bucket_id = item->hash % map->bucket_count;
     item->next = map->buckets[bucket_id];
     map->buckets[bucket_id] = item;
+    map->size++;
 }
 
 size_t aaa_map_size(const struct aaa_map *map) {
     return map->size;
+}
+
+void aaa_stack_push_map(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_push(stack);
+    top->kind = AAA_MAP;
+    top->map = malloc(sizeof(*top->map));
+    aaa_map_init(top->map);
+}
+
+void aaa_stack_map_set(struct aaa_stack *stack) {
+    struct aaa_variable *value = aaa_stack_pop(stack);
+    struct aaa_variable *key = aaa_stack_pop(stack);
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    aaa_map_set(map, key, value);
+}
+
+void aaa_stack_map_get(struct aaa_stack *stack) {
+    struct aaa_variable *key = aaa_stack_pop(stack);
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    struct aaa_variable *value = aaa_map_get(map, key);
+
+    if (!value) {
+        // TODO this requires changes in signature of map:get
+        fprintf(stderr, "map:get does not handle missing keys\n");
+        abort();
+    }
+
+    struct aaa_variable *top = aaa_stack_push(stack);
+    *top = *value;
+}
+
+void aaa_stack_map_has_key(struct aaa_stack *stack) {
+    struct aaa_variable *key = aaa_stack_pop(stack);
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    bool has_key = aaa_map_has_key(map, key);
+    aaa_stack_push_bool(stack, has_key);
+}
+
+void aaa_stack_map_size(struct aaa_stack *stack) {
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    size_t size = aaa_map_size(map);
+    aaa_stack_push_int(stack, size);
+}
+
+void aaa_stack_map_empty(struct aaa_stack *stack) {
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    bool is_empty = aaa_map_empty(map);
+    aaa_stack_push_bool(stack, is_empty);
+}
+
+void aaa_stack_map_clear(struct aaa_stack *stack) {
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    aaa_map_clear(map);
+}
+
+void aaa_stack_map_pop(struct aaa_stack *stack) {
+    struct aaa_variable *key = aaa_stack_pop(stack);
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    struct aaa_variable *value = aaa_map_pop(map, key);
+
+    if (!value) {
+        // TODO this requires changes in signature of map:pop
+        fprintf(stderr, "map:pop does not handle missing keys\n");
+        abort();
+    }
+
+    struct aaa_variable *top = aaa_stack_push(stack);
+    *top = *value;
 }

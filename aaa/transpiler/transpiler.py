@@ -44,6 +44,13 @@ AAA_C_BUILTIN_FUNCS = {
     "dup": "aaa_stack_dup",
     "exit": "aaa_stack_exit",
     "listen": "aaa_stack_listen",
+    "map:clear": "aaa_stack_map_clear",
+    "map:empty": "aaa_stack_map_empty",
+    "map:get": "aaa_stack_map_get",
+    "map:has_key": "aaa_stack_map_has_key",
+    "map:pop": "aaa_stack_map_pop",
+    "map:set": "aaa_stack_map_set",
+    "map:size": "aaa_stack_map_size",
     "nop": "aaa_stack_nop",
     "not": "aaa_stack_not",
     "or": "aaa_stack_or",
@@ -275,7 +282,7 @@ class Transpiler:
                 elif var_type.name == "vec":
                     return f"{indentation}aaa_stack_push_vec(stack);\n"
                 elif var_type.name == "map":
-                    return self._generate_c_not_implemented("map zero value", indent)
+                    return f"{indentation}aaa_stack_push_map(stack);\n"
                 else:  # pragma: nocover
                     assert False
 
