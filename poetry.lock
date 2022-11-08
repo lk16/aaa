@@ -54,6 +54,14 @@ tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.1
 toml = ["tomli"]
 
 [[package]]
+name = "Cython"
+version = "0.29.32"
+description = "The Cython compiler for writing C extensions for the Python language."
+category = "main"
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+
+[[package]]
 name = "distlib"
 version = "0.3.6"
 description = "Distribution utilities"
@@ -106,7 +114,7 @@ python-versions = "*"
 
 [[package]]
 name = "lark"
-version = "1.1.2"
+version = "1.1.4"
 description = "a modern parsing library"
 category = "main"
 optional = false
@@ -116,6 +124,18 @@ python-versions = "*"
 atomic_cache = ["atomicwrites"]
 nearley = ["js2py"]
 regex = ["regex"]
+
+[[package]]
+name = "lark-cython"
+version = "0.0.13"
+description = "A Lark plugin that optimizes LALR parsing using Cython"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+cython = ">=0.29.0"
+lark = ">=1.1.4"
 
 [[package]]
 name = "mypy"
@@ -403,7 +423,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "72c2fee874337e8ac900fa5af94b8f27728fd0231fb80291e8d47af6209ba0cc"
+content-hash = "abd9b80fe606a6f3b9fd634263980609f4ec45c10e44ef0979f760b90e887662"
 
 [metadata.files]
 attrs = [
@@ -474,6 +494,48 @@ coverage = [
     {file = "coverage-6.5.0-pp36.pp37.pp38-none-any.whl", hash = "sha256:1431986dac3923c5945271f169f59c45b8802a114c8f548d611f2015133df77a"},
     {file = "coverage-6.5.0.tar.gz", hash = "sha256:f642e90754ee3e06b0e7e51bce3379590e76b7f76b708e1a71ff043f87025c84"},
 ]
+Cython = [
+    {file = "Cython-0.29.32-cp27-cp27m-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:39afb4679b8c6bf7ccb15b24025568f4f9b4d7f9bf3cbd981021f542acecd75b"},
+    {file = "Cython-0.29.32-cp27-cp27m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:dbee03b8d42dca924e6aa057b836a064c769ddfd2a4c2919e65da2c8a362d528"},
+    {file = "Cython-0.29.32-cp27-cp27mu-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:5ba622326f2862f9c1f99ca8d47ade49871241920a352c917e16861e25b0e5c3"},
+    {file = "Cython-0.29.32-cp27-cp27mu-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:e6ffa08aa1c111a1ebcbd1cf4afaaec120bc0bbdec3f2545f8bb7d3e8e77a1cd"},
+    {file = "Cython-0.29.32-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:97335b2cd4acebf30d14e2855d882de83ad838491a09be2011745579ac975833"},
+    {file = "Cython-0.29.32-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:06be83490c906b6429b4389e13487a26254ccaad2eef6f3d4ee21d8d3a4aaa2b"},
+    {file = "Cython-0.29.32-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:eefd2b9a5f38ded8d859fe96cc28d7d06e098dc3f677e7adbafda4dcdd4a461c"},
+    {file = "Cython-0.29.32-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:5514f3b4122cb22317122a48e175a7194e18e1803ca555c4c959d7dfe68eaf98"},
+    {file = "Cython-0.29.32-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:656dc5ff1d269de4d11ee8542f2ffd15ab466c447c1f10e5b8aba6f561967276"},
+    {file = "Cython-0.29.32-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:cdf10af3e2e3279dc09fdc5f95deaa624850a53913f30350ceee824dc14fc1a6"},
+    {file = "Cython-0.29.32-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:3875c2b2ea752816a4d7ae59d45bb546e7c4c79093c83e3ba7f4d9051dd02928"},
+    {file = "Cython-0.29.32-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:79e3bab19cf1b021b613567c22eb18b76c0c547b9bc3903881a07bfd9e7e64cf"},
+    {file = "Cython-0.29.32-cp35-cp35m-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:b0595aee62809ba353cebc5c7978e0e443760c3e882e2c7672c73ffe46383673"},
+    {file = "Cython-0.29.32-cp35-cp35m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:0ea8267fc373a2c5064ad77d8ff7bf0ea8b88f7407098ff51829381f8ec1d5d9"},
+    {file = "Cython-0.29.32-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:c8e8025f496b5acb6ba95da2fb3e9dacffc97d9a92711aacfdd42f9c5927e094"},
+    {file = "Cython-0.29.32-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:afbce249133a830f121b917f8c9404a44f2950e0e4f5d1e68f043da4c2e9f457"},
+    {file = "Cython-0.29.32-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:513e9707407608ac0d306c8b09d55a28be23ea4152cbd356ceaec0f32ef08d65"},
+    {file = "Cython-0.29.32-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:e83228e0994497900af954adcac27f64c9a57cd70a9ec768ab0cb2c01fd15cf1"},
+    {file = "Cython-0.29.32-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:ea1dcc07bfb37367b639415333cfbfe4a93c3be340edf1db10964bc27d42ed64"},
+    {file = "Cython-0.29.32-cp36-cp36m-musllinux_1_1_x86_64.whl", hash = "sha256:8669cadeb26d9a58a5e6b8ce34d2c8986cc3b5c0bfa77eda6ceb471596cb2ec3"},
+    {file = "Cython-0.29.32-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:ed087eeb88a8cf96c60fb76c5c3b5fb87188adee5e179f89ec9ad9a43c0c54b3"},
+    {file = "Cython-0.29.32-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:3f85eb2343d20d91a4ea9cf14e5748092b376a64b7e07fc224e85b2753e9070b"},
+    {file = "Cython-0.29.32-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:63b79d9e1f7c4d1f498ab1322156a0d7dc1b6004bf981a8abda3f66800e140cd"},
+    {file = "Cython-0.29.32-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:e1958e0227a4a6a2c06fd6e35b7469de50adf174102454db397cec6e1403cce3"},
+    {file = "Cython-0.29.32-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:856d2fec682b3f31583719cb6925c6cdbb9aa30f03122bcc45c65c8b6f515754"},
+    {file = "Cython-0.29.32-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:479690d2892ca56d34812fe6ab8f58e4b2e0129140f3d94518f15993c40553da"},
+    {file = "Cython-0.29.32-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:67fdd2f652f8d4840042e2d2d91e15636ba2bcdcd92e7e5ffbc68e6ef633a754"},
+    {file = "Cython-0.29.32-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:4a4b03ab483271f69221c3210f7cde0dcc456749ecf8243b95bc7a701e5677e0"},
+    {file = "Cython-0.29.32-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:40eff7aa26e91cf108fd740ffd4daf49f39b2fdffadabc7292b4b7dc5df879f0"},
+    {file = "Cython-0.29.32-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:0bbc27abdf6aebfa1bce34cd92bd403070356f28b0ecb3198ff8a182791d58b9"},
+    {file = "Cython-0.29.32-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:cddc47ec746a08603037731f5d10aebf770ced08666100bd2cdcaf06a85d4d1b"},
+    {file = "Cython-0.29.32-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:eca3065a1279456e81c615211d025ea11bfe4e19f0c5650b859868ca04b3fcbd"},
+    {file = "Cython-0.29.32-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:d968ffc403d92addf20b68924d95428d523436adfd25cf505d427ed7ba3bee8b"},
+    {file = "Cython-0.29.32-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:f3fd44cc362eee8ae569025f070d56208908916794b6ab21e139cea56470a2b3"},
+    {file = "Cython-0.29.32-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:b6da3063c5c476f5311fd76854abae6c315f1513ef7d7904deed2e774623bbb9"},
+    {file = "Cython-0.29.32-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:061e25151c38f2361bc790d3bcf7f9d9828a0b6a4d5afa56fbed3bd33fb2373a"},
+    {file = "Cython-0.29.32-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:f9944013588a3543fca795fffb0a070a31a243aa4f2d212f118aa95e69485831"},
+    {file = "Cython-0.29.32-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:07d173d3289415bb496e72cb0ddd609961be08fe2968c39094d5712ffb78672b"},
+    {file = "Cython-0.29.32-py2.py3-none-any.whl", hash = "sha256:eeb475eb6f0ccf6c039035eb4f0f928eb53ead88777e0a760eccb140ad90930b"},
+    {file = "Cython-0.29.32.tar.gz", hash = "sha256:8733cf4758b79304f2a4e39ebfac5e92341bce47bcceb26c1254398b2f8c1af7"},
+]
 distlib = [
     {file = "distlib-0.3.6-py2.py3-none-any.whl", hash = "sha256:f35c4b692542ca110de7ef0bea44d73981caeb34ca0b9b6b2e6d7790dda8f80e"},
     {file = "distlib-0.3.6.tar.gz", hash = "sha256:14bad2d9b04d3a36127ac97f30b12a19268f211063d8f8ee4f47108896e11b46"},
@@ -495,8 +557,58 @@ iniconfig = [
     {file = "iniconfig-1.1.1.tar.gz", hash = "sha256:bc3af051d7d14b2ee5ef9969666def0cd1a000e121eaea580d4a313df4b37f32"},
 ]
 lark = [
-    {file = "lark-1.1.2-py2.py3-none-any.whl", hash = "sha256:c1ab213fc5e2d273fe2d91da218ccc8b5b92d065b17faa5e743499cb16594b7d"},
-    {file = "lark-1.1.2.tar.gz", hash = "sha256:7a8d0c07d663da9391d7faee1bf1d7df4998c47ca43a593cbef5c7566acd057a"},
+    {file = "lark-1.1.4-py3-none-any.whl", hash = "sha256:a42f9f18bdc9d5571a371ae658548e81e78d1642c2145cc3b663e0bf2e9e7eae"},
+    {file = "lark-1.1.4.tar.gz", hash = "sha256:eee86062b149600ef62de0d8dfd38cf85ffc737e16911e7d8c18880f8c5b1333"},
+]
+lark-cython = [
+    {file = "lark-cython-0.0.13.tar.gz", hash = "sha256:0dc6ca773823b3bfd828d7da9460fb3e20be5b23a8d7ce53533c705b0e000e56"},
+    {file = "lark_cython-0.0.13-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:cc87e99612268f8a598ded21c4f79397530b90e8755b0f02c66d27016a37edc2"},
+    {file = "lark_cython-0.0.13-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:172cbb12a62369b10f2a40a270795c0c2db5f7afcc5909284d459c6b484dcb38"},
+    {file = "lark_cython-0.0.13-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:81203a0509e9d4012fa6c3c24cabfd3958102eae41255196747696adf806f8f6"},
+    {file = "lark_cython-0.0.13-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:0384f4978363ebfa96fea645cdb92f79a678c7b29e50e6ae7edbf1681ac3f6c1"},
+    {file = "lark_cython-0.0.13-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:9d2e8c70a2e3cdc772ccc44cf3f58f4724508cbccd1f95d9aec5a1b478fd6f74"},
+    {file = "lark_cython-0.0.13-cp310-cp310-win32.whl", hash = "sha256:e4a563f280e446cf4c1c14b01a1bb4a060c650534648c3e12f6627d466d493cf"},
+    {file = "lark_cython-0.0.13-cp310-cp310-win_amd64.whl", hash = "sha256:b69dcedc77158922fb1939d302d32d2df542253ee66b93f9734457f28ecf9123"},
+    {file = "lark_cython-0.0.13-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:7e97f24869b010e9a05a5e2cc2193bb9f2b552021c9bbe1ec948441bed635abc"},
+    {file = "lark_cython-0.0.13-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2c461ffd0b237f090d6179fd208a6d7882e85c2d41bc716c0c2be46814d67ac5"},
+    {file = "lark_cython-0.0.13-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3db155119fbd9d3534df154ccd93f489348ee17fb349226e02b41b2358fda09f"},
+    {file = "lark_cython-0.0.13-cp36-cp36m-musllinux_1_1_i686.whl", hash = "sha256:53cfba5b9f9abb524c9a93e8d81ab64f7098e1a666df3ff19d4c95a002806fce"},
+    {file = "lark_cython-0.0.13-cp36-cp36m-musllinux_1_1_x86_64.whl", hash = "sha256:498aeb3b68cf752c004e7d5c3578717e2cb9b544f85f851e1671261afc86ac1f"},
+    {file = "lark_cython-0.0.13-cp36-cp36m-win32.whl", hash = "sha256:f3b65082c5fe456ecdfd83d30e8fe06829ceafbabe3278f2fb2abc7a9cdd945f"},
+    {file = "lark_cython-0.0.13-cp36-cp36m-win_amd64.whl", hash = "sha256:12ddd838d48176a721e36dde8e54d445593f62e3e4cf06655cb0594f4a57cb13"},
+    {file = "lark_cython-0.0.13-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:249514c8fb405b1e7ff62e65a1fe5cc0a530e49a2aa3f7660bdb590cedc01cbf"},
+    {file = "lark_cython-0.0.13-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:085f415179e1d777dec9423ceccfa0099b348337d45a1e3c6c05ef29e0b99012"},
+    {file = "lark_cython-0.0.13-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c69bcec40a710d00a38718671404ed54cea4e4e1950d69d5a1cd3614a0f34d85"},
+    {file = "lark_cython-0.0.13-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:c5811e806537dcbce4deb44006672d3d6e6ab99ee0e25f95720a0457f6dcce49"},
+    {file = "lark_cython-0.0.13-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:67b706cde387d4fde31fa2d0f7e7592b9daff292cb1a733e775c2a1c0d74e6cf"},
+    {file = "lark_cython-0.0.13-cp37-cp37m-win32.whl", hash = "sha256:0f545e594897d863f5ddefd703792a7c80cd7b019e08bd8b0e81517045dfba29"},
+    {file = "lark_cython-0.0.13-cp37-cp37m-win_amd64.whl", hash = "sha256:6bb186da916b751a1632175b06a01d5fe31ee2c75d4957abbca7d1c2ce2efe95"},
+    {file = "lark_cython-0.0.13-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:10a3cab35f311758bc7f509b51ee775ff9a4737137f4847de2bbf5df7b310937"},
+    {file = "lark_cython-0.0.13-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2e9edad05a4b22d1f2fb49495e3c05989eb857464466e2237a10d7886c4ca485"},
+    {file = "lark_cython-0.0.13-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0a5dbd007d6573d1d3a708f180af996283be5566829de53410d56fd16e00677f"},
+    {file = "lark_cython-0.0.13-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:0d5808e81d71401428e3beb961b94af2ab36e41186b6566ca870cca6dceac8c7"},
+    {file = "lark_cython-0.0.13-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:5461209286506dd81617d9e56dd6966c2a5ed6b87f2387b64e240c2a0f0b0b10"},
+    {file = "lark_cython-0.0.13-cp38-cp38-win32.whl", hash = "sha256:43d340b32181d5960610f648d7fbffacbd56cb2efecbb5335b02c87ee4ab73ef"},
+    {file = "lark_cython-0.0.13-cp38-cp38-win_amd64.whl", hash = "sha256:528d3150e964ea324ef3dd3e623c59d062da6e95b3f99bde359b794b4dfb917c"},
+    {file = "lark_cython-0.0.13-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:fd7eaae93e8002870d14511ed0044d0a010aa868c0f9330e7340c2bf55a2ba79"},
+    {file = "lark_cython-0.0.13-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e39ab2d98be16dd11222a8b47cdff86e5d161703e30f3cdcc0222aa69a5acdb8"},
+    {file = "lark_cython-0.0.13-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:671ca79947a8df2ae7b777ac1889e81cffd715565c3f98c6f2e4aa07cb46e51e"},
+    {file = "lark_cython-0.0.13-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:1790047fb860a4840eebd9e2cfbcce0b244c34038203525ecafed0b32e634dfa"},
+    {file = "lark_cython-0.0.13-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:74ae2f1440a799ea8ead37eb6bb9ccc89ac9ec616458ed0f88ef0f3c15468324"},
+    {file = "lark_cython-0.0.13-cp39-cp39-win32.whl", hash = "sha256:08d3af7f46a6e99343009d788c6b8cd2f0e525120e8417e06f246530817c0ad5"},
+    {file = "lark_cython-0.0.13-cp39-cp39-win_amd64.whl", hash = "sha256:6cb7cd2d0523409f34b3b34457524da0a602ed1ddd4925ca6a621892713ff57d"},
+    {file = "lark_cython-0.0.13-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:b64599e2eab7bb01808a33ce1dfe5aa8d5d0486ae296836937b50da802e8b101"},
+    {file = "lark_cython-0.0.13-pp37-pypy37_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b0dceedb4f2387f82aca593fec74ec696e2b39219572abf7261bf85a513b716c"},
+    {file = "lark_cython-0.0.13-pp37-pypy37_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a6faa44772b9f4031a4563532affad36456e3befbd8c722a3f1f5d7652b43520"},
+    {file = "lark_cython-0.0.13-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:8bd4a5417562201390c2247884bd020df2538d1f5f7c0dc4d228ba252a0593f2"},
+    {file = "lark_cython-0.0.13-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:c5bb4036536670215be5d499e743c75fa26e77afba952d82383a475726142bbc"},
+    {file = "lark_cython-0.0.13-pp38-pypy38_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:08eb671c0c402a4493f8bdca8290258cd61164b46df1611e1f2927ec6f32fad2"},
+    {file = "lark_cython-0.0.13-pp38-pypy38_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:00d9dc760519c32927a9fd16d55b2f7d35474f278a87af2742c910ce99881dc2"},
+    {file = "lark_cython-0.0.13-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:ed3dfcf91d85120149c48005831caa798e26ef2c77a2d54b988f8baef6177c5e"},
+    {file = "lark_cython-0.0.13-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:5a309cf514010900691a5f6571377146112a33fe51ecd5927f11c0b882b28100"},
+    {file = "lark_cython-0.0.13-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6d4deac9f3f548d464e3b360e3834eac8f004b6e23862b66790f03a477e4db61"},
+    {file = "lark_cython-0.0.13-pp39-pypy39_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6bdd1bd9970f0af2c59dd3c29385e9b9f1039cb74cc9fa2422f5cfd2c5151187"},
+    {file = "lark_cython-0.0.13-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:788db823f09f0e0ed0b5d7a5314fed1e0a2f80716b98f7023ac2ace965d12026"},
 ]
 mypy = [
     {file = "mypy-0.971-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:f2899a3cbd394da157194f913a931edfd4be5f274a88041c9dc2d9cdcb1c315c"},

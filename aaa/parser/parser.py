@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, List, Optional
 
+import lark_cython  # type: ignore
 from lark.exceptions import UnexpectedInput, VisitError
 from lark.lark import Lark
 
@@ -81,6 +82,7 @@ class Parser:
             start="builtins_file_root",
             maybe_placeholders=True,
             parser="lalr",
+            _plugins=lark_cython.plugins,
         )
 
     def _get_source_parser(self) -> Lark:
@@ -91,4 +93,5 @@ class Parser:
             start="regular_file_root",
             maybe_placeholders=True,
             parser="lalr",
+            _plugins=lark_cython.plugins,
         )
