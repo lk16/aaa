@@ -98,6 +98,7 @@ class Transpiler:
                     "gcc",
                     "-Wall",
                     "-Wextra",
+                    # "--coverage", TODO enable this flag with flag
                     "-I",
                     "./aaa/transpiler/",
                     "-o",

@@ -868,12 +868,11 @@ struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable 
         if (item->hash == hash && aaa_variable_equals(key, &item->key)) {
             popped = item;
             *item_addr = item->next;
+            map->size--;
+            return &popped->value;
         }
-    }
 
-    if (popped) {
-        map->size--;
-        return &popped->value;
+        item_addr = &item->next;
     }
 
     return NULL;
