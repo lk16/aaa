@@ -12,6 +12,9 @@ from aaa.run import Runner
 
 
 class TestRunner:
+    # Tell pytest to ignore this class
+    __test__ = False
+
     def __init__(self, path: Path) -> None:
         self.path = path
         self.builtins_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"

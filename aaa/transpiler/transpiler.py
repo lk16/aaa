@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from glob import glob
 from hashlib import sha256
 from pathlib import Path
 
@@ -94,6 +95,8 @@ class Transpiler:
             return 1
 
         if compile:
+            c_files = [str(self.output_file)] + glob("./c/*.c")
+
             exit_code = subprocess.run(
                 [
                     "gcc",
@@ -101,14 +104,13 @@ class Transpiler:
                     "-Wextra",
                     # "--coverage", TODO enable this flag with flag
                     "-I",
-                    "./aaa/transpiler/",
+                    "./c/",
                     "-o",
                     "generated",
                     "-std=gnu99",
                     "-g",
-                    str(self.output_file),
-                    "aaa/transpiler/aaa.c",
                 ]
+                + c_files
             ).returncode
 
             if exit_code != 0:

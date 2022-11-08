@@ -26,7 +26,7 @@ from aaa.parser.models import (
     TypeLiteral,
 )
 
-DUMMY_TOKEN = Token(type_="", value="")
+DUMMY_TOKEN = Token(type="", value="")
 
 
 @v_args(inline=True)

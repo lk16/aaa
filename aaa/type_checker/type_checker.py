@@ -201,7 +201,7 @@ class TypeChecker:
 
         # TODO get rid of dummy_token and dummy_type_literal
 
-        dummy_token = Token(type_="", value="")
+        dummy_token = Token(type="", value="")
 
         dummy_type_literal = parser.TypeLiteral(
             identifier=parser.Identifier(
