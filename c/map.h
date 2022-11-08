@@ -4,19 +4,11 @@
 
 #include "aaa.h"
 
-struct aaa_map_item {
-    struct aaa_variable key, value;
-    size_t hash;
-    struct aaa_map_item *next;
-};
+struct aaa_map_item;
 
-struct aaa_map {
-    size_t bucket_count;
-    struct aaa_map_item **buckets;
-    size_t size;
-};
+struct aaa_map;
 
-void aaa_map_init(struct aaa_map *map);
+struct aaa_map *aaa_map_new(void);
 void aaa_map_free(struct aaa_map *map);
 
 char *aaa_map_repr(const struct aaa_map *map);

@@ -7,16 +7,26 @@
 #include "buffer.h"
 #include "var.h"
 
-void aaa_vector_init(struct aaa_vector *vec) {
+struct aaa_vector {
+    size_t size;
+    size_t max_size;
+    struct aaa_variable *data;
+};
+
+struct aaa_vector *aaa_vector_new(void) {
+    struct aaa_vector *vec = malloc(sizeof(*vec));
     vec->size = 0;
     vec->max_size = 16;
     vec->data = malloc(vec->max_size * sizeof(*vec->data));
-}
-void aaa_vector_free(struct aaa_vector *vec) {
-    free(vec->data);
+    return vec;
 }
 
-char *aaa_vec_repr(const struct aaa_vector *vec) {
+void aaa_vector_free(struct aaa_vector *vec) {
+    free(vec->data);
+    free(vec);
+}
+
+char *aaa_vector_repr(const struct aaa_vector *vec) {
     struct aaa_buffer buff;
     aaa_buffer_init(&buff);
     aaa_buffer_append(&buff, "[");
@@ -34,6 +44,21 @@ char *aaa_vec_repr(const struct aaa_vector *vec) {
     aaa_buffer_append(&buff, "]");
 
     return buff.data;
+}
+
+bool aaa_vector_equals(struct aaa_vector *lhs, struct aaa_vector *rhs) {  // TODO make arguments const
+    if (lhs->size != rhs->size) {
+        return false;
+    }
+    for (size_t i=0; i<lhs->size; i++) {
+        struct aaa_variable *lhs_item = NULL, *rhs_item = NULL;
+        aaa_vector_get(lhs, i, lhs_item);
+        aaa_vector_get(rhs, i, rhs_item);
+        if (!aaa_variable_equals(lhs_item, rhs_item)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void aaa_vector_clear(struct aaa_vector *vec) {

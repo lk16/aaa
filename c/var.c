@@ -9,7 +9,6 @@
 #include "vector.h"
 #include "map.h"
 
-
 char *aaa_variable_repr(const struct aaa_variable *var) {
     switch (var->kind) {
         case AAA_BOOLEAN:
@@ -54,7 +53,7 @@ char *aaa_variable_repr(const struct aaa_variable *var) {
             aaa_buffer_append(&buff, "\"");
             return buff.data;
         case AAA_VECTOR:
-            return aaa_vec_repr(var->vector);
+            return aaa_vector_repr(var->vector);
         case AAA_MAP:
             return aaa_map_repr(var->map);
         default:
@@ -104,19 +103,7 @@ bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variab
         case AAA_STRING:
             return strcmp(lhs->string, rhs->string) == 0;
         case AAA_VECTOR:
-            // TODO use vector equality function when present
-            if (lhs->vector->size != rhs->vector->size) {
-                return false;
-            }
-            for (size_t i=0; i<lhs->vector->size; i++) {
-                struct aaa_variable *lhs_item = NULL, *rhs_item = NULL;
-                aaa_vector_get(lhs->vector, i, lhs_item);
-                aaa_vector_get(rhs->vector, i, rhs_item);
-                if (!aaa_variable_equals(lhs_item, rhs_item)) {
-                    return false;
-                }
-            }
-            return true;
+            return aaa_vector_equals(lhs->vector, rhs->vector);
         default:
             fprintf(stderr, "aaa_variable_equals Unhandled variable kind\n");
             abort();

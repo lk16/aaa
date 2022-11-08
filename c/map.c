@@ -5,18 +5,33 @@
 
 #include "buffer.h"
 
-void aaa_map_init(struct aaa_map *map) {
+struct aaa_map_item {
+    struct aaa_variable key, value;
+    size_t hash;
+    struct aaa_map_item *next;
+};
+
+struct aaa_map {
+    size_t bucket_count;
+    struct aaa_map_item **buckets;
+    size_t size;
+};
+
+struct aaa_map *aaa_map_new(void) {
+    struct aaa_map *map = malloc(sizeof(*map));
     map->size = 0;
     map->bucket_count = 16;
     map->buckets = malloc(map->bucket_count * sizeof(*map->buckets));
     for (size_t b=0; b<map->bucket_count; b++) {
         map->buckets[b] = NULL;
     }
+    return map;
 }
 
 void aaa_map_free(struct aaa_map *map) {
     aaa_map_clear(map);
     free(map->buckets);
+    free(map);
 }
 
 void aaa_map_clear(struct aaa_map *map) {

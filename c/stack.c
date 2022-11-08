@@ -471,12 +471,10 @@ void aaa_stack_str_equals(struct aaa_stack *stack) {
     aaa_stack_push_bool(stack, equal);
 }
 
-
 void aaa_stack_push_vec(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_push(stack);
     top->kind = AAA_VECTOR;
-    top->vector = malloc(sizeof(*top->vector));
-    aaa_vector_init(top->vector);
+    top->vector = aaa_vector_new();
 }
 
 void aaa_stack_vec_push(struct aaa_stack *stack) {
@@ -524,12 +522,10 @@ void aaa_stack_vec_clear(struct aaa_stack *stack) {
     aaa_vector_clear(vec);
 }
 
-
 void aaa_stack_push_map(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_push(stack);
     top->kind = AAA_MAP;
-    top->map = malloc(sizeof(*top->map));
-    aaa_map_init(top->map);
+    top->map = aaa_map_new();
 }
 
 void aaa_stack_map_set(struct aaa_stack *stack) {
