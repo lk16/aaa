@@ -87,6 +87,7 @@ void aaa_stack_map_size(struct aaa_stack *stack);
 void aaa_stack_map_empty(struct aaa_stack *stack);
 void aaa_stack_map_clear(struct aaa_stack *stack);
 void aaa_stack_map_pop(struct aaa_stack *stack);
+void aaa_stack_map_drop(struct aaa_stack *stack);
 
 struct aaa_vector {
     size_t size;

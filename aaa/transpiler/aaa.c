@@ -974,3 +974,10 @@ void aaa_stack_map_pop(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_push(stack);
     *top = *value;
 }
+
+void aaa_stack_map_drop(struct aaa_stack *stack) {
+    struct aaa_variable *key = aaa_stack_pop(stack);
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    aaa_map_drop(map, key);
+}

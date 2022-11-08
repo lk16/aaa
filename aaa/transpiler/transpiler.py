@@ -45,6 +45,7 @@ AAA_C_BUILTIN_FUNCS = {
     "exit": "aaa_stack_exit",
     "listen": "aaa_stack_listen",
     "map:clear": "aaa_stack_map_clear",
+    "map:drop": "aaa_stack_map_drop",
     "map:empty": "aaa_stack_map_empty",
     "map:get": "aaa_stack_map_get",
     "map:has_key": "aaa_stack_map_has_key",
