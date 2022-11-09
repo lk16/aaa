@@ -74,10 +74,15 @@ void aaa_stack_push_int(struct aaa_stack *stack, int value) {
     top->integer = value;
 }
 
-void aaa_stack_push_str(struct aaa_stack *stack, const char *value) {
+void aaa_stack_push_str(struct aaa_stack *stack, struct aaa_string *value) {
     struct aaa_variable *top = aaa_stack_push(stack);
     top->kind = AAA_STRING;
     top->string = value;
+}
+
+void aaa_stack_push_str_raw(struct aaa_stack *stack, char *raw, bool freeable) {
+    struct aaa_string *string = aaa_string_new(raw, freeable);
+    aaa_stack_push_str(stack, string);
 }
 
 void aaa_stack_push_bool(struct aaa_stack *stack, bool value) {
@@ -98,10 +103,15 @@ static int aaa_stack_pop_int(struct aaa_stack *stack) {
     return top->integer;
 }
 
-static const char *aaa_stack_pop_str(struct aaa_stack *stack) {
+static struct aaa_string *aaa_stack_pop_str(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
     aaa_variable_check_kind(top, AAA_STRING);
     return top->string;
+}
+
+static const char *aaa_stack_pop_str_raw(struct aaa_stack *stack) {
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+    return aaa_string_raw(string);
 }
 
 static struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
@@ -200,23 +210,23 @@ void aaa_stack_divide(struct aaa_stack *stack) {
 void aaa_stack_repr(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
     struct aaa_string *repr = aaa_variable_repr(top);
-    aaa_stack_push_str(stack, aaa_string_raw(repr));
-    aaa_string_dec_ref(repr);
+    aaa_stack_push_str(stack, repr);
 }
 
 void aaa_stack_print(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-
-    const char *printed;
+    struct aaa_string *printed = NULL;
 
     if (top->kind == AAA_STRING) {
         printed = top->string;
     } else {
-        struct aaa_string *repr = aaa_variable_repr(top);
-        printed = aaa_string_raw(repr);
-        aaa_string_dec_ref(repr);
+        printed = aaa_variable_repr(top);
     }
-    printf("%s", printed);
+
+    const char *raw = aaa_string_raw(printed);
+    printf("%s", raw);
+
+    aaa_string_dec_ref(printed);
 }
 
 void aaa_stack_drop(struct aaa_stack *stack) {
@@ -311,7 +321,7 @@ void aaa_stack_exit(struct aaa_stack *stack) {
 }
 
 void aaa_stack_write(struct aaa_stack *stack) {
-    const char *data = aaa_stack_pop_str(stack);
+    const char *data = aaa_stack_pop_str_raw(stack);
     int fd = aaa_stack_pop_int(stack);
 
     // TODO make string smarter so we keep its length cached
@@ -328,7 +338,7 @@ void aaa_stack_write(struct aaa_stack *stack) {
 
 void aaa_stack_connect(struct aaa_stack *stack) {
     int port = aaa_stack_pop_int(stack);
-    const char *domain_name = aaa_stack_pop_str(stack);
+    const char *domain_name = aaa_stack_pop_str_raw(stack);
     int fd = aaa_stack_pop_int(stack);
 
     struct addrinfo* addr_info = NULL;
@@ -369,7 +379,7 @@ void aaa_stack_read(struct aaa_stack *stack) {
     int bytes_read = read(fd, buff, n);
     buff[bytes_read] = '\0';
 
-    aaa_stack_push_str(stack, buff);
+    aaa_stack_push_str_raw(stack, buff, true);
 
     if (bytes_read < 0) {
         aaa_stack_push_bool(stack, false);
@@ -380,7 +390,7 @@ void aaa_stack_read(struct aaa_stack *stack) {
 
 void aaa_stack_bind(struct aaa_stack *stack) {
     int port = aaa_stack_pop_int(stack);
-    const char *host = aaa_stack_pop_str(stack);
+    const char *host = aaa_stack_pop_str_raw(stack);
     int fd = aaa_stack_pop_int(stack);
 
     struct addrinfo* addr_info = NULL;
@@ -451,12 +461,12 @@ void aaa_stack_accept(struct aaa_stack *stack) {
                 abort();
         }
 
-        aaa_stack_push_str(stack, client_ip_addr);
+        aaa_stack_push_str_raw(stack, client_ip_addr, true);
         aaa_stack_push_int(stack, client_port);
         aaa_stack_push_int(stack, client_socket_fd);
         aaa_stack_push_bool(stack, true);
     } else {
-        aaa_stack_push_str(stack, "");
+        aaa_stack_push_str_raw(stack, "", false);
         aaa_stack_push_int(stack, 0);
         aaa_stack_push_int(stack, 0);
         aaa_stack_push_bool(stack, false);
@@ -468,8 +478,8 @@ void aaa_stack_nop(struct aaa_stack *stack) {
 }
 
 void aaa_stack_str_equals(struct aaa_stack *stack) {
-    const char *lhs = aaa_stack_pop_str(stack);
-    const char *rhs = aaa_stack_pop_str(stack);
+    const char *lhs = aaa_stack_pop_str_raw(stack);
+    const char *rhs = aaa_stack_pop_str_raw(stack);
     bool equal = strcmp(lhs, rhs) == 0;
     aaa_stack_push_bool(stack, equal);
 }

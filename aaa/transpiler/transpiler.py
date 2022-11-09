@@ -216,7 +216,9 @@ class Transpiler:
         elif isinstance(item, StringLiteral):
             # TODO this is horrible
             string_value = '"' + repr(item.value)[1:-1].replace('"', '\\"') + '"'
-            return f"{indentation}aaa_stack_push_str(stack, {string_value});\n"
+            return (
+                f"{indentation}aaa_stack_push_str_raw(stack, {string_value}, false);\n"
+            )
         elif isinstance(item, BooleanLiteral):
             bool_value = "true"
             if not item.value:

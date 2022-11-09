@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "str.h"
 #include "buffer.h"
@@ -9,10 +10,9 @@
 #include "var.h"
 
 struct aaa_string *aaa_variable_repr_bool(bool boolean) {
-    const char *raw = NULL;
+    char *raw = NULL;
     if (boolean) {
         raw = "true";
-
     } else {
         raw = "false";
     }
@@ -26,10 +26,10 @@ struct aaa_string *aaa_variable_repr_int(int integer) {
     return aaa_string_new(buff, true);
 }
 
-struct aaa_string *aaa_variable_repr_str(const char *raw) {
+struct aaa_string *aaa_variable_repr_str(struct aaa_string *string) {
     struct aaa_buffer *buff = aaa_buffer_new();
     aaa_buffer_append(buff, "\"");
-    const char *c = raw;
+    const char *c = aaa_string_raw(string);
 
     while (*c) {
         switch (*c) {
@@ -52,9 +52,9 @@ struct aaa_string *aaa_variable_repr_str(const char *raw) {
         c++;
     }
     aaa_buffer_append(buff, "\"");
-    struct aaa_string *string = aaa_buffer_to_string(buff);
+    struct aaa_string *repr = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);
-    return string;
+    return repr;
 }
 
 struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
@@ -83,7 +83,7 @@ size_t aaa_variable_hash(const struct aaa_variable *var) {
         case AAA_STRING:
             (void)0;
             size_t hash = 0;
-            const char *c = var->string;
+            const char *c = aaa_string_raw(var->string);
             while (*c) {
                 hash = (hash * 123457) + *c;
                 c++;
@@ -109,7 +109,10 @@ bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variab
         case AAA_INTEGER:
             return lhs->integer == rhs->integer;
         case AAA_STRING:
-            return strcmp(lhs->string, rhs->string) == 0;
+            (void)0;
+            const char *lhs_raw = aaa_string_raw(lhs->string);
+            const char *rhs_raw = aaa_string_raw(rhs->string);
+            return strcmp(lhs_raw, rhs_raw) == 0;
         case AAA_VECTOR:
             return aaa_vector_equals(lhs->vector, rhs->vector);
         default:

@@ -3,8 +3,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "string.h"
+#include "str.h"
 
+// TODO make this enum opaque
 enum aaa_kind {
     AAA_INTEGER,
     AAA_BOOLEAN,
@@ -13,12 +14,13 @@ enum aaa_kind {
     AAA_MAP,
 };
 
+// TODO make this struct opaque
 struct aaa_variable {
     enum aaa_kind kind;
     union {
         int integer;
         bool boolean;
-        const char *string; // TODO worry about memory leaks
+        struct aaa_string *string;
         struct aaa_vector *vector;
         struct aaa_map *map;
     };

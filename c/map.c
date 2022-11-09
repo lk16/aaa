@@ -148,6 +148,7 @@ struct aaa_string *aaa_map_repr(const struct aaa_map *map) {
 
             struct aaa_string *key_repr = aaa_variable_repr(&item->key);
             struct aaa_string *value_repr = aaa_variable_repr(&item->value);
+
             aaa_buffer_append(buff, aaa_string_raw(key_repr));
             aaa_buffer_append(buff, ": ");
             aaa_buffer_append(buff, aaa_string_raw(value_repr));
