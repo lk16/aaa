@@ -4,6 +4,7 @@
 
 #include "map.h"
 #include "buffer.h"
+#include "str.h"
 
 struct aaa_map_item {
     struct aaa_variable key, value;
@@ -130,7 +131,7 @@ size_t aaa_map_size(const struct aaa_map *map) {
     return map->size;
 }
 
-const char *aaa_map_repr(const struct aaa_map *map) {
+struct aaa_string *aaa_map_repr(const struct aaa_map *map) {
     struct aaa_buffer *buff = aaa_buffer_new();
     aaa_buffer_append(buff, "{");
     bool is_first = true;
@@ -145,18 +146,20 @@ const char *aaa_map_repr(const struct aaa_map *map) {
                 aaa_buffer_append(buff, ", ");
             }
 
-            const char *key_repr = aaa_variable_repr(&item->key);
-            const char *value_repr = aaa_variable_repr(&item->value);
-            aaa_buffer_append(buff, key_repr);
+            struct aaa_string *key_repr = aaa_variable_repr(&item->key);
+            struct aaa_string *value_repr = aaa_variable_repr(&item->value);
+            aaa_buffer_append(buff, aaa_string_raw(key_repr));
             aaa_buffer_append(buff, ": ");
-            aaa_buffer_append(buff, value_repr);
+            aaa_buffer_append(buff, aaa_string_raw(value_repr));
 
+            aaa_string_dec_ref(key_repr);
+            aaa_string_dec_ref(value_repr);
             item = item->next;
         }
     }
     aaa_buffer_append(buff, "}");
 
-    const char *repr = aaa_buffer_to_string(buff);
+    struct aaa_string *string = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);
-    return repr;
+    return string;
 }

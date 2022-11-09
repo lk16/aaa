@@ -37,8 +37,8 @@ void aaa_buffer_append(struct aaa_buffer *buff, const char *str) {
     buff->data[buff->size] = '\0';
 }
 
-const char *aaa_buffer_to_string(const struct aaa_buffer *buff) {
-    return buff->data;
+struct aaa_string *aaa_buffer_to_string(const struct aaa_buffer *buff) {
+    return aaa_string_new(buff->data, true);
 }
 
 void aaa_buffer_dec_ref(struct aaa_buffer *buff) {

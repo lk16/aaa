@@ -25,15 +25,16 @@ void aaa_vector_free(struct aaa_vector *vec) {
     free(vec);
 }
 
-const char *aaa_vector_repr(const struct aaa_vector *vec) {
+struct aaa_string *aaa_vector_repr(const struct aaa_vector *vec) {
     struct aaa_buffer *buff = aaa_buffer_new();
     aaa_buffer_append(buff, "[");
 
     for (size_t i=0; i<vec->size; i++) {
         struct aaa_variable *item = vec->data + i;
 
-        const char *item_repr = aaa_variable_repr(item);
-        aaa_buffer_append(buff, item_repr);
+        struct aaa_string *item_repr = aaa_variable_repr(item);
+        aaa_buffer_append(buff, aaa_string_raw(item_repr));
+        aaa_string_dec_ref(item_repr);
 
         if (i != vec->size - 1) {
             aaa_buffer_append(buff, ", ");
@@ -41,9 +42,9 @@ const char *aaa_vector_repr(const struct aaa_vector *vec) {
     }
     aaa_buffer_append(buff, "]");
 
-    const char *repr = aaa_buffer_to_string(buff);
+    struct aaa_string *string = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);
-    return repr;
+    return string;
 }
 
 bool aaa_vector_equals(struct aaa_vector *lhs, struct aaa_vector *rhs) {  // TODO make arguments const
