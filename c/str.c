@@ -25,7 +25,11 @@ void aaa_string_dec_ref(struct aaa_string *string) {
     if (aaa_ref_count_dec(&string->ref_count) == 0) {
         if (string->freeable) {
             free(string->raw);
-            free(string);
         }
+        free(string);
     }
+}
+
+void aaa_string_inc_ref(struct aaa_string *string) {
+    aaa_ref_count_inc(&string->ref_count);
 }

@@ -65,6 +65,7 @@ struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
 
     struct aaa_variable *popped = aaa_stack_top(stack);
     stack->size--;
+
     return popped;
 }
 
@@ -109,11 +110,6 @@ static struct aaa_string *aaa_stack_pop_str(struct aaa_stack *stack) {
     return top->string;
 }
 
-static const char *aaa_stack_pop_str_raw(struct aaa_stack *stack) {
-    struct aaa_string *string = aaa_stack_pop_str(stack);
-    return aaa_string_raw(string);
-}
-
 static struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
     aaa_variable_check_kind(top, AAA_VECTOR);
@@ -131,6 +127,17 @@ void aaa_stack_dup(struct aaa_stack *stack) {
     struct aaa_variable *dupped = aaa_stack_push(stack);
 
     *dupped = *top;
+
+    switch(top->kind) {
+        case AAA_BOOLEAN: break;
+        case AAA_INTEGER: break;
+        case AAA_STRING: aaa_string_inc_ref(top->string);
+        case AAA_VECTOR: break;  // TODO
+        case AAA_MAP: break;  // TODO
+        default:
+            fprintf(stderr, "aaa_stack_dup unhandled variable kind\n");
+            abort();
+    }
 }
 
 void aaa_stack_swap(struct aaa_stack *stack) {
@@ -226,7 +233,20 @@ void aaa_stack_print(struct aaa_stack *stack) {
     const char *raw = aaa_string_raw(printed);
     printf("%s", raw);
 
-    aaa_string_dec_ref(printed);
+    if (top->kind != AAA_STRING) {
+        aaa_string_dec_ref(printed);
+    }
+
+    switch (top->kind) {
+        case AAA_BOOLEAN: break;
+        case AAA_INTEGER: break;
+        case AAA_STRING: aaa_string_dec_ref(top->string);
+        case AAA_VECTOR: break; // TODO
+        case AAA_MAP: break; // TODO
+        default:
+            fprintf(stderr, "aaa_stack_print unhandled variable kind\n");
+            abort();
+    }
 }
 
 void aaa_stack_drop(struct aaa_stack *stack) {
@@ -321,11 +341,13 @@ void aaa_stack_exit(struct aaa_stack *stack) {
 }
 
 void aaa_stack_write(struct aaa_stack *stack) {
-    const char *data = aaa_stack_pop_str_raw(stack);
+    struct aaa_string *data = aaa_stack_pop_str(stack);
     int fd = aaa_stack_pop_int(stack);
 
+    const char *data_raw = aaa_string_raw(data);
+
     // TODO make string smarter so we keep its length cached
-    int written = write(fd, data, strlen(data));
+    int written = write(fd, data_raw, strlen(data_raw));
 
     if (written < 0) {
         aaa_stack_push_int(stack, 0);
@@ -334,12 +356,16 @@ void aaa_stack_write(struct aaa_stack *stack) {
         aaa_stack_push_int(stack, written);
         aaa_stack_push_bool(stack, true);
     }
+
+    aaa_string_dec_ref(data);
 }
 
 void aaa_stack_connect(struct aaa_stack *stack) {
     int port = aaa_stack_pop_int(stack);
-    const char *domain_name = aaa_stack_pop_str_raw(stack);
+    struct aaa_string *domain_name = aaa_stack_pop_str(stack);
     int fd = aaa_stack_pop_int(stack);
+
+    const char *domain_name_raw = aaa_string_raw(domain_name);
 
     struct addrinfo* addr_info = NULL;
 
@@ -353,7 +379,7 @@ void aaa_stack_connect(struct aaa_stack *stack) {
 
     snprintf(service, 6, "%d", port);
 
-    if (getaddrinfo(domain_name, service, NULL, &addr_info) != 0) {
+    if (getaddrinfo(domain_name_raw, service, NULL, &addr_info) != 0) {
         aaa_stack_push_bool(stack, false);
         return;
     }
@@ -367,6 +393,8 @@ void aaa_stack_connect(struct aaa_stack *stack) {
     } else {
         aaa_stack_push_bool(stack, false);
     }
+
+    aaa_string_dec_ref(domain_name);
 }
 
 void aaa_stack_read(struct aaa_stack *stack) {
@@ -390,8 +418,10 @@ void aaa_stack_read(struct aaa_stack *stack) {
 
 void aaa_stack_bind(struct aaa_stack *stack) {
     int port = aaa_stack_pop_int(stack);
-    const char *host = aaa_stack_pop_str_raw(stack);
+    struct aaa_string *host = aaa_stack_pop_str(stack);
     int fd = aaa_stack_pop_int(stack);
+
+    const char *host_raw = aaa_string_raw(host);
 
     struct addrinfo* addr_info = NULL;
 
@@ -405,7 +435,7 @@ void aaa_stack_bind(struct aaa_stack *stack) {
 
     snprintf(service, 6, "%d", port);
 
-    if (getaddrinfo(host, service, NULL, &addr_info) != 0) {
+    if (getaddrinfo(host_raw, service, NULL, &addr_info) != 0) {
         aaa_stack_push_bool(stack, false);
         return;
     }
@@ -419,6 +449,8 @@ void aaa_stack_bind(struct aaa_stack *stack) {
     } else {
         aaa_stack_push_bool(stack, false);
     }
+
+    aaa_string_dec_ref(host);
 }
 
 void aaa_stack_listen(struct aaa_stack *stack) {
@@ -478,10 +510,15 @@ void aaa_stack_nop(struct aaa_stack *stack) {
 }
 
 void aaa_stack_str_equals(struct aaa_stack *stack) {
-    const char *lhs = aaa_stack_pop_str_raw(stack);
-    const char *rhs = aaa_stack_pop_str_raw(stack);
-    bool equal = strcmp(lhs, rhs) == 0;
+    struct aaa_string *lhs = aaa_stack_pop_str(stack);
+    struct aaa_string *rhs = aaa_stack_pop_str(stack);
+    const char *lhs_raw = aaa_string_raw(lhs);
+    const char *rhs_raw = aaa_string_raw(rhs);
+    bool equal = strcmp(lhs_raw, rhs_raw) == 0;
     aaa_stack_push_bool(stack, equal);
+
+    aaa_string_dec_ref(lhs);
+    aaa_string_dec_ref(rhs);
 }
 
 void aaa_stack_push_vec(struct aaa_stack *stack) {
