@@ -9,7 +9,7 @@
 struct aaa_stack {
     size_t size;
     size_t max_size;
-    struct aaa_variable *data;
+    struct aaa_variable **data;
 };
 
 void aaa_stack_init(struct aaa_stack *stack);

@@ -7,7 +7,7 @@
 #include "str.h"
 
 struct aaa_map_item {
-    struct aaa_variable key, value;
+    struct aaa_variable key, value; // TODO store pointers to key and value instead
     size_t hash;
     struct aaa_map_item *next;
 };

@@ -27,7 +27,7 @@ static void aaa_stack_prevent_underflow(const struct aaa_stack *stack, size_t po
     }
 }
 
-static void aaa_stack_prevent_overflow(const struct aaa_stack *stack, size_t push_count) {
+static void aaa_stack_prevent_overflow(const struct aaa_stack *stack, size_t push_count) { // TODO remove this and re-allocate the stack if it gets too big
      if (stack->size + push_count >= stack->max_size) {
         fprintf(stderr, "Aaa stack overflow\n");
         abort();
@@ -45,19 +45,13 @@ void aaa_stack_free(struct aaa_stack *stack) {
 }
 
 static struct aaa_variable *aaa_stack_top(struct aaa_stack *stack) {
-    return stack->data + stack->size - 1;
+    return stack->data[stack->size - 1];
 }
 
-static struct aaa_variable *aaa_stack_push(struct aaa_stack *stack) { // TODO this function should be replaced with aaa_stack_push_variable
+void aaa_stack_push(struct aaa_stack *stack, struct aaa_variable *variable) {
     aaa_stack_prevent_overflow(stack, 1);
-
+    stack->data[stack->size] = variable;
     stack->size++;
-    return aaa_stack_top(stack);
-}
-
-void aaa_stack_push_variable(struct aaa_stack *stack, struct aaa_variable *variable) {
-    struct aaa_variable *top = aaa_stack_push(stack);
-    *top = *variable;
 }
 
 struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
@@ -70,15 +64,19 @@ struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
 }
 
 void aaa_stack_push_int(struct aaa_stack *stack, int value) {
-    struct aaa_variable *top = aaa_stack_push(stack);
-    top->kind = AAA_INTEGER;
-    top->integer = value;
+    struct aaa_variable *var = malloc(sizeof(*var));
+    var->kind = AAA_INTEGER;
+    var->integer = value;
+
+    aaa_stack_push(stack, var);
 }
 
 void aaa_stack_push_str(struct aaa_stack *stack, struct aaa_string *value) {
-    struct aaa_variable *top = aaa_stack_push(stack);
-    top->kind = AAA_STRING;
-    top->string = value;
+    struct aaa_variable *var = malloc(sizeof(*var));
+    var->kind = AAA_STRING;
+    var->string = value;
+
+    aaa_stack_push(stack, var);
 }
 
 void aaa_stack_push_str_raw(struct aaa_stack *stack, char *raw, bool freeable) {
@@ -87,9 +85,11 @@ void aaa_stack_push_str_raw(struct aaa_stack *stack, char *raw, bool freeable) {
 }
 
 void aaa_stack_push_bool(struct aaa_stack *stack, bool value) {
-    struct aaa_variable *top = aaa_stack_push(stack);
-    top->kind = AAA_BOOLEAN;
-    top->boolean = value;
+    struct aaa_variable *var = malloc(sizeof(*var));
+    var->kind = AAA_BOOLEAN;
+    var->boolean = value;
+
+    aaa_stack_push(stack, var);
 }
 
 bool aaa_stack_pop_bool(struct aaa_stack *stack) {
@@ -124,9 +124,7 @@ static struct aaa_map *aaa_stack_pop_map(struct aaa_stack *stack) {
 
 void aaa_stack_dup(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_top(stack);
-    struct aaa_variable *dupped = aaa_stack_push(stack);
-
-    *dupped = *top;
+    aaa_stack_push(stack, top);
 
     switch(top->kind) {
         case AAA_BOOLEAN: break;
@@ -143,12 +141,11 @@ void aaa_stack_dup(struct aaa_stack *stack) {
 void aaa_stack_swap(struct aaa_stack *stack) {
     aaa_stack_prevent_underflow(stack, 2);
 
-    struct aaa_variable *top = aaa_stack_top(stack);
-    struct aaa_variable *below = top - 1;
+    struct aaa_variable *a = aaa_stack_pop(stack);
+    struct aaa_variable *b = aaa_stack_pop(stack);
 
-    struct aaa_variable temp = *top;
-    *top = *below;
-    *below = temp;
+    aaa_stack_push(stack, a);
+    aaa_stack_push(stack, b);
 }
 
 void aaa_stack_assert(struct aaa_stack *stack) {
@@ -162,25 +159,19 @@ void aaa_stack_assert(struct aaa_stack *stack) {
 
 void aaa_stack_over(struct aaa_stack *stack) {
     aaa_stack_prevent_underflow(stack, 2);
-    aaa_stack_push(stack);
 
-    struct aaa_variable *top = aaa_stack_top(stack);
-    struct aaa_variable *original = top - 2;
-
-    *original = *top;
+    struct aaa_variable *copied = stack->data[stack->size - 2];
+    aaa_stack_push(stack, copied);
 }
 
 void aaa_stack_rot(struct aaa_stack *stack) {
-    aaa_stack_prevent_underflow(stack, 3);
+    struct aaa_variable *c = aaa_stack_pop(stack);
+    struct aaa_variable *b = aaa_stack_pop(stack);
+    struct aaa_variable *a = aaa_stack_pop(stack);
 
-    struct aaa_variable *c = aaa_stack_top(stack);
-    struct aaa_variable *b = c - 1;
-    struct aaa_variable *a = c - 2;
-
-    struct aaa_variable tmp = *a;
-    *a = *b;
-    *b = *c;
-    *c = tmp;
+    aaa_stack_push(stack, b);
+    aaa_stack_push(stack, c);
+    aaa_stack_push(stack, a);
 }
 
 void aaa_stack_plus(struct aaa_stack *stack) {
@@ -513,9 +504,11 @@ void aaa_stack_str_equals(struct aaa_stack *stack) {
 }
 
 void aaa_stack_push_vec(struct aaa_stack *stack) {
-    struct aaa_variable *top = aaa_stack_push(stack);
-    top->kind = AAA_VECTOR;
-    top->vector = aaa_vector_new();
+    struct aaa_variable *var = malloc(sizeof(*var));
+    var->kind = AAA_VECTOR;
+    var->vector = aaa_vector_new();
+
+    aaa_stack_push(stack, var);
 }
 
 void aaa_stack_vec_push(struct aaa_stack *stack) {
@@ -527,15 +520,15 @@ void aaa_stack_vec_push(struct aaa_stack *stack) {
 
 void aaa_stack_vec_pop(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-    struct aaa_variable *top = aaa_stack_push(stack);
-    *top = *aaa_vector_pop(vec);  // TODO this is horrible, make stack have an array of aaa_variable pointers
+    struct aaa_variable *popped = aaa_vector_pop(vec);
+    aaa_stack_push(stack, popped);
 }
 
 void aaa_stack_vec_get(struct aaa_stack *stack) {
     int offset = aaa_stack_pop_int(stack);
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-    struct aaa_variable *top = aaa_stack_push(stack);
-    *top = *aaa_vector_get(vec, offset); // TODO this is horrible, make stack have an array of aaa_variable pointers
+    struct aaa_variable *gotten = aaa_vector_get(vec, offset);
+    aaa_stack_push(stack, gotten);
 }
 
 void aaa_stack_vec_set(struct aaa_stack *stack) {
@@ -564,9 +557,10 @@ void aaa_stack_vec_clear(struct aaa_stack *stack) {
 }
 
 void aaa_stack_push_map(struct aaa_stack *stack) {
-    struct aaa_variable *top = aaa_stack_push(stack);
-    top->kind = AAA_MAP;
-    top->map = aaa_map_new();
+    struct aaa_variable *var = malloc(sizeof(*var));
+    var->kind = AAA_MAP;
+    var->map = aaa_map_new();
+    aaa_stack_push(stack, var);
 }
 
 void aaa_stack_map_set(struct aaa_stack *stack) {
@@ -589,8 +583,7 @@ void aaa_stack_map_get(struct aaa_stack *stack) {
         abort();
     }
 
-    struct aaa_variable *top = aaa_stack_push(stack);
-    *top = *value;
+    aaa_stack_push(stack, value);
 }
 
 void aaa_stack_map_has_key(struct aaa_stack *stack) {
@@ -633,8 +626,7 @@ void aaa_stack_map_pop(struct aaa_stack *stack) {
         abort();
     }
 
-    struct aaa_variable *top = aaa_stack_push(stack);
-    *top = *value;
+    aaa_stack_push(stack, value);
 }
 
 void aaa_stack_map_drop(struct aaa_stack *stack) {
