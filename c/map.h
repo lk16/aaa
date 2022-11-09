@@ -11,7 +11,7 @@ struct aaa_map;
 struct aaa_map *aaa_map_new(void);
 void aaa_map_free(struct aaa_map *map);
 
-char *aaa_map_repr(const struct aaa_map *map);
+const char *aaa_map_repr(const struct aaa_map *map);
 
 void aaa_map_clear(struct aaa_map *map);
 void aaa_map_copy(struct aaa_map *map, struct aaa_map *copy);

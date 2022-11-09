@@ -1,11 +1,11 @@
-#include "stack.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+
+#include "stack.h"
 
 static void aaa_variable_check_kind(const struct aaa_variable *var, enum aaa_kind kind) {
     if (var->kind != kind) {
@@ -199,7 +199,7 @@ void aaa_stack_divide(struct aaa_stack *stack) {
 
 void aaa_stack_repr(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    char *repr = aaa_variable_repr(top);
+    const char *repr = aaa_variable_repr(top);
     aaa_stack_push_str(stack, repr);
 }
 

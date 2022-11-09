@@ -1,8 +1,8 @@
-#include "map.h"
 
 #include <malloc.h>
 #include <stdlib.h>
 
+#include "map.h"
 #include "buffer.h"
 
 struct aaa_map_item {
@@ -130,10 +130,9 @@ size_t aaa_map_size(const struct aaa_map *map) {
     return map->size;
 }
 
-char *aaa_map_repr(const struct aaa_map *map) {
-    struct aaa_buffer buff;
-    aaa_buffer_init(&buff);
-    aaa_buffer_append(&buff, "{");
+const char *aaa_map_repr(const struct aaa_map *map) {
+    struct aaa_buffer *buff = aaa_buffer_new();
+    aaa_buffer_append(buff, "{");
     bool is_first = true;
 
     for (size_t i=0; i<map->bucket_count; i++) {
@@ -143,19 +142,21 @@ char *aaa_map_repr(const struct aaa_map *map) {
             if (is_first) {
                 is_first = false;
             } else {
-                aaa_buffer_append(&buff, ", ");
+                aaa_buffer_append(buff, ", ");
             }
 
             const char *key_repr = aaa_variable_repr(&item->key);
             const char *value_repr = aaa_variable_repr(&item->value);
-            aaa_buffer_append(&buff, key_repr);
-            aaa_buffer_append(&buff, ": ");
-            aaa_buffer_append(&buff, value_repr);
+            aaa_buffer_append(buff, key_repr);
+            aaa_buffer_append(buff, ": ");
+            aaa_buffer_append(buff, value_repr);
 
             item = item->next;
         }
     }
-    aaa_buffer_append(&buff, "}");
+    aaa_buffer_append(buff, "}");
 
-    return buff.data;
+    const char *repr = aaa_buffer_to_string(buff);
+    aaa_buffer_dec_ref(buff);
+    return repr;
 }

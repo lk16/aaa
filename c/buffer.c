@@ -1,13 +1,24 @@
-#include "buffer.h"
-
 #include <malloc.h>
 #include <string.h>
 
-void aaa_buffer_init(struct aaa_buffer *buff) {
+#include "buffer.h"
+#include "ref_count.h"
+
+struct aaa_buffer {
+    struct aaa_ref_count ref_count;
+    size_t max_size;
+    char *data;
+    size_t size;
+};
+
+struct aaa_buffer *aaa_buffer_new(void){
+    struct aaa_buffer *buff = malloc(sizeof(*buff));
+    aaa_ref_count_init(&buff->ref_count);
     buff->max_size = 1024;
     buff->data = malloc(buff->max_size * sizeof(char));
     buff->size = 0;
     buff->data[buff->size] = '\0';
+    return buff;
 }
 
 void aaa_buffer_append(struct aaa_buffer *buff, const char *str) {
@@ -24,4 +35,14 @@ void aaa_buffer_append(struct aaa_buffer *buff, const char *str) {
     memcpy(buff->data + buff->size, str, len);
     buff->size += len;
     buff->data[buff->size] = '\0';
+}
+
+const char *aaa_buffer_to_string(const struct aaa_buffer *buff) {
+    return buff->data;
+}
+
+void aaa_buffer_dec_ref(struct aaa_buffer *buff) {
+    if (aaa_ref_count_dec(&buff->ref_count) == 0) {
+        free(buff);
+    }
 }

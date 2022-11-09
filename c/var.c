@@ -1,5 +1,3 @@
-#include "var.h"
-
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -8,8 +6,9 @@
 #include "buffer.h"
 #include "vector.h"
 #include "map.h"
+#include "var.h"
 
-char *aaa_variable_repr(const struct aaa_variable *var) {
+const char *aaa_variable_repr(const struct aaa_variable *var) {
     switch (var->kind) {
         case AAA_BOOLEAN:
             if (var->boolean) {
@@ -25,33 +24,34 @@ char *aaa_variable_repr(const struct aaa_variable *var) {
             return int_buff;
         case AAA_STRING:
             (void)0;
-            struct aaa_buffer buff;
-            aaa_buffer_init(&buff);
-            aaa_buffer_append(&buff, "\"");
+            struct aaa_buffer *buff = aaa_buffer_new();
+            aaa_buffer_append(buff, "\"");
             const char *c = var->string;
 
             while (*c) {
                 switch (*c) {
-                    case '\a': aaa_buffer_append(&buff, "\\a"); break;
-                    case '\b': aaa_buffer_append(&buff, "\\b"); break;
-                    case '\f': aaa_buffer_append(&buff, "\\f"); break;
-                    case '\n': aaa_buffer_append(&buff, "\\n"); break;
-                    case '\r': aaa_buffer_append(&buff, "\\r"); break;
-                    case '\t': aaa_buffer_append(&buff, "\\t"); break;
-                    case '\v': aaa_buffer_append(&buff, "\\v"); break;
-                    case '\\': aaa_buffer_append(&buff, "\\\\"); break;
-                    case '\'': aaa_buffer_append(&buff, "\\'"); break;
-                    case '\"': aaa_buffer_append(&buff, "\\\""); break;
+                    case '\a': aaa_buffer_append(buff, "\\a"); break;
+                    case '\b': aaa_buffer_append(buff, "\\b"); break;
+                    case '\f': aaa_buffer_append(buff, "\\f"); break;
+                    case '\n': aaa_buffer_append(buff, "\\n"); break;
+                    case '\r': aaa_buffer_append(buff, "\\r"); break;
+                    case '\t': aaa_buffer_append(buff, "\\t"); break;
+                    case '\v': aaa_buffer_append(buff, "\\v"); break;
+                    case '\\': aaa_buffer_append(buff, "\\\\"); break;
+                    case '\'': aaa_buffer_append(buff, "\\'"); break;
+                    case '\"': aaa_buffer_append(buff, "\\\""); break;
                     default:
                         (void)0;
                         char str[2] = "\0";
                         str[0] = *c;
-                        aaa_buffer_append(&buff, str);
+                        aaa_buffer_append(buff, str);
                 }
                 c++;
             }
-            aaa_buffer_append(&buff, "\"");
-            return buff.data;
+            aaa_buffer_append(buff, "\"");
+            const char *repr = aaa_buffer_to_string(buff);
+            aaa_buffer_dec_ref(buff);
+            return repr;
         case AAA_VECTOR:
             return aaa_vector_repr(var->vector);
         case AAA_MAP:
