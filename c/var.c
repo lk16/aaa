@@ -120,3 +120,16 @@ bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variab
             abort();
     }
 }
+
+void aaa_variable_dec_ref(struct aaa_variable *var) {
+    switch (var->kind) {
+        case AAA_BOOLEAN: break;
+        case AAA_INTEGER: break;
+        case AAA_STRING: aaa_string_dec_ref(var->string); break;
+        case AAA_VECTOR: aaa_vector_dec_ref(var->vector); break;
+        case AAA_MAP: break; // TODO
+        default:
+            fprintf(stderr, "aaa_stack_print unhandled variable kind\n");
+            abort();
+    }
+}

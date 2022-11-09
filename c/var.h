@@ -29,3 +29,5 @@ struct aaa_variable {
 struct aaa_string *aaa_variable_repr(const struct aaa_variable *var);
 size_t aaa_variable_hash(const struct aaa_variable *var);
 bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variable *rhs);
+
+void aaa_variable_dec_ref(struct aaa_variable *var);

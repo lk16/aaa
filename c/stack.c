@@ -48,7 +48,7 @@ static struct aaa_variable *aaa_stack_top(struct aaa_stack *stack) {
     return stack->data + stack->size - 1;
 }
 
-static struct aaa_variable *aaa_stack_push(struct aaa_stack *stack) {
+static struct aaa_variable *aaa_stack_push(struct aaa_stack *stack) { // TODO this function should be replaced with aaa_stack_push_variable
     aaa_stack_prevent_overflow(stack, 1);
 
     stack->size++;
@@ -131,8 +131,8 @@ void aaa_stack_dup(struct aaa_stack *stack) {
     switch(top->kind) {
         case AAA_BOOLEAN: break;
         case AAA_INTEGER: break;
-        case AAA_STRING: aaa_string_inc_ref(top->string);
-        case AAA_VECTOR: break;  // TODO
+        case AAA_STRING: aaa_string_inc_ref(top->string); break;
+        case AAA_VECTOR: aaa_vector_inc_ref(top->vector); break;
         case AAA_MAP: break;  // TODO
         default:
             fprintf(stderr, "aaa_stack_dup unhandled variable kind\n");
@@ -237,16 +237,7 @@ void aaa_stack_print(struct aaa_stack *stack) {
         aaa_string_dec_ref(printed);
     }
 
-    switch (top->kind) {
-        case AAA_BOOLEAN: break;
-        case AAA_INTEGER: break;
-        case AAA_STRING: aaa_string_dec_ref(top->string);
-        case AAA_VECTOR: break; // TODO
-        case AAA_MAP: break; // TODO
-        default:
-            fprintf(stderr, "aaa_stack_print unhandled variable kind\n");
-            abort();
-    }
+    aaa_variable_dec_ref(top);
 }
 
 void aaa_stack_drop(struct aaa_stack *stack) {
@@ -537,14 +528,14 @@ void aaa_stack_vec_push(struct aaa_stack *stack) {
 void aaa_stack_vec_pop(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
     struct aaa_variable *top = aaa_stack_push(stack);
-    aaa_vector_pop(vec, top);
+    *top = *aaa_vector_pop(vec);  // TODO this is horrible, make stack have an array of aaa_variable pointers
 }
 
 void aaa_stack_vec_get(struct aaa_stack *stack) {
     int offset = aaa_stack_pop_int(stack);
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
     struct aaa_variable *top = aaa_stack_push(stack);
-    aaa_vector_get(vec, offset, top);
+    *top = *aaa_vector_get(vec, offset); // TODO this is horrible, make stack have an array of aaa_variable pointers
 }
 
 void aaa_stack_vec_set(struct aaa_stack *stack) {
