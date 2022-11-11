@@ -8,6 +8,7 @@
 #include "vector.h"
 #include "map.h"
 #include "var.h"
+#include "ref_count.h"
 
 enum aaa_kind {
     AAA_INTEGER,
@@ -18,6 +19,7 @@ enum aaa_kind {
 };
 
 struct aaa_variable {
+    struct aaa_ref_count ref_count;
     enum aaa_kind kind;
     union {
         int integer;
@@ -30,6 +32,7 @@ struct aaa_variable {
 
 static struct aaa_variable *aaa_variable_new(void) {
     struct aaa_variable *var = malloc(sizeof(*var));
+    aaa_ref_count_init(&var->ref_count);
     return var;
 }
 
@@ -232,6 +235,9 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
             fprintf(stderr, "aaa_variable_dec_ref unhandled variable kind\n");
             abort();
     }
+    if (aaa_ref_count_dec(&var->ref_count) == 0) {
+        free(var);
+    }
 }
 
 void aaa_variable_inc_ref(struct aaa_variable *var) {
@@ -245,4 +251,5 @@ void aaa_variable_inc_ref(struct aaa_variable *var) {
             fprintf(stderr, "aaa_variable_inc_ref unhandled variable kind\n");
             abort();
     }
+    aaa_ref_count_inc(&var->ref_count);
 }

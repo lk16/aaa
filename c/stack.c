@@ -78,17 +78,24 @@ void aaa_stack_push_bool(struct aaa_stack *stack, bool value) {
 
 bool aaa_stack_pop_bool(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    return aaa_variable_get_bool(top);
+    bool value = aaa_variable_get_bool(top);
+    aaa_variable_dec_ref(top);
+    return value;
 }
 
 static int aaa_stack_pop_int(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    return aaa_variable_get_int(top);
+    int value = aaa_variable_get_int(top);
+    aaa_variable_dec_ref(top);
+    return value;
 }
 
 static struct aaa_string *aaa_stack_pop_str(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    return aaa_variable_get_str(top);
+    struct aaa_string *value = aaa_variable_get_str(top);
+    aaa_string_inc_ref(value);
+    aaa_variable_dec_ref(top);
+    return value;
 }
 
 static struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
