@@ -282,7 +282,7 @@ class Transpiler:
                 if var_type.name == "int":
                     return f"{indentation}aaa_stack_push_int(stack, 0);\n"
                 elif var_type.name == "str":
-                    return f'{indentation}aaa_stack_push_str(stack, "");\n'
+                    return f'{indentation}aaa_stack_push_str_raw(stack, "", false);\n'
                 elif var_type.name == "bool":
                     return f"{indentation}aaa_stack_push_bool(stack, false);\n"
                 elif var_type.name == "vec":

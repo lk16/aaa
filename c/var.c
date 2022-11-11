@@ -212,10 +212,7 @@ bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variab
         case AAA_INTEGER:
             return lhs->integer == rhs->integer;
         case AAA_STRING:
-            (void)0;
-            const char *lhs_raw = aaa_string_raw(lhs->string);
-            const char *rhs_raw = aaa_string_raw(rhs->string);
-            return strcmp(lhs_raw, rhs_raw) == 0;
+            return aaa_string_equals(lhs->string, rhs->string);
         case AAA_VECTOR:
             return aaa_vector_equals(lhs->vector, rhs->vector);
         default:
