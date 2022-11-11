@@ -230,7 +230,7 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
         case AAA_INTEGER: break;
         case AAA_STRING: aaa_string_dec_ref(var->string); break;
         case AAA_VECTOR: aaa_vector_dec_ref(var->vector); break;
-        case AAA_MAP: break; // TODO
+        case AAA_MAP:    aaa_map_dec_ref(var->map); break;
         default:
             fprintf(stderr, "aaa_variable_dec_ref unhandled variable kind\n");
             abort();
@@ -246,7 +246,7 @@ void aaa_variable_inc_ref(struct aaa_variable *var) {
         case AAA_INTEGER: break;
         case AAA_STRING: aaa_string_inc_ref(var->string); break;
         case AAA_VECTOR: aaa_vector_inc_ref(var->vector); break;
-        case AAA_MAP: break;  // TODO
+        case AAA_MAP:    aaa_map_inc_ref(var->map); break;
         default:
             fprintf(stderr, "aaa_variable_inc_ref unhandled variable kind\n");
             abort();

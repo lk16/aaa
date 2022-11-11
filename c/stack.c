@@ -100,12 +100,22 @@ static struct aaa_string *aaa_stack_pop_str(struct aaa_stack *stack) {
 
 static struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    return aaa_variable_get_vector(top);
+    struct aaa_vector *vector = aaa_variable_get_vector(top);
+
+    aaa_vector_inc_ref(vector);
+    aaa_variable_dec_ref(top);
+
+    return vector;
 }
 
 static struct aaa_map *aaa_stack_pop_map(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    return aaa_variable_get_map(top);
+    struct aaa_map *map = aaa_variable_get_map(top);
+
+    aaa_map_inc_ref(map);
+    aaa_variable_dec_ref(top);
+
+    return map;
 }
 
 void aaa_stack_dup(struct aaa_stack *stack) {
@@ -138,6 +148,8 @@ void aaa_stack_over(struct aaa_stack *stack) {
 
     struct aaa_variable *copied = stack->data[stack->size - 2];
     aaa_stack_push(stack, copied);
+
+    aaa_variable_inc_ref(copied);
 }
 
 void aaa_stack_rot(struct aaa_stack *stack) {
@@ -200,7 +212,8 @@ void aaa_stack_print(struct aaa_stack *stack) {
 }
 
 void aaa_stack_drop(struct aaa_stack *stack) {
-    aaa_stack_pop(stack);
+    struct aaa_variable *popped = aaa_stack_pop(stack);
+    aaa_variable_dec_ref(popped);
 }
 
 void aaa_stack_less(struct aaa_stack *stack) {
@@ -498,8 +511,10 @@ void aaa_stack_vec_get(struct aaa_stack *stack) {
     int offset = aaa_stack_pop_int(stack);
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
     struct aaa_variable *gotten = aaa_vector_get(vec, offset);
+
     aaa_stack_push(stack, gotten);
 
+    aaa_variable_inc_ref(gotten);
     aaa_vector_dec_ref(vec);
 }
 
@@ -548,6 +563,8 @@ void aaa_stack_map_set(struct aaa_stack *stack) {
     struct aaa_map *map = aaa_stack_pop_map(stack);
 
     aaa_map_set(map, key, value);
+
+    aaa_map_dec_ref(map);
 }
 
 void aaa_stack_map_get(struct aaa_stack *stack) {
@@ -563,6 +580,8 @@ void aaa_stack_map_get(struct aaa_stack *stack) {
     }
 
     aaa_stack_push(stack, value);
+
+    aaa_map_dec_ref(map);
 }
 
 void aaa_stack_map_has_key(struct aaa_stack *stack) {
@@ -571,6 +590,8 @@ void aaa_stack_map_has_key(struct aaa_stack *stack) {
 
     bool has_key = aaa_map_has_key(map, key);
     aaa_stack_push_bool(stack, has_key);
+
+    aaa_map_dec_ref(map);
 }
 
 void aaa_stack_map_size(struct aaa_stack *stack) {
@@ -578,6 +599,8 @@ void aaa_stack_map_size(struct aaa_stack *stack) {
 
     size_t size = aaa_map_size(map);
     aaa_stack_push_int(stack, size);
+
+    aaa_map_dec_ref(map);
 }
 
 void aaa_stack_map_empty(struct aaa_stack *stack) {
@@ -585,12 +608,16 @@ void aaa_stack_map_empty(struct aaa_stack *stack) {
 
     bool is_empty = aaa_map_empty(map);
     aaa_stack_push_bool(stack, is_empty);
+
+    aaa_map_dec_ref(map);
 }
 
 void aaa_stack_map_clear(struct aaa_stack *stack) {
     struct aaa_map *map = aaa_stack_pop_map(stack);
 
     aaa_map_clear(map);
+
+    aaa_map_dec_ref(map);
 }
 
 void aaa_stack_map_pop(struct aaa_stack *stack) {
@@ -606,6 +633,8 @@ void aaa_stack_map_pop(struct aaa_stack *stack) {
     }
 
     aaa_stack_push(stack, value);
+
+    aaa_map_dec_ref(map);
 }
 
 void aaa_stack_map_drop(struct aaa_stack *stack) {
@@ -613,4 +642,7 @@ void aaa_stack_map_drop(struct aaa_stack *stack) {
     struct aaa_map *map = aaa_stack_pop_map(stack);
 
     aaa_map_drop(map, key);
+
+    aaa_variable_dec_ref(key);
+    aaa_map_dec_ref(map);
 }

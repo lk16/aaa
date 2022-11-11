@@ -284,7 +284,7 @@ fn test_vec_get_fail {
     todo
 }
 
-fn test_set_ok {
+fn test_vec_set_ok {
     vec[int]
     dup 5 vec:push
     dup 0 7 vec:set
@@ -293,7 +293,7 @@ fn test_set_ok {
     repr "[]" str:equals assert
 }
 
-fn test_set_fail {
+fn test_vec_set_fail {
     todo
 }
 

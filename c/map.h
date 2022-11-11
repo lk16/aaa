@@ -3,7 +3,9 @@
 #include "types.h"
 
 struct aaa_map *aaa_map_new(void);
-void aaa_map_free(struct aaa_map *map);
+
+void aaa_map_dec_ref(struct aaa_map *map);
+void aaa_map_inc_ref(struct aaa_map *map);
 
 struct aaa_string *aaa_map_repr(const struct aaa_map *map);
 
