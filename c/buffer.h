@@ -1,8 +1,6 @@
 #pragma once
 
-#include <stddef.h>
-
-#include "str.h"
+#include "types.h"
 
 struct aaa_buffer *aaa_buffer_new(void);
 void aaa_buffer_append(struct aaa_buffer *buff, const char *str);

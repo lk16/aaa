@@ -6,8 +6,6 @@
 #include "var.h"
 #include "str.h"
 
-struct aaa_vector;
-
 struct aaa_vector *aaa_vector_new(void);
 void aaa_vector_inc_ref(struct aaa_vector *vec);
 void aaa_vector_dec_ref(struct aaa_vector *vec);

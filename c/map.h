@@ -1,12 +1,6 @@
 #pragma once
 
-#include <stddef.h>
-
-#include "aaa.h"
-
-struct aaa_map_item;
-
-struct aaa_map;
+#include "types.h"
 
 struct aaa_map *aaa_map_new(void);
 void aaa_map_free(struct aaa_map *map);

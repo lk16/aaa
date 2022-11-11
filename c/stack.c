@@ -7,13 +7,6 @@
 
 #include "stack.h"
 
-static void aaa_variable_check_kind(const struct aaa_variable *var, enum aaa_kind kind) {
-    if (var->kind != kind) {
-        fprintf(stderr, "Aaa type error\n");
-        abort();
-    }
-}
-
 void aaa_stack_not_implemented(struct aaa_stack *stack, const char *aaa_func_name) {
     (void)stack;
     fprintf(stderr, "%s is not implemented yet!\n", aaa_func_name);
@@ -64,18 +57,12 @@ struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
 }
 
 void aaa_stack_push_int(struct aaa_stack *stack, int value) {
-    struct aaa_variable *var = malloc(sizeof(*var));
-    var->kind = AAA_INTEGER;
-    var->integer = value;
-
+    struct aaa_variable *var = aaa_variable_new_int(value);
     aaa_stack_push(stack, var);
 }
 
 void aaa_stack_push_str(struct aaa_stack *stack, struct aaa_string *value) {
-    struct aaa_variable *var = malloc(sizeof(*var));
-    var->kind = AAA_STRING;
-    var->string = value;
-
+    struct aaa_variable *var = aaa_variable_new_str(value);
     aaa_stack_push(stack, var);
 }
 
@@ -85,57 +72,39 @@ void aaa_stack_push_str_raw(struct aaa_stack *stack, char *raw, bool freeable) {
 }
 
 void aaa_stack_push_bool(struct aaa_stack *stack, bool value) {
-    struct aaa_variable *var = malloc(sizeof(*var));
-    var->kind = AAA_BOOLEAN;
-    var->boolean = value;
-
+    struct aaa_variable *var = aaa_variable_new_bool(value);
     aaa_stack_push(stack, var);
 }
 
 bool aaa_stack_pop_bool(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    aaa_variable_check_kind(top, AAA_BOOLEAN);
-    return top->boolean;
+    return aaa_variable_get_bool(top);
 }
 
 static int aaa_stack_pop_int(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    aaa_variable_check_kind(top, AAA_INTEGER);
-    return top->integer;
+    return aaa_variable_get_int(top);
 }
 
 static struct aaa_string *aaa_stack_pop_str(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    aaa_variable_check_kind(top, AAA_STRING);
-    return top->string;
+    return aaa_variable_get_str(top);
 }
 
 static struct aaa_vector *aaa_stack_pop_vec(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    aaa_variable_check_kind(top, AAA_VECTOR);
-    return top->vector;
+    return aaa_variable_get_vector(top);
 }
 
 static struct aaa_map *aaa_stack_pop_map(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    aaa_variable_check_kind(top, AAA_MAP);
-    return top->map;
+    return aaa_variable_get_map(top);
 }
 
 void aaa_stack_dup(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_top(stack);
     aaa_stack_push(stack, top);
-
-    switch(top->kind) {
-        case AAA_BOOLEAN: break;
-        case AAA_INTEGER: break;
-        case AAA_STRING: aaa_string_inc_ref(top->string); break;
-        case AAA_VECTOR: aaa_vector_inc_ref(top->vector); break;
-        case AAA_MAP: break;  // TODO
-        default:
-            fprintf(stderr, "aaa_stack_dup unhandled variable kind\n");
-            abort();
-    }
+    aaa_variable_inc_ref(top);
 }
 
 void aaa_stack_swap(struct aaa_stack *stack) {
@@ -215,20 +184,10 @@ void aaa_stack_repr(struct aaa_stack *stack) {
 
 void aaa_stack_print(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
-    struct aaa_string *printed = NULL;
-
-    if (top->kind == AAA_STRING) {
-        printed = top->string;
-    } else {
-        printed = aaa_variable_repr(top);
-    }
+    struct aaa_string *printed = aaa_variable_printed(top);
 
     const char *raw = aaa_string_raw(printed);
     printf("%s", raw);
-
-    if (top->kind != AAA_STRING) {
-        aaa_string_dec_ref(printed);
-    }
 
     aaa_variable_dec_ref(top);
 }
@@ -506,10 +465,8 @@ void aaa_stack_str_equals(struct aaa_stack *stack) {
 }
 
 void aaa_stack_push_vec(struct aaa_stack *stack) {
-    struct aaa_variable *var = malloc(sizeof(*var));
-    var->kind = AAA_VECTOR;
-    var->vector = aaa_vector_new();
-
+    struct aaa_vector *vector = aaa_vector_new();
+    struct aaa_variable *var = aaa_variable_new_vector(vector);
     aaa_stack_push(stack, var);
 }
 
@@ -573,9 +530,8 @@ void aaa_stack_vec_clear(struct aaa_stack *stack) {
 }
 
 void aaa_stack_push_map(struct aaa_stack *stack) {
-    struct aaa_variable *var = malloc(sizeof(*var));
-    var->kind = AAA_MAP;
-    var->map = aaa_map_new();
+    struct aaa_map *map = aaa_map_new();
+    struct aaa_variable *var = aaa_variable_new_map(map);
     aaa_stack_push(stack, var);
 }
 

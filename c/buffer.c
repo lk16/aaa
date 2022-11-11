@@ -3,6 +3,7 @@
 
 #include "buffer.h"
 #include "ref_count.h"
+#include "str.h"
 
 struct aaa_buffer {
     struct aaa_ref_count ref_count;

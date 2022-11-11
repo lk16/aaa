@@ -5,6 +5,7 @@
 #include "map.h"
 #include "buffer.h"
 #include "str.h"
+#include "var.h"
 
 struct aaa_map_item {
     struct aaa_variable *key, *value;
@@ -65,16 +66,26 @@ bool aaa_map_empty(const struct aaa_map *map) {
     return map->size == 0;
 }
 
-struct aaa_variable *aaa_map_get(struct aaa_map *map, const struct aaa_variable *key) {
+static struct aaa_map_item *aaa_map_get_item(struct aaa_map *map, const struct aaa_variable *key) {
     size_t hash = aaa_variable_hash(key);
     size_t bucket = hash % map->bucket_count;
     struct aaa_map_item *item = map->buckets[bucket];
 
     while (item) {
         if (item->hash == hash && aaa_variable_equals(key, item->key)) {
-            return item->value;
+            return item;
         }
         item = item->next;
+    }
+
+    return NULL;
+}
+
+struct aaa_variable *aaa_map_get(struct aaa_map *map, const struct aaa_variable *key) {
+    struct aaa_map_item *item = aaa_map_get_item(map, key);
+
+    if (item) {
+        return item->value;
     }
 
     return NULL;
@@ -110,21 +121,19 @@ struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable 
 }
 
 void aaa_map_set(struct aaa_map *map, struct aaa_variable *key, struct aaa_variable *new_value) {
-    struct aaa_variable *value = aaa_map_get(map, key);
+    struct aaa_map_item *item = aaa_map_get_item(map, key);
 
-    if (value) {
-        *value = *new_value;
-        return;
+    if (!item) {
+        item = malloc(sizeof(*item));
+        item->key = key;
+        item->hash = aaa_variable_hash(key);
+        size_t bucket_id = item->hash % map->bucket_count;
+        item->next = map->buckets[bucket_id];
+        map->buckets[bucket_id] = item;
+        map->size++;
     }
 
-    struct aaa_map_item *item = malloc(sizeof(*item));
-    item->key = key;
     item->value = new_value;
-    item->hash = aaa_variable_hash(key);
-    size_t bucket_id = item->hash % map->bucket_count;
-    item->next = map->buckets[bucket_id];
-    map->buckets[bucket_id] = item;
-    map->size++;
 }
 
 size_t aaa_map_size(const struct aaa_map *map) {

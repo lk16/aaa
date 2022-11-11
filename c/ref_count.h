@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stddef.h>
+#include "types.h"
 
 struct aaa_ref_count {
     size_t count;
