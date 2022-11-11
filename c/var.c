@@ -9,6 +9,42 @@
 #include "map.h"
 #include "var.h"
 
+static struct aaa_variable *aaa_variable_new(void) {
+    struct aaa_variable *var = malloc(sizeof(*var));
+    return var;
+}
+
+struct aaa_variable *aaa_variable_new_int(int integer) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->kind = AAA_INTEGER;
+    var->integer = integer;
+    return var;
+}
+struct aaa_variable *aaa_variable_new_bool(bool boolean) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->kind = AAA_BOOLEAN;
+    var->boolean = boolean;
+    return var;
+}
+struct aaa_variable *aaa_variable_new_str(struct aaa_string *string) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->kind = AAA_STRING;
+    var->string = string;
+    return var;
+}
+struct aaa_variable *aaa_variable_new_vector(struct aaa_vector *vector) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->kind = AAA_VECTOR;
+    var->vector = vector;
+    return var;
+}
+struct aaa_variable *aaa_variable_new_map(struct aaa_map *map) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->kind = AAA_MAP;
+    var->map = map;
+    return var;
+}
+
 struct aaa_string *aaa_variable_repr_bool(bool boolean) {
     char *raw = NULL;
     if (boolean) {
