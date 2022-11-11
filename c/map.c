@@ -7,7 +7,7 @@
 #include "str.h"
 
 struct aaa_map_item {
-    struct aaa_variable key, value; // TODO store pointers to key and value instead
+    struct aaa_variable *key, *value;
     size_t hash;
     struct aaa_map_item *next;
 };
@@ -71,8 +71,8 @@ struct aaa_variable *aaa_map_get(struct aaa_map *map, const struct aaa_variable 
     struct aaa_map_item *item = map->buckets[bucket];
 
     while (item) {
-        if (item->hash == hash && aaa_variable_equals(key, &item->key)) {
-            return &item->value;
+        if (item->hash == hash && aaa_variable_equals(key, item->key)) {
+            return item->value;
         }
         item = item->next;
     }
@@ -96,11 +96,11 @@ struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable 
             return NULL;
         }
 
-        if (item->hash == hash && aaa_variable_equals(key, &item->key)) {
+        if (item->hash == hash && aaa_variable_equals(key, item->key)) {
             popped = item;
             *item_addr = item->next;
             map->size--;
-            return &popped->value;
+            return popped->value;
         }
 
         item_addr = &item->next;
@@ -109,7 +109,7 @@ struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable 
     return NULL;
 }
 
-void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key, const struct aaa_variable *new_value) {
+void aaa_map_set(struct aaa_map *map, struct aaa_variable *key, struct aaa_variable *new_value) {
     struct aaa_variable *value = aaa_map_get(map, key);
 
     if (value) {
@@ -118,8 +118,8 @@ void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key, const stru
     }
 
     struct aaa_map_item *item = malloc(sizeof(*item));
-    item->key = *key;
-    item->value = *new_value;
+    item->key = key;
+    item->value = new_value;
     item->hash = aaa_variable_hash(key);
     size_t bucket_id = item->hash % map->bucket_count;
     item->next = map->buckets[bucket_id];
@@ -146,8 +146,8 @@ struct aaa_string *aaa_map_repr(const struct aaa_map *map) {
                 aaa_buffer_append(buff, ", ");
             }
 
-            struct aaa_string *key_repr = aaa_variable_repr(&item->key);
-            struct aaa_string *value_repr = aaa_variable_repr(&item->value);
+            struct aaa_string *key_repr = aaa_variable_repr(item->key);
+            struct aaa_string *value_repr = aaa_variable_repr(item->value);
 
             aaa_buffer_append(buff, aaa_string_raw(key_repr));
             aaa_buffer_append(buff, ": ");
