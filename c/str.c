@@ -8,6 +8,7 @@
 #include "ref_count.h"
 #include "buffer.h"
 #include "vector.h"
+#include "var.h"
 
 struct aaa_string {
     struct aaa_ref_count ref_count;
@@ -116,11 +117,11 @@ struct aaa_string *aaa_string_upper(const struct aaa_string *string) {
     return aaa_string_new(upper, true);
 }
 
-void aaa_string_find(const struct aaa_string *string, const struct aaa_string *search, int *offset_out, bool *success_out) {
+void aaa_string_find(const struct aaa_string *string, const struct aaa_string *search, size_t *offset_out, bool *success_out) {
     aaa_string_find_after(string, search, 0, offset_out, success_out);
 }
 
-void aaa_string_find_after(const struct aaa_string *string, const struct aaa_string *search, int start, int *offset_out, bool *success_out) {
+void aaa_string_find_after(const struct aaa_string *string, const struct aaa_string *search, size_t start, size_t *offset_out, bool *success_out) {
     char *location = strstr(string->raw + start, search->raw);
 
     if (location) {
@@ -149,7 +150,7 @@ void aaa_string_to_bool(const struct aaa_string *string, bool *boolean_out, bool
     *success_out = false;
 }
 
-void aaa_string_to_int(const struct aaa_string *string, int *integer_out, bool *success_out) {
+void aaa_string_to_int(const struct aaa_string *string, size_t *integer_out, bool *success_out) {
     char * end = NULL;
     long converted = strtol(string->raw, &end, 10);
 
@@ -161,7 +162,44 @@ void aaa_string_to_int(const struct aaa_string *string, int *integer_out, bool *
     *integer_out = (int)converted;
 }
 
-struct aaa_string *aaa_string_replace(const struct aaa_string *string, const struct aaa_string *search, const struct aaa_string *replace);
-struct aaa_vector *aaa_string_split(const struct aaa_string *string, const struct aaa_string *sep);
-struct aaa_string *aaa_string_strip(const struct aaa_string *string);
-void aaa_string_substr(const struct aaa_string *string, int start, int end, bool *success_out);
+struct aaa_string *aaa_string_substr(const struct aaa_string *string, size_t start, size_t end, bool *success_out) {
+    if (end < start || end >= string->length) {
+        *success_out = false;
+        return NULL;
+    }
+
+    char *raw = malloc((end - start + 1) * sizeof(char));
+    strncpy(raw, string->raw + start, end - start);
+    *success_out = true;
+    return aaa_string_new(raw, true);
+}
+
+struct aaa_string *aaa_string_replace(const struct aaa_string *string, const struct aaa_string *search, const struct aaa_string *replace) {
+    struct aaa_vector *split = aaa_string_split(string, search);
+    return aaa_string_join(replace, split);
+}
+
+struct aaa_vector *aaa_string_split(const struct aaa_string *string, const struct aaa_string *sep) {
+    struct aaa_vector *vector = aaa_vector_new();
+
+    size_t end = 0;
+    size_t start = 0;
+
+    while (end < string->length) {
+        char *next_sep = strstr(string->raw + end, sep->raw);
+
+        start = next_sep - string->raw;
+        end = start + sep->length;
+
+        bool dummy;
+        struct aaa_string *string = aaa_string_substr(string, start, end, &dummy);
+        struct aaa_variable *var = aaa_variable_new_str(string);
+
+        aaa_vector_push(vector, var);
+        aaa_string_dec_ref(string);
+    }
+
+    return vector;
+}
+
+struct aaa_string *aaa_string_strip(const struct aaa_string *string);  // TODO
