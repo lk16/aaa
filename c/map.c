@@ -101,6 +101,7 @@ struct aaa_variable *aaa_map_get(struct aaa_map *map, const struct aaa_variable 
     struct aaa_map_item *item = aaa_map_get_item(map, key);
 
     if (item) {
+        aaa_variable_inc_ref(item->value);
         return item->value;
     }
 
@@ -108,7 +109,14 @@ struct aaa_variable *aaa_map_get(struct aaa_map *map, const struct aaa_variable 
 }
 
 bool aaa_map_has_key(struct aaa_map *map, const struct aaa_variable *key) {
-    return aaa_map_get(map, key) != NULL;
+    struct aaa_variable *value = aaa_map_get(map, key);
+
+    if (value) {
+        aaa_variable_dec_ref(value);
+        return true;
+    }
+
+    return false;
 }
 
 struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable *key) {
