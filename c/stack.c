@@ -497,11 +497,13 @@ void aaa_stack_vec_push(struct aaa_stack *stack) {
     aaa_vector_push(vec, pushed);
 
     aaa_vector_dec_ref(vec);
+    aaa_variable_dec_ref(pushed);
 }
 
 void aaa_stack_vec_pop(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
     struct aaa_variable *popped = aaa_vector_pop(vec);
+
     aaa_stack_push(stack, popped);
 
     aaa_vector_dec_ref(vec);
@@ -530,6 +532,7 @@ void aaa_stack_vec_set(struct aaa_stack *stack) {
 
 void aaa_stack_vec_size(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+
     int size = aaa_vector_size(vec);
     aaa_stack_push_int(stack, size);
 
@@ -538,6 +541,7 @@ void aaa_stack_vec_size(struct aaa_stack *stack) {
 
 void aaa_stack_vec_empty(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+
     int empty = aaa_vector_empty(vec);
     aaa_stack_push_bool(stack, empty);
 
@@ -546,6 +550,7 @@ void aaa_stack_vec_empty(struct aaa_stack *stack) {
 
 void aaa_stack_vec_clear(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+
     aaa_vector_clear(vec);
 
     aaa_vector_dec_ref(vec);
@@ -554,6 +559,7 @@ void aaa_stack_vec_clear(struct aaa_stack *stack) {
 void aaa_stack_push_map(struct aaa_stack *stack) {
     struct aaa_map *map = aaa_map_new();
     struct aaa_variable *var = aaa_variable_new_map(map);
+
     aaa_stack_push(stack, var);
 }
 
@@ -565,6 +571,8 @@ void aaa_stack_map_set(struct aaa_stack *stack) {
     aaa_map_set(map, key, value);
 
     aaa_map_dec_ref(map);
+    aaa_variable_dec_ref(key);
+    aaa_variable_dec_ref(value);
 }
 
 void aaa_stack_map_get(struct aaa_stack *stack) {
@@ -582,6 +590,7 @@ void aaa_stack_map_get(struct aaa_stack *stack) {
     aaa_stack_push(stack, value);
 
     aaa_map_dec_ref(map);
+    aaa_variable_dec_ref(key);
 }
 
 void aaa_stack_map_has_key(struct aaa_stack *stack) {
@@ -592,6 +601,7 @@ void aaa_stack_map_has_key(struct aaa_stack *stack) {
     aaa_stack_push_bool(stack, has_key);
 
     aaa_map_dec_ref(map);
+    aaa_variable_dec_ref(key);
 }
 
 void aaa_stack_map_size(struct aaa_stack *stack) {
@@ -634,6 +644,7 @@ void aaa_stack_map_pop(struct aaa_stack *stack) {
 
     aaa_stack_push(stack, value);
 
+    aaa_variable_dec_ref(key);
     aaa_map_dec_ref(map);
 }
 

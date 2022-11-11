@@ -28,9 +28,7 @@ struct aaa_vector *aaa_vector_new(void) {
 
 void aaa_vector_dec_ref(struct aaa_vector *vec) {
     if (aaa_ref_count_dec(&vec->ref_count) == 0) {
-        for(size_t i=0; i<vec->size; i++) {
-            aaa_variable_dec_ref(vec->data[i]);
-        }
+        aaa_vector_clear(vec);
         free(vec->data);
         free(vec);
     }
@@ -80,6 +78,10 @@ bool aaa_vector_equals(struct aaa_vector *lhs, struct aaa_vector *rhs) {  // TOD
 }
 
 void aaa_vector_clear(struct aaa_vector *vec) {
+    for(size_t i=0; i<vec->size; i++) {
+        aaa_variable_dec_ref(vec->data[i]);
+    }
+
     vec->size = 0;
 }
 
@@ -138,6 +140,7 @@ void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed) {
 
     vec->data[vec->size] = pushed;
     vec->size++;
+    aaa_variable_inc_ref(pushed);
 }
 
 void aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *value) {
@@ -146,6 +149,7 @@ void aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *
         abort();
     }
 
+    aaa_variable_dec_ref(vec->data[offset]);
     vec->data[offset] = value;
 }
 
