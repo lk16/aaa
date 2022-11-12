@@ -150,7 +150,7 @@ void aaa_string_to_bool(const struct aaa_string *string, bool *boolean_out, bool
     *success_out = false;
 }
 
-void aaa_string_to_int(const struct aaa_string *string, size_t *integer_out, bool *success_out) {
+void aaa_string_to_int(const struct aaa_string *string, int *integer_out, bool *success_out) {
     char * end = NULL;
     long converted = strtol(string->raw, &end, 10);
 
@@ -163,13 +163,14 @@ void aaa_string_to_int(const struct aaa_string *string, size_t *integer_out, boo
 }
 
 struct aaa_string *aaa_string_substr(const struct aaa_string *string, size_t start, size_t end, bool *success_out) {
-    if (end < start || end >= string->length) {
+    if (end < start || end > string->length) {
         *success_out = false;
-        return NULL;
+        return aaa_string_new("", false);
     }
 
     char *raw = malloc((end - start + 1) * sizeof(char));
     strncpy(raw, string->raw + start, end - start);
+    raw[end - start] = '\0';
     *success_out = true;
     return aaa_string_new(raw, true);
 }
@@ -185,21 +186,50 @@ struct aaa_vector *aaa_string_split(const struct aaa_string *string, const struc
     size_t end = 0;
     size_t start = 0;
 
-    while (end < string->length) {
-        char *next_sep = strstr(string->raw + end, sep->raw);
+    while (start < string->length) {
+        char *next_sep = strstr(string->raw + start, sep->raw);
 
-        start = next_sep - string->raw;
-        end = start + sep->length;
+        end = next_sep - string->raw;
 
         bool dummy;
-        struct aaa_string *string = aaa_string_substr(string, start, end, &dummy);
-        struct aaa_variable *var = aaa_variable_new_str(string);
+        struct aaa_string *split = aaa_string_substr(string, start, end, &dummy);
+        struct aaa_variable *var = aaa_variable_new_str(split);
+
+        start = end + sep->length;
 
         aaa_vector_push(vector, var);
-        aaa_string_dec_ref(string);
+        aaa_string_dec_ref(split);
     }
 
     return vector;
 }
 
-struct aaa_string *aaa_string_strip(const struct aaa_string *string);  // TODO
+struct aaa_string *aaa_string_strip(const struct aaa_string *string) {
+    char *c = string->raw;
+
+    size_t leading_ws = 0;
+    size_t trailing_ws = 0;
+
+    while(*c) {
+        if (isspace(*c)) {
+            leading_ws++;
+        }
+        c++;
+    }
+
+    c = string->raw + string->length - 1;
+
+    while (c >= string->raw) {
+        if (isspace(*c)) {
+            trailing_ws++;
+        }
+        c++;
+    }
+
+    if (leading_ws == string->length) {
+        trailing_ws = 0;
+    }
+
+    bool dummy;
+    return aaa_string_substr(string, leading_ws, string->length - trailing_ws, &dummy);
+};

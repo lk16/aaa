@@ -61,7 +61,20 @@ AAA_C_BUILTIN_FUNCS = {
     "repr": "aaa_stack_repr",
     "rot": "aaa_stack_rot",
     "socket": "aaa_stack_socket",
+    "str:contains": "aaa_stack_str_contains",
     "str:equals": "aaa_stack_str_equals",
+    "str:find_after": "aaa_stack_str_find_after",
+    "str:find": "aaa_stack_str_find",
+    "str:join": "aaa_stack_str_join",
+    "str:len": "aaa_stack_str_len",
+    "str:lower": "aaa_stack_str_lower",
+    "str:replace": "aaa_stack_str_replace",
+    "str:split": "aaa_stack_str_split",
+    "str:strip": "aaa_stack_str_strip",
+    "str:substr": "aaa_stack_str_substr",
+    "str:to_bool": "aaa_stack_str_to_bool",
+    "str:to_int": "aaa_stack_str_to_int",
+    "str:upper": "aaa_stack_str_upper",
     "swap": "aaa_stack_swap",
     "vec:clear": "aaa_stack_vec_clear",
     "vec:empty": "aaa_stack_vec_empty",
@@ -286,7 +299,7 @@ class Transpiler:
                 elif var_type.name == "bool":
                     return f"{indentation}aaa_stack_push_bool(stack, false);\n"
                 elif var_type.name == "vec":
-                    return f"{indentation}aaa_stack_push_vec(stack);\n"
+                    return f"{indentation}aaa_stack_push_vec_empty(stack);\n"
                 elif var_type.name == "map":
                     return f"{indentation}aaa_stack_push_map(stack);\n"
                 else:  # pragma: nocover

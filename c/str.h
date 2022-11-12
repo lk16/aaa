@@ -23,4 +23,4 @@ void aaa_string_find_after(const struct aaa_string *string, const struct aaa_str
 void aaa_string_find(const struct aaa_string *string, const struct aaa_string *search, size_t *offset_out, bool *success_out);
 struct aaa_string *aaa_string_substr(const struct aaa_string *string, size_t start, size_t end, bool *success_out);
 void aaa_string_to_bool(const struct aaa_string *string, bool *boolean_out, bool *success_out);
-void aaa_string_to_int(const struct aaa_string *string, size_t *integer_out, bool *success_out);
+void aaa_string_to_int(const struct aaa_string *string, int *integer_out, bool *success_out);

@@ -472,20 +472,12 @@ void aaa_stack_nop(struct aaa_stack *stack) {
     (void)stack;
 }
 
-void aaa_stack_str_equals(struct aaa_stack *stack) {
-    struct aaa_string *lhs = aaa_stack_pop_str(stack);
-    struct aaa_string *rhs = aaa_stack_pop_str(stack);
-    const char *lhs_raw = aaa_string_raw(lhs);
-    const char *rhs_raw = aaa_string_raw(rhs);
-    bool equal = strcmp(lhs_raw, rhs_raw) == 0;
-    aaa_stack_push_bool(stack, equal);
-
-    aaa_string_dec_ref(lhs);
-    aaa_string_dec_ref(rhs);
+void aaa_stack_push_vec_empty(struct aaa_stack *stack) {
+    struct aaa_vector *vector = aaa_vector_new();
+    aaa_stack_push_vec(stack, vector);
 }
 
-void aaa_stack_push_vec(struct aaa_stack *stack) {
-    struct aaa_vector *vector = aaa_vector_new();
+void aaa_stack_push_vec(struct aaa_stack *stack, struct aaa_vector *vector) {
     struct aaa_variable *var = aaa_variable_new_vector(vector);
     aaa_stack_push(stack, var);
 }
@@ -656,4 +648,172 @@ void aaa_stack_map_drop(struct aaa_stack *stack) {
 
     aaa_variable_dec_ref(key);
     aaa_map_dec_ref(map);
+}
+
+void aaa_stack_str_append(struct aaa_stack *stack) {
+    struct aaa_string *rhs = aaa_stack_pop_str(stack);
+    struct aaa_string *lhs = aaa_stack_pop_str(stack);
+
+    struct aaa_string *combined = aaa_string_append(lhs, rhs);
+    aaa_stack_push_str(stack, combined);
+
+    aaa_string_dec_ref(lhs);
+    aaa_string_dec_ref(rhs);
+}
+
+void aaa_stack_str_contains(struct aaa_stack *stack) {
+    struct aaa_string *search = aaa_stack_pop_str(stack);
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    bool contained = aaa_string_contains(string, search);
+    aaa_stack_push_bool(stack, contained);
+
+    aaa_string_dec_ref(search);
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_equals(struct aaa_stack *stack) {
+    struct aaa_string *rhs = aaa_stack_pop_str(stack);
+    struct aaa_string *lhs = aaa_stack_pop_str(stack);
+
+    bool contained = aaa_string_equals(lhs, rhs);
+    aaa_stack_push_bool(stack, contained);
+
+    aaa_string_dec_ref(lhs);
+    aaa_string_dec_ref(rhs);
+}
+
+void aaa_stack_str_join(struct aaa_stack *stack) {
+    struct aaa_vector *parts = aaa_stack_pop_vec(stack);
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    struct aaa_string *joined = aaa_string_join(string, parts);
+    aaa_stack_push_str(stack, joined);
+
+    aaa_vector_dec_ref(parts);
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_len(struct aaa_stack *stack) {
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    size_t length = aaa_string_len(string);
+    aaa_stack_push_int(stack, length);
+
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_lower(struct aaa_stack *stack) {
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    struct aaa_string *lower = aaa_string_lower(string);
+    aaa_stack_push_str(stack, lower);
+
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_upper(struct aaa_stack *stack) {
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    struct aaa_string *upper = aaa_string_lower(string);
+    aaa_stack_push_str(stack, upper);
+
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_replace(struct aaa_stack *stack) {
+    struct aaa_string *replace = aaa_stack_pop_str(stack);
+    struct aaa_string *search = aaa_stack_pop_str(stack);
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    struct aaa_string *replaced = aaa_string_replace(string, search, replace);
+    aaa_stack_push_str(stack, replaced);
+
+    aaa_string_dec_ref(replace);
+    aaa_string_dec_ref(search);
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_split(struct aaa_stack *stack) {
+    struct aaa_string *sep = aaa_stack_pop_str(stack);
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    struct aaa_vector *split = aaa_string_split(string, sep);
+    aaa_stack_push_vec(stack, split);
+
+    aaa_string_dec_ref(sep);
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_strip(struct aaa_stack *stack) {
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    struct aaa_string *stripped = aaa_string_strip(string);
+    aaa_stack_push_str(stack, stripped);
+
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_find_after(struct aaa_stack *stack) {
+    size_t start = aaa_stack_pop_int(stack);
+    struct aaa_string *search = aaa_stack_pop_str(stack);
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    size_t offset;
+    bool success;
+    aaa_string_find_after(string, search, start, &offset, &success);
+    aaa_stack_push_int(stack, offset);
+    aaa_stack_push_bool(stack, success);
+
+    aaa_string_dec_ref(search);
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_find(struct aaa_stack *stack) {
+    struct aaa_string *search = aaa_stack_pop_str(stack);
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    bool success;
+    size_t offset;
+    aaa_string_find(string, search, &offset, &success);
+    aaa_stack_push_int(stack, offset);
+    aaa_stack_push_bool(stack, success);
+
+    aaa_string_dec_ref(search);
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_substr(struct aaa_stack *stack) {
+    size_t end = aaa_stack_pop_int(stack);
+    size_t start = aaa_stack_pop_int(stack);
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    bool success;
+    struct aaa_string *substr = aaa_string_substr(string, start, end, &success);
+    aaa_stack_push_str(stack, substr);
+
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_to_bool(struct aaa_stack *stack) {
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    bool boolean, success;
+    aaa_string_to_bool(string, &boolean, &success);
+    aaa_stack_push_bool(stack, boolean);
+    aaa_stack_push_bool(stack, success);
+
+    aaa_string_dec_ref(string);
+}
+
+void aaa_stack_str_to_int(struct aaa_stack *stack) {
+    struct aaa_string *string = aaa_stack_pop_str(stack);
+
+    bool success;
+    int integer;
+    aaa_string_to_int(string, &integer, &success);
+    aaa_stack_push_int(stack, integer);
+    aaa_stack_push_bool(stack, success);
+
+    aaa_string_dec_ref(string);
 }
