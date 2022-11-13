@@ -110,7 +110,7 @@ struct aaa_string *aaa_string_upper(const struct aaa_string *string) {
     char *c = upper;
 
     while(*c) {
-        *c = tolower(*c);
+        *c = toupper(*c);
         c++;
     }
 
@@ -154,12 +154,14 @@ void aaa_string_to_int(const struct aaa_string *string, int *integer_out, bool *
     char * end = NULL;
     long converted = strtol(string->raw, &end, 10);
 
-    if (converted > INT_MAX || converted < INT_MIN || end == string->raw) {
+    if (converted > INT_MAX || converted < INT_MIN || end != string->raw + string->length) {
         *success_out = false;
         *integer_out = 0;
+        return;
     }
 
     *integer_out = (int)converted;
+    *success_out = true;
 }
 
 struct aaa_string *aaa_string_substr(const struct aaa_string *string, size_t start, size_t end, bool *success_out) {
@@ -189,7 +191,11 @@ struct aaa_vector *aaa_string_split(const struct aaa_string *string, const struc
     while (start < string->length) {
         char *next_sep = strstr(string->raw + start, sep->raw);
 
-        end = next_sep - string->raw;
+        if (next_sep) {
+            end = next_sep - string->raw;
+        } else {
+            end = string->length;
+        }
 
         bool dummy;
         struct aaa_string *split = aaa_string_substr(string, start, end, &dummy);
@@ -198,6 +204,7 @@ struct aaa_vector *aaa_string_split(const struct aaa_string *string, const struc
         start = end + sep->length;
 
         aaa_vector_push(vector, var);
+
         aaa_string_dec_ref(split);
     }
 
@@ -210,20 +217,16 @@ struct aaa_string *aaa_string_strip(const struct aaa_string *string) {
     size_t leading_ws = 0;
     size_t trailing_ws = 0;
 
-    while(*c) {
-        if (isspace(*c)) {
-            leading_ws++;
-        }
+    while(*c && isspace(*c)) {
+        leading_ws++;
         c++;
     }
 
     c = string->raw + string->length - 1;
 
-    while (c >= string->raw) {
-        if (isspace(*c)) {
-            trailing_ws++;
-        }
-        c++;
+    while (c >= string->raw && isspace(*c)) {
+        trailing_ws++;
+        c--;
     }
 
     if (leading_ws == string->length) {

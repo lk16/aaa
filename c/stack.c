@@ -715,7 +715,7 @@ void aaa_stack_str_lower(struct aaa_stack *stack) {
 void aaa_stack_str_upper(struct aaa_stack *stack) {
     struct aaa_string *string = aaa_stack_pop_str(stack);
 
-    struct aaa_string *upper = aaa_string_lower(string);
+    struct aaa_string *upper = aaa_string_upper(string);
     aaa_stack_push_str(stack, upper);
 
     aaa_string_dec_ref(string);
@@ -791,6 +791,7 @@ void aaa_stack_str_substr(struct aaa_stack *stack) {
     bool success;
     struct aaa_string *substr = aaa_string_substr(string, start, end, &success);
     aaa_stack_push_str(stack, substr);
+    aaa_stack_push_bool(stack, success);
 
     aaa_string_dec_ref(string);
 }

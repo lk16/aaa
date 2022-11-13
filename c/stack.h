@@ -74,6 +74,7 @@ void aaa_stack_map_empty(struct aaa_stack *stack);
 void aaa_stack_map_clear(struct aaa_stack *stack);
 void aaa_stack_map_pop(struct aaa_stack *stack);
 void aaa_stack_map_drop(struct aaa_stack *stack);
+void aaa_stack_str_append(struct aaa_stack *stack);
 void aaa_stack_str_contains(struct aaa_stack *stack);
 void aaa_stack_str_equals(struct aaa_stack *stack);
 void aaa_stack_str_join(struct aaa_stack *stack);

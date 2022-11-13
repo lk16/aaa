@@ -61,6 +61,7 @@ AAA_C_BUILTIN_FUNCS = {
     "repr": "aaa_stack_repr",
     "rot": "aaa_stack_rot",
     "socket": "aaa_stack_socket",
+    "str:append": "aaa_stack_str_append",
     "str:contains": "aaa_stack_str_contains",
     "str:equals": "aaa_stack_str_equals",
     "str:find_after": "aaa_stack_str_find_after",
