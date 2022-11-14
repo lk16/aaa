@@ -179,7 +179,9 @@ struct aaa_string *aaa_string_substr(const struct aaa_string *string, size_t sta
 
 struct aaa_string *aaa_string_replace(const struct aaa_string *string, const struct aaa_string *search, const struct aaa_string *replace) {
     struct aaa_vector *split = aaa_string_split(string, search);
-    return aaa_string_join(replace, split);
+    struct aaa_string *joined = aaa_string_join(replace, split);
+    aaa_vector_dec_ref(split);
+    return joined;
 }
 
 struct aaa_vector *aaa_string_split(const struct aaa_string *string, const struct aaa_string *sep) {
@@ -205,7 +207,7 @@ struct aaa_vector *aaa_string_split(const struct aaa_string *string, const struc
 
         aaa_vector_push(vector, var);
 
-        aaa_string_dec_ref(split);
+        aaa_variable_dec_ref(var);
     }
 
     return vector;
