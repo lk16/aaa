@@ -50,6 +50,8 @@ def runtests() -> None:
     commands = [
         "pre-commit run --all-files mypy",
         "pytest --cov=aaa --cov-report=term-missing --pdb -x --lf --nf",
+        "./manage.py transpile-tests stdlib/ generated.c --compile",
+        "valgrind --error-exitcode=1 --leak-check=full ./generated",
     ]
 
     for command in commands:
