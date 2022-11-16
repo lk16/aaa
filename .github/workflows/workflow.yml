@@ -49,5 +49,6 @@ jobs:
         poetry run pytest --cov=aaa --cov-report=term-missing -x -vv
     - name: Run C tests
       run : |
+        export AAA_STDLIB_PATH=$(pwd)/stdlib
         poetry run ./manage.py transpile-tests stdlib/ generated.c --compile
         valgrind --error-exitcode=1 --leak-check=full ./generated
