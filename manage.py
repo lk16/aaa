@@ -19,6 +19,7 @@ def cli() -> None:
 @cli.command()
 @click.argument("code", type=str)
 def cmd(code: str) -> None:
+    # TODO add verbose flag
     exit_code = Runner.without_file(code).run()
     exit(exit_code)
 
@@ -26,6 +27,7 @@ def cmd(code: str) -> None:
 @cli.command()
 @click.argument("path", type=click.Path(exists=True))
 def run(path: str) -> None:
+    # TODO add verbose flag
     exit_code = Runner(Path(path)).run()
     exit(exit_code)
 
@@ -36,6 +38,7 @@ def run(path: str) -> None:
 @click.option("-c", "--compile", is_flag=True, default=False)
 @click.option("-r", "--run", is_flag=True, default=False)
 def transpile(source_file: str, output_file: str, compile: bool, run: bool) -> None:
+    # TODO add verbose flag
     exit_code = Runner(Path(source_file)).transpile(
         Path(output_file), compile=compile, run=run
     )
@@ -58,6 +61,7 @@ def runtests() -> None:
 @cli.command()
 @click.argument("path", type=click.Path(exists=True))
 def test(path: str) -> None:
+    # TODO add verbose flag
     exit_code = TestRunner(Path(path)).run()
     exit(exit_code)
 
@@ -68,6 +72,8 @@ def test(path: str) -> None:
 @click.option("-c", "--compile", is_flag=True, default=False)
 @click.option("-r", "--run", is_flag=True, default=False)
 def transpile_tests(path: str, output_file: str, compile: bool, run: bool) -> None:
+    # TODO add verbose flag
+
     main_test_code = TestRunner(Path(path)).build_main_test_file()
 
     main_test_file = Path(gettempdir()) / NamedTemporaryFile(delete=False).name

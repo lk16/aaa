@@ -234,7 +234,7 @@ class Simulator:
         func_name = format_str(function.name, max_length=15)
 
         stack_str = " ".join(repr(item) for item in self.stack)
-        stack_str = format_str(stack_str, max_length=60)
+        stack_str = format_str(stack_str, max_length=120)
 
         print(
             f"DEBUG | {func_name:>15} | IP: {ip:>3} | {instruction:>30} | Stack: {stack_str}",
@@ -612,7 +612,7 @@ class Simulator:
         return self.get_instruction_pointer() + 1
 
     def instruction_map_copy(self) -> int:
-        map_var = self.top()
+        map_var = self.pop_var()
         copied = deepcopy(map_var)
         self.push_var(copied)
         return self.get_instruction_pointer() + 1
@@ -865,7 +865,7 @@ class Simulator:
 
     def instruction_str_split(self) -> int:
         separator = self.pop_str()
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         split = string.split(separator)
 
@@ -890,7 +890,7 @@ class Simulator:
     def instruction_str_substr(self) -> int:
         end = self.pop_int()
         start = self.pop_int()
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         if (
             start < 0
@@ -908,23 +908,23 @@ class Simulator:
         return self.get_instruction_pointer() + 1
 
     def instruction_str_len(self) -> int:
-        string: str = self.top().value
+        string: str = self.pop_str()
         self.push_int(len(string))
         return self.get_instruction_pointer() + 1
 
     def instruction_str_upper(self) -> int:
-        string: str = self.top().value
+        string: str = self.pop_str()
         self.push_str(string.upper())
         return self.get_instruction_pointer() + 1
 
     def instruction_str_lower(self) -> int:
-        string: str = self.top().value
+        string: str = self.pop_str()
         self.push_str(string.lower())
         return self.get_instruction_pointer() + 1
 
     def instruction_str_find(self) -> int:
         search = self.pop_str()
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         index = string.find(search)
 
@@ -940,7 +940,7 @@ class Simulator:
     def instruction_str_find_after(self) -> int:
         offset = self.pop_int()
         search = self.pop_str()
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         index = string.find(search, offset)
 
@@ -954,7 +954,7 @@ class Simulator:
         return self.get_instruction_pointer() + 1
 
     def instruction_str_to_int(self) -> int:
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         try:
             integer = int(string)
@@ -969,7 +969,7 @@ class Simulator:
 
     def instruction_str_join(self) -> int:
         parts: List[Variable] = self.pop_var().value
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         joined = string.join(part.value for part in parts)
 
@@ -979,7 +979,7 @@ class Simulator:
 
     def instruction_str_equals(self) -> int:
         other = self.pop_str()
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         self.push_bool(string == other)
 
@@ -987,14 +987,14 @@ class Simulator:
 
     def instruction_str_contains(self) -> int:
         other = self.pop_str()
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         self.push_bool(other in string)
 
         return self.get_instruction_pointer() + 1
 
     def instruction_str_to_bool(self) -> int:
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         if string in ["true", "false"]:
             self.push_bool(string == "true")
@@ -1008,7 +1008,7 @@ class Simulator:
     def instruction_str_replace(self) -> int:
         replacement = self.pop_str()
         search = self.pop_str()
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         replaced = string.replace(search, replacement)
         self.push_str(replaced)
@@ -1017,7 +1017,7 @@ class Simulator:
 
     def instruction_str_append(self) -> int:
         suffix = self.pop_str()
-        string: str = self.top().value
+        string: str = self.pop_str()
 
         appeneded = string + suffix
         self.push_str(appeneded)
