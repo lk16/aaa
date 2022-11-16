@@ -161,7 +161,12 @@ fn test_int_zero_value {
     0 = assert
 }
 
-fn test_int_repr {
+fn test_int_repr_positive {
+    123 repr
+    "123" str:equals assert
+}
+
+fn test_int_repr_negative {
     -123 repr
     "-123" str:equals assert
 }
@@ -367,6 +372,37 @@ fn test_map_print_one_item {
     dup "one" 1 map:set
     repr
     "{\"one\": 1}" str:equals assert
+}
+
+fn test_map_print_two_items {
+    map[str, int]
+    dup "one" 1 map:set
+    dup "two" 2 map:set
+    repr
+
+    dup "{\"one\": 1, \"two\": 2}" str:equals
+    swap "{\"two\": 2, \"one\": 1}" str:equals
+    or assert
+}
+
+fn test_map_twenty_items {
+    map[int, int]
+    0
+    while dup 20 < {
+        over over dup map:set
+        1 +
+    }
+    drop
+
+    0
+    while dup 20 < {
+        over over map:get
+        over = assert
+        1 +
+    }
+    drop
+
+    drop
 }
 
 fn test_map_get_set {
