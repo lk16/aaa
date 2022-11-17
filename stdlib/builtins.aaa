@@ -51,7 +51,7 @@ fn vec[T]:empty args v as vec[T]                           return bool
 fn vec[T]:get   args v as vec[T], offset as int            return T
 fn vec[T]:pop   args v as vec[T]                           return T
 fn vec[T]:push  args v as vec[T], item as T
-fn vec[T]:set   args v as vec[T], offset as int, item as T
+fn vec[T]:set   args v as vec[T], offset as int, item as T return bool
 fn vec[T]:size  args v as vec[T]                           return int
 
 // TODO remove all first map[K, V] return values

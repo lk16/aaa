@@ -517,7 +517,8 @@ void aaa_stack_vec_set(struct aaa_stack *stack) {
     int offset = aaa_stack_pop_int(stack);
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
 
-    aaa_vector_set(vec, offset, value);
+    bool success = aaa_vector_set(vec, offset, value);
+    aaa_stack_push_bool(stack, success);
 
     aaa_vector_dec_ref(vec);
 }

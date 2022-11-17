@@ -530,7 +530,13 @@ class Simulator:
         index = self.pop_int()
         vec: List[Variable] = self.pop_var().value
 
-        vec[index] = x
+        try:
+            vec[index] = x
+        except IndexError:
+            self.push_bool(False)
+        else:
+            self.push_bool(True)
+
         return self.get_instruction_pointer() + 1
 
     def instruction_vec_size(self) -> int:

@@ -143,14 +143,15 @@ void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed) {
     aaa_variable_inc_ref(pushed);
 }
 
-void aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *value) {
+bool aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *value) {
     if (offset >= vec->size) {
-        fprintf(stderr, "aaa_vector_set out of range\n");
-        abort();
+        aaa_variable_dec_ref(value);
+        return false;
     }
 
     aaa_variable_dec_ref(vec->data[offset]);
     vec->data[offset] = value;
+    return true;
 }
 
 size_t aaa_vector_size(const struct aaa_vector *vec) {
