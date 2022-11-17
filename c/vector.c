@@ -10,7 +10,7 @@
 struct aaa_vector {
     struct aaa_ref_count ref_count;
     size_t size;
-    size_t max_size;
+    size_t capacity;
     struct aaa_variable **data;
 };
 
@@ -18,8 +18,8 @@ struct aaa_vector *aaa_vector_new(void) {
     struct aaa_vector *vec = malloc(sizeof(*vec));
     aaa_ref_count_init(&vec->ref_count);
     vec->size = 0;
-    vec->max_size = 16;
-    vec->data = malloc(vec->max_size * sizeof(*vec->data));
+    vec->capacity = 16;
+    vec->data = malloc(vec->capacity * sizeof(*vec->data));
     for (size_t i=0; i<vec->size; i++) {
         vec->data[i] = NULL;
     }
@@ -117,25 +117,25 @@ struct aaa_variable *aaa_vector_pop(struct aaa_vector *vec) {
     return popped;
 }
 
-static void aaa_vector_resize(struct aaa_vector *vec, size_t new_size) {
-    struct aaa_variable **new_data = malloc(new_size * sizeof(*new_data));
+static void aaa_vector_resize(struct aaa_vector *vec, size_t new_capacity) {
+    struct aaa_variable **new_data = malloc(new_capacity * sizeof(*new_data));
 
     for (size_t i=0; i<vec->size; i++) {
         new_data[i] = vec->data[i];
     }
 
-    for (size_t i=vec->size; i<new_size; i++) {
+    for (size_t i=vec->size; i<new_capacity; i++) {
         new_data[i] = NULL;
     }
 
     free(vec->data);
     vec->data = new_data;
-    vec->size = new_size;
+    vec->capacity = new_capacity;
 }
 
 void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed) {
-    if(vec->size == vec->max_size) {
-        aaa_vector_resize(vec, 2 * vec->size);
+    if(vec->size == vec->capacity) {
+        aaa_vector_resize(vec, 2 * vec->capacity);
     }
 
     vec->data[vec->size] = pushed;

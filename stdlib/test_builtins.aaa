@@ -289,13 +289,33 @@ fn test_vec_get_fail {
     todo
 }
 
-fn test_vec_set_ok {
+fn test_vec_set_ok_one {
     vec[int]
     dup 5 vec:push
     dup 0 7 vec:set
     dup vec:pop
     7 = assert
     repr "[]" str:equals assert
+}
+
+fn test_vec_set_ok_twenty {
+    vec[int]
+    0
+    while dup 20 < {
+        over over vec:push
+        1 +
+    }
+    drop
+
+    0
+    while dup 20 < {
+        over over vec:get
+        over = assert
+        1 +
+    }
+    drop
+
+    drop
 }
 
 fn test_vec_set_fail {
