@@ -46,6 +46,7 @@ AAA_C_BUILTIN_FUNCS = {
     "exit": "aaa_stack_exit",
     "listen": "aaa_stack_listen",
     "map:clear": "aaa_stack_map_clear",
+    "map:copy": "aaa_stack_map_copy",
     "map:drop": "aaa_stack_map_drop",
     "map:empty": "aaa_stack_map_empty",
     "map:get": "aaa_stack_map_get",
@@ -124,6 +125,7 @@ class Transpiler:
                     "generated",
                     "-std=gnu99",
                     "-g",
+                    "-Werror",
                 ]
                 + c_files
             ).returncode
@@ -303,7 +305,7 @@ class Transpiler:
                 elif var_type.name == "vec":
                     return f"{indentation}aaa_stack_push_vec_empty(stack);\n"
                 elif var_type.name == "map":
-                    return f"{indentation}aaa_stack_push_map(stack);\n"
+                    return f"{indentation}aaa_stack_push_map_empty(stack);\n"
                 else:  # pragma: nocover
                     assert False
 

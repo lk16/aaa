@@ -500,7 +500,11 @@ fn test_map_clear {
 }
 
 fn test_map_copy {
-    todo
+    map[str, int]
+    dup map:copy
+    dup "one" 1 map:set
+    map:size 1 = assert
+    map:size 0 = assert
 }
 
 fn test_map_dup {

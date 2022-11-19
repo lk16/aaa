@@ -65,14 +65,6 @@ void aaa_map_clear(struct aaa_map *map) {
     map->size = 0;
 }
 
-void aaa_map_copy(struct aaa_map *map, struct aaa_map *copy) {
-    (void)map;
-    (void)copy;
-
-    fprintf(stderr, "aaa_map_copy is not implemented yet!\n");
-    abort();
-}
-
 void aaa_map_drop(struct aaa_map *map, const struct aaa_variable *key) {
     struct aaa_variable *popped = aaa_map_pop(map, key);
     aaa_variable_dec_ref(popped);
@@ -246,4 +238,18 @@ struct aaa_string *aaa_map_repr(const struct aaa_map *map) {
     struct aaa_string *string = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);
     return string;
+}
+
+struct aaa_map *aaa_map_copy(struct aaa_map *map) {
+    struct aaa_map *copy = aaa_map_new();
+    for (size_t b=0; b<map->bucket_count; b++) {
+        struct aaa_map_item *item = map->buckets[b];
+
+        while (item) {
+            aaa_map_set(copy, item->key, item->value);
+            item = item->next;
+        }
+    }
+
+    return copy;
 }

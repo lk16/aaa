@@ -549,12 +549,16 @@ void aaa_stack_vec_clear(struct aaa_stack *stack) {
     aaa_vector_dec_ref(vec);
 }
 
-void aaa_stack_push_map(struct aaa_stack *stack) {
+void aaa_stack_push_map_empty(struct aaa_stack *stack) {
     struct aaa_map *map = aaa_map_new();
-    struct aaa_variable *var = aaa_variable_new_map(map);
+    aaa_stack_push_map(stack, map);
+}
 
+void aaa_stack_push_map(struct aaa_stack *stack, struct aaa_map *map) {
+    struct aaa_variable *var = aaa_variable_new_map(map);
     aaa_stack_push(stack, var);
 }
+
 
 void aaa_stack_map_set(struct aaa_stack *stack) {
     struct aaa_variable *value = aaa_stack_pop(stack);
@@ -827,4 +831,13 @@ void aaa_stack_vec_copy(struct aaa_stack *stack) {
     aaa_stack_push_vec(stack, copy);
 
     aaa_vector_dec_ref(vec);
+}
+
+void aaa_stack_map_copy(struct aaa_stack *stack) {
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    struct aaa_map *copy = aaa_map_copy(map);
+    aaa_stack_push_map(stack, copy);
+
+    aaa_map_dec_ref(map);
 }
