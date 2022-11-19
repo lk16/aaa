@@ -59,6 +59,7 @@ void aaa_stack_str_equals(struct aaa_stack *stack);
 void aaa_stack_push_vec_empty(struct aaa_stack *stack);
 void aaa_stack_push_vec(struct aaa_stack *stack, struct aaa_vector *vector);
 void aaa_stack_vec_push(struct aaa_stack *stack);
+void aaa_stack_vec_copy(struct aaa_stack *stack);
 void aaa_stack_vec_pop(struct aaa_stack *stack);
 void aaa_stack_vec_get(struct aaa_stack *stack);
 void aaa_stack_vec_set(struct aaa_stack *stack);

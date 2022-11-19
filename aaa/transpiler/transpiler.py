@@ -78,6 +78,7 @@ AAA_C_BUILTIN_FUNCS = {
     "str:upper": "aaa_stack_str_upper",
     "swap": "aaa_stack_swap",
     "vec:clear": "aaa_stack_vec_clear",
+    "vec:copy": "aaa_stack_vec_copy",
     "vec:empty": "aaa_stack_vec_empty",
     "vec:get": "aaa_stack_vec_get",
     "vec:pop": "aaa_stack_vec_pop",

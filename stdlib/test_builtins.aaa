@@ -357,7 +357,11 @@ fn test_vec_clear {
 }
 
 fn test_vec_copy {
-    todo
+    vec[int]
+    dup vec:copy
+    dup 5 vec:push
+    vec:size 1 = assert
+    vec:size 0 = assert
 }
 
 fn test_vec_dup {

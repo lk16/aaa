@@ -85,12 +85,13 @@ void aaa_vector_clear(struct aaa_vector *vec) {
     vec->size = 0;
 }
 
-void aaa_vector_copy(struct aaa_vector *vec, struct aaa_vector *copy) {
-    (void)vec;
-    (void)copy;
-
-    fprintf(stderr, "aaa_vector_copy is not implemented yet!\n");
-    abort();
+struct aaa_vector *aaa_vector_copy(struct aaa_vector *vec) {
+    struct aaa_vector *copy = aaa_vector_new();
+    for(size_t i=0; i<vec->size; i++) {
+        struct aaa_variable *item = aaa_vector_get(vec, i);
+        aaa_vector_push(copy, item);
+    }
+    return copy;
 }
 
 bool aaa_vector_empty(const struct aaa_vector *vec) {

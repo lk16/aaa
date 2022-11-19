@@ -819,3 +819,12 @@ void aaa_stack_str_to_int(struct aaa_stack *stack) {
 
     aaa_string_dec_ref(string);
 }
+
+void aaa_stack_vec_copy(struct aaa_stack *stack) {
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+
+    struct aaa_vector *copy = aaa_vector_copy(vec);
+    aaa_stack_push_vec(stack, copy);
+
+    aaa_vector_dec_ref(vec);
+}
