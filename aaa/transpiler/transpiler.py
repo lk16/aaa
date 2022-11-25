@@ -166,10 +166,18 @@ class Transpiler:
         if function.arguments:
             content += f"{indentation}// load arguments\n"
             for arg in reversed(function.arguments):
-                content += f"{indentation}struct aaa_variable {arg.name} = *aaa_stack_pop(stack);\n"
+                content += f"{indentation}struct aaa_variable *aaa_arg_{arg.name} = aaa_stack_pop(stack);\n"
             content += "\n"
 
         content += self._generate_c_function_body(function.body, 1)
+
+        if function.arguments:
+            content += "\n"
+            content += f"{indentation}// decrease arguments' ref_count\n"
+            for arg in reversed(function.arguments):
+                content += f"{indentation}aaa_variable_dec_ref(aaa_arg_{arg.name});\n"
+            content += "\n"
+
         content += "}\n\n"
 
         return content
@@ -246,7 +254,10 @@ class Transpiler:
             return f"{indentation}{c_func_name}(stack);\n"
 
         if isinstance(identifier.kind, IdentifierUsingArgument):
-            return f"{indentation}aaa_stack_push_variable(stack, &{identifier.name});\n"
+            return (
+                f"{indentation}aaa_variable_inc_ref(aaa_arg_{identifier.name});\n"
+                + f"{indentation}aaa_stack_push(stack, aaa_arg_{identifier.name});\n"
+            )
 
         if isinstance(identifier.kind, IdentifierCallingType):
             var_type = identifier.kind.var_type

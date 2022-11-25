@@ -867,6 +867,7 @@ void aaa_stack_field_query(struct aaa_stack *stack) {
 
     aaa_stack_push(stack, field);
 
+    aaa_variable_inc_ref(field);
     aaa_string_dec_ref(field_name);
     aaa_struct_dec_ref(s);
 }

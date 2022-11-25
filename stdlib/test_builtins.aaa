@@ -857,3 +857,15 @@ fn test_struct_set_get_struct {
 
     3 = assert
 }
+
+fn int_holder:increment args i as int_holder {
+    i "value" { i "value" ? 1 + } !
+}
+
+fn test_struct_member_function {
+    int_holder
+    dup int_holder:increment
+    "value" ?
+
+    1 = assert
+}

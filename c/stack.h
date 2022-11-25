@@ -35,7 +35,7 @@ void aaa_stack_greater(struct aaa_stack *stack);
 void aaa_stack_drop(struct aaa_stack *stack);
 void aaa_stack_modulo(struct aaa_stack *stack);
 struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack);
-void aaa_stack_push_variable(struct aaa_stack *stack, struct aaa_variable *variable);
+void aaa_stack_push(struct aaa_stack *stack, struct aaa_variable *variable);
 void aaa_stack_equals(struct aaa_stack *stack);
 void aaa_stack_or(struct aaa_stack *stack);
 void aaa_stack_socket(struct aaa_stack *stack);
