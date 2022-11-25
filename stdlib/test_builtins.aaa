@@ -695,3 +695,43 @@ fn test_str_append {
     "abcd" "ef" str:append
     "abcdef" str:equals assert
 }
+
+fn test_if_true {
+    0
+    if true {
+        drop 1
+    }
+
+    1 = assert
+}
+
+fn test_if_false {
+    0
+    if false {
+        drop 1
+    }
+
+    0 = assert
+}
+
+fn test_else_true {
+    0
+    if true {
+        drop 1
+    } else {
+        drop 2
+    }
+
+    1 = assert
+}
+
+fn test_else_false {
+    0
+    if false {
+        drop 1
+    } else {
+        drop 2
+    }
+
+    2 = assert
+}
