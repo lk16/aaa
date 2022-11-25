@@ -753,3 +753,12 @@ fn test_loop_true_false {
 
     4 = assert
 }
+
+struct int_holder {
+    value as int
+}
+
+fn test_struct_zero_value_int {
+    int_holder "value" ?
+    0 = assert
+}

@@ -20,6 +20,7 @@ from aaa.cross_referencer.models import (
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
+    Type,
     Unresolved,
 )
 
@@ -93,9 +94,11 @@ class Transpiler:
     def _generate_c_file(self) -> str:
         includes = '#include "aaa.h"\n'
 
-        # TODO generate forward declaration of types
+        for type in self.types.values():
+            self._generate_struct_declaration(type)
 
-        # TODO generate type definitions
+        for type in self.types.values():
+            self._generate_struct_definition(type)
 
         forward_func_declarations = ""
 
@@ -141,7 +144,7 @@ class Transpiler:
         # hash file and name to prevent naming collisions
         hash_input = f"{function.file} {function.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
-        return f"aaa_user_{hash}"
+        return f"aaa_user_func_{hash}"
 
     def _generate_c_function(self, function: Function) -> str:
         assert not isinstance(function.body, Unresolved)
@@ -284,3 +287,27 @@ class Transpiler:
         indentation = self._indent(indent)
 
         return f'{indentation}aaa_stack_not_implemented(stack, "{unimplemented}");\n'
+
+    def _generate_c_struct_name(self, type: Type) -> str:
+        # hash file and name to prevent naming collisions
+        hash_input = f"{type.file} {type.name}"
+        hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
+        return f"aaa_user_type_{hash}"
+
+    def _generate_struct_declaration(self, type: Type) -> str:
+        c_struct_name = self._generate_c_struct_name(type)
+        return f"struct {c_struct_name};\n"
+
+    def _generate_struct_definition(self, type: Type) -> str:
+        c_struct_name = self._generate_c_struct_name(type)
+
+        defintion = f"struct {c_struct_name} {{\n"
+
+        assert not isinstance(type.fields, Unresolved)
+
+        for field_name in type.fields.keys():
+            defintion += f"{C_IDENTATION}struct aaa_variable *{field_name};\n"
+
+        defintion += "};\n"
+
+        return defintion
