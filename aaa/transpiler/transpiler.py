@@ -20,7 +20,6 @@ from aaa.cross_referencer.models import (
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
-    Type,
     Unresolved,
 )
 
@@ -92,44 +91,41 @@ class Transpiler:
         return C_IDENTATION * indent
 
     def _generate_c_file(self) -> str:
-        includes = '#include "aaa.h"\n'
-
-        for type in self.types.values():
-            self._generate_struct_declaration(type)
-
-        for type in self.types.values():
-            self._generate_struct_definition(type)
-
-        forward_func_declarations = ""
+        content = '#include "aaa.h"\n'
+        content += "\n"
 
         for function in self.functions.values():
             if function.file == self.builtins_path:
                 continue
             func_name = self._generate_c_function_name(function)
-            forward_func_declarations += f"void {func_name}(struct aaa_stack *stack);\n"
+            content += f"void {func_name}(struct aaa_stack *stack);\n"
 
-        content = ""
+        content += "\n"
 
         for function in self.functions.values():
             if function.file == self.builtins_path:
                 continue
             content += self._generate_c_function(function)
-            content += "\n"
 
+        content += self._generate_c_main_function()
+
+        return content
+
+    def _generate_c_main_function(self) -> str:
         aaa_user_main_func = self.functions[(self.entrypoint, "main")]
         aaa_user_main_name = self._generate_c_function_name(aaa_user_main_func)
 
-        content += "int main(int argc, char **argv) {\n"
-        content += "    (void)argc;\n"
-        content += "    (void)argv;\n"
-        content += "    struct aaa_stack stack;\n"
-        content += "    aaa_stack_init(&stack);\n"
-        content += f"    {aaa_user_main_name}(&stack);\n"
-        content += "    aaa_stack_free(&stack);\n"
-        content += "    return 0;\n"
-        content += "}\n"
-
-        return includes + "\n" + forward_func_declarations + "\n" + content
+        return (
+            "int main(int argc, char **argv) {\n"
+            + "    (void)argc;\n"
+            + "    (void)argv;\n"
+            + "    struct aaa_stack stack;\n"
+            + "    aaa_stack_init(&stack);\n"
+            + f"    {aaa_user_main_name}(&stack);\n"
+            + "    aaa_stack_free(&stack);\n"
+            + "    return 0;\n"
+            + "}\n"
+        )
 
     def _generate_c_builtin_function_name(self, function: Function) -> str:
         if function.name in AAA_C_BUILTIN_FUNCS:
@@ -168,7 +164,7 @@ class Transpiler:
             content += "\n"
 
         content += self._generate_c_function_body(function.body, 1)
-        content += "}\n"
+        content += "}\n\n"
 
         return content
 
@@ -287,27 +283,3 @@ class Transpiler:
         indentation = self._indent(indent)
 
         return f'{indentation}aaa_stack_not_implemented(stack, "{unimplemented}");\n'
-
-    def _generate_c_struct_name(self, type: Type) -> str:
-        # hash file and name to prevent naming collisions
-        hash_input = f"{type.file} {type.name}"
-        hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
-        return f"aaa_user_type_{hash}"
-
-    def _generate_struct_declaration(self, type: Type) -> str:
-        c_struct_name = self._generate_c_struct_name(type)
-        return f"struct {c_struct_name};\n"
-
-    def _generate_struct_definition(self, type: Type) -> str:
-        c_struct_name = self._generate_c_struct_name(type)
-
-        defintion = f"struct {c_struct_name} {{\n"
-
-        assert not isinstance(type.fields, Unresolved)
-
-        for field_name in type.fields.keys():
-            defintion += f"{C_IDENTATION}struct aaa_variable *{field_name};\n"
-
-        defintion += "};\n"
-
-        return defintion
