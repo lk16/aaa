@@ -260,9 +260,33 @@ void aaa_variable_inc_ref(struct aaa_variable *var) {
         case AAA_STRING: aaa_string_inc_ref(var->string); break;
         case AAA_VECTOR: aaa_vector_inc_ref(var->vector); break;
         case AAA_MAP:    aaa_map_inc_ref(var->map); break;
+        case AAA_STRUCT: aaa_struct_inc_ref(var->struct_); break;
         default:
             fprintf(stderr, "aaa_variable_inc_ref unhandled variable kind\n");
             abort();
     }
     aaa_ref_count_inc(&var->ref_count);
+}
+
+struct aaa_variable *aaa_variable_new_int_zero_value(void) {
+    return aaa_variable_new_int(0);
+}
+
+struct aaa_variable *aaa_variable_new_bool_zero_value(void) {
+    return aaa_variable_new_bool(false);
+}
+
+struct aaa_variable *aaa_variable_new_str_zero_value(void) {
+    struct aaa_string *string = aaa_string_new("", false);
+    return aaa_variable_new_str(string);
+}
+
+struct aaa_variable *aaa_variable_new_vector_zero_value(void) {
+    struct aaa_vector *vector = aaa_vector_new();
+    return aaa_variable_new_vector(vector);
+}
+
+struct aaa_variable *aaa_variable_new_map_zero_value(void) {
+    struct aaa_map *map = aaa_map_new();
+    return aaa_variable_new_map(map);
 }

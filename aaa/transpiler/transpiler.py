@@ -218,6 +218,7 @@ class Transpiler:
         elif isinstance(item, StructFieldUpdate):
             return (
                 f'{indentation}aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
+                + self._generate_c_function_body(item.new_value_expr, indent)
                 + f"{indentation}aaa_stack_field_update(stack);\n"
             )
         else:  # pragma: nocover
@@ -314,12 +315,22 @@ class Transpiler:
         code += f'{C_IDENTATION}struct aaa_struct *s = aaa_struct_new("{type.name}");\n'
 
         for field_name, field_type in type.fields.items():
+            code += f"{C_IDENTATION}struct aaa_variable *{field_name} = "
             if field_type.name == "int":
-                code += f"{C_IDENTATION}struct aaa_variable *{field_name} = aaa_variable_new_int(0);\n"
-                code += f'{C_IDENTATION}aaa_struct_create_field(s, "{field_name}", {field_name});\n'
-                code += f"{C_IDENTATION}aaa_variable_dec_ref({field_name});\n"
+                code += "aaa_variable_new_int_zero_value();\n"
+            elif field_type.name == "bool":
+                code += "aaa_variable_new_bool_zero_value();\n"
+            elif field_type.name == "str":
+                code += "aaa_variable_new_str_zero_value();\n"
+            elif field_type.name == "vec":
+                code += "aaa_variable_new_vector_zero_value();\n"
+            elif field_type.name == "map":
+                code += "aaa_variable_new_map_zero_value();\n"
             else:
                 raise NotImplementedError
+
+            code += f'{C_IDENTATION}aaa_struct_create_field(s, "{field_name}", {field_name});\n'
+            code += f"{C_IDENTATION}aaa_variable_dec_ref({field_name});\n"
 
         code += f"{C_IDENTATION}return s;\n"
         code += "}\n\n"

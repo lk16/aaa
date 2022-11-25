@@ -15,6 +15,12 @@ struct aaa_variable *aaa_variable_new_vector(struct aaa_vector *vector);
 struct aaa_variable *aaa_variable_new_map(struct aaa_map *map);
 struct aaa_variable *aaa_variable_new_struct(struct aaa_struct *struct_);
 
+struct aaa_variable *aaa_variable_new_int_zero_value(void);
+struct aaa_variable *aaa_variable_new_bool_zero_value(void);
+struct aaa_variable *aaa_variable_new_str_zero_value(void);
+struct aaa_variable *aaa_variable_new_vector_zero_value(void);
+struct aaa_variable *aaa_variable_new_map_zero_value(void);
+
 int aaa_variable_get_int(struct aaa_variable *var);
 bool aaa_variable_get_bool(struct aaa_variable *var);
 struct aaa_string *aaa_variable_get_str(struct aaa_variable *var);

@@ -763,4 +763,91 @@ fn test_struct_zero_value_int {
     0 = assert
 }
 
-// TODO move other struct tests
+struct bool_holder {
+    value as bool
+}
+
+fn test_struct_zero_value_bool {
+    bool_holder "value" ?
+    not assert
+}
+
+struct string_holder {
+    value as str
+}
+
+fn test_struct_zero_value_str {
+    string_holder "value" ?
+    "" str:equals assert
+}
+
+struct vector_holder {
+    value as vec[int]
+}
+
+fn test_struct_zero_value_vec {
+    vector_holder "value" ?
+    repr "[]" str:equals assert
+}
+
+struct map_holder {
+    value as map[int, str]
+}
+
+fn test_struct_zero_value_map {
+    map_holder "value" ?
+    repr "{}" str:equals assert
+}
+
+// TODO
+// struct indirect_int_holder {
+//     value as int_holder
+// }
+
+fn test_struct_zero_value_struct {
+    todo
+}
+
+fn test_struct_set_get_int {
+    int_holder
+    dup "value" { 3 } !
+    "value" ?
+
+    3 = assert
+}
+
+fn test_struct_set_get_bool {
+    bool_holder
+    dup "value" { true } !
+    "value" ?
+
+    assert
+}
+
+fn test_struct_set_get_str {
+    string_holder
+    dup "value" { "foo" } !
+    "value" ?
+
+    "foo" str:equals assert
+}
+
+fn test_struct_set_get_vec {
+    vector_holder
+    dup "value" ?
+    5 vec:push
+    "value" ?
+
+    repr "[5]" str:equals assert
+}
+
+fn test_struct_set_get_map {
+    map_holder
+    dup "value" ?
+    5 "five" map:set
+    "value" ?
+
+    repr "{5: \"five\"}" str:equals assert
+}
+
+// TODO add test for struct containing other struct
