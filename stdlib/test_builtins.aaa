@@ -735,3 +735,21 @@ fn test_else_false {
 
     2 = assert
 }
+
+fn test_loop_false {
+    0
+    while false {
+        drop 1
+    }
+
+    0 = assert
+}
+
+fn test_loop_true_false {
+    0
+    while dup 4 < {
+        1 +
+    }
+
+    4 = assert
+}
