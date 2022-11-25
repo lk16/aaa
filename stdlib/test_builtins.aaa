@@ -799,13 +799,13 @@ fn test_struct_zero_value_map {
     repr "{}" str:equals assert
 }
 
-// TODO
-// struct indirect_int_holder {
-//     value as int_holder
-// }
+struct indirect_int_holder {
+    value as int_holder
+}
 
 fn test_struct_zero_value_struct {
-    todo
+    indirect_int_holder "value" ? "value" ?
+    0 = assert
 }
 
 fn test_struct_set_get_int {
@@ -850,4 +850,10 @@ fn test_struct_set_get_map {
     repr "{5: \"five\"}" str:equals assert
 }
 
-// TODO add test for struct containing other struct
+fn test_struct_set_get_struct {
+    indirect_int_holder
+    dup "value" ? "value" { 3 } !
+    "value" ? "value" ?
+
+    3 = assert
+}

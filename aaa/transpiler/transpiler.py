@@ -327,7 +327,8 @@ class Transpiler:
             elif field_type.name == "map":
                 code += "aaa_variable_new_map_zero_value();\n"
             else:
-                raise NotImplementedError
+                c_field_struct_name = self._generate_c_struct_name(field_type.type)
+                code += f"aaa_variable_new_struct({c_field_struct_name}_new());\n"
 
             code += f'{C_IDENTATION}aaa_struct_create_field(s, "{field_name}", {field_name});\n'
             code += f"{C_IDENTATION}aaa_variable_dec_ref({field_name});\n"
