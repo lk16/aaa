@@ -36,57 +36,6 @@ AAA_C_BUILTIN_FUNCS = {
     "=": "aaa_stack_equals",
     ">": "aaa_stack_greater",
     ">=": "aaa_stack_greater_equal",
-    "accept": "aaa_stack_accept",
-    "and": "aaa_stack_and",
-    "assert": "aaa_stack_assert",
-    "bind": "aaa_stack_bind",
-    "connect": "aaa_stack_connect",
-    "drop": "aaa_stack_drop",
-    "dup": "aaa_stack_dup",
-    "exit": "aaa_stack_exit",
-    "listen": "aaa_stack_listen",
-    "map:clear": "aaa_stack_map_clear",
-    "map:copy": "aaa_stack_map_copy",
-    "map:drop": "aaa_stack_map_drop",
-    "map:empty": "aaa_stack_map_empty",
-    "map:get": "aaa_stack_map_get",
-    "map:has_key": "aaa_stack_map_has_key",
-    "map:pop": "aaa_stack_map_pop",
-    "map:set": "aaa_stack_map_set",
-    "map:size": "aaa_stack_map_size",
-    "nop": "aaa_stack_nop",
-    "not": "aaa_stack_not",
-    "or": "aaa_stack_or",
-    "over": "aaa_stack_over",
-    "read": "aaa_stack_read",
-    "repr": "aaa_stack_repr",
-    "rot": "aaa_stack_rot",
-    "socket": "aaa_stack_socket",
-    "str:append": "aaa_stack_str_append",
-    "str:contains": "aaa_stack_str_contains",
-    "str:equals": "aaa_stack_str_equals",
-    "str:find_after": "aaa_stack_str_find_after",
-    "str:find": "aaa_stack_str_find",
-    "str:join": "aaa_stack_str_join",
-    "str:len": "aaa_stack_str_len",
-    "str:lower": "aaa_stack_str_lower",
-    "str:replace": "aaa_stack_str_replace",
-    "str:split": "aaa_stack_str_split",
-    "str:strip": "aaa_stack_str_strip",
-    "str:substr": "aaa_stack_str_substr",
-    "str:to_bool": "aaa_stack_str_to_bool",
-    "str:to_int": "aaa_stack_str_to_int",
-    "str:upper": "aaa_stack_str_upper",
-    "swap": "aaa_stack_swap",
-    "vec:clear": "aaa_stack_vec_clear",
-    "vec:copy": "aaa_stack_vec_copy",
-    "vec:empty": "aaa_stack_vec_empty",
-    "vec:get": "aaa_stack_vec_get",
-    "vec:pop": "aaa_stack_vec_pop",
-    "vec:push": "aaa_stack_vec_push",
-    "vec:set": "aaa_stack_vec_set",
-    "vec:size": "aaa_stack_vec_size",
-    "write": "aaa_stack_write",
 }
 
 C_IDENTATION = " " * 4
@@ -179,7 +128,16 @@ class Transpiler:
 
         return includes + "\n" + forward_func_declarations + "\n" + content
 
+    def _generate_c_builtin_function_name(self, function: Function) -> str:
+        if function.name in AAA_C_BUILTIN_FUNCS:
+            return AAA_C_BUILTIN_FUNCS[function.name]
+
+        return "aaa_stack_" + function.name.replace(":", "_")
+
     def _generate_c_function_name(self, function: Function) -> str:
+        if function.file == self.builtins_path:
+            return self._generate_c_builtin_function_name(function)
+
         # hash file and name to prevent naming collisions
         hash_input = f"{function.file} {function.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
@@ -274,19 +232,7 @@ class Transpiler:
         indentation = self._indent(indent)
 
         if isinstance(identifier.kind, IdentifierCallingFunction):
-            called = identifier.kind.function
-            c_func_name = ""
-
-            if called.file == self.builtins_path:
-                try:
-                    c_func_name = AAA_C_BUILTIN_FUNCS[called.name]
-                except KeyError:
-                    # TODO
-                    return self._generate_c_not_implemented(identifier.name, indent)
-
-            else:
-                c_func_name = self._generate_c_function_name(called)
-
+            c_func_name = self._generate_c_function_name(identifier.kind.function)
             return f"{indentation}{c_func_name}(stack);\n"
 
         if isinstance(identifier.kind, IdentifierUsingArgument):
