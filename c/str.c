@@ -26,7 +26,7 @@ struct aaa_string *aaa_string_new(char *raw, bool freeable) {
     return string;
 }
 
-const char *aaa_string_raw(const struct aaa_string *string) {
+char *aaa_string_raw(const struct aaa_string *string) {
     return string->raw;
 }
 

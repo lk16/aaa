@@ -9,6 +9,7 @@
 #include "map.h"
 #include "var.h"
 #include "ref_count.h"
+#include "struct.h"
 
 enum aaa_kind {
     AAA_INTEGER,
@@ -16,6 +17,7 @@ enum aaa_kind {
     AAA_STRING,
     AAA_VECTOR,
     AAA_MAP,
+    AAA_STRUCT,
 };
 
 struct aaa_variable {
@@ -27,6 +29,7 @@ struct aaa_variable {
         struct aaa_string *string;
         struct aaa_vector *vector;
         struct aaa_map *map;
+        struct aaa_struct *struct_;
     };
 };
 
@@ -72,6 +75,13 @@ struct aaa_variable *aaa_variable_new_map(struct aaa_map *map) {
     return var;
 }
 
+struct aaa_variable *aaa_variable_new_struct(struct aaa_struct *struct_) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->kind = AAA_STRUCT;
+    var->struct_ = struct_;
+    return var;
+}
+
 struct aaa_string *aaa_variable_repr_bool(bool boolean) {
     char *raw = NULL;
     if (boolean) {
@@ -112,6 +122,11 @@ struct aaa_vector *aaa_variable_get_vector(struct aaa_variable *var) {
 struct aaa_map *aaa_variable_get_map(struct aaa_variable *var) {
     aaa_variable_check_kind(var, AAA_MAP);
     return var->map;
+}
+
+struct aaa_struct *aaa_variable_get_struct(struct aaa_variable *var) {
+    aaa_variable_check_kind(var, AAA_STRUCT);
+    return var->struct_;
 }
 
 struct aaa_string *aaa_variable_repr_int(int integer) {
@@ -228,6 +243,7 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
         case AAA_STRING: aaa_string_dec_ref(var->string); break;
         case AAA_VECTOR: aaa_vector_dec_ref(var->vector); break;
         case AAA_MAP:    aaa_map_dec_ref(var->map); break;
+        case AAA_STRUCT: aaa_struct_dec_ref(var->struct_); break;
         default:
             fprintf(stderr, "aaa_variable_dec_ref unhandled variable kind\n");
             abort();

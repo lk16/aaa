@@ -20,6 +20,7 @@ from aaa.cross_referencer.models import (
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
+    Type,
     Unresolved,
 )
 
@@ -93,6 +94,11 @@ class Transpiler:
     def _generate_c_file(self) -> str:
         content = '#include "aaa.h"\n'
         content += "\n"
+
+        for type in self.types.values():
+            content += self._generate_c_struct_new_func(type)
+
+        # TODO struct member functions
 
         for function in self.functions.values():
             if function.file == self.builtins_path:
@@ -205,11 +211,15 @@ class Transpiler:
         elif isinstance(item, Branch):
             return self._generate_c_branch(item, indent)
         elif isinstance(item, StructFieldQuery):
-            # TODO
-            return self._generate_c_not_implemented("StructFieldQuery", indent)
+            return (
+                f'{indentation}aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
+                + f"{indentation}aaa_stack_field_query(stack);\n"
+            )
         elif isinstance(item, StructFieldUpdate):
-            # TODO
-            return self._generate_c_not_implemented("StructFieldUpdate", indent)
+            return (
+                f'{indentation}aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
+                + f"{indentation}aaa_stack_field_update(stack);\n"
+            )
         else:  # pragma: nocover
             assert False
 
@@ -254,8 +264,10 @@ class Transpiler:
                 else:  # pragma: nocover
                     assert False
 
-            # TODO
-            return self._generate_c_not_implemented("IdentifierCallingType", indent)
+            c_struct_name = self._generate_c_struct_name(var_type.type)
+            return (
+                f"{indentation}aaa_stack_push_struct(stack, {c_struct_name}_new());\n"
+            )
 
         assert False
 
@@ -283,3 +295,33 @@ class Transpiler:
         indentation = self._indent(indent)
 
         return f'{indentation}aaa_stack_not_implemented(stack, "{unimplemented}");\n'
+
+    def _generate_c_struct_name(self, type: Type) -> str:
+        hash_input = f"{type.file} {type.name}"
+        hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
+        return f"aaa_user_struct_{hash}"
+
+    def _generate_c_struct_new_func(self, type: Type) -> str:
+        assert not isinstance(type.fields, Unresolved)
+
+        if type.file == self.builtins_path and not type.fields:
+            return ""
+
+        c_struct_name = self._generate_c_struct_name(type)
+
+        code = f"// Generated for: {type.file} {type.name}\n"
+        code += f"struct aaa_struct *{c_struct_name}_new(void) {{\n"
+        code += f'{C_IDENTATION}struct aaa_struct *s = aaa_struct_new("{type.name}");\n'
+
+        for field_name, field_type in type.fields.items():
+            if field_type.name == "int":
+                code += f"{C_IDENTATION}struct aaa_variable *{field_name} = aaa_variable_new_int(0);\n"
+                code += f'{C_IDENTATION}aaa_struct_create_field(s, "{field_name}", {field_name});\n'
+                code += f"{C_IDENTATION}aaa_variable_dec_ref({field_name});\n"
+            else:
+                raise NotImplementedError
+
+        code += f"{C_IDENTATION}return s;\n"
+        code += "}\n\n"
+
+        return code

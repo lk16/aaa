@@ -83,6 +83,22 @@ bool aaa_stack_pop_bool(struct aaa_stack *stack) {
     return value;
 }
 
+struct aaa_struct *aaa_stack_pop_struct(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    struct aaa_struct *s = aaa_variable_get_struct(top);
+
+    aaa_struct_inc_ref(s);
+    aaa_variable_dec_ref(top);
+
+    return s;
+}
+
+void aaa_stack_push_struct(struct aaa_stack *stack, struct aaa_struct *s) {
+    struct aaa_variable *var = aaa_variable_new_struct(s);
+    aaa_stack_push(stack, var);
+}
+
+
 static int aaa_stack_pop_int(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
     int value = aaa_variable_get_int(top);
@@ -840,4 +856,30 @@ void aaa_stack_map_copy(struct aaa_stack *stack) {
     aaa_stack_push_map(stack, copy);
 
     aaa_map_dec_ref(map);
+}
+
+void aaa_stack_field_query(struct aaa_stack *stack) {
+    struct aaa_string *field_name = aaa_stack_pop_str(stack);
+    struct aaa_struct *s = aaa_stack_pop_struct(stack);
+
+    char *field_name_raw = aaa_string_raw(field_name);
+    struct aaa_variable *field = aaa_struct_get_field(s, field_name_raw);
+
+    aaa_stack_push(stack, field);
+
+    aaa_string_dec_ref(field_name);
+    aaa_struct_dec_ref(s);
+}
+
+void aaa_stack_field_update(struct aaa_stack *stack) {
+    struct aaa_variable *new_value = aaa_stack_pop(stack);
+    struct aaa_string *field_name = aaa_stack_pop_str(stack);
+    struct aaa_struct *s = aaa_stack_pop_struct(stack);
+
+    char *field_name_raw = aaa_string_raw(field_name);
+    aaa_struct_set_field(s, field_name_raw, new_value);
+
+    aaa_variable_dec_ref(new_value);
+    aaa_string_dec_ref(field_name);
+    aaa_struct_dec_ref(s);
 }

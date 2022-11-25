@@ -5,6 +5,7 @@
 
 #include "var.h"
 #include "map.h"
+#include "struct.h"
 
 struct aaa_stack {
     size_t size;
@@ -22,6 +23,8 @@ void aaa_stack_push_str(struct aaa_stack *stack, struct aaa_string *value);
 void aaa_stack_push_str_raw(struct aaa_stack *stack, char *value, bool freeable);
 void aaa_stack_push_bool(struct aaa_stack *stack, bool value);
 bool aaa_stack_pop_bool(struct aaa_stack *stack);
+void aaa_stack_push_struct(struct aaa_stack *stack, struct aaa_struct *s);
+struct aaa_struct *aaa_stack_pop_struct(struct aaa_stack *stack);
 void aaa_stack_dup(struct aaa_stack *stack);
 void aaa_stack_swap(struct aaa_stack *stack);
 void aaa_stack_plus(struct aaa_stack *stack);
@@ -93,3 +96,5 @@ void aaa_stack_str_find(struct aaa_stack *stack);
 void aaa_stack_str_substr(struct aaa_stack *stack);
 void aaa_stack_str_to_bool(struct aaa_stack *stack);
 void aaa_stack_str_to_int(struct aaa_stack *stack);
+void aaa_stack_field_query(struct aaa_stack *stack);
+void aaa_stack_field_update(struct aaa_stack *stack);
