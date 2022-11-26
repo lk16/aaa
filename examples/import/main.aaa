@@ -1,9 +1,7 @@
 from "imported" import max
 
 
-fn
-    main
-{
+fn main {
     3 5 max .
     "\n" .
 }

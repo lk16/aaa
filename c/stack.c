@@ -224,6 +224,7 @@ void aaa_stack_print(struct aaa_stack *stack) {
     const char *raw = aaa_string_raw(printed);
     printf("%s", raw);
 
+    aaa_string_dec_ref(printed);
     aaa_variable_dec_ref(top);
 }
 

@@ -182,6 +182,7 @@ struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
 
 struct aaa_string *aaa_variable_printed(const struct aaa_variable *var) {
     if (var->kind == AAA_STRING) {
+        aaa_string_inc_ref(var->string);
         return var->string;
     }
 
