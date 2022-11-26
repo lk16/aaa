@@ -76,6 +76,7 @@ class Transpiler:
                     "-std=gnu99",
                     "-g",
                     "-Werror",
+                    "-Wno-missing-braces",
                 ]
                 + c_files
             ).returncode

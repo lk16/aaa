@@ -33,13 +33,39 @@ struct aaa_variable {
     };
 };
 
+static struct aaa_variable aaa_const_bool_false = {{0}, AAA_BOOLEAN, boolean: false};
+static struct aaa_variable aaa_const_bool_true = {{0}, AAA_BOOLEAN, boolean: true};
+
+static struct aaa_variable aaa_const_ints[11] = {
+    {{0}, AAA_INTEGER, integer: 0},
+    {{0}, AAA_INTEGER, integer: 1},
+    {{0}, AAA_INTEGER, integer: 2},
+    {{0}, AAA_INTEGER, integer: 3},
+    {{0}, AAA_INTEGER, integer: 4},
+    {{0}, AAA_INTEGER, integer: 5},
+    {{0}, AAA_INTEGER, integer: 6},
+    {{0}, AAA_INTEGER, integer: 7},
+    {{0}, AAA_INTEGER, integer: 8},
+    {{0}, AAA_INTEGER, integer: 9},
+    {{0}, AAA_INTEGER, integer: 10},
+};
+
 static struct aaa_variable *aaa_variable_new(void) {
     struct aaa_variable *var = malloc(sizeof(*var));
     aaa_ref_count_init(&var->ref_count);
     return var;
 }
 
+static bool aaa_variable_has_const_int(int integer) {
+    int max_const_int = sizeof(aaa_const_ints) / sizeof(aaa_const_ints[0]);
+    return integer >= 0 && integer < max_const_int;
+}
+
 struct aaa_variable *aaa_variable_new_int(int integer) {
+    if (aaa_variable_has_const_int(integer)) {
+        return &aaa_const_ints[integer];
+    }
+
     struct aaa_variable *var = aaa_variable_new();
     var->kind = AAA_INTEGER;
     var->integer = integer;
@@ -47,10 +73,11 @@ struct aaa_variable *aaa_variable_new_int(int integer) {
 }
 
 struct aaa_variable *aaa_variable_new_bool(bool boolean) {
-    struct aaa_variable *var = aaa_variable_new();
-    var->kind = AAA_BOOLEAN;
-    var->boolean = boolean;
-    return var;
+    if (boolean) {
+        return &aaa_const_bool_true;
+    } else {
+        return &aaa_const_bool_false;
+    }
 }
 
 struct aaa_variable *aaa_variable_new_str(struct aaa_string *string) {
@@ -239,8 +266,8 @@ bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variab
 
 void aaa_variable_dec_ref(struct aaa_variable *var) {
     switch (var->kind) {
-        case AAA_BOOLEAN: break;
-        case AAA_INTEGER: break;
+        case AAA_BOOLEAN: return;
+        case AAA_INTEGER: if (aaa_variable_has_const_int(var->integer)) { return; } break;
         case AAA_STRING: aaa_string_dec_ref(var->string); break;
         case AAA_VECTOR: aaa_vector_dec_ref(var->vector); break;
         case AAA_MAP:    aaa_map_dec_ref(var->map); break;
@@ -256,7 +283,7 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
 
 void aaa_variable_inc_ref(struct aaa_variable *var) {
     switch(var->kind) {
-        case AAA_BOOLEAN: break;
+        case AAA_BOOLEAN: return;
         case AAA_INTEGER: break;
         case AAA_STRING: aaa_string_inc_ref(var->string); break;
         case AAA_VECTOR: aaa_vector_inc_ref(var->vector); break;
