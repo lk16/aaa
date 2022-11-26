@@ -1,15 +1,15 @@
-#include <stdio.h>
 #include <malloc.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "str.h"
 #include "buffer.h"
-#include "vector.h"
 #include "map.h"
-#include "var.h"
 #include "ref_count.h"
+#include "str.h"
 #include "struct.h"
+#include "var.h"
+#include "vector.h"
 
 enum aaa_kind {
     AAA_INTEGER,
@@ -33,21 +33,18 @@ struct aaa_variable {
     };
 };
 
-static struct aaa_variable aaa_const_bool_false = {{0}, AAA_BOOLEAN, boolean: false};
-static struct aaa_variable aaa_const_bool_true = {{0}, AAA_BOOLEAN, boolean: true};
+static struct aaa_variable aaa_const_bool_false =
+    {{0}, AAA_BOOLEAN, boolean : false};
+static struct aaa_variable aaa_const_bool_true =
+    {{0}, AAA_BOOLEAN, boolean : true};
 
 static struct aaa_variable aaa_const_ints[11] = {
-    {{0}, AAA_INTEGER, integer: 0},
-    {{0}, AAA_INTEGER, integer: 1},
-    {{0}, AAA_INTEGER, integer: 2},
-    {{0}, AAA_INTEGER, integer: 3},
-    {{0}, AAA_INTEGER, integer: 4},
-    {{0}, AAA_INTEGER, integer: 5},
-    {{0}, AAA_INTEGER, integer: 6},
-    {{0}, AAA_INTEGER, integer: 7},
-    {{0}, AAA_INTEGER, integer: 8},
-    {{0}, AAA_INTEGER, integer: 9},
-    {{0}, AAA_INTEGER, integer: 10},
+    {{0}, AAA_INTEGER, integer : 0},  {{0}, AAA_INTEGER, integer : 1},
+    {{0}, AAA_INTEGER, integer : 2},  {{0}, AAA_INTEGER, integer : 3},
+    {{0}, AAA_INTEGER, integer : 4},  {{0}, AAA_INTEGER, integer : 5},
+    {{0}, AAA_INTEGER, integer : 6},  {{0}, AAA_INTEGER, integer : 7},
+    {{0}, AAA_INTEGER, integer : 8},  {{0}, AAA_INTEGER, integer : 9},
+    {{0}, AAA_INTEGER, integer : 10},
 };
 
 static struct aaa_variable *aaa_variable_new(void) {
@@ -87,7 +84,6 @@ struct aaa_variable *aaa_variable_new_str(struct aaa_string *string) {
     return var;
 }
 
-
 struct aaa_variable *aaa_variable_new_vector(struct aaa_vector *vector) {
     struct aaa_variable *var = aaa_variable_new();
     var->kind = AAA_VECTOR;
@@ -119,7 +115,8 @@ struct aaa_string *aaa_variable_repr_bool(bool boolean) {
     return aaa_string_new(raw, false);
 }
 
-static void aaa_variable_check_kind(const struct aaa_variable *var, enum aaa_kind kind) {
+static void aaa_variable_check_kind(const struct aaa_variable *var,
+                                    enum aaa_kind kind) {
     if (var->kind != kind) {
         fprintf(stderr, "Aaa type error\n");
         abort();
@@ -170,16 +167,36 @@ struct aaa_string *aaa_variable_repr_str(struct aaa_string *string) {
 
     while (*c) {
         switch (*c) {
-            case '\a': aaa_buffer_append(buff, "\\a"); break;
-            case '\b': aaa_buffer_append(buff, "\\b"); break;
-            case '\f': aaa_buffer_append(buff, "\\f"); break;
-            case '\n': aaa_buffer_append(buff, "\\n"); break;
-            case '\r': aaa_buffer_append(buff, "\\r"); break;
-            case '\t': aaa_buffer_append(buff, "\\t"); break;
-            case '\v': aaa_buffer_append(buff, "\\v"); break;
-            case '\\': aaa_buffer_append(buff, "\\\\"); break;
-            case '\'': aaa_buffer_append(buff, "\\'"); break;
-            case '\"': aaa_buffer_append(buff, "\\\""); break;
+            case '\a':
+                aaa_buffer_append(buff, "\\a");
+                break;
+            case '\b':
+                aaa_buffer_append(buff, "\\b");
+                break;
+            case '\f':
+                aaa_buffer_append(buff, "\\f");
+                break;
+            case '\n':
+                aaa_buffer_append(buff, "\\n");
+                break;
+            case '\r':
+                aaa_buffer_append(buff, "\\r");
+                break;
+            case '\t':
+                aaa_buffer_append(buff, "\\t");
+                break;
+            case '\v':
+                aaa_buffer_append(buff, "\\v");
+                break;
+            case '\\':
+                aaa_buffer_append(buff, "\\\\");
+                break;
+            case '\'':
+                aaa_buffer_append(buff, "\\'");
+                break;
+            case '\"':
+                aaa_buffer_append(buff, "\\\"");
+                break;
             default:
                 (void)0;
                 char str[2] = "\0";
@@ -196,11 +213,16 @@ struct aaa_string *aaa_variable_repr_str(struct aaa_string *string) {
 
 struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
     switch (var->kind) {
-        case AAA_BOOLEAN: return aaa_variable_repr_bool(var->boolean);
-        case AAA_INTEGER: return aaa_variable_repr_int(var->integer);
-        case AAA_STRING:  return aaa_variable_repr_str(var->string);
-        case AAA_VECTOR:  return aaa_vector_repr(var->vector);
-        case AAA_MAP:     return aaa_map_repr(var->map);
+        case AAA_BOOLEAN:
+            return aaa_variable_repr_bool(var->boolean);
+        case AAA_INTEGER:
+            return aaa_variable_repr_int(var->integer);
+        case AAA_STRING:
+            return aaa_variable_repr_str(var->string);
+        case AAA_VECTOR:
+            return aaa_vector_repr(var->vector);
+        case AAA_MAP:
+            return aaa_map_repr(var->map);
         default:
             fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
             abort();
@@ -225,7 +247,8 @@ size_t aaa_variable_hash(const struct aaa_variable *var) {
                 return 0;
             }
         case AAA_INTEGER:
-            return (var->integer ^ 0x123456789) + (var->integer << 13) + (var->integer >> 17);
+            return (var->integer ^ 0x123456789) + (var->integer << 13) +
+                   (var->integer >> 17);
         case AAA_STRING:
             (void)0;
             size_t hash = 0;
@@ -244,7 +267,8 @@ size_t aaa_variable_hash(const struct aaa_variable *var) {
     }
 }
 
-bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variable *rhs) {
+bool aaa_variable_equals(const struct aaa_variable *lhs,
+                         const struct aaa_variable *rhs) {
     if (lhs->kind != rhs->kind) {
         return false;
     }
@@ -266,12 +290,25 @@ bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variab
 
 void aaa_variable_dec_ref(struct aaa_variable *var) {
     switch (var->kind) {
-        case AAA_BOOLEAN: return;
-        case AAA_INTEGER: if (aaa_variable_has_const_int(var->integer)) { return; } break;
-        case AAA_STRING: aaa_string_dec_ref(var->string); break;
-        case AAA_VECTOR: aaa_vector_dec_ref(var->vector); break;
-        case AAA_MAP:    aaa_map_dec_ref(var->map); break;
-        case AAA_STRUCT: aaa_struct_dec_ref(var->struct_); break;
+        case AAA_BOOLEAN:
+            return;
+        case AAA_INTEGER:
+            if (aaa_variable_has_const_int(var->integer)) {
+                return;
+            }
+            break;
+        case AAA_STRING:
+            aaa_string_dec_ref(var->string);
+            break;
+        case AAA_VECTOR:
+            aaa_vector_dec_ref(var->vector);
+            break;
+        case AAA_MAP:
+            aaa_map_dec_ref(var->map);
+            break;
+        case AAA_STRUCT:
+            aaa_struct_dec_ref(var->struct_);
+            break;
         default:
             fprintf(stderr, "aaa_variable_dec_ref unhandled variable kind\n");
             abort();
@@ -282,13 +319,23 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
 }
 
 void aaa_variable_inc_ref(struct aaa_variable *var) {
-    switch(var->kind) {
-        case AAA_BOOLEAN: return;
-        case AAA_INTEGER: break;
-        case AAA_STRING: aaa_string_inc_ref(var->string); break;
-        case AAA_VECTOR: aaa_vector_inc_ref(var->vector); break;
-        case AAA_MAP:    aaa_map_inc_ref(var->map); break;
-        case AAA_STRUCT: aaa_struct_inc_ref(var->struct_); break;
+    switch (var->kind) {
+        case AAA_BOOLEAN:
+            return;
+        case AAA_INTEGER:
+            break;
+        case AAA_STRING:
+            aaa_string_inc_ref(var->string);
+            break;
+        case AAA_VECTOR:
+            aaa_vector_inc_ref(var->vector);
+            break;
+        case AAA_MAP:
+            aaa_map_inc_ref(var->map);
+            break;
+        case AAA_STRUCT:
+            aaa_struct_inc_ref(var->struct_);
+            break;
         default:
             fprintf(stderr, "aaa_variable_inc_ref unhandled variable kind\n");
             abort();

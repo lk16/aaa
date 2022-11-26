@@ -1,12 +1,12 @@
 #pragma once
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
-#include "str.h"
-#include "vector.h"
 #include "map.h"
+#include "str.h"
 #include "struct.h"
+#include "vector.h"
 
 struct aaa_variable *aaa_variable_new_int(int integer);
 struct aaa_variable *aaa_variable_new_bool(bool boolean);
@@ -28,11 +28,11 @@ struct aaa_vector *aaa_variable_get_vector(struct aaa_variable *var);
 struct aaa_map *aaa_variable_get_map(struct aaa_variable *var);
 struct aaa_struct *aaa_variable_get_struct(struct aaa_variable *var);
 
-
 struct aaa_string *aaa_variable_repr(const struct aaa_variable *var);
 struct aaa_string *aaa_variable_printed(const struct aaa_variable *var);
 size_t aaa_variable_hash(const struct aaa_variable *var);
-bool aaa_variable_equals(const struct aaa_variable *lhs, const struct aaa_variable *rhs);
+bool aaa_variable_equals(const struct aaa_variable *lhs,
+                         const struct aaa_variable *rhs);
 
 void aaa_variable_dec_ref(struct aaa_variable *var);
 void aaa_variable_inc_ref(struct aaa_variable *var);

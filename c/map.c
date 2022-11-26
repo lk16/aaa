@@ -2,11 +2,11 @@
 #include <malloc.h>
 #include <stdlib.h>
 
-#include "map.h"
 #include "buffer.h"
+#include "map.h"
+#include "ref_count.h"
 #include "str.h"
 #include "var.h"
-#include "ref_count.h"
 
 struct aaa_map_item {
     struct aaa_variable *key, *value;
@@ -27,7 +27,7 @@ struct aaa_map *aaa_map_new(void) {
     map->size = 0;
     map->bucket_count = 16;
     map->buckets = malloc(map->bucket_count * sizeof(*map->buckets));
-    for (size_t b=0; b<map->bucket_count; b++) {
+    for (size_t b = 0; b < map->bucket_count; b++) {
         map->buckets[b] = NULL;
     }
     return map;
@@ -50,11 +50,11 @@ void aaa_map_clear(struct aaa_map *map) {
         return;
     }
 
-    for (size_t b=0; b<map->bucket_count; b++) {
+    for (size_t b = 0; b < map->bucket_count; b++) {
         struct aaa_map_item *item = map->buckets[b];
         struct aaa_map_item *next;
 
-        while(item) {
+        while (item) {
             next = item->next;
             aaa_variable_dec_ref(item->key);
             aaa_variable_dec_ref(item->value);
@@ -74,9 +74,7 @@ static float aaa_map_load_factor(const struct aaa_map *map) {
     return (float)(map->size) / map->bucket_count;
 }
 
-bool aaa_map_empty(const struct aaa_map *map) {
-    return map->size == 0;
-}
+bool aaa_map_empty(const struct aaa_map *map) { return map->size == 0; }
 
 static void aaa_map_rehash(struct aaa_map *map, size_t new_bucket_count) {
     if (map->bucket_count < new_bucket_count) {
@@ -89,14 +87,14 @@ static void aaa_map_rehash(struct aaa_map *map, size_t new_bucket_count) {
     map->bucket_count = new_bucket_count;
     map->buckets = malloc(map->bucket_count * sizeof(*map->buckets));
 
-    for (size_t b=0; b<map->bucket_count; b++) {
+    for (size_t b = 0; b < map->bucket_count; b++) {
         map->buckets[b] = NULL;
     }
 
-    for (size_t b=0; b<old_size; b++) {
+    for (size_t b = 0; b < old_size; b++) {
         struct aaa_map_item *item = old_buckets[b];
 
-        while(item) {
+        while (item) {
             struct aaa_map_item *next = item->next;
 
             size_t new_bucket = item->hash % new_bucket_count;
@@ -110,7 +108,8 @@ static void aaa_map_rehash(struct aaa_map *map, size_t new_bucket_count) {
     free(old_buckets);
 }
 
-static struct aaa_map_item *aaa_map_get_item(struct aaa_map *map, const struct aaa_variable *key) {
+static struct aaa_map_item *aaa_map_get_item(struct aaa_map *map,
+                                             const struct aaa_variable *key) {
     size_t hash = aaa_variable_hash(key);
     size_t bucket = hash % map->bucket_count;
     struct aaa_map_item *item = map->buckets[bucket];
@@ -125,7 +124,8 @@ static struct aaa_map_item *aaa_map_get_item(struct aaa_map *map, const struct a
     return NULL;
 }
 
-struct aaa_variable *aaa_map_get(struct aaa_map *map, const struct aaa_variable *key) {
+struct aaa_variable *aaa_map_get(struct aaa_map *map,
+                                 const struct aaa_variable *key) {
     struct aaa_map_item *item = aaa_map_get_item(map, key);
 
     if (item) {
@@ -147,7 +147,8 @@ bool aaa_map_has_key(struct aaa_map *map, const struct aaa_variable *key) {
     return false;
 }
 
-struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable *key) {
+struct aaa_variable *aaa_map_pop(struct aaa_map *map,
+                                 const struct aaa_variable *key) {
     size_t hash = aaa_variable_hash(key);
     size_t bucket = hash % map->bucket_count;
     struct aaa_map_item **item_addr = &map->buckets[bucket];
@@ -174,7 +175,8 @@ struct aaa_variable *aaa_map_pop(struct aaa_map *map, const struct aaa_variable 
     return NULL;
 }
 
-void aaa_map_set(struct aaa_map *map, struct aaa_variable *key, struct aaa_variable *new_value) {
+void aaa_map_set(struct aaa_map *map, struct aaa_variable *key,
+                 struct aaa_variable *new_value) {
     struct aaa_map_item *item = aaa_map_get_item(map, key);
 
     if (item) {
@@ -202,16 +204,14 @@ void aaa_map_set(struct aaa_map *map, struct aaa_variable *key, struct aaa_varia
     aaa_variable_inc_ref(new_value);
 }
 
-size_t aaa_map_size(const struct aaa_map *map) {
-    return map->size;
-}
+size_t aaa_map_size(const struct aaa_map *map) { return map->size; }
 
 struct aaa_string *aaa_map_repr(const struct aaa_map *map) {
     struct aaa_buffer *buff = aaa_buffer_new();
     aaa_buffer_append(buff, "{");
     bool is_first = true;
 
-    for (size_t i=0; i<map->bucket_count; i++) {
+    for (size_t i = 0; i < map->bucket_count; i++) {
         struct aaa_map_item *item = map->buckets[i];
 
         while (item) {
@@ -242,7 +242,7 @@ struct aaa_string *aaa_map_repr(const struct aaa_map *map) {
 
 struct aaa_map *aaa_map_copy(struct aaa_map *map) {
     struct aaa_map *copy = aaa_map_new();
-    for (size_t b=0; b<map->bucket_count; b++) {
+    for (size_t b = 0; b < map->bucket_count; b++) {
         struct aaa_map_item *item = map->buckets[b];
 
         while (item) {

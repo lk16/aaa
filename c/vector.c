@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vector.h"
 #include "buffer.h"
-#include "var.h"
 #include "ref_count.h"
+#include "var.h"
+#include "vector.h"
 
 struct aaa_vector {
     struct aaa_ref_count ref_count;
@@ -20,7 +20,7 @@ struct aaa_vector *aaa_vector_new(void) {
     vec->size = 0;
     vec->capacity = 16;
     vec->data = malloc(vec->capacity * sizeof(*vec->data));
-    for (size_t i=0; i<vec->size; i++) {
+    for (size_t i = 0; i < vec->size; i++) {
         vec->data[i] = NULL;
     }
     return vec;
@@ -42,7 +42,7 @@ struct aaa_string *aaa_vector_repr(const struct aaa_vector *vec) {
     struct aaa_buffer *buff = aaa_buffer_new();
     aaa_buffer_append(buff, "[");
 
-    for (size_t i=0; i<vec->size; i++) {
+    for (size_t i = 0; i < vec->size; i++) {
         struct aaa_variable *item = vec->data[i];
 
         struct aaa_string *item_repr = aaa_variable_repr(item);
@@ -60,12 +60,13 @@ struct aaa_string *aaa_vector_repr(const struct aaa_vector *vec) {
     return string;
 }
 
-bool aaa_vector_equals(struct aaa_vector *lhs, struct aaa_vector *rhs) {  // TODO make arguments const
+bool aaa_vector_equals(struct aaa_vector *lhs,
+                       struct aaa_vector *rhs) { // TODO make arguments const
     if (lhs->size != rhs->size) {
         return false;
     }
 
-    for (size_t i=0; i<lhs->size; i++) {
+    for (size_t i = 0; i < lhs->size; i++) {
         struct aaa_variable *lhs_item = aaa_vector_get(lhs, i);
         struct aaa_variable *rhs_item = aaa_vector_get(rhs, i);
 
@@ -78,7 +79,7 @@ bool aaa_vector_equals(struct aaa_vector *lhs, struct aaa_vector *rhs) {  // TOD
 }
 
 void aaa_vector_clear(struct aaa_vector *vec) {
-    for(size_t i=0; i<vec->size; i++) {
+    for (size_t i = 0; i < vec->size; i++) {
         aaa_variable_dec_ref(vec->data[i]);
     }
 
@@ -87,16 +88,14 @@ void aaa_vector_clear(struct aaa_vector *vec) {
 
 struct aaa_vector *aaa_vector_copy(struct aaa_vector *vec) {
     struct aaa_vector *copy = aaa_vector_new();
-    for(size_t i=0; i<vec->size; i++) {
+    for (size_t i = 0; i < vec->size; i++) {
         struct aaa_variable *item = aaa_vector_get(vec, i);
         aaa_vector_push(copy, item);
     }
     return copy;
 }
 
-bool aaa_vector_empty(const struct aaa_vector *vec) {
-    return vec->size == 0;
-}
+bool aaa_vector_empty(const struct aaa_vector *vec) { return vec->size == 0; }
 
 struct aaa_variable *aaa_vector_get(struct aaa_vector *vec, size_t offset) {
     if (offset >= vec->size) {
@@ -121,11 +120,11 @@ struct aaa_variable *aaa_vector_pop(struct aaa_vector *vec) {
 static void aaa_vector_resize(struct aaa_vector *vec, size_t new_capacity) {
     struct aaa_variable **new_data = malloc(new_capacity * sizeof(*new_data));
 
-    for (size_t i=0; i<vec->size; i++) {
+    for (size_t i = 0; i < vec->size; i++) {
         new_data[i] = vec->data[i];
     }
 
-    for (size_t i=vec->size; i<new_capacity; i++) {
+    for (size_t i = vec->size; i < new_capacity; i++) {
         new_data[i] = NULL;
     }
 
@@ -135,7 +134,7 @@ static void aaa_vector_resize(struct aaa_vector *vec, size_t new_capacity) {
 }
 
 void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed) {
-    if(vec->size == vec->capacity) {
+    if (vec->size == vec->capacity) {
         aaa_vector_resize(vec, 2 * vec->capacity);
     }
 
@@ -144,7 +143,8 @@ void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed) {
     aaa_variable_inc_ref(pushed);
 }
 
-bool aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *value) {
+bool aaa_vector_set(struct aaa_vector *vec, size_t offset,
+                    struct aaa_variable *value) {
     if (offset >= vec->size) {
         aaa_variable_dec_ref(value);
         return false;
@@ -155,6 +155,4 @@ bool aaa_vector_set(struct aaa_vector *vec, size_t offset, struct aaa_variable *
     return true;
 }
 
-size_t aaa_vector_size(const struct aaa_vector *vec) {
-    return vec->size;
-}
+size_t aaa_vector_size(const struct aaa_vector *vec) { return vec->size; }

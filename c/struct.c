@@ -1,11 +1,11 @@
-#include <stdio.h>
 #include <malloc.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-#include "struct.h"
 #include "map.h"
 #include "ref_count.h"
 #include "str.h"
+#include "struct.h"
 
 struct aaa_struct {
     struct aaa_ref_count ref_count;
@@ -33,14 +33,17 @@ void aaa_struct_inc_ref(struct aaa_struct *s) {
     aaa_ref_count_inc(&s->ref_count);
 }
 
-static void aaa_struct_upsert_field(struct aaa_struct *s, char *field_name, struct aaa_variable *new_value, bool create) {
+static void aaa_struct_upsert_field(struct aaa_struct *s, char *field_name,
+                                    struct aaa_variable *new_value,
+                                    bool create) {
     struct aaa_string *key = aaa_string_new(field_name, false);
     struct aaa_variable *key_var = aaa_variable_new_str(key);
 
     bool has_key = aaa_map_has_key(s->map, key_var);
 
     if (has_key == create) {
-        fprintf(stderr, "Struct upserting failed: create=%d, has_key=%d\n", create, has_key);
+        fprintf(stderr, "Struct upserting failed: create=%d, has_key=%d\n",
+                create, has_key);
         abort();
     }
 
@@ -49,15 +52,18 @@ static void aaa_struct_upsert_field(struct aaa_struct *s, char *field_name, stru
     aaa_variable_dec_ref(key_var);
 }
 
-void aaa_struct_create_field(struct aaa_struct *s, char *field_name, struct aaa_variable *new_value) {
+void aaa_struct_create_field(struct aaa_struct *s, char *field_name,
+                             struct aaa_variable *new_value) {
     aaa_struct_upsert_field(s, field_name, new_value, true);
 }
 
-void aaa_struct_set_field(struct aaa_struct *s, char *field_name, struct aaa_variable *new_value) {
+void aaa_struct_set_field(struct aaa_struct *s, char *field_name,
+                          struct aaa_variable *new_value) {
     aaa_struct_upsert_field(s, field_name, new_value, false);
 }
 
-struct aaa_variable *aaa_struct_get_field(struct aaa_struct *s, char *field_name) {
+struct aaa_variable *aaa_struct_get_field(struct aaa_struct *s,
+                                          char *field_name) {
     struct aaa_string *key = aaa_string_new(field_name, false);
     struct aaa_variable *key_var = aaa_variable_new_str(key);
 

@@ -1,27 +1,32 @@
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <netdb.h>
-#include <arpa/inet.h>
+#include <unistd.h>
 
 #include "stack.h"
 
-void aaa_stack_not_implemented(struct aaa_stack *stack, const char *aaa_func_name) {
+void aaa_stack_not_implemented(struct aaa_stack *stack,
+                               const char *aaa_func_name) {
     (void)stack;
     fprintf(stderr, "%s is not implemented yet!\n", aaa_func_name);
     abort();
 }
 
-static void aaa_stack_prevent_underflow(const struct aaa_stack *stack, size_t pop_count) {
+static void aaa_stack_prevent_underflow(const struct aaa_stack *stack,
+                                        size_t pop_count) {
     if (stack->size < pop_count) {
         fprintf(stderr, "Aaa stack underflow\n");
         abort();
     }
 }
 
-static void aaa_stack_prevent_overflow(const struct aaa_stack *stack, size_t push_count) { // TODO remove this and re-allocate the stack if it gets too big
-     if (stack->size + push_count >= stack->max_size) {
+static void aaa_stack_prevent_overflow(
+    const struct aaa_stack *stack,
+    size_t push_count) { // TODO remove this and re-allocate the stack if it
+                         // gets too big
+    if (stack->size + push_count >= stack->max_size) {
         fprintf(stderr, "Aaa stack overflow\n");
         abort();
     }
@@ -33,9 +38,7 @@ void aaa_stack_init(struct aaa_stack *stack) {
     stack->data = malloc(stack->max_size * sizeof(*stack->data));
 }
 
-void aaa_stack_free(struct aaa_stack *stack) {
-    free(stack->data);
-}
+void aaa_stack_free(struct aaa_stack *stack) { free(stack->data); }
 
 static struct aaa_variable *aaa_stack_top(struct aaa_stack *stack) {
     return stack->data[stack->size - 1];
@@ -97,7 +100,6 @@ void aaa_stack_push_struct(struct aaa_stack *stack, struct aaa_struct *s) {
     struct aaa_variable *var = aaa_variable_new_struct(s);
     aaa_stack_push(stack, var);
 }
-
 
 static int aaa_stack_pop_int(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
@@ -347,7 +349,7 @@ void aaa_stack_connect(struct aaa_stack *stack) {
 
     const char *domain_name_raw = aaa_string_raw(domain_name);
 
-    struct addrinfo* addr_info = NULL;
+    struct addrinfo *addr_info = NULL;
 
     // prevent buffer overflow
     if (port >= 65536 || port < 0) {
@@ -364,7 +366,8 @@ void aaa_stack_connect(struct aaa_stack *stack) {
         return;
     }
 
-    int success = connect(fd, (struct sockaddr*) addr_info->ai_addr, sizeof(*addr_info));
+    int success =
+        connect(fd, (struct sockaddr *)addr_info->ai_addr, sizeof(*addr_info));
 
     freeaddrinfo(addr_info);
 
@@ -403,7 +406,7 @@ void aaa_stack_bind(struct aaa_stack *stack) {
 
     const char *host_raw = aaa_string_raw(host);
 
-    struct addrinfo* addr_info = NULL;
+    struct addrinfo *addr_info = NULL;
 
     // prevent buffer overflow
     if (port >= 65536 || port < 0) {
@@ -420,7 +423,8 @@ void aaa_stack_bind(struct aaa_stack *stack) {
         return;
     }
 
-    int bind_status = bind(fd, (struct sockaddr*) addr_info->ai_addr, sizeof(*addr_info));
+    int bind_status =
+        bind(fd, (struct sockaddr *)addr_info->ai_addr, sizeof(*addr_info));
 
     freeaddrinfo(addr_info);
 
@@ -450,7 +454,8 @@ void aaa_stack_accept(struct aaa_stack *stack) {
     struct sockaddr_in client_socket;
     socklen_t client_socket_len = sizeof(struct sockaddr_in);
 
-    int client_socket_fd = accept(fd, (struct sockaddr *) &client_socket, &client_socket_len);
+    int client_socket_fd =
+        accept(fd, (struct sockaddr *)&client_socket, &client_socket_len);
 
     if (client_socket_fd != -1) {
         char *client_ip_addr = malloc((INET6_ADDRSTRLEN + 1) * sizeof(char));
@@ -458,14 +463,17 @@ void aaa_stack_accept(struct aaa_stack *stack) {
 
         switch (client_socket.sin_family) {
             case AF_INET: {
-                struct sockaddr_in *sin = (struct sockaddr_in*) &client_socket;
-                inet_ntop(AF_INET, &sin->sin_addr, client_ip_addr, INET6_ADDRSTRLEN);
+                struct sockaddr_in *sin = (struct sockaddr_in *)&client_socket;
+                inet_ntop(AF_INET, &sin->sin_addr, client_ip_addr,
+                          INET6_ADDRSTRLEN);
                 client_port = sin->sin_port;
                 break;
             }
             case AF_INET6: {
-                struct sockaddr_in6 *sin = (struct sockaddr_in6*) &client_socket;
-                inet_ntop(AF_INET6, &sin->sin6_addr, client_ip_addr, INET6_ADDRSTRLEN);
+                struct sockaddr_in6 *sin =
+                    (struct sockaddr_in6 *)&client_socket;
+                inet_ntop(AF_INET6, &sin->sin6_addr, client_ip_addr,
+                          INET6_ADDRSTRLEN);
                 client_port = sin->sin6_port;
                 break;
             }
@@ -485,9 +493,7 @@ void aaa_stack_accept(struct aaa_stack *stack) {
     }
 }
 
-void aaa_stack_nop(struct aaa_stack *stack) {
-    (void)stack;
-}
+void aaa_stack_nop(struct aaa_stack *stack) { (void)stack; }
 
 void aaa_stack_push_vec_empty(struct aaa_stack *stack) {
     struct aaa_vector *vector = aaa_vector_new();
@@ -575,7 +581,6 @@ void aaa_stack_push_map(struct aaa_stack *stack, struct aaa_map *map) {
     struct aaa_variable *var = aaa_variable_new_map(map);
     aaa_stack_push(stack, var);
 }
-
 
 void aaa_stack_map_set(struct aaa_stack *stack) {
     struct aaa_variable *value = aaa_stack_pop(stack);

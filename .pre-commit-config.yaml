@@ -56,3 +56,10 @@ repos:
     hooks:
     - id: detect-missing-init
       args: ['--create', "--track", "--python-folders", "lang,tests"]
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v15.0.4
+    hooks:
+    - id: clang-format
+      files: '.*\.(c|h)$'
+      args: ['-style=file:.clang-format']

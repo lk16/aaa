@@ -12,7 +12,7 @@ struct aaa_buffer {
     size_t size;
 };
 
-struct aaa_buffer *aaa_buffer_new(void){
+struct aaa_buffer *aaa_buffer_new(void) {
     struct aaa_buffer *buff = malloc(sizeof(*buff));
     aaa_ref_count_init(&buff->ref_count);
     buff->max_size = 1024;
