@@ -7,6 +7,7 @@ from tempfile import NamedTemporaryFile, gettempdir
 import click
 from click import ClickException
 
+from aaa.parser.tokenizer import Tokenizer
 from aaa.run import Runner
 from aaa.run_tests import TestRunner
 
@@ -85,6 +86,13 @@ def transpile_tests(path: str, output_file: str, compile: bool, run: bool) -> No
         Path(output_file), compile=compile, run=run
     )
     exit(exit_code)
+
+
+# TODO remove
+@cli.command()
+@click.argument("code")
+def tokenize(code: str) -> None:
+    Tokenizer(code).tokenize()
 
 
 if __name__ == "__main__":

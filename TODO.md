@@ -1,5 +1,15 @@
 # TODO
 
+### Parse without Lark
+- [ ] create Tokenizer which returns iterable of tokens
+- [ ] use Tokenizer on entrypoint file
+- [ ] build parser without Lark
+- [ ] parse entrypoint file
+- [ ] find out dependencies, tokenize and parse them
+- [ ] repeat until all dependencies are parsed
+- [ ] get rid of Lark completely
+
+
 ### Transpiling to C
 - [x] Implement `repr`
 - [x] Update python tests to use `repr` instead of `.`
