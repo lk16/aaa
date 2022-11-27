@@ -1,12 +1,14 @@
 import re
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 
 class TokenType(Enum):
     ARGS = "ARGS"
     AS = "AS"
     BEGIN = "BEGIN"
+    COMMA = "COMMA"
+    COLON = "COLON"
     COMMENT = "COMMENT"
     ELSE = "ELSE"
     END = "END"
@@ -26,6 +28,8 @@ class TokenType(Enum):
     STRUCT = "STRUCT"
     TRUE = "TRUE"
     TYPE = "TYPE"
+    TYPE_PARAM_BEGIN = "TYPE_PARAM_BEGIN"
+    TYPE_PARAM_END = "TYPE_PARAM_END"
     WHILE = "WHILE"
     WHITESPACE = "WHITESPACE"
 
@@ -39,12 +43,15 @@ class Token:
         return f"{self.__class__.__name__}(type={self.type}, value={repr(self.value)})"
 
 
-FIXED_SIZED_TOKENS = [
+FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
     ("-", TokenType.OPERATOR),
+    (",", TokenType.COMMA),
     ("!", TokenType.SET_FIELD),
     ("!=", TokenType.OPERATOR),
     ("?", TokenType.GET_FIELD),
     (".", TokenType.OPERATOR),
+    ("[", TokenType.TYPE_PARAM_BEGIN),
+    ("]", TokenType.TYPE_PARAM_END),
     ("{", TokenType.BEGIN),
     ("}", TokenType.END),
     ("*", TokenType.OPERATOR),
@@ -56,6 +63,7 @@ FIXED_SIZED_TOKENS = [
     ("=", TokenType.OPERATOR),
     (">", TokenType.OPERATOR),
     (">=", TokenType.OPERATOR),
+    (":", TokenType.COLON),
     ("args", TokenType.ARGS),
     ("as", TokenType.AS),
     ("else", TokenType.ELSE),
@@ -105,14 +113,24 @@ class Tokenizer:
         return Token(TokenType.WHITESPACE, self.code[offset : offset + ws_len])
 
     def _tokenize_fixed_size(self, offset: int) -> Optional[Token]:
+        token: Optional[Token] = None
+
         for value, token_type in FIXED_SIZED_TOKENS:
             if self.code[offset:].startswith(value):
                 end = offset + len(value)
 
-                if end == len(self.code) or self.code[end].isspace():
-                    return Token(token_type, self.code[offset:end])
+                if (
+                    end >= len(self.code)
+                    or self.code[end].isspace()
+                    or not value.isalpha()
+                ):
+                    found = Token(token_type, self.code[offset:end])
 
-        return None
+                    # keep longest token
+                    if not token or (len(found.value) > len(token.value)):
+                        token = found
+
+        return token
 
     def _tokenize_comment(self, offset: int) -> Optional[Token]:
         return self._regex(offset, "//[^\n]*", TokenType.COMMENT)
@@ -169,11 +187,18 @@ class Tokenizer:
             )
 
             if not token:
-                print("Tokenize error")
+                print(
+                    "Tokenize error, next few characters: ",
+                    self.code[offset : offset + 20],
+                )
                 exit()
 
-            print("token", token)
+            if token.type != TokenType.WHITESPACE:
+                print("token", token)
+
             tokens.append(token)
             offset += len(token.value)
+
+        tokens = list(filter(lambda token: token.type != TokenType.WHITESPACE, tokens))
 
         return tokens

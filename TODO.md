@@ -1,7 +1,10 @@
 # TODO
 
 ### Parse without Lark
-- [ ] create Tokenizer which returns iterable of tokens
+- [x] create Tokenizer which returns iterable of tokens
+- [ ] better error handling in Tokenizer
+- [ ] tests for Tokenizer
+- [ ] use Tokenizer on builtins file
 - [ ] use Tokenizer on entrypoint file
 - [ ] build parser without Lark
 - [ ] parse entrypoint file

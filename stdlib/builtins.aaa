@@ -54,7 +54,6 @@ fn vec[T]:push  args v as vec[T], item as T
 fn vec[T]:set   args v as vec[T], offset as int, item as T return bool
 fn vec[T]:size  args v as vec[T]                           return int
 
-// TODO remove all first map[K, V] return values
 fn map[K, V]:clear   args m as map[K, V]
 fn map[K, V]:copy    args m as map[K, V]                       return map[K, V]
 fn map[K, V]:drop    args m as map[K, V], key as K
@@ -68,7 +67,6 @@ fn map[K, V]:size    args m as map[K, V]                       return int
 // TODO: rename vec:size and map:size to vec:len and map:len
 
 // string functions
-
 fn str:append     args s as str, other as str                  return str
 fn str:contains   args s as str, other as str                  return bool
 fn str:equals     args s as str, other as str                  return bool
