@@ -3,16 +3,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from lark.lexer import Token
-
 from aaa import AaaModel
 from aaa.parser import models as parser
 
 
 class AaaCrossReferenceModel(AaaModel):
-    def __init__(self, *, file: Path, token: Token) -> None:
+    def __init__(self, *, file: Path, line: int, column: int) -> None:
         self.file = file
-        self.token = token
+        self.line = line
+        self.column = column
 
 
 class Unresolved(AaaModel):
@@ -20,9 +19,9 @@ class Unresolved(AaaModel):
 
 
 class Identifiable(AaaCrossReferenceModel):
-    def __init__(self, *, file: Path, token: Token, name: str) -> None:
+    def __init__(self, *, file: Path, line: int, column: int, name: str) -> None:
         self.__name = name
-        super().__init__(file=file, token=token)
+        super().__init__(file=file, line=line, column=column)
 
     def identify(self) -> Tuple[Path, str]:
         return (self.file, self.__name)
@@ -66,7 +65,9 @@ class Function(Identifiable):
         else:
             name = self.func_name
 
-        super().__init__(file=parsed.file, token=parsed.token, name=name)
+        super().__init__(
+            file=parsed.file, line=parsed.line, column=parsed.column, name=name
+        )
 
     def get_argument(self, name: str) -> Optional[Argument]:
         assert not isinstance(self.arguments, Unresolved)
@@ -90,7 +91,7 @@ class Argument(AaaCrossReferenceModel):
     def __init__(self, *, var_type: VariableType, name: str, file: Path) -> None:
         self.var_type = var_type
         self.name = name
-        super().__init__(file=file, token=var_type.token)
+        super().__init__(file=file, line=var_type.line, column=var_type.column)
 
 
 class FunctionBodyItem(AaaCrossReferenceModel):
@@ -102,7 +103,7 @@ class FunctionBody(FunctionBodyItem):
         self, *, parsed: parser.FunctionBody, items: List[FunctionBodyItem]
     ) -> None:
         self.items = items
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class Import(Identifiable):
@@ -119,7 +120,12 @@ class Import(Identifiable):
         self.source_name = source_name
         self.imported_name = imported_name
         self.source = source
-        super().__init__(file=parsed.file, token=parsed.token, name=self.imported_name)
+        super().__init__(
+            file=parsed.file,
+            line=parsed.line,
+            column=parsed.column,
+            name=self.imported_name,
+        )
 
 
 class Type(Identifiable):
@@ -139,7 +145,8 @@ class Type(Identifiable):
 
         super().__init__(
             file=parsed.file,
-            token=parsed.token,
+            line=parsed.line,
+            column=parsed.column,
             name=parsed.identifier.name,
         )
 
@@ -157,7 +164,7 @@ class VariableType(AaaCrossReferenceModel):
         self.params = params
         self.is_placeholder = is_placeholder
         self.name = self.type.name
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
     def __repr__(self) -> str:
         output = self.name
@@ -183,19 +190,19 @@ class VariableType(AaaCrossReferenceModel):
 class IntegerLiteral(FunctionBodyItem):
     def __init__(self, *, parsed: parser.IntegerLiteral) -> None:
         self.value = parsed.value
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class StringLiteral(FunctionBodyItem, parser.StringLiteral):
     def __init__(self, *, parsed: parser.StringLiteral) -> None:
         self.value = parsed.value
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class BooleanLiteral(FunctionBodyItem, parser.BooleanLiteral):
     def __init__(self, *, parsed: parser.BooleanLiteral) -> None:
         self.value = parsed.value
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class Loop(FunctionBodyItem):
@@ -208,7 +215,7 @@ class Loop(FunctionBodyItem):
     ) -> None:
         self.condition = condition
         self.body = body
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class IdentifierKind(AaaModel):
@@ -241,7 +248,7 @@ class Identifier(FunctionBodyItem):
         self.kind = kind
         self.name = parsed.name
         self.type_params = type_params
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class Branch(FunctionBodyItem):
@@ -256,13 +263,13 @@ class Branch(FunctionBodyItem):
         self.condition = condition
         self.if_body = if_body
         self.else_body = else_body
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class StructFieldQuery(FunctionBodyItem):
     def __init__(self, *, parsed: parser.StructFieldQuery) -> None:
         self.field_name = parsed.field_name
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class StructFieldUpdate(FunctionBodyItem):
@@ -271,7 +278,7 @@ class StructFieldUpdate(FunctionBodyItem):
     ) -> None:
         self.field_name = parsed.field_name
         self.new_value_expr = new_value_expr
-        super().__init__(file=parsed.file, token=parsed.token)
+        super().__init__(file=parsed.file, line=parsed.line, column=parsed.column)
 
 
 class ArgumentIdentifiable(Identifiable):

@@ -2,8 +2,6 @@ from copy import copy
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from lark.lexer import Token
-
 from aaa import AaaRunnerException
 from aaa.cross_referencer.models import (
     BooleanLiteral,
@@ -85,7 +83,8 @@ class TypeChecker:
         if computed_return_types != expected_return_types:
             raise FunctionTypeError(
                 file=function.file,
-                token=function.token,
+                line=function.line,
+                column=function.column,
                 function=function,
                 expected_return_types=expected_return_types,
                 computed_return_types=computed_return_types,
@@ -96,7 +95,7 @@ class TypeChecker:
         function: Function,
         type_stack: List[VariableType],
         called_function: Function,
-        called_function_token: Token,
+        called_function_identifier: Identifier,
     ) -> List[VariableType]:
 
         signature = self.signatures[called_function.identify()]
@@ -107,7 +106,8 @@ class TypeChecker:
         if len(stack) < arg_count:
             raise StackTypesError(
                 file=function.file,
-                token=called_function_token,
+                line=called_function_identifier.line,
+                column=called_function_identifier.column,
                 function=function,
                 signature=signature,
                 type_stack=type_stack,
@@ -126,7 +126,8 @@ class TypeChecker:
             if not match_result:
                 raise StackTypesError(
                     file=function.file,
-                    token=called_function_token,
+                    line=called_function_identifier.line,
+                    column=called_function_identifier.column,
                     function=function,
                     signature=signature,
                     type_stack=type_stack,
@@ -201,14 +202,13 @@ class TypeChecker:
 
         # TODO get rid of dummy_token and dummy_type_literal
 
-        dummy_token = Token(type="", value="")
-
         dummy_type_literal = parser.TypeLiteral(
             identifier=parser.Identifier(
-                name=type_name, token=dummy_token, file=self.builtins_path
+                name=type_name, line=-1, column=-1, file=self.builtins_path
             ),
+            line=-1,
+            column=-1,
             params=[],
-            token=dummy_token,
             file=Path(self.builtins_path),
         )
 
@@ -263,7 +263,8 @@ class TypeChecker:
         if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
                 file=function.file,
-                token=function_body.token,
+                line=function_body.line,
+                column=function_body.column,
                 function=function,
                 type_stack=type_stack,
                 condition_stack=condition_stack,
@@ -289,7 +290,8 @@ class TypeChecker:
         if if_stack != else_stack:
             raise BranchTypeError(
                 file=function.file,
-                token=branch.token,
+                line=branch.line,
+                column=branch.column,
                 function=function,
                 type_stack=type_stack,
                 if_stack=if_stack,
@@ -311,7 +313,8 @@ class TypeChecker:
         if loop_stack != type_stack:
             raise LoopTypeError(
                 file=function.file,
-                token=loop.token,
+                line=loop.line,
+                column=loop.column,
                 function=function,
                 type_stack=type_stack,
                 loop_stack=loop_stack,
@@ -370,7 +373,7 @@ class TypeChecker:
             # Function was called, apply signature of called function
             called_function = identifier.kind.function
             return self._check_function_call(
-                function, type_stack, called_function, identifier.token
+                function, type_stack, called_function, identifier
             )
         elif isinstance(identifier.kind, IdentifierCallingType):
             return type_stack + [identifier.kind.var_type]
@@ -392,7 +395,8 @@ class TypeChecker:
             ):
                 raise InvalidMainSignuture(
                     file=function.file,
-                    token=function.token,
+                    line=function.line,
+                    column=function.column,
                     function=function,
                 )
 
@@ -409,7 +413,8 @@ class TypeChecker:
             ):
                 raise InvalidTestSignuture(
                     file=function.file,
-                    token=function.token,
+                    line=function.line,
+                    column=function.column,
                     function=function,
                 )
 
@@ -424,7 +429,8 @@ class TypeChecker:
             ):
                 raise InvalidMemberFunctionSignature(
                     file=function.file,
-                    token=function.token,
+                    line=function.line,
+                    column=function.column,
                     function=function,
                     struct_type=struct_type,
                     signature=signature,
@@ -448,7 +454,8 @@ class TypeChecker:
         except KeyError as e:
             raise UnknownField(
                 file=function.file,
-                token=node.token,
+                line=node.line,
+                column=node.column,
                 function=function,
                 struct_type=struct_type,
                 field_name=field_name,
@@ -468,7 +475,8 @@ class TypeChecker:
         if len(type_stack) < 2:
             raise StackTypesError(
                 file=function.file,
-                token=field_query.token,
+                line=field_query.line,
+                column=field_query.column,
                 function=function,
                 signature=StructQuerySignature(),
                 type_stack=type_stack,
@@ -503,7 +511,8 @@ class TypeChecker:
         if len(type_stack) < 3:
             raise StackTypesError(
                 file=function.file,
-                token=field_update.token,
+                line=field_update.line,
+                column=field_update.column,
                 function=function,
                 signature=StructUpdateSignature(),
                 type_stack=type_stack,
@@ -521,7 +530,8 @@ class TypeChecker:
         ):
             raise StructUpdateStackError(
                 file=function.file,
-                token=field_update.token,
+                line=field_update.line,
+                column=field_update.column,
                 function=function,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
@@ -532,7 +542,8 @@ class TypeChecker:
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
                 file=function.file,
-                token=field_update.new_value_expr.token,
+                line=field_update.new_value_expr.line,
+                column=field_update.new_value_expr.column,
                 function=function,
                 type_stack=type_stack,
                 struct_type=struct_type,

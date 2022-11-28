@@ -26,8 +26,6 @@ from aaa.parser.models import (
     TypeLiteral,
 )
 
-DUMMY_TOKEN = Token(type="", value="")
-
 
 @v_args(inline=True)
 class AaaTransformer(Transformer[Any, ParsedFile]):
@@ -40,13 +38,21 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
     def argument(self, identifier: Identifier, type: TypeLiteral) -> Argument:
         return Argument(
-            token=identifier.token, identifier=identifier, type=type, file=self.file
+            line=identifier.line,
+            column=identifier.column,
+            identifier=identifier,
+            type=type,
+            file=self.file,
         )
 
     def boolean(self, token: Token) -> BooleanLiteral:
         assert token.value in ["true", "false"]
+        assert token.line is not None
+        assert token.column is not None
         value = token.value == "true"
-        return BooleanLiteral(token=token, value=value, file=self.file)
+        return BooleanLiteral(
+            line=token.line, column=token.column, value=value, file=self.file
+        )
 
     def branch(
         self,
@@ -59,11 +65,15 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         else_body: Optional[FunctionBody],
     ) -> Branch:
         else_body = else_body or FunctionBody(
-            token=DUMMY_TOKEN, items=[], file=self.file
+            line=-1, column=-1, items=[], file=self.file
         )
 
+        assert if_token.line is not None
+        assert if_token.column is not None
+
         return Branch(
-            token=if_token,
+            line=if_token.line,
+            column=if_token.column,
             condition=condition,
             if_body=if_body,
             else_body=else_body,
@@ -79,7 +89,10 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     ) -> Function:
         arguments = arguments or []
         return_types = return_types or []
-        empty_body = FunctionBody(items=[], file=self.file, token=DUMMY_TOKEN)
+        empty_body = FunctionBody(items=[], file=self.file, line=-1, column=-1)
+
+        assert token.line is not None
+        assert token.column is not None
 
         return Function(
             struct_name=function_name.struct_name,
@@ -89,7 +102,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             return_types=return_types,
             body=empty_body,
             file=self.file,
-            token=token,
+            line=token.line,
+            column=token.column,
         )
 
     def type_declaration(
@@ -112,7 +126,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 assert False
 
         return ParsedFile(
-            token=args[0].token,
+            line=args[0].line,
+            column=args[0].column,
             functions=functions,
             imports=[],
             structs=[],
@@ -126,9 +141,11 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return function_body_item
 
     def function_body(self, *function_body_items: FunctionBodyItem) -> FunctionBody:
-        token = function_body_items[0].token
         return FunctionBody(
-            token=token, items=list(function_body_items), file=self.file
+            line=function_body_items[0].line,
+            column=function_body_items[0].column,
+            items=list(function_body_items),
+            file=self.file,
         )
 
     def function_name(
@@ -136,13 +153,18 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         type_literal: TypeLiteral,
         identifier: Optional[Identifier],
     ) -> FunctionName:
+
+        assert type_literal.line is not None
+        assert type_literal.column is not None
+
         if identifier:
             return FunctionName(
                 struct_name=type_literal.identifier,
                 type_params=type_literal.params,
                 func_name=identifier,
                 file=self.file,
-                token=type_literal.token,
+                line=type_literal.line,
+                column=type_literal.column,
             )
 
         return FunctionName(
@@ -150,7 +172,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             type_params=type_literal.params,
             func_name=type_literal.identifier,
             file=self.file,
-            token=type_literal.token,
+            line=type_literal.line,
+            column=type_literal.column,
         )
 
     def function_definition(
@@ -163,7 +186,12 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return function_declaration
 
     def identifier(self, token: Token) -> Identifier:
-        return Identifier(name=token.value, token=token, file=self.file)
+        assert token.line is not None
+        assert token.column is not None
+
+        return Identifier(
+            name=token.value, line=token.line, column=token.column, file=self.file
+        )
 
     def type_literal(
         self,
@@ -173,7 +201,11 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         params = params or []
 
         return TypeLiteral(
-            identifier=identifier, params=params, file=self.file, token=identifier.token
+            identifier=identifier,
+            params=params,
+            file=self.file,
+            line=identifier.line,
+            column=identifier.column,
         )
 
     def import_item(
@@ -185,7 +217,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return ImportItem(
             origninal_name=original_name.name,
             imported_name=imported_name.name,
-            token=original_name.token,
+            line=original_name.line,
+            column=original_name.column,
             file=self.file,
         )
 
@@ -195,15 +228,24 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def import_statement(
         self, token: Token, source: StringLiteral, imported_items: List[ImportItem]
     ) -> Import:
+        assert token.line is not None
+        assert token.column is not None
+
         return Import(
             source=source.value,
             imported_items=imported_items,
-            token=token,
+            line=token.line,
+            column=token.column,
             file=self.file,
         )
 
     def integer(self, token: Token) -> IntegerLiteral:
-        return IntegerLiteral(token=token, value=int(token.value), file=self.file)
+        assert token.line is not None
+        assert token.column is not None
+
+        return IntegerLiteral(
+            line=token.line, column=token.column, value=int(token.value), file=self.file
+        )
 
     def literal(
         self, literal: Union[IntegerLiteral, BooleanLiteral, StringLiteral]
@@ -217,13 +259,32 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         begin_token: Token,
         body: FunctionBody,
     ) -> Loop:
-        return Loop(token=while_token, condition=condition, body=body, file=self.file)
+        assert while_token.line is not None
+        assert while_token.column is not None
+
+        return Loop(
+            line=while_token.line,
+            column=while_token.column,
+            condition=condition,
+            body=body,
+            file=self.file,
+        )
 
     def member_function_name(self, token: Token) -> Identifier:
-        return Identifier(name=token.value, token=token, file=self.file)
+        assert token.line is not None
+        assert token.column is not None
+
+        return Identifier(
+            name=token.value, line=token.line, column=token.column, file=self.file
+        )
 
     def operator(self, token: Token) -> Operator:
-        return Operator(value=token.value, token=token, file=self.file)
+        assert token.line is not None
+        assert token.column is not None
+
+        return Operator(
+            value=token.value, line=token.line, column=token.column, file=self.file
+        )
 
     def regular_file_root(self, *args: Function | Struct | Import) -> ParsedFile:
         functions: List[Function] = []
@@ -241,7 +302,8 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
                 assert False
 
         return ParsedFile(
-            token=args[0].token,
+            line=args[0].line,
+            column=args[0].column,
             functions=functions,
             imports=imports,
             structs=structs,
@@ -262,7 +324,12 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         value = value.replace("\\r", "\r")
         value = value.replace('\\"', '"')
 
-        return StringLiteral(token=token, value=value, file=self.file)
+        assert token.line is not None
+        assert token.column is not None
+
+        return StringLiteral(
+            line=token.line, column=token.column, value=value, file=self.file
+        )
 
     def struct_definition(
         self,
@@ -271,8 +338,12 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         begin_token: Token,
         fields: List[Argument],
     ) -> Struct:
+        assert struct_token.line is not None
+        assert struct_token.column is not None
+
         return Struct(
-            token=struct_token,
+            line=struct_token.line,
+            column=struct_token.column,
             identifier=identifier,
             fields={field.identifier.name: field.type for field in fields},
             file=self.file,
@@ -284,7 +355,12 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
     def struct_field_query(
         self, field_name: StringLiteral, token: Token
     ) -> StructFieldQuery:
-        return StructFieldQuery(field_name=field_name, token=token, file=self.file)
+        assert token.line is not None
+        assert token.column is not None
+
+        return StructFieldQuery(
+            field_name=field_name, line=token.line, column=token.column, file=self.file
+        )
 
     def struct_field_update_operator(self, token: Token) -> Token:
         return token
@@ -296,10 +372,14 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         new_value_expr: FunctionBody,
         update_operator_token: Token,
     ) -> StructFieldUpdate:
+        assert update_operator_token.line is not None
+        assert update_operator_token.column is not None
+
         return StructFieldUpdate(
             field_name=field_name,
             new_value_expr=new_value_expr,
-            token=update_operator_token,
+            line=update_operator_token.line,
+            column=update_operator_token.column,
             file=self.file,
         )
 

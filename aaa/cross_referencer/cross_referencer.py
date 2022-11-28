@@ -43,7 +43,6 @@ from aaa.cross_referencer.models import (
     VariableType,
 )
 from aaa.parser import models as parser
-from aaa.parser.transformer import DUMMY_TOKEN
 
 AAA_KEYWORDS = {
     "and",
@@ -202,7 +201,10 @@ class CrossReferencer:
 
             if name in AAA_KEYWORDS and file != self.builtins_path:
                 raise KeywordUsedAsIdentifier(
-                    token=identifiable.token, file=identifiable.file
+                    line=identifiable.line,
+                    column=identifiable.column,
+                    file=identifiable.file,
+                    keyword=identifiable.name,
                 )
 
             if key in identifiers:
@@ -285,7 +287,6 @@ class CrossReferencer:
     ) -> Identifiable:
         name = identifier.name
         file = identifier.file
-        token = identifier.token
 
         builtins_key = (self.builtins_path, name)
         key = (file, name)
@@ -295,7 +296,9 @@ class CrossReferencer:
         elif key in self.identifiers:
             found = self.identifiers[key]
         else:
-            raise UnknownIdentifier(file=file, name=name, token=token)
+            raise UnknownIdentifier(
+                file=file, name=name, line=identifier.line, column=identifier.column
+            )
 
         if isinstance(found, Import):
             assert not isinstance(found.source, (Unresolved, Import))
@@ -399,12 +402,14 @@ class CrossReferencer:
                 if lhs_arg.identifier.name == rhs_arg.identifier.name:
                     lhs_identifiable = ArgumentIdentifiable(
                         file=lhs_arg.file,
-                        token=lhs_arg.token,
+                        line=lhs_arg.line,
+                        column=lhs_arg.column,
                         name=lhs_arg.identifier.name,
                     )
                     rhs_identifiable = ArgumentIdentifiable(
                         file=rhs_arg.file,
-                        token=rhs_arg.token,
+                        line=rhs_arg.line,
+                        column=rhs_arg.column,
                         name=rhs_arg.identifier.name,
                     )
 
@@ -430,7 +435,10 @@ class CrossReferencer:
 
             if parsed_arg.identifier.name in AAA_KEYWORDS:
                 raise KeywordUsedAsIdentifier(
-                    token=parsed_arg.identifier.token, file=parsed_arg.identifier.file
+                    line=parsed_arg.identifier.line,
+                    column=parsed_arg.identifier.column,
+                    file=parsed_arg.identifier.file,
+                    keyword=parsed_arg.identifier.name,
                 )
 
             if not isinstance(type, Type):
@@ -439,7 +447,8 @@ class CrossReferencer:
             if len(parsed_type.params) != type.param_count:
                 raise UnexpectedTypeParameterCount(
                     file=function.file,
-                    token=parsed_arg.identifier.token,
+                    line=parsed_arg.identifier.line,
+                    column=parsed_arg.identifier.column,
                     expected_param_count=type.param_count,
                     found_param_count=len(parsed_type.params),
                 )
@@ -512,7 +521,10 @@ class CrossReferencer:
                 raise CollidingIdentifier(
                     file=argument.file,
                     colliding=ArgumentIdentifiable(
-                        file=argument.file, token=argument.token, name=argument.name
+                        file=argument.file,
+                        line=argument.line,
+                        column=argument.column,
+                        name=argument.name,
                     ),
                     found=found,
                 )
@@ -570,7 +582,8 @@ class CrossReferencer:
                 return Identifier(
                     parsed=parser.Identifier(
                         file=parsed_item.file,
-                        token=parsed_item.token,
+                        line=parsed_item.line,
+                        column=parsed_item.column,
                         name=parsed_item.value,
                     ),
                     type_params=[],
@@ -605,7 +618,8 @@ class CrossReferencer:
                     parsed=parser.Identifier(
                         name=name,
                         file=parsed_item.file,
-                        token=parsed_item.token,
+                        line=parsed_item.line,
+                        column=parsed_item.column,
                     ),
                 )
             elif isinstance(parsed_item, parser.StructFieldQuery):
@@ -627,11 +641,13 @@ class CrossReferencer:
                 identifier=parser.Identifier(
                     name=identifier.name,
                     file=Path("/dev/null"),
-                    token=DUMMY_TOKEN,
+                    line=-1,
+                    column=-1,
                 ),
                 params=[],
                 file=Path("/dev/null"),
-                token=DUMMY_TOKEN,
+                line=-1,
+                column=-1,
             )
 
             type = self._get_identifiable(identifier)
@@ -670,11 +686,13 @@ class CrossReferencer:
                         identifier=parser.Identifier(
                             name=identifier.name,
                             file=Path("/dev/null"),
-                            token=DUMMY_TOKEN,
+                            line=-1,
+                            column=-1,
                         ),
                         params=[],
                         file=Path("/dev/null"),
-                        token=DUMMY_TOKEN,
+                        line=-1,
+                        column=-1,
                     )
 
                     var_type = VariableType(
@@ -690,7 +708,8 @@ class CrossReferencer:
                     if len(identifier.type_params) != identifiable.param_count:
                         raise UnexpectedTypeParameterCount(
                             file=function.file,
-                            token=identifier.token,
+                            line=identifier.line,
+                            column=identifier.column,
                             expected_param_count=identifiable.param_count,
                             found_param_count=len(identifier.type_params),
                         )

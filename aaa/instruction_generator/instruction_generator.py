@@ -217,7 +217,13 @@ class InstructionGenerator:
                 if called_function.name in OPERATOR_INSTRUCTIONS:
                     return [OPERATOR_INSTRUCTIONS[called_function.name]]
                 if called_function.name == "assert":
-                    return [Assert(identifier.file, identifier.token)]
+                    return [
+                        Assert(
+                            identifier.file,
+                            identifier.line,
+                            identifier.column,
+                        )
+                    ]
 
                 return [
                     StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[called_function.name])

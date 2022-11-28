@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from lark.lexer import Token
-
 from aaa import AaaException, error_location
 from aaa.cross_referencer.models import (
     ArgumentIdentifiable,
@@ -44,7 +42,7 @@ class ImportedItemNotFound(CrossReferenceBaseException):
         self.file = file
 
     def where(self) -> str:
-        return error_location(self.file, self.import_.token)
+        return error_location(self.file, self.import_.line, self.import_.column)
 
     def __str__(self) -> str:
         return (
@@ -64,7 +62,7 @@ class IndirectImportException(CrossReferenceBaseException):
         self.import_ = import_
 
     def where(self) -> str:
-        return error_location(self.file, self.import_.token)
+        return error_location(self.file, self.import_.line, self.import_.column)
 
     def __str__(self) -> str:
         return f"{self.where()}: Indirect imports are forbidden.\n"
@@ -83,8 +81,10 @@ class CollidingIdentifier(CrossReferenceBaseException):
         self.file = file
 
     def __str__(self) -> str:
-        lhs_where = error_location(self.file, self.colliding.token)
-        rhs_where = error_location(self.file, self.found.token)
+        lhs_where = error_location(
+            self.file, self.colliding.line, self.colliding.column
+        )
+        rhs_where = error_location(self.file, self.found.line, self.found.column)
 
         return (
             f"{lhs_where}: {self.describe(self.colliding)} collides with:\n"
@@ -93,13 +93,14 @@ class CollidingIdentifier(CrossReferenceBaseException):
 
 
 class UnknownIdentifier(CrossReferenceBaseException):
-    def __init__(self, *, file: Path, name: str, token: Token) -> None:
+    def __init__(self, *, file: Path, name: str, line: int, column: int) -> None:
         self.name = name
-        self.token = token
+        self.line = line
+        self.column = column
         self.file = file
 
     def where(self) -> str:
-        return error_location(self.file, self.token)
+        return error_location(self.file, self.line, self.column)
 
     def __str__(self) -> str:
         return f"{self.where()}: Usage of unknown identifier {self.name}\n"
@@ -111,7 +112,9 @@ class InvalidTypeParameter(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def where(self) -> str:
-        return error_location(self.file, self.identifiable.token)
+        return error_location(
+            self.file, self.identifiable.line, self.identifiable.column
+        )
 
     def __str__(self) -> str:
         return f"{self.where()}: Cannot use {self.describe(self.identifiable)} as type parameter\n"
@@ -123,8 +126,8 @@ class InvalidArgument(CrossReferenceBaseException):
         self.found = found
 
     def __str__(self) -> str:
-        used_loc = error_location(self.used.file, self.used.token)
-        found_loc = error_location(self.found.file, self.found.token)
+        used_loc = error_location(self.used.file, self.used.line, self.used.column)
+        found_loc = error_location(self.found.file, self.found.line, self.found.column)
 
         return (
             f"{used_loc}: Cannot use {self.used.identifier.name} as argument\n"
@@ -138,7 +141,9 @@ class InvalidType(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def where(self) -> str:
-        return error_location(self.file, self.identifiable.token)
+        return error_location(
+            self.file, self.identifiable.line, self.identifiable.column
+        )
 
     def __str__(self) -> str:
         return (
@@ -169,17 +174,19 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
     def __init__(
         self,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         expected_param_count: int,
         found_param_count: int,
     ) -> None:
         self.file = file
-        self.token = token
+        self.line = line
+        self.column = column
         self.expected_param_count = expected_param_count
         self.found_param_count = found_param_count
 
     def where(self) -> str:
-        return error_location(self.file, self.token)
+        return error_location(self.file, self.line, self.column)
 
     def __str__(self) -> str:
         return (
@@ -190,12 +197,14 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
 
 
 class KeywordUsedAsIdentifier(CrossReferenceBaseException):
-    def __init__(self, *, token: Token, file: Path) -> None:
-        self.token = token
+    def __init__(self, *, line: int, column: int, file: Path, keyword: str) -> None:
+        self.line = line
+        self.column = column
         self.file = file
+        self.keyword = keyword
 
     def where(self) -> str:
-        return f"{self.file}:{self.token.line}:{self.token.column}"
+        return f"{self.file}:{self.line}:{self.column}"
 
     def __str__(self) -> str:
-        return f'{self.where()}: Can\'t use keyword "{self.token.value}" as identifier.'
+        return f'{self.where()}: Can\'t use keyword "{self.keyword}" as identifier.'

@@ -488,7 +488,10 @@ class Simulator:
         if not x:
             call_stack_copy = deepcopy(self.call_stack)
             raise AaaAssertionFailure(
-                instruction.file, instruction.token, call_stack_copy
+                instruction.file,
+                instruction.line,
+                instruction.column,
+                call_stack_copy,
             )
 
         return self.get_instruction_pointer() + 1

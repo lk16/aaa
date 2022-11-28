@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Sequence
 
-from lark.lexer import Token
-
 
 class AaaModel:
     def __repr__(self) -> str:  # pragma: nocover
@@ -25,5 +23,5 @@ class AaaRunnerException(AaaException):
         self.exceptions = exceptions
 
 
-def error_location(file: Path, token: Token) -> str:
-    return f"{file}:{token.line}:{token.column}"
+def error_location(file: Path, line: int, column: int) -> str:
+    return f"{file}:{line}:{column}"

@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import List, Union
 
-from lark.lexer import Token
-
 from aaa import AaaException, error_location
 from aaa.cross_referencer.models import (
     Function,
@@ -25,13 +23,16 @@ def format_typestack(
 
 
 class TypeCheckerException(AaaException):
-    def __init__(self, file: Path, token: Token, function: "Function") -> None:
+    def __init__(
+        self, file: Path, line: int, column: int, function: "Function"
+    ) -> None:
         self.file = file
         self.function = function
-        self.token = token
+        self.line = line
+        self.column = column
 
     def where(self) -> str:
-        return error_location(self.file, self.token)
+        return error_location(self.file, self.line, self.column)
 
 
 class TypeException(TypeCheckerException):
@@ -43,14 +44,15 @@ class FunctionTypeError(TypeCheckerException):
         self,
         *,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         expected_return_types: List[VariableType],
         computed_return_types: List[VariableType],
     ) -> None:
         self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def __str__(self) -> str:
         expected = format_typestack(self.expected_return_types)
@@ -68,7 +70,8 @@ class StackTypesError(TypeCheckerException):
         self,
         *,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         signature: Union["Signature", "StructQuerySignature", "StructUpdateSignature"],
         type_stack: List[VariableType],
@@ -81,7 +84,7 @@ class StackTypesError(TypeCheckerException):
         self.signature = signature
         self.type_stack = type_stack
         self.func_like = func_like
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def func_like_name(self) -> str:
         if isinstance(self.func_like, Function):
@@ -116,14 +119,15 @@ class ConditionTypeError(TypeCheckerException):
         self,
         *,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         type_stack: List[VariableType],
         condition_stack: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.condition_stack = condition_stack
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def __str__(self) -> str:
         stack_before = format_typestack(self.type_stack)
@@ -141,7 +145,8 @@ class BranchTypeError(TypeCheckerException):
         self,
         *,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         type_stack: List[VariableType],
         if_stack: List[VariableType],
@@ -150,7 +155,7 @@ class BranchTypeError(TypeCheckerException):
         self.type_stack = type_stack
         self.if_stack = if_stack
         self.else_stack = else_stack
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def __str__(self) -> str:
         before_stack = format_typestack(self.type_stack)
@@ -170,14 +175,15 @@ class LoopTypeError(TypeCheckerException):
         self,
         *,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         type_stack: List[VariableType],
         loop_stack: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.loop_stack = loop_stack
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def __str__(self) -> str:
         before_stack = format_typestack(self.type_stack)
@@ -205,14 +211,15 @@ class StructUpdateStackError(TypeCheckerException):
         self,
         *,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         type_stack: List[VariableType],
         type_stack_before: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.type_stack_before = type_stack_before
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def __str__(self) -> str:
         expected_stack = format_typestack(self.type_stack_before)
@@ -230,7 +237,8 @@ class StructUpdateTypeError(TypeCheckerException):
         self,
         *,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         type_stack: List[VariableType],
         struct_type: Type,
@@ -243,7 +251,7 @@ class StructUpdateTypeError(TypeCheckerException):
         self.field_name = field_name
         self.expected_type = expected_type
         self.found_type = found_type
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def __str__(self) -> str:
         return (
@@ -263,20 +271,21 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
         self,
         *,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         struct_type: Type,
         signature: "Signature",
     ) -> None:
         self.struct_type = struct_type
         self.signature = signature
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def __str__(self) -> str:
         _, member_func_name = self.function.identify()
 
-        line = self.function.token.line
-        col = self.function.token.column
+        line = self.function.line
+        col = self.function.column
 
         formatted = f"{self.file}:{line}:{col} Function {member_func_name} has invalid member-function signature\n\n"
 
@@ -296,14 +305,15 @@ class UnknownField(TypeCheckerException):
     def __init__(
         self,
         file: Path,
-        token: Token,
+        line: int,
+        column: int,
         function: "Function",
         struct_type: Type,
         field_name: str,
     ) -> None:
         self.struct_type = struct_type
         self.field_name = field_name
-        super().__init__(file=file, token=token, function=function)
+        super().__init__(file=file, line=line, column=column, function=function)
 
     def __str__(self) -> str:
         return f"{self.where()}: Usage of unknown field {self.field_name} of type {self.struct_type.name}"

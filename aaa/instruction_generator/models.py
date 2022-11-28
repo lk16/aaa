@@ -2,8 +2,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from lark.lexer import Token
-
 from aaa import AaaModel
 from aaa.cross_referencer.models import Function, Type, VariableType
 
@@ -216,9 +214,10 @@ class Nop(Instruction):
 
 
 class Assert(Instruction):
-    def __init__(self, file: Path, token: Token) -> None:
+    def __init__(self, file: Path, line: int, column: int) -> None:
         self.file = file
-        self.token = token
+        self.line = line
+        self.column = column
 
 
 class PushVec(Instruction):
