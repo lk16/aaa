@@ -33,7 +33,8 @@ void aaa_struct_inc_ref(struct aaa_struct *s) {
     aaa_ref_count_inc(&s->ref_count);
 }
 
-static void aaa_struct_upsert_field(struct aaa_struct *s, char *field_name,
+static void aaa_struct_upsert_field(struct aaa_struct *s,
+                                    const char *field_name,
                                     struct aaa_variable *new_value,
                                     bool create) {
     struct aaa_string *key = aaa_string_new(field_name, false);
@@ -52,18 +53,18 @@ static void aaa_struct_upsert_field(struct aaa_struct *s, char *field_name,
     aaa_variable_dec_ref(key_var);
 }
 
-void aaa_struct_create_field(struct aaa_struct *s, char *field_name,
+void aaa_struct_create_field(struct aaa_struct *s, const char *field_name,
                              struct aaa_variable *new_value) {
     aaa_struct_upsert_field(s, field_name, new_value, true);
 }
 
-void aaa_struct_set_field(struct aaa_struct *s, char *field_name,
+void aaa_struct_set_field(struct aaa_struct *s, const char *field_name,
                           struct aaa_variable *new_value) {
     aaa_struct_upsert_field(s, field_name, new_value, false);
 }
 
 struct aaa_variable *aaa_struct_get_field(struct aaa_struct *s,
-                                          char *field_name) {
+                                          const char *field_name) {
     struct aaa_string *key = aaa_string_new(field_name, false);
     struct aaa_variable *key_var = aaa_variable_new_str(key);
 

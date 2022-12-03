@@ -12,12 +12,12 @@
 
 struct aaa_string {
     struct aaa_ref_count ref_count;
-    char *raw;
+    const char *raw;
     size_t length;
     bool freeable;
 };
 
-struct aaa_string *aaa_string_new(char *raw, bool freeable) {
+struct aaa_string *aaa_string_new(const char *raw, bool freeable) {
     struct aaa_string *string = malloc(sizeof(*string));
     aaa_ref_count_init(&string->ref_count);
     string->raw = raw;
@@ -26,12 +26,14 @@ struct aaa_string *aaa_string_new(char *raw, bool freeable) {
     return string;
 }
 
-char *aaa_string_raw(const struct aaa_string *string) { return string->raw; }
+const char *aaa_string_raw(const struct aaa_string *string) {
+    return string->raw;
+}
 
 void aaa_string_dec_ref(struct aaa_string *string) {
     if (aaa_ref_count_dec(&string->ref_count) == 0) {
         if (string->freeable) {
-            free(string->raw);
+            free((void *)string->raw);
         }
         free(string);
     }
@@ -230,7 +232,7 @@ struct aaa_vector *aaa_string_split(const struct aaa_string *string,
 }
 
 struct aaa_string *aaa_string_strip(const struct aaa_string *string) {
-    char *c = string->raw;
+    const char *c = string->raw;
 
     size_t leading_ws = 0;
     size_t trailing_ws = 0;

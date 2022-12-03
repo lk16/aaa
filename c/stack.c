@@ -327,9 +327,9 @@ void aaa_stack_write(struct aaa_stack *stack) {
     int fd = aaa_stack_pop_int(stack);
 
     const char *data_raw = aaa_string_raw(data);
+    size_t length = aaa_string_len(data);
 
-    // TODO make string smarter so we keep its length cached
-    int written = write(fd, data_raw, strlen(data_raw));
+    int written = write(fd, data_raw, length);
 
     if (written < 0) {
         aaa_stack_push_int(stack, 0);
@@ -868,7 +868,7 @@ void aaa_stack_field_query(struct aaa_stack *stack) {
     struct aaa_string *field_name = aaa_stack_pop_str(stack);
     struct aaa_struct *s = aaa_stack_pop_struct(stack);
 
-    char *field_name_raw = aaa_string_raw(field_name);
+    const char *field_name_raw = aaa_string_raw(field_name);
     struct aaa_variable *field = aaa_struct_get_field(s, field_name_raw);
 
     aaa_stack_push(stack, field);
@@ -882,7 +882,7 @@ void aaa_stack_field_update(struct aaa_stack *stack) {
     struct aaa_string *field_name = aaa_stack_pop_str(stack);
     struct aaa_struct *s = aaa_stack_pop_struct(stack);
 
-    char *field_name_raw = aaa_string_raw(field_name);
+    const char *field_name_raw = aaa_string_raw(field_name);
     aaa_struct_set_field(s, field_name_raw, new_value);
 
     aaa_variable_dec_ref(new_value);
