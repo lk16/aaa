@@ -3,9 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "stack.h"
+
+extern char **environ;
 
 void aaa_stack_not_implemented(struct aaa_stack *stack,
                                const char *aaa_func_name) {
@@ -225,6 +228,7 @@ void aaa_stack_print(struct aaa_stack *stack) {
 
     const char *raw = aaa_string_raw(printed);
     printf("%s", raw);
+    fflush(stdout);
 
     aaa_string_dec_ref(printed);
     aaa_variable_dec_ref(top);
@@ -888,4 +892,107 @@ void aaa_stack_field_update(struct aaa_stack *stack) {
     aaa_variable_dec_ref(new_value);
     aaa_string_dec_ref(field_name);
     aaa_struct_dec_ref(s);
+}
+
+void aaa_stack_fsync(struct aaa_stack *stack) {
+    int fd = aaa_stack_pop_int(stack);
+
+    if (fsync(fd) == -1) {
+        aaa_stack_push_bool(stack, false);
+    }
+
+    aaa_stack_push_bool(stack, true);
+}
+
+void aaa_stack_environ(struct aaa_stack *stack) {
+    struct aaa_map *map = aaa_map_new();
+
+    struct aaa_string *splitter = aaa_string_new("=", false);
+
+    for (char **env_item = environ; *env_item; env_item++) {
+        struct aaa_string *item = aaa_string_new(*env_item, false);
+        struct aaa_vector *split = aaa_string_split(item, splitter);
+
+        struct aaa_variable *key = aaa_vector_get(split, 0);
+        struct aaa_variable *value = aaa_vector_get(split, 1);
+
+        aaa_map_set(map, key, value);
+
+        aaa_string_dec_ref(item);
+        aaa_vector_dec_ref(split);
+    }
+
+    aaa_stack_push_map(stack, map);
+}
+
+void aaa_stack_execve(struct aaa_stack *stack) {
+    struct aaa_map *env_map = aaa_stack_pop_map(stack);
+    struct aaa_vector *argv_vec = aaa_stack_pop_vec(stack);
+    struct aaa_string *path_str = aaa_stack_pop_str(stack);
+
+    size_t argv_length = aaa_vector_size(argv_vec);
+    size_t env_length = aaa_map_size(env_map);
+
+    const char *path = aaa_string_raw(path_str);
+    char **argv = malloc((argv_length + 1) * sizeof(*argv));
+
+    for (size_t i = 0; i < argv_length; i++) {
+        struct aaa_variable *argv_item_var = aaa_vector_get(argv_vec, i);
+        struct aaa_string *argv_item = aaa_variable_get_str(argv_item_var);
+
+        const char *argv_item_raw = aaa_string_raw(argv_item);
+        size_t argv_item_length = aaa_string_len(argv_item);
+
+        argv[i] = malloc((argv_item_length + 1) * sizeof(char));
+        strcpy(argv[i], argv_item_raw);
+    }
+    argv[argv_length] = NULL;
+
+    char **env = malloc((env_length + 1) * sizeof(*env));
+
+    struct aaa_map_iter *env_iter = aaa_map_iter_new(env_map);
+
+    struct aaa_variable *env_key_var = NULL;
+    struct aaa_variable *env_value_var = NULL;
+
+    size_t env_offset = 0;
+    while (aaa_map_iter_next(env_iter, &env_key_var, &env_value_var)) {
+        struct aaa_string *env_key = aaa_variable_get_str(env_key_var);
+        struct aaa_string *env_value = aaa_variable_get_str(env_value_var);
+
+        size_t key_length = aaa_string_len(env_key);
+        size_t value_length = aaa_string_len(env_value);
+
+        char *env_item = malloc(key_length + value_length + 2 * sizeof(char));
+        sprintf(env_item, "%s=%s", aaa_string_raw(env_key),
+                aaa_string_raw(env_value));
+
+        env[env_offset] = env_item;
+        env_offset++;
+    }
+
+    env[env_length] = NULL;
+
+    execve(path, argv, env);
+}
+
+void aaa_stack_fork(struct aaa_stack *stack) {
+    int pid = fork();
+
+    aaa_stack_push_int(stack, pid);
+}
+
+void aaa_stack_waitpid(struct aaa_stack *stack) {
+    int options = aaa_stack_pop_int(stack);
+    int pid = aaa_stack_pop_int(stack);
+
+    int changed_pid = waitpid(pid, NULL, options);
+
+    if (changed_pid == 0) {
+        aaa_stack_push_int(stack, 0);
+        aaa_stack_push_bool(stack, false);
+    } else {
+        aaa_stack_push_int(stack, changed_pid);
+        aaa_stack_push_bool(stack, true);
+    }
 }

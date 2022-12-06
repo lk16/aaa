@@ -253,3 +253,72 @@ struct aaa_map *aaa_map_copy(struct aaa_map *map) {
 
     return copy;
 }
+
+struct aaa_map_iter {
+    struct aaa_ref_count ref_count;
+    struct aaa_map *map;
+    size_t next_bucket;
+    struct aaa_map_item *next_item;
+};
+
+struct aaa_map_iter *aaa_map_iter_new(struct aaa_map *map) {
+    struct aaa_map_iter *iter = malloc(sizeof(*iter));
+    aaa_ref_count_init(&iter->ref_count);
+    aaa_map_inc_ref(map);
+    iter->map = map;
+    iter->next_bucket = 1;
+    iter->next_item = map->buckets[0];
+    return iter;
+}
+
+void aaa_map_iter_dec_ref(struct aaa_map_iter *iter) {
+    if (aaa_ref_count_dec(&iter->ref_count) == 0) {
+        free(iter);
+    }
+}
+
+void aaa_map_iter_inc_ref(struct aaa_map_iter *iter) {
+    aaa_ref_count_inc(&iter->ref_count);
+}
+
+bool aaa_map_iter_next(struct aaa_map_iter *iter, struct aaa_variable **key,
+                       struct aaa_variable **value) {
+    while (true) {
+        if (iter->next_bucket >= iter->map->bucket_count) {
+            if (*key) {
+                aaa_variable_dec_ref(*key);
+                *key = NULL;
+            }
+
+            if (*value) {
+                aaa_variable_dec_ref(*value);
+                *value = NULL;
+            }
+
+            return false;
+        }
+
+        if (!iter->next_item) {
+            iter->next_item = iter->map->buckets[iter->next_bucket];
+            iter->next_bucket++;
+        }
+
+        break;
+    }
+
+    if (*key) {
+        aaa_variable_dec_ref(*key);
+    }
+
+    if (*value) {
+        aaa_variable_dec_ref(*value);
+    }
+
+    *key = iter->next_item->key;
+    *value = iter->next_item->value;
+    iter->next_item = iter->next_item->next;
+
+    aaa_variable_inc_ref(*key);
+    aaa_variable_inc_ref(*value);
+    return true;
+}

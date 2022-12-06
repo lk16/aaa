@@ -100,3 +100,8 @@ void aaa_stack_str_to_bool(struct aaa_stack *stack);
 void aaa_stack_str_to_int(struct aaa_stack *stack);
 void aaa_stack_field_query(struct aaa_stack *stack);
 void aaa_stack_field_update(struct aaa_stack *stack);
+void aaa_stack_fsync(struct aaa_stack *stack);
+void aaa_stack_environ(struct aaa_stack *stack);
+void aaa_stack_execve(struct aaa_stack *stack);
+void aaa_stack_fork(struct aaa_stack *stack);
+void aaa_stack_waitpid(struct aaa_stack *stack);

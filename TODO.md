@@ -3,13 +3,12 @@
 ### Transpiling to C
 - [x] Implement `repr`
 - [x] Update python tests to use `repr` instead of `.`
-- [ ] Port remaining tests to `test_builtins.aaa`
-- [ ] Move all tests for `.` to one python file
+- [x] Port remaining tests to `test_builtins.aaa`
 - [ ] Implement missing stdlib functions in C implementation
 - [ ] Run `gcov` to find missing coverage
 - [ ] Run `valgrind` to find memory issues
-- [ ] Add some C source code linter
-- [ ] Add all of that to CI
+- [x] Add some C source code linter
+- [x] Add all of that to CI
 - [ ] Add transpiling to `README.md`
 
 ### Tests

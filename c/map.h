@@ -21,3 +21,11 @@ struct aaa_variable *aaa_map_pop(struct aaa_map *map,
 void aaa_map_set(struct aaa_map *map, struct aaa_variable *key,
                  struct aaa_variable *value);
 size_t aaa_map_size(const struct aaa_map *map);
+
+struct aaa_map_iter *aaa_map_iter_new(struct aaa_map *map);
+
+void aaa_map_iter_dec_ref(struct aaa_map_iter *iter);
+void aaa_map_iter_inc_ref(struct aaa_map_iter *iter);
+
+bool aaa_map_iter_next(struct aaa_map_iter *iter, struct aaa_variable **key,
+                       struct aaa_variable **value);
