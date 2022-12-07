@@ -1054,7 +1054,14 @@ void aaa_stack_getenv(struct aaa_stack *stack) {
     const char *name_raw = aaa_string_raw(name);
 
     const char *value = getenv(name_raw);
-    aaa_stack_push_str_raw(stack, value, false);
+
+    if (value) {
+        aaa_stack_push_str_raw(stack, value, false);
+        aaa_stack_push_bool(stack, true);
+    } else {
+        aaa_stack_push_str_raw(stack, "", false);
+        aaa_stack_push_bool(stack, false);
+    }
 
     aaa_string_dec_ref(name);
 }
