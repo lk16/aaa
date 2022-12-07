@@ -21,7 +21,7 @@ void aaa_stack_not_implemented(struct aaa_stack *stack,
 
 void aaa_stack_push_int(struct aaa_stack *stack, int value);
 void aaa_stack_push_str(struct aaa_stack *stack, struct aaa_string *value);
-void aaa_stack_push_str_raw(struct aaa_stack *stack, char *value,
+void aaa_stack_push_str_raw(struct aaa_stack *stack, const char *value,
                             bool freeable);
 void aaa_stack_push_bool(struct aaa_stack *stack, bool value);
 bool aaa_stack_pop_bool(struct aaa_stack *stack);
@@ -71,7 +71,6 @@ void aaa_stack_vec_set(struct aaa_stack *stack);
 void aaa_stack_vec_size(struct aaa_stack *stack);
 void aaa_stack_vec_empty(struct aaa_stack *stack);
 void aaa_stack_vec_clear(struct aaa_stack *stack);
-void aaa_stack_vec_clear(struct aaa_stack *stack);
 void aaa_stack_push_map_empty(struct aaa_stack *stack);
 void aaa_stack_push_map(struct aaa_stack *stack, struct aaa_map *map);
 void aaa_stack_map_set(struct aaa_stack *stack);
@@ -85,7 +84,6 @@ void aaa_stack_map_pop(struct aaa_stack *stack);
 void aaa_stack_map_drop(struct aaa_stack *stack);
 void aaa_stack_str_append(struct aaa_stack *stack);
 void aaa_stack_str_contains(struct aaa_stack *stack);
-void aaa_stack_str_equals(struct aaa_stack *stack);
 void aaa_stack_str_join(struct aaa_stack *stack);
 void aaa_stack_str_len(struct aaa_stack *stack);
 void aaa_stack_str_lower(struct aaa_stack *stack);
@@ -105,3 +103,15 @@ void aaa_stack_environ(struct aaa_stack *stack);
 void aaa_stack_execve(struct aaa_stack *stack);
 void aaa_stack_fork(struct aaa_stack *stack);
 void aaa_stack_waitpid(struct aaa_stack *stack);
+void aaa_stack_chdir(struct aaa_stack *stack);
+void aaa_stack_close(struct aaa_stack *stack);
+void aaa_stack_getcwd(struct aaa_stack *stack);
+void aaa_stack_getenv(struct aaa_stack *stack);
+void aaa_stack_getpid(struct aaa_stack *stack);
+void aaa_stack_getppid(struct aaa_stack *stack);
+void aaa_stack_gettimeofday(struct aaa_stack *stack);
+void aaa_stack_open(struct aaa_stack *stack);
+void aaa_stack_setenv(struct aaa_stack *stack);
+void aaa_stack_time(struct aaa_stack *stack);
+void aaa_stack_unlink(struct aaa_stack *stack);
+void aaa_stack_unsetenv(struct aaa_stack *stack);

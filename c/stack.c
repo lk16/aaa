@@ -1,9 +1,13 @@
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "stack.h"
@@ -72,7 +76,8 @@ void aaa_stack_push_str(struct aaa_stack *stack, struct aaa_string *value) {
     aaa_stack_push(stack, var);
 }
 
-void aaa_stack_push_str_raw(struct aaa_stack *stack, char *raw, bool freeable) {
+void aaa_stack_push_str_raw(struct aaa_stack *stack, const char *raw,
+                            bool freeable) {
     struct aaa_string *string = aaa_string_new(raw, freeable);
     aaa_stack_push_str(stack, string);
 }
@@ -995,4 +1000,142 @@ void aaa_stack_waitpid(struct aaa_stack *stack) {
         aaa_stack_push_int(stack, changed_pid);
         aaa_stack_push_bool(stack, true);
     }
+}
+
+void aaa_stack_getcwd(struct aaa_stack *stack) {
+    size_t buff_size = PATH_MAX;
+    char *buff = malloc(buff_size);
+
+    if (getcwd(buff, buff_size) == NULL) {
+        fprintf(stderr, "getcwd() failed\n");
+        abort();
+    }
+
+    aaa_stack_push_str_raw(stack, buff, true);
+}
+
+void aaa_stack_chdir(struct aaa_stack *stack) {
+    struct aaa_string *path = aaa_stack_pop_str(stack);
+    const char *path_raw = aaa_string_raw(path);
+
+    if (chdir(path_raw) == 0) {
+        aaa_stack_push_bool(stack, true);
+    } else {
+        aaa_stack_push_bool(stack, false);
+    }
+
+    aaa_string_dec_ref(path);
+}
+
+void aaa_stack_close(struct aaa_stack *stack) {
+    int fd = aaa_stack_pop_int(stack);
+
+    if (close(fd) == 0) {
+        aaa_stack_push_bool(stack, true);
+    } else {
+        aaa_stack_push_bool(stack, false);
+    }
+}
+
+void aaa_stack_getpid(struct aaa_stack *stack) {
+    int pid = getpid();
+
+    aaa_stack_push_int(stack, pid);
+}
+
+void aaa_stack_getppid(struct aaa_stack *stack) {
+    int ppid = getppid();
+
+    aaa_stack_push_int(stack, ppid);
+}
+
+void aaa_stack_getenv(struct aaa_stack *stack) {
+    struct aaa_string *name = aaa_stack_pop_str(stack);
+    const char *name_raw = aaa_string_raw(name);
+
+    const char *value = getenv(name_raw);
+    aaa_stack_push_str_raw(stack, value, false);
+
+    aaa_string_dec_ref(name);
+}
+
+void aaa_stack_gettimeofday(struct aaa_stack *stack) {
+    struct timeval tv;
+
+    if (gettimeofday(&tv, NULL) != 0) {
+        fprintf(stderr, "gettimeofday() failed\n");
+        abort();
+    }
+
+    aaa_stack_push_int(stack, tv.tv_sec);
+    aaa_stack_push_int(stack, tv.tv_usec);
+}
+
+void aaa_stack_open(struct aaa_stack *stack) {
+    int mode = aaa_stack_pop_int(stack);
+    int flags = aaa_stack_pop_int(stack);
+    struct aaa_string *path = aaa_stack_pop_str(stack);
+
+    const char *path_raw = aaa_string_raw(path);
+
+    int fd = open(path_raw, flags, mode);
+
+    if (fd == -1) {
+        aaa_stack_push_int(stack, 0);
+        aaa_stack_push_bool(stack, false);
+    } else {
+        aaa_stack_push_int(stack, fd);
+        aaa_stack_push_bool(stack, true);
+    }
+
+    aaa_string_dec_ref(path);
+}
+
+void aaa_stack_setenv(struct aaa_stack *stack) {
+    struct aaa_string *value = aaa_stack_pop_str(stack);
+    struct aaa_string *name = aaa_stack_pop_str(stack);
+
+    const char *value_raw = aaa_string_raw(value);
+    const char *name_raw = aaa_string_raw(name);
+
+    if (setenv(name_raw, value_raw, 1) == -1) {
+        fprintf(stderr, "setenv() failed\n");
+        abort();
+    }
+
+    aaa_string_dec_ref(value);
+    aaa_string_dec_ref(name);
+}
+
+void aaa_stack_time(struct aaa_stack *stack) {
+    int timestamp = time(NULL);
+
+    aaa_stack_push_int(stack, timestamp);
+}
+
+void aaa_stack_unlink(struct aaa_stack *stack) {
+    struct aaa_string *path = aaa_stack_pop_str(stack);
+
+    const char *path_raw = aaa_string_raw(path);
+
+    if (unlink(path_raw) == 0) {
+        aaa_stack_push_bool(stack, true);
+    } else {
+        aaa_stack_push_bool(stack, false);
+    }
+
+    aaa_string_dec_ref(path);
+}
+
+void aaa_stack_unsetenv(struct aaa_stack *stack) {
+    struct aaa_string *name = aaa_stack_pop_str(stack);
+
+    const char *name_raw = aaa_string_raw(name);
+
+    if (unsetenv(name_raw) == -1) {
+        fprintf(stderr, "unsetenv() failed\n");
+        abort();
+    }
+
+    aaa_string_dec_ref(name);
 }
