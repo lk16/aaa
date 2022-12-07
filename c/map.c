@@ -71,7 +71,7 @@ void aaa_map_drop(struct aaa_map *map, const struct aaa_variable *key) {
 }
 
 static float aaa_map_load_factor(const struct aaa_map *map) {
-    return (float)(map->size) / map->bucket_count;
+    return (float)(map->size) / (float)(map->bucket_count);
 }
 
 bool aaa_map_empty(const struct aaa_map *map) { return map->size == 0; }

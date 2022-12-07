@@ -6,6 +6,7 @@
 #include "ref_count.h"
 #include "str.h"
 #include "struct.h"
+#include "var.h"
 
 struct aaa_struct {
     struct aaa_ref_count ref_count;

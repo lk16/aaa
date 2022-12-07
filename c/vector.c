@@ -4,6 +4,7 @@
 
 #include "buffer.h"
 #include "ref_count.h"
+#include "str.h"
 #include "var.h"
 #include "vector.h"
 

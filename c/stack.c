@@ -10,7 +10,12 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "map.h"
 #include "stack.h"
+#include "str.h"
+#include "struct.h"
+#include "var.h"
+#include "vector.h"
 
 extern char **environ;
 
@@ -338,7 +343,7 @@ void aaa_stack_write(struct aaa_stack *stack) {
     const char *data_raw = aaa_string_raw(data);
     size_t length = aaa_string_len(data);
 
-    int written = write(fd, data_raw, length);
+    int written = (int)write(fd, data_raw, length);
 
     if (written < 0) {
         aaa_stack_push_int(stack, 0);
@@ -394,9 +399,9 @@ void aaa_stack_read(struct aaa_stack *stack) {
     int fd = aaa_stack_pop_int(stack);
 
     // TODO we create a C-string here, consider using a new buffer type
-    char *buff = malloc((n + 1) * sizeof(char));
+    char *buff = malloc((long unsigned)(n + 1) * sizeof(char));
 
-    int bytes_read = read(fd, buff, n);
+    int bytes_read = (int)read(fd, buff, (size_t)n);
     buff[bytes_read] = '\0';
 
     aaa_stack_push_str_raw(stack, buff, true);
@@ -536,7 +541,7 @@ void aaa_stack_vec_pop(struct aaa_stack *stack) {
 void aaa_stack_vec_get(struct aaa_stack *stack) {
     int offset = aaa_stack_pop_int(stack);
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-    struct aaa_variable *gotten = aaa_vector_get(vec, offset);
+    struct aaa_variable *gotten = aaa_vector_get(vec, (size_t)offset);
 
     aaa_stack_push(stack, gotten);
 
@@ -549,7 +554,7 @@ void aaa_stack_vec_set(struct aaa_stack *stack) {
     int offset = aaa_stack_pop_int(stack);
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
 
-    bool success = aaa_vector_set(vec, offset, value);
+    bool success = aaa_vector_set(vec, (size_t)offset, value);
     aaa_stack_push_bool(stack, success);
 
     aaa_vector_dec_ref(vec);
@@ -558,8 +563,8 @@ void aaa_stack_vec_set(struct aaa_stack *stack) {
 void aaa_stack_vec_size(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
 
-    int size = aaa_vector_size(vec);
-    aaa_stack_push_int(stack, size);
+    size_t size = aaa_vector_size(vec);
+    aaa_stack_push_int(stack, (int)size);
 
     aaa_vector_dec_ref(vec);
 }
@@ -636,7 +641,7 @@ void aaa_stack_map_size(struct aaa_stack *stack) {
     struct aaa_map *map = aaa_stack_pop_map(stack);
 
     size_t size = aaa_map_size(map);
-    aaa_stack_push_int(stack, size);
+    aaa_stack_push_int(stack, (int)size);
 
     aaa_map_dec_ref(map);
 }
@@ -734,7 +739,7 @@ void aaa_stack_str_len(struct aaa_stack *stack) {
     struct aaa_string *string = aaa_stack_pop_str(stack);
 
     size_t length = aaa_string_len(string);
-    aaa_stack_push_int(stack, length);
+    aaa_stack_push_int(stack, (int)length);
 
     aaa_string_dec_ref(string);
 }
@@ -791,14 +796,14 @@ void aaa_stack_str_strip(struct aaa_stack *stack) {
 }
 
 void aaa_stack_str_find_after(struct aaa_stack *stack) {
-    size_t start = aaa_stack_pop_int(stack);
+    int start = aaa_stack_pop_int(stack);
     struct aaa_string *search = aaa_stack_pop_str(stack);
     struct aaa_string *string = aaa_stack_pop_str(stack);
 
     size_t offset;
     bool success;
-    aaa_string_find_after(string, search, start, &offset, &success);
-    aaa_stack_push_int(stack, offset);
+    aaa_string_find_after(string, search, (size_t)start, &offset, &success);
+    aaa_stack_push_int(stack, (int)offset);
     aaa_stack_push_bool(stack, success);
 
     aaa_string_dec_ref(search);
@@ -812,7 +817,7 @@ void aaa_stack_str_find(struct aaa_stack *stack) {
     bool success;
     size_t offset;
     aaa_string_find(string, search, &offset, &success);
-    aaa_stack_push_int(stack, offset);
+    aaa_stack_push_int(stack, (int)offset);
     aaa_stack_push_bool(stack, success);
 
     aaa_string_dec_ref(search);
@@ -820,12 +825,13 @@ void aaa_stack_str_find(struct aaa_stack *stack) {
 }
 
 void aaa_stack_str_substr(struct aaa_stack *stack) {
-    size_t end = aaa_stack_pop_int(stack);
-    size_t start = aaa_stack_pop_int(stack);
+    int end = aaa_stack_pop_int(stack);
+    int start = aaa_stack_pop_int(stack);
     struct aaa_string *string = aaa_stack_pop_str(stack);
 
     bool success;
-    struct aaa_string *substr = aaa_string_substr(string, start, end, &success);
+    struct aaa_string *substr =
+        aaa_string_substr(string, (size_t)start, (size_t)end, &success);
     aaa_stack_push_str(stack, substr);
     aaa_stack_push_bool(stack, success);
 
@@ -1074,8 +1080,8 @@ void aaa_stack_gettimeofday(struct aaa_stack *stack) {
         abort();
     }
 
-    aaa_stack_push_int(stack, tv.tv_sec);
-    aaa_stack_push_int(stack, tv.tv_usec);
+    aaa_stack_push_int(stack, (int)tv.tv_sec);
+    aaa_stack_push_int(stack, (int)tv.tv_usec);
 }
 
 void aaa_stack_open(struct aaa_stack *stack) {
@@ -1115,9 +1121,9 @@ void aaa_stack_setenv(struct aaa_stack *stack) {
 }
 
 void aaa_stack_time(struct aaa_stack *stack) {
-    int timestamp = time(NULL);
+    time_t timestamp = time(NULL);
 
-    aaa_stack_push_int(stack, timestamp);
+    aaa_stack_push_int(stack, (int)timestamp);
 }
 
 void aaa_stack_unlink(struct aaa_stack *stack) {

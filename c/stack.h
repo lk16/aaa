@@ -3,9 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "map.h"
-#include "struct.h"
-#include "var.h"
+#include "types.h"
 
 struct aaa_stack {
     size_t size;

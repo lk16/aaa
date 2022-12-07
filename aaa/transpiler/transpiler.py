@@ -66,8 +66,6 @@ class Transpiler:
             exit_code = subprocess.run(
                 [
                     "gcc",
-                    "-Wall",
-                    "-Wextra",
                     # "--coverage", TODO enable this flag with flag
                     "-I",
                     "./c/",
@@ -75,8 +73,27 @@ class Transpiler:
                     "generated",
                     "-std=gnu99",
                     "-g",
+                    "-Wall",
+                    "-Wextra",
                     "-Werror",
+                    "-Wcast-align",
+                    "-Wconversion",
+                    "-Wfloat-equal",
+                    "-Wformat=2",
+                    "-Winline",
+                    "-Wlogical-op",
+                    "-Wmissing-prototypes",
                     "-Wno-missing-braces",
+                    "-Wno-missing-field-initializers",
+                    "-Wold-style-definition",
+                    "-Wpointer-arith",
+                    "-Wredundant-decls",
+                    "-Wshadow",
+                    "-Wstrict-prototypes",
+                    "-Wswitch-default",
+                    "-Wswitch-enum",
+                    "-Wundef",
+                    "-Wunreachable-code",
                 ]
                 + c_files
             ).returncode
@@ -97,9 +114,12 @@ class Transpiler:
         content += "\n"
 
         for type in self.types.values():
-            content += self._generate_c_struct_new_func(type)
+            content += self._generate_c_struct_new_func_prototype(type)
 
-        # TODO struct member functions
+        content += "\n"
+
+        for type in self.types.values():
+            content += self._generate_c_struct_new_func(type)
 
         for function in self.functions.values():
             if function.file == self.builtins_path:
@@ -313,6 +333,15 @@ class Transpiler:
         hash_input = f"{type.file} {type.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"aaa_user_struct_{hash}"
+
+    def _generate_c_struct_new_func_prototype(self, type: Type) -> str:
+        assert not isinstance(type.fields, Unresolved)
+
+        if type.file == self.builtins_path and not type.fields:
+            return ""
+
+        c_struct_name = self._generate_c_struct_name(type)
+        return f"struct aaa_struct *{c_struct_name}_new(void);\n"
 
     def _generate_c_struct_new_func(self, type: Type) -> str:
         assert not isinstance(type.fields, Unresolved)

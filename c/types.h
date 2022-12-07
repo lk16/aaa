@@ -11,3 +11,4 @@ struct aaa_ref_count;
 struct aaa_string;
 struct aaa_map;
 struct aaa_vector;
+struct aaa_struct;

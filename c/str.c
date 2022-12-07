@@ -101,7 +101,7 @@ struct aaa_string *aaa_string_lower(const struct aaa_string *string) {
     char *c = lower;
 
     while (*c) {
-        *c = tolower(*c);
+        *c = (char)tolower(*c);
         c++;
     }
 
@@ -115,7 +115,7 @@ struct aaa_string *aaa_string_upper(const struct aaa_string *string) {
     char *c = upper;
 
     while (*c) {
-        *c = toupper(*c);
+        *c = (char)toupper(*c);
         c++;
     }
 
@@ -134,7 +134,7 @@ void aaa_string_find_after(const struct aaa_string *string,
     char *location = strstr(string->raw + start, search->raw);
 
     if (location) {
-        *offset_out = location - string->raw;
+        *offset_out = (size_t)(location - string->raw);
         *success_out = true;
     } else {
         *offset_out = 0;
@@ -211,7 +211,7 @@ struct aaa_vector *aaa_string_split(const struct aaa_string *string,
         char *next_sep = strstr(string->raw + start, sep->raw);
 
         if (next_sep) {
-            end = next_sep - string->raw;
+            end = (size_t)(next_sep - string->raw);
         } else {
             end = string->length;
         }

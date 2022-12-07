@@ -4,7 +4,9 @@
 - [x] Implement `repr`
 - [x] Update python tests to use `repr` instead of `.`
 - [x] Port remaining tests to `test_builtins.aaa`
-- [ ] Implement missing stdlib functions in C implementation
+- [x] Implement missing stdlib functions in C implementation
+- [ ] Add `-Wconversion`
+- [ ] Consider other C compiler warning flags
 - [ ] Reset `errno` in case C stdlib functions fail
 - [ ] Run `gcov` to find missing coverage
 - [ ] Run `valgrind` to find memory issues

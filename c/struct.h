@@ -1,5 +1,6 @@
-#include "str.h"
-#include "var.h"
+#pragma once
+
+#include "types.h"
 
 struct aaa_struct;
 

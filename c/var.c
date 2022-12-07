@@ -105,7 +105,7 @@ struct aaa_variable *aaa_variable_new_struct(struct aaa_struct *struct_) {
     return var;
 }
 
-struct aaa_string *aaa_variable_repr_bool(bool boolean) {
+static struct aaa_string *aaa_variable_repr_bool(bool boolean) {
     char *raw = NULL;
     if (boolean) {
         raw = "true";
@@ -153,14 +153,14 @@ struct aaa_struct *aaa_variable_get_struct(struct aaa_variable *var) {
     return var->struct_;
 }
 
-struct aaa_string *aaa_variable_repr_int(int integer) {
-    size_t buff_size = snprintf(NULL, 0, "%d", integer);
+static struct aaa_string *aaa_variable_repr_int(int integer) {
+    size_t buff_size = (size_t)snprintf(NULL, 0, "%d", integer);
     char *buff = malloc(buff_size + 1);
     snprintf(buff, buff_size + 1, "%d", integer);
     return aaa_string_new(buff, true);
 }
 
-struct aaa_string *aaa_variable_repr_str(struct aaa_string *string) {
+static struct aaa_string *aaa_variable_repr_str(struct aaa_string *string) {
     struct aaa_buffer *buff = aaa_buffer_new();
     aaa_buffer_append(buff, "\"");
     const char *c = aaa_string_raw(string);
@@ -223,6 +223,7 @@ struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
             return aaa_vector_repr(var->vector);
         case AAA_MAP:
             return aaa_map_repr(var->map);
+        case AAA_STRUCT:
         default:
             fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
             abort();
@@ -247,20 +248,24 @@ size_t aaa_variable_hash(const struct aaa_variable *var) {
                 return 0;
             }
         case AAA_INTEGER:
-            return (var->integer ^ 0x123456789) + (var->integer << 13) +
-                   (var->integer >> 17);
+            return (size_t)(var->integer ^ 0x123456789) +
+                   (size_t)(var->integer << 13) + (size_t)(var->integer >> 17);
         case AAA_STRING:
             (void)0;
             size_t hash = 0;
             const char *c = aaa_string_raw(var->string);
             while (*c) {
-                hash = (hash * 123457) + *c;
+                hash = (hash * 123457) + (size_t)(*c);
                 c++;
             }
             return hash;
         case AAA_VECTOR:
             fprintf(stderr, "Cannot hash a vector!\n");
             abort();
+        case AAA_MAP:
+            fprintf(stderr, "Cannot hash a map!\n");
+            abort();
+        case AAA_STRUCT:
         default:
             fprintf(stderr, "aaa_variable_hash Unhandled variable kind\n");
             abort();
@@ -282,6 +287,8 @@ bool aaa_variable_equals(const struct aaa_variable *lhs,
             return aaa_string_equals(lhs->string, rhs->string);
         case AAA_VECTOR:
             return aaa_vector_equals(lhs->vector, rhs->vector);
+        case AAA_MAP:
+        case AAA_STRUCT:
         default:
             fprintf(stderr, "aaa_variable_equals Unhandled variable kind\n");
             abort();

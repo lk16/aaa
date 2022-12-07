@@ -3,10 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "map.h"
-#include "str.h"
-#include "struct.h"
-#include "vector.h"
+#include "types.h"
 
 struct aaa_variable *aaa_variable_new_int(int integer);
 struct aaa_variable *aaa_variable_new_bool(bool boolean);
