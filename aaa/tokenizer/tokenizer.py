@@ -125,6 +125,9 @@ class Tokenizer:
                 offset += 1
 
     def run(self) -> List[Token]:
+        # TODO catch TokenizerException
+        # TODO return model with tokens and exceptions
+
         tokens = self.tokenize_unfiltered()
 
         filtered: List[Token] = []

@@ -1,95 +1,44 @@
-from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
-from aaa.parser.exceptions import ParserBaseException
-from aaa.parser.models import Function, ParsedFile, ParserOutput, TypeLiteral
+from aaa.parser.exceptions import NewParserException
+from aaa.parser.models import Identifier
 from aaa.tokenizer.models import Token, TokenType
-from aaa.tokenizer.tokenizer import Tokenizer
 
 
-class NewParser:
-    def __init__(
-        self,
-        entrypoint: Path,
-        builtins_path: Path,
-    ) -> None:
-        self.entrypoint = entrypoint.resolve()
-        self.builtins_path = builtins_path
+class SingleFileParser:
+    def __init__(self, tokens: List[Token]) -> None:
+        self.tokens = tokens
 
-        self.parsed: Dict[Path, ParsedFile] = {}
-        self.parse_queue = [self.entrypoint]
-        self.exceptions: List[ParserBaseException] = []
+    def _expect(self, offset: int, token_types: List[TokenType]) -> None:
+        token = self.tokens[offset]
 
-    def run(self) -> ParserOutput:
-        self.parsed[self.builtins_path] = self._parse_builtins(self.builtins_path)
+        if token.type not in token_types:
+            raise NewParserException(
+                file=token.file,
+                line=token.line,
+                column=token.column,
+                expected_token_types=token_types,
+                found_token_type=token.type,
+            )
 
-        # TODO tokenize and parse entrypoint, enqueue dependencies
+    def _parse_identifier(self, offset: int) -> Tuple[int, Identifier]:
+        self._expect(offset, [TokenType.IDENTIFIER])
 
-        return ParserOutput(
-            parsed=self.parsed,
-            entrypoint=self.entrypoint,
-            builtins_path=self.builtins_path,
-        )
-
-    def _expect_token(
-        self, tokens: List[Token], offset: int, token_type: TokenType
-    ) -> Token:
-        if tokens[offset].type != token_type:
-            # TODO unexpected token
-            raise NotImplementedError
-
-        return tokens[offset]
-
-    def _parse_builtins(self, file: Path) -> ParsedFile:
-
-        functions: List[Function] = []
-        types: List[TypeLiteral] = []
-
-        tokens = Tokenizer(file).run()
-
-        offset = 0
-
-        while offset < len(tokens):
-            token = tokens[offset]
-
-            if token.type == TokenType.TYPE:
-                type, offset = self._parse_type_literal(tokens, offset + 1)
-                types.append(type)
-
-            elif token.type == TokenType.FUNCTION:
-                function, offset = self._parse_function_declaration(tokens, offset + 1)
-                functions.append(function)
-
-            else:
-                # TODO unexpected TokenType
-                raise NotImplementedError
-
-        return ParsedFile(
-            functions=functions,
-            imports=[],
-            structs=[],
-            types=types,
-            file=file,
-            token=None,  # type: ignore  # TODO
-        )
-
-    def _parse_type_literal(
-        self, tokens: List[Token], offset: int
-    ) -> Tuple[TypeLiteral, int]:
-
-        # TODO
-        identifier = self._expect_token(tokens, offset, TokenType.IDENTIFIER)
+        token = self.tokens[offset]
         offset += 1
 
-        _ = identifier
+        return offset, Identifier(
+            name=token.value, file=token.file, line=token.line, column=token.column
+        )
 
-        if tokens[offset].type == TokenType.TYPE_PARAM_BEGIN:
-            ...
+    # TODO identifier
+    # TODO flat_type_params
+    # TODO flat_type_literal
+    # TODO type_declaration
 
-        raise NotImplementedError
+    # TODO ...
+    # TODO function_declaration
+    # TODO builtins_file_root
 
-    def _parse_function_declaration(
-        self, tokens: List[Token], offset: int
-    ) -> Tuple[Function, int]:
-        # TODO
-        raise NotImplementedError
+    # TODO ...
+    # TODO regular_file_root

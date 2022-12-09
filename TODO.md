@@ -5,14 +5,9 @@
 - [x] add file, line and column to `Token`
 - [x] move `Tokenizer` to new module
 - [x] better error handling in `Tokenizer`
-- [ ] tests for `Tokenizer`
-- [ ] use `Tokenizer` on builtins file
-- [ ] use `Tokenizer` on entrypoint file
-- [ ] build parser without Lark
-- [ ] parse entrypoint file
-- [ ] find out dependencies, tokenize and parse them
-- [ ] repeat until all dependencies are parsed
-- [ ] get rid of Lark completely
+- [x] tests for `Tokenizer`
+- [ ] build `SingleFileParser` without Lark
+- [ ] build `Parser` which calls `Tokenizer` and `SingleFileParser` for every file
 
 
 ### Transpiling to C

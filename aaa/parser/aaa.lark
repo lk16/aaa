@@ -68,7 +68,7 @@ import_item: identifier [_AS identifier]
 
 // --- structs and types ---
 
-type_declaration: TYPE type_literal
+type_declaration: TYPE flat_type_literal
 
 struct_definition: STRUCT identifier BEGIN arguments _END
 

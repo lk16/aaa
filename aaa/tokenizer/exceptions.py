@@ -17,4 +17,5 @@ class TokenizerException(AaaException):
         return line + "\n" + ((self.column - 1) * " ") + "^\n"
 
     def __str__(self) -> str:  # pragma: nocover
+        # TODO confirm this looks correct
         return f"{self.where()} Tokenizing failed\n{self.context()}\n"
