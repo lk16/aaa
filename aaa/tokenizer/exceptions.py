@@ -9,12 +9,12 @@ class TokenizerException(AaaException):
         self.line = line
         self.column = column
 
-    def where(self) -> str:
+    def where(self) -> str:  # pragma: nocover
         return error_location(self.file, self.line, self.column)
 
-    def context(self) -> str:
+    def context(self) -> str:  # pragma: nocover
         line = self.file.read_text().split("\n")[self.line - 1]
         return line + "\n" + ((self.column - 1) * " ") + "^\n"
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: nocover
         return f"{self.where()} Tokenizing failed\n{self.context()}\n"

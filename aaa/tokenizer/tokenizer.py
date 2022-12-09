@@ -101,7 +101,7 @@ class Tokenizer:
         offset = start + 1
 
         while True:
-            if offset > len(self.code):
+            if offset >= len(self.code):
                 self._fail(start)
 
             if not self.code[offset].isprintable():

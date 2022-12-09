@@ -4,6 +4,7 @@ from tempfile import NamedTemporaryFile, gettempdir
 
 import pytest
 
+from aaa.tokenizer.exceptions import TokenizerException
 from aaa.tokenizer.models import TokenType
 from aaa.tokenizer.tokenizer import Tokenizer
 
@@ -48,11 +49,43 @@ def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> Non
     file = Path(gettempdir()) / temp_file.name
 
     file.write_text(code)
-    tokens = Tokenizer(file).tokenize_unfiltered()
+    tokenizer = Tokenizer(file)
+    tokens = tokenizer.tokenize_unfiltered()
 
     assert 1 == len(tokens)
     assert expected_token_type == tokens[0].type
     assert code == tokens[0].value
 
+    tokens = tokenizer.run()
 
-# TODO add tokenizer exceptions and tests for all those cases
+    if expected_token_type in [TokenType.WHITESPACE, TokenType.COMMENT]:
+        assert 0 == len(tokens)
+
+    else:
+        assert 1 == len(tokens)
+        assert expected_token_type == tokens[0].type
+        assert code == tokens[0].value
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_line", "expected_column"],
+    [
+        pytest.param(' fn "', 1, 5, id="string_without_end"),
+        pytest.param(' fn "\n"', 1, 5, id="string_with_unprintable_char"),
+        pytest.param(' fn "\\y', 1, 5, id="string_with_invalid_escape_sequence"),
+        pytest.param(' fn "\\', 1, 5, id="string_with_half_escape_sequence"),
+        pytest.param("~", 1, 1, id="unknown_sequence"),
+    ],
+)
+def test_tokenizer_error(code: str, expected_line: int, expected_column: int) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+    with pytest.raises(TokenizerException) as e:
+        Tokenizer(file).tokenize_unfiltered()
+
+    tokenizer_exception = e.value
+
+    assert expected_line == tokenizer_exception.line
+    assert expected_column == tokenizer_exception.column

@@ -42,6 +42,3 @@ class Token:
         self.file = file
         self.line = line
         self.column = column
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(type={self.type}, value={repr(self.value)})"
