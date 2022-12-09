@@ -1,8 +1,9 @@
 import re
 from pathlib import Path
-from typing import List, Optional
+from typing import List, NoReturn, Optional, Tuple
 
 from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
+from aaa.tokenizer.exceptions import TokenizerException
 from aaa.tokenizer.models import Token, TokenType
 
 
@@ -11,9 +12,18 @@ class Tokenizer:
         self.file = file
         self.code = file.read_text()
 
+    def _fail(self, offset: int) -> NoReturn:
+        line, column = self._get_line_col(offset)
+        raise TokenizerException(self.file, line, column)
+
+    def _get_line_col(self, offset: int) -> Tuple[int, int]:
+        prefix = self.code[:offset]
+        line = 1 + prefix.count("\n")
+        column = offset - prefix.rfind("\n")
+        return line, column
+
     def _create_token(self, token_type: TokenType, start: int, end: int) -> Token:
-        line = 1 + self.code[:start].count("\n")
-        column = start - self.code[:start].rfind("\n")
+        line, column = self._get_line_col(start)
 
         return Token(
             token_type,
@@ -92,20 +102,24 @@ class Tokenizer:
 
         while True:
             if offset > len(self.code):
-                # File ended
-                # TODO raise some string parsing error
-                return None
+                self._fail(start)
 
             if not self.code[offset].isprintable():
-                # Unprintable character (includes newline)
-                # TODO raise some string parsing error
-                return None
+                self._fail(start)
 
             if self.code[offset] == '"':
                 return self._create_token(TokenType.STRING, start, offset + 1)
 
             if self.code[offset] == "\\":
-                # TODO check if escape sequence is valid, if not raise some string parsing error
+
+                try:
+                    escaped = self.code[offset + 1]
+                except IndexError:
+                    self._fail(start)
+
+                if escaped not in ["n", "r", "\\", '"']:
+                    self._fail(start)
+
                 offset += 2
             else:
                 offset += 1
@@ -137,12 +151,7 @@ class Tokenizer:
             )
 
             if not token:
-                # TODO raise exception
-                print(
-                    "Tokenize error, next few characters: ",
-                    self.code[offset : offset + 20],
-                )
-                exit()
+                self._fail(offset)
 
             if token.type != TokenType.WHITESPACE:
                 print(

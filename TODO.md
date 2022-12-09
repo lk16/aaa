@@ -4,7 +4,7 @@
 - [x] create Tokenizer which returns iterable of tokens
 - [x] add file, line and column to `Token`
 - [x] move `Tokenizer` to new module
-- [ ] better error handling in `Tokenizer`
+- [x] better error handling in `Tokenizer`
 - [ ] tests for `Tokenizer`
 - [ ] use `Tokenizer` on builtins file
 - [ ] use `Tokenizer` on entrypoint file
