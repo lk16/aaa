@@ -82,11 +82,17 @@ function_declaration: FN function_name [_ARGS arguments] [_RETURN return_types]
 
 function_definition: function_declaration BEGIN function_body _END
 
+flat_type_literal: identifier [flat_type_params]
+
 type_literal: identifier [type_params]
 
-type_params: "[" type_literal ("," type_literal)* [","] "]"
+type_params: "[" type_literal ("," type_literal)* "]"
 
-function_name: type_literal [":" identifier]
+flat_type_params: "[" identifier ("," identifier)* "]"
+
+function_name: flat_type_literal [":" identifier]
+
+function_call: identifier ([type_params] | [":" identifier])
 
 arguments: argument ("," argument)* [","]
 
@@ -106,7 +112,7 @@ function_body: function_body_item+
 
 function_body_item: ( \
       literal
-    | function_name  // includes identifier
+    | function_call  // includes identifier
     | branch
     | loop
     | struct_field_query

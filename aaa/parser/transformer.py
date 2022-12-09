@@ -148,29 +148,69 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             file=self.file,
         )
 
-    def function_name(
+    def function_call(
         self,
-        type_literal: TypeLiteral,
-        identifier: Optional[Identifier],
+        identifier: Identifier,
+        part_two: Identifier | List[TypeLiteral] | None,
     ) -> FunctionName:
 
-        assert type_literal.line is not None
-        assert type_literal.column is not None
+        assert identifier.line is not None
+        assert identifier.column is not None
 
-        if identifier:
+        if part_two is None:
+            # Regular function call, such as `nop`
             return FunctionName(
-                struct_name=type_literal.identifier,
-                type_params=type_literal.params,
+                struct_name=None,
+                type_params=[],
                 func_name=identifier,
+                file=self.file,
+                line=identifier.line,
+                column=identifier.column,
+            )
+
+        if isinstance(part_two, Identifier):
+            # Member function call, such as `str:split`
+            return FunctionName(
+                struct_name=identifier,
+                type_params=[],
+                func_name=part_two,
+                file=self.file,
+                line=identifier.line,
+                column=identifier.column,
+            )
+
+        if isinstance(part_two, list):
+            # Type literal, such as `vec[vec[int]]`
+            return FunctionName(
+                struct_name=None,
+                type_params=part_two,
+                func_name=identifier,
+                file=self.file,
+                line=identifier.line,
+                column=identifier.column,
+            )
+
+        assert False  # pragma: nocover
+
+    def function_name(
+        self, type_literal: TypeLiteral, identifier: Optional[Identifier]
+    ) -> FunctionName:
+
+        if identifier is None:
+            return FunctionName(
+                struct_name=None,
+                type_params=type_literal.params,
+                func_name=type_literal.identifier,
                 file=self.file,
                 line=type_literal.line,
                 column=type_literal.column,
             )
 
+        # name as it appears in function_declaration, such as `vec[T]:clear`
         return FunctionName(
-            struct_name=None,
+            struct_name=type_literal.identifier,
             type_params=type_literal.params,
-            func_name=type_literal.identifier,
+            func_name=identifier,
             file=self.file,
             line=type_literal.line,
             column=type_literal.column,
@@ -199,6 +239,32 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         params: Optional[List[TypeLiteral]],
     ) -> TypeLiteral:
         params = params or []
+
+        return TypeLiteral(
+            identifier=identifier,
+            params=params,
+            file=self.file,
+            line=identifier.line,
+            column=identifier.column,
+        )
+
+    def flat_type_literal(
+        self,
+        identifier: Identifier,
+        flat_type_params: Optional[List[Identifier]],
+    ) -> TypeLiteral:
+        flat_type_params = flat_type_params or []
+
+        params = [
+            TypeLiteral(
+                identifier=flat_param,
+                params=[],
+                file=flat_param.file,
+                line=flat_param.line,
+                column=flat_param.column,
+            )
+            for flat_param in flat_type_params
+        ]
 
         return TypeLiteral(
             identifier=identifier,
@@ -271,6 +337,7 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         )
 
     def member_function_name(self, token: Token) -> Identifier:
+        # TODO is this function used?
         assert token.line is not None
         assert token.column is not None
 
@@ -385,3 +452,6 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
 
     def type_params(self, *params: TypeLiteral) -> List[TypeLiteral]:
         return list(params)
+
+    def flat_type_params(self, *params: TypeLiteral) -> List[TypeLiteral]:
+        return self.type_params(*params)
