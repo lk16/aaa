@@ -153,64 +153,52 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         identifier: Identifier,
         part_two: Identifier | List[TypeLiteral] | None,
     ) -> FunctionName:
-
-        assert identifier.line is not None
-        assert identifier.column is not None
+        type_params: List[TypeLiteral] = []
+        struct_name: Optional[Identifier] = None
+        func_name: Identifier
 
         if part_two is None:
             # Regular function call, such as `nop`
-            return FunctionName(
-                struct_name=None,
-                type_params=[],
-                func_name=identifier,
-                file=self.file,
-                line=identifier.line,
-                column=identifier.column,
-            )
+            func_name = identifier
 
         if isinstance(part_two, Identifier):
             # Member function call, such as `str:split`
-            return FunctionName(
-                struct_name=identifier,
-                type_params=[],
-                func_name=part_two,
-                file=self.file,
-                line=identifier.line,
-                column=identifier.column,
-            )
+            struct_name = identifier
+            func_name = part_two
 
         if isinstance(part_two, list):
             # Type literal, such as `vec[vec[int]]`
-            return FunctionName(
-                struct_name=None,
-                type_params=part_two,
-                func_name=identifier,
-                file=self.file,
-                line=identifier.line,
-                column=identifier.column,
-            )
+            type_params = part_two
+            func_name = identifier
 
-        assert False  # pragma: nocover
+        return FunctionName(
+            struct_name=struct_name,
+            type_params=type_params,
+            func_name=func_name,
+            file=self.file,
+            line=identifier.line,
+            column=identifier.column,
+        )
 
     def function_name(
         self, type_literal: TypeLiteral, identifier: Optional[Identifier]
     ) -> FunctionName:
+        struct_name: Optional[Identifier] = None
+        func_name: Identifier
 
-        if identifier is None:
-            return FunctionName(
-                struct_name=None,
-                type_params=type_literal.params,
-                func_name=type_literal.identifier,
-                file=self.file,
-                line=type_literal.line,
-                column=type_literal.column,
-            )
+        if identifier:
+            # member function name as in a declaration, such as `vec[T]:clear`
+            struct_name = type_literal.identifier
+            func_name = identifier
 
-        # name as it appears in function_declaration, such as `vec[T]:clear`
+        else:
+            # function name as in declaration, such as `dup[A]`
+            func_name = type_literal.identifier
+
         return FunctionName(
-            struct_name=type_literal.identifier,
+            struct_name=struct_name,
             type_params=type_literal.params,
-            func_name=identifier,
+            func_name=func_name,
             file=self.file,
             line=type_literal.line,
             column=type_literal.column,
