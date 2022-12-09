@@ -17,7 +17,6 @@ from aaa.parser.models import (
     ImportItem,
     IntegerLiteral,
     Loop,
-    Operator,
     ParsedFile,
     StringLiteral,
     Struct,
@@ -324,23 +323,6 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             file=self.file,
         )
 
-    def member_function_name(self, token: Token) -> Identifier:
-        # TODO is this function used?
-        assert token.line is not None
-        assert token.column is not None
-
-        return Identifier(
-            name=token.value, line=token.line, column=token.column, file=self.file
-        )
-
-    def operator(self, token: Token) -> Operator:
-        assert token.line is not None
-        assert token.column is not None
-
-        return Operator(
-            value=token.value, line=token.line, column=token.column, file=self.file
-        )
-
     def regular_file_root(self, *args: Function | Struct | Import) -> ParsedFile:
         functions: List[Function] = []
         imports: List[Import] = []
@@ -404,9 +386,6 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
             file=self.file,
         )
 
-    def struct_field_query_operator(self, token: Token) -> Token:
-        return token
-
     def struct_field_query(
         self, field_name: StringLiteral, token: Token
     ) -> StructFieldQuery:
@@ -416,9 +395,6 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         return StructFieldQuery(
             field_name=field_name, line=token.line, column=token.column, file=self.file
         )
-
-    def struct_field_update_operator(self, token: Token) -> Token:
-        return token
 
     def struct_field_update(
         self,

@@ -112,7 +112,7 @@ function_body: function_body_item+
 
 function_body_item: ( \
       literal
-    | function_call  // includes identifier
+    | function_call
     | branch
     | loop
     | struct_field_query
