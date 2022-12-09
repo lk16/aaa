@@ -12,9 +12,9 @@ class Tokenizer:
         self.code = file.read_text()
 
     def _create_token(self, token_type: TokenType, start: int, end: int) -> Token:
-        # TODO compute line, column
         line = 1 + self.code[:start].count("\n")
         column = start - self.code[:start].rfind("\n")
+
         return Token(
             token_type,
             value=self.code[start:end],
