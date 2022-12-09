@@ -7,9 +7,9 @@ from tempfile import NamedTemporaryFile, gettempdir
 import click
 from click import ClickException
 
-from aaa.parser.tokenizer import Tokenizer
 from aaa.run import Runner
 from aaa.run_tests import TestRunner
+from aaa.tokenizer.tokenizer import Tokenizer
 
 
 @click.group()

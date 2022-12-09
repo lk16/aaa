@@ -3,7 +3,7 @@
 ### Parse without Lark
 - [x] create Tokenizer which returns iterable of tokens
 - [x] add file, line and column to `Token`
-- [ ] move `Tokenizer` to new module
+- [x] move `Tokenizer` to new module
 - [ ] better error handling in `Tokenizer`
 - [ ] tests for `Tokenizer`
 - [ ] use `Tokenizer` on builtins file

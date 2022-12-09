@@ -1,89 +1,9 @@
 import re
-from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
-
-class TokenType(Enum):
-    ARGS = "ARGS"
-    AS = "AS"
-    BEGIN = "BEGIN"
-    COMMA = "COMMA"
-    COLON = "COLON"
-    COMMENT = "COMMENT"
-    ELSE = "ELSE"
-    END = "END"
-    FALSE = "FALSE"
-    FROM = "FROM"
-    FUNCTION = "FUNCTION"
-    GET_FIELD = "GET_FIELD"
-    IDENTIFIER = "IDENTIFIER"
-    IF = "IF"
-    INTEGER = "INTEGER"
-    IMPORT = "IMPORT"
-    OPERATOR = "OPERATOR"
-    RETURN = "RETURN"
-    SET_FIELD = "SET_FIELD"
-    SHEBANG = "SHEBANG"
-    STRING = "STRING"
-    STRUCT = "STRUCT"
-    TRUE = "TRUE"
-    TYPE = "TYPE"
-    TYPE_PARAM_BEGIN = "TYPE_PARAM_BEGIN"
-    TYPE_PARAM_END = "TYPE_PARAM_END"
-    WHILE = "WHILE"
-    WHITESPACE = "WHITESPACE"
-
-
-class Token:
-    def __init__(
-        self, type: TokenType, value: str, file: Path, line: int, column: int
-    ) -> None:
-        self.type = type
-        self.value = value
-        self.file = file
-        self.line = line
-        self.column = column
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(type={self.type}, value={repr(self.value)})"
-
-
-FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
-    ("-", TokenType.OPERATOR),
-    (",", TokenType.COMMA),
-    ("!", TokenType.SET_FIELD),
-    ("!=", TokenType.OPERATOR),
-    ("?", TokenType.GET_FIELD),
-    (".", TokenType.OPERATOR),
-    ("[", TokenType.TYPE_PARAM_BEGIN),
-    ("]", TokenType.TYPE_PARAM_END),
-    ("{", TokenType.BEGIN),
-    ("}", TokenType.END),
-    ("*", TokenType.OPERATOR),
-    ("/", TokenType.OPERATOR),
-    ("%", TokenType.OPERATOR),
-    ("+", TokenType.OPERATOR),
-    ("<", TokenType.OPERATOR),
-    ("<=", TokenType.OPERATOR),
-    ("=", TokenType.OPERATOR),
-    (">", TokenType.OPERATOR),
-    (">=", TokenType.OPERATOR),
-    (":", TokenType.COLON),
-    ("args", TokenType.ARGS),
-    ("as", TokenType.AS),
-    ("else", TokenType.ELSE),
-    ("false", TokenType.FALSE),
-    ("fn", TokenType.FUNCTION),
-    ("from", TokenType.FROM),
-    ("if", TokenType.IF),
-    ("import", TokenType.IMPORT),
-    ("return", TokenType.RETURN),
-    ("struct", TokenType.STRUCT),
-    ("true", TokenType.TRUE),
-    ("type", TokenType.TYPE),
-    ("while", TokenType.WHILE),
-]
+from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
+from aaa.tokenizer.models import Token, TokenType
 
 
 class Tokenizer:

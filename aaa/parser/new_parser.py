@@ -3,7 +3,8 @@ from typing import Dict, List, Tuple
 
 from aaa.parser.exceptions import ParserBaseException
 from aaa.parser.models import Function, ParsedFile, ParserOutput, TypeLiteral
-from aaa.parser.tokenizer import Token, Tokenizer, TokenType
+from aaa.tokenizer.models import Token, TokenType
+from aaa.tokenizer.tokenizer import Tokenizer
 
 
 class NewParser:
