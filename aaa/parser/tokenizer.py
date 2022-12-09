@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from pathlib import Path
 from typing import List, Optional, Tuple
 
 
@@ -35,9 +36,14 @@ class TokenType(Enum):
 
 
 class Token:
-    def __init__(self, type: TokenType, value: str) -> None:
+    def __init__(
+        self, type: TokenType, value: str, file: Path, line: int, column: int
+    ) -> None:
         self.type = type
         self.value = value
+        self.file = file
+        self.line = line
+        self.column = column
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(type={self.type}, value={repr(self.value)})"
@@ -81,8 +87,21 @@ FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
 
 
 class Tokenizer:
-    def __init__(self, code: str) -> None:
-        self.code = code
+    def __init__(self, file: Path) -> None:
+        self.file = file
+        self.code = file.read_text()
+
+    def _create_token(self, token_type: TokenType, start: int, end: int) -> Token:
+        # TODO compute line, column
+        line = 1 + self.code[:start].count("\n")
+        column = start - self.code[:start].rfind("\n")
+        return Token(
+            token_type,
+            value=self.code[start:end],
+            file=self.file,
+            line=line,
+            column=column,
+        )
 
     def _regex(self, offset: int, regex: str, token_type: TokenType) -> Optional[Token]:
         match = re.match(regex, self.code[offset:])
@@ -91,7 +110,7 @@ class Tokenizer:
             return None
 
         end = offset + len(match.group(0))
-        return Token(token_type, self.code[offset:end])
+        return self._create_token(token_type, offset, end)
 
     def _tokenize_whitespace(self, offset: int) -> Optional[Token]:
         ws_len = 0
@@ -110,7 +129,7 @@ class Tokenizer:
         if ws_len == 0:
             return None
 
-        return Token(TokenType.WHITESPACE, self.code[offset : offset + ws_len])
+        return self._create_token(TokenType.WHITESPACE, offset, offset + ws_len)
 
     def _tokenize_fixed_size(self, offset: int) -> Optional[Token]:
         token: Optional[Token] = None
@@ -124,7 +143,7 @@ class Tokenizer:
                     or self.code[end].isspace()
                     or not value.isalpha()
                 ):
-                    found = Token(token_type, self.code[offset:end])
+                    found = self._create_token(token_type, offset, end)
 
                     # keep longest token
                     if not token or (len(found.value) > len(token.value)):
@@ -163,7 +182,7 @@ class Tokenizer:
                 return None
 
             if self.code[offset] == '"':
-                return Token(TokenType.STRING, self.code[start : offset + 1])
+                return self._create_token(TokenType.STRING, start, offset + 1)
 
             if self.code[offset] == "\\":
                 # TODO check if escape sequence is valid, if not raise some string parsing error
@@ -171,7 +190,18 @@ class Tokenizer:
             else:
                 offset += 1
 
-    def tokenize(self) -> List[Token]:
+    def run(self) -> List[Token]:
+        tokens = self.tokenize_unfiltered()
+
+        filtered: List[Token] = []
+
+        for token in tokens:
+            if token.type not in [TokenType.WHITESPACE, TokenType.COMMENT]:
+                filtered.append(token)
+
+        return filtered
+
+    def tokenize_unfiltered(self) -> List[Token]:
         offset = 0
         tokens: List[Token] = []
 
@@ -187,6 +217,7 @@ class Tokenizer:
             )
 
             if not token:
+                # TODO raise exception
                 print(
                     "Tokenize error, next few characters: ",
                     self.code[offset : offset + 20],
@@ -194,11 +225,11 @@ class Tokenizer:
                 exit()
 
             if token.type != TokenType.WHITESPACE:
-                print("token", token)
+                print(
+                    f"{token.line:>4}:{token.column:>3} {token.type.value:>20} {repr(token.value)}"
+                )
 
             tokens.append(token)
             offset += len(token.value)
-
-        tokens = list(filter(lambda token: token.type != TokenType.WHITESPACE, tokens))
 
         return tokens

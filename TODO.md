@@ -2,10 +2,12 @@
 
 ### Parse without Lark
 - [x] create Tokenizer which returns iterable of tokens
-- [ ] better error handling in Tokenizer
-- [ ] tests for Tokenizer
-- [ ] use Tokenizer on builtins file
-- [ ] use Tokenizer on entrypoint file
+- [x] add file, line and column to `Token`
+- [ ] move `Tokenizer` to new module
+- [ ] better error handling in `Tokenizer`
+- [ ] tests for `Tokenizer`
+- [ ] use `Tokenizer` on builtins file
+- [ ] use `Tokenizer` on entrypoint file
 - [ ] build parser without Lark
 - [ ] parse entrypoint file
 - [ ] find out dependencies, tokenize and parse them
@@ -18,11 +20,11 @@
 - [x] Update python tests to use `repr` instead of `.`
 - [x] Port remaining tests to `test_builtins.aaa`
 - [x] Implement missing stdlib functions in C implementation
-- [ ] Add `-Wconversion`
-- [ ] Consider other C compiler warning flags
+- [x] Add `-Wconversion`
+- [x] Consider other C compiler warning flags
 - [ ] Reset `errno` in case C stdlib functions fail
 - [ ] Run `gcov` to find missing coverage
-- [ ] Run `valgrind` to find memory issues
+- [x] Run `valgrind` to find memory issues
 - [x] Add some C source code linter
 - [x] Add all of that to CI
 - [ ] Add transpiling to `README.md`

@@ -90,9 +90,9 @@ def transpile_tests(path: str, output_file: str, compile: bool, run: bool) -> No
 
 # TODO remove
 @cli.command()
-@click.argument("code")
-def tokenize(code: str) -> None:
-    Tokenizer(code).tokenize()
+@click.argument("path", type=click.Path(exists=True))
+def tokenize(path: str) -> None:
+    Tokenizer(Path(path)).run()
 
 
 if __name__ == "__main__":

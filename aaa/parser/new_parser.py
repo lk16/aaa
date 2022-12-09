@@ -44,7 +44,7 @@ class NewParser:
         functions: List[Function] = []
         types: List[TypeLiteral] = []
 
-        tokens = Tokenizer(file.read_text()).tokenize()
+        tokens = Tokenizer(file).run()
 
         offset = 0
 
