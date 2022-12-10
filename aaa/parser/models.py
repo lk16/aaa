@@ -145,7 +145,7 @@ class Function(AaaParseModel):
         self.type_params = type_params
         self.arguments = arguments
         self.return_types = return_types
-        self.body = body
+        self.body = body  # TODO make optional
         super().__init__(file=file, line=line, column=column)
 
     def is_test(self) -> bool:

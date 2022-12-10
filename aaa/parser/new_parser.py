@@ -6,7 +6,15 @@ from aaa.parser.exceptions import (
     NewParserException,
     ParserBaseException,
 )
-from aaa.parser.models import Argument, FunctionName, Identifier, TypeLiteral
+from aaa.parser.models import (
+    Argument,
+    Function,
+    FunctionBody,
+    FunctionName,
+    Identifier,
+    ParsedFile,
+    TypeLiteral,
+)
 from aaa.tokenizer.models import Token, TokenType
 
 
@@ -243,6 +251,79 @@ class SingleFileParser:
                 return_types.append(return_type)
 
         return return_types, offset
+
+    def _parse_function_declaration(self, offset: int) -> Tuple[Function, int]:
+        fn_token, offset = self._token(offset, [TokenType.FUNCTION])
+        function_name, offset = self._parse_function_name(offset)
+        arguments: List[Argument] = []
+        return_types: List[TypeLiteral] = []
+
+        token = self._peek_token(offset)
+        if token and token.type == TokenType.ARGS:
+            _, offset = self._token(offset, [TokenType.ARGS])
+            arguments, offset = self._parse_arguments(offset)
+
+        token = self._peek_token(offset)
+        if token and token.type == TokenType.RETURN:
+            _, offset = self._token(offset, [TokenType.RETURN])
+            return_types, offset = self._parse_return_types(offset)
+
+        empty_body = FunctionBody(items=[], file=self.file, line=-1, column=-1)
+
+        function = Function(
+            struct_name=function_name.struct_name,
+            func_name=function_name.func_name,
+            type_params=function_name.type_params,
+            arguments=arguments,
+            return_types=return_types,
+            body=empty_body,
+            file=self.file,
+            line=fn_token.line,
+            column=fn_token.column,
+        )
+
+        return function, offset
+
+    def _parse_builtins_file_root(self, offset: int) -> Tuple[ParsedFile, int]:
+
+        first_token = self._peek_token(offset)
+
+        if not first_token:
+            raise NewParserEndOfFileException(self.file)
+
+        functions: List[Function] = []
+        types: List[TypeLiteral] = []
+
+        while True:
+            try:
+                function, offset = self._parse_function_declaration(offset)
+            except ParserBaseException:
+                pass
+            else:
+                functions.append(function)
+                continue
+
+            try:
+                type, offset = self._parse_type_declaration(offset)
+            except ParserBaseException:
+                pass
+            else:
+                types.append(type)
+                continue
+
+            break
+
+        parsed_file = ParsedFile(
+            line=first_token.line,
+            column=first_token.column,
+            functions=functions,
+            imports=[],
+            structs=[],
+            types=types,
+            file=self.file,
+        )
+
+        return parsed_file, offset
 
     # TODO function_declaration
     # TODO builtins_file_root

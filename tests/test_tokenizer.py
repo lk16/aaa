@@ -31,7 +31,9 @@ def test_tokenizer_parts_add_up(file: Path) -> None:
         pytest.param("\t", TokenType.WHITESPACE, id="tab"),
         pytest.param(" \t\n \t\n", TokenType.WHITESPACE, id="mixed_whitespace"),
         pytest.param("fn", TokenType.FUNCTION, id="fixed_size"),
-        pytest.param(">=", TokenType.OPERATOR, id="fixed_size_with_shorter_substring"),
+        pytest.param(
+            ">=", TokenType.IDENTIFIER, id="fixed_size_with_shorter_substring"
+        ),
         pytest.param("// comment", TokenType.COMMENT, id="comment"),
         pytest.param("#!/usr/bin/env aaa", TokenType.SHEBANG, id="shebang"),
         pytest.param("123", TokenType.INTEGER, id="positive_integer"),

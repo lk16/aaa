@@ -432,3 +432,63 @@ def test_parse_return_types(
     else:
         with pytest.raises(expected_exception):
             parser._parse_return_types(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("fn a", None, 2),
+        ("fn a,", None, 2),
+        ("fn a args b as int", None, 6),
+        ("fn a args b as int,", None, 7),
+        ("fn a args b as int, c as int", None, 10),
+        ("fn a args b as int, c as int,", None, 11),
+        ("fn a args b as vec[int], c as vec[int],", None, 17),
+        ("fn a args b as vec[int,], c as vec[int,],", None, 19),
+        ("fn a return int", None, 4),
+        ("fn a return int,", None, 5),
+        ("fn a return vec[int]", None, 7),
+        ("fn a return vec[int],map[int,int]", None, 14),
+        ("fn a return vec[int],map[int,int],", None, 15),
+        ("fn a return vec[int],map[int,vec[int]],", None, 18),
+        ("fn a args b as vec[int], return vec[int],map[int,vec[int]],", None, 26),
+        ("fn a args", NewParserEndOfFileException, 0),
+        ("fn a return", NewParserEndOfFileException, 0),
+        ("fn a return", NewParserEndOfFileException, 0),
+        ("fn a return vec[", None, 4),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_function_declaration(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_function_declaration(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_function_declaration(0)
+
+
+def test_parse_builtins_file() -> None:
+    file = Path("./stdlib/builtins.aaa")
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    _, offset = parser._parse_builtins_file_root(0)
+    assert len(tokens) == offset
+
+
+# TODO test parsing builtins_file_root in more detail

@@ -66,11 +66,13 @@ class NewParserException(ParserBaseException):
         )
         found = self.found_token_types.name
 
-        return (
-            f"{self.where()}: Parsing failed, expected one of {expected}, found {found}\n"
-            + self.context()
-            + "\n"
-        )
+        message = f"{self.where()}: Parsing failed, expected "
+
+        if len(self.expected_token_types) > 1:
+            message += "one of "
+
+        message += f"{expected}, but found {found}\n" + self.context() + "\n"
+        return message
 
 
 class NewParserEndOfFileException(ParserBaseException):

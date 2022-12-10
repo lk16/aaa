@@ -19,7 +19,6 @@ class TokenType(Enum):
     IF = "IF"
     INTEGER = "INTEGER"
     IMPORT = "IMPORT"
-    OPERATOR = "OPERATOR"
     RETURN = "RETURN"
     SET_FIELD = "SET_FIELD"
     SHEBANG = "SHEBANG"
