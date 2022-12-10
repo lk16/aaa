@@ -529,3 +529,41 @@ def test_parse_builtins_root(
     else:
         with pytest.raises(expected_exception):
             parser._parse_builtins_file_root(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("struct a", NewParserEndOfFileException, 0),
+        ("struct a {", NewParserEndOfFileException, 0),
+        ("struct a {}", NewParserException, 0),
+        ("struct a { b as int }", None, 7),
+        ("struct a { b as int, }", None, 8),
+        ("struct a { b as map[int,vec[int]] }", None, 15),
+        ("struct a { b as map[int,vec[int]], }", None, 16),
+        ("struct a { b as int, }", None, 8),
+        ("struct a { b as int, c as int }", None, 11),
+        ("struct a { b as int, c as int, }", None, 12),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_struct_definition(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_struct_definition(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_struct_definition(0)

@@ -13,6 +13,7 @@ from aaa.parser.models import (
     FunctionName,
     Identifier,
     ParsedFile,
+    Struct,
     TypeLiteral,
 )
 from aaa.tokenizer.models import Token, TokenType
@@ -329,8 +330,39 @@ class SingleFileParser:
 
         return parsed_file, offset
 
-    # TODO function_declaration
-    # TODO builtins_file_root
+    def _parse_struct_definition(self, offset: int) -> Tuple[Struct, int]:
+        struct_token, offset = self._token(offset, [TokenType.STRUCT])
+        identifier, offset = self._parse_identifier(offset)
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        fields, offset = self._parse_arguments(offset)
+        _, offset = self._token(offset, [TokenType.END])
 
-    # TODO ...
+        struct = Struct(
+            line=struct_token.line,
+            column=struct_token.column,
+            identifier=identifier,
+            fields={field.identifier.name: field.type for field in fields},
+            file=self.file,
+        )
+
+        return struct, offset
+
+    # TODO string
+    # TODO import_item
+    # TODO import_items
+    # TODO import_statement
+
+    # TODO boolean
+    # TODO integer
+    # TODO literal
+    # TODO function_call
+    # TODO branch
+    # TODO loop
+    # TODO struct_field_query
+    # TODO struct_field_update
+
+    # TODO function_body_item
+    # TODO function_body
+    # TODO function_definition
+
     # TODO regular_file_root
