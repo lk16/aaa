@@ -53,6 +53,7 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
 
         identifiers: List[Identifier] = []
+        token: Optional[Token]
 
         while True:
             identifier, offset = self._parse_identifier(offset)
@@ -63,6 +64,12 @@ class SingleFileParser:
             )
 
             if token.type == TokenType.TYPE_PARAM_END:
+                break
+
+            # Handle comma at the end, for example `[A,]` or `[A,B,]`
+            token = self._peek_token(offset)
+            if token and token.type == TokenType.TYPE_PARAM_END:
+                _, offset = self._token(offset, [TokenType.TYPE_PARAM_END])
                 break
 
         type_params = [
@@ -139,6 +146,7 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
 
         type_params: List[TypeLiteral] = []
+        token: Optional[Token]
 
         while True:
             type_param, offset = self._parse_type_literal(offset)
@@ -149,6 +157,12 @@ class SingleFileParser:
             )
 
             if token.type == TokenType.TYPE_PARAM_END:
+                break
+
+            # Handle comma at the end, for example `[A,]` or `[A,B[C,],]`
+            token = self._peek_token(offset)
+            if token and token.type == TokenType.TYPE_PARAM_END:
+                _, offset = self._token(offset, [TokenType.TYPE_PARAM_END])
                 break
 
         return type_params, offset

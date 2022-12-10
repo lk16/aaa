@@ -86,9 +86,9 @@ flat_type_literal: identifier [flat_type_params]
 
 type_literal: identifier [type_params]
 
-type_params: "[" type_literal ("," type_literal)* "]"
+type_params: "[" type_literal ("," type_literal)* [","] "]"
 
-flat_type_params: "[" identifier ("," identifier)* "]"
+flat_type_params: "[" identifier ("," identifier)* [","] "]"
 
 function_name: flat_type_literal [":" identifier]
 
