@@ -6,7 +6,7 @@ from aaa.parser.exceptions import (
     NewParserException,
     ParserBaseException,
 )
-from aaa.parser.models import FunctionName, Identifier, TypeLiteral
+from aaa.parser.models import Argument, FunctionName, Identifier, TypeLiteral
 from aaa.tokenizer.models import Token, TokenType
 
 
@@ -172,6 +172,21 @@ class SingleFileParser:
         )
 
         return type_literal, offset
+
+    def _parse_argument(self, offset: int) -> Tuple[Argument, int]:
+        identifier, offset = self._parse_identifier(offset)
+        _, offset = self._token(offset, [TokenType.AS])
+        type, offset = self._parse_type_literal(offset)
+
+        argument = Argument(
+            identifier=identifier,
+            type=type,
+            file=identifier.file,
+            line=identifier.line,
+            column=identifier.column,
+        )
+
+        return argument, offset
 
     # TODO argument
     # TODO arguments
