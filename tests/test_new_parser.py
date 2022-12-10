@@ -360,3 +360,75 @@ def test_parse_argument(
     else:
         with pytest.raises(expected_exception):
             parser._parse_argument(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("foo", NewParserEndOfFileException, 0),
+        ("foo as", NewParserEndOfFileException, 0),
+        ("foo as bar", None, 3),
+        ("foo as bar[A]", None, 6),
+        ("foo as bar[A,B]", None, 8),
+        ("foo as bar[A,B],", None, 9),
+        ("foo as bar[A,B],foo as bar[A,B]", None, 17),
+        ("foo as bar[A,B],foo as bar[A,B],", None, 18),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_arguments(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_arguments(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_arguments(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("foo", None, 1),
+        ("foo,", None, 2),
+        ("foo[A]", None, 4),
+        ("foo[A],", None, 5),
+        ("foo[A,B]", None, 6),
+        ("foo[A,B],", None, 7),
+        ("foo[A,B],foo[A,B]", None, 13),
+        ("foo[A,B],foo[A,B],", None, 14),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_return_types(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_return_types(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_return_types(0)

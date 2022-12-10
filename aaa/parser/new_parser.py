@@ -202,9 +202,48 @@ class SingleFileParser:
 
         return argument, offset
 
-    # TODO argument
-    # TODO arguments
-    # TODO return_types
+    def _parse_arguments(self, offset: int) -> Tuple[List[Argument], int]:
+        arguments: List[Argument] = []
+
+        argument, offset = self._parse_argument(offset)
+        arguments.append(argument)
+
+        while True:
+            try:
+                _, offset = self._token(offset, [TokenType.COMMA])
+            except ParserBaseException:
+                break
+
+            try:
+                argument, offset = self._parse_argument(offset)
+            except ParserBaseException:
+                break
+            else:
+                arguments.append(argument)
+
+        return arguments, offset
+
+    def _parse_return_types(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+        return_types: List[TypeLiteral] = []
+
+        return_type, offset = self._parse_type_literal(offset)
+        return_types.append(return_type)
+
+        while True:
+            try:
+                _, offset = self._token(offset, [TokenType.COMMA])
+            except ParserBaseException:
+                break
+
+            try:
+                return_type, offset = self._parse_type_literal(offset)
+            except ParserBaseException:
+                break
+            else:
+                return_types.append(return_type)
+
+        return return_types, offset
+
     # TODO function_declaration
     # TODO builtins_file_root
 
