@@ -288,8 +288,12 @@ class SingleFileParser:
 
         first_token = self._peek_token(offset)
 
-        if not first_token:
-            raise NewParserEndOfFileException(self.file)
+        if first_token:
+            first_line = first_token.line
+            first_column = first_token.column
+        else:
+            first_line = 1
+            first_column = 1
 
         functions: List[Function] = []
         types: List[TypeLiteral] = []
@@ -314,8 +318,8 @@ class SingleFileParser:
             break
 
         parsed_file = ParsedFile(
-            line=first_token.line,
-            column=first_token.column,
+            line=first_line,
+            column=first_column,
             functions=functions,
             imports=[],
             structs=[],

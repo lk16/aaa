@@ -13,6 +13,12 @@ class AaaParseModel(AaaModel):
         self.line = line
         self.column = column
 
+    def __eq__(self, other: object) -> bool:
+        if type(other) != type(self):
+            return False
+
+        return vars(self) == vars(other)
+
 
 class FunctionBodyItem(AaaParseModel):
     ...

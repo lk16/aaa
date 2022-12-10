@@ -10,6 +10,7 @@ from aaa.parser.exceptions import (
     ParserBaseException,
 )
 from aaa.parser.new_parser import SingleFileParser
+from aaa.parser.parser import Parser
 from aaa.tokenizer.tokenizer import Tokenizer
 
 
@@ -487,8 +488,44 @@ def test_parse_builtins_file() -> None:
     tokens = Tokenizer(file).run()
     parser = SingleFileParser(file, tokens)
 
-    _, offset = parser._parse_builtins_file_root(0)
+    parsed_file, offset = parser._parse_builtins_file_root(0)
     assert len(tokens) == offset
 
+    old_parser = Parser(Path("."), file, None)
+    expected_parsed_file = old_parser._parse(file, old_parser._get_builtins_parser())
 
-# TODO test parsing builtins_file_root in more detail
+    assert expected_parsed_file.types == parsed_file.types
+    assert expected_parsed_file.functions == parsed_file.functions
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("", None, 0),
+        ("fn a", None, 2),
+        ("fn a fn b", None, 4),
+        ("type a", None, 2),
+        ("type a type b", None, 4),
+        ("type a[A,B] fn a args b as vec[int,map[int,int]] return c", None, 25),
+        ("3", None, 0),
+    ],
+)
+def test_parse_builtins_root(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_builtins_file_root(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_builtins_file_root(0)
