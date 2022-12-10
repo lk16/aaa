@@ -71,3 +71,12 @@ class NewParserException(ParserBaseException):
             + self.context()
             + "\n"
         )
+
+
+class NewParserEndOfFileException(ParserBaseException):
+    def __init__(self, file: Path) -> None:
+        self.file = file
+
+    def __str__(self) -> str:
+        # TODO add context
+        return f"{self.file} Parsing failed, unexpected end of file."
