@@ -224,3 +224,87 @@ def test_parse_function_name(
     else:
         with pytest.raises(expected_result):
             parser._parse_function_name(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("[]", NewParserException, 0),
+        ("[A]", None, 3),
+        ("[A", NewParserEndOfFileException, 0),
+        ("[A,", NewParserEndOfFileException, 0),
+        ("[A,]", NewParserException, 0),
+        ("[,", NewParserException, 0),
+        ("[A,B]", None, 5),
+        ("[A,B,]", NewParserException, 0),
+        ("[A[B]]", None, 6),
+        ("[A[B,]]", NewParserException, 0),
+        ("[[A]B]", NewParserException, 0),
+        ("[A[B],C]", None, 8),
+        ("[A[B[C]],D]", None, 11),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_type_params(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_type_params(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_type_params(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("foo", None, 1),
+        ("foo[]", None, 1),
+        ("[A]", NewParserException, 0),
+        ("foo[A]", None, 4),
+        ("foo[A", None, 1),
+        ("foo[A,", None, 1),
+        ("foo[A,]", None, 1),
+        ("foo[,", None, 1),
+        ("foo[A,B]", None, 6),
+        ("foo[A,B,]", None, 1),
+        ("foo[A[B]]", None, 7),
+        ("foo[A[B,]]", None, 1),
+        ("foo[[A]B]", None, 1),
+        ("foo[A[B],C]", None, 9),
+        ("foo[A[B[C]],D]", None, 12),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_type_literal(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_type_literal(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_type_literal(0)

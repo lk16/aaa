@@ -54,19 +54,16 @@ class SingleFileParser:
 
         identifiers: List[Identifier] = []
 
-        identifier, offset = self._parse_identifier(offset)
-        identifiers.append(identifier)
-
         while True:
+            identifier, offset = self._parse_identifier(offset)
+            identifiers.append(identifier)
+
             token, offset = self._token(
                 offset, [TokenType.TYPE_PARAM_END, TokenType.COMMA]
             )
 
             if token.type == TokenType.TYPE_PARAM_END:
                 break
-
-            identifier, offset = self._parse_identifier(offset)
-            identifiers.append(identifier)
 
         type_params = [
             TypeLiteral(
@@ -137,6 +134,44 @@ class SingleFileParser:
         )
 
         return function_name, offset
+
+    def _parse_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+        _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
+
+        type_params: List[TypeLiteral] = []
+
+        while True:
+            type_param, offset = self._parse_type_literal(offset)
+            type_params.append(type_param)
+
+            token, offset = self._token(
+                offset, [TokenType.TYPE_PARAM_END, TokenType.COMMA]
+            )
+
+            if token.type == TokenType.TYPE_PARAM_END:
+                break
+
+        return type_params, offset
+
+    def _parse_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
+        identifier, offset = self._parse_identifier(offset)
+
+        type_params: List[TypeLiteral] = []
+
+        try:
+            type_params, offset = self._parse_type_params(offset)
+        except ParserBaseException:
+            pass
+
+        type_literal = TypeLiteral(
+            identifier=identifier,
+            params=type_params,
+            file=identifier.file,
+            line=identifier.line,
+            column=identifier.column,
+        )
+
+        return type_literal, offset
 
     # TODO argument
     # TODO arguments
