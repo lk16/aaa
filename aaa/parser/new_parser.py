@@ -1,7 +1,11 @@
 from pathlib import Path
 from typing import List, Tuple
 
-from aaa.parser.exceptions import NewParserEndOfFileException, NewParserException
+from aaa.parser.exceptions import (
+    NewParserEndOfFileException,
+    NewParserException,
+    ParserBaseException,
+)
 from aaa.parser.models import Identifier, TypeLiteral
 from aaa.tokenizer.models import Token, TokenType
 
@@ -39,7 +43,7 @@ class SingleFileParser:
 
         return identifier, offset
 
-    def _parser_flat_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+    def _parse_flat_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
         _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
 
         identifiers: List[Identifier] = []
@@ -71,8 +75,31 @@ class SingleFileParser:
 
         return type_params, offset
 
-    # TODO flat_type_params
-    # TODO flat_type_literal
+    def _parse_flat_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
+        identifier, offset = self._parse_identifier(offset)
+
+        type_params: List[TypeLiteral] = []
+
+        try:
+            type_params, offset = self._parse_flat_type_params(offset)
+        except ParserBaseException:
+            pass
+
+        type_literal = TypeLiteral(
+            identifier=identifier,
+            params=type_params,
+            file=identifier.file,
+            line=identifier.line,
+            column=identifier.column,
+        )
+
+        return type_literal, offset
+
+    def _parse_type_declaration(self, offset: int) -> Tuple[TypeLiteral, int]:
+        _, offset = self._token(offset, [TokenType.TYPE])
+        type_literal, offset = self._parse_flat_type_literal(offset)
+        return type_literal, offset
+
     # TODO type_declaration
 
     # TODO ...
