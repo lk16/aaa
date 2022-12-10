@@ -1,6 +1,6 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile, gettempdir
-from typing import List, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 import pytest
 
@@ -172,3 +172,55 @@ def test_parse_type_declaration(
     else:
         with pytest.raises(expected_result):
             parser._parse_type_declaration(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_result", "expected_offset"],
+    [
+        ("foo", (None, [], "foo"), 1),
+        ("foo[", (None, [], "foo"), 1),
+        ("foo[]", (None, [], "foo"), 1),
+        ("foo:", NewParserEndOfFileException, 0),
+        ("foo[]:", (None, [], "foo"), 1),
+        ("foo:bar", ("foo", [], "bar"), 3),
+        ("foo[A]", (None, ["A"], "foo"), 4),
+        ("foo[A]:bar", ("foo", ["A"], "bar"), 6),
+        ("foo[A,]:bar", (None, [], "foo"), 1),
+        ("foo[A,B]:bar", ("foo", ["A", "B"], "bar"), 8),
+        ("foo[A,B,C]:bar", ("foo", ["A", "B", "C"], "bar"), 10),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_function_name(
+    code: str,
+    expected_result: Tuple[str, List[str], Optional[str]] | Type[ParserBaseException],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if isinstance(expected_result, tuple):
+        function_name, offset = parser._parse_function_name(0)
+        expected_struct_name, expected_type_params, expected_func_name = expected_result
+
+        assert expected_offset == offset
+
+        if expected_struct_name is not None:
+            assert function_name.struct_name
+            assert expected_struct_name == function_name.struct_name.name
+        else:
+            assert function_name.struct_name is None
+
+        assert expected_func_name == function_name.func_name.name
+        assert expected_type_params == [
+            param.identifier.name for param in function_name.type_params
+        ]
+    else:
+        with pytest.raises(expected_result):
+            parser._parse_function_name(0)

@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from aaa.parser.exceptions import (
     NewParserEndOfFileException,
     NewParserException,
     ParserBaseException,
 )
-from aaa.parser.models import Identifier, TypeLiteral
+from aaa.parser.models import FunctionName, Identifier, TypeLiteral
 from aaa.tokenizer.models import Token, TokenType
 
 
@@ -15,13 +15,19 @@ class SingleFileParser:
         self.tokens = tokens
         self.file = file
 
+    def _peek_token(self, offset: int) -> Optional[Token]:
+        try:
+            return self.tokens[offset]
+        except IndexError:
+            return None
+
     def _token(
         self, offset: int, expected_token_types: List[TokenType]
     ) -> Tuple[Token, int]:
-        try:
-            token = self.tokens[offset]
-        except IndexError as e:
-            raise NewParserEndOfFileException(file=self.file) from e
+        token = self._peek_token(offset)
+
+        if not token:
+            raise NewParserEndOfFileException(file=self.file)
 
         if token.type not in expected_token_types:
             raise NewParserException(
@@ -100,9 +106,41 @@ class SingleFileParser:
         type_literal, offset = self._parse_flat_type_literal(offset)
         return type_literal, offset
 
-    # TODO type_declaration
+    def _parse_function_name(self, offset: int) -> Tuple[FunctionName, int]:
+        type_literal, offset = self._parse_flat_type_literal(offset)
+        identifier: Optional[Identifier] = None
 
-    # TODO ...
+        token = self._peek_token(offset)
+
+        if token and token.type == TokenType.COLON:
+            _, offset = self._token(offset, [TokenType.COLON])
+            identifier, offset = self._parse_identifier(offset)
+
+        struct_name: Optional[Identifier] = None
+
+        if identifier:
+            # member function name as in a declaration, such as `vec[T]:clear`
+            struct_name = type_literal.identifier
+            func_name = identifier
+
+        else:
+            # function name as in declaration, such as `dup[A]`
+            func_name = type_literal.identifier
+
+        function_name = FunctionName(
+            struct_name=struct_name,
+            type_params=type_literal.params,
+            func_name=func_name,
+            file=self.file,
+            line=type_literal.line,
+            column=type_literal.column,
+        )
+
+        return function_name, offset
+
+    # TODO argument
+    # TODO arguments
+    # TODO return_types
     # TODO function_declaration
     # TODO builtins_file_root
 
