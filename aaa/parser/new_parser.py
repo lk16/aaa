@@ -12,6 +12,7 @@ from aaa.parser.models import (
     FunctionBody,
     FunctionName,
     Identifier,
+    Import,
     ImportItem,
     ParsedFile,
     StringLiteral,
@@ -32,20 +33,18 @@ class SingleFileParser:
         except IndexError:
             return None
 
-    def _token(
-        self, offset: int, expected_token_types: List[TokenType]
-    ) -> Tuple[Token, int]:
+    def _token(self, offset: int, expected: List[TokenType]) -> Tuple[Token, int]:
         token = self._peek_token(offset)
 
         if not token:
             raise NewParserEndOfFileException(file=self.file)
 
-        if token.type not in expected_token_types:
+        if token.type not in expected:
             raise NewParserException(
                 file=token.file,
                 line=token.line,
                 column=token.column,
-                expected_token_types=expected_token_types,
+                expected_token_types=expected,
                 found_token_type=token.type,
             )
 
@@ -384,9 +383,42 @@ class SingleFileParser:
 
         return import_item, offset
 
-    # TODO import_item
-    # TODO import_items
-    # TODO import_statement
+    def _parse_import_items(self, offset: int) -> Tuple[List[ImportItem], int]:
+        import_items: List[ImportItem] = []
+
+        import_item, offset = self._parse_import_item(offset)
+        import_items.append(import_item)
+
+        while True:
+            try:
+                _, offset = self._token(offset, [TokenType.COMMA])
+            except ParserBaseException:
+                break
+
+            try:
+                import_item, offset = self._parse_import_item(offset)
+            except ParserBaseException:
+                break
+            else:
+                import_items.append(import_item)
+
+        return import_items, offset
+
+    def _parse_import_statement(self, offset: int) -> Tuple[Import, int]:
+        from_token, offset = self._token(offset, [TokenType.FROM])
+        source, offset = self._parse_string(offset)
+        _, offset = self._token(offset, [TokenType.IMPORT])
+        import_items, offset = self._parse_import_items(offset)
+
+        import_ = Import(
+            source=source.value,
+            imported_items=import_items,
+            file=from_token.file,
+            line=from_token.line,
+            column=from_token.column,
+        )
+
+        return import_, offset
 
     # TODO boolean
     # TODO integer

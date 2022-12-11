@@ -637,3 +637,89 @@ def test_parse_import_item(
     else:
         with pytest.raises(expected_result):
             parser._parse_import_item(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("foo", None, 1),
+        ("foo,", None, 2),
+        ("foo,bar", None, 3),
+        ("foo,bar,", None, 4),
+        ("foo as bar,foo", None, 5),
+        ("foo as bar,foo,", None, 6),
+        ("foo,foo as bar", None, 5),
+        ("foo,foo as bar,", None, 6),
+        ("foo as", NewParserEndOfFileException, 0),
+        ("foo as bar", None, 3),
+        ("foo as bar,", None, 4),
+        ("foo as bar,foo", None, 5),
+        ("foo as bar,foo as", None, 4),
+        ("foo as bar,foo as bar", None, 7),
+        ("foo as bar,foo as bar,", None, 8),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_import_items(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_import_items(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_import_items(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("from", NewParserEndOfFileException, 0),
+        ('from "a"', NewParserEndOfFileException, 0),
+        ('from "a" import', NewParserEndOfFileException, 0),
+        ("from a import b", NewParserException, 0),
+        ('from "a" import b', None, 4),
+        ('from "a" import b,', None, 5),
+        ('from "a" import b as c', None, 6),
+        ('from "a" import b as c,', None, 7),
+        ('from "a" import b as c,d', None, 8),
+        ('from "a" import b as c,d,', None, 9),
+        ('from "a" import b as c,d as e', None, 10),
+        ('from "a" import b as c,d as e,', None, 11),
+        ('from "a" import b,d as e,', None, 9),
+        ('from "a" import b as c,d,', None, 9),
+        ('from "a" import b,d,', None, 7),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_import_statement(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_import_statement(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_import_statement(0)
