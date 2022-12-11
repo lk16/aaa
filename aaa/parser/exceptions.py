@@ -26,15 +26,6 @@ class ParseException(ParserBaseException):
         return f"{self.where()}: Could not parse file\n" + context
 
 
-class FileReadError(ParserBaseException):
-    # TODO be sure this is used in NewParser
-    def __init__(self, file: Path) -> None:
-        self.file = file
-
-    def __str__(self) -> str:
-        return f"{self.file}: Failed to open or read\n"
-
-
 class NewParserException(ParserBaseException):
     def __init__(
         self,

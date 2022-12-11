@@ -10,8 +10,8 @@ from aaa.cross_referencer.exceptions import (
     MainIsNotAFunction,
     UnknownIdentifier,
 )
-from aaa.parser.exceptions import FileReadError
 from aaa.simulator.exceptions import AaaAssertionFailure
+from aaa.tokenizer.exceptions import FileReadError
 from aaa.type_checker.exceptions import (
     BranchTypeError,
     ConditionTypeError,

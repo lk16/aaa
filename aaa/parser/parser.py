@@ -6,9 +6,12 @@ from lark.exceptions import UnexpectedInput, VisitError
 from lark.lark import Lark
 
 from aaa import AaaRunnerException
-from aaa.parser.exceptions import FileReadError, ParseException, ParserBaseException
+from aaa.parser.exceptions import ParseException, ParserBaseException
 from aaa.parser.models import ParsedFile, ParserOutput
+from aaa.parser.new_parser import SingleFileParser
 from aaa.parser.transformer import AaaTransformer
+from aaa.tokenizer.exceptions import FileReadError
+from aaa.tokenizer.tokenizer import Tokenizer
 
 
 class Parser:
@@ -26,16 +29,11 @@ class Parser:
         self.exceptions: List[ParserBaseException] = []
 
     def run(self) -> ParserOutput:
-        builtins_parser = self._get_builtins_parser()
-        source_parser = self._get_source_parser()
-
-        self.parsed[self.builtins_path] = self._parse(
-            self.builtins_path, builtins_parser
-        )
+        self.parsed[self.builtins_path] = self._new_parse(self.builtins_path, False)
 
         for file in self.parse_queue:
             try:
-                self.parsed[file] = self._parse(file, source_parser)
+                self.parsed[file] = self._new_parse(file, True)
             except ParserBaseException as e:
                 self.exceptions.append(e)
             else:
@@ -50,7 +48,18 @@ class Parser:
             entrypoint=self.entrypoint,
         )
 
+    def _new_parse(self, file: Path, is_regular_file: bool) -> ParsedFile:
+        # TODO rename to _parse
+
+        tokens = Tokenizer(file).run()
+        parser = SingleFileParser(file, tokens)
+
+        if is_regular_file:
+            return parser.parse_regular_file()
+        return parser.parse_builtins_file()
+
     def _parse(self, file: Path, parser: Lark) -> ParsedFile:
+        # TODO remove
         try:
             code = file.read_text()
         except OSError:
@@ -75,6 +84,7 @@ class Parser:
                 self.parse_queue.append(import_.source_file)
 
     def _get_builtins_parser(self) -> Lark:
+        # TODO remove
         grammar_path = Path(__file__).parent / "aaa.lark"
 
         return Lark(
@@ -86,6 +96,7 @@ class Parser:
         )
 
     def _get_source_parser(self) -> Lark:
+        # TODO remove
         grammar_path = Path(__file__).parent / "aaa.lark"
 
         return Lark(

@@ -3,14 +3,14 @@ from pathlib import Path
 from typing import List, NoReturn, Optional, Tuple
 
 from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
-from aaa.tokenizer.exceptions import TokenizerException
+from aaa.tokenizer.exceptions import FileReadError, TokenizerException
 from aaa.tokenizer.models import Token, TokenType
 
 
 class Tokenizer:
     def __init__(self, file: Path) -> None:
         self.file = file
-        self.code = file.read_text()
+        self.code = ""
 
     def _fail(self, offset: int) -> NoReturn:
         line, column = self._get_line_col(offset)
@@ -143,6 +143,11 @@ class Tokenizer:
         return filtered
 
     def tokenize_unfiltered(self) -> List[Token]:
+        try:
+            self.code = self.file.read_text()
+        except OSError as e:
+            raise FileReadError(self.file) from e
+
         offset = 0
         tokens: List[Token] = []
 
@@ -159,11 +164,6 @@ class Tokenizer:
 
             if not token:
                 self._fail(offset)
-
-            if token.type != TokenType.WHITESPACE:
-                print(
-                    f"{token.line:>4}:{token.column:>3} {token.type.value:>20} {repr(token.value)}"
-                )
 
             tokens.append(token)
             offset += len(token.value)

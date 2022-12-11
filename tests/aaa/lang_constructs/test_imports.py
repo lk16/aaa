@@ -3,7 +3,7 @@ from typing import Dict, List, Type
 import pytest
 
 from aaa.cross_referencer.exceptions import ImportedItemNotFound, UnknownIdentifier
-from aaa.parser.exceptions import FileReadError
+from aaa.tokenizer.exceptions import FileReadError
 from tests.aaa import check_aaa_full_source_multi_file
 
 

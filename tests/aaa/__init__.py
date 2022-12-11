@@ -43,33 +43,33 @@ def check_aaa_full_source_multi_file(
             with redirect_stderr(StringIO()) as stderr:
                 runner.run()
 
-    exception_types = list(map(type, runner.exceptions))
+        exception_types = list(map(type, runner.exceptions))
 
-    if exception_types != expected_exception_types:
-        # If we reach this code, some test for Aaa code is broken.
-        # We print some info useful for debuging.
+        if exception_types != expected_exception_types:
+            # If we reach this code, some test for Aaa code is broken.
+            # We print some info useful for debuging.
 
-        error = (
-            "\n"
-            + "Expected exception types: "
-            + " ".join(exc_type.__name__ for exc_type in expected_exception_types)
-            + "\n"
-            + "     Got exception types: "
-            + " ".join(exc_type.__name__ for exc_type in exception_types)
-            + "\n"
-        )
+            error = (
+                "\n"
+                + "Expected exception types: "
+                + " ".join(exc_type.__name__ for exc_type in expected_exception_types)
+                + "\n"
+                + "     Got exception types: "
+                + " ".join(exc_type.__name__ for exc_type in exception_types)
+                + "\n"
+            )
 
-        if runner.exceptions:
-            error += "\nException(s):\n"
+            if runner.exceptions:
+                error += "\nException(s):\n"
 
-            for exception in runner.exceptions:
-                error += f"{exception}\n"
+                for exception in runner.exceptions:
+                    error += f"{exception}\n"
 
-        assert False, error
+            assert False, error
 
-    if not expected_exception_types:
-        assert expected_output == stdout.getvalue()
-        assert "" == stderr.getvalue()
+        if not expected_exception_types:
+            assert expected_output == stdout.getvalue()
+            assert "" == stderr.getvalue()
 
-    full_temp_dir = os.path.join(gettempdir(), directory)
+        full_temp_dir = os.path.join(gettempdir(), directory)
     return full_temp_dir, runner.exceptions

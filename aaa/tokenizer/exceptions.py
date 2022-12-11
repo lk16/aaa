@@ -3,7 +3,11 @@ from pathlib import Path
 from aaa import AaaException, error_location
 
 
-class TokenizerException(AaaException):
+class BaseTokenizerException(AaaException):
+    ...
+
+
+class TokenizerException(BaseTokenizerException):
     def __init__(self, file: Path, line: int, column: int) -> None:
         self.file = file
         self.line = line
@@ -19,3 +23,11 @@ class TokenizerException(AaaException):
     def __str__(self) -> str:  # pragma: nocover
         # TODO confirm this looks correct
         return f"{self.where()} Tokenizing failed\n{self.context()}\n"
+
+
+class FileReadError(BaseTokenizerException):
+    def __init__(self, file: Path) -> None:
+        self.file = file
+
+    def __str__(self) -> str:
+        return f"{self.file}: Failed to open or read\n"
