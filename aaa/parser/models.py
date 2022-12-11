@@ -75,7 +75,7 @@ class Branch(FunctionBodyItem):
         *,
         condition: FunctionBody,
         if_body: FunctionBody,
-        else_body: FunctionBody,
+        else_body: FunctionBody,  # TODO make optional
         file: Path,
         line: int,
         column: int,
@@ -86,7 +86,9 @@ class Branch(FunctionBodyItem):
         super().__init__(file=file, line=line, column=column)
 
 
-class FunctionBody(AaaParseModel):
+class FunctionBody(
+    AaaParseModel
+):  # TODO remove this and replace by List[FunctionBodyItem]
     def __init__(
         self, *, items: List[FunctionBodyItem], file: Path, line: int, column: int
     ) -> None:
@@ -246,7 +248,7 @@ class TypeLiteral(AaaParseModel):
         super().__init__(file=file, line=line, column=column)
 
 
-class FunctionName(AaaParseModel):
+class FunctionName(FunctionBodyItem):
     def __init__(
         self,
         func_name: Identifier,

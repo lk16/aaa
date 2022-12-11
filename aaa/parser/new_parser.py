@@ -9,16 +9,21 @@ from aaa.parser.exceptions import (
 from aaa.parser.models import (
     Argument,
     BooleanLiteral,
+    Branch,
     Function,
     FunctionBody,
+    FunctionBodyItem,
     FunctionName,
     Identifier,
     Import,
     ImportItem,
     IntegerLiteral,
+    Loop,
     ParsedFile,
     StringLiteral,
     Struct,
+    StructFieldQuery,
+    StructFieldUpdate,
     TypeLiteral,
 )
 from aaa.tokenizer.models import Token, TokenType
@@ -509,11 +514,135 @@ class SingleFileParser:
 
         return func_call, offset
 
-    # TODO branch
-    # TODO loop
-    # TODO struct_field_query
-    # TODO struct_field_update
-    # TODO function_body_item
-    # TODO function_body
+    def _parse_branch(self, offset: int) -> Tuple[Branch, int]:
+        if_token, offset = self._token(offset, [TokenType.IF])
+        condition, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        if_body, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        token = self._peek_token(offset)
+
+        if token and token.type == TokenType.ELSE:
+            _, offset = self._token(offset, [TokenType.ELSE])
+            _, offset = self._token(offset, [TokenType.BEGIN])
+            else_body, offset = self._parse_function_body(offset)
+            _, offset = self._token(offset, [TokenType.END])
+        else:
+            else_body = FunctionBody(line=-1, column=-1, items=[], file=self.file)
+
+        branch = Branch(
+            line=if_token.line,
+            column=if_token.column,
+            condition=condition,
+            if_body=if_body,
+            else_body=else_body,
+            file=self.file,
+        )
+
+        return branch, offset
+
+    def _parse_loop(self, offset: int) -> Tuple[Loop, int]:
+        while_token, offset = self._token(offset, [TokenType.WHILE])
+        condition, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        body, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        loop = Loop(
+            condition=condition,
+            body=body,
+            file=while_token.file,
+            line=while_token.line,
+            column=while_token.column,
+        )
+
+        return loop, offset
+
+    def _parse_struct_field_query(self, offset: int) -> Tuple[StructFieldQuery, int]:
+        field_name, offset = self._parse_string(offset)
+        _, offset = self._token(offset, [TokenType.GET_FIELD])
+
+        field_query = StructFieldQuery(
+            field_name=field_name,
+            file=field_name.file,
+            line=field_name.line,
+            column=field_name.column,
+        )
+
+        return field_query, offset
+
+    def _parse_struct_field_update(self, offset: int) -> Tuple[StructFieldUpdate, int]:
+        field_name, offset = self._parse_string(offset)
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        new_value_expr, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        field_update = StructFieldUpdate(
+            field_name=field_name,
+            new_value_expr=new_value_expr,
+            file=field_name.file,
+            line=field_name.line,
+            column=field_name.column,
+        )
+
+        return field_update, offset
+
+    def _parse_function_body_item(self, offset: int) -> Tuple[FunctionBodyItem, int]:
+        token = self._peek_token(offset)
+
+        if not token:
+            raise NewParserEndOfFileException(self.file)
+
+        # TODO consider inlining _parse_literal in this function
+        literal_token_types = [
+            TokenType.TRUE,
+            TokenType.FALSE,
+            TokenType.INTEGER,
+            TokenType.STRING,
+        ]
+
+        if token.type == TokenType.STRING:
+            try:
+                return self._parse_struct_field_query(offset)
+            except ParserBaseException:
+                pass
+
+            try:
+                return self._parse_struct_field_update(offset)
+            except ParserBaseException:
+                pass
+
+        if token.type in literal_token_types:
+            return self._parse_literal(offset)
+        if token.type == TokenType.IDENTIFIER:
+            return self._parse_function_call(offset)
+        if token.type == TokenType.IF:
+            return self._parse_branch(offset)
+        if token.type == TokenType.WHILE:
+            return self._parse_loop(offset)
+
+        raise NotImplementedError  # TODO
+
+    def _parse_function_body(self, offset: int) -> Tuple[FunctionBody, int]:
+        items: List[FunctionBodyItem] = []
+
+        item, offset = self._parse_function_body_item(offset)
+        items.append(item)
+
+        while True:
+            try:
+                item, offset = self._parse_function_body_item(offset)
+            except ParserBaseException:
+                break
+
+            items.append(item)
+
+        function_body = FunctionBody(
+            items=items, file=items[0].file, line=items[0].line, column=items[0].column
+        )
+
+        return function_body, offset
+
     # TODO function_definition
     # TODO regular_file_root
