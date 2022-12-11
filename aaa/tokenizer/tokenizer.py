@@ -34,14 +34,9 @@ class Tokenizer:
         return line, column
 
     def _create_token(self, token_type: TokenType, start: int, end: int) -> Token:
-        line, column = self._get_line_col(start)
-
+        # NOTE line and column are set later to increase performance
         return Token(
-            token_type,
-            value=self.code[start:end],
-            file=self.file,
-            line=line,
-            column=column,
+            token_type, value=self.code[start:end], file=self.file, line=-1, column=-1
         )
 
     def _regex(
@@ -219,5 +214,25 @@ class Tokenizer:
 
             tokens.append(token)
             offset += len(token.value)
+
+        tokens = self._compute_line_col(tokens)
+
+        return tokens
+
+    def _compute_line_col(self, tokens: List[Token]) -> List[Token]:
+        line = 1
+        column = 1
+
+        for token in tokens:
+            token.line = line
+            token.column = column
+
+            newlines = token.value.count("\n")
+
+            if newlines == 0:
+                column += len(token.value)
+            else:
+                line += newlines
+                column = len(token.value) - token.value.rfind("\n")
 
         return tokens
