@@ -145,7 +145,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:3:30: Usage of unknown field y of type bar",
+            "/foo/main.aaa:3:26: Usage of unknown field y of type bar",
             id="unknown-struct-field-get",
         ),
         pytest.param(
@@ -155,7 +155,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:3:36: Usage of unknown field y of type bar",
+            "/foo/main.aaa:3:26: Usage of unknown field y of type bar",
             id="unknown-struct-field-set",
         ),
         pytest.param(
@@ -164,7 +164,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:2:34: Usage of unknown field x of type int",
+            "/foo/main.aaa:2:24: Usage of unknown field x of type int",
             id="set-field-of-non-struct",
         ),
         pytest.param(
@@ -174,7 +174,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             StructUpdateStackError,
-            "/foo/main.aaa:3:40 Function foo modifies stack incorrectly when updating struct field\n"
+            "/foo/main.aaa:3:26 Function foo modifies stack incorrectly when updating struct field\n"
             + "  Expected: bar str <new field value> \n"
             + "    Found: bar str int int\n",
             id="struct-update-stack-error",
