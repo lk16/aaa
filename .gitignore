@@ -3,7 +3,6 @@ __pycache__
 .coverage
 *.code-workspace
 .envrc
-lark.pdf
 *.idea
 *.prof
 generated.c

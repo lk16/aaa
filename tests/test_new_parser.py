@@ -12,7 +12,6 @@ from aaa.parser.exceptions import (
     ParserBaseException,
 )
 from aaa.parser.new_parser import SingleFileParser
-from aaa.parser.parser import Parser
 from aaa.tokenizer.tokenizer import Tokenizer
 
 
@@ -492,12 +491,6 @@ def test_parse_builtins_file_root() -> None:
 
     parsed_file, offset = parser._parse_builtins_file_root(0)
     assert len(tokens) == offset
-
-    old_parser = Parser(Path("."), file, None)
-    expected_parsed_file = old_parser._parse(file, old_parser._get_builtins_parser())
-
-    assert expected_parsed_file.types == parsed_file.types
-    assert expected_parsed_file.functions == parsed_file.functions
 
 
 @pytest.mark.parametrize(
@@ -1169,13 +1162,6 @@ def test_parse_regular_file_root_all_source_files(file: Path) -> None:
     parsed_file, offset = parser._parse_regular_file_root(0)
     assert len(tokens) == offset
 
-    old_parser = Parser(Path("."), file, None)
-    expected_parsed_file = old_parser._parse(file, old_parser._get_source_parser())
-
-    assert expected_parsed_file.imports == parsed_file.imports
-    assert expected_parsed_file.structs == parsed_file.structs
-    assert expected_parsed_file.functions == parsed_file.functions
-
 
 def test_parse_regular_file_root_empty_file() -> None:
     temp_file = NamedTemporaryFile(delete=False)
@@ -1199,29 +1185,15 @@ def test_parse_regular_file_all_source_files(file: Path) -> None:
     tokens = Tokenizer(file).run()
     parser = SingleFileParser(file, tokens)
 
-    parsed_file = parser.parse_regular_file()
-
-    old_parser = Parser(Path("."), file, None)
-    expected_parsed_file = old_parser._parse(file, old_parser._get_source_parser())
-
-    assert expected_parsed_file.imports == parsed_file.imports
-    assert expected_parsed_file.structs == parsed_file.structs
-    assert expected_parsed_file.functions == parsed_file.functions
+    parser.parse_regular_file()
 
 
 def test_parse_builtins_file() -> None:
     file = Path("./stdlib/builtins.aaa")
-
     tokens = Tokenizer(file).run()
     parser = SingleFileParser(file, tokens)
 
-    parsed_file = parser.parse_builtins_file()
-
-    old_parser = Parser(Path("."), file, None)
-    expected_parsed_file = old_parser._parse(file, old_parser._get_builtins_parser())
-
-    assert expected_parsed_file.types == parsed_file.types
-    assert expected_parsed_file.functions == parsed_file.functions
+    parser.parse_builtins_file()
 
 
 def test_parse_regular_file_fail() -> None:

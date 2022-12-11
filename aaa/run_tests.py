@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from aaa import AaaException
-from aaa.parser.exceptions import ParseException
+from aaa.parser.exceptions import ParserBaseException
 from aaa.parser.models import Function, ParsedFile
 from aaa.parser.parser import Parser
 from aaa.run import Runner
@@ -43,14 +43,14 @@ class TestRunner:
         for test_file in sorted(test_files):
             try:
                 parsed_files[test_file] = self._parse_file(test_file)
-            except ParseException as e:
+            except ParserBaseException as e:
                 self.exceptions.append(e)
 
         return parsed_files
 
     def _parse_file(self, file: Path) -> ParsedFile:
         parser = Parser(file, self.builtins_path)
-        return parser._parse(file, parser._get_source_parser())
+        return parser._parse(file, True)
 
     def _get_test_functions(self) -> List[Function]:
         test_functions: List[Function] = []

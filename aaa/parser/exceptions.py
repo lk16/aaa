@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import List
 
-from lark.exceptions import UnexpectedInput
-
 from aaa import AaaException
 from aaa.tokenizer.models import TokenType
 
@@ -11,22 +9,8 @@ class ParserBaseException(AaaException):
     ...
 
 
-class ParseException(ParserBaseException):
-    # TODO remove once lark is removed
-    def __init__(self, *, file: Path, parse_error: UnexpectedInput) -> None:
-        self.parse_error = parse_error
-        self.file = file
-
-    def where(self) -> str:
-        return f"{self.file}:{self.parse_error.line}:{self.parse_error.column}"
-
-    def __str__(self) -> str:
-        context = self.parse_error.get_context(self.file.read_text())
-
-        return f"{self.where()}: Could not parse file\n" + context
-
-
 class NewParserException(ParserBaseException):
+    # TODO rename class
     def __init__(
         self,
         *,
@@ -67,6 +51,8 @@ class NewParserException(ParserBaseException):
 
 
 class NewParserEndOfFileException(ParserBaseException):
+    # TODO rename class
+
     def __init__(self, file: Path) -> None:
         self.file = file
 
