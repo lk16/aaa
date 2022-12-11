@@ -8,12 +8,14 @@ from aaa.parser.exceptions import (
 )
 from aaa.parser.models import (
     Argument,
+    BooleanLiteral,
     Function,
     FunctionBody,
     FunctionName,
     Identifier,
     Import,
     ImportItem,
+    IntegerLiteral,
     ParsedFile,
     StringLiteral,
     Struct,
@@ -420,17 +422,37 @@ class SingleFileParser:
 
         return import_, offset
 
-    # TODO boolean
-    # TODO integer
+    def _parse_boolean(self, offset: int) -> Tuple[BooleanLiteral, int]:
+        token, offset = self._token(offset, [TokenType.TRUE, TokenType.FALSE])
+
+        boolean = BooleanLiteral(
+            value=token.value == "true",
+            file=token.file,
+            line=token.line,
+            column=token.column,
+        )
+
+        return boolean, offset
+
+    def _parse_integer(self, offset: int) -> Tuple[IntegerLiteral, int]:
+        token, offset = self._token(offset, [TokenType.INTEGER])
+
+        integer = IntegerLiteral(
+            value=int(token.value),
+            file=token.file,
+            line=token.line,
+            column=token.column,
+        )
+
+        return integer, offset
+
     # TODO literal
     # TODO function_call
     # TODO branch
     # TODO loop
     # TODO struct_field_query
     # TODO struct_field_update
-
     # TODO function_body_item
     # TODO function_body
     # TODO function_definition
-
     # TODO regular_file_root

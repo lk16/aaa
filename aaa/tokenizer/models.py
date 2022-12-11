@@ -24,7 +24,7 @@ class TokenType(Enum):
     SHEBANG = "SHEBANG"
     STRING = "STRING"
     STRUCT = "STRUCT"
-    TRUE = "TRUE"
+    TRUE = "TRUE"  # replace TRUE and FALSE with BOOLEAN
     TYPE = "TYPE"
     TYPE_PARAM_BEGIN = "TYPE_PARAM_BEGIN"
     TYPE_PARAM_END = "TYPE_PARAM_END"

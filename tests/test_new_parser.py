@@ -723,3 +723,66 @@ def test_parse_import_statement(
     else:
         with pytest.raises(expected_exception):
             parser._parse_import_statement(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_result", "expected_offset"],
+    [
+        ("true", True, 1),
+        ("false", False, 1),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_boolean(
+    code: str,
+    expected_result: bool | Type[ParserBaseException],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if isinstance(expected_result, bool):
+        boolean, offset = parser._parse_boolean(0)
+        assert expected_result == boolean.value
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_result):
+            parser._parse_boolean(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_result", "expected_offset"],
+    [
+        ("0", 0, 1),
+        ("123", 123, 1),
+        ("-456", -456, 1),
+        ("", NewParserEndOfFileException, 0),
+        ("true", NewParserException, 0),
+    ],
+)
+def test_parse_integer(
+    code: str,
+    expected_result: int | Type[ParserBaseException],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if isinstance(expected_result, int):
+        boolean, offset = parser._parse_integer(0)
+        assert expected_result == boolean.value
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_result):
+            parser._parse_integer(0)
