@@ -577,6 +577,7 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.BEGIN])
         new_value_expr, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.SET_FIELD])
 
         field_update = StructFieldUpdate(
             field_name=field_name,
@@ -622,7 +623,14 @@ class SingleFileParser:
         if token.type == TokenType.WHILE:
             return self._parse_loop(offset)
 
-        raise NotImplementedError  # TODO
+        raise NewParserException(
+            file=token.file,
+            line=token.line,
+            column=token.column,
+            expected_token_types=literal_token_types
+            + [TokenType.IDENTIFIER, TokenType.IF, TokenType.WHILE],
+            found_token_type=token.type,
+        )
 
     def _parse_function_body(self, offset: int) -> Tuple[FunctionBody, int]:
         items: List[FunctionBodyItem] = []

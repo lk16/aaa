@@ -871,9 +871,253 @@ def test_parse_function_call(
             parser._parse_function_call(0)
 
 
-# TODO test branch
-# TODO test loop
-# TODO test struct field query
-# TODO test struct field update
-# TODO test fucntion body item
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("if", NewParserEndOfFileException, 0),
+        ("if true", NewParserEndOfFileException, 0),
+        ("if true {", NewParserEndOfFileException, 0),
+        ("if true { nop", NewParserEndOfFileException, 0),
+        ("if true { nop } else ", NewParserEndOfFileException, 0),
+        ("if true { nop } else {", NewParserEndOfFileException, 0),
+        ("if true { nop } else { nop", NewParserEndOfFileException, 0),
+        ("if true { nop }", None, 5),
+        ("if true { nop } else { nop }", None, 9),
+        ("if true { while true { nop } }", None, 9),
+        ("if true { if true { nop } else { nop } }", None, 13),
+        ('if true { "x" ? }', None, 6),
+        ('if true { "x" { nop } ! }', None, 9),
+        ('if true { "x" }', None, 5),
+        ('if true { "x" 3 }', None, 6),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_branch(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_branch(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_branch(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("while", NewParserEndOfFileException, 0),
+        ("while true", NewParserEndOfFileException, 0),
+        ("while true {", NewParserEndOfFileException, 0),
+        ("while true { nop", NewParserEndOfFileException, 0),
+        ("while true { nop }", None, 5),
+        ("while true { while true { nop } }", None, 9),
+        ("while true { if true { nop } else { nop } }", None, 13),
+        ('while true { "x" ? }', None, 6),
+        ('while true { "x" { nop } ! }', None, 9),
+        ('while true { "x" }', None, 5),
+        ('while true { "x" 3 }', None, 6),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_loop(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_loop(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_loop(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ('"foo"', NewParserEndOfFileException, 0),
+        ('"foo" ?', None, 2),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_field_query(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_struct_field_query(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_struct_field_query(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ('"foo"', NewParserEndOfFileException, 0),
+        ('"foo" {', NewParserEndOfFileException, 0),
+        ('"foo" { nop', NewParserEndOfFileException, 0),
+        ('"foo" { nop }', NewParserEndOfFileException, 0),
+        ('"foo" { nop } !', None, 5),
+        ('"foo" { while true { nop } } !', None, 9),
+        ('"foo" { if true { nop } else { nop } } !', None, 13),
+        ('"foo" { "x" ? } !', None, 6),
+        ('"foo" { "x" { nop } ! } !', None, 9),
+        ('"foo" { "x" } !', None, 5),
+        ('"foo" { "x" 3 } !', None, 6),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_struct_field_update(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_struct_field_update(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_struct_field_update(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("3", None, 1),
+        ("false", None, 1),
+        ('"foo"', None, 1),
+        ("foo", None, 1),
+        ("foo[A]", None, 4),
+        ("foo[A,]", None, 5),
+        ("foo[A,B]", None, 6),
+        ("foo[A,B,]", None, 7),
+        ("foo:bar", None, 3),
+        ("if true { nop }", None, 5),
+        ("if true { nop } else { nop }", None, 9),
+        ("while true { nop }", None, 5),
+        ('"foo" ?', None, 2),
+        ('"foo" { nop } !', None, 5),
+        ("", NewParserEndOfFileException, 0),
+        ("fn", NewParserException, 0),
+    ],
+)
+def test_parse_function_body_item(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_function_body_item(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_function_body_item(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("3", None, 1),
+        ("false", None, 1),
+        ('"foo"', None, 1),
+        ("foo", None, 1),
+        ("foo[A]", None, 4),
+        ("foo[A,]", None, 5),
+        ("foo[A,B]", None, 6),
+        ("foo[A,B,]", None, 7),
+        ("foo:bar", None, 3),
+        ("if true { nop }", None, 5),
+        ("if true { nop } else { nop }", None, 9),
+        ("while true { nop }", None, 5),
+        ('"foo" ?', None, 2),
+        ('"foo" { nop } !', None, 5),
+        ("if true { nop } 3", None, 6),
+        ("if true { nop } false", None, 6),
+        ('if true { nop } "foo"', None, 6),
+        ("if true { nop } foo", None, 6),
+        ("if true { nop } foo[A]", None, 9),
+        ("if true { nop } foo[A,]", None, 10),
+        ("if true { nop } foo[A,B]", None, 11),
+        ("if true { nop } foo[A,B,]", None, 12),
+        ("if true { nop } foo:bar", None, 8),
+        ("if true { nop } if true { nop }", None, 10),
+        ("if true { nop } if true { nop } else { nop }", None, 14),
+        ("if true { nop } while true { nop }", None, 10),
+        ('if true { nop } "foo" ?', None, 7),
+        ('if true { nop } "foo" { nop } !', None, 10),
+        ("", NewParserEndOfFileException, 0),
+        ("fn", NewParserException, 0),
+    ],
+)
+def test_parse_function_body(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_function_body(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_function_body(0)
+
+
 # TODO test function body
