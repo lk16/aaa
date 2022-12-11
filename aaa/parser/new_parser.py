@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 from aaa.parser.exceptions import (
     NewParserEndOfFileException,
     NewParserException,
+    NewParserUnhandledTopLevelToken,
     ParserBaseException,
 )
 from aaa.parser.models import (
@@ -33,6 +34,36 @@ class SingleFileParser:
     def __init__(self, file: Path, tokens: List[Token]) -> None:
         self.tokens = tokens
         self.file = file
+
+    def parse_builtins_file(self) -> ParsedFile:
+        parsed_file, offset = self._parse_builtins_file_root(0)
+
+        if offset != len(self.tokens):
+            token = self.tokens[offset]
+
+            raise NewParserUnhandledTopLevelToken(
+                file=self.file,
+                line=token.line,
+                column=token.column,
+                token_type=token.type,
+            )
+
+        return parsed_file
+
+    def parse_regular_file(self) -> ParsedFile:
+        parsed_file, offset = self._parse_regular_file_root(0)
+
+        if offset != len(self.tokens):
+            token = self.tokens[offset]
+
+            raise NewParserUnhandledTopLevelToken(
+                file=self.file,
+                line=token.line,
+                column=token.column,
+                token_type=token.type,
+            )
+
+        return parsed_file
 
     def _peek_token(self, offset: int) -> Optional[Token]:
         try:

@@ -8,6 +8,7 @@ import pytest
 from aaa.parser.exceptions import (
     NewParserEndOfFileException,
     NewParserException,
+    NewParserUnhandledTopLevelToken,
     ParserBaseException,
 )
 from aaa.parser.new_parser import SingleFileParser
@@ -483,7 +484,7 @@ def test_parse_function_declaration(
             parser._parse_function_declaration(0)
 
 
-def test_parse_builtins_file() -> None:
+def test_parse_builtins_file_root() -> None:
     file = Path("./stdlib/builtins.aaa")
 
     tokens = Tokenizer(file).run()
@@ -1187,3 +1188,67 @@ def test_parse_regular_file_root_empty_file() -> None:
 
     _, offset = parser._parse_regular_file_root(0)
     assert 0 == offset
+
+
+@pytest.mark.parametrize(
+    ["file"],
+    {(Path(file),) for file in glob("**/*.aaa", root_dir=".", recursive=True)}
+    - {(Path("./stdlib/builtins.aaa"),)},
+)
+def test_parse_regular_file_all_source_files(file: Path) -> None:
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    parsed_file = parser.parse_regular_file()
+
+    old_parser = Parser(Path("."), file, None)
+    expected_parsed_file = old_parser._parse(file, old_parser._get_source_parser())
+
+    assert expected_parsed_file.imports == parsed_file.imports
+    assert expected_parsed_file.structs == parsed_file.structs
+    assert expected_parsed_file.functions == parsed_file.functions
+
+
+def test_parse_builtins_file() -> None:
+    file = Path("./stdlib/builtins.aaa")
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    parsed_file = parser.parse_builtins_file()
+
+    old_parser = Parser(Path("."), file, None)
+    expected_parsed_file = old_parser._parse(file, old_parser._get_builtins_parser())
+
+    assert expected_parsed_file.types == parsed_file.types
+    assert expected_parsed_file.functions == parsed_file.functions
+
+
+def test_parse_regular_file_fail() -> None:
+    code = "fn foo { nop } 3"
+
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    with pytest.raises(NewParserUnhandledTopLevelToken):
+        parser.parse_regular_file()
+
+
+def test_parse_builtins_file_fail() -> None:
+    code = "fn foo args a as int return bool 3"
+
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    with pytest.raises(NewParserUnhandledTopLevelToken):
+        parser.parse_builtins_file()

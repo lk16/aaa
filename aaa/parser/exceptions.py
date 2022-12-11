@@ -82,3 +82,32 @@ class NewParserEndOfFileException(ParserBaseException):
     def __str__(self) -> str:
         # TODO add context
         return f"{self.file} Parsing failed, unexpected end of file."
+
+
+class NewParserUnhandledTopLevelToken(ParserBaseException):
+    def __init__(
+        self,
+        *,
+        file: Path,
+        line: int,
+        column: int,
+        token_type: TokenType,
+    ) -> None:
+        self.file = file
+        self.line = line
+        self.column = column
+        self.token_type = token_type
+
+    def where(self) -> str:  # pragma: nocover
+        return f"{self.file}:{self.line}:{self.column}"
+
+    def context(self) -> str:  # pragma: nocover
+        line = self.file.read_text().split("\n")[self.line - 1]
+        return line + "\n" + ((self.column - 1) * " ") + "^\n"
+
+    def __str__(self) -> str:  # pragma: nocover
+        return (
+            f"{self.where()}: Parsing failed, unexpected top-level token {self.token_type.name}\n"
+            + self.context()
+            + "\n"
+        )
