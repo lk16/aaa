@@ -77,12 +77,13 @@ def test(path: str) -> None:
 def transpile_tests(path: str, output_file: str, compile: bool, run: bool) -> None:
     # TODO add verbose flag
 
-    main_test_code = TestRunner(Path(path)).build_main_test_file()
+    test_runner = TestRunner(Path(path))
+    main_test_code = test_runner.build_main_test_file()
 
     main_test_file = Path(gettempdir()) / NamedTemporaryFile(delete=False).name
     main_test_file.write_text(main_test_code)
 
-    exit_code = Runner(main_test_file).transpile(
+    exit_code = Runner(main_test_file, test_runner.parsed_files).transpile(
         Path(output_file), compile=compile, run=run
     )
     exit(exit_code)
