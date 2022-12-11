@@ -13,6 +13,7 @@ from aaa.parser.models import (
     FunctionName,
     Identifier,
     ParsedFile,
+    StringLiteral,
     Struct,
     TypeLiteral,
 )
@@ -347,7 +348,21 @@ class SingleFileParser:
 
         return struct, offset
 
-    # TODO string
+    def _parse_string(self, offset: int) -> Tuple[StringLiteral, int]:
+        token, offset = self._token(offset, [TokenType.STRING])
+
+        value = token.value[1:-1]
+        value = value.replace("\\\\", "\\")
+        value = value.replace("\\n", "\n")
+        value = value.replace("\\r", "\r")
+        value = value.replace('\\"', '"')
+
+        string = StringLiteral(
+            value=value, file=token.file, line=token.line, column=token.column
+        )
+
+        return string, offset
+
     # TODO import_item
     # TODO import_items
     # TODO import_statement

@@ -567,3 +567,38 @@ def test_parse_struct_definition(
     else:
         with pytest.raises(expected_exception):
             parser._parse_struct_definition(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_result", "expected_offset"],
+    [
+        ('""', "", 1),
+        ('"foo"', "foo", 1),
+        ('"\\n"', "\n", 1),
+        ('"\\r"', "\r", 1),
+        ('"\\\\"', "\\", 1),
+        ('"\\""', '"', 1),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_string(
+    code: str,
+    expected_result: str | Type[ParserBaseException],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if isinstance(expected_result, str):
+        string, offset = parser._parse_string(0)
+        assert expected_offset == offset
+        assert expected_result == string.value
+    else:
+        with pytest.raises(expected_result):
+            parser._parse_string(0)
