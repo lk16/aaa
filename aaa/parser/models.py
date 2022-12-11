@@ -168,6 +168,7 @@ class ImportItem(AaaParseModel):
         line: int,
         column: int,
     ) -> None:
+        # TODO inconsisted typing, original_name and imported_name should be an Identifier
         self.original_name = origninal_name
         self.imported_name = imported_name
         super().__init__(file=file, line=line, column=column)

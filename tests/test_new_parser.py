@@ -602,3 +602,38 @@ def test_parse_string(
     else:
         with pytest.raises(expected_result):
             parser._parse_string(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_result", "expected_offset"],
+    [
+        ("foo", ("foo", "foo"), 1),
+        ("foo as", NewParserEndOfFileException, 0),
+        ("foo as bar", ("foo", "bar"), 3),
+        ("", NewParserEndOfFileException, 0),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_import_item(
+    code: str,
+    expected_result: Tuple[str, str] | Type[ParserBaseException],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if isinstance(expected_result, tuple):
+        expected_original_name, expected_imported_name = expected_result
+
+        import_item, offset = parser._parse_import_item(0)
+        assert expected_original_name == import_item.original_name
+        assert expected_imported_name == import_item.imported_name
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_result):
+            parser._parse_import_item(0)

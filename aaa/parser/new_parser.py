@@ -12,6 +12,7 @@ from aaa.parser.models import (
     FunctionBody,
     FunctionName,
     Identifier,
+    ImportItem,
     ParsedFile,
     StringLiteral,
     Struct,
@@ -362,6 +363,26 @@ class SingleFileParser:
         )
 
         return string, offset
+
+    def _parse_import_item(self, offset: int) -> Tuple[ImportItem, int]:
+        original_name, offset = self._parse_identifier(offset)
+
+        token = self._peek_token(offset)
+        if token and token.type == TokenType.AS:
+            _, offset = self._token(offset, [TokenType.AS])
+            imported_name, offset = self._parse_identifier(offset)
+        else:
+            imported_name = original_name
+
+        import_item = ImportItem(
+            origninal_name=original_name.name,
+            imported_name=imported_name.name,
+            file=original_name.file,
+            line=original_name.line,
+            column=original_name.column,
+        )
+
+        return import_item, offset
 
     # TODO import_item
     # TODO import_items
