@@ -446,6 +446,38 @@ class SingleFileParser:
 
         return integer, offset
 
+    def _parse_literal(
+        self, offset: int
+    ) -> Tuple[BooleanLiteral | StringLiteral | IntegerLiteral, int]:
+        token = self._peek_token(offset)
+
+        if not token:
+            raise NewParserEndOfFileException(self.file)
+
+        if token.type in [TokenType.TRUE, TokenType.FALSE]:
+            return self._parse_boolean(offset)
+
+        if token.type == TokenType.STRING:
+            return self._parse_string(offset)
+
+        if token.type == TokenType.INTEGER:
+            return self._parse_integer(offset)
+
+        expected_types = [
+            TokenType.TRUE,
+            TokenType.FALSE,
+            TokenType.STRING,
+            TokenType.INTEGER,
+        ]
+
+        raise NewParserException(
+            file=token.file,
+            line=token.line,
+            column=token.column,
+            expected_token_types=expected_types,
+            found_token_type=token.type,
+        )
+
     # TODO literal
     # TODO function_call
     # TODO branch

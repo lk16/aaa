@@ -786,3 +786,39 @@ def test_parse_integer(
     else:
         with pytest.raises(expected_result):
             parser._parse_integer(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_result", "expected_offset"],
+    [
+        ("0", 0, 1),
+        ("123", 123, 1),
+        ("-456", -456, 1),
+        ("true", True, 1),
+        ("false", False, 1),
+        ('"foo"', "foo", 1),
+        ("fn", NewParserException, 0),
+        ("", NewParserEndOfFileException, 0),
+    ],
+)
+def test_parse_literal(
+    code: str,
+    expected_result: int | bool | str | Type[ParserBaseException],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if isinstance(expected_result, (int, str, bool)):
+        literal, offset = parser._parse_literal(0)
+        assert expected_result == literal.value
+        assert type(expected_result) == type(literal.value)  # noqa: E721
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_result):
+            parser._parse_literal(0)
