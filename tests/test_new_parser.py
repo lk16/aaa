@@ -822,3 +822,50 @@ def test_parse_literal(
     else:
         with pytest.raises(expected_result):
             parser._parse_literal(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_result", "expected_offset"],
+    [
+        ("foo", (None, [], "foo"), 1),
+        ("foo[A]", (None, ["A"], "foo"), 4),
+        ("foo[A,]", (None, ["A"], "foo"), 5),
+        ("foo[A,B]", (None, ["A", "B"], "foo"), 6),
+        ("foo[A,B,]", (None, ["A", "B"], "foo"), 7),
+        ("foo:bar", ("foo", [], "bar"), 3),
+        ("fn", NewParserException, 0),
+        ("", NewParserEndOfFileException, 0),
+    ],
+)
+def test_parse_function_call(
+    code: str,
+    expected_result: Tuple[Optional[str], List[str], str] | Type[ParserBaseException],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if isinstance(expected_result, tuple):
+        expected_struct_name, expected_type_params, expected_func_name = expected_result
+        func_call, offset = parser._parse_function_call(0)
+
+        if expected_struct_name is not None:
+            assert func_call.struct_name
+            assert expected_struct_name == func_call.struct_name.name
+        else:
+            assert expected_struct_name is None
+
+        assert expected_type_params == [
+            type_param.identifier.name for type_param in func_call.type_params
+        ]
+        assert expected_func_name == func_call.func_name.name
+
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_result):
+            parser._parse_function_call(0)

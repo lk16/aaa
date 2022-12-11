@@ -478,8 +478,37 @@ class SingleFileParser:
             found_token_type=token.type,
         )
 
-    # TODO literal
-    # TODO function_call
+    def _parse_function_call(self, offset: int) -> Tuple[FunctionName, int]:
+        token: Optional[Token]
+        identifier, offset = self._parse_identifier(offset)
+
+        type_params: List[TypeLiteral] = []
+        struct_name: Optional[Identifier] = None
+        func_name: Identifier
+
+        token = self._peek_token(offset)
+
+        if token and token.type == TokenType.TYPE_PARAM_BEGIN:
+            func_name = identifier
+            type_params, offset = self._parse_type_params(offset)
+        elif token and token.type == TokenType.COLON:
+            _, offset = self._token(offset, [TokenType.COLON])
+            struct_name = identifier
+            func_name, offset = self._parse_identifier(offset)
+        else:
+            func_name = identifier
+
+        func_call = FunctionName(
+            struct_name=struct_name,
+            type_params=type_params,
+            func_name=func_name,
+            file=self.file,
+            line=identifier.line,
+            column=identifier.column,
+        )
+
+        return func_call, offset
+
     # TODO branch
     # TODO loop
     # TODO struct_field_query
