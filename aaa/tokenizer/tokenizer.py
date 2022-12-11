@@ -33,12 +33,6 @@ class Tokenizer:
         column = offset - prefix.rfind("\n")
         return line, column
 
-    def _create_token(self, token_type: TokenType, start: int, end: int) -> Token:
-        # NOTE line and column are set later to increase performance
-        return Token(
-            token_type, value=self.code[start:end], file=self.file, line=-1, column=-1
-        )
-
     def _regex(
         self, offset: int, pattern: re.Pattern[str], token_type: TokenType
     ) -> Optional[Token]:
@@ -48,7 +42,7 @@ class Tokenizer:
             return None
 
         end = offset + len(match.group(0))
-        return self._create_token(token_type, offset, end)
+        return Token(token_type, self.code[offset:end])
 
     def _tokenize_whitespace(self, offset: int) -> Optional[Token]:
         ws_len = 0
@@ -67,7 +61,7 @@ class Tokenizer:
         if ws_len == 0:
             return None
 
-        return self._create_token(TokenType.WHITESPACE, offset, offset + ws_len)
+        return Token(TokenType.WHITESPACE, self.code[offset : offset + ws_len])
 
     def _tokenize_fixed_size(self, offset: int) -> Optional[Token]:
         token: Optional[Token] = None
@@ -77,7 +71,7 @@ class Tokenizer:
         except KeyError:
             pass
         else:
-            return self._create_token(token_type, offset, offset + 1)
+            return Token(token_type, self.code[offset : offset + 1])
 
         try:
             remainder, token_type = TWO_CHAR_PREFIXED_SIZED_TOKENS[
@@ -97,7 +91,7 @@ class Tokenizer:
             ):
                 return None
 
-            return self._create_token(token_type, offset, offset + length)
+            return Token(token_type, self.code[offset : offset + length])
 
         for value, token_type in FIXED_SIZED_TOKENS:
             if self.code[offset:].startswith(value):
@@ -108,7 +102,7 @@ class Tokenizer:
                     or self.code[end].isspace()
                     or not value.isalpha()
                 ):
-                    found = self._create_token(token_type, offset, end)
+                    found = Token(token_type, self.code[offset:end])
 
                     # keep longest token
                     if not token or (len(found.value) > len(token.value)):
@@ -155,7 +149,7 @@ class Tokenizer:
                 self._fail(start)
 
             if self.code[offset] == '"':
-                return self._create_token(TokenType.STRING, start, offset + 1)
+                return Token(TokenType.STRING, self.code[start : offset + 1])
 
             if self.code[offset] == "\\":
 
@@ -224,8 +218,7 @@ class Tokenizer:
         column = 1
 
         for token in tokens:
-            token.line = line
-            token.column = column
+            token.set_location(self.file, line, column)
 
             newlines = token.value.count("\n")
 
