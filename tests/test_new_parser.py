@@ -1,3 +1,4 @@
+from glob import glob
 from pathlib import Path
 from tempfile import NamedTemporaryFile, gettempdir
 from typing import List, Optional, Tuple, Type
@@ -1120,4 +1121,69 @@ def test_parse_function_body(
             parser._parse_function_body(0)
 
 
-# TODO test function body
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("fn", NewParserEndOfFileException, 0),
+        ("fn foo", NewParserEndOfFileException, 0),
+        ("fn foo {", NewParserEndOfFileException, 0),
+        ("fn foo { nop", NewParserEndOfFileException, 0),
+        ("fn foo { nop }", None, 5),
+        ("fn foo args a as int { nop }", None, 9),
+        ("fn foo args a as vec[map[int,str]] { nop }", None, 17),
+        ("fn foo args a as vec[map[int,str]] { while true { nop } }", None, 21),
+        ("3", NewParserException, 0),
+    ],
+)
+def test_parse_function_definition(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    if expected_exception is None:
+        _, offset = parser._parse_function_definition(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_function_definition(0)
+
+
+@pytest.mark.parametrize(
+    ["file"],
+    {(Path(file),) for file in glob("**/*.aaa", root_dir=".", recursive=True)}
+    - {(Path("./stdlib/builtins.aaa"),)},
+)
+def test_parse_regular_file_root_all_source_files(file: Path) -> None:
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    parsed_file, offset = parser._parse_regular_file_root(0)
+    assert len(tokens) == offset
+
+    old_parser = Parser(Path("."), file, None)
+    expected_parsed_file = old_parser._parse(file, old_parser._get_source_parser())
+
+    assert expected_parsed_file.imports == parsed_file.imports
+    assert expected_parsed_file.structs == parsed_file.structs
+    assert expected_parsed_file.functions == parsed_file.functions
+
+
+def test_parse_regular_file_root_empty_file() -> None:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text("")
+
+    tokens = Tokenizer(file).run()
+    parser = SingleFileParser(file, tokens)
+
+    _, offset = parser._parse_regular_file_root(0)
+    assert 0 == offset

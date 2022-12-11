@@ -393,7 +393,10 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         assert token.column is not None
 
         return StructFieldQuery(
-            field_name=field_name, line=token.line, column=token.column, file=self.file
+            field_name=field_name,
+            line=field_name.line,
+            column=field_name.column,
+            file=self.file,
         )
 
     def struct_field_update(
@@ -403,14 +406,14 @@ class AaaTransformer(Transformer[Any, ParsedFile]):
         new_value_expr: FunctionBody,
         update_operator_token: Token,
     ) -> StructFieldUpdate:
-        assert update_operator_token.line is not None
-        assert update_operator_token.column is not None
+        assert field_name.line is not None
+        assert field_name.column is not None
 
         return StructFieldUpdate(
             field_name=field_name,
             new_value_expr=new_value_expr,
-            line=update_operator_token.line,
-            column=update_operator_token.column,
+            line=field_name.line,
+            column=field_name.column,
             file=self.file,
         )
 

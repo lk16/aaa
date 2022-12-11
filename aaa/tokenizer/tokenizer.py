@@ -133,7 +133,11 @@ class Tokenizer:
         filtered: List[Token] = []
 
         for token in tokens:
-            if token.type not in [TokenType.WHITESPACE, TokenType.COMMENT]:
+            if token.type not in [
+                TokenType.WHITESPACE,
+                TokenType.COMMENT,
+                TokenType.SHEBANG,
+            ]:
                 filtered.append(token)
 
         return filtered

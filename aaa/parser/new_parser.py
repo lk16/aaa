@@ -652,5 +652,65 @@ class SingleFileParser:
 
         return function_body, offset
 
-    # TODO function_definition
-    # TODO regular_file_root
+    def _parse_function_definition(self, offset: int) -> Tuple[Function, int]:
+        function, offset = self._parse_function_declaration(offset)
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        body, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        function.body = body
+        return function, offset
+
+    def _parse_regular_file_root(self, offset: int) -> Tuple[ParsedFile, int]:
+
+        first_token = self._peek_token(offset)
+
+        if first_token:
+            first_line = first_token.line
+            first_column = first_token.column
+        else:
+            first_line = 1
+            first_column = 1
+
+        functions: List[Function] = []
+        structs: List[Struct] = []
+        imports: List[Import] = []
+
+        while True:
+            try:
+                function, offset = self._parse_function_definition(offset)
+            except ParserBaseException:
+                pass
+            else:
+                functions.append(function)
+                continue
+
+            try:
+                struct, offset = self._parse_struct_definition(offset)
+            except ParserBaseException:
+                pass
+            else:
+                structs.append(struct)
+                continue
+
+            try:
+                import_, offset = self._parse_import_statement(offset)
+            except ParserBaseException:
+                pass
+            else:
+                imports.append(import_)
+                continue
+
+            break
+
+        parsed_file = ParsedFile(
+            line=first_line,
+            column=first_column,
+            functions=functions,
+            imports=imports,
+            structs=structs,
+            types=[],
+            file=self.file,
+        )
+
+        return parsed_file, offset
