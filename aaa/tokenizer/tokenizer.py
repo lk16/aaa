@@ -2,7 +2,11 @@ import re
 from pathlib import Path
 from typing import List, NoReturn, Optional, Tuple
 
-from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
+from aaa.tokenizer.constants import (
+    FIXED_SIZED_TOKENS,
+    ONE_CHAR_PREFIXED_SIZED_TOKENS,
+    TWO_CHAR_PREFIXED_SIZED_TOKENS,
+)
 from aaa.tokenizer.exceptions import FileReadError, TokenizerException
 from aaa.tokenizer.models import Token, TokenType
 
@@ -10,6 +14,8 @@ comment_regex = re.compile("//[^\n]*")
 shebang_regex = re.compile("#![^\n]*")
 integer_regex = re.compile("(-)?[0-9]+")
 identifier_regex = re.compile("[a-zA-Z_]+")
+
+IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 
 
 class Tokenizer:
@@ -71,6 +77,33 @@ class Tokenizer:
     def _tokenize_fixed_size(self, offset: int) -> Optional[Token]:
         token: Optional[Token] = None
 
+        try:
+            token_type = ONE_CHAR_PREFIXED_SIZED_TOKENS[self.code[offset]]
+        except KeyError:
+            pass
+        else:
+            return self._create_token(token_type, offset, offset + 1)
+
+        try:
+            remainder, token_type = TWO_CHAR_PREFIXED_SIZED_TOKENS[
+                self.code[offset : offset + 2]
+            ]
+        except KeyError:
+            pass
+        else:
+            if remainder and not self.code[offset + 2 :].startswith(remainder):
+                return None
+
+            length = 2 + len(remainder)
+
+            if (
+                offset + length < len(self.code)
+                and self.code[offset + length] in IDENTIFIER_CHARS
+            ):
+                return None
+
+            return self._create_token(token_type, offset, offset + length)
+
         for value, token_type in FIXED_SIZED_TOKENS:
             if self.code[offset:].startswith(value):
                 end = offset + len(value)
@@ -107,10 +140,7 @@ class Tokenizer:
         return self._regex(offset, integer_regex, TokenType.INTEGER)
 
     def _tokenize_identifier(self, offset: int) -> Optional[Token]:
-        if (
-            self.code[offset]
-            not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
-        ):
+        if self.code[offset] not in IDENTIFIER_CHARS:
             return None
 
         return self._regex(offset, identifier_regex, TokenType.IDENTIFIER)
