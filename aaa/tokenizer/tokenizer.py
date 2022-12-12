@@ -6,11 +6,6 @@ from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
 from aaa.tokenizer.exceptions import FileReadError, TokenizerException
 from aaa.tokenizer.models import Token, TokenType
 
-comment_regex = re.compile("//[^\n]*")
-shebang_regex = re.compile("#![^\n]*")
-integer_regex = re.compile("(-)?[0-9]+")
-identifier_regex = re.compile("[a-zA-Z_]+")
-
 
 class Tokenizer:
     def __init__(self, file: Path) -> None:
@@ -38,10 +33,8 @@ class Tokenizer:
             column=column,
         )
 
-    def _regex(
-        self, offset: int, pattern: re.Pattern[str], token_type: TokenType
-    ) -> Optional[Token]:
-        match = pattern.match(self.code[offset:])
+    def _regex(self, offset: int, regex: str, token_type: TokenType) -> Optional[Token]:
+        match = re.match(regex, self.code[offset:])
 
         if not match:
             return None
@@ -89,31 +82,16 @@ class Tokenizer:
         return token
 
     def _tokenize_comment(self, offset: int) -> Optional[Token]:
-        if not self.code[offset:].startswith("//"):
-            return None
-
-        return self._regex(offset, comment_regex, TokenType.COMMENT)
+        return self._regex(offset, "//[^\n]*", TokenType.COMMENT)
 
     def _tokenize_shebang(self, offset: int) -> Optional[Token]:
-        if not self.code[offset:].startswith("#!"):
-            return None
-
-        return self._regex(offset, shebang_regex, TokenType.SHEBANG)
+        return self._regex(offset, "#![^\n]*", TokenType.SHEBANG)
 
     def _tokenize_integer(self, offset: int) -> Optional[Token]:
-        if self.code[offset] not in "-0123456789":
-            return None
-
-        return self._regex(offset, integer_regex, TokenType.INTEGER)
+        return self._regex(offset, "(-)?[0-9]+", TokenType.INTEGER)
 
     def _tokenize_identifier(self, offset: int) -> Optional[Token]:
-        if (
-            self.code[offset]
-            not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
-        ):
-            return None
-
-        return self._regex(offset, identifier_regex, TokenType.IDENTIFIER)
+        return self._regex(offset, "[a-zA-Z_]+", TokenType.IDENTIFIER)
 
     def _tokenize_string(self, offset: int) -> Optional[Token]:
         if self.code[offset] != '"':
