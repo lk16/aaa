@@ -1,14 +1,5 @@
 # TODO
 
-### Parse without Lark
-- [x] create Tokenizer which returns iterable of tokens
-- [x] add file, line and column to `Token`
-- [x] move `Tokenizer` to new module
-- [x] better error handling in `Tokenizer`
-- [x] tests for `Tokenizer`
-- [x] build `SingleFileParser` without Lark
-- [x] build `Parser` which calls `Tokenizer` and `SingleFileParser` for every file
-
 
 ### Transpiling to C
 - [x] Implement `repr`
