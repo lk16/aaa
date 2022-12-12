@@ -75,7 +75,7 @@ class Branch(FunctionBodyItem):
         *,
         condition: FunctionBody,
         if_body: FunctionBody,
-        else_body: FunctionBody,  # TODO make optional
+        else_body: Optional[FunctionBody],
         file: Path,
         line: int,
         column: int,

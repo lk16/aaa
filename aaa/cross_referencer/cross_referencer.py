@@ -1,6 +1,6 @@
 import typing
 from pathlib import Path
-from typing import List, Tuple, TypeVar
+from typing import List, Optional, Tuple, TypeVar
 
 from aaa import AaaRunnerException
 from aaa.cross_referencer.exceptions import (
@@ -596,10 +596,16 @@ class CrossReferencer:
                     parsed=parsed_item,
                 )
             elif isinstance(parsed_item, parser.Branch):
+
+                resolved_else_body: Optional[FunctionBody] = None
+
+                if parsed_item.else_body:
+                    resolved_else_body = resolve_body(parsed_item.else_body)
+
                 return Branch(
                     condition=resolve_body(parsed_item.condition),
                     if_body=resolve_body(parsed_item.if_body),
-                    else_body=resolve_body(parsed_item.else_body),
+                    else_body=resolved_else_body,
                     parsed=parsed_item,
                 )
             elif isinstance(parsed_item, parser.FunctionName):
@@ -726,7 +732,8 @@ class CrossReferencer:
                 elif isinstance(item, Branch):
                     resolve(item.condition)
                     resolve(item.if_body)
-                    resolve(item.else_body)
+                    if item.else_body:
+                        resolve(item.else_body)
                 elif isinstance(item, StructFieldUpdate):
                     resolve(item.new_value_expr)
                 elif isinstance(item, Identifier):

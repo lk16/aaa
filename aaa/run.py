@@ -8,7 +8,7 @@ from aaa import AaaException, AaaRunnerException
 from aaa.cross_referencer.cross_referencer import CrossReferencer
 from aaa.instruction_generator.instruction_generator import InstructionGenerator
 from aaa.parser.models import ParsedFile
-from aaa.parser.single_file_parser import Parser
+from aaa.parser.parser import Parser
 from aaa.simulator.exceptions import AaaRuntimeException
 from aaa.simulator.simulator import Simulator
 from aaa.transpiler.transpiler import Transpiler

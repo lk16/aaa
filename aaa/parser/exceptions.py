@@ -33,8 +33,6 @@ class ParserException(ParserBaseException):
         return line + "\n" + ((self.column - 1) * " ") + "^\n"
 
     def __str__(self) -> str:  # pragma: nocover
-        # TODO confirm this looks right
-
         expected = ", ".join(
             token_type.name for token_type in self.expected_token_types
         )

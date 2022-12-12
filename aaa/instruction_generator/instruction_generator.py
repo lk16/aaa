@@ -270,9 +270,12 @@ class InstructionGenerator:
 
         else_nop_offset = if_offset + len(if_instructions) + 1
         else_offset = else_nop_offset + 1
-        else_instructions = self.instructions_for_function_body(
-            branch.else_body, else_offset
-        )
+        else_instructions: List[Instruction] = []
+
+        if branch.else_body:
+            else_instructions = self.instructions_for_function_body(
+                branch.else_body, else_offset
+            )
 
         branch_end_nop_offset = else_offset + len(else_instructions)
 

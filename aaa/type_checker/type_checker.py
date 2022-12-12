@@ -281,9 +281,13 @@ class TypeChecker:
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
         if_stack = self._check_function_body(function, branch.if_body, copy(type_stack))
-        else_stack = self._check_function_body(
-            function, branch.else_body, copy(type_stack)
-        )
+
+        if branch.else_body:
+            else_stack = self._check_function_body(
+                function, branch.else_body, copy(type_stack)
+            )
+        else:
+            else_stack = copy(type_stack)
 
         # Regardless whether the if- or else- branch is taken,
         # afterwards the stack should be the same.

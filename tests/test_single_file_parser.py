@@ -11,7 +11,7 @@ from aaa.parser.exceptions import (
     ParserBaseException,
     ParserException,
 )
-from aaa.parser.new_parser import SingleFileParser
+from aaa.parser.single_file_parser import SingleFileParser
 from aaa.tokenizer.tokenizer import Tokenizer
 
 

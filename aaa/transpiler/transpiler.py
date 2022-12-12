@@ -309,7 +309,6 @@ class Transpiler:
 
         condition_code = self._generate_c_function_body(branch.condition, indent)
         if_code = self._generate_c_function_body(branch.if_body, indent + 1)
-        else_code = self._generate_c_function_body(branch.else_body, indent + 1)
 
         code = (
             condition_code
@@ -317,7 +316,8 @@ class Transpiler:
             + if_code
         )
 
-        if branch.else_body.items:
+        if branch.else_body:
+            else_code = self._generate_c_function_body(branch.else_body, indent + 1)
             code += f"{indentation}}} else {{\n" + else_code
 
         code += f"{indentation}}}\n"

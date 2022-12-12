@@ -257,7 +257,7 @@ class Branch(FunctionBodyItem):
         *,
         condition: FunctionBody,
         if_body: FunctionBody,
-        else_body: FunctionBody,
+        else_body: Optional[FunctionBody],
         parsed: parser.Branch,
     ) -> None:
         self.condition = condition
