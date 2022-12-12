@@ -6,8 +6,8 @@
 - [x] move `Tokenizer` to new module
 - [x] better error handling in `Tokenizer`
 - [x] tests for `Tokenizer`
-- [ ] build `SingleFileParser` without Lark
-- [ ] build `Parser` which calls `Tokenizer` and `SingleFileParser` for every file
+- [x] build `SingleFileParser` without Lark
+- [x] build `Parser` which calls `Tokenizer` and `SingleFileParser` for every file
 
 
 ### Transpiling to C
