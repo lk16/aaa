@@ -7,7 +7,7 @@ from typing import Dict, List
 from aaa import AaaException
 from aaa.parser.exceptions import ParserBaseException
 from aaa.parser.models import Function, ParsedFile
-from aaa.parser.parser import Parser
+from aaa.parser.single_file_parser import Parser
 from aaa.run import Runner
 
 

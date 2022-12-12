@@ -9,8 +9,7 @@ class ParserBaseException(AaaException):
     ...
 
 
-class NewParserException(ParserBaseException):
-    # TODO rename class
+class ParserException(ParserBaseException):
     def __init__(
         self,
         *,
@@ -50,9 +49,7 @@ class NewParserException(ParserBaseException):
         return message
 
 
-class NewParserEndOfFileException(ParserBaseException):
-    # TODO rename class
-
+class EndOfFileException(ParserBaseException):
     def __init__(self, file: Path) -> None:
         self.file = file
 

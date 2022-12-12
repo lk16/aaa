@@ -6,10 +6,10 @@ from typing import List, Optional, Tuple, Type
 import pytest
 
 from aaa.parser.exceptions import (
-    NewParserEndOfFileException,
-    NewParserException,
+    EndOfFileException,
     NewParserUnhandledTopLevelToken,
     ParserBaseException,
+    ParserException,
 )
 from aaa.parser.new_parser import SingleFileParser
 from aaa.tokenizer.tokenizer import Tokenizer
@@ -21,8 +21,8 @@ from aaa.tokenizer.tokenizer import Tokenizer
         ("abc_def", "abc_def"),
         ("Abc_deF", "Abc_deF"),
         ("_", "_"),
-        ("", NewParserEndOfFileException),
-        ("3", NewParserException),
+        ("", EndOfFileException),
+        ("3", ParserException),
     ],
 )
 def test_parse_identifier(
@@ -49,20 +49,20 @@ def test_parse_identifier(
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
-        ("[", NewParserEndOfFileException, 0),
-        ("[A", NewParserEndOfFileException, 0),
-        ("[]", NewParserException, 0),
+        ("[", EndOfFileException, 0),
+        ("[A", EndOfFileException, 0),
+        ("[]", ParserException, 0),
         ("[A]", ["A"], 3),
-        ("[A,", NewParserEndOfFileException, 0),
+        ("[A,", EndOfFileException, 0),
         ("[A,]", ["A"], 4),
-        ("[,A]", NewParserException, 0),
-        ("[A,B", NewParserEndOfFileException, 0),
+        ("[,A]", ParserException, 0),
+        ("[A,B", EndOfFileException, 0),
         ("[A,B]", ["A", "B"], 5),
         ("[A,B,]", ["A", "B"], 6),
         ("[A,B,C]", ["A", "B", "C"], 7),
         ("[A,B,C,]", ["A", "B", "C"], 8),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_flat_type_params(
@@ -105,8 +105,8 @@ def test_parse_flat_type_params(
         ("foo[A,B,]", ("foo", ["A", "B"]), 7),
         ("foo[A,B,C]", ("foo", ["A", "B", "C"]), 8),
         ("foo[A,B,C,]", ("foo", ["A", "B", "C"]), 9),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_flat_type_literal(
@@ -151,8 +151,8 @@ def test_parse_flat_type_literal(
         ("type foo[A,B,]", ("foo", ["A", "B"]), 8),
         ("type foo[A,B,C]", ("foo", ["A", "B", "C"]), 9),
         ("type foo[A,B,C,]", ("foo", ["A", "B", "C"]), 10),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_type_declaration(
@@ -188,7 +188,7 @@ def test_parse_type_declaration(
         ("foo", (None, [], "foo"), 1),
         ("foo[", (None, [], "foo"), 1),
         ("foo[]", (None, [], "foo"), 1),
-        ("foo:", NewParserEndOfFileException, 0),
+        ("foo:", EndOfFileException, 0),
         ("foo[]:", (None, [], "foo"), 1),
         ("foo:bar", ("foo", [], "bar"), 3),
         ("foo[A]", (None, ["A"], "foo"), 4),
@@ -203,8 +203,8 @@ def test_parse_type_declaration(
         ("foo[A,B,]:bar", ("foo", ["A", "B"], "bar"), 9),
         ("foo[A,B,C]:bar", ("foo", ["A", "B", "C"], "bar"), 10),
         ("foo[A,B,C,]:bar", ("foo", ["A", "B", "C"], "bar"), 11),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_function_name(
@@ -244,21 +244,21 @@ def test_parse_function_name(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("[]", NewParserException, 0),
+        ("[]", ParserException, 0),
         ("[A]", None, 3),
-        ("[A", NewParserEndOfFileException, 0),
-        ("[A,", NewParserEndOfFileException, 0),
+        ("[A", EndOfFileException, 0),
+        ("[A,", EndOfFileException, 0),
         ("[A,]", None, 4),
-        ("[,", NewParserException, 0),
+        ("[,", ParserException, 0),
         ("[A,B]", None, 5),
         ("[A,B,]", None, 6),
         ("[A[B]]", None, 6),
         ("[A[B,]]", None, 7),
-        ("[[A]B]", NewParserException, 0),
+        ("[[A]B]", ParserException, 0),
         ("[A[B],C]", None, 8),
         ("[A[B[C]],D]", None, 11),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_type_params(
@@ -287,7 +287,7 @@ def test_parse_type_params(
     [
         ("foo", None, 1),
         ("foo[]", None, 1),
-        ("[A]", NewParserException, 0),
+        ("[A]", ParserException, 0),
         ("foo[A]", None, 4),
         ("foo[A", None, 1),
         ("foo[A,", None, 1),
@@ -301,8 +301,8 @@ def test_parse_type_params(
         ("foo[[A]B]", None, 1),
         ("foo[A[B],C]", None, 9),
         ("foo[A[B[C]],D]", None, 12),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_type_literal(
@@ -329,8 +329,8 @@ def test_parse_type_literal(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("foo", NewParserEndOfFileException, 0),
-        ("foo as", NewParserEndOfFileException, 0),
+        ("foo", EndOfFileException, 0),
+        ("foo as", EndOfFileException, 0),
         ("foo as bar", None, 3),
         ("foo as bar[]", None, 3),
         ("foo as bar[A", None, 3),
@@ -339,8 +339,8 @@ def test_parse_type_literal(
         ("foo as bar[A,]", None, 7),
         ("foo as bar[A,B]", None, 8),
         ("foo as bar[A,B,]", None, 9),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_argument(
@@ -367,16 +367,16 @@ def test_parse_argument(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("foo", NewParserEndOfFileException, 0),
-        ("foo as", NewParserEndOfFileException, 0),
+        ("foo", EndOfFileException, 0),
+        ("foo as", EndOfFileException, 0),
         ("foo as bar", None, 3),
         ("foo as bar[A]", None, 6),
         ("foo as bar[A,B]", None, 8),
         ("foo as bar[A,B],", None, 9),
         ("foo as bar[A,B],foo as bar[A,B]", None, 17),
         ("foo as bar[A,B],foo as bar[A,B],", None, 18),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_arguments(
@@ -411,8 +411,8 @@ def test_parse_arguments(
         ("foo[A,B],", None, 7),
         ("foo[A,B],foo[A,B]", None, 13),
         ("foo[A,B],foo[A,B],", None, 14),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_return_types(
@@ -454,12 +454,12 @@ def test_parse_return_types(
         ("fn a return vec[int],map[int,int],", None, 15),
         ("fn a return vec[int],map[int,vec[int]],", None, 18),
         ("fn a args b as vec[int], return vec[int],map[int,vec[int]],", None, 26),
-        ("fn a args", NewParserEndOfFileException, 0),
-        ("fn a return", NewParserEndOfFileException, 0),
-        ("fn a return", NewParserEndOfFileException, 0),
+        ("fn a args", EndOfFileException, 0),
+        ("fn a return", EndOfFileException, 0),
+        ("fn a return", EndOfFileException, 0),
         ("fn a return vec[", None, 4),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_function_declaration(
@@ -529,9 +529,9 @@ def test_parse_builtins_root(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("struct a", NewParserEndOfFileException, 0),
-        ("struct a {", NewParserEndOfFileException, 0),
-        ("struct a {}", NewParserException, 0),
+        ("struct a", EndOfFileException, 0),
+        ("struct a {", EndOfFileException, 0),
+        ("struct a {}", ParserException, 0),
         ("struct a { b as int }", None, 7),
         ("struct a { b as int, }", None, 8),
         ("struct a { b as map[int,vec[int]] }", None, 15),
@@ -539,8 +539,8 @@ def test_parse_builtins_root(
         ("struct a { b as int, }", None, 8),
         ("struct a { b as int, c as int }", None, 11),
         ("struct a { b as int, c as int, }", None, 12),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_struct_definition(
@@ -573,8 +573,8 @@ def test_parse_struct_definition(
         ('"\\r"', "\r", 1),
         ('"\\\\"', "\\", 1),
         ('"\\""', '"', 1),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_string(
@@ -603,10 +603,10 @@ def test_parse_string(
     ["code", "expected_result", "expected_offset"],
     [
         ("foo", ("foo", "foo"), 1),
-        ("foo as", NewParserEndOfFileException, 0),
+        ("foo as", EndOfFileException, 0),
         ("foo as bar", ("foo", "bar"), 3),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_import_item(
@@ -645,15 +645,15 @@ def test_parse_import_item(
         ("foo as bar,foo,", None, 6),
         ("foo,foo as bar", None, 5),
         ("foo,foo as bar,", None, 6),
-        ("foo as", NewParserEndOfFileException, 0),
+        ("foo as", EndOfFileException, 0),
         ("foo as bar", None, 3),
         ("foo as bar,", None, 4),
         ("foo as bar,foo", None, 5),
         ("foo as bar,foo as", None, 4),
         ("foo as bar,foo as bar", None, 7),
         ("foo as bar,foo as bar,", None, 8),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_import_items(
@@ -680,10 +680,10 @@ def test_parse_import_items(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("from", NewParserEndOfFileException, 0),
-        ('from "a"', NewParserEndOfFileException, 0),
-        ('from "a" import', NewParserEndOfFileException, 0),
-        ("from a import b", NewParserException, 0),
+        ("from", EndOfFileException, 0),
+        ('from "a"', EndOfFileException, 0),
+        ('from "a" import', EndOfFileException, 0),
+        ("from a import b", ParserException, 0),
         ('from "a" import b', None, 4),
         ('from "a" import b,', None, 5),
         ('from "a" import b as c', None, 6),
@@ -695,8 +695,8 @@ def test_parse_import_items(
         ('from "a" import b,d as e,', None, 9),
         ('from "a" import b as c,d,', None, 9),
         ('from "a" import b,d,', None, 7),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_import_statement(
@@ -725,8 +725,8 @@ def test_parse_import_statement(
     [
         ("true", True, 1),
         ("false", False, 1),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_boolean(
@@ -757,8 +757,8 @@ def test_parse_boolean(
         ("0", 0, 1),
         ("123", 123, 1),
         ("-456", -456, 1),
-        ("", NewParserEndOfFileException, 0),
-        ("true", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("true", ParserException, 0),
     ],
 )
 def test_parse_integer(
@@ -792,8 +792,8 @@ def test_parse_integer(
         ("true", True, 1),
         ("false", False, 1),
         ('"foo"', "foo", 1),
-        ("fn", NewParserException, 0),
-        ("", NewParserEndOfFileException, 0),
+        ("fn", ParserException, 0),
+        ("", EndOfFileException, 0),
     ],
 )
 def test_parse_literal(
@@ -828,8 +828,8 @@ def test_parse_literal(
         ("foo[A,B]", (None, ["A", "B"], "foo"), 6),
         ("foo[A,B,]", (None, ["A", "B"], "foo"), 7),
         ("foo:bar", ("foo", [], "bar"), 3),
-        ("fn", NewParserException, 0),
-        ("", NewParserEndOfFileException, 0),
+        ("fn", ParserException, 0),
+        ("", EndOfFileException, 0),
     ],
 )
 def test_parse_function_call(
@@ -869,13 +869,13 @@ def test_parse_function_call(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("if", NewParserEndOfFileException, 0),
-        ("if true", NewParserEndOfFileException, 0),
-        ("if true {", NewParserEndOfFileException, 0),
-        ("if true { nop", NewParserEndOfFileException, 0),
-        ("if true { nop } else ", NewParserEndOfFileException, 0),
-        ("if true { nop } else {", NewParserEndOfFileException, 0),
-        ("if true { nop } else { nop", NewParserEndOfFileException, 0),
+        ("if", EndOfFileException, 0),
+        ("if true", EndOfFileException, 0),
+        ("if true {", EndOfFileException, 0),
+        ("if true { nop", EndOfFileException, 0),
+        ("if true { nop } else ", EndOfFileException, 0),
+        ("if true { nop } else {", EndOfFileException, 0),
+        ("if true { nop } else { nop", EndOfFileException, 0),
         ("if true { nop }", None, 5),
         ("if true { nop } else { nop }", None, 9),
         ("if true { while true { nop } }", None, 9),
@@ -884,8 +884,8 @@ def test_parse_function_call(
         ('if true { "x" { nop } ! }', None, 9),
         ('if true { "x" }', None, 5),
         ('if true { "x" 3 }', None, 6),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_branch(
@@ -912,10 +912,10 @@ def test_parse_branch(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("while", NewParserEndOfFileException, 0),
-        ("while true", NewParserEndOfFileException, 0),
-        ("while true {", NewParserEndOfFileException, 0),
-        ("while true { nop", NewParserEndOfFileException, 0),
+        ("while", EndOfFileException, 0),
+        ("while true", EndOfFileException, 0),
+        ("while true {", EndOfFileException, 0),
+        ("while true { nop", EndOfFileException, 0),
         ("while true { nop }", None, 5),
         ("while true { while true { nop } }", None, 9),
         ("while true { if true { nop } else { nop } }", None, 13),
@@ -923,8 +923,8 @@ def test_parse_branch(
         ('while true { "x" { nop } ! }', None, 9),
         ('while true { "x" }', None, 5),
         ('while true { "x" 3 }', None, 6),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_loop(
@@ -951,10 +951,10 @@ def test_parse_loop(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ('"foo"', NewParserEndOfFileException, 0),
+        ('"foo"', EndOfFileException, 0),
         ('"foo" ?', None, 2),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_field_query(
@@ -981,10 +981,10 @@ def test_parse_field_query(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ('"foo"', NewParserEndOfFileException, 0),
-        ('"foo" {', NewParserEndOfFileException, 0),
-        ('"foo" { nop', NewParserEndOfFileException, 0),
-        ('"foo" { nop }', NewParserEndOfFileException, 0),
+        ('"foo"', EndOfFileException, 0),
+        ('"foo" {', EndOfFileException, 0),
+        ('"foo" { nop', EndOfFileException, 0),
+        ('"foo" { nop }', EndOfFileException, 0),
         ('"foo" { nop } !', None, 5),
         ('"foo" { while true { nop } } !', None, 9),
         ('"foo" { if true { nop } else { nop } } !', None, 13),
@@ -992,8 +992,8 @@ def test_parse_field_query(
         ('"foo" { "x" { nop } ! } !', None, 9),
         ('"foo" { "x" } !', None, 5),
         ('"foo" { "x" 3 } !', None, 6),
-        ("", NewParserEndOfFileException, 0),
-        ("3", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_struct_field_update(
@@ -1034,8 +1034,8 @@ def test_parse_struct_field_update(
         ("while true { nop }", None, 5),
         ('"foo" ?', None, 2),
         ('"foo" { nop } !', None, 5),
-        ("", NewParserEndOfFileException, 0),
-        ("fn", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("fn", ParserException, 0),
     ],
 )
 def test_parse_function_body_item(
@@ -1090,8 +1090,8 @@ def test_parse_function_body_item(
         ("if true { nop } while true { nop }", None, 10),
         ('if true { nop } "foo" ?', None, 7),
         ('if true { nop } "foo" { nop } !', None, 10),
-        ("", NewParserEndOfFileException, 0),
-        ("fn", NewParserException, 0),
+        ("", EndOfFileException, 0),
+        ("fn", ParserException, 0),
     ],
 )
 def test_parse_function_body(
@@ -1118,15 +1118,15 @@ def test_parse_function_body(
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("fn", NewParserEndOfFileException, 0),
-        ("fn foo", NewParserEndOfFileException, 0),
-        ("fn foo {", NewParserEndOfFileException, 0),
-        ("fn foo { nop", NewParserEndOfFileException, 0),
+        ("fn", EndOfFileException, 0),
+        ("fn foo", EndOfFileException, 0),
+        ("fn foo {", EndOfFileException, 0),
+        ("fn foo { nop", EndOfFileException, 0),
         ("fn foo { nop }", None, 5),
         ("fn foo args a as int { nop }", None, 9),
         ("fn foo args a as vec[map[int,str]] { nop }", None, 17),
         ("fn foo args a as vec[map[int,str]] { while true { nop } }", None, 21),
-        ("3", NewParserException, 0),
+        ("3", ParserException, 0),
     ],
 )
 def test_parse_function_definition(

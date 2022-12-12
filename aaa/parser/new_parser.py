@@ -2,10 +2,10 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from aaa.parser.exceptions import (
-    NewParserEndOfFileException,
-    NewParserException,
+    EndOfFileException,
     NewParserUnhandledTopLevelToken,
     ParserBaseException,
+    ParserException,
 )
 from aaa.parser.models import (
     Argument,
@@ -75,10 +75,10 @@ class SingleFileParser:
         token = self._peek_token(offset)
 
         if not token:
-            raise NewParserEndOfFileException(file=self.file)
+            raise EndOfFileException(file=self.file)
 
         if token.type not in expected:
-            raise NewParserException(
+            raise ParserException(
                 file=token.file,
                 line=token.line,
                 column=token.column,
@@ -488,7 +488,7 @@ class SingleFileParser:
         token = self._peek_token(offset)
 
         if not token:
-            raise NewParserEndOfFileException(self.file)
+            raise EndOfFileException(self.file)
 
         if token.type in [TokenType.TRUE, TokenType.FALSE]:
             return self._parse_boolean(offset)
@@ -506,7 +506,7 @@ class SingleFileParser:
             TokenType.INTEGER,
         ]
 
-        raise NewParserException(
+        raise ParserException(
             file=token.file,
             line=token.line,
             column=token.column,
@@ -624,7 +624,7 @@ class SingleFileParser:
         token = self._peek_token(offset)
 
         if not token:
-            raise NewParserEndOfFileException(self.file)
+            raise EndOfFileException(self.file)
 
         # TODO consider inlining _parse_literal in this function
         literal_token_types = [
@@ -654,7 +654,7 @@ class SingleFileParser:
         if token.type == TokenType.WHILE:
             return self._parse_loop(offset)
 
-        raise NewParserException(
+        raise ParserException(
             file=token.file,
             line=token.line,
             column=token.column,
