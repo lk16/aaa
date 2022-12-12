@@ -8,6 +8,12 @@
 //
 // language.
 
+// Lark is a parsing toolkit for python. https://github.com/lark-parser/lark
+// However it is no longer used for parsing Aaa.
+
+// Tokenizing and parsing are done in modules aaa.tokenizzer and aaa.parser respectively.
+// This file is just here as a reference for the grammar used in those parsers and tokenizers.
+
 %import common.WS
 %ignore WS
 
