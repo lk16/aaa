@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from aaa import Position
 from aaa.parser.exceptions import (
     EndOfFileException,
     NewParserUnhandledTopLevelToken,
@@ -40,13 +41,7 @@ class SingleFileParser:
 
         if offset != len(self.tokens):
             token = self.tokens[offset]
-
-            raise NewParserUnhandledTopLevelToken(
-                file=self.file,
-                line=token.line,
-                column=token.column,
-                token_type=token.type,
-            )
+            raise NewParserUnhandledTopLevelToken(token.position, token.type)
 
         return parsed_file
 
@@ -55,13 +50,7 @@ class SingleFileParser:
 
         if offset != len(self.tokens):
             token = self.tokens[offset]
-
-            raise NewParserUnhandledTopLevelToken(
-                file=self.file,
-                line=token.line,
-                column=token.column,
-                token_type=token.type,
-            )
+            raise NewParserUnhandledTopLevelToken(token.position, token.type)
 
         return parsed_file
 
@@ -78,23 +67,13 @@ class SingleFileParser:
             raise EndOfFileException(file=self.file)
 
         if token.type not in expected:
-            raise ParserException(
-                file=token.file,
-                line=token.line,
-                column=token.column,
-                expected_token_types=expected,
-                found_token_type=token.type,
-            )
+            raise ParserException(token.position, expected, token.type)
 
         return token, offset + 1
 
     def _parse_identifier(self, offset: int) -> Tuple[Identifier, int]:
         token, offset = self._token(offset, [TokenType.IDENTIFIER])
-
-        identifier = Identifier(
-            name=token.value, file=token.file, line=token.line, column=token.column
-        )
-
+        identifier = Identifier(token.position, token.value)
         return identifier, offset
 
     def _parse_flat_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
@@ -121,13 +100,7 @@ class SingleFileParser:
                 break
 
         type_params = [
-            TypeLiteral(
-                identifier=identifier,
-                params=[],
-                file=identifier.file,
-                line=identifier.line,
-                column=identifier.column,
-            )
+            TypeLiteral(identifier.position, identifier, [])
             for identifier in identifiers
         ]
 
@@ -143,14 +116,7 @@ class SingleFileParser:
         except ParserBaseException:
             pass
 
-        type_literal = TypeLiteral(
-            identifier=identifier,
-            params=type_params,
-            file=identifier.file,
-            line=identifier.line,
-            column=identifier.column,
-        )
-
+        type_literal = TypeLiteral(identifier.position, identifier, type_params)
         return type_literal, offset
 
     def _parse_type_declaration(self, offset: int) -> Tuple[TypeLiteral, int]:
@@ -180,12 +146,7 @@ class SingleFileParser:
             func_name = type_literal.identifier
 
         function_name = FunctionName(
-            struct_name=struct_name,
-            type_params=type_literal.params,
-            func_name=func_name,
-            file=self.file,
-            line=type_literal.line,
-            column=type_literal.column,
+            type_literal.position, struct_name, type_literal.params, func_name
         )
 
         return function_name, offset
@@ -225,14 +186,7 @@ class SingleFileParser:
         except ParserBaseException:
             pass
 
-        type_literal = TypeLiteral(
-            identifier=identifier,
-            params=type_params,
-            file=identifier.file,
-            line=identifier.line,
-            column=identifier.column,
-        )
-
+        type_literal = TypeLiteral(identifier.position, identifier, type_params)
         return type_literal, offset
 
     def _parse_argument(self, offset: int) -> Tuple[Argument, int]:
@@ -240,14 +194,7 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.AS])
         type, offset = self._parse_type_literal(offset)
 
-        argument = Argument(
-            identifier=identifier,
-            type=type,
-            file=identifier.file,
-            line=identifier.line,
-            column=identifier.column,
-        )
-
+        argument = Argument(identifier.position, identifier, type)
         return argument, offset
 
     def _parse_arguments(self, offset: int) -> Tuple[List[Argument], int]:
@@ -308,18 +255,16 @@ class SingleFileParser:
             _, offset = self._token(offset, [TokenType.RETURN])
             return_types, offset = self._parse_return_types(offset)
 
-        empty_body = FunctionBody(items=[], file=self.file, line=-1, column=-1)
+        empty_body = FunctionBody(items=[], position=Position(self.file, -1, -1))
 
         function = Function(
+            position=fn_token.position,
             struct_name=function_name.struct_name,
             func_name=function_name.func_name,
             type_params=function_name.type_params,
             arguments=arguments,
             return_types=return_types,
             body=empty_body,
-            file=self.file,
-            line=fn_token.line,
-            column=fn_token.column,
         )
 
         return function, offset
@@ -329,11 +274,9 @@ class SingleFileParser:
         first_token = self._peek_token(offset)
 
         if first_token:
-            first_line = first_token.line
-            first_column = first_token.column
+            position = first_token.position
         else:
-            first_line = 1
-            first_column = 1
+            position = Position(self.file, 1, 1)
 
         functions: List[Function] = []
         types: List[TypeLiteral] = []
@@ -358,13 +301,11 @@ class SingleFileParser:
             break
 
         parsed_file = ParsedFile(
-            line=first_line,
-            column=first_column,
+            position=position,
             functions=functions,
             imports=[],
             structs=[],
             types=types,
-            file=self.file,
         )
 
         return parsed_file, offset
@@ -377,11 +318,9 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.END])
 
         struct = Struct(
-            line=struct_token.line,
-            column=struct_token.column,
+            position=struct_token.position,
             identifier=identifier,
             fields={field.identifier.name: field.type for field in fields},
-            file=self.file,
         )
 
         return struct, offset
@@ -395,10 +334,7 @@ class SingleFileParser:
         value = value.replace("\\r", "\r")
         value = value.replace('\\"', '"')
 
-        string = StringLiteral(
-            value=value, file=token.file, line=token.line, column=token.column
-        )
-
+        string = StringLiteral(token.position, value)
         return string, offset
 
     def _parse_import_item(self, offset: int) -> Tuple[ImportItem, int]:
@@ -412,11 +348,9 @@ class SingleFileParser:
             imported_name = original_name
 
         import_item = ImportItem(
+            position=original_name.position,
             origninal_name=original_name.name,
             imported_name=imported_name.name,
-            file=original_name.file,
-            line=original_name.line,
-            column=original_name.column,
         )
 
         return import_item, offset
@@ -449,37 +383,21 @@ class SingleFileParser:
         import_items, offset = self._parse_import_items(offset)
 
         import_ = Import(
+            position=from_token.position,
             source=source.value,
             imported_items=import_items,
-            file=from_token.file,
-            line=from_token.line,
-            column=from_token.column,
         )
-
         return import_, offset
 
     def _parse_boolean(self, offset: int) -> Tuple[BooleanLiteral, int]:
         token, offset = self._token(offset, [TokenType.TRUE, TokenType.FALSE])
-
-        boolean = BooleanLiteral(
-            value=token.value == "true",
-            file=token.file,
-            line=token.line,
-            column=token.column,
-        )
-
+        boolean = BooleanLiteral(token.position, token.value == "true")
         return boolean, offset
 
     def _parse_integer(self, offset: int) -> Tuple[IntegerLiteral, int]:
         token, offset = self._token(offset, [TokenType.INTEGER])
 
-        integer = IntegerLiteral(
-            value=int(token.value),
-            file=token.file,
-            line=token.line,
-            column=token.column,
-        )
-
+        integer = IntegerLiteral(token.position, int(token.value))
         return integer, offset
 
     def _parse_literal(
@@ -506,13 +424,7 @@ class SingleFileParser:
             TokenType.INTEGER,
         ]
 
-        raise ParserException(
-            file=token.file,
-            line=token.line,
-            column=token.column,
-            expected_token_types=expected_types,
-            found_token_type=token.type,
-        )
+        raise ParserException(token.position, expected_types, token.type)
 
     def _parse_function_call(self, offset: int) -> Tuple[FunctionName, int]:
         token: Optional[Token]
@@ -535,14 +447,8 @@ class SingleFileParser:
             func_name = identifier
 
         func_call = FunctionName(
-            struct_name=struct_name,
-            type_params=type_params,
-            func_name=func_name,
-            file=self.file,
-            line=identifier.line,
-            column=identifier.column,
+            identifier.position, struct_name, type_params, func_name
         )
-
         return func_call, offset
 
     def _parse_branch(self, offset: int) -> Tuple[Branch, int]:
@@ -561,14 +467,7 @@ class SingleFileParser:
             else_body, offset = self._parse_function_body(offset)
             _, offset = self._token(offset, [TokenType.END])
 
-        branch = Branch(
-            line=if_token.line,
-            column=if_token.column,
-            condition=condition,
-            if_body=if_body,
-            else_body=else_body,
-            file=self.file,
-        )
+        branch = Branch(if_token.position, condition, if_body, else_body)
 
         return branch, offset
 
@@ -579,27 +478,14 @@ class SingleFileParser:
         body, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.END])
 
-        loop = Loop(
-            condition=condition,
-            body=body,
-            file=while_token.file,
-            line=while_token.line,
-            column=while_token.column,
-        )
-
+        loop = Loop(while_token.position, condition, body)
         return loop, offset
 
     def _parse_struct_field_query(self, offset: int) -> Tuple[StructFieldQuery, int]:
         field_name, offset = self._parse_string(offset)
         _, offset = self._token(offset, [TokenType.GET_FIELD])
 
-        field_query = StructFieldQuery(
-            field_name=field_name,
-            file=field_name.file,
-            line=field_name.line,
-            column=field_name.column,
-        )
-
+        field_query = StructFieldQuery(field_name.position, field_name)
         return field_query, offset
 
     def _parse_struct_field_update(self, offset: int) -> Tuple[StructFieldUpdate, int]:
@@ -610,13 +496,8 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.SET_FIELD])
 
         field_update = StructFieldUpdate(
-            field_name=field_name,
-            new_value_expr=new_value_expr,
-            file=field_name.file,
-            line=field_name.line,
-            column=field_name.column,
+            field_name.position, field_name, new_value_expr
         )
-
         return field_update, offset
 
     def _parse_function_body_item(self, offset: int) -> Tuple[FunctionBodyItem, int]:
@@ -654,9 +535,7 @@ class SingleFileParser:
             return self._parse_loop(offset)
 
         raise ParserException(
-            file=token.file,
-            line=token.line,
-            column=token.column,
+            position=token.position,
             expected_token_types=literal_token_types
             + [TokenType.IDENTIFIER, TokenType.IF, TokenType.WHILE],
             found_token_type=token.type,
@@ -676,10 +555,7 @@ class SingleFileParser:
 
             items.append(item)
 
-        function_body = FunctionBody(
-            items=items, file=items[0].file, line=items[0].line, column=items[0].column
-        )
-
+        function_body = FunctionBody(items[0].position, items)
         return function_body, offset
 
     def _parse_function_definition(self, offset: int) -> Tuple[Function, int]:
@@ -696,11 +572,9 @@ class SingleFileParser:
         first_token = self._peek_token(offset)
 
         if first_token:
-            first_line = first_token.line
-            first_column = first_token.column
+            position = first_token.position
         else:
-            first_line = 1
-            first_column = 1
+            position = Position(self.file, 1, 1)
 
         functions: List[Function] = []
         structs: List[Struct] = []
@@ -734,13 +608,11 @@ class SingleFileParser:
             break
 
         parsed_file = ParsedFile(
-            line=first_line,
-            column=first_column,
+            position=position,
             functions=functions,
             imports=imports,
             structs=structs,
             types=[],
-            file=self.file,
         )
 
         return parsed_file, offset

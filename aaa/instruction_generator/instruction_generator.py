@@ -213,17 +213,11 @@ class InstructionGenerator:
         if isinstance(identifier.kind, IdentifierCallingFunction):
             called_function = identifier.kind.function
 
-            if called_function.file == self.builtins_path:
+            if called_function.position.file == self.builtins_path:
                 if called_function.name in OPERATOR_INSTRUCTIONS:
                     return [OPERATOR_INSTRUCTIONS[called_function.name]]
                 if called_function.name == "assert":
-                    return [
-                        Assert(
-                            identifier.file,
-                            identifier.line,
-                            identifier.column,
-                        )
-                    ]
+                    return [Assert(identifier.position)]
 
                 return [
                     StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[called_function.name])
@@ -237,7 +231,7 @@ class InstructionGenerator:
             type = var_type.type
             type_params = var_type.params
 
-            if type.file == self.builtins_path:
+            if type.position.file == self.builtins_path:
                 if type.name == "int":
                     return [PushInt(0)]
                 elif type.name == "str":

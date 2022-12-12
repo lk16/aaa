@@ -236,7 +236,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             struct main { x as int }
             """,
             MainIsNotAFunction,
-            "/foo/main.aaa: Found type main instead of function main",
+            "/foo/main.aaa:2:13: Found type main instead of function main",
             id="struct-name-collision",
         ),
         pytest.param(

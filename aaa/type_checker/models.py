@@ -10,7 +10,7 @@ class AaaTypeCheckerModel(AaaModel):
 
 class Signature(AaaTypeCheckerModel):
     def __init__(
-        self, *, arguments: List[VariableType], return_types: List[VariableType]
+        self, arguments: List[VariableType], return_types: List[VariableType]
     ) -> None:
         self.arguments = arguments
         self.return_types = return_types

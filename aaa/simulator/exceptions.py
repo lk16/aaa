@@ -1,7 +1,6 @@
-from pathlib import Path
 from typing import List
 
-from aaa import AaaException
+from aaa import AaaException, Position
 from aaa.simulator.models import CallStackItem
 
 
@@ -10,16 +9,12 @@ class AaaRuntimeException(AaaException):
 
 
 class AaaAssertionFailure(AaaRuntimeException):
-    def __init__(
-        self, file: Path, line: int, column: int, call_stack: List[CallStackItem]
-    ) -> None:
-        self.file = file
-        self.line = line
-        self.column = column
+    def __init__(self, position: Position, call_stack: List[CallStackItem]) -> None:
+        self.position = position
         self.call_stack = call_stack
 
     def __str__(self) -> str:
-        msg = f"{self.file}:{self.line}:{self.column}: Assertion failure, stacktrace:\n"
+        msg = f"{self.position}: Assertion failure, stacktrace:\n"
 
         for call_stack_item in reversed(self.call_stack):
             # TODO add location of calls

@@ -2,7 +2,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from aaa import AaaModel
+from aaa import AaaModel, Position
 from aaa.cross_referencer.models import Function, Type, VariableType
 
 
@@ -214,10 +214,8 @@ class Nop(Instruction):
 
 
 class Assert(Instruction):
-    def __init__(self, file: Path, line: int, column: int) -> None:
-        self.file = file
-        self.line = line
-        self.column = column
+    def __init__(self, position: Position) -> None:
+        self.position = position
 
 
 class PushVec(Instruction):

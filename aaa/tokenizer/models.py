@@ -1,5 +1,6 @@
 from enum import Enum
-from pathlib import Path
+
+from aaa import Position
 
 
 class TokenType(Enum):
@@ -33,11 +34,7 @@ class TokenType(Enum):
 
 
 class Token:
-    def __init__(
-        self, type: TokenType, value: str, file: Path, line: int, column: int
-    ) -> None:
+    def __init__(self, position: Position, type: TokenType, value: str) -> None:
+        self.position = position
         self.type = type
         self.value = value
-        self.file = file
-        self.line = line
-        self.column = column

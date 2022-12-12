@@ -93,5 +93,5 @@ def test_tokenizer_error(code: str, expected_line: int, expected_column: int) ->
 
     tokenizer_exception = e.value
 
-    assert expected_line == tokenizer_exception.line
-    assert expected_column == tokenizer_exception.column
+    assert expected_line == tokenizer_exception.position.line
+    assert expected_column == tokenizer_exception.position.column

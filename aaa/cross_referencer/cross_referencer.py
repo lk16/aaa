@@ -2,7 +2,7 @@ import typing
 from pathlib import Path
 from typing import List, Optional, Tuple, TypeVar
 
-from aaa import AaaRunnerException
+from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.exceptions import (
     CollidingIdentifier,
     CrossReferenceBaseException,
@@ -11,7 +11,6 @@ from aaa.cross_referencer.exceptions import (
     InvalidArgument,
     InvalidType,
     InvalidTypeParameter,
-    KeywordUsedAsIdentifier,
     MainFunctionNotFound,
     MainIsNotAFunction,
     UnexpectedTypeParameterCount,
@@ -43,36 +42,6 @@ from aaa.cross_referencer.models import (
     VariableType,
 )
 from aaa.parser import models as parser
-
-AAA_KEYWORDS = {
-    "and",
-    "args",
-    "as",
-    "assert",
-    "bool",
-    "drop",
-    "dup",
-    "else",
-    "false",
-    "fn",
-    "from",
-    "if",
-    "import",
-    "int",
-    "map",
-    "nop",
-    "not",
-    "or",
-    "over",
-    "return",
-    "rot",
-    "str",
-    "struct",
-    "swap",
-    "true",
-    "vec",
-    "while",
-}
 
 
 class CrossReferencer:
@@ -154,7 +123,7 @@ class CrossReferencer:
                         )
                     else:
                         print(
-                            f"- arg {arg.name} of type {arg.var_type.file}:{arg.var_type.name}"
+                            f"- arg {arg.name} of type {arg.var_type.position.file}:{arg.var_type.name}"
                         )
 
                 assert not isinstance(identifiable.return_types, Unresolved)
@@ -163,7 +132,7 @@ class CrossReferencer:
                         print(f"- return placeholder type {return_type.type.name}")
                     else:
                         print(
-                            f"- return type {return_type.type.file}:{return_type.type.name}"
+                            f"- return type {return_type.type.position.file}:{return_type.type.name}"
                         )
 
             elif isinstance(identifiable, Type):
@@ -172,7 +141,7 @@ class CrossReferencer:
                 for field_name, field_var_type in identifiable.fields.items():
                     assert not isinstance(field_var_type, Unresolved)
                     print(
-                        f"- field {field_name} of type {field_var_type.file}:{field_var_type.name}"
+                        f"- field {field_name} of type {field_var_type.position.file}:{field_var_type.name}"
                     )
 
             else:
@@ -197,24 +166,9 @@ class CrossReferencer:
 
         for identifiable in identifiables:
             key = identifiable.identify()
-            file, name = key
-
-            if name in AAA_KEYWORDS and file != self.builtins_path:
-                raise KeywordUsedAsIdentifier(
-                    line=identifiable.line,
-                    column=identifiable.column,
-                    file=identifiable.file,
-                    keyword=identifiable.name,
-                )
 
             if key in identifiers:
-                collisions.append(
-                    CollidingIdentifier(
-                        file=identifiable.file,
-                        colliding=identifiable,
-                        found=identifiers[key],
-                    )
-                )
+                collisions.append(CollidingIdentifier(identifiable, identifiers[key]))
                 continue
 
             identifiers[key] = identifiable
@@ -275,10 +229,10 @@ class CrossReferencer:
         try:
             source = self.identifiers[key]
         except KeyError:
-            raise ImportedItemNotFound(file=import_.file, import_=import_)
+            raise ImportedItemNotFound(import_)
 
         if isinstance(source, Import):
-            raise IndirectImportException(file=import_.file, import_=import_)
+            raise IndirectImportException(import_)
 
         import_.source = source
 
@@ -286,7 +240,7 @@ class CrossReferencer:
         self, identifier: parser.Identifier | Identifier  # TODO this union is ugly
     ) -> Identifiable:
         name = identifier.name
-        file = identifier.file
+        file = identifier.position.file
 
         builtins_key = (self.builtins_path, name)
         key = (file, name)
@@ -296,9 +250,7 @@ class CrossReferencer:
         elif key in self.identifiers:
             found = self.identifiers[key]
         else:
-            raise UnknownIdentifier(
-                file=file, name=name, line=identifier.line, column=identifier.column
-            )
+            raise UnknownIdentifier(identifier.position, name)
 
         if isinstance(found, Import):
             assert not isinstance(found.source, (Unresolved, Import))
@@ -373,12 +325,11 @@ class CrossReferencer:
             fields={},
         )
 
-        if (function.file, param_name) in self.identifiers:
+        if (function.position.file, param_name) in self.identifiers:
             # Another identifier in the same file has this name.
             raise CollidingIdentifier(
-                file=function.file,
                 colliding=type,
-                found=self.identifiers[(function.file, param_name)],
+                found=self.identifiers[(function.position.file, param_name)],
             )
 
         return type
@@ -401,20 +352,13 @@ class CrossReferencer:
 
                 if lhs_arg.identifier.name == rhs_arg.identifier.name:
                     lhs_identifiable = ArgumentIdentifiable(
-                        file=lhs_arg.file,
-                        line=lhs_arg.line,
-                        column=lhs_arg.column,
-                        name=lhs_arg.identifier.name,
+                        lhs_arg.position, lhs_arg.identifier.name
                     )
                     rhs_identifiable = ArgumentIdentifiable(
-                        file=rhs_arg.file,
-                        line=rhs_arg.line,
-                        column=rhs_arg.column,
-                        name=rhs_arg.identifier.name,
+                        rhs_arg.position, rhs_arg.identifier.name
                     )
 
                     raise CollidingIdentifier(
-                        file=function.file,
                         colliding=lhs_identifiable,
                         found=rhs_identifiable,
                     )
@@ -433,22 +377,12 @@ class CrossReferencer:
         else:
             type = self._get_identifiable(parsed_type.identifier)
 
-            if parsed_arg.identifier.name in AAA_KEYWORDS:
-                raise KeywordUsedAsIdentifier(
-                    line=parsed_arg.identifier.line,
-                    column=parsed_arg.identifier.column,
-                    file=parsed_arg.identifier.file,
-                    keyword=parsed_arg.identifier.name,
-                )
-
             if not isinstance(type, Type):
                 raise InvalidArgument(used=parsed_arg.type, found=type)
 
             if len(parsed_type.params) != type.param_count:
                 raise UnexpectedTypeParameterCount(
-                    file=function.file,
-                    line=parsed_arg.identifier.line,
-                    column=parsed_arg.identifier.column,
+                    position=parsed_arg.identifier.position,
                     expected_param_count=type.param_count,
                     found_param_count=len(parsed_type.params),
                 )
@@ -457,7 +391,6 @@ class CrossReferencer:
 
         return Argument(
             name=parsed_arg.identifier.name,
-            file=function.file,
             var_type=VariableType(
                 parsed=parsed_type,
                 type=type,
@@ -487,7 +420,7 @@ class CrossReferencer:
             identifier = self._get_identifiable(param.identifier)
 
             if not isinstance(identifier, Type):
-                raise InvalidType(file=identifier.file, identifiable=identifier)
+                raise InvalidType(identifier)
 
             param_type = identifier
 
@@ -511,7 +444,7 @@ class CrossReferencer:
         assert not isinstance(function.arguments, Unresolved)
 
         for argument in function.arguments:
-            key = (function.file, argument.name)
+            key = (function.position.file, argument.name)
 
             try:
                 found = self.identifiers[key]
@@ -519,13 +452,7 @@ class CrossReferencer:
                 pass
             else:
                 raise CollidingIdentifier(
-                    file=argument.file,
-                    colliding=ArgumentIdentifiable(
-                        file=argument.file,
-                        line=argument.line,
-                        column=argument.column,
-                        name=argument.name,
-                    ),
+                    colliding=ArgumentIdentifiable(argument.position, argument.name),
                     found=found,
                 )
 
@@ -544,7 +471,7 @@ class CrossReferencer:
                 type = self._get_identifiable(parsed_return_type.identifier)
 
                 if not isinstance(type, Type):
-                    raise InvalidTypeParameter(file=function.file, identifiable=type)
+                    raise InvalidTypeParameter(type)
 
                 params = self._lookup_function_params(function, parsed_return_type)
 
@@ -580,12 +507,7 @@ class CrossReferencer:
                 return BooleanLiteral(parsed=parsed_item)
             elif isinstance(parsed_item, parser.Operator):
                 return Identifier(
-                    parsed=parser.Identifier(
-                        file=parsed_item.file,
-                        line=parsed_item.line,
-                        column=parsed_item.column,
-                        name=parsed_item.value,
-                    ),
+                    parsed=parser.Identifier(parsed_item.position, parsed_item.value),
                     type_params=[],
                     kind=Unresolved(),
                 )
@@ -621,12 +543,7 @@ class CrossReferencer:
                     type_params=[
                         resolve_param(param) for param in parsed_item.type_params
                     ],
-                    parsed=parser.Identifier(
-                        name=name,
-                        file=parsed_item.file,
-                        line=parsed_item.line,
-                        column=parsed_item.column,
-                    ),
+                    parsed=parser.Identifier(parsed_item.position, name),
                 )
             elif isinstance(parsed_item, parser.StructFieldQuery):
                 return StructFieldQuery(parsed=parsed_item)
@@ -646,14 +563,10 @@ class CrossReferencer:
             dummy_type_literal = parser.TypeLiteral(
                 identifier=parser.Identifier(
                     name=identifier.name,
-                    file=Path("/dev/null"),
-                    line=-1,
-                    column=-1,
+                    position=Position(Path("/dev/null"), -1, -1),
                 ),
                 params=[],
-                file=Path("/dev/null"),
-                line=-1,
-                column=-1,
+                position=Position(Path("/dev/null"), -1, -1),
             )
 
             type = self._get_identifiable(identifier)
@@ -691,14 +604,10 @@ class CrossReferencer:
                     dummy_type_literal = parser.TypeLiteral(
                         identifier=parser.Identifier(
                             name=identifier.name,
-                            file=Path("/dev/null"),
-                            line=-1,
-                            column=-1,
+                            position=Position(Path("/dev/null"), -1, -1),
                         ),
                         params=[],
-                        file=Path("/dev/null"),
-                        line=-1,
-                        column=-1,
+                        position=Position(Path("/dev/null"), -1, -1),
                     )
 
                     var_type = VariableType(
@@ -713,9 +622,7 @@ class CrossReferencer:
 
                     if len(identifier.type_params) != identifiable.param_count:
                         raise UnexpectedTypeParameterCount(
-                            file=function.file,
-                            line=identifier.line,
-                            column=identifier.column,
+                            position=identifier.position,
                             expected_param_count=identifiable.param_count,
                             found_param_count=len(identifier.type_params),
                         )
@@ -755,4 +662,4 @@ class CrossReferencer:
             raise MainFunctionNotFound(self.entrypoint) from e
 
         if not isinstance(main, Function):
-            raise MainIsNotAFunction(self.entrypoint, main)
+            raise MainIsNotAFunction(main)

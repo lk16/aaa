@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from aaa import AaaException, error_location
+from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
     ArgumentIdentifiable,
     Function,
@@ -13,8 +13,6 @@ from aaa.parser.models import TypeLiteral
 
 
 class CrossReferenceBaseException(AaaException):
-    # TODO move file and token fields here
-
     def describe(self, item: Identifiable) -> str:
         if isinstance(item, Function):
             return f"function {item.name}"
@@ -32,123 +30,71 @@ class CrossReferenceBaseException(AaaException):
 
 
 class ImportedItemNotFound(CrossReferenceBaseException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        import_: Import,
-    ) -> None:
+    def __init__(self, import_: Import) -> None:
         self.import_ = import_
-        self.file = file
-
-    def where(self) -> str:
-        return error_location(self.file, self.import_.line, self.import_.column)
 
     def __str__(self) -> str:
         return (
-            f"{self.where()}: Could not import "
+            f"{self.import_.position}: Could not import "
             + f"{self.import_.source_name} from {self.import_.source_file}\n"
         )
 
 
 class IndirectImportException(CrossReferenceBaseException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        import_: Import,
-    ) -> None:
-        self.file = file
+    def __init__(self, import_: Import) -> None:
         self.import_ = import_
 
-    def where(self) -> str:
-        return error_location(self.file, self.import_.line, self.import_.column)
-
     def __str__(self) -> str:
-        return f"{self.where()}: Indirect imports are forbidden.\n"
+        return f"{self.import_.position}: Indirect imports are forbidden.\n"
 
 
 class CollidingIdentifier(CrossReferenceBaseException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        colliding: Identifiable,
-        found: Identifiable,
-    ) -> None:
+    def __init__(self, colliding: Identifiable, found: Identifiable) -> None:
         self.colliding = colliding
         self.found = found
-        self.file = file
 
     def __str__(self) -> str:
-        lhs_where = error_location(
-            self.file, self.colliding.line, self.colliding.column
-        )
-        rhs_where = error_location(self.file, self.found.line, self.found.column)
-
         return (
-            f"{lhs_where}: {self.describe(self.colliding)} collides with:\n"
-            f"{rhs_where}: {self.describe(self.found)}\n"
+            f"{self.colliding.position}: {self.describe(self.colliding)} collides with:\n"
+            f"{self.found.position}: {self.describe(self.found)}\n"
         )
 
 
 class UnknownIdentifier(CrossReferenceBaseException):
-    def __init__(self, *, file: Path, name: str, line: int, column: int) -> None:
+    def __init__(self, position: Position, name: str) -> None:
+        self.position = position
         self.name = name
-        self.line = line
-        self.column = column
-        self.file = file
-
-    def where(self) -> str:
-        return error_location(self.file, self.line, self.column)
 
     def __str__(self) -> str:
-        return f"{self.where()}: Usage of unknown identifier {self.name}\n"
+        return f"{self.position}: Usage of unknown identifier {self.name}\n"
 
 
 class InvalidTypeParameter(CrossReferenceBaseException):
-    def __init__(self, *, file: Path, identifiable: Identifiable) -> None:
-        self.file = file
+    def __init__(self, identifiable: Identifiable) -> None:
         self.identifiable = identifiable
 
-    def where(self) -> str:
-        return error_location(
-            self.file, self.identifiable.line, self.identifiable.column
-        )
-
     def __str__(self) -> str:
-        return f"{self.where()}: Cannot use {self.describe(self.identifiable)} as type parameter\n"
+        return f"{self.identifiable.position}: Cannot use {self.describe(self.identifiable)} as type parameter\n"
 
 
 class InvalidArgument(CrossReferenceBaseException):
-    def __init__(self, *, used: TypeLiteral, found: Identifiable) -> None:
+    def __init__(self, used: TypeLiteral, found: Identifiable) -> None:
         self.used = used
         self.found = found
 
     def __str__(self) -> str:
-        used_loc = error_location(self.used.file, self.used.line, self.used.column)
-        found_loc = error_location(self.found.file, self.found.line, self.found.column)
-
         return (
-            f"{used_loc}: Cannot use {self.used.identifier.name} as argument\n"
-            + f"{found_loc}: {self.describe(self.found)} collides\n"
+            f"{self.used.position}: Cannot use {self.used.identifier.name} as argument\n"
+            + f"{self.found.position}: {self.describe(self.found)} collides\n"
         )
 
 
 class InvalidType(CrossReferenceBaseException):
-    def __init__(self, *, file: Path, identifiable: Identifiable) -> None:
-        self.file = file
+    def __init__(self, identifiable: Identifiable) -> None:
         self.identifiable = identifiable
 
-    def where(self) -> str:
-        return error_location(
-            self.file, self.identifiable.line, self.identifiable.column
-        )
-
     def __str__(self) -> str:
-        return (
-            f"{self.where()}: Cannot use {self.describe(self.identifiable)} as type\n"
-        )
+        return f"{self.identifiable.position}: Cannot use {self.describe(self.identifiable)} as type\n"
 
 
 class MainFunctionNotFound(CrossReferenceBaseException):
@@ -161,50 +107,28 @@ class MainFunctionNotFound(CrossReferenceBaseException):
 
 
 class MainIsNotAFunction(CrossReferenceBaseException):
-    def __init__(self, file: Path, identifiable: Identifiable) -> None:
-        self.file = file
+    def __init__(self, identifiable: Identifiable) -> None:
         self.identifiable = identifiable
         super().__init__()
 
     def __str__(self) -> str:
-        return f"{self.file}: Found {self.describe(self.identifiable)} instead of function main"
+        return f"{self.identifiable.position}: Found {self.describe(self.identifiable)} instead of function main"
 
 
 class UnexpectedTypeParameterCount(CrossReferenceBaseException):
     def __init__(
         self,
-        file: Path,
-        line: int,
-        column: int,
+        position: Position,
         expected_param_count: int,
         found_param_count: int,
     ) -> None:
-        self.file = file
-        self.line = line
-        self.column = column
+        self.position = position
         self.expected_param_count = expected_param_count
         self.found_param_count = found_param_count
 
-    def where(self) -> str:
-        return error_location(self.file, self.line, self.column)
-
     def __str__(self) -> str:
         return (
-            f"{self.where()}: Unexpected number of type parameters\n"
+            f"{self.position}: Unexpected number of type parameters\n"
             + f"Expected parameter count: {self.expected_param_count}\n"
             + f"   Found parameter count: {self.found_param_count}"
         )
-
-
-class KeywordUsedAsIdentifier(CrossReferenceBaseException):
-    def __init__(self, *, line: int, column: int, file: Path, keyword: str) -> None:
-        self.line = line
-        self.column = column
-        self.file = file
-        self.keyword = keyword
-
-    def where(self) -> str:
-        return f"{self.file}:{self.line}:{self.column}"
-
-    def __str__(self) -> str:
-        return f'{self.where()}: Can\'t use keyword "{self.keyword}" as identifier.'

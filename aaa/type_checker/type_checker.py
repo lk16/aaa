@@ -2,7 +2,7 @@ from copy import copy
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from aaa import AaaRunnerException
+from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
@@ -73,7 +73,7 @@ class TypeChecker:
             raise AaaRunnerException(self.exceptions)
 
     def _check(self, function: Function) -> None:
-        if function.file == self.builtins_path:
+        if function.position.file == self.builtins_path:
             # builtins can't be type checked
             return
 
@@ -82,12 +82,10 @@ class TypeChecker:
 
         if computed_return_types != expected_return_types:
             raise FunctionTypeError(
-                file=function.file,
-                line=function.line,
-                column=function.column,
-                function=function,
-                expected_return_types=expected_return_types,
-                computed_return_types=computed_return_types,
+                function.position,
+                function,
+                expected_return_types,
+                computed_return_types,
             )
 
     def _check_function_call(
@@ -105,9 +103,7 @@ class TypeChecker:
 
         if len(stack) < arg_count:
             raise StackTypesError(
-                file=function.file,
-                line=called_function_identifier.line,
-                column=called_function_identifier.column,
+                position=called_function_identifier.position,
                 function=function,
                 signature=signature,
                 type_stack=type_stack,
@@ -125,9 +121,7 @@ class TypeChecker:
 
             if not match_result:
                 raise StackTypesError(
-                    file=function.file,
-                    line=called_function_identifier.line,
-                    column=called_function_identifier.column,
+                    position=called_function_identifier.position,
                     function=function,
                     signature=signature,
                     type_stack=type_stack,
@@ -204,12 +198,11 @@ class TypeChecker:
 
         dummy_type_literal = parser.TypeLiteral(
             identifier=parser.Identifier(
-                name=type_name, line=-1, column=-1, file=self.builtins_path
+                name=type_name,
+                position=Position(self.builtins_path, -1, -1),
             ),
-            line=-1,
-            column=-1,
+            position=Position(self.builtins_path, -1, -1),
             params=[],
-            file=Path(self.builtins_path),
         )
 
         return VariableType(
@@ -262,9 +255,7 @@ class TypeChecker:
 
         if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
-                file=function.file,
-                line=function_body.line,
-                column=function_body.column,
+                position=function_body.position,
                 function=function,
                 type_stack=type_stack,
                 condition_stack=condition_stack,
@@ -293,9 +284,7 @@ class TypeChecker:
         # afterwards the stack should be the same.
         if if_stack != else_stack:
             raise BranchTypeError(
-                file=function.file,
-                line=branch.line,
-                column=branch.column,
+                position=branch.position,
                 function=function,
                 type_stack=type_stack,
                 if_stack=if_stack,
@@ -316,9 +305,7 @@ class TypeChecker:
 
         if loop_stack != type_stack:
             raise LoopTypeError(
-                file=function.file,
-                line=loop.line,
-                column=loop.column,
+                position=loop.position,
                 function=function,
                 type_stack=type_stack,
                 loop_stack=loop_stack,
@@ -397,17 +384,12 @@ class TypeChecker:
                     len(function.return_types) == 0,
                 ]
             ):
-                raise InvalidMainSignuture(
-                    file=function.file,
-                    line=function.line,
-                    column=function.column,
-                    function=function,
-                )
+                raise InvalidMainSignuture(function.position, function)
 
         if (
             function.struct_name == ""
             and function.func_name.startswith("test_")
-            and function.file.name.startswith("test_")
+            and function.position.file.name.startswith("test_")
         ):
             if not all(
                 [
@@ -415,16 +397,11 @@ class TypeChecker:
                     len(function.return_types) == 0,
                 ]
             ):
-                raise InvalidTestSignuture(
-                    file=function.file,
-                    line=function.line,
-                    column=function.column,
-                    function=function,
-                )
+                raise InvalidTestSignuture(function.position, function)
 
         if function.is_member_function():
             signature = self.signatures[function.identify()]
-            struct_type = self.types[(function.file, function.struct_name)]
+            struct_type = self.types[(function.position.file, function.struct_name)]
 
             # A memberfunction on a type foo needs to take a foo object as the first argument
             if (
@@ -432,12 +409,7 @@ class TypeChecker:
                 or signature.arguments[0].type != struct_type
             ):
                 raise InvalidMemberFunctionSignature(
-                    file=function.file,
-                    line=function.line,
-                    column=function.column,
-                    function=function,
-                    struct_type=struct_type,
-                    signature=signature,
+                    function.position, function, struct_type, signature
                 )
 
         assert not isinstance(function.body, Unresolved)
@@ -457,9 +429,7 @@ class TypeChecker:
             field_type = struct_type.fields[field_name]
         except KeyError as e:
             raise UnknownField(
-                file=function.file,
-                line=node.line,
-                column=node.column,
+                position=node.position,
                 function=function,
                 struct_type=struct_type,
                 field_name=field_name,
@@ -478,9 +448,7 @@ class TypeChecker:
 
         if len(type_stack) < 2:
             raise StackTypesError(
-                file=function.file,
-                line=field_query.line,
-                column=field_query.column,
+                position=field_query.position,
                 function=function,
                 signature=StructQuerySignature(),
                 type_stack=type_stack,
@@ -514,9 +482,7 @@ class TypeChecker:
 
         if len(type_stack) < 3:
             raise StackTypesError(
-                file=function.file,
-                line=field_update.line,
-                column=field_update.column,
+                position=field_update.position,
                 function=function,
                 signature=StructUpdateSignature(),
                 type_stack=type_stack,
@@ -533,9 +499,7 @@ class TypeChecker:
             ]
         ):
             raise StructUpdateStackError(
-                file=function.file,
-                line=field_update.line,
-                column=field_update.column,
+                position=field_update.position,
                 function=function,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
@@ -545,9 +509,7 @@ class TypeChecker:
 
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
-                file=function.file,
-                line=field_update.new_value_expr.line,
-                column=field_update.new_value_expr.column,
+                position=field_update.new_value_expr.position,
                 function=function,
                 type_stack=type_stack,
                 struct_type=struct_type,

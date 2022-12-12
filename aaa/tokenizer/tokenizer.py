@@ -1,7 +1,8 @@
 import re
 from pathlib import Path
-from typing import List, NoReturn, Optional, Tuple
+from typing import List, NoReturn, Optional
 
+from aaa import Position
 from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
 from aaa.tokenizer.exceptions import FileReadError, TokenizerException
 from aaa.tokenizer.models import Token, TokenType
@@ -13,25 +14,18 @@ class Tokenizer:
         self.code = ""
 
     def _fail(self, offset: int) -> NoReturn:
-        line, column = self._get_line_col(offset)
-        raise TokenizerException(self.file, line, column)
+        position = self._get_position(offset)
+        raise TokenizerException(position)
 
-    def _get_line_col(self, offset: int) -> Tuple[int, int]:
+    def _get_position(self, offset: int) -> Position:
         prefix = self.code[:offset]
         line = 1 + prefix.count("\n")
         column = offset - prefix.rfind("\n")
-        return line, column
+        return Position(self.file, line, column)
 
     def _create_token(self, token_type: TokenType, start: int, end: int) -> Token:
-        line, column = self._get_line_col(start)
-
-        return Token(
-            token_type,
-            value=self.code[start:end],
-            file=self.file,
-            line=line,
-            column=column,
-        )
+        position = self._get_position(start)
+        return Token(position, token_type, self.code[start:end])
 
     def _regex(self, offset: int, regex: str, token_type: TokenType) -> Optional[Token]:
         match = re.match(regex, self.code[offset:])

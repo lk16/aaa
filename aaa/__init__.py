@@ -14,6 +14,16 @@ class AaaModel:
         )
 
 
+class Position:
+    def __init__(self, file: Path, line: int, column: int) -> None:
+        self.file = file
+        self.line = line
+        self.column = column
+
+    def __str__(self) -> str:
+        return f"{self.file}:{self.line}:{self.column}"
+
+
 class AaaException(Exception):
     ...
 
@@ -21,7 +31,3 @@ class AaaException(Exception):
 class AaaRunnerException(AaaException):
     def __init__(self, exceptions: Sequence[AaaException]) -> None:
         self.exceptions = exceptions
-
-
-def error_location(file: Path, line: int, column: int) -> str:
-    return f"{file}:{line}:{column}"

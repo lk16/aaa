@@ -122,7 +122,7 @@ class Transpiler:
             content += self._generate_c_struct_new_func(type)
 
         for function in self.functions.values():
-            if function.file == self.builtins_path:
+            if function.position.file == self.builtins_path:
                 continue
             func_name = self._generate_c_function_name(function)
             content += f"void {func_name}(struct aaa_stack *stack);\n"
@@ -130,7 +130,7 @@ class Transpiler:
         content += "\n"
 
         for function in self.functions.values():
-            if function.file == self.builtins_path:
+            if function.position.file == self.builtins_path:
                 continue
             content += self._generate_c_function(function)
 
@@ -161,11 +161,11 @@ class Transpiler:
         return "aaa_stack_" + function.name.replace(":", "_")
 
     def _generate_c_function_name(self, function: Function) -> str:
-        if function.file == self.builtins_path:
+        if function.position.file == self.builtins_path:
             return self._generate_c_builtin_function_name(function)
 
         # hash file and name to prevent naming collisions
-        hash_input = f"{function.file} {function.name}"
+        hash_input = f"{function.position.file} {function.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"aaa_user_func_{hash}"
 
@@ -181,7 +181,7 @@ class Transpiler:
 
         func_name = self._generate_c_function_name(function)
 
-        content = f"// Generated from: {function.file} {function.name}\n"
+        content = f"// Generated from: {function.position.file} {function.name}\n"
         content += f"void {func_name}(struct aaa_stack *stack) {{\n"
 
         if function.arguments:
@@ -283,7 +283,7 @@ class Transpiler:
         if isinstance(identifier.kind, IdentifierCallingType):
             var_type = identifier.kind.var_type
 
-            if var_type.type.file == self.builtins_path:
+            if var_type.type.position.file == self.builtins_path:
                 if var_type.name == "int":
                     return f"{indentation}aaa_stack_push_int(stack, 0);\n"
                 elif var_type.name == "str":
@@ -330,14 +330,14 @@ class Transpiler:
         return f'{indentation}aaa_stack_not_implemented(stack, "{unimplemented}");\n'
 
     def _generate_c_struct_name(self, type: Type) -> str:
-        hash_input = f"{type.file} {type.name}"
+        hash_input = f"{type.position.file} {type.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"aaa_user_struct_{hash}"
 
     def _generate_c_struct_new_func_prototype(self, type: Type) -> str:
         assert not isinstance(type.fields, Unresolved)
 
-        if type.file == self.builtins_path and not type.fields:
+        if type.position.file == self.builtins_path and not type.fields:
             return ""
 
         c_struct_name = self._generate_c_struct_name(type)
@@ -346,12 +346,12 @@ class Transpiler:
     def _generate_c_struct_new_func(self, type: Type) -> str:
         assert not isinstance(type.fields, Unresolved)
 
-        if type.file == self.builtins_path and not type.fields:
+        if type.position.file == self.builtins_path and not type.fields:
             return ""
 
         c_struct_name = self._generate_c_struct_name(type)
 
-        code = f"// Generated for: {type.file} {type.name}\n"
+        code = f"// Generated for: {type.position.file} {type.name}\n"
         code += f"struct aaa_struct *{c_struct_name}_new(void) {{\n"
         code += f'{C_IDENTATION}struct aaa_struct *s = aaa_struct_new("{type.name}");\n'
 

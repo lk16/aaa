@@ -85,7 +85,7 @@ class TestRunner:
         test_count_digits = len(str(test_count))
 
         for test_number, test_function in enumerate(self.test_functions, start=0):
-            from_ = str(test_function.file)
+            from_ = str(test_function.position.file)
             func_name = test_function.func_name.name
 
             # Functions are aliased to prevent naming collisions

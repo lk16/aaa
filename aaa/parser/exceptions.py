@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 
-from aaa import AaaException
+from aaa import AaaException, Position
 from aaa.tokenizer.models import TokenType
 
 
@@ -12,25 +12,18 @@ class ParserBaseException(AaaException):
 class ParserException(ParserBaseException):
     def __init__(
         self,
-        *,
-        file: Path,
-        line: int,
-        column: int,
+        position: Position,
         expected_token_types: List[TokenType],
         found_token_type: TokenType,
     ) -> None:
-        self.file = file
-        self.line = line
-        self.column = column
+        self.position = position
         self.expected_token_types = expected_token_types
         self.found_token_types = found_token_type
 
-    def where(self) -> str:  # pragma: nocover
-        return f"{self.file}:{self.line}:{self.column}"
-
     def context(self) -> str:  # pragma: nocover
-        line = self.file.read_text().split("\n")[self.line - 1]
-        return line + "\n" + ((self.column - 1) * " ") + "^\n"
+        code = self.position.file.read_text()
+        line = code.split("\n")[self.position.line - 1]
+        return line + "\n" + ((self.position.column - 1) * " ") + "^\n"
 
     def __str__(self) -> str:  # pragma: nocover
         expected = ", ".join(
@@ -38,7 +31,7 @@ class ParserException(ParserBaseException):
         )
         found = self.found_token_types.name
 
-        message = f"{self.where()}: Parsing failed, expected "
+        message = f"{self.position}: Parsing failed, expected "
 
         if len(self.expected_token_types) > 1:
             message += "one of "
@@ -57,29 +50,18 @@ class EndOfFileException(ParserBaseException):
 
 
 class NewParserUnhandledTopLevelToken(ParserBaseException):
-    def __init__(
-        self,
-        *,
-        file: Path,
-        line: int,
-        column: int,
-        token_type: TokenType,
-    ) -> None:
-        self.file = file
-        self.line = line
-        self.column = column
+    def __init__(self, position: Position, token_type: TokenType) -> None:
+        self.position = position
         self.token_type = token_type
 
-    def where(self) -> str:  # pragma: nocover
-        return f"{self.file}:{self.line}:{self.column}"
-
     def context(self) -> str:  # pragma: nocover
-        line = self.file.read_text().split("\n")[self.line - 1]
-        return line + "\n" + ((self.column - 1) * " ") + "^\n"
+        code = self.position.file.read_text()
+        line = code.split("\n")[self.position.line - 1]
+        return line + "\n" + ((self.position.column - 1) * " ") + "^\n"
 
     def __str__(self) -> str:  # pragma: nocover
         return (
-            f"{self.where()}: Parsing failed, unexpected top-level token {self.token_type.name}\n"
+            f"{self.position}: Parsing failed, unexpected top-level token {self.token_type.name}\n"
             + self.context()
             + "\n"
         )
