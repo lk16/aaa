@@ -33,14 +33,11 @@ class TokenType(Enum):
 
 
 class Token:
-    def __init__(self, type: TokenType, value: str) -> None:
+    def __init__(
+        self, type: TokenType, value: str, file: Path, line: int, column: int
+    ) -> None:
         self.type = type
         self.value = value
-        self.file: Path
-        self.line = -1
-        self.column = -1
-
-    def set_location(self, file: Path, line: int, column: int) -> None:
         self.file = file
         self.line = line
         self.column = column
