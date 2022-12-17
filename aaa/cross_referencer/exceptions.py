@@ -6,6 +6,7 @@ from aaa.cross_referencer.models import (
     Function,
     Identifiable,
     Import,
+    UnresolvedImport,
     Type,
     Unresolved,
 )
@@ -16,7 +17,7 @@ class CrossReferenceBaseException(AaaException):
     def describe(self, item: Identifiable) -> str:
         if isinstance(item, Function):
             return f"function {item.name}"
-        elif isinstance(item, Import):
+        elif isinstance(item, (Import, UnresolvedImport)):
             if isinstance(item.source, Unresolved):
                 return f"imported identifier {item.name}"
             return self.describe(item.source)
@@ -29,7 +30,7 @@ class CrossReferenceBaseException(AaaException):
 
 
 class ImportedItemNotFound(CrossReferenceBaseException):
-    def __init__(self, import_: Import) -> None:
+    def __init__(self, import_: UnresolvedImport) -> None:
         self.import_ = import_
 
     def __str__(self) -> str:
@@ -40,7 +41,7 @@ class ImportedItemNotFound(CrossReferenceBaseException):
 
 
 class IndirectImportException(CrossReferenceBaseException):
-    def __init__(self, import_: Import) -> None:
+    def __init__(self, import_: UnresolvedImport) -> None:
         self.import_ = import_
 
     def __str__(self) -> str:

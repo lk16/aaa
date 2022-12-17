@@ -32,6 +32,7 @@ from aaa.cross_referencer.models import (
     IdentifierCallingType,
     IdentifierUsingArgument,
     Import,
+    UnresolvedImport,
     IntegerLiteral,
     Loop,
     StringLiteral,
@@ -54,17 +55,27 @@ class CrossReferencer:
 
     def run(self) -> CrossReferencerOutput:
         identifiers_list = self._load_identifiers()
-        self.identifiers, colissions = self._detect_duplicate_identifiers(
-            identifiers_list
-        )
-        self.exceptions += colissions
 
-        for file, identifier, import_ in self._get_identifiers_by_type(Import):
-            try:
-                self._resolve_import(import_)
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-                del self.identifiers[(file, identifier)]
+        for identifiable in identifiers_list:
+            if isinstance(identifiable, UnresolvedImport):
+                try:
+                    import_ = self._resolve_import(identifiable)
+                except CrossReferenceBaseException as e:
+                    self.exceptions.append(e)
+                    continue
+
+                key = import_.identify()
+
+                try:
+                    found = self.identifiers[key]
+                except KeyError:
+                    self.identifiers[key] = import_
+                else:
+                    self.exceptions += [CollidingIdentifier(import_, found)]
+
+        # TODO resolve types
+
+        # TODO resolve functions
 
         for file, identifier, type_ in self._get_identifiers_by_type(Type):
             try:
@@ -171,6 +182,9 @@ class CrossReferencer:
                 collisions.append(CollidingIdentifier(identifiable, identifiers[key]))
                 continue
 
+            if isinstance(identifiable, UnresolvedImport):
+                continue
+
             identifiers[key] = identifiable
 
         return identifiers, collisions
@@ -184,12 +198,16 @@ class CrossReferencer:
     def _load_functions(self, parsed: List[parser.Function]) -> List[Function]:
         return [Function(parsed=parsed_function) for parsed_function in parsed]
 
-    def _load_imports(self, parsed_imports: List[parser.Import]) -> List[Import]:
-        imports: List[Import] = []
+    def _load_imports(
+        self, parsed_imports: List[parser.Import]
+    ) -> List[UnresolvedImport]:
+        imports: List[UnresolvedImport] = []
 
         for parsed_import in parsed_imports:
             for imported_item in parsed_import.imported_items:
-                import_ = Import(import_item=imported_item, import_=parsed_import)
+                import_ = UnresolvedImport(
+                    import_item=imported_item, import_=parsed_import
+                )
                 imports.append(import_)
 
         return imports
@@ -199,7 +217,7 @@ class CrossReferencer:
             Type(param_count=len(type.params), parsed=type, fields={}) for type in types
         ]
 
-    def _resolve_import(self, import_: Import) -> None:
+    def _resolve_import(self, import_: UnresolvedImport) -> Import:
 
         key = (import_.source_file, import_.source_name)
 
@@ -208,10 +226,10 @@ class CrossReferencer:
         except KeyError:
             raise ImportedItemNotFound(import_)
 
-        if isinstance(source, Import):
+        if isinstance(source, UnresolvedImport):
             raise IndirectImportException(import_)
 
-        import_.source = source
+        return Import(import_, source)
 
     def _get_identifiable(
         self, identifier: parser.Identifier | Identifier  # TODO this union is ugly

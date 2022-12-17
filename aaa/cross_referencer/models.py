@@ -93,12 +93,20 @@ class FunctionBody(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class Import(Identifiable):
+class UnresolvedImport(Identifiable):
     def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
         self.source_file = import_.source_file
         self.source_name = import_item.original_name
-        self.source: Identifiable | Unresolved = Unresolved()
+        self.source = Unresolved()
         super().__init__(import_item.position, import_item.imported_name)
+
+
+class Import(Identifiable):
+    def __init__(self, unresolved: UnresolvedImport, source: Identifiable) -> None:
+        self.source_file = unresolved.source_file
+        self.source_name = unresolved.source_name
+        self.source = source
+        super().__init__(unresolved.position, unresolved.name)
 
 
 class Type(Identifiable):
