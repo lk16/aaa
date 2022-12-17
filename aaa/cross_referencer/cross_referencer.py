@@ -390,7 +390,7 @@ class CrossReferencer:
                     found_param_count=len(parsed_type.params),
                 )
 
-            params = self._lookup_function_params(function, type_params, parsed_type)
+            params = self._lookup_function_params(type_params, parsed_type)
 
         return Argument(
             name=parsed_arg.identifier.name,
@@ -412,7 +412,6 @@ class CrossReferencer:
 
     def _lookup_function_param(
         self,
-        function: UnresolvedFunction,  # TODO is function used here?
         type_params: Dict[str, Type],
         param: parser.TypeLiteral,
     ) -> VariableType:
@@ -435,17 +434,16 @@ class CrossReferencer:
             type=param_type,
             is_placeholder=is_placeholder,
             parsed=param,
-            params=self._lookup_function_params(function, type_params, param),
+            params=self._lookup_function_params(type_params, param),
         )
 
     def _lookup_function_params(
         self,
-        function: UnresolvedFunction,
         type_params: Dict[str, Type],
         parsed_type: parser.TypeLiteral,
     ) -> List[VariableType]:
         return [
-            self._lookup_function_param(function, type_params, param)
+            self._lookup_function_param(type_params, param)
             for param in parsed_type.params
         ]
 
@@ -482,9 +480,7 @@ class CrossReferencer:
                 if not isinstance(type, Type):
                     raise InvalidTypeParameter(type)
 
-                params = self._lookup_function_params(
-                    function, type_params, parsed_return_type
-                )
+                params = self._lookup_function_params(type_params, parsed_return_type)
 
             return_type = VariableType(
                 parsed=parsed_return_type,
