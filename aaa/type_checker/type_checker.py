@@ -19,7 +19,6 @@ from aaa.cross_referencer.models import (
     StructFieldQuery,
     StructFieldUpdate,
     Type,
-    Unresolved,
     VariableType,
 )
 from aaa.parser import models as parser
@@ -55,9 +54,6 @@ class TypeChecker:
 
     def run(self) -> None:
         for function in self.functions.values():
-            assert not isinstance(function.arguments, Unresolved)
-            assert not isinstance(function.return_types, Unresolved)
-
             self.signatures[function.identify()] = Signature(
                 arguments=[arg.var_type for arg in function.arguments],
                 return_types=function.return_types,
@@ -374,9 +370,6 @@ class TypeChecker:
     def _check_function(
         self, function: Function, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        assert not isinstance(function.arguments, Unresolved)
-        assert not isinstance(function.return_types, Unresolved)
-
         if function.name == "main":
             if not all(
                 [
@@ -412,7 +405,6 @@ class TypeChecker:
                     function.position, function, struct_type, signature
                 )
 
-        assert not isinstance(function.body, Unresolved)
         return self._check_function_body(function, function.body, type_stack)
 
     def _get_struct_field_type(
@@ -422,9 +414,6 @@ class TypeChecker:
         struct_type: Type,
     ) -> VariableType:
         field_name = node.field_name.value
-
-        assert not isinstance(struct_type.fields, Unresolved)
-
         try:
             field_type = struct_type.fields[field_name]
         except KeyError as e:
@@ -435,7 +424,6 @@ class TypeChecker:
                 field_name=field_name,
             ) from e
 
-        assert not isinstance(field_type, Unresolved)
         return field_type
 
     def _check_type_struct_field_query(

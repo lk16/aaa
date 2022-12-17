@@ -12,10 +12,6 @@ class AaaCrossReferenceModel(AaaModel):
         self.position = position
 
 
-class Unresolved(AaaModel):
-    ...
-
-
 class Identifiable(AaaCrossReferenceModel):
     def __init__(self, position: Position, name: str) -> None:
         self.name = name
@@ -28,37 +24,43 @@ class Identifiable(AaaCrossReferenceModel):
 IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
-class Function(Identifiable):
-    def __init__(
-        self,
-        parsed: parser.Function,
-    ) -> None:
-        self.type_params: Dict[str, Type] | Unresolved = Unresolved()
-        self.arguments: List[Argument] | Unresolved = Unresolved()
-        self.return_types: List[VariableType] | Unresolved = Unresolved()
-        self.body: FunctionBody | Unresolved = Unresolved()
+class UnresolvedFunction(Identifiable):
+    def __init__(self, parsed: parser.Function) -> None:
+        self.parsed = parsed
+        self.func_name = parsed.func_name.name
 
         if parsed.struct_name:
             self.struct_name = parsed.struct_name.name
         else:
             self.struct_name = ""
 
-        self.func_name = parsed.func_name.name
-        self.parsed_type_params = parsed.type_params
-        self.parsed_arguments = parsed.arguments
-        self.parsed_return_types = parsed.return_types
-        self.parsed_body = parsed.body
-
-        if self.struct_name:
+        if parsed.struct_name:
             name = f"{self.struct_name}:{self.func_name}"
         else:
             name = self.func_name
 
         super().__init__(parsed.position, name)
 
-    def get_argument(self, name: str) -> Optional[Argument]:
-        assert not isinstance(self.arguments, Unresolved)
 
+class Function(Identifiable):
+    def __init__(
+        self,
+        unresolved: UnresolvedFunction,
+        type_params: Dict[str, Type],
+        arguments: List[Argument],
+        return_types: List[VariableType],
+        body: FunctionBody,
+    ) -> None:
+        self.type_params = type_params
+        self.arguments = arguments
+        self.return_types = return_types
+        self.body = body
+
+        self.func_name = unresolved.func_name
+        self.struct_name = unresolved.struct_name
+        super().__init__(unresolved.position, unresolved.name)
+
+    def get_argument(self, name: str) -> Optional[Argument]:
         for argument in self.arguments:
             if name == argument.name:
                 return argument
@@ -66,12 +68,6 @@ class Function(Identifiable):
 
     def is_member_function(self) -> bool:
         return self.struct_name != ""
-
-    def get_parsed_type_param(self, name: str) -> Optional[parser.TypeLiteral]:
-        for parsed_type_param in self.parsed_type_params:
-            if parsed_type_param.identifier.name == name:
-                return parsed_type_param
-        return None
 
 
 class Argument(AaaCrossReferenceModel):
@@ -97,7 +93,6 @@ class UnresolvedImport(Identifiable):
     def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
         self.source_file = import_.source_file
         self.source_name = import_item.original_name
-        self.source = Unresolved()
         super().__init__(import_item.position, import_item.imported_name)
 
 
@@ -109,21 +104,28 @@ class Import(Identifiable):
         super().__init__(unresolved.position, unresolved.name)
 
 
-class Type(Identifiable):
+class UnresolvedType(Identifiable):
     def __init__(
         self,
         parsed: parser.TypeLiteral | parser.Struct,
         param_count: int,
-        fields: Dict[str, VariableType] | Unresolved,
     ) -> None:
         self.param_count = param_count
-        self.fields = fields
         self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
 
         if isinstance(parsed, parser.Struct):
             self.parsed_field_types = parsed.fields
 
         super().__init__(parsed.position, parsed.identifier.name)
+
+
+class Type(Identifiable):
+    def __init__(
+        self, unresolved: UnresolvedType, fields: Dict[str, VariableType]
+    ) -> None:
+        self.param_count = unresolved.param_count
+        self.fields = fields
+        super().__init__(unresolved.position, unresolved.name)
 
 
 class VariableType(AaaCrossReferenceModel):
@@ -213,7 +215,7 @@ class IdentifierCallingType(IdentifierKind):
 class Identifier(FunctionBodyItem):
     def __init__(
         self,
-        kind: IdentifierKind | Unresolved,
+        kind: IdentifierKind,
         type_params: List[Identifier],
         parsed: parser.Identifier,
     ) -> None:

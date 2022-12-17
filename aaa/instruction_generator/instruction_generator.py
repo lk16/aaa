@@ -16,7 +16,6 @@ from aaa.cross_referencer.models import (
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
-    Unresolved,
 )
 from aaa.instruction_generator.models import (
     And,
@@ -168,7 +167,6 @@ class InstructionGenerator:
         )
 
     def generate_instructions(self, function: Function) -> List[Instruction]:
-        assert not isinstance(function.body, Unresolved)
         return self.instructions_for_function_body(function.body, 0)
 
     def instructions_for_integer_literal(
@@ -207,8 +205,6 @@ class InstructionGenerator:
         return loop_instructions
 
     def instructions_for_identfier(self, identifier: Identifier) -> List[Instruction]:
-
-        assert not isinstance(identifier.kind, Unresolved)
 
         if isinstance(identifier.kind, IdentifierCallingFunction):
             called_function = identifier.kind.function

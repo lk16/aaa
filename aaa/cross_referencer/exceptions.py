@@ -7,8 +7,7 @@ from aaa.cross_referencer.models import (
     Identifiable,
     Import,
     UnresolvedImport,
-    Type,
-    Unresolved,
+    UnresolvedType,
 )
 from aaa.parser.models import TypeLiteral
 
@@ -17,11 +16,11 @@ class CrossReferenceBaseException(AaaException):
     def describe(self, item: Identifiable) -> str:
         if isinstance(item, Function):
             return f"function {item.name}"
-        elif isinstance(item, (Import, UnresolvedImport)):
-            if isinstance(item.source, Unresolved):
-                return f"imported identifier {item.name}"
+        elif isinstance(item, Import):
             return self.describe(item.source)
-        elif isinstance(item, Type):
+        elif isinstance(item, UnresolvedImport):
+            return f"imported identifier {item.name}"
+        elif isinstance(item, UnresolvedType):
             return f"type {item.name}"
         elif isinstance(item, ArgumentIdentifiable):
             return f"function argument {item.name}"

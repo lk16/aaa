@@ -8,7 +8,7 @@ from socket import socket
 from typing import Any, Callable, Dict, List, Type
 
 from aaa import AaaRunnerException
-from aaa.cross_referencer.models import Function, Unresolved, VariableType
+from aaa.cross_referencer.models import Function, VariableType
 from aaa.instruction_generator.models import (
     And,
     Assert,
@@ -259,8 +259,6 @@ class Simulator:
         assert isinstance(function, Function)
 
         argument_values: Dict[str, Variable] = {}
-
-        assert not isinstance(function.arguments, Unresolved)
 
         for argument in reversed(function.arguments):
             argument_values[argument.name] = self.pop_var()
@@ -626,8 +624,6 @@ class Simulator:
 
         struct_fields: Dict[str, Variable] = {}
 
-        assert not isinstance(instruction.var_type.type.fields, Unresolved)
-
         # TODO move code to create zero value of struct out
 
         def get_zero_var(var_type: VariableType) -> Variable:
@@ -647,8 +643,6 @@ class Simulator:
                     return MapVar({})
                 else:  # pragma: nocover
                     assert False
-
-            assert not isinstance(var_type.type.fields, Unresolved)
 
             return Variable(
                 {

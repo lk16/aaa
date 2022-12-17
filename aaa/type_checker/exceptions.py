@@ -22,7 +22,7 @@ def format_typestack(
 
 
 class TypeCheckerException(AaaException):
-    def __init__(self, position: Position, function: "Function") -> None:
+    def __init__(self, position: Position, function: Function) -> None:
         self.position = position
         self.function = function
 
@@ -35,7 +35,7 @@ class FunctionTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         expected_return_types: List[VariableType],
         computed_return_types: List[VariableType],
     ) -> None:
@@ -58,7 +58,7 @@ class StackTypesError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         signature: Union["Signature", "StructQuerySignature", "StructUpdateSignature"],
         type_stack: List[VariableType],
         func_like: Union[
@@ -104,7 +104,7 @@ class ConditionTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         type_stack: List[VariableType],
         condition_stack: List[VariableType],
     ) -> None:
@@ -127,7 +127,7 @@ class BranchTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         type_stack: List[VariableType],
         if_stack: List[VariableType],
         else_stack: List[VariableType],
@@ -154,7 +154,7 @@ class LoopTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         type_stack: List[VariableType],
         loop_stack: List[VariableType],
     ) -> None:
@@ -187,7 +187,7 @@ class StructUpdateStackError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         type_stack: List[VariableType],
         type_stack_before: List[VariableType],
     ) -> None:
@@ -210,7 +210,7 @@ class StructUpdateTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         type_stack: List[VariableType],
         struct_type: Type,
         field_name: str,
@@ -241,7 +241,7 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         struct_type: Type,
         signature: "Signature",
     ) -> None:
@@ -270,7 +270,7 @@ class UnknownField(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: "Function",
+        function: Function,
         struct_type: Type,
         field_name: str,
     ) -> None:

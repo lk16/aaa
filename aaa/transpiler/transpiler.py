@@ -21,7 +21,6 @@ from aaa.cross_referencer.models import (
     StructFieldQuery,
     StructFieldUpdate,
     Type,
-    Unresolved,
 )
 
 AAA_C_BUILTIN_FUNCS = {
@@ -170,9 +169,6 @@ class Transpiler:
         return f"aaa_user_func_{hash}"
 
     def _generate_c_function(self, function: Function) -> str:
-        assert not isinstance(function.body, Unresolved)
-        assert not isinstance(function.arguments, Unresolved)
-
         indentation = "    "
 
         if not function.body:
@@ -335,8 +331,6 @@ class Transpiler:
         return f"aaa_user_struct_{hash}"
 
     def _generate_c_struct_new_func_prototype(self, type: Type) -> str:
-        assert not isinstance(type.fields, Unresolved)
-
         if type.position.file == self.builtins_path and not type.fields:
             return ""
 
@@ -344,8 +338,6 @@ class Transpiler:
         return f"struct aaa_struct *{c_struct_name}_new(void);\n"
 
     def _generate_c_struct_new_func(self, type: Type) -> str:
-        assert not isinstance(type.fields, Unresolved)
-
         if type.position.file == self.builtins_path and not type.fields:
             return ""
 
