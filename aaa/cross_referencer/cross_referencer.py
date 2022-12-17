@@ -113,7 +113,7 @@ class CrossReferencer:
         params = self._resolve_function_params(unresolved)
         arguments = self._resolve_function_arguments(unresolved, params)
         return_types = self._resolve_function_return_types(unresolved, params)
-        body = self._resolve_function_body(unresolved)
+        body = self._resolve_function_body_root(unresolved)
 
         function = Function(unresolved, params, arguments, return_types, body)
         self._check_argument_identifier_collision(function)
@@ -492,90 +492,116 @@ class CrossReferencer:
             return_types.append(return_type)
         return return_types
 
-    def _resolve_function_body(self, function: UnresolvedFunction) -> FunctionBody:
-        def resolve_body(parsed_body: parser.FunctionBody) -> FunctionBody:
-            return FunctionBody(
-                items=[resolve_item(item) for item in parsed_body.items],
-                parsed=parsed_body,
-            )
+    def _resolve_function_body(
+        self, function: UnresolvedFunction, parsed_body: parser.FunctionBody
+    ) -> FunctionBody:
+        return FunctionBody(
+            items=[
+                self._resolve_function_body_item(function, item)
+                for item in parsed_body.items
+            ],
+            parsed=parsed_body,
+        )
 
-        def resolve_param(
-            function: UnresolvedFunction, type_literal: parser.TypeLiteral
-        ) -> Identifier:
-            _ = type_literal
-            raise NotImplementedError  # TODO
+    def _resolve_function_type_param(
+        self, function: UnresolvedFunction, type_literal: parser.TypeLiteral
+    ) -> Identifier:
+        raise NotImplementedError  # TODO
 
-        def resolve_item(parsed_item: parser.FunctionBodyItem) -> FunctionBodyItem:
-            if isinstance(parsed_item, parser.IntegerLiteral):
-                return IntegerLiteral(parsed=parsed_item)
-            elif isinstance(parsed_item, parser.StringLiteral):
-                return StringLiteral(parsed=parsed_item)
-            elif isinstance(parsed_item, parser.BooleanLiteral):
-                return BooleanLiteral(parsed=parsed_item)
-            elif isinstance(parsed_item, parser.Operator):
-                # TODO make parser output an Identifier for OPERATOR tokens
-                identifier = parser.Identifier(parsed_item.position, parsed_item.value)
+    def _resolve_operator(
+        self, function: UnresolvedFunction, operator: parser.Operator
+    ) -> Identifier:
+        # TODO make parser output an Identifier for OPERATOR tokens
+        identifier = parser.Identifier(operator.position, operator.value)
 
-                operator_func = self._get_identifiable(identifier)
-                assert isinstance(operator_func, Function)
+        operator_func = self._get_identifiable(identifier)
+        assert isinstance(operator_func, Function)
 
-                return Identifier(
-                    parsed=identifier,
-                    type_params=[],
-                    kind=IdentifierCallingFunction(operator_func),
-                )
-            elif isinstance(parsed_item, parser.Loop):
-                return Loop(
-                    condition=resolve_body(parsed_item.condition),
-                    body=resolve_body(parsed_item.body),
-                    parsed=parsed_item,
-                )
-            elif isinstance(parsed_item, parser.Branch):
+        return Identifier(
+            parsed=identifier,
+            type_params=[],
+            kind=IdentifierCallingFunction(operator_func),
+        )
 
-                resolved_else_body: Optional[FunctionBody] = None
+    def _resolve_branch(
+        self, function: UnresolvedFunction, branch: parser.Branch
+    ) -> Branch:
+        resolved_else_body: Optional[FunctionBody] = None
 
-                if parsed_item.else_body:
-                    resolved_else_body = resolve_body(parsed_item.else_body)
+        if branch.else_body:
+            resolved_else_body = self._resolve_function_body(function, branch.else_body)
 
-                return Branch(
-                    condition=resolve_body(parsed_item.condition),
-                    if_body=resolve_body(parsed_item.if_body),
-                    else_body=resolved_else_body,
-                    parsed=parsed_item,
-                )
-            elif isinstance(parsed_item, parser.FunctionName):
-                if parsed_item.struct_name:
-                    name = (
-                        f"{parsed_item.struct_name.name}:{parsed_item.func_name.name}"
-                    )
-                else:
-                    name = parsed_item.func_name.name
+        return Branch(
+            condition=self._resolve_function_body(function, branch.condition),
+            if_body=self._resolve_function_body(function, branch.if_body),
+            else_body=resolved_else_body,
+            parsed=branch,
+        )
 
-                # TODO creating a parser.Identifier here is a hack
-                identifier = parser.Identifier(parsed_item.position, name)
+    def _resolve_loop(self, function: UnresolvedFunction, loop: parser.Loop) -> Loop:
+        return Loop(
+            condition=self._resolve_function_body(function, loop.condition),
+            body=self._resolve_function_body(function, loop.body),
+            parsed=loop,
+        )
 
-                operator_func = self._get_identifiable(identifier)
-                assert isinstance(operator_func, Function)
+    def _resolve_function_name(
+        self, function: UnresolvedFunction, function_name: parser.FunctionName
+    ) -> Identifier:
+        if function_name.struct_name:
+            name = f"{function_name.struct_name.name}:{function_name.func_name.name}"
+        else:
+            name = function_name.func_name.name
 
-                return Identifier(
-                    kind=IdentifierCallingFunction(operator_func),
-                    type_params=[
-                        resolve_param(function, param)
-                        for param in parsed_item.type_params
-                    ],
-                    parsed=identifier,
-                )
-            elif isinstance(parsed_item, parser.StructFieldQuery):
-                return StructFieldQuery(parsed=parsed_item)
-            elif isinstance(parsed_item, parser.StructFieldUpdate):
-                return StructFieldUpdate(
-                    parsed=parsed_item,
-                    new_value_expr=resolve_body(parsed_item.new_value_expr),
-                )
-            else:  # pragma: nocover
-                assert False
+        # TODO creating a parser.Identifier here is a hack
+        identifier = parser.Identifier(function_name.position, name)
 
-        return resolve_body(function.parsed.body)
+        operator_func = self._get_identifiable(identifier)
+        assert isinstance(operator_func, Function)
+
+        return Identifier(
+            kind=IdentifierCallingFunction(operator_func),
+            type_params=[
+                self._resolve_function_type_param(function, param)
+                for param in function_name.type_params
+            ],
+            parsed=identifier,
+        )
+
+    def _resolve_struct_field_update(
+        self, function: UnresolvedFunction, update: parser.StructFieldUpdate
+    ) -> StructFieldUpdate:
+        return StructFieldUpdate(
+            parsed=update,
+            new_value_expr=self._resolve_function_body(function, update.new_value_expr),
+        )
+
+    def _resolve_function_body_item(
+        self, function: UnresolvedFunction, parsed_item: parser.FunctionBodyItem
+    ) -> FunctionBodyItem:
+        if isinstance(parsed_item, parser.IntegerLiteral):
+            return IntegerLiteral(parsed_item)
+        elif isinstance(parsed_item, parser.StringLiteral):
+            return StringLiteral(parsed_item)
+        elif isinstance(parsed_item, parser.BooleanLiteral):
+            return BooleanLiteral(parsed_item)
+        elif isinstance(parsed_item, parser.Operator):
+            return self._resolve_operator(function, parsed_item)
+        elif isinstance(parsed_item, parser.Loop):
+            return self._resolve_loop(function, parsed_item)
+        elif isinstance(parsed_item, parser.Branch):
+            return self._resolve_branch(function, parsed_item)
+        elif isinstance(parsed_item, parser.FunctionName):
+            return self._resolve_function_name(function, parsed_item)
+        elif isinstance(parsed_item, parser.StructFieldQuery):
+            return StructFieldQuery(parsed=parsed_item)
+        elif isinstance(parsed_item, parser.StructFieldUpdate):
+            return self._resolve_struct_field_update(function, parsed_item)
+        else:  # pragma: nocover
+            assert False
+
+    def _resolve_function_body_root(self, function: UnresolvedFunction) -> FunctionBody:
+        return self._resolve_function_body(function, function.parsed.body)
 
     def _resolve_main_function(self) -> None:
         # TODO move to type_checker
