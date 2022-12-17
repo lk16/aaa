@@ -166,26 +166,6 @@ class CrossReferencer:
             identifiables += self._load_imports(parsed_file.imports)
         return identifiables
 
-    def _detect_duplicate_identifiers(
-        self, identifiables: List[Identifiable]
-    ) -> Tuple[IdentifiablesDict, List[CollidingIdentifier]]:
-        identifiers: IdentifiablesDict = {}
-        collisions: List[CollidingIdentifier] = []
-
-        for identifiable in identifiables:
-            key = identifiable.identify()
-
-            if key in identifiers:
-                collisions.append(CollidingIdentifier(identifiable, identifiers[key]))
-                continue
-
-            if isinstance(identifiable, UnresolvedImport):
-                continue
-
-            identifiers[key] = identifiable
-
-        return identifiers, collisions
-
     def _load_struct_types(
         self, parsed_structs: List[parser.Struct]
     ) -> List[UnresolvedType]:
@@ -227,7 +207,7 @@ class CrossReferencer:
         except KeyError:
             raise ImportedItemNotFound(import_)
 
-        if isinstance(source, UnresolvedImport):
+        if isinstance(source, Import):
             raise IndirectImportException(import_)
 
         return Import(import_, source)
