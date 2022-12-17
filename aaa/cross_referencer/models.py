@@ -18,15 +18,11 @@ class Unresolved(AaaModel):
 
 class Identifiable(AaaCrossReferenceModel):
     def __init__(self, position: Position, name: str) -> None:
-        self.__name = name
+        self.name = name
         super().__init__(position)
 
     def identify(self) -> Tuple[Path, str]:
-        return (self.position.file, self.__name)
-
-    @property
-    def name(self) -> str:
-        return self.__name
+        return (self.position.file, self.name)
 
 
 IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
@@ -36,15 +32,11 @@ class Function(Identifiable):
     def __init__(
         self,
         parsed: parser.Function,
-        type_params: Dict[str, Type] | Unresolved,
-        arguments: List[Argument] | Unresolved,
-        return_types: List[VariableType] | Unresolved,
-        body: FunctionBody | Unresolved,
     ) -> None:
-        self.type_params = type_params
-        self.arguments = arguments
-        self.return_types = return_types
-        self.body = body
+        self.type_params: Dict[str, Type] | Unresolved = Unresolved()
+        self.arguments: List[Argument] | Unresolved = Unresolved()
+        self.return_types: List[VariableType] | Unresolved = Unresolved()
+        self.body: FunctionBody | Unresolved = Unresolved()
 
         if parsed.struct_name:
             self.struct_name = parsed.struct_name.name

@@ -181,19 +181,8 @@ class CrossReferencer:
             for parsed_struct in parsed_structs
         ]
 
-    def _load_functions(
-        self, parsed_functions: List[parser.Function]
-    ) -> List[Function]:
-        return [
-            Function(
-                parsed=parsed_function,
-                arguments=Unresolved(),
-                type_params=Unresolved(),
-                return_types=Unresolved(),
-                body=Unresolved(),
-            )
-            for parsed_function in parsed_functions
-        ]
+    def _load_functions(self, parsed: List[parser.Function]) -> List[Function]:
+        return [Function(parsed=parsed_function) for parsed_function in parsed]
 
     def _load_imports(self, parsed_imports: List[parser.Import]) -> List[Import]:
         imports: List[Import] = []
@@ -207,12 +196,7 @@ class CrossReferencer:
 
     def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
         return [
-            Type(
-                param_count=len(type.params),
-                parsed=type,
-                fields={},
-            )
-            for type in types
+            Type(param_count=len(type.params), parsed=type, fields={}) for type in types
         ]
 
     def _resolve_import(self, import_: Import) -> None:
@@ -312,11 +296,7 @@ class CrossReferencer:
 
         assert type_literal
 
-        type = Type(
-            parsed=type_literal,
-            param_count=0,
-            fields={},
-        )
+        type = Type(parsed=type_literal, param_count=0, fields={})
 
         if (function.position.file, param_name) in self.identifiers:
             # Another identifier in the same file has this name.
