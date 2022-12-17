@@ -18,8 +18,7 @@ class CrossReferenceBaseException(AaaException):
             return f"function {item.name}"
         elif isinstance(item, Import):
             if isinstance(item.source, Unresolved):
-                return f"imported identifier {item.imported_name}"
-
+                return f"imported identifier {item.name}"
             return self.describe(item.source)
         elif isinstance(item, Type):
             return f"type {item.name}"

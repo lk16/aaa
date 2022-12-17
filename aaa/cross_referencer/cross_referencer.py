@@ -200,14 +200,7 @@ class CrossReferencer:
 
         for parsed_import in parsed_imports:
             for imported_item in parsed_import.imported_items:
-                import_ = Import(
-                    parsed=imported_item,
-                    source_file=parsed_import.source_file,
-                    source_name=imported_item.original_name,
-                    imported_name=imported_item.imported_name,
-                    source=Unresolved(),
-                )
-
+                import_ = Import(import_item=imported_item, import_=parsed_import)
                 imports.append(import_)
 
         return imports

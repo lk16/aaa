@@ -102,19 +102,11 @@ class FunctionBody(FunctionBodyItem):
 
 
 class Import(Identifiable):
-    def __init__(
-        self,
-        parsed: parser.ImportItem,
-        source_file: Path,
-        source_name: str,
-        imported_name: str,
-        source: Identifiable | Unresolved,
-    ) -> None:
-        self.source_file = source_file
-        self.source_name = source_name
-        self.imported_name = imported_name
-        self.source = source
-        super().__init__(parsed.position, self.imported_name)
+    def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
+        self.source_file = import_.source_file
+        self.source_name = import_item.original_name
+        self.source: Identifiable | Unresolved = Unresolved()
+        super().__init__(import_item.position, import_item.imported_name)
 
 
 class Type(Identifiable):
