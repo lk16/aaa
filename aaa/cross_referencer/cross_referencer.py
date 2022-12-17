@@ -17,6 +17,7 @@ from aaa.cross_referencer.exceptions import (
     UnknownIdentifier,
 )
 from aaa.cross_referencer.models import (
+    AaaCrossReferenceModel,
     Argument,
     ArgumentIdentifiable,
     BooleanLiteral,
@@ -157,8 +158,8 @@ class CrossReferencer:
                 raise NotImplementedError
             print("\n")
 
-    def _load_identifiers(self) -> List[Identifiable]:
-        identifiables: List[Identifiable] = []
+    def _load_identifiers(self) -> List[AaaCrossReferenceModel]:
+        identifiables: List[AaaCrossReferenceModel] = []
         for parsed_file in self.parsed_files.values():
             identifiables += self._load_types(parsed_file.types)
             identifiables += self._load_struct_types(parsed_file.structs)

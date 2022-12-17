@@ -24,7 +24,7 @@ class Identifiable(AaaCrossReferenceModel):
 IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
-class UnresolvedFunction(Identifiable):
+class UnresolvedFunction(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.Function) -> None:
         self.parsed = parsed
         self.func_name = parsed.func_name.name
@@ -39,7 +39,8 @@ class UnresolvedFunction(Identifiable):
         else:
             name = self.func_name
 
-        super().__init__(parsed.position, name)
+        self.name = name
+        super().__init__(parsed.position)
 
 
 class Function(Identifiable):
@@ -89,11 +90,12 @@ class FunctionBody(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class UnresolvedImport(Identifiable):
+class UnresolvedImport(AaaCrossReferenceModel):
     def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
         self.source_file = import_.source_file
         self.source_name = import_item.original_name
-        super().__init__(import_item.position, import_item.imported_name)
+        self.name = import_item.imported_name
+        super().__init__(import_item.position)
 
 
 class Import(Identifiable):
@@ -104,7 +106,7 @@ class Import(Identifiable):
         super().__init__(unresolved.position, unresolved.name)
 
 
-class UnresolvedType(Identifiable):
+class UnresolvedType(AaaCrossReferenceModel):
     def __init__(
         self,
         parsed: parser.TypeLiteral | parser.Struct,
@@ -116,7 +118,8 @@ class UnresolvedType(Identifiable):
         if isinstance(parsed, parser.Struct):
             self.parsed_field_types = parsed.fields
 
-        super().__init__(parsed.position, parsed.identifier.name)
+        self.name = parsed.identifier.name
+        super().__init__(parsed.position)
 
 
 class Type(Identifiable):
