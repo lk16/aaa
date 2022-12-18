@@ -67,32 +67,45 @@ class CrossReferencer:
     def run(self) -> CrossReferencerOutput:
         identifiers_list = self._load_identifiers()
 
-        for identifiable in identifiers_list:
-            if isinstance(identifiable, UnresolvedImport):
+        for unresolved in identifiers_list:
+            if isinstance(unresolved, UnresolvedImport):
                 try:
-                    import_ = self._resolve_import(identifiable)
+                    import_ = self._resolve_import(unresolved)
                 except CrossReferenceBaseException as e:
                     self.exceptions.append(e)
                 else:
                     self._save_identifier(import_)
 
-        for identifiable in identifiers_list:
-            if isinstance(identifiable, UnresolvedType):
+        for unresolved in identifiers_list:
+            if isinstance(unresolved, UnresolvedType):
                 try:
-                    type = self._resolve_type(identifiable)
+                    type = self._resolve_type(unresolved)
                 except CrossReferenceBaseException as e:
                     self.exceptions.append(e)
                 else:
                     self._save_identifier(type)
 
-        for identifiable in identifiers_list:
-            if isinstance(identifiable, UnresolvedFunction):
+        for unresolved in identifiers_list:
+            if isinstance(unresolved, UnresolvedFunction):
                 try:
-                    function = self._resolve_function(identifiable)
+                    function = self._resolve_function_signature(unresolved)
                 except CrossReferenceBaseException as e:
                     self.exceptions.append(e)
                 else:
                     self._save_identifier(function)
+
+        for unresolved in identifiers_list:
+            if isinstance(unresolved, UnresolvedFunction):
+                func = self.identifiers[(unresolved.position.file, unresolved.name)]
+                assert isinstance(func, Function)
+                try:
+                    body = self._resolve_function_body_root(
+                        unresolved, func.type_params, func.arguments
+                    )
+                except CrossReferenceBaseException as e:
+                    self.exceptions.append(e)
+                else:
+                    func.body = body
 
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
@@ -109,15 +122,13 @@ class CrossReferencer:
             entrypoint=self.entrypoint,
         )
 
-    def _resolve_function(self, unresolved: UnresolvedFunction) -> Function:
+    def _resolve_function_signature(self, unresolved: UnresolvedFunction) -> Function:
         self._check_function_argument_collision(unresolved)
 
         params = self._resolve_function_params(unresolved)
         arguments = self._resolve_function_arguments(unresolved, params)
         return_types = self._resolve_function_return_types(unresolved, params)
-        body = self._resolve_function_body_root(unresolved, params, arguments)
-
-        function = Function(unresolved, params, arguments, return_types, body)
+        function = Function(unresolved, params, arguments, return_types)
         self._check_argument_identifier_collision(function)
 
         return function
@@ -576,17 +587,20 @@ class CrossReferencer:
                     parsed=identifier,
                 )
 
-        operator_func = self._get_identifiable(identifier)
-        assert isinstance(operator_func, Function)
+        identifiable = self._get_identifiable(identifier)
 
-        return Identifier(
-            kind=IdentifierCallingFunction(operator_func),
-            type_params=[
-                self._resolve_function_type_param(function, param)
-                for param in function_name.type_params
-            ],
-            parsed=identifier,
-        )
+        if isinstance(identifiable, Function):
+            return Identifier(
+                kind=IdentifierCallingFunction(identifiable),
+                type_params=[
+                    self._resolve_function_type_param(function, param)
+                    for param in function_name.type_params
+                ],
+                parsed=identifier,
+            )
+
+        # TODO handle identifiable is a Type
+        raise NotImplementedError
 
     def _resolve_struct_field_update(
         self,

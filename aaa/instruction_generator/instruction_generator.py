@@ -167,6 +167,7 @@ class InstructionGenerator:
         )
 
     def generate_instructions(self, function: Function) -> List[Instruction]:
+        assert function.body
         return self.instructions_for_function_body(function.body, 0)
 
     def instructions_for_integer_literal(

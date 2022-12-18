@@ -405,6 +405,7 @@ class TypeChecker:
                     function.position, function, struct_type, signature
                 )
 
+        assert function.body
         return self._check_function_body(function, function.body, type_stack)
 
     def _get_struct_field_type(

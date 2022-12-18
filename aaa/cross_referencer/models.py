@@ -50,12 +50,11 @@ class Function(Identifiable):
         type_params: Dict[str, Type],
         arguments: List[Argument],
         return_types: List[VariableType],
-        body: FunctionBody,
     ) -> None:
         self.type_params = type_params
         self.arguments = arguments
         self.return_types = return_types
-        self.body = body
+        self.body: Optional[FunctionBody] = None
 
         self.func_name = unresolved.func_name
         self.struct_name = unresolved.struct_name

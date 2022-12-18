@@ -267,7 +267,9 @@ class Transpiler:
         indentation = self._indent(indent)
 
         if isinstance(identifier.kind, IdentifierCallingFunction):
-            c_func_name = self._generate_c_function_name(identifier.kind.function)
+            called = identifier.kind.function
+            assert isinstance(called, Function)
+            c_func_name = self._generate_c_function_name(called)
             return f"{indentation}{c_func_name}(stack);\n"
 
         if isinstance(identifier.kind, IdentifierUsingArgument):
