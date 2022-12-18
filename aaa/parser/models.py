@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from aaa import AaaModel, Position
 
@@ -183,6 +183,9 @@ class ParsedFile(AaaParseModel):
         self.structs = structs
         self.types = types
         super().__init__(position)
+
+    def dependencies(self) -> Set[Path]:
+        return {import_.source_file for import_ in self.imports}
 
 
 class TypeLiteral(AaaParseModel):

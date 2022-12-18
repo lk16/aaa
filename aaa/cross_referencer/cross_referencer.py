@@ -65,47 +65,7 @@ class CrossReferencer:
             self.exceptions += [CollidingIdentifier(identifiable, found)]
 
     def run(self) -> CrossReferencerOutput:
-        identifiers_list = self._load_identifiers()
-
-        for unresolved in identifiers_list:
-            if isinstance(unresolved, UnresolvedImport):
-                try:
-                    import_ = self._resolve_import(unresolved)
-                except CrossReferenceBaseException as e:
-                    self.exceptions.append(e)
-                else:
-                    self._save_identifier(import_)
-
-        for unresolved in identifiers_list:
-            if isinstance(unresolved, UnresolvedType):
-                try:
-                    type = self._resolve_type(unresolved)
-                except CrossReferenceBaseException as e:
-                    self.exceptions.append(e)
-                else:
-                    self._save_identifier(type)
-
-        for unresolved in identifiers_list:
-            if isinstance(unresolved, UnresolvedFunction):
-                try:
-                    function = self._resolve_function_signature(unresolved)
-                except CrossReferenceBaseException as e:
-                    self.exceptions.append(e)
-                else:
-                    self._save_identifier(function)
-
-        for unresolved in identifiers_list:
-            if isinstance(unresolved, UnresolvedFunction):
-                func = self.identifiers[(unresolved.position.file, unresolved.name)]
-                assert isinstance(func, Function)
-                try:
-                    body = self._resolve_function_body_root(
-                        unresolved, func.type_params, func.arguments
-                    )
-                except CrossReferenceBaseException as e:
-                    self.exceptions.append(e)
-                else:
-                    func.body = body
+        self._cross_reference_file(self.entrypoint)
 
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
@@ -121,6 +81,55 @@ class CrossReferencer:
             builtins_path=self.builtins_path,
             entrypoint=self.entrypoint,
         )
+
+    def _cross_reference_file(self, file: Path) -> None:
+        # TODO prevent cross referencing twice
+        # TODO prevent circular dependencies
+
+        dependencies = self.parsed_files[file].dependencies()
+
+        for dependency in dependencies:
+            self._cross_reference_file(dependency)
+
+        imports, types, functions = self._load_identifiers(file)
+
+        for unresolved_import in imports:
+            try:
+                import_ = self._resolve_import(unresolved_import)
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+            else:
+                self._save_identifier(import_)
+
+        for unresolved_type in types:
+            try:
+                type = self._resolve_type(unresolved_type)
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+            else:
+                self._save_identifier(type)
+
+        for unresolved_function in functions:
+            try:
+                function = self._resolve_function_signature(unresolved_function)
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+            else:
+                self._save_identifier(function)
+
+        for unresolved_function in functions:
+            func = self.identifiers[
+                (unresolved_function.position.file, unresolved_function.name)
+            ]
+            assert isinstance(func, Function)
+            try:
+                body = self._resolve_function_body_root(
+                    unresolved_function, func.type_params, func.arguments
+                )
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+            else:
+                func.body = body
 
     def _resolve_function_signature(self, unresolved: UnresolvedFunction) -> Function:
         self._check_function_argument_collision(unresolved)
@@ -170,14 +179,20 @@ class CrossReferencer:
                 raise NotImplementedError
             print("\n")
 
-    def _load_identifiers(self) -> List[AaaCrossReferenceModel]:
-        identifiables: List[AaaCrossReferenceModel] = []
-        for parsed_file in self.parsed_files.values():
-            identifiables += self._load_types(parsed_file.types)
-            identifiables += self._load_struct_types(parsed_file.structs)
-            identifiables += self._load_functions(parsed_file.functions)
-            identifiables += self._load_imports(parsed_file.imports)
-        return identifiables
+    def _load_identifiers(
+        self, file: Path
+    ) -> Tuple[List[UnresolvedImport], List[UnresolvedType], List[UnresolvedFunction]]:
+        imports: List[UnresolvedImport] = []
+        types: List[UnresolvedType] = []
+        functions: List[UnresolvedFunction] = []
+
+        parsed_file = self.parsed_files[file]
+
+        types += self._load_types(parsed_file.types)
+        types += self._load_struct_types(parsed_file.structs)
+        functions += self._load_functions(parsed_file.functions)
+        imports += self._load_imports(parsed_file.imports)
+        return imports, types, functions
 
     def _load_struct_types(
         self, parsed_structs: List[parser.Struct]

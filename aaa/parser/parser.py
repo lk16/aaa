@@ -51,6 +51,6 @@ class Parser:
         return parser.parse_builtins_file()
 
     def _enqueue_dependencies(self, parsed_file: ParsedFile) -> None:
-        for import_ in parsed_file.imports:
-            if import_.source_file not in self.parsed:
-                self.parse_queue.append(import_.source_file)
+        for dependency in parsed_file.dependencies():
+            if dependency not in self.parsed:
+                self.parse_queue.append(dependency)
