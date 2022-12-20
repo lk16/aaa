@@ -6,6 +6,7 @@ from aaa.cross_referencer.models import (
     Function,
     Identifiable,
     Import,
+    Type,
     UnresolvedImport,
     UnresolvedType,
 )
@@ -20,7 +21,7 @@ class CrossReferenceBaseException(AaaException):
             return self.describe(item.source)
         elif isinstance(item, UnresolvedImport):
             return f"imported identifier {item.name}"
-        elif isinstance(item, UnresolvedType):
+        elif isinstance(item, (Type, UnresolvedType)):
             return f"type {item.name}"
         elif isinstance(item, ArgumentIdentifiable):
             return f"function argument {item.name}"

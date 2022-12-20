@@ -133,16 +133,16 @@ class Type(Identifiable):
 class VariableType(AaaCrossReferenceModel):
     def __init__(
         self,
-        parsed: parser.TypeLiteral,
         type: Type,
         params: List[VariableType],
         is_placeholder: bool,
+        position: Position,
     ) -> None:
         self.type = type
         self.params = params
         self.is_placeholder = is_placeholder
         self.name = self.type.name
-        super().__init__(parsed.position)
+        super().__init__(position)
 
     def __repr__(self) -> str:
         output = self.name
@@ -195,36 +195,34 @@ class Loop(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class IdentifierKind(AaaModel):
-    ...
-
-
-class IdentifierUsingArgument(IdentifierKind):
-    def __init__(self, arg_type: VariableType) -> None:
-        self.arg_type = arg_type
-
-
-class IdentifierCallingFunction(IdentifierKind):
-    def __init__(self, function: Function) -> None:
-        self.function = function
-
-
-class IdentifierCallingType(IdentifierKind):
-    def __init__(self, var_type: VariableType) -> None:
-        self.var_type = var_type
-
-
 class Identifier(FunctionBodyItem):
     def __init__(
-        self,
-        kind: IdentifierKind,
-        type_params: List[Identifier],
-        parsed: parser.Identifier,
+        self, type_params: List[Identifier], parsed: parser.Identifier
     ) -> None:
-        self.kind = kind
         self.name = parsed.name
         self.type_params = type_params
         super().__init__(parsed.position)
+
+
+class CallingArgument(FunctionBodyItem):
+    def __init__(self, argument: Argument, position: Position) -> None:
+        self.argument = argument
+        super().__init__(position)
+
+
+class CallingFunction(FunctionBodyItem):
+    def __init__(
+        self, function: Function, type_params: List[Identifier], position: Position
+    ) -> None:
+        self.function = function
+        self.type_params = type_params
+        super().__init__(position)
+
+
+class CallingType(FunctionBodyItem):
+    def __init__(self, var_type: VariableType) -> None:
+        self.var_type = var_type
+        super().__init__(var_type.position)
 
 
 class Branch(FunctionBodyItem):

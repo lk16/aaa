@@ -1,6 +1,6 @@
 import typing
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, TypeVar
+from typing import Dict, List, Optional, Set, Tuple, TypeVar
 
 from aaa import AaaRunnerException
 from aaa.cross_referencer.exceptions import (
@@ -17,11 +17,13 @@ from aaa.cross_referencer.exceptions import (
     UnknownIdentifier,
 )
 from aaa.cross_referencer.models import (
-    AaaCrossReferenceModel,
     Argument,
     ArgumentIdentifiable,
     BooleanLiteral,
     Branch,
+    CallingArgument,
+    CallingFunction,
+    CallingType,
     CrossReferencerOutput,
     Function,
     FunctionBody,
@@ -29,8 +31,6 @@ from aaa.cross_referencer.models import (
     Identifiable,
     IdentifiablesDict,
     Identifier,
-    IdentifierCallingFunction,
-    IdentifierUsingArgument,
     Import,
     IntegerLiteral,
     Loop,
@@ -53,6 +53,7 @@ class CrossReferencer:
         self.entrypoint = parser_output.entrypoint
         self.identifiers: IdentifiablesDict = {}
         self.exceptions: List[CrossReferenceBaseException] = []
+        self.cross_referenced_files: Set[Path] = set()
 
     def _save_identifier(self, identifiable: Identifiable) -> None:
         key = identifiable.identify()
@@ -82,13 +83,27 @@ class CrossReferencer:
             entrypoint=self.entrypoint,
         )
 
+    def _get_remaining_dependencies(self, file: Path) -> List[Path]:
+        deps: List[Path] = []
+
+        if file != self.builtins_path:
+            deps += [self.builtins_path]
+
+        deps += self.parsed_files[file].dependencies()
+
+        # NOTE: don't use set difference to maintain import order as in source file
+        remaining_deps: List[Path] = []
+
+        for dep in deps:
+            if dep not in self.cross_referenced_files:
+                remaining_deps.append(dep)
+
+        return remaining_deps
+
     def _cross_reference_file(self, file: Path) -> None:
-        # TODO prevent cross referencing twice
         # TODO prevent circular dependencies
 
-        dependencies = self.parsed_files[file].dependencies()
-
-        for dependency in dependencies:
+        for dependency in self._get_remaining_dependencies(file):
             self._cross_reference_file(dependency)
 
         imports, types, functions = self._load_identifiers(file)
@@ -130,6 +145,8 @@ class CrossReferencer:
                 self.exceptions.append(e)
             else:
                 func.body = body
+
+        self.cross_referenced_files.add(file)
 
     def _resolve_function_signature(self, unresolved: UnresolvedFunction) -> Function:
         self._check_function_argument_collision(unresolved)
@@ -294,18 +311,18 @@ class CrossReferencer:
 
             params.append(
                 VariableType(
-                    parsed=parsed_param,
                     type=param_type,
                     params=[],
                     is_placeholder=False,
+                    position=parsed_param.position,
                 )
             )
 
         return VariableType(
-            parsed=parsed_field,
             type=field_type,
             params=params,
             is_placeholder=False,
+            position=parsed_field.position,
         )
 
     def _resolve_type(self, unresolved: UnresolvedType) -> Type:
@@ -403,10 +420,10 @@ class CrossReferencer:
         return Argument(
             name=parsed_arg.identifier.name,
             var_type=VariableType(
-                parsed=parsed_type,
                 type=type,
                 params=params,
                 is_placeholder=arg_type_name in type_params,
+                position=parsed_type.position,
             ),
         )
 
@@ -441,8 +458,8 @@ class CrossReferencer:
         return VariableType(
             type=param_type,
             is_placeholder=is_placeholder,
-            parsed=param,
             params=self._lookup_function_params(type_params, param),
+            position=param.position,
         )
 
     def _lookup_function_params(
@@ -491,10 +508,10 @@ class CrossReferencer:
                 params = self._lookup_function_params(type_params, parsed_return_type)
 
             return_type = VariableType(
-                parsed=parsed_return_type,
                 type=type,
                 params=params,
                 is_placeholder=return_type_name in type_params,
+                position=parsed_return_type.position,
             )
 
             return_types.append(return_type)
@@ -526,18 +543,13 @@ class CrossReferencer:
         params: Dict[str, Type],
         arguments: List[Argument],
         operator: parser.Operator,
-    ) -> Identifier:
+    ) -> CallingFunction:
         # TODO make parser output an Identifier for OPERATOR tokens
         identifier = parser.Identifier(operator.position, operator.value)
-
         operator_func = self._get_identifiable(identifier)
         assert isinstance(operator_func, Function)
 
-        return Identifier(
-            parsed=identifier,
-            type_params=[],
-            kind=IdentifierCallingFunction(operator_func),
-        )
+        return CallingFunction(operator_func, [], identifier.position)
 
     def _resolve_branch(
         self,
@@ -585,37 +597,49 @@ class CrossReferencer:
         params: Dict[str, Type],
         arguments: List[Argument],
         function_name: parser.FunctionName,
-    ) -> Identifier:
+    ) -> CallingArgument | CallingFunction | CallingType:
+
         if function_name.struct_name:
             name = f"{function_name.struct_name.name}:{function_name.func_name.name}"
         else:
             name = function_name.func_name.name
 
-        # TODO creating a parser.Identifier here is a hack
-        identifier = parser.Identifier(function_name.position, name)
-
         for argument in arguments:
             if name == argument.name:
-                return Identifier(
-                    kind=IdentifierUsingArgument(argument.var_type),
-                    type_params=[],
-                    parsed=identifier,
-                )
+                if function_name.type_params:
+                    # TODO handle handle case like: fn foo args a as int { a[b] drop }
+                    raise NotImplementedError
 
+                return CallingArgument(argument, function_name.position)
+
+        # TODO creating a parser.Identifier here is a hack
+        identifier = parser.Identifier(function_name.position, name)
         identifiable = self._get_identifiable(identifier)
 
         if isinstance(identifiable, Function):
-            return Identifier(
-                kind=IdentifierCallingFunction(identifiable),
+            return CallingFunction(
+                function=identifiable,
                 type_params=[
                     self._resolve_function_type_param(function, param)
                     for param in function_name.type_params
                 ],
-                parsed=identifier,
+                position=function_name.position,
             )
 
-        # TODO handle identifiable is a Type
-        raise NotImplementedError
+        if isinstance(identifiable, Type):
+            var_type = VariableType(
+                identifiable,
+                [
+                    self._lookup_function_param(params, param)
+                    for param in function_name.type_params
+                ],
+                False,
+                identifier.position,
+            )
+
+            return CallingType(var_type)
+
+        assert False  # pragma: nocover
 
     def _resolve_struct_field_update(
         self,

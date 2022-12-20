@@ -7,14 +7,13 @@ from pathlib import Path
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
+    CallingArgument,
+    CallingFunction,
+    CallingType,
     CrossReferencerOutput,
     Function,
     FunctionBody,
     FunctionBodyItem,
-    Identifier,
-    IdentifierCallingFunction,
-    IdentifierCallingType,
-    IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
     StringLiteral,
@@ -231,8 +230,12 @@ class Transpiler:
             return f"{indentation}aaa_stack_push_bool(stack, {bool_value});\n"
         elif isinstance(item, Loop):
             return self._generate_c_loop(item, indent)
-        elif isinstance(item, Identifier):
-            return self._generate_c_identifier_code(item, indent)
+        elif isinstance(item, CallingFunction):
+            return self._generate_c_call_function_code(item, indent)
+        elif isinstance(item, CallingType):
+            return self._generate_c_call_type_code(item, indent)
+        elif isinstance(item, CallingArgument):
+            return self._generate_c_call_argument_code(item, indent)
         elif isinstance(item, Branch):
             return self._generate_c_branch(item, indent)
         elif isinstance(item, StructFieldQuery):
@@ -263,44 +266,45 @@ class Transpiler:
             + f"{self._indent(indent)}}}\n"
         )
 
-    def _generate_c_identifier_code(self, identifier: Identifier, indent: int) -> str:
+    def _generate_c_call_function_code(
+        self, call_func: CallingFunction, indent: int
+    ) -> str:
         indentation = self._indent(indent)
+        called = call_func.function
+        c_func_name = self._generate_c_function_name(called)
+        return f"{indentation}{c_func_name}(stack);\n"
 
-        if isinstance(identifier.kind, IdentifierCallingFunction):
-            called = identifier.kind.function
-            assert isinstance(called, Function)
-            c_func_name = self._generate_c_function_name(called)
-            return f"{indentation}{c_func_name}(stack);\n"
+    def _generate_c_call_type_code(self, call_type: CallingType, indent: int) -> str:
+        indentation = self._indent(indent)
+        var_type = call_type.var_type
 
-        if isinstance(identifier.kind, IdentifierUsingArgument):
-            return (
-                f"{indentation}aaa_variable_inc_ref(aaa_arg_{identifier.name});\n"
-                + f"{indentation}aaa_stack_push(stack, aaa_arg_{identifier.name});\n"
-            )
+        if var_type.type.position.file == self.builtins_path:
+            if var_type.name == "int":
+                return f"{indentation}aaa_stack_push_int(stack, 0);\n"
+            elif var_type.name == "str":
+                return f'{indentation}aaa_stack_push_str_raw(stack, "", false);\n'
+            elif var_type.name == "bool":
+                return f"{indentation}aaa_stack_push_bool(stack, false);\n"
+            elif var_type.name == "vec":
+                return f"{indentation}aaa_stack_push_vec_empty(stack);\n"
+            elif var_type.name == "map":
+                return f"{indentation}aaa_stack_push_map_empty(stack);\n"
+            else:  # pragma: nocover
+                assert False
 
-        if isinstance(identifier.kind, IdentifierCallingType):
-            var_type = identifier.kind.var_type
+        c_struct_name = self._generate_c_struct_name(var_type.type)
+        return f"{indentation}aaa_stack_push_struct(stack, {c_struct_name}_new());\n"
 
-            if var_type.type.position.file == self.builtins_path:
-                if var_type.name == "int":
-                    return f"{indentation}aaa_stack_push_int(stack, 0);\n"
-                elif var_type.name == "str":
-                    return f'{indentation}aaa_stack_push_str_raw(stack, "", false);\n'
-                elif var_type.name == "bool":
-                    return f"{indentation}aaa_stack_push_bool(stack, false);\n"
-                elif var_type.name == "vec":
-                    return f"{indentation}aaa_stack_push_vec_empty(stack);\n"
-                elif var_type.name == "map":
-                    return f"{indentation}aaa_stack_push_map_empty(stack);\n"
-                else:  # pragma: nocover
-                    assert False
+    def _generate_c_call_argument_code(
+        self, call_arg: CallingArgument, indent: int
+    ) -> str:
+        indentation = self._indent(indent)
+        arg_name = call_arg.argument
 
-            c_struct_name = self._generate_c_struct_name(var_type.type)
-            return (
-                f"{indentation}aaa_stack_push_struct(stack, {c_struct_name}_new());\n"
-            )
-
-        assert False
+        return (
+            f"{indentation}aaa_variable_inc_ref(aaa_arg_{arg_name});\n"
+            + f"{indentation}aaa_stack_push(stack, aaa_arg_{arg_name});\n"
+        )
 
     def _generate_c_branch(self, branch: Branch, indent: int) -> str:
         indentation = self._indent(indent)

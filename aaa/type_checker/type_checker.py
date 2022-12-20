@@ -6,13 +6,12 @@ from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
+    CallingArgument,
+    CallingFunction,
+    CallingType,
     CrossReferencerOutput,
     Function,
     FunctionBody,
-    Identifier,
-    IdentifierCallingFunction,
-    IdentifierCallingType,
-    IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
     StringLiteral,
@@ -21,7 +20,6 @@ from aaa.cross_referencer.models import (
     Type,
     VariableType,
 )
-from aaa.parser import models as parser
 from aaa.type_checker.exceptions import (
     BranchTypeError,
     ConditionTypeError,
@@ -89,7 +87,6 @@ class TypeChecker:
         function: Function,
         type_stack: List[VariableType],
         called_function: Function,
-        called_function_identifier: Identifier,
     ) -> List[VariableType]:
 
         signature = self.signatures[called_function.identify()]
@@ -99,7 +96,7 @@ class TypeChecker:
 
         if len(stack) < arg_count:
             raise StackTypesError(
-                position=called_function_identifier.position,
+                position=function.position,
                 function=function,
                 signature=signature,
                 type_stack=type_stack,
@@ -117,7 +114,7 @@ class TypeChecker:
 
             if not match_result:
                 raise StackTypesError(
-                    position=called_function_identifier.position,
+                    position=function.position,
                     function=function,
                     signature=signature,
                     type_stack=type_stack,
@@ -190,19 +187,8 @@ class TypeChecker:
     def _get_builtin_var_type(self, type_name: str) -> VariableType:
         type = self.types[(self.builtins_path, type_name)]
 
-        # TODO get rid of dummy_token and dummy_type_literal
-
-        dummy_type_literal = parser.TypeLiteral(
-            identifier=parser.Identifier(
-                name=type_name,
-                position=Position(self.builtins_path, -1, -1),
-            ),
-            position=Position(self.builtins_path, -1, -1),
-            params=[],
-        )
-
         return VariableType(
-            parsed=dummy_type_literal,
+            position=Position(self.builtins_path, -1, -1),
             type=type,
             params=[],
             is_placeholder=False,
@@ -339,33 +325,43 @@ class TypeChecker:
                 stack = self._check_type_struct_field_update(
                     function, child_node, copy(stack)
                 )
-            elif isinstance(child_node, Identifier):
-                stack = self._check_identifier(function, child_node, copy(stack))
+            elif isinstance(child_node, CallingArgument):
+                stack = self._check_call_argument(function, child_node, copy(stack))
+            elif isinstance(child_node, CallingFunction):
+                stack = self._check_call_function(function, child_node, copy(stack))
+            elif isinstance(child_node, CallingType):
+                stack = self._check_call_type(function, child_node, copy(stack))
             else:  # pragma nocover
                 assert False
 
         return stack
 
-    def _check_identifier(
+    def _check_call_argument(
         self,
         function: Function,
-        identifier: Identifier,
+        call_arg: CallingArgument,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
-        if isinstance(identifier.kind, IdentifierUsingArgument):
-            # Push argument on stack
-            return type_stack + [identifier.kind.arg_type]
+        # Push argument on stack
+        arg_var_type = call_arg.argument.var_type
+        return type_stack + [arg_var_type]
 
-        elif isinstance(identifier.kind, IdentifierCallingFunction):
-            # Function was called, apply signature of called function
-            called_function = identifier.kind.function
-            return self._check_function_call(
-                function, type_stack, called_function, identifier
-            )
-        elif isinstance(identifier.kind, IdentifierCallingType):
-            return type_stack + [identifier.kind.var_type]
-        else:  # pragma: nocover
-            assert False
+    def _check_call_function(
+        self,
+        function: Function,
+        call_function: CallingFunction,
+        type_stack: List[VariableType],
+    ) -> List[VariableType]:
+        called_function = call_function.function
+        return self._check_function_call(function, type_stack, called_function)
+
+    def _check_call_type(
+        self,
+        function: Function,
+        call_type: CallingType,
+        type_stack: List[VariableType],
+    ) -> List[VariableType]:
+        return type_stack + [call_type.var_type]
 
     def _check_function(
         self, function: Function, type_stack: List[VariableType]

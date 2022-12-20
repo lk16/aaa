@@ -4,13 +4,12 @@ from typing import Dict, List, Tuple
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
+    CallingArgument,
+    CallingFunction,
+    CallingType,
     CrossReferencerOutput,
     Function,
     FunctionBody,
-    Identifier,
-    IdentifierCallingFunction,
-    IdentifierCallingType,
-    IdentifierUsingArgument,
     IntegerLiteral,
     Loop,
     StringLiteral,
@@ -205,49 +204,49 @@ class InstructionGenerator:
 
         return loop_instructions
 
-    def instructions_for_identfier(self, identifier: Identifier) -> List[Instruction]:
+    def instructions_for_calling_function(
+        self, call_function: CallingFunction
+    ) -> List[Instruction]:
+        called_function = call_function.function
 
-        if isinstance(identifier.kind, IdentifierCallingFunction):
-            called_function = identifier.kind.function
+        if called_function.position.file == self.builtins_path:
+            if called_function.name in OPERATOR_INSTRUCTIONS:
+                return [OPERATOR_INSTRUCTIONS[called_function.name]]
+            if called_function.name == "assert":
+                return [Assert(call_function.position)]
 
-            if called_function.position.file == self.builtins_path:
-                if called_function.name in OPERATOR_INSTRUCTIONS:
-                    return [OPERATOR_INSTRUCTIONS[called_function.name]]
-                if called_function.name == "assert":
-                    return [Assert(identifier.position)]
+            return [StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[called_function.name])]
 
-                return [
-                    StandardLibraryCall(kind=STDLIB_INSTRUCTIONS[called_function.name])
-                ]
+        file, name = called_function.identify()
+        return [CallFunction(func_name=name, file=file)]
 
-            file, name = called_function.identify()
-            return [CallFunction(func_name=name, file=file)]
+    def instructions_for_calling_type(
+        self, call_type: CallingType
+    ) -> List[Instruction]:
+        var_type = call_type.var_type
+        type = var_type.type
+        type_params = var_type.params
 
-        if isinstance(identifier.kind, IdentifierCallingType):
-            var_type = identifier.kind.var_type
-            type = var_type.type
-            type_params = var_type.params
+        if type.position.file == self.builtins_path:
+            if type.name == "int":
+                return [PushInt(0)]
+            elif type.name == "str":
+                return [PushString("")]
+            elif type.name == "bool":
+                return [PushBool(False)]
+            elif type.name == "vec":
+                return [PushVec(item_type=type_params[0])]
+            elif type.name == "map":
+                return [PushMap(key_type=type_params[0], value_type=type_params[1])]
+            else:  # pragma: nocover
+                raise NotImplementedError
 
-            if type.position.file == self.builtins_path:
-                if type.name == "int":
-                    return [PushInt(0)]
-                elif type.name == "str":
-                    return [PushString("")]
-                elif type.name == "bool":
-                    return [PushBool(False)]
-                elif type.name == "vec":
-                    return [PushVec(item_type=type_params[0])]
-                elif type.name == "map":
-                    return [PushMap(key_type=type_params[0], value_type=type_params[1])]
-                else:  # pragma: nocover
-                    raise NotImplementedError
+        return [PushStruct(var_type)]
 
-            return [PushStruct(var_type)]
-
-        if isinstance(identifier.kind, IdentifierUsingArgument):
-            return [PushFunctionArgument(arg_name=identifier.name)]
-
-        assert False  # pragma: nocover
+    def instructions_for_calling_argument(
+        self, call_arg: CallingArgument
+    ) -> List[Instruction]:
+        return [PushFunctionArgument(arg_name=call_arg.argument.name)]
 
     def instructions_for_branch(self, branch: Branch, offset: int) -> List[Instruction]:
         branch_instructions: List[Instruction] = []
@@ -293,8 +292,12 @@ class InstructionGenerator:
                 instructions += self.instructions_for_branch(child, child_offset)
             elif isinstance(child, FunctionBody):
                 instructions += self.instructions_for_function_body(child, child_offset)
-            elif isinstance(child, Identifier):
-                instructions += self.instructions_for_identfier(child)
+            elif isinstance(child, CallingFunction):
+                instructions += self.instructions_for_calling_function(child)
+            elif isinstance(child, CallingType):
+                instructions += self.instructions_for_calling_type(child)
+            elif isinstance(child, CallingArgument):
+                instructions += self.instructions_for_calling_argument(child)
             elif isinstance(child, IntegerLiteral):
                 instructions += self.instructions_for_integer_literal(child)
             elif isinstance(child, Loop):
