@@ -23,6 +23,9 @@ class Position:
     def __str__(self) -> str:
         return f"{self.file}:{self.line}:{self.column}"
 
+    def __repr__(self) -> str:
+        return str(vars(self))
+
 
 class AaaException(Exception):
     ...

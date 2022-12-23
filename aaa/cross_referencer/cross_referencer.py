@@ -124,6 +124,8 @@ class CrossReferencer:
             else:
                 self._save_identifier(type)
 
+        functions_with_signatures: List[Function] = []
+
         for unresolved_function in functions:
             try:
                 function = self._resolve_function_signature(unresolved_function)
@@ -131,20 +133,28 @@ class CrossReferencer:
                 self.exceptions.append(e)
             else:
                 self._save_identifier(function)
+                functions_with_signatures.append(function)
 
         for unresolved_function in functions:
-            func = self.identifiers[
-                (unresolved_function.position.file, unresolved_function.name)
-            ]
-            assert isinstance(func, Function)
+            # TODO refactor this code more
+            try:
+                function_identifier = self.identifiers[
+                    (unresolved_function.position.file, unresolved_function.name)
+                ]
+            except KeyError:
+                continue
+
+            assert isinstance(function_identifier, Function)
+            function = function_identifier
+
             try:
                 body = self._resolve_function_body_root(
-                    unresolved_function, func.type_params, func.arguments
+                    unresolved_function, function.type_params, function.arguments
                 )
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
             else:
-                func.body = body
+                function.body = body
 
         self.cross_referenced_files.add(file)
 
@@ -281,7 +291,7 @@ class CrossReferencer:
 
     T = TypeVar("T")
 
-    def _get_identifiers_by_type(
+    def _get_identifiers_by_type(  # TODO is this dead code?
         self, type: typing.Type[T]
     ) -> List[Tuple[Path, str, T]]:
         return [
@@ -599,6 +609,7 @@ class CrossReferencer:
         function_name: parser.FunctionName,
     ) -> CallingArgument | CallingFunction | CallingType:
 
+        # TODO computing name is probably redundant
         if function_name.struct_name:
             name = f"{function_name.struct_name.name}:{function_name.func_name.name}"
         else:
