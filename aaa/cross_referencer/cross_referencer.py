@@ -530,16 +530,6 @@ class CrossReferencer:
     ) -> Identifier:
         raise NotImplementedError  # TODO
 
-    def _resolve_operator(
-        self, function: Function, operator: parser.Operator
-    ) -> CallingFunction:
-        # TODO make parser output an Identifier for OPERATOR tokens
-        identifier = parser.Identifier(operator.position, operator.value)
-        operator_func = self._get_identifiable(identifier)
-        assert isinstance(operator_func, Function)
-
-        return CallingFunction(operator_func, [], identifier.position)
-
     def _resolve_branch(self, function: Function, branch: parser.Branch) -> Branch:
         resolved_else_body: Optional[FunctionBody] = None
 
@@ -632,8 +622,6 @@ class CrossReferencer:
             return StringLiteral(parsed_item)
         elif isinstance(parsed_item, parser.BooleanLiteral):
             return BooleanLiteral(parsed_item)
-        elif isinstance(parsed_item, parser.Operator):
-            return self._resolve_operator(function, parsed_item)
         elif isinstance(parsed_item, parser.Loop):
             return self._resolve_loop(function, parsed_item)
         elif isinstance(parsed_item, parser.Branch):

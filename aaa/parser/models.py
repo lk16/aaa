@@ -40,12 +40,6 @@ class BooleanLiteral(FunctionBodyItem):
         super().__init__(position)
 
 
-class Operator(FunctionBodyItem):
-    def __init__(self, position: Position, value: str) -> None:
-        self.value = value
-        super().__init__(position)
-
-
 class Loop(FunctionBodyItem):
     def __init__(
         self, position: Position, condition: FunctionBody, body: FunctionBody
