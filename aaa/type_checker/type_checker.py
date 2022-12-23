@@ -385,6 +385,7 @@ class TypeChecker:
                 [
                     len(function.arguments) == 0,
                     len(function.return_types) == 0,
+                    len(function.type_params) == 0,
                 ]
             ):
                 raise InvalidMainSignuture(function.position, function)

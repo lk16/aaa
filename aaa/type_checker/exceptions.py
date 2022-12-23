@@ -176,7 +176,7 @@ class LoopTypeError(TypeCheckerException):
 
 class InvalidMainSignuture(TypeCheckerException):
     def __str__(self) -> str:
-        return f"{self.position} Main function should have no arguments and no return types\n"
+        return f"{self.position} Main function should have no type parameters, no arguments and no return types\n"
 
 
 class InvalidTestSignuture(TypeCheckerException):

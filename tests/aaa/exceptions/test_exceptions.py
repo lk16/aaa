@@ -69,6 +69,16 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             """
+            fn main { nop }
+            fn bar[main] { nop }
+            """,
+            CollidingIdentifier,
+            "/foo/main.aaa:3:20: type main collides with:\n"
+            + "/foo/main.aaa:2:13: function main\n",
+            id="funcname-param-collision",
+        ),
+        pytest.param(
+            """
             fn bar { 5 }
             fn main { nop }
             """,
@@ -122,7 +132,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main args a as int { nop }",
             InvalidMainSignuture,
-            "/foo/main.aaa:1:1 Main function should have no arguments and no return types\n",
+            "/foo/main.aaa:1:1 Main function should have no type parameters, no arguments and no return types\n",
             id="invalid-main-signature-argument",
         ),
         pytest.param(
@@ -136,8 +146,14 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main args a as int { 5 }",
             InvalidMainSignuture,
-            "/foo/main.aaa:1:1 Main function should have no arguments and no return types\n",
+            "/foo/main.aaa:1:1 Main function should have no type parameters, no arguments and no return types\n",
             id="invalid-main-signature-both",
+        ),
+        pytest.param(
+            "fn main[A] { nop }",
+            InvalidMainSignuture,
+            "/foo/main.aaa:1:1 Main function should have no type parameters, no arguments and no return types\n",
+            id="invalid-main-type-params",
         ),
         pytest.param(
             """
@@ -274,6 +290,16 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:30: Cannot use main as argument\n"
             + "/foo/main.aaa:2:13: function main collides\n",
             id="invalid-type-parameter",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn bar[bar] { nop }
+            """,
+            Exception,
+            "",
+            id="funcname-param-collision",
+            marks=pytest.mark.skip,
         ),
     ],
 )
