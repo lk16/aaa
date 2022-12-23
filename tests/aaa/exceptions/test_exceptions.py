@@ -8,6 +8,7 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
+    InvalidTypeParameter,
     UnknownIdentifier,
 )
 from aaa.simulator.exceptions import AaaAssertionFailure
@@ -300,6 +301,49 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "",
             id="funcname-param-collision",
             marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            "fn main { vec[int,int] drop }",
+            Exception,
+            "",
+            id="call-with-too-many-type-params",
+            marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            "fn main { vec drop }",
+            Exception,
+            "",
+            id="call-with-too-few-type-params",
+            marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo args a as vec[int,int] { nop }
+            """,
+            Exception,
+            "",
+            id="argument-with-too-many-type-params",
+            marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo args a as vec { nop }
+            """,
+            Exception,
+            "",
+            id="argument-with-too-few-type-params",
+            marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return main { nop }
+            """,
+            InvalidTypeParameter,
+            "/foo/main.aaa:2:13: Cannot use function main as type parameter\n",
+            id="return-func-name",
         ),
     ],
 )

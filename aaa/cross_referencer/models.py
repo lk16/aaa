@@ -60,12 +60,6 @@ class Function(Identifiable):
         self.struct_name = unresolved.struct_name
         super().__init__(unresolved.position, unresolved.name)
 
-    def get_argument(self, name: str) -> Optional[Argument]:
-        for argument in self.arguments:
-            if name == argument.name:
-                return argument
-        return None
-
     def is_member_function(self) -> bool:
         return self.struct_name != ""
 
@@ -144,7 +138,7 @@ class VariableType(AaaCrossReferenceModel):
         self.name = self.type.name
         super().__init__(position)
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: nocover
         output = self.name
 
         if self.params:
@@ -155,7 +149,7 @@ class VariableType(AaaCrossReferenceModel):
         return output
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, VariableType):
+        if not isinstance(other, VariableType):  # pragma: nocover
             return False
 
         # NOTE: Type instances are unique, we can use identity here
@@ -195,15 +189,6 @@ class Loop(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class Identifier(FunctionBodyItem):
-    def __init__(
-        self, type_params: List[Identifier], parsed: parser.Identifier
-    ) -> None:
-        self.name = parsed.name
-        self.type_params = type_params
-        super().__init__(parsed.position)
-
-
 class CallingArgument(FunctionBodyItem):
     def __init__(self, argument: Argument, position: Position) -> None:
         self.argument = argument
@@ -212,7 +197,7 @@ class CallingArgument(FunctionBodyItem):
 
 class CallingFunction(FunctionBodyItem):
     def __init__(
-        self, function: Function, type_params: List[Identifier], position: Position
+        self, function: Function, type_params: List[VariableType], position: Position
     ) -> None:
         self.function = function
         self.type_params = type_params

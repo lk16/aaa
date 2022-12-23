@@ -29,7 +29,6 @@ from aaa.cross_referencer.models import (
     FunctionBodyItem,
     Identifiable,
     IdentifiablesDict,
-    Identifier,
     Import,
     IntegerLiteral,
     Loop,
@@ -527,8 +526,8 @@ class CrossReferencer:
 
     def _resolve_function_type_param(
         self, function: Function, type_literal: parser.TypeLiteral
-    ) -> Identifier:
-        raise NotImplementedError  # TODO
+    ) -> VariableType:
+        raise NotImplementedError  # TODO implement
 
     def _resolve_branch(self, function: Function, branch: parser.Branch) -> Branch:
         resolved_else_body: Optional[FunctionBody] = None
