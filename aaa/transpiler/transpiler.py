@@ -192,7 +192,6 @@ class Transpiler:
             content += f"{indentation}// decrease arguments' ref_count\n"
             for arg in reversed(function.arguments):
                 content += f"{indentation}aaa_variable_dec_ref(aaa_arg_{arg.name});\n"
-            content += "\n"
 
         content += "}\n\n"
 
@@ -299,7 +298,7 @@ class Transpiler:
         self, call_arg: CallingArgument, indent: int
     ) -> str:
         indentation = self._indent(indent)
-        arg_name = call_arg.argument
+        arg_name = call_arg.argument.name
 
         return (
             f"{indentation}aaa_variable_inc_ref(aaa_arg_{arg_name});\n"

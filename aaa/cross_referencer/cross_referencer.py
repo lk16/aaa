@@ -97,7 +97,7 @@ class CrossReferencer:
         remaining_deps: List[Path] = []
 
         for dep in deps:
-            if dep not in self.cross_referenced_files:
+            if dep not in self.cross_referenced_files and dep not in remaining_deps:
                 remaining_deps.append(dep)
 
         return remaining_deps
