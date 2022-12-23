@@ -290,8 +290,6 @@ class InstructionGenerator:
                 instructions += self.instructions_for_boolean_literal(child)
             elif isinstance(child, Branch):
                 instructions += self.instructions_for_branch(child, child_offset)
-            elif isinstance(child, FunctionBody):
-                instructions += self.instructions_for_function_body(child, child_offset)
             elif isinstance(child, CallingFunction):
                 instructions += self.instructions_for_calling_function(child)
             elif isinstance(child, CallingType):
