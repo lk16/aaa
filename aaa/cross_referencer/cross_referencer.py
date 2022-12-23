@@ -1,6 +1,5 @@
-import typing
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, TypeVar
+from typing import Dict, List, Optional, Set, Tuple
 
 from aaa import AaaRunnerException
 from aaa.cross_referencer.exceptions import (
@@ -293,17 +292,6 @@ class CrossReferencer:
             return found.source
 
         return found
-
-    T = TypeVar("T")
-
-    def _get_identifiers_by_type(  # TODO is this dead code?
-        self, type: typing.Type[T]
-    ) -> List[Tuple[Path, str, T]]:
-        return [
-            (file, identifier, identifiable)
-            for (file, identifier), identifiable in self.identifiers.items()
-            if isinstance(identifiable, type)
-        ]
 
     def _resolve_type_field(self, parsed_field: parser.TypeLiteral) -> VariableType:
         type_identifier = parsed_field.identifier
