@@ -271,6 +271,7 @@ class Transpiler:
         indentation = self._indent(indent)
         called = call_func.function
         c_func_name = self._generate_c_function_name(called)
+
         return f"{indentation}{c_func_name}(stack);\n"
 
     def _generate_c_call_type_code(self, call_type: CallingType, indent: int) -> str:

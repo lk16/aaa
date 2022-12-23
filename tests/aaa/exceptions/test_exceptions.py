@@ -3,6 +3,7 @@ from typing import Dict, Type
 import pytest
 
 from aaa.cross_referencer.exceptions import (
+    CircularDependencyError,
     CollidingIdentifier,
     ImportedItemNotFound,
     InvalidArgument,
@@ -310,6 +311,29 @@ def test_one_error(
             FileReadError,
             "/foo/main.aaa: Failed to open or read\n",
             id="file-not-found",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "five" import five
+                fn main { nop }
+                """,
+                "five.aaa": """
+                from "six" import six
+                fn five return int { six 1 - }
+                """,
+                "six.aaa": """
+                from "five" import five
+                fn six return int { five 1 + }
+                """,
+            },
+            CircularDependencyError,
+            "Circular dependency detected:\n"
+            + "- /foo/main.aaa\n"
+            + "- /foo/five.aaa\n"
+            + "- /foo/six.aaa\n"
+            + "- /foo/five.aaa\n",
+            id="circular-dependency",
         ),
     ],
 )

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
@@ -130,3 +131,14 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
             + f"Expected parameter count: {self.expected_param_count}\n"
             + f"   Found parameter count: {self.found_param_count}"
         )
+
+
+class CircularDependencyError(CrossReferenceBaseException):
+    def __init__(self, dependencies: List[Path]) -> None:
+        self.dependencies = dependencies
+
+    def __str__(self) -> str:
+        message = "Circular dependency detected:\n"
+        for dep in self.dependencies:
+            message += f"- {dep}\n"
+        return message

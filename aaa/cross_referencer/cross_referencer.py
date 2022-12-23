@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from aaa import AaaRunnerException
 from aaa.cross_referencer.exceptions import (
+    CircularDependencyError,
     CollidingIdentifier,
     CrossReferenceBaseException,
     ImportedItemNotFound,
@@ -53,6 +54,7 @@ class CrossReferencer:
         self.identifiers: IdentifiablesDict = {}
         self.exceptions: List[CrossReferenceBaseException] = []
         self.cross_referenced_files: Set[Path] = set()
+        self.cross_reference_stack: List[Path] = []
 
     def _save_identifier(self, identifiable: Identifiable) -> None:
         key = identifiable.identify()
@@ -102,7 +104,10 @@ class CrossReferencer:
         return remaining_deps
 
     def _cross_reference_file(self, file: Path) -> None:
-        # TODO prevent circular dependencies
+        if file in self.cross_reference_stack:
+            raise CircularDependencyError(self.cross_reference_stack + [file])
+
+        self.cross_reference_stack.append(file)
 
         for dependency in self._get_remaining_dependencies(file):
             self._cross_reference_file(dependency)
@@ -160,6 +165,7 @@ class CrossReferencer:
             else:
                 function.body = body
 
+        self.cross_reference_stack.pop()
         self.cross_referenced_files.add(file)
 
     def _resolve_function_signature(self, unresolved: UnresolvedFunction) -> Function:
