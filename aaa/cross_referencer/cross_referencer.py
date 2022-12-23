@@ -121,32 +121,10 @@ class CrossReferencer:
         for type in types:
             self._resolve(type)
 
-        for unresolved_function in functions:
-            self._resolve(unresolved_function)
+        for function in functions:
+            self._resolve(function)
 
-        for unresolved_function in functions:
-            # TODO refactor this code more
-            try:
-                function_identifier = self.identifiers[
-                    (unresolved_function.position.file, unresolved_function.name)
-                ]
-            except KeyError:
-                continue
-
-            if not isinstance(function_identifier, Function):
-                # TODO Handle naming collision of function and something else, currently handled in TypeChecker.
-                continue
-
-            function = function_identifier
-
-            try:
-                body = self._resolve_function_body_root(
-                    function, unresolved_function.parsed.body
-                )
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-            else:
-                function.body = body
+        self._resolve_function_bodies(functions)
 
         self.cross_reference_stack.pop()
         self.cross_referenced_files.add(file)
@@ -669,10 +647,30 @@ class CrossReferencer:
         else:  # pragma: nocover
             assert False
 
-    def _resolve_function_body_root(
-        self, function: Function, body: parser.FunctionBody
-    ) -> FunctionBody:
-        return self._resolve_function_body(function, body)
+    def _resolve_function_bodies(self, functions: List[UnresolvedFunction]) -> None:
+        for unresolved_function in functions:
+            key = (unresolved_function.position.file, unresolved_function.name)
+
+            try:
+                function_identifier = self.identifiers[key]
+            except KeyError:
+                # Function signature loading failed, so no body to resolve
+                continue
+
+            if not isinstance(function_identifier, Function):
+                # TODO Handle naming collision of function and something else, currently handled in TypeChecker.
+                continue
+
+            function = function_identifier
+
+            try:
+                body = self._resolve_function_body(
+                    function, unresolved_function.parsed.body
+                )
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+            else:
+                function.body = body
 
     def _resolve_main_function(self) -> None:
         # TODO move to type_checker
