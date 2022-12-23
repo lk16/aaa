@@ -17,6 +17,7 @@ from aaa.cross_referencer.exceptions import (
     UnknownIdentifier,
 )
 from aaa.cross_referencer.models import (
+    AaaCrossReferenceModel,
     Argument,
     ArgumentIdentifiable,
     BooleanLiteral,
@@ -114,32 +115,14 @@ class CrossReferencer:
 
         imports, types, functions = self._load_identifiers(file)
 
-        for unresolved_import in imports:
-            try:
-                import_ = self._resolve_import(unresolved_import)
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-            else:
-                self._save_identifier(import_)
+        for import_ in imports:
+            self._resolve(import_)
 
-        for unresolved_type in types:
-            try:
-                type = self._resolve_type(unresolved_type)
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-            else:
-                self._save_identifier(type)
-
-        functions_with_signatures: List[Function] = []
+        for type in types:
+            self._resolve(type)
 
         for unresolved_function in functions:
-            try:
-                function = self._resolve_function_signature(unresolved_function)
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-            else:
-                self._save_identifier(function)
-                functions_with_signatures.append(function)
+            self._resolve(unresolved_function)
 
         for unresolved_function in functions:
             # TODO refactor this code more
@@ -168,7 +151,28 @@ class CrossReferencer:
         self.cross_reference_stack.pop()
         self.cross_referenced_files.add(file)
 
-    def _resolve_function_signature(self, unresolved: UnresolvedFunction) -> Function:
+    def _resolve(
+        self, unresolved: UnresolvedImport | UnresolvedType | UnresolvedFunction
+    ) -> None:
+
+        resolvers = {
+            UnresolvedImport: self._resolve_import,
+            UnresolvedType: self._resolve_type,
+            UnresolvedFunction: self._resolve_function_signature,
+        }
+
+        try:
+            identifiable = resolvers[type(unresolved)](unresolved)
+        except CrossReferenceBaseException as e:
+            self.exceptions.append(e)
+        else:
+            self._save_identifier(identifiable)
+
+    def _resolve_function_signature(
+        self, unresolved: AaaCrossReferenceModel
+    ) -> Function:
+        assert isinstance(unresolved, UnresolvedFunction)
+
         self._check_function_argument_collision(unresolved)
 
         params = self._resolve_function_params(unresolved)
@@ -263,7 +267,8 @@ class CrossReferencer:
             UnresolvedType(param_count=len(type.params), parsed=type) for type in types
         ]
 
-    def _resolve_import(self, import_: UnresolvedImport) -> Import:
+    def _resolve_import(self, import_: AaaCrossReferenceModel) -> Import:
+        assert isinstance(import_, UnresolvedImport)
 
         key = (import_.source_file, import_.source_name)
 
@@ -334,7 +339,8 @@ class CrossReferencer:
             position=parsed_field.position,
         )
 
-    def _resolve_type(self, unresolved: UnresolvedType) -> Type:
+    def _resolve_type(self, unresolved: AaaCrossReferenceModel) -> Type:
+        assert isinstance(unresolved, UnresolvedType)
         fields = {
             field_name: self._resolve_type_field(parsed_field)
             for field_name, parsed_field in unresolved.parsed_field_types.items()
