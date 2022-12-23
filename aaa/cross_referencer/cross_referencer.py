@@ -141,7 +141,7 @@ class CrossReferencer:
 
             try:
                 body = self._resolve_function_body_root(
-                    unresolved_function, function.type_params, function.arguments
+                    function, unresolved_function.parsed.body
                 )
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
@@ -537,31 +537,23 @@ class CrossReferencer:
         return return_types
 
     def _resolve_function_body(
-        self,
-        function: UnresolvedFunction,
-        params: Dict[str, Type],
-        arguments: List[Argument],
-        parsed_body: parser.FunctionBody,
+        self, function: Function, parsed_body: parser.FunctionBody
     ) -> FunctionBody:
         return FunctionBody(
             items=[
-                self._resolve_function_body_item(function, params, arguments, item)
+                self._resolve_function_body_item(function, item)
                 for item in parsed_body.items
             ],
             parsed=parsed_body,
         )
 
     def _resolve_function_type_param(
-        self, function: UnresolvedFunction, type_literal: parser.TypeLiteral
+        self, function: Function, type_literal: parser.TypeLiteral
     ) -> Identifier:
         raise NotImplementedError  # TODO
 
     def _resolve_operator(
-        self,
-        function: UnresolvedFunction,
-        params: Dict[str, Type],
-        arguments: List[Argument],
-        operator: parser.Operator,
+        self, function: Function, operator: parser.Operator
     ) -> CallingFunction:
         # TODO make parser output an Identifier for OPERATOR tokens
         identifier = parser.Identifier(operator.position, operator.value)
@@ -570,51 +562,33 @@ class CrossReferencer:
 
         return CallingFunction(operator_func, [], identifier.position)
 
-    def _resolve_branch(
-        self,
-        function: UnresolvedFunction,
-        params: Dict[str, Type],
-        arguments: List[Argument],
-        branch: parser.Branch,
-    ) -> Branch:
+    def _resolve_branch(self, function: Function, branch: parser.Branch) -> Branch:
         resolved_else_body: Optional[FunctionBody] = None
 
         if branch.else_body:
-            resolved_else_body = self._resolve_function_body(
-                function, params, arguments, branch.else_body
-            )
+            resolved_else_body = self._resolve_function_body(function, branch.else_body)
 
         return Branch(
-            condition=self._resolve_function_body(
-                function, params, arguments, branch.condition
-            ),
-            if_body=self._resolve_function_body(
-                function, params, arguments, branch.if_body
-            ),
+            condition=self._resolve_function_body(function, branch.condition),
+            if_body=self._resolve_function_body(function, branch.if_body),
             else_body=resolved_else_body,
             parsed=branch,
         )
 
     def _resolve_loop(
         self,
-        function: UnresolvedFunction,
-        params: Dict[str, Type],
-        arguments: List[Argument],
+        function: Function,
         loop: parser.Loop,
     ) -> Loop:
         return Loop(
-            condition=self._resolve_function_body(
-                function, params, arguments, loop.condition
-            ),
-            body=self._resolve_function_body(function, params, arguments, loop.body),
+            condition=self._resolve_function_body(function, loop.condition),
+            body=self._resolve_function_body(function, loop.body),
             parsed=loop,
         )
 
     def _resolve_function_name(
         self,
-        function: UnresolvedFunction,
-        params: Dict[str, Type],
-        arguments: List[Argument],
+        function: Function,
         function_name: parser.FunctionName,
     ) -> CallingArgument | CallingFunction | CallingType:
 
@@ -624,7 +598,7 @@ class CrossReferencer:
         else:
             name = function_name.func_name.name
 
-        for argument in arguments:
+        for argument in function.arguments:
             if name == argument.name:
                 if function_name.type_params:
                     # TODO handle handle case like: fn foo args a as int { a[b] drop }
@@ -650,7 +624,7 @@ class CrossReferencer:
             var_type = VariableType(
                 identifiable,
                 [
-                    self._lookup_function_param(params, param)
+                    self._lookup_function_param(function.type_params, param)
                     for param in function_name.type_params
                 ],
                 False,
@@ -663,24 +637,16 @@ class CrossReferencer:
 
     def _resolve_struct_field_update(
         self,
-        function: UnresolvedFunction,
-        params: Dict[str, Type],
-        arguments: List[Argument],
+        function: Function,
         update: parser.StructFieldUpdate,
     ) -> StructFieldUpdate:
         return StructFieldUpdate(
             parsed=update,
-            new_value_expr=self._resolve_function_body(
-                function, params, arguments, update.new_value_expr
-            ),
+            new_value_expr=self._resolve_function_body(function, update.new_value_expr),
         )
 
     def _resolve_function_body_item(
-        self,
-        function: UnresolvedFunction,
-        params: Dict[str, Type],
-        arguments: List[Argument],
-        parsed_item: parser.FunctionBodyItem,
+        self, function: Function, parsed_item: parser.FunctionBodyItem
     ) -> FunctionBodyItem:
         if isinstance(parsed_item, parser.IntegerLiteral):
             return IntegerLiteral(parsed_item)
@@ -689,31 +655,24 @@ class CrossReferencer:
         elif isinstance(parsed_item, parser.BooleanLiteral):
             return BooleanLiteral(parsed_item)
         elif isinstance(parsed_item, parser.Operator):
-            return self._resolve_operator(function, params, arguments, parsed_item)
+            return self._resolve_operator(function, parsed_item)
         elif isinstance(parsed_item, parser.Loop):
-            return self._resolve_loop(function, params, arguments, parsed_item)
+            return self._resolve_loop(function, parsed_item)
         elif isinstance(parsed_item, parser.Branch):
-            return self._resolve_branch(function, params, arguments, parsed_item)
+            return self._resolve_branch(function, parsed_item)
         elif isinstance(parsed_item, parser.FunctionName):
-            return self._resolve_function_name(function, params, arguments, parsed_item)
+            return self._resolve_function_name(function, parsed_item)
         elif isinstance(parsed_item, parser.StructFieldQuery):
-            return StructFieldQuery(parsed=parsed_item)
+            return StructFieldQuery(parsed_item)
         elif isinstance(parsed_item, parser.StructFieldUpdate):
-            return self._resolve_struct_field_update(
-                function, params, arguments, parsed_item
-            )
+            return self._resolve_struct_field_update(function, parsed_item)
         else:  # pragma: nocover
             assert False
 
     def _resolve_function_body_root(
-        self,
-        function: UnresolvedFunction,
-        params: Dict[str, Type],
-        arguments: List[Argument],
+        self, function: Function, body: parser.FunctionBody
     ) -> FunctionBody:
-        return self._resolve_function_body(
-            function, params, arguments, function.parsed.body
-        )
+        return self._resolve_function_body(function, body)
 
     def _resolve_main_function(self) -> None:
         # TODO move to type_checker
