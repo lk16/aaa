@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Union
 
 from aaa import AaaException, Position
@@ -280,3 +281,11 @@ class UnknownField(TypeCheckerException):
 
     def __str__(self) -> str:
         return f"{self.position}: Usage of unknown field {self.field_name} of type {self.struct_type.name}"
+
+
+class MainFunctionNotFound(TypeCheckerException):
+    def __init__(self, file: Path) -> None:
+        self.file = file
+
+    def __str__(self) -> str:
+        return f"{self.file}: No main function found"

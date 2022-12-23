@@ -28,6 +28,7 @@ from aaa.type_checker.exceptions import (
     InvalidMemberFunctionSignature,
     InvalidTestSignuture,
     LoopTypeError,
+    MainFunctionNotFound,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
@@ -47,6 +48,7 @@ class TypeChecker:
         self.types = cross_referencer_output.types
         self.imports = cross_referencer_output.imports
         self.builtins_path = cross_referencer_output.builtins_path
+        self.entrypoint = cross_referencer_output.entrypoint
         self.signatures: Dict[Tuple[Path, str], Signature] = {}
         self.exceptions: List[TypeCheckerException] = []
 
@@ -62,6 +64,8 @@ class TypeChecker:
                 self._check(function)
             except TypeCheckerException as e:
                 self.exceptions.append(e)
+
+        self._check_main_function()
 
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
@@ -81,6 +85,13 @@ class TypeChecker:
                 expected_return_types,
                 computed_return_types,
             )
+
+    def _check_main_function(self) -> None:
+        try:
+            self.functions[(self.entrypoint, "main")]
+        except KeyError:
+            e = MainFunctionNotFound(self.entrypoint)
+            self.exceptions.append(e)
 
     def _check_function_call(
         self,

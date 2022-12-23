@@ -11,8 +11,6 @@ from aaa.cross_referencer.exceptions import (
     InvalidArgument,
     InvalidType,
     InvalidTypeParameter,
-    MainFunctionNotFound,
-    MainIsNotAFunction,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
@@ -69,8 +67,6 @@ class CrossReferencer:
 
     def run(self) -> CrossReferencerOutput:
         self._cross_reference_file(self.entrypoint)
-
-        self._resolve_main_function()
 
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
@@ -642,7 +638,7 @@ class CrossReferencer:
                 continue
 
             if not isinstance(function_identifier, Function):
-                # TODO Handle naming collision of function and something else, currently handled in TypeChecker.
+                # Name collision of function and something else
                 continue
 
             function = function_identifier
@@ -655,14 +651,3 @@ class CrossReferencer:
                 self.exceptions.append(e)
             else:
                 function.body = body
-
-    def _resolve_main_function(self) -> None:
-        # TODO move to type_checker
-
-        try:
-            main = self.identifiers[(self.entrypoint, "main")]
-        except KeyError as e:
-            raise MainFunctionNotFound(self.entrypoint) from e
-
-        if not isinstance(main, Function):
-            raise MainIsNotAFunction(main)

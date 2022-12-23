@@ -8,8 +8,6 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
-    MainFunctionNotFound,
-    MainIsNotAFunction,
     UnknownIdentifier,
 )
 from aaa.simulator.exceptions import AaaAssertionFailure
@@ -21,6 +19,7 @@ from aaa.type_checker.exceptions import (
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     LoopTypeError,
+    MainFunctionNotFound,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
@@ -237,8 +236,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """
             struct main { x as int }
             """,
-            MainIsNotAFunction,
-            "/foo/main.aaa:2:13: Found type main instead of function main",
+            MainFunctionNotFound,
+            "/foo/main.aaa: No main function found",
             id="struct-named-main",
         ),
         pytest.param(

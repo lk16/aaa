@@ -96,24 +96,6 @@ class InvalidType(CrossReferenceBaseException):
         return f"{self.identifiable.position}: Cannot use {self.describe(self.identifiable)} as type\n"
 
 
-class MainFunctionNotFound(CrossReferenceBaseException):
-    def __init__(self, file: Path) -> None:
-        self.file = file
-        super().__init__()
-
-    def __str__(self) -> str:
-        return f"{self.file}: No main function found"
-
-
-class MainIsNotAFunction(CrossReferenceBaseException):
-    def __init__(self, identifiable: Identifiable) -> None:
-        self.identifiable = identifiable
-        super().__init__()
-
-    def __str__(self) -> str:
-        return f"{self.identifiable.position}: Found {self.describe(self.identifiable)} instead of function main"
-
-
 class UnexpectedTypeParameterCount(CrossReferenceBaseException):
     def __init__(
         self,
