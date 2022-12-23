@@ -68,6 +68,8 @@ class CrossReferencer:
     def run(self) -> CrossReferencerOutput:
         self._cross_reference_file(self.entrypoint)
 
+        self._resolve_main_function()
+
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
 
@@ -144,7 +146,10 @@ class CrossReferencer:
             except KeyError:
                 continue
 
-            assert isinstance(function_identifier, Function)
+            if not isinstance(function_identifier, Function):
+                # TODO Handle naming collision of function and something else, currently handled in TypeChecker.
+                continue
+
             function = function_identifier
 
             try:
@@ -450,8 +455,6 @@ class CrossReferencer:
         type_params: Dict[str, Type],
         param: parser.TypeLiteral,
     ) -> VariableType:
-        assert len(param.params) == 0
-
         param_name = param.identifier.name
         if param_name in type_params:
             param_type = type_params[param_name]
@@ -494,6 +497,12 @@ class CrossReferencer:
                 raise CollidingIdentifier(
                     colliding=ArgumentIdentifiable(argument.position, argument.name),
                     found=found,
+                )
+
+            if function.name == argument.name:
+                raise CollidingIdentifier(
+                    found=ArgumentIdentifiable(argument.position, argument.name),
+                    colliding=function,
                 )
 
     def _resolve_function_return_types(

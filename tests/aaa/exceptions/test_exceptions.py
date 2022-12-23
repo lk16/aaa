@@ -237,7 +237,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             MainIsNotAFunction,
             "/foo/main.aaa:2:13: Found type main instead of function main",
-            id="struct-name-collision",
+            id="struct-named-main",
         ),
         pytest.param(
             """
@@ -467,8 +467,8 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:2:36: imported identifier five collides with:\n"
-            + "/foo/main.aaa:3:17: type five\n",
+            "/foo/main.aaa:3:17: type five collides with:\n"
+            + "/foo/main.aaa:2:36: imported identifier five\n",
             id="struct-import",
         ),
         pytest.param(
