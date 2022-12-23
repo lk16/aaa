@@ -54,11 +54,11 @@ class Transpiler:
         code = self._generate_c_file()
         self.output_file.write_text(code)
 
-        if run_binary and not compile:
+        if run_binary and not compile:  # pragma: nocover
             print("Can't run binary without (re-)compiling!", file=sys.stderr)
             return 1
 
-        if compile:
+        if compile:  # pragma: nocover
             c_files = [str(self.output_file)] + glob("./c/*.c")
 
             exit_code = subprocess.run(
@@ -99,7 +99,7 @@ class Transpiler:
             if exit_code != 0:
                 return exit_code
 
-        if run_binary:
+        if run_binary:  # pragma: nocover
             return subprocess.run(["./generated"]).returncode
 
         return 0
@@ -170,9 +170,7 @@ class Transpiler:
     def _generate_c_function(self, function: Function) -> str:
         indentation = "    "
 
-        if not function.body:
-            # TODO better handling
-            raise ValueError(f"No body for function {function.identify()}")
+        assert function.body
 
         func_name = self._generate_c_function_name(function)
 
@@ -212,9 +210,7 @@ class Transpiler:
     ) -> str:
         indentation = self._indent(indent)
 
-        if isinstance(item, FunctionBody):
-            return self._generate_c_function_body(item, indent)
-        elif isinstance(item, IntegerLiteral):
+        if isinstance(item, IntegerLiteral):
             return f"{indentation}aaa_stack_push_int(stack, {item.value});\n"
         elif isinstance(item, StringLiteral):
             # TODO this is horrible
@@ -325,11 +321,6 @@ class Transpiler:
         code += f"{indentation}}}\n"
 
         return code
-
-    def _generate_c_not_implemented(self, unimplemented: str, indent: int) -> str:
-        indentation = self._indent(indent)
-
-        return f'{indentation}aaa_stack_not_implemented(stack, "{unimplemented}");\n'
 
     def _generate_c_struct_name(self, type: Type) -> str:
         hash_input = f"{type.position.file} {type.name}"
