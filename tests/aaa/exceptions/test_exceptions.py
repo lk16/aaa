@@ -6,6 +6,7 @@ from aaa.cross_referencer.exceptions import (
     CircularDependencyError,
     CollidingIdentifier,
     ImportedItemNotFound,
+    IndirectImportException,
     InvalidArgument,
     MainFunctionNotFound,
     MainIsNotAFunction,
@@ -334,6 +335,19 @@ def test_one_error(
             + "- /foo/six.aaa\n"
             + "- /foo/five.aaa\n",
             id="circular-dependency",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+            from \"foo\" import bar
+            fn main { nop }
+            """,
+                "foo.aaa": 'from "bar" import bar',
+                "bar.aaa": "fn bar { nop }",
+            },
+            IndirectImportException,
+            "/foo/main.aaa:2:31: Indirect imports are forbidden.\n",
+            id="indirect-import",
         ),
     ],
 )

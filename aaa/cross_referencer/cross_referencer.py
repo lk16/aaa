@@ -161,7 +161,7 @@ class CrossReferencer:
 
         return function
 
-    def print_values(self) -> None:
+    def print_values(self) -> None:  # pragma: nocover
         # TODO use this function with a commandline switch
 
         for (file, identifier), identifiable in self.identifiers.items():
