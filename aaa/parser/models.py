@@ -204,6 +204,11 @@ class FunctionName(FunctionBodyItem):
         self.func_name = func_name
         super().__init__(position)
 
+    def name(self) -> str:
+        if self.struct_name:
+            return f"{self.struct_name.name}:{self.func_name.name}"
+        return self.func_name.name
+
 
 class ParserOutput(AaaModel):
     def __init__(

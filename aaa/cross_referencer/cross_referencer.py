@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from aaa import AaaRunnerException
+from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.exceptions import (
     CircularDependencyError,
     CollidingIdentifier,
@@ -260,21 +260,25 @@ class CrossReferencer:
 
         return Import(import_, source)
 
-    def _get_identifiable(
-        self, identifier: parser.Identifier | Identifier  # TODO this union is ugly
+    def _get_identifiable(self, identifier: parser.Identifier) -> Identifiable:
+        return self.__get_identifiable(identifier.name, identifier.position)
+
+    def _get_identifiable_from_function_name(
+        self, func_name: parser.FunctionName
     ) -> Identifiable:
-        name = identifier.name
-        file = identifier.position.file
+        return self.__get_identifiable(func_name.name(), func_name.position)
+
+    def __get_identifiable(self, name: str, position: Position) -> Identifiable:
 
         builtins_key = (self.builtins_path, name)
-        key = (file, name)
+        key = (position.file, name)
 
         if builtins_key in self.identifiers:
             found = self.identifiers[builtins_key]
         elif key in self.identifiers:
             found = self.identifiers[key]
         else:
-            raise UnknownIdentifier(identifier.position, name)
+            raise UnknownIdentifier(position, name)
 
         if isinstance(found, Import):
             assert not isinstance(found.source, Import)
@@ -560,32 +564,24 @@ class CrossReferencer:
         function_name: parser.FunctionName,
     ) -> CallingArgument | CallingFunction | CallingType:
 
-        # TODO computing name is probably redundant
-        if function_name.struct_name:
-            name = f"{function_name.struct_name.name}:{function_name.func_name.name}"
-        else:
-            name = function_name.func_name.name
-
         for argument in function.arguments:
-            if name == argument.name:
+            if function_name.name() == argument.name:
                 if function_name.type_params:
                     # TODO handle handle case like: fn foo args a as int { a[b] drop }
                     raise NotImplementedError
 
                 return CallingArgument(argument, function_name.position)
 
-        # TODO creating a parser.Identifier here is a hack
-        identifier = parser.Identifier(function_name.position, name)
-        identifiable = self._get_identifiable(identifier)
+        identifiable = self._get_identifiable_from_function_name(function_name)
 
         if isinstance(identifiable, Function):
             return CallingFunction(
-                function=identifiable,
-                type_params=[
+                identifiable,
+                [
                     self._resolve_function_type_param(function, param)
                     for param in function_name.type_params
                 ],
-                position=function_name.position,
+                function_name.position,
             )
 
         if isinstance(identifiable, Type):
@@ -596,7 +592,7 @@ class CrossReferencer:
                     for param in function_name.type_params
                 ],
                 False,
-                identifier.position,
+                function_name.position,
             )
 
             return CallingType(var_type)
