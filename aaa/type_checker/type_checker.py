@@ -2,7 +2,7 @@ from copy import copy
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from aaa import AaaRunnerException, Position
+from aaa import AaaRunnerException
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
@@ -92,55 +92,6 @@ class TypeChecker:
         except KeyError:
             e = MainFunctionNotFound(self.entrypoint)
             self.exceptions.append(e)
-
-    def _check_function_call(
-        self,
-        function: Function,
-        type_stack: List[VariableType],
-        called_function: Function,
-        called_function_position: Position,
-    ) -> List[VariableType]:
-
-        signature = self.signatures[called_function.identify()]
-
-        stack = copy(type_stack)
-        arg_count = len(signature.arguments)
-
-        if len(stack) < arg_count:
-            raise StackTypesError(
-                function=function,
-                signature=signature,
-                type_stack=type_stack,
-                func_like=called_function,
-                position=called_function_position,
-            )
-
-        placeholder_types: Dict[str, VariableType] = {}
-        expected_types = signature.arguments
-        types = stack[len(stack) - arg_count :]
-
-        for expected_type, type in zip(expected_types, types, strict=True):
-            match_result = self._match_signature_items(
-                function, expected_type, type, placeholder_types
-            )
-
-            if not match_result:
-                raise StackTypesError(
-                    position=called_function_position,
-                    function=function,
-                    signature=signature,
-                    type_stack=type_stack,
-                    func_like=called_function,
-                )
-
-        stack = stack[: len(stack) - arg_count]
-
-        for return_type in signature.return_types:
-            stack.append(
-                self._update_return_type(function, return_type, placeholder_types)
-            )
-
-        return stack
 
     def _match_signature_items(
         self,
@@ -351,10 +302,46 @@ class TypeChecker:
         call_function: CallingFunction,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
-        called_function = call_function.function
-        return self._check_function_call(
-            function, type_stack, called_function, call_function.position
-        )
+        signature = self.signatures[call_function.function.identify()]
+
+        stack = copy(type_stack)
+        arg_count = len(signature.arguments)
+
+        if len(stack) < arg_count:
+            raise StackTypesError(
+                function=function,
+                signature=signature,
+                type_stack=type_stack,
+                func_like=call_function.function,
+                position=call_function.position,
+            )
+
+        placeholder_types: Dict[str, VariableType] = {}
+        expected_types = signature.arguments
+        types = stack[len(stack) - arg_count :]
+
+        for expected_type, type in zip(expected_types, types, strict=True):
+            match_result = self._match_signature_items(
+                function, expected_type, type, placeholder_types
+            )
+
+            if not match_result:
+                raise StackTypesError(
+                    function=function,
+                    signature=signature,
+                    type_stack=type_stack,
+                    func_like=call_function.function,
+                    position=call_function.position,
+                )
+
+        stack = stack[: len(stack) - arg_count]
+
+        for return_type in signature.return_types:
+            stack.append(
+                self._update_return_type(function, return_type, placeholder_types)
+            )
+
+        return stack
 
     def _check_call_type(
         self,
