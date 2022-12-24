@@ -297,10 +297,20 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             fn bar[bar] { nop }
             """,
-            Exception,
-            "",
+            CollidingIdentifier,
+            "/foo/main.aaa:3:13: function bar collides with:\n"
+            + "/foo/main.aaa:3:20: type bar\n",
             id="funcname-param-collision",
-            marks=pytest.mark.skip,
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo[bar] args bar as int { nop }
+            """,
+            CollidingIdentifier,
+            "/foo/main.aaa:3:20: type bar collides with:\n"
+            + "/foo/main.aaa:3:30: function argument bar\n",
+            id="argument-param-collision",
         ),
         pytest.param(
             "fn main { vec[int,int] drop }",

@@ -452,6 +452,18 @@ class CrossReferencer:
             if function.name == argument.name:
                 raise CollidingIdentifier(function, argument)
 
+        for param_name, param in function.type_params.items():
+            key = (function.position.file, param_name)
+            if key in self.identifiers:
+                raise CollidingIdentifier(param, self.identifiers[key])
+
+            if function.name == param_name:
+                raise CollidingIdentifier(function, param)
+
+            for argument in function.arguments:
+                if param_name == argument.name:
+                    raise CollidingIdentifier(param, argument)
+
     def _resolve_function_return_types(
         self, function: UnresolvedFunction, type_params: Dict[str, Type]
     ) -> List[VariableType]:
@@ -469,6 +481,7 @@ class CrossReferencer:
                 type = self._get_identifiable(parsed_return_type.identifier)
 
                 if not isinstance(type, Type):
+                    # TODO this should raise InvalidReturnType
                     raise InvalidTypeParameter(type)
 
                 params = self._lookup_function_params(type_params, parsed_return_type)
