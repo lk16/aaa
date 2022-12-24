@@ -49,7 +49,8 @@ class Runner:
 
         return Path(stdlib_folder) / "builtins.aaa"
 
-    def run(self) -> int:
+    def run(self, verbose: bool = False) -> int:
+        # TODO use verbose
         try:
             stdlib_path = self._get_stdlib_path()
 
@@ -71,7 +72,10 @@ class Runner:
 
         return 0
 
-    def transpile(self, output_file: Path, compile: bool, run: bool) -> int:
+    def transpile(
+        self, output_file: Path, compile: bool, run: bool, verbose: bool = False
+    ) -> int:
+        # TODO use verbose
         try:
             stdlib_path = self._get_stdlib_path()
 
@@ -91,5 +95,3 @@ class Runner:
             self.exceptions = [e]
             self._print_exceptions(AaaRunnerException([e]))
             return 1
-
-        return 0

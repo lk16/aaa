@@ -19,30 +19,31 @@ def cli() -> None:
 
 @cli.command()
 @click.argument("code", type=str)
-def cmd(code: str) -> None:
-    # TODO add verbose flag
-    exit_code = Runner.without_file(code).run()
+@click.option("-v", "--verbose", is_flag=True)
+def cmd(code: str, verbose: bool) -> None:
+    exit_code = Runner.without_file(code).run(verbose)
     exit(exit_code)
 
 
 @cli.command()
 @click.argument("path", type=click.Path(exists=True))
-def run(path: str) -> None:
-    # TODO add verbose flag
-    exit_code = Runner(Path(path)).run()
+@click.option("-v", "--verbose", is_flag=True)
+def run(path: str, verbose: bool) -> None:
+    exit_code = Runner(Path(path)).run(verbose)
     exit(exit_code)
 
 
 @cli.command()
 @click.argument("source_file", type=click.Path(exists=True))
 @click.argument("output_file")
-@click.option("-c", "--compile", is_flag=True, default=False)
-@click.option("-r", "--run", is_flag=True, default=False)
-def transpile(source_file: str, output_file: str, compile: bool, run: bool) -> None:
-    # TODO add verbose flag
-    exit_code = Runner(Path(source_file)).transpile(
-        Path(output_file), compile=compile, run=run
-    )
+@click.option("-c", "--compile", is_flag=True)
+@click.option("-r", "--run", is_flag=True)
+@click.option("-v", "--verbose", is_flag=True)
+def transpile(
+    source_file: str, output_file: str, compile: bool, run: bool, verbose: bool
+) -> None:
+    runner = Runner(Path(source_file))
+    exit_code = runner.transpile(Path(output_file), compile, run, verbose)
     exit(exit_code)
 
 
@@ -63,8 +64,8 @@ def runtests() -> None:
 
 @cli.command()
 @click.argument("path", type=click.Path(exists=True))
-def test(path: str) -> None:
-    # TODO add verbose flag
+@click.option("-v", "--verbose", is_flag=True)
+def test(path: str, verbose: bool) -> None:
     exit_code = TestRunner(Path(path)).run()
     exit(exit_code)
 
@@ -72,9 +73,12 @@ def test(path: str) -> None:
 @cli.command()
 @click.argument("path", type=click.Path(exists=True))
 @click.argument("output_file")
-@click.option("-c", "--compile", is_flag=True, default=False)
-@click.option("-r", "--run", is_flag=True, default=False)
-def transpile_tests(path: str, output_file: str, compile: bool, run: bool) -> None:
+@click.option("-c", "--compile", is_flag=True)
+@click.option("-r", "--run", is_flag=True)
+@click.option("-v", "--verbose", is_flag=True)
+def transpile_tests(
+    path: str, output_file: str, compile: bool, run: bool, verbose: bool
+) -> None:
     # TODO add verbose flag
 
     test_runner = TestRunner(Path(path))
@@ -83,9 +87,8 @@ def transpile_tests(path: str, output_file: str, compile: bool, run: bool) -> No
     main_test_file = Path(gettempdir()) / NamedTemporaryFile(delete=False).name
     main_test_file.write_text(main_test_code)
 
-    exit_code = Runner(main_test_file, test_runner.parsed_files).transpile(
-        Path(output_file), compile=compile, run=run
-    )
+    runner = Runner(main_test_file, test_runner.parsed_files)
+    exit_code = runner.transpile(Path(output_file), compile, run, verbose)
     exit(exit_code)
 
 
