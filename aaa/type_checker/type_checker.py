@@ -224,11 +224,6 @@ class TypeChecker:
     ) -> List[VariableType]:
         return type_stack + [self._get_bool_var_type()]
 
-    def _check_parsed_type(
-        self, var_type: VariableType, type_stack: List[VariableType]
-    ) -> List[VariableType]:
-        return type_stack + [var_type]
-
     def _check_condition(
         self,
         function: Function,
@@ -321,8 +316,6 @@ class TypeChecker:
                 stack = self._check_loop(function, child_node, copy(stack))
             elif isinstance(child_node, StringLiteral):
                 stack = self._check_string_literal(copy(stack))
-            elif isinstance(child_node, VariableType):
-                stack = self._check_parsed_type(child_node, copy(stack))
             elif isinstance(child_node, StructFieldQuery):
                 stack = self._check_type_struct_field_query(
                     function, child_node, copy(stack)
@@ -393,6 +386,7 @@ class TypeChecker:
                 [
                     len(function.arguments) == 0,
                     len(function.return_types) == 0,
+                    len(function.type_params) == 0,
                 ]
             ):
                 raise InvalidTestSignuture(function.position, function)
