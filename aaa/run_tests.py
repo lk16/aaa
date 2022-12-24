@@ -15,12 +15,13 @@ class TestRunner:
     # Tell pytest to ignore this class
     __test__ = False
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, verbose: bool) -> None:
         self.path = path
         self.builtins_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
         self.exceptions: List[AaaException] = []
         self.parsed_files: Dict[Path, ParsedFile] = {}
         self.test_functions: List[Function] = []
+        self.verbose = verbose
 
     def run(self) -> int:
         main_file_code = self.build_main_test_file()
@@ -32,7 +33,9 @@ class TestRunner:
             print(f"Found {len(self.exceptions)} error(s).", file=sys.stderr)
             return 1
 
-        return Runner.without_file(main_file_code, self.parsed_files).run()
+        return Runner.without_file(
+            main_file_code, self.parsed_files, self.verbose
+        ).run()
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.path, recursive=True)
@@ -49,7 +52,7 @@ class TestRunner:
         return parsed_files
 
     def _parse_file(self, file: Path) -> ParsedFile:
-        parser = Parser(file, self.builtins_path)
+        parser = Parser(file, self.builtins_path, None, self.verbose)
         return parser._parse(file, True)
 
     def _get_test_functions(self) -> List[Function]:

@@ -43,7 +43,9 @@ from aaa.type_checker.models import (
 
 
 class TypeChecker:
-    def __init__(self, cross_referencer_output: CrossReferencerOutput) -> None:
+    def __init__(
+        self, cross_referencer_output: CrossReferencerOutput, verbose: bool
+    ) -> None:
         self.functions = cross_referencer_output.functions
         self.types = cross_referencer_output.types
         self.imports = cross_referencer_output.imports
@@ -51,6 +53,7 @@ class TypeChecker:
         self.entrypoint = cross_referencer_output.entrypoint
         self.signatures: Dict[Tuple[Path, str], Signature] = {}
         self.exceptions: List[TypeCheckerException] = []
+        self.verbose = verbose  # TODO use
 
     def run(self) -> None:
         for function in self.functions.values():

@@ -12,7 +12,8 @@ def test_gettimeofday() -> None:
     def mock_time() -> float:
         return MOCK_SEC + (MOCK_NANO_SEC / 1_000_000_000)
 
-    runner = Runner.without_file('fn main { gettimeofday . " " . . }')
+    code = 'fn main { gettimeofday . " " . . }'
+    runner = Runner.without_file(code, None, False)
 
     with patch("aaa.simulator.simulator.time.time", mock_time):
         with redirect_stdout(StringIO()) as stdout:

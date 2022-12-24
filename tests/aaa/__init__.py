@@ -37,7 +37,7 @@ def check_aaa_full_source_multi_file(
             (dir_path / file).write_text(code)
 
         main_path = dir_path / "main.aaa"
-        runner = Runner(main_path)
+        runner = Runner(main_path, None, False)
 
         with redirect_stdout(StringIO()) as stdout:
             with redirect_stderr(StringIO()) as stderr:

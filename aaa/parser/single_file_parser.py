@@ -32,9 +32,10 @@ from aaa.tokenizer.models import Token, TokenType
 
 
 class SingleFileParser:
-    def __init__(self, file: Path, tokens: List[Token]) -> None:
+    def __init__(self, file: Path, tokens: List[Token], verbose: bool) -> None:
         self.tokens = tokens
         self.file = file
+        self.verbose = verbose  # TODO use
 
     def parse_builtins_file(self) -> ParsedFile:
         parsed_file, offset = self._parse_builtins_file_root(0)

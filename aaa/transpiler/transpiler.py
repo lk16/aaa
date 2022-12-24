@@ -42,13 +42,17 @@ C_IDENTATION = " " * 4
 
 class Transpiler:
     def __init__(
-        self, cross_referencer_output: CrossReferencerOutput, output_file: Path
+        self,
+        cross_referencer_output: CrossReferencerOutput,
+        output_file: Path,
+        verbose: bool,
     ) -> None:
         self.output_file = output_file
         self.types = cross_referencer_output.types
         self.functions = cross_referencer_output.functions
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
+        self.verbose = verbose  # TODO use
 
     def run(self, compile: bool, run_binary: bool) -> int:
         code = self._generate_c_file()

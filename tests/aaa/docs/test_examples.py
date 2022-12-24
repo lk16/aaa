@@ -73,7 +73,7 @@ EXPECTED_EXAMPLE_OUTPUT = {
 def test_examples(
     example_file_path: Path, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
-    Runner(Path(example_file_path)).run()
+    Runner(Path(example_file_path), None, False).run()
     stdout, stderr = capfd.readouterr()
     assert str(stderr) == ""
     assert str(stdout) == expected_output

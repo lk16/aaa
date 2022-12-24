@@ -145,12 +145,15 @@ STDLIB_INSTRUCTIONS: Dict[str, StandardLibraryCallKind] = {
 
 
 class InstructionGenerator:
-    def __init__(self, cross_reference_output: CrossReferencerOutput) -> None:
+    def __init__(
+        self, cross_reference_output: CrossReferencerOutput, verbose: bool
+    ) -> None:
         self.functions = cross_reference_output.functions
         self.types = cross_reference_output.types
         self.builtins_path = cross_reference_output.builtins_path
         self.entrypoint = cross_reference_output.entrypoint
         self.instructions_dict: Dict[Tuple[Path, str], List[Instruction]] = {}
+        self.verbose = verbose  # TODO use
 
     def run(self) -> InstructionGeneratorOutput:
         for function in self.functions.values():

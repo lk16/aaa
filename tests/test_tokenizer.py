@@ -17,7 +17,7 @@ from aaa.tokenizer.tokenizer import Tokenizer
     ],
 )
 def test_tokenizer_parts_add_up(file: Path) -> None:
-    tokens = Tokenizer(file).tokenize_unfiltered()
+    tokens = Tokenizer(file, False).tokenize_unfiltered()
 
     tokens_concatenated = "".join(token.value for token in tokens)
     assert tokens_concatenated == file.read_text()
@@ -51,7 +51,7 @@ def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> Non
     file = Path(gettempdir()) / temp_file.name
 
     file.write_text(code)
-    tokenizer = Tokenizer(file)
+    tokenizer = Tokenizer(file, False)
     tokens = tokenizer.tokenize_unfiltered()
 
     assert 1 == len(tokens)
@@ -89,7 +89,7 @@ def test_tokenizer_error(code: str, expected_line: int, expected_column: int) ->
 
     file.write_text(code)
     with pytest.raises(TokenizerException) as e:
-        Tokenizer(file).tokenize_unfiltered()
+        Tokenizer(file, False).tokenize_unfiltered()
 
     tokenizer_exception = e.value
 

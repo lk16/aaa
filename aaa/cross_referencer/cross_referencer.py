@@ -44,7 +44,7 @@ from aaa.parser import models as parser
 
 
 class CrossReferencer:
-    def __init__(self, parser_output: parser.ParserOutput) -> None:
+    def __init__(self, parser_output: parser.ParserOutput, verbose: bool) -> None:
         self.parsed_files = parser_output.parsed
         self.builtins_path = parser_output.builtins_path
         self.entrypoint = parser_output.entrypoint
@@ -52,6 +52,7 @@ class CrossReferencer:
         self.exceptions: List[CrossReferenceBaseException] = []
         self.cross_referenced_files: Set[Path] = set()
         self.cross_reference_stack: List[Path] = []
+        self.verbose = verbose  # TODO use
 
     def _save_identifier(self, identifiable: Identifiable) -> None:
         key = identifiable.identify()

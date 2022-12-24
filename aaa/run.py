@@ -17,20 +17,24 @@ from aaa.type_checker.type_checker import TypeChecker
 
 class Runner:
     def __init__(
-        self, entrypoint: Path, parsed_files: Optional[Dict[Path, ParsedFile]] = None
+        self,
+        entrypoint: Path,
+        parsed_files: Optional[Dict[Path, ParsedFile]],
+        verbose: bool,
     ) -> None:
         self.entrypoint = entrypoint
         self.exceptions: Sequence[AaaException] = []
         self.parsed_files = parsed_files or {}
+        self.verbose = verbose
 
     @staticmethod
     def without_file(
-        code: str, parsed_files: Optional[Dict[Path, ParsedFile]] = None
+        code: str, parsed_files: Optional[Dict[Path, ParsedFile]], verbose: bool
     ) -> "Runner":
         temp_file = NamedTemporaryFile(delete=False)
         file = Path(gettempdir()) / temp_file.name
         file.write_text(code)
-        return Runner(file, parsed_files)
+        return Runner(file, parsed_files, verbose)
 
     def _print_exceptions(self, runner_exception: AaaRunnerException) -> None:
         for exception in runner_exception.exceptions:
@@ -49,18 +53,25 @@ class Runner:
 
         return Path(stdlib_folder) / "builtins.aaa"
 
-    def run(self, verbose: bool = False) -> int:
-        # TODO use verbose
+    def run(self) -> int:
         try:
             stdlib_path = self._get_stdlib_path()
 
-            parser_output = Parser(
-                self.entrypoint, stdlib_path, self.parsed_files
-            ).run()
-            cross_referencer_output = CrossReferencer(parser_output).run()
-            TypeChecker(cross_referencer_output).run()
-            instruction_gen_output = InstructionGenerator(cross_referencer_output).run()
-            Simulator(instruction_gen_output, False).run()
+            parser = Parser(
+                self.entrypoint, stdlib_path, self.parsed_files, self.verbose
+            )
+            parser_output = parser.run()
+
+            cross_referencer_output = CrossReferencer(parser_output, self.verbose).run()
+
+            TypeChecker(cross_referencer_output, self.verbose).run()
+
+            instruction_gen = InstructionGenerator(
+                cross_referencer_output, self.verbose
+            )
+            instruction_gen_output = instruction_gen.run()
+
+            Simulator(instruction_gen_output, self.verbose).run()
         except AaaRunnerException as e:
             self.exceptions = e.exceptions
             self._print_exceptions(e)
@@ -72,21 +83,22 @@ class Runner:
 
         return 0
 
-    def transpile(
-        self, output_file: Path, compile: bool, run: bool, verbose: bool = False
-    ) -> int:
-        # TODO use verbose
+    def transpile(self, output_file: Path, compile: bool, run: bool) -> int:
         try:
             stdlib_path = self._get_stdlib_path()
 
-            parser_output = Parser(
-                self.entrypoint, stdlib_path, self.parsed_files
-            ).run()
-            cross_referencer_output = CrossReferencer(parser_output).run()
-            TypeChecker(cross_referencer_output).run()
-            return Transpiler(cross_referencer_output, output_file).run(
-                compile=compile, run_binary=run
+            parser = Parser(
+                self.entrypoint, stdlib_path, self.parsed_files, self.verbose
             )
+            parser_output = parser.run()
+
+            cross_referencer_output = CrossReferencer(parser_output, self.verbose).run()
+
+            TypeChecker(cross_referencer_output, self.verbose).run()
+
+            transpiler = Transpiler(cross_referencer_output, output_file, self.verbose)
+            transpiler.run(compile, run)
+
         except AaaRunnerException as e:
             self.exceptions = e.exceptions
             self._print_exceptions(e)
@@ -95,3 +107,5 @@ class Runner:
             self.exceptions = [e]
             self._print_exceptions(AaaRunnerException([e]))
             return 1
+
+        return 0

@@ -12,7 +12,8 @@ def test_write_ok() -> None:
         print(data.decode("utf-8"), end="")
         return len(data)
 
-    runner = Runner.without_file('fn main { 1 "hello world\\n" write . . }')
+    code = 'fn main { 1 "hello world\\n" write . . }'
+    runner = Runner.without_file(code, None, False)
 
     with patch("aaa.simulator.simulator.os.write", mock_write):
         with redirect_stdout(StringIO()) as stdout:
@@ -25,7 +26,8 @@ def test_write_fail() -> None:
     def mock_write(fd: int, data: bytes) -> None:
         raise OSError
 
-    runner = Runner.without_file('fn main { 4 "hello world\\n" write . . }')
+    code = 'fn main { 4 "hello world\\n" write . . }'
+    runner = Runner.without_file(code, None, False)
 
     with patch("aaa.simulator.simulator.os.write", mock_write):
         with redirect_stdout(StringIO()) as stdout:

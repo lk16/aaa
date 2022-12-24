@@ -9,7 +9,6 @@ from click import ClickException
 
 from aaa.run import Runner
 from aaa.run_tests import TestRunner
-from aaa.tokenizer.tokenizer import Tokenizer
 
 
 @click.group()
@@ -21,7 +20,7 @@ def cli() -> None:
 @click.argument("code", type=str)
 @click.option("-v", "--verbose", is_flag=True)
 def cmd(code: str, verbose: bool) -> None:
-    exit_code = Runner.without_file(code).run(verbose)
+    exit_code = Runner.without_file(code, None, verbose).run()
     exit(exit_code)
 
 
@@ -29,7 +28,7 @@ def cmd(code: str, verbose: bool) -> None:
 @click.argument("path", type=click.Path(exists=True))
 @click.option("-v", "--verbose", is_flag=True)
 def run(path: str, verbose: bool) -> None:
-    exit_code = Runner(Path(path)).run(verbose)
+    exit_code = Runner(Path(path), None, verbose).run()
     exit(exit_code)
 
 
@@ -42,8 +41,8 @@ def run(path: str, verbose: bool) -> None:
 def transpile(
     source_file: str, output_file: str, compile: bool, run: bool, verbose: bool
 ) -> None:
-    runner = Runner(Path(source_file))
-    exit_code = runner.transpile(Path(output_file), compile, run, verbose)
+    runner = Runner(Path(source_file), None, verbose)
+    exit_code = runner.transpile(Path(output_file), compile, run)
     exit(exit_code)
 
 
@@ -66,7 +65,7 @@ def runtests() -> None:
 @click.argument("path", type=click.Path(exists=True))
 @click.option("-v", "--verbose", is_flag=True)
 def test(path: str, verbose: bool) -> None:
-    exit_code = TestRunner(Path(path)).run()
+    exit_code = TestRunner(Path(path), verbose).run()
     exit(exit_code)
 
 
@@ -81,22 +80,15 @@ def transpile_tests(
 ) -> None:
     # TODO add verbose flag
 
-    test_runner = TestRunner(Path(path))
+    test_runner = TestRunner(Path(path), verbose)
     main_test_code = test_runner.build_main_test_file()
 
     main_test_file = Path(gettempdir()) / NamedTemporaryFile(delete=False).name
     main_test_file.write_text(main_test_code)
 
-    runner = Runner(main_test_file, test_runner.parsed_files)
-    exit_code = runner.transpile(Path(output_file), compile, run, verbose)
+    runner = Runner(main_test_file, test_runner.parsed_files, verbose)
+    exit_code = runner.transpile(Path(output_file), compile, run)
     exit(exit_code)
-
-
-# TODO remove
-@cli.command()
-@click.argument("path", type=click.Path(exists=True))
-def tokenize(path: str) -> None:
-    Tokenizer(Path(path)).run()
 
 
 if __name__ == "__main__":

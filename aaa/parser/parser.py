@@ -13,14 +13,15 @@ class Parser:
         self,
         entrypoint: Path,
         builtins_path: Path,
-        parsed_files: Optional[Dict[Path, ParsedFile]] = None,
+        parsed_files: Optional[Dict[Path, ParsedFile]],
+        verbose: bool,
     ) -> None:
         self.entrypoint = entrypoint.resolve()
         self.builtins_path = builtins_path
-
         self.parsed: Dict[Path, ParsedFile] = parsed_files or {}
         self.parse_queue = [self.entrypoint]
         self.exceptions: List[ParserBaseException] = []
+        self.verbose = verbose  # TODO use
 
     def run(self) -> ParserOutput:
         self.parsed[self.builtins_path] = self._parse(self.builtins_path, False)
@@ -43,8 +44,8 @@ class Parser:
         )
 
     def _parse(self, file: Path, is_regular_file: bool) -> ParsedFile:
-        tokens = Tokenizer(file).run()
-        parser = SingleFileParser(file, tokens)
+        tokens = Tokenizer(file, self.verbose).run()
+        parser = SingleFileParser(file, tokens, self.verbose)
 
         if is_regular_file:
             return parser.parse_regular_file()

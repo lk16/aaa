@@ -34,8 +34,8 @@ def test_parse_identifier(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected, str):
         identifier, offset = parser._parse_identifier(0)
@@ -75,8 +75,8 @@ def test_parse_flat_type_params(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, list):
         type_params, offset = parser._parse_flat_type_params(0)
@@ -119,8 +119,8 @@ def test_parse_flat_type_literal(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, tuple):
         type_literal, offset = parser._parse_flat_type_literal(0)
@@ -165,8 +165,8 @@ def test_parse_type_declaration(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, tuple):
         type_literal, offset = parser._parse_type_declaration(0)
@@ -217,8 +217,8 @@ def test_parse_function_name(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, tuple):
         function_name, offset = parser._parse_function_name(0)
@@ -271,8 +271,8 @@ def test_parse_type_params(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_type_params(0)
@@ -315,8 +315,8 @@ def test_parse_type_literal(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_type_literal(0)
@@ -353,8 +353,8 @@ def test_parse_argument(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_argument(0)
@@ -389,8 +389,8 @@ def test_parse_arguments(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_arguments(0)
@@ -425,8 +425,8 @@ def test_parse_return_types(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_return_types(0)
@@ -472,8 +472,8 @@ def test_parse_function_declaration(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_function_declaration(0)
@@ -486,8 +486,8 @@ def test_parse_function_declaration(
 def test_parse_builtins_file_root() -> None:
     file = Path("./stdlib/builtins.aaa")
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     parsed_file, offset = parser._parse_builtins_file_root(0)
     assert len(tokens) == offset
@@ -515,8 +515,8 @@ def test_parse_builtins_root(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_builtins_file_root(0)
@@ -553,8 +553,8 @@ def test_parse_struct_definition(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_struct_definition(0)
@@ -587,8 +587,8 @@ def test_parse_string(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, str):
         string, offset = parser._parse_string(0)
@@ -619,8 +619,8 @@ def test_parse_import_item(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, tuple):
         expected_original_name, expected_imported_name = expected_result
@@ -666,8 +666,8 @@ def test_parse_import_items(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_import_items(0)
@@ -709,8 +709,8 @@ def test_parse_import_statement(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_import_statement(0)
@@ -739,8 +739,8 @@ def test_parse_boolean(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, bool):
         boolean, offset = parser._parse_boolean(0)
@@ -771,8 +771,8 @@ def test_parse_integer(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, int):
         boolean, offset = parser._parse_integer(0)
@@ -806,8 +806,8 @@ def test_parse_literal(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, (int, str, bool)):
         literal, offset = parser._parse_literal(0)
@@ -842,8 +842,8 @@ def test_parse_function_call(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if isinstance(expected_result, tuple):
         expected_struct_name, expected_type_params, expected_func_name = expected_result
@@ -898,8 +898,8 @@ def test_parse_branch(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_branch(0)
@@ -937,8 +937,8 @@ def test_parse_loop(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_loop(0)
@@ -967,8 +967,8 @@ def test_parse_field_query(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_struct_field_query(0)
@@ -1006,8 +1006,8 @@ def test_parse_struct_field_update(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_struct_field_update(0)
@@ -1048,8 +1048,8 @@ def test_parse_function_body_item(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_function_body_item(0)
@@ -1104,8 +1104,8 @@ def test_parse_function_body(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_function_body(0)
@@ -1139,8 +1139,8 @@ def test_parse_function_definition(
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
         _, offset = parser._parse_function_definition(0)
@@ -1156,8 +1156,8 @@ def test_parse_function_definition(
     - {(Path("./stdlib/builtins.aaa"),)},
 )
 def test_parse_regular_file_root_all_source_files(file: Path) -> None:
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     parsed_file, offset = parser._parse_regular_file_root(0)
     assert len(tokens) == offset
@@ -1169,8 +1169,8 @@ def test_parse_regular_file_root_empty_file() -> None:
 
     file.write_text("")
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     _, offset = parser._parse_regular_file_root(0)
     assert 0 == offset
@@ -1182,16 +1182,16 @@ def test_parse_regular_file_root_empty_file() -> None:
     - {(Path("./stdlib/builtins.aaa"),)},
 )
 def test_parse_regular_file_all_source_files(file: Path) -> None:
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     parser.parse_regular_file()
 
 
 def test_parse_builtins_file() -> None:
     file = Path("./stdlib/builtins.aaa")
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     parser.parse_builtins_file()
 
@@ -1204,8 +1204,8 @@ def test_parse_regular_file_fail() -> None:
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     with pytest.raises(NewParserUnhandledTopLevelToken):
         parser.parse_regular_file()
@@ -1219,8 +1219,8 @@ def test_parse_builtins_file_fail() -> None:
 
     file.write_text(code)
 
-    tokens = Tokenizer(file).run()
-    parser = SingleFileParser(file, tokens)
+    tokens = Tokenizer(file, False).run()
+    parser = SingleFileParser(file, tokens, False)
 
     with pytest.raises(NewParserUnhandledTopLevelToken):
         parser.parse_builtins_file()

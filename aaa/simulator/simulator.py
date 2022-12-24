@@ -58,9 +58,7 @@ from aaa.simulator.variable import BoolVar, IntVar, MapVar, StrVar, Variable, Ve
 
 class Simulator:
     def __init__(
-        self,
-        instruction_generator_output: InstructionGeneratorOutput,
-        verbose: bool = False,
+        self, instruction_generator_output: InstructionGeneratorOutput, verbose: bool
     ) -> None:
         self.stack: List[Variable] = []
         self.call_stack: List[CallStackItem] = []

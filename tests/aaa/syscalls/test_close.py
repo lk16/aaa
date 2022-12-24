@@ -11,7 +11,7 @@ def test_close_ok() -> None:
     def mock_close(fd: int) -> None:
         pass
 
-    runner = Runner.without_file("fn main { 2 close . }")
+    runner = Runner.without_file("fn main { 2 close . }", None, False)
 
     with patch("aaa.simulator.simulator.os.close", mock_close):
         with redirect_stdout(StringIO()) as stdout:
@@ -24,7 +24,7 @@ def test_close_fail() -> None:
     def mock_close(fd: int) -> None:
         raise OSError
 
-    runner = Runner.without_file("fn main { 3 close . }")
+    runner = Runner.without_file("fn main { 3 close . }", None, False)
 
     with patch("aaa.simulator.simulator.os.close", mock_close):
         with redirect_stdout(StringIO()) as stdout:
