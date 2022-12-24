@@ -65,10 +65,10 @@ class Function(Identifiable):
 
 
 class Argument(AaaCrossReferenceModel):
-    def __init__(self, var_type: VariableType, name: str) -> None:
+    def __init__(self, var_type: VariableType, identifier: parser.Identifier) -> None:
         self.var_type = var_type
-        self.name = name
-        super().__init__(var_type.position)
+        self.name = identifier.name
+        super().__init__(identifier.position)
 
 
 class FunctionBodyItem(AaaCrossReferenceModel):
@@ -237,11 +237,6 @@ class StructFieldUpdate(FunctionBodyItem):
         self.field_name = parsed.field_name
         self.new_value_expr = new_value_expr
         super().__init__(parsed.position)
-
-
-class ArgumentIdentifiable(Identifiable):
-    # NOTE: used for argument name collision with CollidingIdentifier
-    ...
 
 
 class CrossReferencerOutput(AaaModel):

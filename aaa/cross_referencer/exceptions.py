@@ -3,7 +3,7 @@ from typing import List
 
 from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
-    ArgumentIdentifiable,
+    Argument,
     Function,
     Identifiable,
     Import,
@@ -15,14 +15,14 @@ from aaa.parser.models import TypeLiteral
 
 
 class CrossReferenceBaseException(AaaException):
-    def describe(self, item: Identifiable) -> str:
+    def describe(self, item: Identifiable | Argument) -> str:
         if isinstance(item, Function):
             return f"function {item.name}"
         elif isinstance(item, (Import, UnresolvedImport)):
             return f"imported identifier {item.name}"
         elif isinstance(item, (Type, UnresolvedType)):
             return f"type {item.name}"
-        elif isinstance(item, ArgumentIdentifiable):
+        elif isinstance(item, Argument):
             return f"function argument {item.name}"
         else:  # pragma: nocover
             assert False
@@ -48,7 +48,9 @@ class IndirectImportException(CrossReferenceBaseException):
 
 
 class CollidingIdentifier(CrossReferenceBaseException):
-    def __init__(self, colliding: Identifiable, found: Identifiable) -> None:
+    def __init__(
+        self, colliding: Identifiable | Argument, found: Identifiable | Argument
+    ) -> None:
         self.colliding = colliding
         self.found = found
 

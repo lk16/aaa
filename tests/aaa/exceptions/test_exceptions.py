@@ -447,7 +447,7 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:3:36: function argument bar collides with:\n"
+            "/foo/main.aaa:3:29: function argument bar collides with:\n"
             + "/foo/main.aaa:2:17: function bar\n",
             id="argname-other-func-name",
         ),
@@ -459,7 +459,7 @@ def test_multi_file_errors(
                 """
             },
             "/foo/main.aaa:2:17: function foo collides with:\n"
-            + "/foo/main.aaa:2:36: function argument foo\n",
+            + "/foo/main.aaa:2:29: function argument foo\n",
             id="argname-same-funcname",
         ),
         pytest.param(
@@ -481,7 +481,7 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:3:36: function argument bar collides with:\n"
+            "/foo/main.aaa:3:29: function argument bar collides with:\n"
             + "/foo/main.aaa:2:17: type bar\n",
             id="argname-struct",
         ),
@@ -496,7 +496,7 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:37: function argument five collides with:\n"
+            "/foo/main.aaa:3:29: function argument five collides with:\n"
             + "/foo/main.aaa:2:36: imported identifier five\n",
             id="argname-import",
         ),
@@ -589,7 +589,7 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:36: function argument bar collides with:\n"
+            "/foo/main.aaa:3:29: function argument bar collides with:\n"
             + "/foo/main.aaa:2:36: imported identifier bar\n",
             id="argname-import-renamed",
         ),

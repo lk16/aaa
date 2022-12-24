@@ -17,7 +17,6 @@ from aaa.cross_referencer.exceptions import (
 from aaa.cross_referencer.models import (
     AaaCrossReferenceModel,
     Argument,
-    ArgumentIdentifiable,
     BooleanLiteral,
     Branch,
     CallingArgument,
@@ -146,13 +145,11 @@ class CrossReferencer:
     ) -> Function:
         assert isinstance(unresolved, UnresolvedFunction)
 
-        self._check_function_argument_collision(unresolved)
-
         params = self._resolve_function_params(unresolved)
         arguments = self._resolve_function_arguments(unresolved, params)
         return_types = self._resolve_function_return_types(unresolved, params)
         function = Function(unresolved, params, arguments, return_types)
-        self._check_argument_identifier_collision(function)
+        self._check_function_identifiers_collision(function)
 
         return function
 
@@ -355,27 +352,6 @@ class CrossReferencer:
             for parsed_type_param in function.parsed.type_params
         }
 
-    def _check_function_argument_collision(self, function: UnresolvedFunction) -> None:
-        arg_count = len(function.parsed.arguments)
-
-        for i in range(arg_count):
-            lhs_arg = function.parsed.arguments[i]
-            for j in range(i + 1, arg_count):
-                rhs_arg = function.parsed.arguments[j]
-
-                if lhs_arg.identifier.name == rhs_arg.identifier.name:
-                    lhs_identifiable = ArgumentIdentifiable(
-                        lhs_arg.position, lhs_arg.identifier.name
-                    )
-                    rhs_identifiable = ArgumentIdentifiable(
-                        rhs_arg.position, rhs_arg.identifier.name
-                    )
-
-                    raise CollidingIdentifier(
-                        colliding=lhs_identifiable,
-                        found=rhs_identifiable,
-                    )
-
     def _resolve_function_argument(
         self,
         function: UnresolvedFunction,
@@ -410,7 +386,7 @@ class CrossReferencer:
             params = self._lookup_function_params(type_params, parsed_type)
 
         return Argument(
-            name=parsed_arg.identifier.name,
+            identifier=parsed_arg.identifier,
             var_type=VariableType(
                 type=type,
                 params=params,
@@ -462,25 +438,19 @@ class CrossReferencer:
             for param in parsed_type.params
         ]
 
-    def _check_argument_identifier_collision(self, function: Function) -> None:
+    def _check_function_identifiers_collision(self, function: Function) -> None:
+        for lhs_index, lhs_arg in enumerate(function.arguments):
+            for rhs_arg in function.arguments[lhs_index + 1 :]:
+                if lhs_arg.name == rhs_arg.name:
+                    raise CollidingIdentifier(lhs_arg, rhs_arg)
+
         for argument in function.arguments:
             key = (function.position.file, argument.name)
-
-            try:
-                found = self.identifiers[key]
-            except KeyError:
-                pass
-            else:
-                raise CollidingIdentifier(
-                    colliding=ArgumentIdentifiable(argument.position, argument.name),
-                    found=found,
-                )
+            if key in self.identifiers:
+                raise CollidingIdentifier(argument, self.identifiers[key])
 
             if function.name == argument.name:
-                raise CollidingIdentifier(
-                    found=ArgumentIdentifiable(argument.position, argument.name),
-                    colliding=function,
-                )
+                raise CollidingIdentifier(function, argument)
 
     def _resolve_function_return_types(
         self, function: UnresolvedFunction, type_params: Dict[str, Type]
