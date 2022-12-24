@@ -8,6 +8,7 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
+    InvalidType,
     InvalidTypeParameter,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
@@ -359,6 +360,15 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             InvalidTypeParameter,
             "/foo/main.aaa:2:13: Cannot use function main as type parameter\n",
             id="return-func-name",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn bar return vec[main] { nop }
+            """,
+            InvalidType,
+            "/foo/main.aaa:2:13: Cannot use function main as type\n",
+            id="function-as-return-type-param",
         ),
     ],
 )
