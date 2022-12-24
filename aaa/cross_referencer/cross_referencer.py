@@ -493,6 +493,13 @@ class CrossReferencer:
                 position=parsed_return_type.position,
             )
 
+            expected_param_count = return_type.type.param_count
+            found_param_count = len(return_type.params)
+            if expected_param_count != found_param_count:
+                raise UnexpectedTypeParameterCount(
+                    return_type.position, expected_param_count, found_param_count
+                )
+
             return_types.append(return_type)
         return return_types
 
@@ -572,6 +579,13 @@ class CrossReferencer:
                 False,
                 function_name.position,
             )
+
+            expected_param_count = var_type.type.param_count
+            found_param_count = len(var_type.params)
+            if expected_param_count != found_param_count:
+                raise UnexpectedTypeParameterCount(
+                    function_name.position, expected_param_count, found_param_count
+                )
 
             return CallingType(var_type)
 

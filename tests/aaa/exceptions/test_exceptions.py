@@ -9,6 +9,7 @@ from aaa.cross_referencer.exceptions import (
     IndirectImportException,
     InvalidArgument,
     InvalidTypeParameter,
+    UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
 from aaa.simulator.exceptions import AaaAssertionFailure
@@ -314,37 +315,41 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             "fn main { vec[int,int] drop }",
-            Exception,
-            "",
+            UnexpectedTypeParameterCount,
+            "/foo/main.aaa:1:11: Unexpected number of type parameters\n"
+            + "Expected parameter count: 1\n"
+            + "   Found parameter count: 2\n",
             id="call-with-too-many-type-params",
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             "fn main { vec drop }",
-            Exception,
-            "",
+            UnexpectedTypeParameterCount,
+            "/foo/main.aaa:1:11: Unexpected number of type parameters\n"
+            + "Expected parameter count: 1\n"
+            + "   Found parameter count: 0\n",
             id="call-with-too-few-type-params",
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
             fn main { nop }
             fn foo args a as vec[int,int] { nop }
             """,
-            Exception,
-            "",
+            UnexpectedTypeParameterCount,
+            "/foo/main.aaa:3:25: Unexpected number of type parameters\n"
+            + "Expected parameter count: 1\n"
+            + "   Found parameter count: 2\n",
             id="argument-with-too-many-type-params",
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
             fn main { nop }
             fn foo args a as vec { nop }
             """,
-            Exception,
-            "",
+            UnexpectedTypeParameterCount,
+            "/foo/main.aaa:3:25: Unexpected number of type parameters\n"
+            + "Expected parameter count: 1\n"
+            + "   Found parameter count: 0\n",
             id="argument-with-too-few-type-params",
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             """

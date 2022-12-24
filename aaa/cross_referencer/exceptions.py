@@ -113,7 +113,7 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
         return (
             f"{self.position}: Unexpected number of type parameters\n"
             + f"Expected parameter count: {self.expected_param_count}\n"
-            + f"   Found parameter count: {self.found_param_count}"
+            + f"   Found parameter count: {self.found_param_count}\n"
         )
 
 
