@@ -70,12 +70,12 @@ class UnknownIdentifier(CrossReferenceBaseException):
         return f"{self.position}: Usage of unknown identifier {self.name}\n"
 
 
-class InvalidTypeParameter(CrossReferenceBaseException):
+class InvalidReturnType(CrossReferenceBaseException):
     def __init__(self, identifiable: Identifiable) -> None:
         self.identifiable = identifiable
 
     def __str__(self) -> str:
-        return f"{self.identifiable.position}: Cannot use {self.describe(self.identifiable)} as type parameter\n"
+        return f"{self.identifiable.position}: Cannot use {self.describe(self.identifiable)} as return type\n"
 
 
 class InvalidArgument(CrossReferenceBaseException):

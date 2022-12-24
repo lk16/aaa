@@ -198,13 +198,7 @@ class TypeChecker:
 
     def _get_builtin_var_type(self, type_name: str) -> VariableType:
         type = self.types[(self.builtins_path, type_name)]
-
-        return VariableType(
-            position=Position(self.builtins_path, -1, -1),
-            type=type,
-            params=[],
-            is_placeholder=False,
-        )
+        return VariableType(type, [], False, type.position)
 
     def _get_bool_var_type(self) -> VariableType:
         return self._get_builtin_var_type("bool")

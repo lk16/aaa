@@ -9,8 +9,8 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
+    InvalidReturnType,
     InvalidType,
-    InvalidTypeParameter,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
@@ -255,10 +255,20 @@ class CrossReferencer:
     def _get_identifiable(self, identifier: parser.Identifier) -> Identifiable:
         return self.__get_identifiable(identifier.name, identifier.position)
 
+    def _get_type(self, identifier: parser.Identifier) -> Type:
+        type = self._get_identifiable(identifier)
+        assert isinstance(type, Type)
+        return type
+
     def _get_identifiable_from_function_name(
         self, func_name: parser.FunctionName
     ) -> Identifiable:
         return self.__get_identifiable(func_name.name(), func_name.position)
+
+    def _get_identifiable_from_type_literal(
+        self, type: parser.TypeLiteral
+    ) -> Identifiable:
+        return self.__get_identifiable(type.identifier.name, type.position)
 
     def __get_identifiable(self, name: str, position: Position) -> Identifiable:
 
@@ -279,22 +289,14 @@ class CrossReferencer:
         return found
 
     def _resolve_type_field(self, parsed_field: parser.TypeLiteral) -> VariableType:
-        type_identifier = parsed_field.identifier
-        field_type = self._get_identifiable(type_identifier)
 
-        if not isinstance(field_type, Type):
-            # TODO field is import/function/...
-            raise NotImplementedError
+        type_identifier = parsed_field.identifier
+        field_type = self._get_type(type_identifier)
 
         params: List[VariableType] = []
 
         for parsed_param in parsed_field.params:
-            param_type = self._get_identifiable(parsed_param.identifier)
-
-            if not isinstance(param_type, Type):
-                # TODO param_type is import/function/...
-                raise NotImplementedError
-
+            param_type = self._get_type(parsed_param.identifier)
             assert len(parsed_param.params) == 0
 
             params.append(
@@ -442,25 +444,29 @@ class CrossReferencer:
         for lhs_index, lhs_arg in enumerate(function.arguments):
             for rhs_arg in function.arguments[lhs_index + 1 :]:
                 if lhs_arg.name == rhs_arg.name:
+                    # Argument names collide
                     raise CollidingIdentifier(lhs_arg, rhs_arg)
 
         for argument in function.arguments:
             key = (function.position.file, argument.name)
             if key in self.identifiers:
+                # Argument collides with file-scoped identifier
                 raise CollidingIdentifier(argument, self.identifiers[key])
 
             if function.name == argument.name:
+                # Argument collides with function
                 raise CollidingIdentifier(function, argument)
 
         for param_name, param in function.type_params.items():
-            key = (function.position.file, param_name)
-            if key in self.identifiers:
-                raise CollidingIdentifier(param, self.identifiers[key])
+            # If a param name collides with file-scoped identifier,
+            # creation of the param fails, so it's not tested here.
 
             if function.name == param_name:
+                # Param name collides with function
                 raise CollidingIdentifier(function, param)
 
             for argument in function.arguments:
+                # Param name collides with argument
                 if param_name == argument.name:
                     raise CollidingIdentifier(param, argument)
 
@@ -481,8 +487,7 @@ class CrossReferencer:
                 type = self._get_identifiable(parsed_return_type.identifier)
 
                 if not isinstance(type, Type):
-                    # TODO this should raise InvalidReturnType
-                    raise InvalidTypeParameter(type)
+                    raise InvalidReturnType(type)
 
                 params = self._lookup_function_params(type_params, parsed_return_type)
 
@@ -517,7 +522,21 @@ class CrossReferencer:
     def _resolve_function_type_param(
         self, function: Function, type_literal: parser.TypeLiteral
     ) -> VariableType:
-        raise NotImplementedError  # TODO implement
+        for param_name, param in function.type_params.items():
+            if type_literal.identifier.name == param_name:
+                return VariableType(param, [], True, type_literal.position)
+
+        try:
+            identifiable = self._get_identifiable_from_type_literal(type_literal)
+        except KeyError:
+            # TODO unknown type param
+            raise NotImplementedError
+
+        if not isinstance(identifiable, Type):
+            # Use non-type as type param
+            raise NotImplementedError
+
+        return VariableType(identifiable, [], False, type_literal.position)
 
     def _resolve_branch(self, function: Function, branch: parser.Branch) -> Branch:
         resolved_else_body: Optional[FunctionBody] = None

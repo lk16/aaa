@@ -8,8 +8,8 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
+    InvalidReturnType,
     InvalidType,
-    InvalidTypeParameter,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
@@ -357,8 +357,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             fn foo return main { nop }
             """,
-            InvalidTypeParameter,
-            "/foo/main.aaa:2:13: Cannot use function main as type parameter\n",
+            InvalidReturnType,
+            "/foo/main.aaa:2:13: Cannot use function main as return type\n",
             id="return-func-name",
         ),
         pytest.param(
@@ -369,6 +369,28 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             InvalidType,
             "/foo/main.aaa:2:13: Cannot use function main as type\n",
             id="function-as-return-type-param",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn bar return vec { nop }
+            """,
+            UnexpectedTypeParameterCount,
+            "/foo/main.aaa:3:27: Unexpected number of type parameters\n"
+            + "Expected parameter count: 1\n"
+            + "   Found parameter count: 0\n",
+            id="returntype-with-too-few-type-params",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn bar return vec[int,int] { nop }
+            """,
+            UnexpectedTypeParameterCount,
+            "/foo/main.aaa:3:27: Unexpected number of type parameters\n"
+            + "Expected parameter count: 1\n"
+            + "   Found parameter count: 2\n",
+            id="returntype-with-too-many-type-params",
         ),
     ],
 )
