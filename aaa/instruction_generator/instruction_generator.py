@@ -1,12 +1,12 @@
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import aaa.cross_referencer.models as cross_referencer
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
-    CallingArgument,
-    CallingFunction,
-    CallingType,
+    CallArgument,
+    CallType,
     CrossReferencerOutput,
     Function,
     FunctionBody,
@@ -208,7 +208,7 @@ class InstructionGenerator:
         return loop_instructions
 
     def instructions_for_calling_function(
-        self, call_function: CallingFunction
+        self, call_function: cross_referencer.CallFunction
     ) -> List[Instruction]:
         called_function = call_function.function
 
@@ -223,9 +223,7 @@ class InstructionGenerator:
         file, name = called_function.identify()
         return [CallFunction(func_name=name, file=file)]
 
-    def instructions_for_calling_type(
-        self, call_type: CallingType
-    ) -> List[Instruction]:
+    def instructions_for_calling_type(self, call_type: CallType) -> List[Instruction]:
         var_type = call_type.var_type
         type = var_type.type
         type_params = var_type.params
@@ -247,7 +245,7 @@ class InstructionGenerator:
         return [PushStruct(var_type)]
 
     def instructions_for_calling_argument(
-        self, call_arg: CallingArgument
+        self, call_arg: CallArgument
     ) -> List[Instruction]:
         return [PushFunctionArgument(arg_name=call_arg.argument.name)]
 
@@ -293,11 +291,11 @@ class InstructionGenerator:
                 instructions += self.instructions_for_boolean_literal(child)
             elif isinstance(child, Branch):
                 instructions += self.instructions_for_branch(child, child_offset)
-            elif isinstance(child, CallingFunction):
+            elif isinstance(child, cross_referencer.CallFunction):
                 instructions += self.instructions_for_calling_function(child)
-            elif isinstance(child, CallingType):
+            elif isinstance(child, CallType):
                 instructions += self.instructions_for_calling_type(child)
-            elif isinstance(child, CallingArgument):
+            elif isinstance(child, CallArgument):
                 instructions += self.instructions_for_calling_argument(child)
             elif isinstance(child, IntegerLiteral):
                 instructions += self.instructions_for_integer_literal(child)

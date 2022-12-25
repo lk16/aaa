@@ -189,13 +189,13 @@ class Loop(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class CallingArgument(FunctionBodyItem):
+class CallArgument(FunctionBodyItem):
     def __init__(self, argument: Argument, position: Position) -> None:
         self.argument = argument
         super().__init__(position)
 
 
-class CallingFunction(FunctionBodyItem):
+class CallFunction(FunctionBodyItem):
     def __init__(
         self, function: Function, type_params: List[VariableType], position: Position
     ) -> None:
@@ -204,7 +204,7 @@ class CallingFunction(FunctionBodyItem):
         super().__init__(position)
 
 
-class CallingType(FunctionBodyItem):
+class CallType(FunctionBodyItem):
     def __init__(self, var_type: VariableType) -> None:
         self.var_type = var_type
         super().__init__(var_type.position)

@@ -19,9 +19,9 @@ from aaa.cross_referencer.models import (
     Argument,
     BooleanLiteral,
     Branch,
-    CallingArgument,
-    CallingFunction,
-    CallingType,
+    CallArgument,
+    CallFunction,
+    CallType,
     CrossReferencerOutput,
     Function,
     FunctionBody,
@@ -567,7 +567,7 @@ class CrossReferencer:
         self,
         function: Function,
         function_name: parser.FunctionName,
-    ) -> CallingArgument | CallingFunction | CallingType:
+    ) -> CallArgument | CallFunction | CallType:
 
         for argument in function.arguments:
             if function_name.name() == argument.name:
@@ -575,12 +575,12 @@ class CrossReferencer:
                     # TODO handle handle case like: fn foo args a as int { a[b] drop }
                     raise NotImplementedError
 
-                return CallingArgument(argument, function_name.position)
+                return CallArgument(argument, function_name.position)
 
         identifiable = self._get_identifiable_from_function_name(function_name)
 
         if isinstance(identifiable, Function):
-            return CallingFunction(
+            return CallFunction(
                 identifiable,
                 [
                     self._resolve_function_type_param(function, param)
@@ -607,7 +607,7 @@ class CrossReferencer:
                     function_name.position, expected_param_count, found_param_count
                 )
 
-            return CallingType(var_type)
+            return CallType(var_type)
 
         assert False  # pragma: nocover
 

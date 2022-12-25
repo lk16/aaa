@@ -7,9 +7,9 @@ from pathlib import Path
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
-    CallingArgument,
-    CallingFunction,
-    CallingType,
+    CallArgument,
+    CallFunction,
+    CallType,
     CrossReferencerOutput,
     Function,
     FunctionBody,
@@ -229,11 +229,11 @@ class Transpiler:
             return f"{indentation}aaa_stack_push_bool(stack, {bool_value});\n"
         elif isinstance(item, Loop):
             return self._generate_c_loop(item, indent)
-        elif isinstance(item, CallingFunction):
+        elif isinstance(item, CallFunction):
             return self._generate_c_call_function_code(item, indent)
-        elif isinstance(item, CallingType):
+        elif isinstance(item, CallType):
             return self._generate_c_call_type_code(item, indent)
-        elif isinstance(item, CallingArgument):
+        elif isinstance(item, CallArgument):
             return self._generate_c_call_argument_code(item, indent)
         elif isinstance(item, Branch):
             return self._generate_c_branch(item, indent)
@@ -266,7 +266,7 @@ class Transpiler:
         )
 
     def _generate_c_call_function_code(
-        self, call_func: CallingFunction, indent: int
+        self, call_func: CallFunction, indent: int
     ) -> str:
         indentation = self._indent(indent)
         called = call_func.function
@@ -274,7 +274,7 @@ class Transpiler:
 
         return f"{indentation}{c_func_name}(stack);\n"
 
-    def _generate_c_call_type_code(self, call_type: CallingType, indent: int) -> str:
+    def _generate_c_call_type_code(self, call_type: CallType, indent: int) -> str:
         indentation = self._indent(indent)
         var_type = call_type.var_type
 
@@ -296,7 +296,7 @@ class Transpiler:
         return f"{indentation}aaa_stack_push_struct(stack, {c_struct_name}_new());\n"
 
     def _generate_c_call_argument_code(
-        self, call_arg: CallingArgument, indent: int
+        self, call_arg: CallArgument, indent: int
     ) -> str:
         indentation = self._indent(indent)
         arg_name = call_arg.argument.name

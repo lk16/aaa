@@ -6,9 +6,9 @@ from aaa import AaaRunnerException
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
-    CallingArgument,
-    CallingFunction,
-    CallingType,
+    CallArgument,
+    CallFunction,
+    CallType,
     CrossReferencerOutput,
     Function,
     FunctionBody,
@@ -278,11 +278,11 @@ class TypeChecker:
                 stack = self._check_type_struct_field_update(
                     function, child_node, copy(stack)
                 )
-            elif isinstance(child_node, CallingArgument):
+            elif isinstance(child_node, CallArgument):
                 stack = self._check_call_argument(function, child_node, copy(stack))
-            elif isinstance(child_node, CallingFunction):
+            elif isinstance(child_node, CallFunction):
                 stack = self._check_call_function(function, child_node, copy(stack))
-            elif isinstance(child_node, CallingType):
+            elif isinstance(child_node, CallType):
                 stack = self._check_call_type(function, child_node, copy(stack))
             else:  # pragma nocover
                 assert False
@@ -292,7 +292,7 @@ class TypeChecker:
     def _check_call_argument(
         self,
         function: Function,
-        call_arg: CallingArgument,
+        call_arg: CallArgument,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
         # Push argument on stack
@@ -302,7 +302,7 @@ class TypeChecker:
     def _check_call_function(
         self,
         function: Function,
-        call_function: CallingFunction,
+        call_function: CallFunction,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
         signature = self.signatures[call_function.function.identify()]
@@ -349,7 +349,7 @@ class TypeChecker:
     def _check_call_type(
         self,
         function: Function,
-        call_type: CallingType,
+        call_type: CallType,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
         return type_stack + [call_type.var_type]
