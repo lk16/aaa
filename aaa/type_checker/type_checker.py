@@ -54,7 +54,7 @@ class TypeChecker:
                 # builtins can't be type-checked
                 continue
             try:
-                self._check_function(function, [])
+                SingleFunctionTypeChecker(function, self).run()
             except TypeCheckerException as e:
                 self.exceptions.append(e)
 
@@ -84,9 +84,32 @@ class TypeChecker:
         ):
             raise InvalidMainSignuture(function.position, function)
 
+
+class SingleFunctionTypeChecker:
+    def __init__(self, function: Function, type_checker: TypeChecker) -> None:
+        self.function = function
+        self.type_checker = type_checker  # TODO is this ugly?
+
+    def run(self) -> None:
+        if self.function.is_test():
+            self._check_test_function()
+
+        if self.function.is_member_function():
+            self._check_member_function()
+
+        assert self.function.body
+        computed_return_types = self._check_function_body(self.function.body, [])
+
+        if computed_return_types != self.function.return_types:
+            raise FunctionTypeError(
+                self.function.position,  # TODO simplify this
+                self.function,
+                self.function.return_types,
+                computed_return_types,
+            )
+
     def _match_signature_items(
         self,
-        function: Function,
         expected_var_type: VariableType,
         var_type: VariableType,
         placeholder_types: Dict[str, VariableType],
@@ -107,10 +130,7 @@ class TypeChecker:
 
             for expected_param, param in zip(expected_var_type.params, var_type.params):
                 match_result = self._match_signature_items(
-                    function,
-                    expected_param,
-                    param,
-                    placeholder_types,
+                    expected_param, param, placeholder_types
                 )
 
                 if not match_result:
@@ -119,10 +139,7 @@ class TypeChecker:
             return True
 
     def _update_return_type(
-        self,
-        function: Function,
-        return_type: VariableType,
-        placeholder_types: Dict[str, VariableType],
+        self, return_type: VariableType, placeholder_types: Dict[str, VariableType]
     ) -> VariableType:
         if return_type.is_placeholder:
             if return_type.name not in placeholder_types:
@@ -132,14 +149,12 @@ class TypeChecker:
             return placeholder_types[return_type.name]
 
         for i, param in enumerate(return_type.params):
-            return_type.params[i] = self._update_return_type(
-                function, param, placeholder_types
-            )
+            return_type.params[i] = self._update_return_type(param, placeholder_types)
 
         return return_type
 
     def _get_builtin_var_type(self, type_name: str) -> VariableType:
-        type = self.types[(self.builtins_path, type_name)]
+        type = self.type_checker.types[(self.type_checker.builtins_path, type_name)]
         return VariableType(type, [], False, type.position)
 
     def _get_bool_var_type(self) -> VariableType:
@@ -152,62 +167,50 @@ class TypeChecker:
         return self._get_builtin_var_type("int")
 
     def _check_integer_literal(
-        self,
-        function: Function,
-        literal: IntegerLiteral,
-        type_stack: List[VariableType],
+        self, literal: IntegerLiteral, type_stack: List[VariableType]
     ) -> List[VariableType]:
         return type_stack + [self._get_int_var_type()]
 
     def _check_string_literal(
-        self, function: Function, literal: StringLiteral, type_stack: List[VariableType]
+        self, literal: StringLiteral, type_stack: List[VariableType]
     ) -> List[VariableType]:
         return type_stack + [self._get_str_var_type()]
 
     def _check_boolean_literal(
         self,
-        function: Function,
         literal: BooleanLiteral,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
         return type_stack + [self._get_bool_var_type()]
 
     def _check_condition(
-        self,
-        function: Function,
-        function_body: FunctionBody,
-        type_stack: List[VariableType],
+        self, function_body: FunctionBody, type_stack: List[VariableType]
     ) -> None:
         # Condition is a special type of function body:
         # It should push exactly one boolean and not modify the type stack under it
-        condition_stack = self._check_function_body(
-            function, function_body, copy(type_stack)
-        )
+        condition_stack = self._check_function_body(function_body, copy(type_stack))
 
         if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
+                function=self.function,
                 position=function_body.position,
-                function=function,
                 type_stack=type_stack,
                 condition_stack=condition_stack,
             )
 
     def _check_branch(
         self,
-        function: Function,
         branch: Branch,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
-        self._check_condition(function, branch.condition, copy(type_stack))
+        self._check_condition(branch.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
-        if_stack = self._check_function_body(function, branch.if_body, copy(type_stack))
+        if_stack = self._check_function_body(branch.if_body, copy(type_stack))
 
         if branch.else_body:
-            else_stack = self._check_function_body(
-                function, branch.else_body, copy(type_stack)
-            )
+            else_stack = self._check_function_body(branch.else_body, copy(type_stack))
         else:
             else_stack = copy(type_stack)
 
@@ -216,7 +219,7 @@ class TypeChecker:
         if if_stack != else_stack:
             raise BranchTypeError(
                 position=branch.position,
-                function=function,
+                function=self.function,
                 type_stack=type_stack,
                 if_stack=if_stack,
                 else_stack=else_stack,
@@ -226,18 +229,18 @@ class TypeChecker:
         return if_stack
 
     def _check_loop(
-        self, function: Function, loop: Loop, type_stack: List[VariableType]
+        self, loop: Loop, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        self._check_condition(function, loop.condition, copy(type_stack))
+        self._check_condition(loop.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
-        loop_stack = self._check_function_body(function, loop.body, copy(type_stack))
+        loop_stack = self._check_function_body(loop.body, copy(type_stack))
 
         if loop_stack != type_stack:
             raise LoopTypeError(
                 position=loop.position,
-                function=function,
+                function=self.function,
                 type_stack=type_stack,
                 loop_stack=loop_stack,
             )
@@ -246,10 +249,7 @@ class TypeChecker:
         return loop_stack
 
     def _check_function_body(
-        self,
-        function: Function,
-        function_body: FunctionBody,
-        type_stack: List[VariableType],
+        self, function_body: FunctionBody, type_stack: List[VariableType]
     ) -> List[VariableType]:
 
         checkers = {
@@ -270,32 +270,26 @@ class TypeChecker:
             stack = copy(stack)
 
             checker = checkers[type(item)]
-            stack = checker(function, item, stack)  # type: ignore
+            stack = checker(item, stack)  # type: ignore
 
         return stack
 
     def _check_call_argument(
-        self,
-        function: Function,
-        call_arg: CallArgument,
-        type_stack: List[VariableType],
+        self, call_arg: CallArgument, type_stack: List[VariableType]
     ) -> List[VariableType]:
         # Push argument on stack
         arg_var_type = call_arg.argument.var_type
         return type_stack + [arg_var_type]
 
     def _check_call_function(
-        self,
-        function: Function,
-        call_function: CallFunction,
-        type_stack: List[VariableType],
+        self, call_function: CallFunction, type_stack: List[VariableType]
     ) -> List[VariableType]:
         stack = copy(type_stack)
         arg_count = len(call_function.function.arguments)
 
         if len(stack) < arg_count:
             raise StackTypesError(
-                function=function,
+                function=self.function,
                 type_stack=type_stack,
                 func_like=call_function.function,
                 position=call_function.position,
@@ -306,12 +300,12 @@ class TypeChecker:
 
         for argument, type in zip(call_function.function.arguments, types, strict=True):
             match_result = self._match_signature_items(
-                function, argument.var_type, type, placeholder_types
+                argument.var_type, type, placeholder_types
             )
 
             if not match_result:
                 raise StackTypesError(
-                    function=function,
+                    function=self.function,
                     type_stack=type_stack,
                     func_like=call_function.function,
                     position=call_function.position,
@@ -320,69 +314,43 @@ class TypeChecker:
         stack = stack[: len(stack) - arg_count]
 
         for return_type in call_function.function.return_types:
-            stack.append(
-                self._update_return_type(function, return_type, placeholder_types)
-            )
+            stack.append(self._update_return_type(return_type, placeholder_types))
 
         return stack
 
     def _check_call_type(
-        self,
-        function: Function,
-        call_type: CallType,
-        type_stack: List[VariableType],
+        self, call_type: CallType, type_stack: List[VariableType]
     ) -> List[VariableType]:
         return type_stack + [call_type.var_type]
 
-    def _check_test_function(self, function: Function) -> None:
+    def _check_test_function(self) -> None:
         if not all(
             [
-                len(function.arguments) == 0,
-                len(function.return_types) == 0,
-                len(function.type_params) == 0,
+                len(self.function.arguments) == 0,
+                len(self.function.return_types) == 0,
+                len(self.function.type_params) == 0,
             ]
         ):
-            raise InvalidTestSignuture(function.position, function)
+            raise InvalidTestSignuture(
+                self.function.position, self.function
+            )  # TODO simplify
 
-    def _check_member_function(self, function: Function) -> None:
-        struct_type = self.types[(function.position.file, function.struct_name)]
+    def _check_member_function(self) -> None:
+        struct_type = self.type_checker.types[
+            (self.function.position.file, self.function.struct_name)
+        ]
 
         # A memberfunction on a type foo needs to take a foo object as the first argument
         if (
-            len(function.arguments) == 0
-            or function.arguments[0].var_type.type != struct_type
+            len(self.function.arguments) == 0
+            or self.function.arguments[0].var_type.type != struct_type
         ):
-            raise InvalidMemberFunctionSignature(
-                function.position, function, struct_type
-            )
-
-    def _check_function(
-        self, function: Function, type_stack: List[VariableType]
-    ) -> None:
-        if function.is_test():
-            self._check_test_function(function)
-
-        if function.is_member_function():
-            self._check_member_function(function)
-
-        assert function.body
-        computed_return_types = self._check_function_body(
-            function, function.body, type_stack
-        )
-
-        if computed_return_types != function.return_types:
-            raise FunctionTypeError(
-                function.position,
-                function,
-                function.return_types,
-                computed_return_types,
+            raise InvalidMemberFunctionSignature(  # TODO simplify
+                self.function.position, self.function, struct_type
             )
 
     def _get_struct_field_type(
-        self,
-        function: Function,
-        node: StructFieldQuery | StructFieldUpdate,
-        struct_type: Type,
+        self, node: StructFieldQuery | StructFieldUpdate, struct_type: Type
     ) -> VariableType:
         field_name = node.field_name.value
         try:
@@ -390,7 +358,7 @@ class TypeChecker:
         except KeyError as e:
             raise UnknownField(
                 position=node.position,
-                function=function,
+                function=self.function,
                 struct_type=struct_type,
                 field_name=field_name,
             ) from e
@@ -398,18 +366,15 @@ class TypeChecker:
         return field_type
 
     def _check_type_struct_field_query(
-        self,
-        function: Function,
-        field_query: StructFieldQuery,
-        type_stack: List[VariableType],
+        self, field_query: StructFieldQuery, type_stack: List[VariableType]
     ) -> List[VariableType]:
         literal = StringLiteral(field_query.field_name)
-        type_stack = self._check_string_literal(function, literal, copy(type_stack))
+        type_stack = self._check_string_literal(literal, copy(type_stack))
 
         if len(type_stack) < 2:
             raise StackTypesError(
                 position=field_query.position,
-                function=function,
+                function=self.function,
                 type_stack=type_stack,
                 func_like=field_query,
             )
@@ -419,31 +384,26 @@ class TypeChecker:
         # This is enforced by the parser
         assert field_selector_type == self._get_str_var_type()
 
-        field_type = self._get_struct_field_type(
-            function, field_query, struct_var_type.type
-        )
+        field_type = self._get_struct_field_type(field_query, struct_var_type.type)
 
         # pop struct and field name, push field
         return type_stack[:-2] + [field_type]
 
     def _check_type_struct_field_update(
-        self,
-        function: Function,
-        field_update: StructFieldUpdate,
-        type_stack: List[VariableType],
+        self, field_update: StructFieldUpdate, type_stack: List[VariableType]
     ) -> List[VariableType]:
         literal = StringLiteral(field_update.field_name)
-        type_stack = self._check_string_literal(function, literal, copy(type_stack))
+        type_stack = self._check_string_literal(literal, copy(type_stack))
 
         type_stack_before = type_stack
         type_stack = self._check_function_body(
-            function, field_update.new_value_expr, copy(type_stack_before)
+            field_update.new_value_expr, copy(type_stack_before)
         )
 
         if len(type_stack) < 3:
             raise StackTypesError(
                 position=field_update.position,
-                function=function,
+                function=self.function,
                 type_stack=type_stack,
                 func_like=field_update,
             )
@@ -459,17 +419,17 @@ class TypeChecker:
         ):
             raise StructUpdateStackError(
                 position=field_update.position,
-                function=function,
+                function=self.function,
                 type_stack=type_stack,
                 type_stack_before=type_stack_before,
             )
 
-        field_type = self._get_struct_field_type(function, field_update, struct_type)
+        field_type = self._get_struct_field_type(field_update, struct_type)
 
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
                 position=field_update.new_value_expr.position,
-                function=function,
+                function=self.function,
                 type_stack=type_stack,
                 struct_type=struct_type,
                 field_name=field_update.field_name.value,
