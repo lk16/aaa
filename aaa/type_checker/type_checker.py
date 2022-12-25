@@ -162,17 +162,23 @@ class TypeChecker:
         return self._get_builtin_var_type("int")
 
     def _check_integer_literal(
-        self, type_stack: List[VariableType]
+        self,
+        function: Function,
+        literal: IntegerLiteral,
+        type_stack: List[VariableType],
     ) -> List[VariableType]:
         return type_stack + [self._get_int_var_type()]
 
     def _check_string_literal(
-        self, type_stack: List[VariableType]
+        self, function: Function, literal: StringLiteral, type_stack: List[VariableType]
     ) -> List[VariableType]:
         return type_stack + [self._get_str_var_type()]
 
     def _check_boolean_literal(
-        self, type_stack: List[VariableType]
+        self,
+        function: Function,
+        literal: BooleanLiteral,
+        type_stack: List[VariableType],
     ) -> List[VariableType]:
         return type_stack + [self._get_bool_var_type()]
 
@@ -256,34 +262,25 @@ class TypeChecker:
         type_stack: List[VariableType],
     ) -> List[VariableType]:
 
+        checkers = {
+            BooleanLiteral: self._check_boolean_literal,
+            Branch: self._check_branch,
+            IntegerLiteral: self._check_integer_literal,
+            Loop: self._check_loop,
+            StringLiteral: self._check_string_literal,
+            StructFieldQuery: self._check_type_struct_field_query,
+            StructFieldUpdate: self._check_type_struct_field_update,
+            CallArgument: self._check_call_argument,
+            CallFunction: self._check_call_function,
+            CallType: self._check_call_type,
+        }
+
         stack = copy(type_stack)
-        for child_node in function_body.items:
-            if isinstance(child_node, BooleanLiteral):
-                stack = self._check_boolean_literal(copy(stack))
-            elif isinstance(child_node, Branch):
-                stack = self._check_branch(function, child_node, copy(stack))
-            elif isinstance(child_node, IntegerLiteral):
-                stack = self._check_integer_literal(copy(stack))
-            elif isinstance(child_node, Loop):
-                stack = self._check_loop(function, child_node, copy(stack))
-            elif isinstance(child_node, StringLiteral):
-                stack = self._check_string_literal(copy(stack))
-            elif isinstance(child_node, StructFieldQuery):
-                stack = self._check_type_struct_field_query(
-                    function, child_node, copy(stack)
-                )
-            elif isinstance(child_node, StructFieldUpdate):
-                stack = self._check_type_struct_field_update(
-                    function, child_node, copy(stack)
-                )
-            elif isinstance(child_node, CallArgument):
-                stack = self._check_call_argument(function, child_node, copy(stack))
-            elif isinstance(child_node, CallFunction):
-                stack = self._check_call_function(function, child_node, copy(stack))
-            elif isinstance(child_node, CallType):
-                stack = self._check_call_type(function, child_node, copy(stack))
-            else:  # pragma nocover
-                assert False
+        for item in function_body.items:
+            stack = copy(stack)
+
+            checker = checkers[type(item)]
+            stack = checker(function, item, stack)  # type: ignore
 
         return stack
 
@@ -406,7 +403,8 @@ class TypeChecker:
         field_query: StructFieldQuery,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
-        type_stack = self._check_string_literal(copy(type_stack))
+        literal = StringLiteral(field_query.field_name)
+        type_stack = self._check_string_literal(function, literal, copy(type_stack))
 
         if len(type_stack) < 2:
             raise StackTypesError(
@@ -434,7 +432,8 @@ class TypeChecker:
         field_update: StructFieldUpdate,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
-        type_stack = self._check_string_literal(copy(type_stack))
+        literal = StringLiteral(field_update.field_name)
+        type_stack = self._check_string_literal(function, literal, copy(type_stack))
 
         type_stack_before = type_stack
         type_stack = self._check_function_body(
