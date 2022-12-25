@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Dict, List
+from typing import Any, Callable, Dict, List
 
 from aaa import AaaRunnerException
 from aaa.cross_referencer.models import (
@@ -251,7 +251,7 @@ class SingleFunctionTypeChecker:
         self, function_body: FunctionBody, type_stack: List[VariableType]
     ) -> List[VariableType]:
 
-        checkers = {
+        checkers: Dict[Any, Callable[[Any, List[VariableType]], List[VariableType]]] = {
             BooleanLiteral: self._check_boolean_literal,
             Branch: self._check_branch,
             IntegerLiteral: self._check_integer_literal,
@@ -269,7 +269,7 @@ class SingleFunctionTypeChecker:
             stack = copy(stack)
 
             checker = checkers[type(item)]
-            stack = checker(item, stack)  # type: ignore
+            stack = checker(item, stack)
 
         return stack
 
