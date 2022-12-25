@@ -50,8 +50,11 @@ class TypeChecker:
 
     def run(self) -> None:
         for function in self.functions.values():
+            if self._is_builtin(function):
+                # builtins can't be type-checked
+                continue
             try:
-                self._check(function)
+                self._check_function(function, [])
             except TypeCheckerException as e:
                 self.exceptions.append(e)
 
@@ -63,21 +66,8 @@ class TypeChecker:
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
 
-    def _check(self, function: Function) -> None:
-        if function.position.file == self.builtins_path:
-            # builtins can't be type checked
-            return
-
-        expected_return_types = function.return_types
-        computed_return_types = self._check_function(function, [])
-
-        if computed_return_types != expected_return_types:
-            raise FunctionTypeError(
-                function.position,
-                function,
-                expected_return_types,
-                computed_return_types,
-            )
+    def _is_builtin(self, function: Function) -> bool:
+        return function.position.file == self.builtins_path
 
     def _check_main_function(self) -> None:
         try:
@@ -368,7 +358,7 @@ class TypeChecker:
 
     def _check_function(
         self, function: Function, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> None:
         if function.is_test():
             self._check_test_function(function)
 
@@ -376,7 +366,17 @@ class TypeChecker:
             self._check_member_function(function)
 
         assert function.body
-        return self._check_function_body(function, function.body, type_stack)
+        computed_return_types = self._check_function_body(
+            function, function.body, type_stack
+        )
+
+        if computed_return_types != function.return_types:
+            raise FunctionTypeError(
+                function.position,
+                function,
+                function.return_types,
+                computed_return_types,
+            )
 
     def _get_struct_field_type(
         self,
