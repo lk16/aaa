@@ -1,6 +1,5 @@
 from copy import copy
-from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from aaa import AaaRunnerException
 from aaa.cross_referencer.models import (
@@ -35,11 +34,6 @@ from aaa.type_checker.exceptions import (
     TypeCheckerException,
     UnknownField,
 )
-from aaa.type_checker.models import (
-    Signature,
-    StructQuerySignature,
-    StructUpdateSignature,
-)
 
 
 class TypeChecker:
@@ -51,17 +45,10 @@ class TypeChecker:
         self.imports = cross_referencer_output.imports
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
-        self.signatures: Dict[Tuple[Path, str], Signature] = {}
         self.exceptions: List[TypeCheckerException] = []
         self.verbose = verbose  # TODO use
 
     def run(self) -> None:
-        for function in self.functions.values():
-            self.signatures[function.identify()] = Signature(
-                arguments=[arg.var_type for arg in function.arguments],
-                return_types=function.return_types,
-            )
-
         for function in self.functions.values():
             try:
                 self._check(function)
@@ -81,7 +68,7 @@ class TypeChecker:
             # builtins can't be type checked
             return
 
-        expected_return_types = self.signatures[function.identify()].return_types
+        expected_return_types = function.return_types
         computed_return_types = self._check_function(function, [])
 
         if computed_return_types != expected_return_types:
@@ -316,33 +303,28 @@ class TypeChecker:
         call_function: CallFunction,
         type_stack: List[VariableType],
     ) -> List[VariableType]:
-        signature = self.signatures[call_function.function.identify()]
-
         stack = copy(type_stack)
-        arg_count = len(signature.arguments)
+        arg_count = len(call_function.function.arguments)
 
         if len(stack) < arg_count:
             raise StackTypesError(
                 function=function,
-                signature=signature,
                 type_stack=type_stack,
                 func_like=call_function.function,
                 position=call_function.position,
             )
 
         placeholder_types: Dict[str, VariableType] = {}
-        expected_types = signature.arguments
         types = stack[len(stack) - arg_count :]
 
-        for expected_type, type in zip(expected_types, types, strict=True):
+        for argument, type in zip(call_function.function.arguments, types, strict=True):
             match_result = self._match_signature_items(
-                function, expected_type, type, placeholder_types
+                function, argument.var_type, type, placeholder_types
             )
 
             if not match_result:
                 raise StackTypesError(
                     function=function,
-                    signature=signature,
                     type_stack=type_stack,
                     func_like=call_function.function,
                     position=call_function.position,
@@ -350,7 +332,7 @@ class TypeChecker:
 
         stack = stack[: len(stack) - arg_count]
 
-        for return_type in signature.return_types:
+        for return_type in call_function.function.return_types:
             stack.append(
                 self._update_return_type(function, return_type, placeholder_types)
             )
@@ -376,13 +358,15 @@ class TypeChecker:
             raise InvalidTestSignuture(function.position, function)
 
     def _check_member_function(self, function: Function) -> None:
-        signature = self.signatures[function.identify()]
         struct_type = self.types[(function.position.file, function.struct_name)]
 
         # A memberfunction on a type foo needs to take a foo object as the first argument
-        if len(signature.arguments) == 0 or signature.arguments[0].type != struct_type:
+        if (
+            len(function.arguments) == 0
+            or function.arguments[0].var_type.type != struct_type
+        ):
             raise InvalidMemberFunctionSignature(
-                function.position, function, struct_type, signature
+                function.position, function, struct_type
             )
 
     def _check_function(
@@ -428,7 +412,6 @@ class TypeChecker:
             raise StackTypesError(
                 position=field_query.position,
                 function=function,
-                signature=StructQuerySignature(),
                 type_stack=type_stack,
                 func_like=field_query,
             )
@@ -462,7 +445,6 @@ class TypeChecker:
             raise StackTypesError(
                 position=field_update.position,
                 function=function,
-                signature=StructUpdateSignature(),
                 type_stack=type_stack,
                 func_like=field_update,
             )

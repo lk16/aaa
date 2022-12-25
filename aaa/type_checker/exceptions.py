@@ -9,11 +9,6 @@ from aaa.cross_referencer.models import (
     Type,
     VariableType,
 )
-from aaa.type_checker.models import (
-    Signature,
-    StructQuerySignature,
-    StructUpdateSignature,
-)
 
 
 def format_typestack(
@@ -60,15 +55,9 @@ class StackTypesError(TypeCheckerException):
         self,
         position: Position,
         function: Function,
-        signature: Union["Signature", "StructQuerySignature", "StructUpdateSignature"],
         type_stack: List[VariableType],
-        func_like: Union[
-            Function,
-            StructFieldUpdate,
-            StructFieldQuery,
-        ],
+        func_like: Union[Function, StructFieldUpdate, StructFieldQuery],
     ) -> None:
-        self.signature = signature
         self.type_stack = type_stack
         self.func_like = func_like
         super().__init__(position, function)
@@ -84,11 +73,12 @@ class StackTypesError(TypeCheckerException):
             assert False
 
     def format_typestack(self) -> str:
-        if isinstance(self.signature, Signature):
-            return format_typestack(self.signature.arguments)
-        elif isinstance(self.signature, StructQuerySignature):
+        if isinstance(self.func_like, Function):
+            types = [arg.var_type for arg in self.func_like.arguments]
+            return format_typestack(types)
+        elif isinstance(self.func_like, StructFieldQuery):
             return "<struct type> str"
-        elif isinstance(self.signature, StructUpdateSignature):
+        elif isinstance(self.func_like, StructFieldUpdate):
             return "<struct type> str <type of field to update>"
         else:  # pragma:nocover
             assert False
@@ -244,24 +234,20 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
         position: Position,
         function: Function,
         struct_type: Type,
-        signature: "Signature",
     ) -> None:
         self.struct_type = struct_type
-        self.signature = signature
         super().__init__(position, function)
 
     def __str__(self) -> str:
-        _, member_func_name = self.function.identify()
+        full_func_name = f"{self.function.struct_name}:{self.function.func_name}"
+        formatted = f"{self.position} Function {full_func_name} has invalid member-function signature\n\n"
 
-        formatted = f"{self.position} Function {member_func_name} has invalid member-function signature\n\n"
+        arguments = [arg.var_type for arg in self.function.arguments]
 
-        if (
-            len(self.signature.arguments) == 0
-            or str(self.signature.arguments[0]) != self.struct_type.name
-        ):
+        if len(arguments) == 0 or arguments[0].type != self.struct_type:
             formatted += (
                 f"Expected arg types: {self.struct_type.name} ...\n"
-                + f"   Found arg types: {' '.join(str(arg) for arg in self.signature.arguments)}\n"
+                + f"   Found arg types: {' '.join(str(arg.type) for arg in arguments)}\n"
             )
 
         return formatted
