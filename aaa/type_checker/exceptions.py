@@ -29,22 +29,17 @@ class TypeException(TypeCheckerException):
 
 class FunctionTypeError(TypeCheckerException):
     def __init__(
-        self,
-        position: Position,
-        function: Function,
-        expected_return_types: List[VariableType],
-        computed_return_types: List[VariableType],
+        self, function: Function, computed_return_types: List[VariableType]
     ) -> None:
-        self.expected_return_types = expected_return_types
         self.computed_return_types = computed_return_types
-        super().__init__(position, function)
+        super().__init__(function.position, function)
 
     def __str__(self) -> str:
-        expected = format_typestack(self.expected_return_types)
+        expected = format_typestack(self.function.return_types)
         found = format_typestack(self.computed_return_types)
 
         return (
-            f"{self.position}: Function {self.function.name} returns wrong type(s)\n"
+            f"{self.function.position}: Function {self.function.name} returns wrong type(s)\n"
             + f"expected return types: {expected}\n"
             + f"   found return types: {found}\n"
         )
@@ -170,6 +165,9 @@ class InvalidMainSignuture(TypeCheckerException):
 
 
 class InvalidTestSignuture(TypeCheckerException):
+    def __init__(self, function: Function) -> None:
+        super().__init__(function.position, function)
+
     def __str__(self) -> str:
         return f"{self.position} Test function {self.function.name} should have no arguments and no return types\n"
 
@@ -231,12 +229,11 @@ class StructUpdateTypeError(TypeCheckerException):
 class InvalidMemberFunctionSignature(TypeCheckerException):
     def __init__(
         self,
-        position: Position,
         function: Function,
         struct_type: Type,
     ) -> None:
         self.struct_type = struct_type
-        super().__init__(position, function)
+        super().__init__(function.position, function)
 
     def __str__(self) -> str:
         full_func_name = f"{self.function.struct_name}:{self.function.func_name}"

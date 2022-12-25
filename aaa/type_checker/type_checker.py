@@ -105,12 +105,7 @@ class SingleFunctionTypeChecker:
         computed_return_types = self._check_function_body(self.function.body, [])
 
         if computed_return_types != self.function.return_types:
-            raise FunctionTypeError(
-                self.function.position,  # TODO simplify this
-                self.function,
-                self.function.return_types,
-                computed_return_types,
-            )
+            raise FunctionTypeError(self.function, computed_return_types)
 
     def _match_signature_items(
         self,
@@ -335,23 +330,19 @@ class SingleFunctionTypeChecker:
                 len(self.function.type_params) == 0,
             ]
         ):
-            raise InvalidTestSignuture(
-                self.function.position, self.function
-            )  # TODO simplify
+            raise InvalidTestSignuture(self.function)
 
     def _check_member_function(self) -> None:
         struct_type = self.types[
             (self.function.position.file, self.function.struct_name)
         ]
 
-        # A memberfunction on a type foo needs to take a foo object as the first argument
+        # A member function on a type foo needs to take a foo object as the first argument
         if (
             len(self.function.arguments) == 0
             or self.function.arguments[0].var_type.type != struct_type
         ):
-            raise InvalidMemberFunctionSignature(  # TODO simplify
-                self.function.position, self.function, struct_type
-            )
+            raise InvalidMemberFunctionSignature(self.function, struct_type)
 
     def _get_struct_field_type(
         self, node: StructFieldQuery | StructFieldUpdate, struct_type: Type
