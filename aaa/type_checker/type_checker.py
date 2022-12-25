@@ -68,7 +68,10 @@ class TypeChecker:
             except TypeCheckerException as e:
                 self.exceptions.append(e)
 
-        self._check_main_function()
+        try:
+            self._check_main_function()
+        except TypeCheckerException as e:
+            self.exceptions.append(e)
 
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
@@ -91,10 +94,18 @@ class TypeChecker:
 
     def _check_main_function(self) -> None:
         try:
-            self.functions[(self.entrypoint, "main")]
+            function = self.functions[(self.entrypoint, "main")]
         except KeyError:
-            e = MainFunctionNotFound(self.entrypoint)
-            self.exceptions.append(e)
+            raise MainFunctionNotFound(self.entrypoint)
+
+        if not all(
+            [
+                len(function.arguments) == 0,
+                len(function.return_types) == 0,
+                len(function.type_params) == 0,
+            ]
+        ):
+            raise InvalidMainSignuture(function.position, function)
 
     def _match_signature_items(
         self,
@@ -354,45 +365,34 @@ class TypeChecker:
     ) -> List[VariableType]:
         return type_stack + [call_type.var_type]
 
+    def _check_test_function(self, function: Function) -> None:
+        if not all(
+            [
+                len(function.arguments) == 0,
+                len(function.return_types) == 0,
+                len(function.type_params) == 0,
+            ]
+        ):
+            raise InvalidTestSignuture(function.position, function)
+
+    def _check_member_function(self, function: Function) -> None:
+        signature = self.signatures[function.identify()]
+        struct_type = self.types[(function.position.file, function.struct_name)]
+
+        # A memberfunction on a type foo needs to take a foo object as the first argument
+        if len(signature.arguments) == 0 or signature.arguments[0].type != struct_type:
+            raise InvalidMemberFunctionSignature(
+                function.position, function, struct_type, signature
+            )
+
     def _check_function(
         self, function: Function, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        if function.name == "main":
-            if not all(
-                [
-                    len(function.arguments) == 0,
-                    len(function.return_types) == 0,
-                    len(function.type_params) == 0,
-                ]
-            ):
-                raise InvalidMainSignuture(function.position, function)
-
-        if (
-            function.struct_name == ""
-            and function.func_name.startswith("test_")
-            and function.position.file.name.startswith("test_")
-        ):
-            if not all(
-                [
-                    len(function.arguments) == 0,
-                    len(function.return_types) == 0,
-                    len(function.type_params) == 0,
-                ]
-            ):
-                raise InvalidTestSignuture(function.position, function)
+        if function.is_test():
+            self._check_test_function(function)
 
         if function.is_member_function():
-            signature = self.signatures[function.identify()]
-            struct_type = self.types[(function.position.file, function.struct_name)]
-
-            # A memberfunction on a type foo needs to take a foo object as the first argument
-            if (
-                len(signature.arguments) == 0
-                or signature.arguments[0].type != struct_type
-            ):
-                raise InvalidMemberFunctionSignature(
-                    function.position, function, struct_type, signature
-                )
+            self._check_member_function(function)
 
         assert function.body
         return self._check_function_body(function, function.body, type_stack)

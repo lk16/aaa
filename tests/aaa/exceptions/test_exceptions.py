@@ -147,12 +147,6 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             id="invalid-main-signature-return-type\n",
         ),
         pytest.param(
-            "fn main args a as int { 5 }",
-            InvalidMainSignuture,
-            "/foo/main.aaa:1:1 Main function should have no type parameters, no arguments and no return types\n",
-            id="invalid-main-signature-both",
-        ),
-        pytest.param(
             "fn main[A] { nop }",
             InvalidMainSignuture,
             "/foo/main.aaa:1:1 Main function should have no type parameters, no arguments and no return types\n",

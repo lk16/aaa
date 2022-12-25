@@ -63,6 +63,13 @@ class Function(Identifiable):
     def is_member_function(self) -> bool:
         return self.struct_name != ""
 
+    def is_test(self) -> bool:
+        return (
+            not self.is_member_function()
+            and self.func_name.startswith("test_")
+            and self.position.file.name.startswith("test_")
+        )
+
 
 class Argument(AaaCrossReferenceModel):
     def __init__(self, var_type: VariableType, identifier: parser.Identifier) -> None:
