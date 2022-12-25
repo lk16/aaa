@@ -53,8 +53,11 @@ class TypeChecker:
             if self._is_builtin(function):
                 # builtins can't be type-checked
                 continue
+
+            checker = SingleFunctionTypeChecker(function, self)
+
             try:
-                SingleFunctionTypeChecker(function, self).run()
+                checker.run()
             except TypeCheckerException as e:
                 self.exceptions.append(e)
 
@@ -88,7 +91,8 @@ class TypeChecker:
 class SingleFunctionTypeChecker:
     def __init__(self, function: Function, type_checker: TypeChecker) -> None:
         self.function = function
-        self.type_checker = type_checker  # TODO is this ugly?
+        self.types = type_checker.types
+        self.builtins_path = type_checker.builtins_path
 
     def run(self) -> None:
         if self.function.is_test():
@@ -154,7 +158,7 @@ class SingleFunctionTypeChecker:
         return return_type
 
     def _get_builtin_var_type(self, type_name: str) -> VariableType:
-        type = self.type_checker.types[(self.type_checker.builtins_path, type_name)]
+        type = self.types[(self.builtins_path, type_name)]
         return VariableType(type, [], False, type.position)
 
     def _get_bool_var_type(self) -> VariableType:
@@ -336,7 +340,7 @@ class SingleFunctionTypeChecker:
             )  # TODO simplify
 
     def _check_member_function(self) -> None:
-        struct_type = self.type_checker.types[
+        struct_type = self.types[
             (self.function.position.file, self.function.struct_name)
         ]
 
