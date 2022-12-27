@@ -38,12 +38,7 @@ fn main {
     - `map:values`
     - `map:items`
 - Add `set` container and member functions
-
-### Instruction optimization
-- remove `nop` instructions
-- eliminate jumps to jumps
-- [constant folding](https://en.wikipedia.org/wiki/Constant_folding)
-- removing dead branches
+- Add a way to iterate over `vec`, `map` and `set`
 
 ### Support syscalls
 - Add binary or/and/not integer operations
@@ -56,6 +51,7 @@ fn main {
 - return early (`return`)
 - debug tools (`breakpoint`)
 - allow type params for struct
+- support `fn main args vec[str] return int { ... }`
 - compile to native executable
 - compile itself
 
