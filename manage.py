@@ -20,7 +20,8 @@ def cli() -> None:
 @click.argument("code", type=str)
 @click.option("-v", "--verbose", is_flag=True)
 def cmd(code: str, verbose: bool) -> None:
-    exit_code = Runner.without_file(code, None, verbose).run()
+    runner = Runner.without_file(code, None, verbose)
+    exit_code = runner.run(None, True, None, True)
     exit(exit_code)
 
 
@@ -28,21 +29,8 @@ def cmd(code: str, verbose: bool) -> None:
 @click.argument("path", type=click.Path(exists=True))
 @click.option("-v", "--verbose", is_flag=True)
 def run(path: str, verbose: bool) -> None:
-    exit_code = Runner(Path(path), None, verbose).run()
-    exit(exit_code)
-
-
-@cli.command()
-@click.argument("source_file", type=click.Path(exists=True))
-@click.argument("output_file")
-@click.option("-c", "--compile", is_flag=True)
-@click.option("-r", "--run", is_flag=True)
-@click.option("-v", "--verbose", is_flag=True)
-def transpile(
-    source_file: str, output_file: str, compile: bool, run: bool, verbose: bool
-) -> None:
-    runner = Runner(Path(source_file), None, verbose)
-    exit_code = runner.transpile(Path(output_file), compile, run)
+    runner = Runner(Path(path), None, verbose)
+    exit_code = runner.run(None, True, None, True)
     exit(exit_code)
 
 
@@ -63,23 +51,13 @@ def runtests() -> None:
 
 @cli.command()
 @click.argument("path", type=click.Path(exists=True))
-@click.option("-v", "--verbose", is_flag=True)
-def test(path: str, verbose: bool) -> None:
-    exit_code = TestRunner(Path(path), verbose).run()
-    exit(exit_code)
-
-
-@cli.command()
-@click.argument("path", type=click.Path(exists=True))
-@click.argument("output_file")
 @click.option("-c", "--compile", is_flag=True)
 @click.option("-r", "--run", is_flag=True)
 @click.option("-v", "--verbose", is_flag=True)
-def transpile_tests(
-    path: str, output_file: str, compile: bool, run: bool, verbose: bool
-) -> None:
-    # TODO add verbose flag
+def test(path: str, compile: bool, run: bool, verbose: bool) -> None:
+    # TODO add flag for generated c file and generated binary file
 
+    # TODO move building of main test file to Runner
     test_runner = TestRunner(Path(path), verbose)
     main_test_code = test_runner.build_main_test_file()
 
@@ -87,7 +65,7 @@ def transpile_tests(
     main_test_file.write_text(main_test_code)
 
     runner = Runner(main_test_file, test_runner.parsed_files, verbose)
-    exit_code = runner.transpile(Path(output_file), compile, run)
+    exit_code = runner.run(None, compile, None, run)
     exit(exit_code)
 
 

@@ -79,9 +79,6 @@ class Tokenizer:
     def _tokenize_comment(self, offset: int) -> Optional[Token]:
         return self._regex(offset, "//[^\n]*", TokenType.COMMENT)
 
-    def _tokenize_shebang(self, offset: int) -> Optional[Token]:
-        return self._regex(offset, "#![^\n]*", TokenType.SHEBANG)
-
     def _tokenize_integer(self, offset: int) -> Optional[Token]:
         return self._regex(offset, "(-)?[0-9]+", TokenType.INTEGER)
 
@@ -131,7 +128,6 @@ class Tokenizer:
             if token.type not in [
                 TokenType.WHITESPACE,
                 TokenType.COMMENT,
-                TokenType.SHEBANG,
             ]:
                 filtered.append(token)
 
@@ -150,7 +146,6 @@ class Tokenizer:
             token = (
                 self._tokenize_whitespace(offset)
                 or self._tokenize_comment(offset)
-                or self._tokenize_shebang(offset)
                 or self._tokenize_integer(offset)
                 or self._tokenize_fixed_size(offset)
                 or self._tokenize_string(offset)

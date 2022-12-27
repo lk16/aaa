@@ -5,7 +5,6 @@ Stack-based language, like forth.
 The following tools for the Aaa language can be found is this repo
 * A [tokenizer](./aaa/tokenizer/) and [parser](./aaa/parser/) for Aaa. [Grammar](./aaa.lark).
 * A [type checker](./aaa/type_checker/)
-* A [python simulator](./aaa/simulator/)
 * A [transpiler to C](./aaa/transpiler/)
 * A [VS Code extension](./aaa-vscode-extension/README.md) for the Aaa language.
 * A lot of tests, written both in python and Aaa
@@ -41,21 +40,8 @@ curl http://localhost:8080
 - loops (`while`)
 - functions (`fn`)
 - comments (`//`)
-- shebang, see below (`#!`)
 - multi-file support (`import`)
 - [upcoming](./TODO.md)
-
-### Shebang
-
-Starting an aaa source file with `#!/usr/bin/env aaa` allows it to be run just like this `./yourfile.aaa`.
-This only works under the following conditions:
-* `yourfile.aaa` is executable
-* `yourfile.aaa` has a function named `main` that takes no arguments and returns nothing
-* `aaa` is in your PATH
-
-Use `chmod +x yourfile.aaa` to make your source file executable. To add `aaa` to path, a [simple script](./run_aaa.sh) is provided we can just symlink from any folder that's in your PATH, for example `ln -s -T $(pwd)/run_aaa.sh ~/.local/bin/aaa`.
-
-If running files using the shebang feels sluggish, it's because `poetry run` is [slow](https://github.com/python-poetry/poetry/issues/3502).
 
 ### Name
 The name of this language is just the first letter of the Latin alphabet [repeated](#Examples) three times. When code in this language doesn't work, its meaning becomes an [abbreviation](https://en.uncyclopedia.co/wiki/AAAAAAAAA!).

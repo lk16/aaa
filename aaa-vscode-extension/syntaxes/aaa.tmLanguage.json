@@ -19,10 +19,6 @@
 			"match": "(//.*)"
 		},
 		{
-			"name": "comment.line.shebang.aaa",
-			"match": "(#!.*)"
-		},
-		{
 			"name": "keyword.operator.arithmetic.aaa",
 			"match": "\\+|\\-|\\*|/|%"
 		},

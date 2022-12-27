@@ -31,3 +31,7 @@ class AaaException(Exception):
 class AaaRunnerException(AaaException):
     def __init__(self, exceptions: Sequence[AaaException]) -> None:
         self.exceptions = exceptions
+
+
+class AaaRuntimeException(AaaException):
+    ...

@@ -13,7 +13,6 @@ from aaa.cross_referencer.exceptions import (
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
-from aaa.simulator.exceptions import AaaAssertionFailure
 from aaa.tokenizer.exceptions import FileReadError
 from aaa.type_checker.exceptions import (
     BranchTypeError,
@@ -260,14 +259,6 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             MainFunctionNotFound,
             "/foo/main.aaa: No main function found",
             id="main-not-found",
-        ),
-        pytest.param(
-            """
-            fn main { false assert }
-            """,
-            AaaAssertionFailure,
-            "/foo/main.aaa:2:29: Assertion failure, stacktrace:\n- main\n",
-            id="assertion-failure",
         ),
         pytest.param(
             """

@@ -20,9 +20,6 @@
 COMMENT: "//" /[^\n]*/ "\n"
 %ignore COMMENT
 
-SHEBANG: "#!" /[^\n]*/ "\n"
-%ignore SHEBANG
-
 integer: /(-)?[0-9]+/
 
 %import common.ESCAPED_STRING

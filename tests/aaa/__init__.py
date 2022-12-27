@@ -41,7 +41,7 @@ def check_aaa_full_source_multi_file(
 
         with redirect_stdout(StringIO()) as stdout:
             with redirect_stderr(StringIO()) as stderr:
-                runner.run()
+                runner.run(None, True, None, True)
 
         exception_types = list(map(type, runner.exceptions))
 

@@ -6,13 +6,6 @@ from aaa.run import Runner
 from aaa.run_tests import TestRunner
 
 
-def test_stdlib_python() -> None:
-    stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
-
-    exit_code = TestRunner(stdlib_path, False).run()
-    assert exit_code == 0
-
-
 def test_stdlib_transpiling() -> None:
     stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
 
@@ -22,9 +15,7 @@ def test_stdlib_transpiling() -> None:
     main_test_file = Path(gettempdir()) / NamedTemporaryFile(delete=False).name
     main_test_file.write_text(main_test_code)
 
-    output_file = Path(gettempdir()) / NamedTemporaryFile(delete=False).name
-
     runner = Runner(main_test_file, test_runner.parsed_files, False)
-    exit_code = runner.transpile(output_file, compile=False, run=False)
+    exit_code = runner.run(None, True, None, True)
 
     assert exit_code == 0

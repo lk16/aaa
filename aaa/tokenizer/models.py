@@ -22,7 +22,6 @@ class TokenType(Enum):
     IMPORT = "IMPORT"
     RETURN = "RETURN"
     SET_FIELD = "SET_FIELD"
-    SHEBANG = "SHEBANG"
     STRING = "STRING"
     STRUCT = "STRUCT"
     TRUE = "TRUE"  # replace TRUE and FALSE with BOOLEAN

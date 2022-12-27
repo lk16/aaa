@@ -3,6 +3,8 @@ import sys
 from glob import glob
 from hashlib import sha256
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+from typing import Optional
 
 from aaa.cross_referencer.models import (
     BooleanLiteral,
@@ -44,67 +46,74 @@ class Transpiler:
     def __init__(
         self,
         cross_referencer_output: CrossReferencerOutput,
-        output_file: Path,
+        generated_c_file: Optional[Path],
+        generated_binary_file: Optional[Path],
         verbose: bool,
     ) -> None:
-        self.output_file = output_file
         self.types = cross_referencer_output.types
         self.functions = cross_referencer_output.functions
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
         self.verbose = verbose  # TODO use
 
+        self.generated_c_file = generated_c_file or Path(
+            NamedTemporaryFile(delete=False, suffix=".c").name
+        )
+
+        self.generated_binary_file = generated_binary_file or Path(
+            NamedTemporaryFile(delete=False).name
+        )
+
     def run(self, compile: bool, run_binary: bool) -> int:
         code = self._generate_c_file()
-        self.output_file.write_text(code)
+        self.generated_c_file.write_text(code)
 
         if run_binary and not compile:  # pragma: nocover
             print("Can't run binary without (re-)compiling!", file=sys.stderr)
             return 1
 
         if compile:  # pragma: nocover
-            c_files = [str(self.output_file)] + glob("./c/*.c")
+            c_files = [str(self.generated_c_file)] + glob("./c/*.c")
 
-            exit_code = subprocess.run(
-                [
-                    "gcc",
-                    # "--coverage", TODO enable this flag with flag
-                    "-I",
-                    "./c/",
-                    "-o",
-                    "generated",
-                    "-std=gnu99",
-                    "-g",
-                    "-Wall",
-                    "-Wextra",
-                    "-Werror",
-                    "-Wcast-align",
-                    "-Wconversion",
-                    "-Wfloat-equal",
-                    "-Wformat=2",
-                    "-Winline",
-                    "-Wlogical-op",
-                    "-Wmissing-prototypes",
-                    "-Wno-missing-braces",
-                    "-Wno-missing-field-initializers",
-                    "-Wold-style-definition",
-                    "-Wpointer-arith",
-                    "-Wredundant-decls",
-                    "-Wshadow",
-                    "-Wstrict-prototypes",
-                    "-Wswitch-default",
-                    "-Wswitch-enum",
-                    "-Wundef",
-                    "-Wunreachable-code",
-                ]
-                + c_files
-            ).returncode
+            command = [
+                "gcc",
+                # "--coverage", TODO enable this flag with flag
+                "-I",
+                "./c/",
+                "-o",
+                str(self.generated_binary_file),
+                "-std=gnu99",
+                "-g",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-Wcast-align",
+                "-Wconversion",
+                "-Wfloat-equal",
+                "-Wformat=2",
+                "-Winline",
+                "-Wlogical-op",
+                "-Wmissing-prototypes",
+                "-Wno-missing-braces",
+                "-Wno-missing-field-initializers",
+                "-Wold-style-definition",
+                "-Wpointer-arith",
+                "-Wredundant-decls",
+                "-Wshadow",
+                "-Wstrict-prototypes",
+                "-Wswitch-default",
+                "-Wswitch-enum",
+                "-Wundef",
+                "-Wunreachable-code",
+            ] + c_files
+
+            exit_code = subprocess.run(command).returncode
 
             if exit_code != 0:
                 return exit_code
 
         if run_binary:  # pragma: nocover
-            return subprocess.run(["./generated"]).returncode
+            return subprocess.run([self.generated_binary_file]).returncode
 
         return 0
 

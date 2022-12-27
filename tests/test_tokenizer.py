@@ -35,7 +35,6 @@ def test_tokenizer_parts_add_up(file: Path) -> None:
             ">=", TokenType.IDENTIFIER, id="fixed_size_with_shorter_substring"
         ),
         pytest.param("// comment", TokenType.COMMENT, id="comment"),
-        pytest.param("#!/usr/bin/env aaa", TokenType.SHEBANG, id="shebang"),
         pytest.param("123", TokenType.INTEGER, id="positive_integer"),
         pytest.param("-123", TokenType.INTEGER, id="negative_integer"),
         pytest.param("AaBb_YyZz", TokenType.IDENTIFIER, id="identifier"),
@@ -60,11 +59,7 @@ def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> Non
 
     tokens = tokenizer.run()
 
-    if expected_token_type in [
-        TokenType.WHITESPACE,
-        TokenType.COMMENT,
-        TokenType.SHEBANG,
-    ]:
+    if expected_token_type in [TokenType.WHITESPACE, TokenType.COMMENT]:
         assert 0 == len(tokens)
 
     else:

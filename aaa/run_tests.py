@@ -33,9 +33,8 @@ class TestRunner:
             print(f"Found {len(self.exceptions)} error(s).", file=sys.stderr)
             return 1
 
-        return Runner.without_file(
-            main_file_code, self.parsed_files, self.verbose
-        ).run()
+        runner = Runner.without_file(main_file_code, self.parsed_files, self.verbose)
+        return runner.run(None, True, None, True)
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.path, recursive=True)
