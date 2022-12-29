@@ -1,5 +1,4 @@
 import subprocess
-import sys
 from glob import glob
 from hashlib import sha256
 from pathlib import Path
@@ -67,10 +66,6 @@ class Transpiler:
     def run(self, compile: bool, run_binary: bool) -> int:
         code = self._generate_c_file()
         self.generated_c_file.write_text(code)
-
-        if run_binary and not compile:  # pragma: nocover
-            print("Can't run binary without (re-)compiling!", file=sys.stderr)
-            return 1
 
         if compile:  # pragma: nocover
             c_files = [str(self.generated_c_file)] + glob("./c/*.c")
