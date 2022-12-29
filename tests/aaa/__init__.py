@@ -1,8 +1,9 @@
 import os
+import subprocess
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
-from tempfile import TemporaryDirectory, gettempdir
+from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from typing import Dict, List, Sequence, Tuple, Type
 
 from aaa import AaaException
@@ -39,9 +40,17 @@ def check_aaa_full_source_multi_file(
         main_path = dir_path / "main.aaa"
         runner = Runner(main_path, None, False)
 
+        binary_path = Path(NamedTemporaryFile(delete=False).name)
+
         with redirect_stdout(StringIO()) as stdout:
             with redirect_stderr(StringIO()) as stderr:
-                runner.run(None, True, None, True)
+                runner_exit_code = runner.run(None, True, binary_path, False)
+
+        if runner_exit_code == 0:
+            process = subprocess.run([str(binary_path)], capture_output=True)
+
+            stdout.write(process.stdout.decode("utf-8"))
+            stderr.write(process.stderr.decode("utf-8"))
 
         exception_types = list(map(type, runner.exceptions))
 
