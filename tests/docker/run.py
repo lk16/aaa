@@ -19,29 +19,25 @@ if __name__ == "__main__":
 
 
 def run(source: str, skip_valgrind: bool = False) -> Tuple[str, str, int]:
-    binary_path = Path(NamedTemporaryFile(delete=False).name)
+    binary = NamedTemporaryFile(delete=False).name
     source_path = Path(__file__).parent / "src" / source
 
     runner = Runner(source_path, None, False)
-    exit_code = runner.run(None, True, binary_path, False)
+    exit_code = runner.run(None, True, binary, False)
     assert 0 == exit_code
 
-    process = subprocess.run([str(binary_path)], capture_output=True, timeout=2)
+    process = subprocess.run([binary], capture_output=True, timeout=2)
 
     stdout = process.stdout.decode("utf-8")
     stderr = process.stderr.decode("utf-8")
     exit_code = process.returncode
 
-    if exit_code == 0:
-        command = [
-            "valgrind",
-            "--error-exitcode=1",
-            "--leak-check=full",
-            str(binary_path),
-        ]
+    if exit_code == 0 and not skip_valgrind:
+        command = ["valgrind", "--error-exitcode=1", "--leak-check=full", binary]
         process = subprocess.run(command, capture_output=True, timeout=2)
 
-        if process.returncode != 0 and not skip_valgrind:
+        if process.returncode != 0:
+            print(process.stdout.decode())
             print(process.stderr.decode(), file=sys.stderr)
             assert False, "Valgrind found memory errors"
 
@@ -118,10 +114,8 @@ def test_chdir(source: str, expected_stdout: str) -> None:
     assert expected_stdout == stdout
     assert "" == stderr
     assert 0 == exit_code
-    os.execve
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize(
     ["source", "expected_stdout", "skip_valgrind"],
     [
@@ -134,7 +128,6 @@ def test_execve(source: str, expected_stdout: str, skip_valgrind: bool) -> None:
     assert expected_stdout == stdout
     assert "" == stderr
     assert 0 == exit_code
-    os.execve
 
 
 # TODO add test for execve

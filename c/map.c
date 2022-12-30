@@ -273,6 +273,7 @@ struct aaa_map_iter *aaa_map_iter_new(struct aaa_map *map) {
 
 void aaa_map_iter_dec_ref(struct aaa_map_iter *iter) {
     if (aaa_ref_count_dec(&iter->ref_count) == 0) {
+        aaa_map_dec_ref(iter->map);
         free(iter);
     }
 }

@@ -40,14 +40,14 @@ def check_aaa_full_source_multi_file(
         main_path = dir_path / "main.aaa"
         runner = Runner(main_path, None, False)
 
-        binary_path = Path(NamedTemporaryFile(delete=False).name)
+        binary = NamedTemporaryFile(delete=False).name
 
         with redirect_stdout(StringIO()) as stdout:
             with redirect_stderr(StringIO()) as stderr:
-                runner_exit_code = runner.run(None, True, binary_path, False)
+                runner_exit_code = runner.run(None, True, binary, False)
 
         if runner_exit_code == 0:
-            process = subprocess.run([str(binary_path)], capture_output=True)
+            process = subprocess.run([binary], capture_output=True)
 
             stdout.write(process.stdout.decode("utf-8"))
             stderr.write(process.stderr.decode("utf-8"))

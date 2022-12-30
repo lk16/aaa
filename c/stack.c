@@ -987,8 +987,26 @@ void aaa_stack_execve(struct aaa_stack *stack) {
 
     execve(path, argv, env);
 
-    // NOTE: if execve() succeeds, it doesn't return
-    // It can only return an error.
+    // NOTE: execve() only returns when it fails.
+
+    for (size_t i = 0; i < argv_length; i++) {
+        free(argv[i]);
+    }
+
+    free(argv);
+
+    for (size_t i = 0; i < env_length; i++) {
+        free(env[i]);
+    }
+
+    free(env);
+
+    aaa_map_iter_dec_ref(env_iter);
+
+    aaa_string_dec_ref(path_str);
+    aaa_vector_dec_ref(argv_vec);
+    aaa_map_dec_ref(env_map);
+
     aaa_stack_push_bool(stack, false);
 }
 

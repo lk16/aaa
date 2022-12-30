@@ -1,8 +1,8 @@
 fn main {
-    "/usr/bin/true"
+    "/bin/true"
 
     vec[str]
-    dup "/usr/bin/true" vec:push
+    dup "/bin/true" vec:push
 
     environ
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env -S python3 -u
 
 import subprocess
-import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Optional
@@ -20,19 +19,41 @@ def cli() -> None:
 
 @cli.command()
 @click.argument("code", type=str)
+@click.option("-c", "--compile", is_flag=True)
+@click.option("-r", "--run", is_flag=True)
+@click.option("--c-file")
+@click.option("-o", "--binary")
 @click.option("-v", "--verbose", is_flag=True)
-def cmd(code: str, verbose: bool) -> None:
+def cmd(
+    code: str,
+    compile: bool,
+    run: bool,
+    verbose: bool,
+    c_file: Optional[str],
+    binary: Optional[str],
+) -> None:
     runner = Runner.without_file(code, None, verbose)
-    exit_code = runner.run(None, True, None, True)
+    exit_code = runner.run(c_file, compile, binary, run)
     exit(exit_code)
 
 
 @cli.command()
 @click.argument("path", type=click.Path(exists=True))
+@click.option("-c", "--compile", is_flag=True)
+@click.option("-r", "--run", is_flag=True)
+@click.option("--c-file")
+@click.option("-o", "--binary")
 @click.option("-v", "--verbose", is_flag=True)
-def run(path: str, verbose: bool) -> None:
+def run(
+    path: str,
+    compile: bool,
+    run: bool,
+    verbose: bool,
+    c_file: Optional[str],
+    binary: Optional[str],
+) -> None:
     runner = Runner(Path(path), None, verbose)
-    exit_code = runner.run(None, True, None, True)
+    exit_code = runner.run(c_file, compile, binary, run)
     exit(exit_code)
 
 
@@ -71,21 +92,6 @@ def test(
     c_file: Optional[str],
     binary: Optional[str],
 ) -> None:
-    if c_file is not None and not c_file.endswith(".c"):
-        print("Output C file should have a .c extension.", file=sys.stderr)
-        exit(1)
-
-    if binary is not None and not compile:
-        print(
-            "Specifying binary path without compiling does not make sense.",
-            file=sys.stderr,
-        )
-        exit(1)
-
-    if run and not compile:
-        print("Can't run binary without (re-)compiling!", file=sys.stderr)
-        exit(1)
-
     test_runner = TestRunner(Path(path), verbose)
     exit_code = test_runner.run(c_file, compile, binary, run)
     exit(exit_code)

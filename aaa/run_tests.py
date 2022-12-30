@@ -36,16 +36,7 @@ class TestRunner:
             return 1
 
         runner = Runner.without_file(main_file_code, self.parsed_files, self.verbose)
-
-        generated_c_file: Optional[Path] = None
-        if c_file:
-            generated_c_file = Path(c_file).resolve()
-
-        generated_binary_file: Optional[Path] = None
-        if binary:
-            generated_binary_file = Path(binary).resolve()
-
-        return runner.run(generated_c_file, compile, generated_binary_file, run)
+        return runner.run(c_file, compile, binary, run)
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.tests_root, recursive=True)

@@ -51,12 +51,30 @@ class Runner:
         return Path(stdlib_folder) / "builtins.aaa"
 
     def run(
-        self,
-        generated_c_file: Optional[Path],
-        compile: bool,
-        generated_binary_file: Optional[Path],
-        run: bool,
+        self, c_file: Optional[str], compile: bool, binary: Optional[str], run: bool
     ) -> int:
+        if c_file is not None and not str(c_file).endswith(".c"):
+            print("Output C file should have a .c extension.", file=sys.stderr)
+            exit(1)
+
+        if binary is not None and not compile:
+            print(
+                "Specifying binary path without compiling does not make sense.",
+                file=sys.stderr,
+            )
+            exit(1)
+
+        if run and not compile:
+            print("Can't run binary without (re-)compiling!", file=sys.stderr)
+            exit(1)
+
+        generated_c_file: Optional[Path] = None
+        if c_file:
+            generated_c_file = Path(c_file).resolve()
+
+        generated_binary_file: Optional[Path] = None
+        if binary:
+            generated_binary_file = Path(binary).resolve()
 
         try:
             stdlib_path = self._get_stdlib_path()

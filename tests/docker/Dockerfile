@@ -20,6 +20,7 @@ COPY stdlib /app/stdlib
 COPY aaa /app/aaa
 COPY c /app/c
 COPY tests /app/tests
+COPY manage.py /app
 
 ENV AAA_STDLIB_PATH=/app/stdlib
 
