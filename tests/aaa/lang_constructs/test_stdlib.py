@@ -10,7 +10,7 @@ def test_stdlib_transpiling() -> None:
     stdlib_path = Path(os.environ["AAA_STDLIB_PATH"])
 
     test_runner = TestRunner(stdlib_path, False)
-    main_test_code = test_runner.build_main_test_file()
+    main_test_code = test_runner._build_main_test_file()
 
     main_test_file = Path(gettempdir()) / NamedTemporaryFile(delete=False).name
     main_test_file.write_text(main_test_code)

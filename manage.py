@@ -79,29 +79,12 @@ def test(
         )
         exit(1)
 
-    if run and not compile:  # pragma: nocover
+    if run and not compile:
         print("Can't run binary without (re-)compiling!", file=sys.stderr)
         exit(1)
 
-    # TODO move building of main test file to Runner
     test_runner = TestRunner(Path(path), verbose)
-    main_test_code = test_runner.build_main_test_file()
-
-    main_test_file = Path(NamedTemporaryFile(delete=False).name)
-    main_test_file.write_text(main_test_code)
-
-    runner = Runner(main_test_file, test_runner.parsed_files, verbose)
-
-    # TODO move a lot of this code out of manage.py
-    generated_c_file: Optional[Path] = None
-    if c_file:
-        generated_c_file = Path(c_file).resolve()
-
-    generated_binary_file: Optional[Path] = None
-    if binary:
-        generated_binary_file = Path(binary).resolve()
-
-    exit_code = runner.run(generated_c_file, compile, generated_binary_file, run)
+    exit_code = test_runner.run(c_file, compile, binary, run)
     exit(exit_code)
 
 

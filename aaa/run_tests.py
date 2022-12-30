@@ -2,7 +2,7 @@ import os
 import sys
 from glob import glob
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from aaa import AaaException
 from aaa.parser.exceptions import ParserBaseException
@@ -15,16 +15,18 @@ class TestRunner:
     # Tell pytest to ignore this class
     __test__ = False
 
-    def __init__(self, path: Path, verbose: bool) -> None:
-        self.path = path
+    def __init__(self, tests_root: Path, verbose: bool) -> None:
+        self.tests_root = tests_root
         self.builtins_path = Path(os.environ["AAA_STDLIB_PATH"]) / "builtins.aaa"
         self.exceptions: List[AaaException] = []
         self.parsed_files: Dict[Path, ParsedFile] = {}
         self.test_functions: List[Function] = []
         self.verbose = verbose
 
-    def run(self) -> int:
-        main_file_code = self.build_main_test_file()
+    def run(
+        self, c_file: Optional[str], compile: bool, binary: Optional[str], run: bool
+    ) -> int:
+        main_file_code = self._build_main_test_file()
 
         if self.exceptions:
             for exception in self.exceptions:
@@ -34,11 +36,20 @@ class TestRunner:
             return 1
 
         runner = Runner.without_file(main_file_code, self.parsed_files, self.verbose)
-        return runner.run(None, True, None, True)
+
+        generated_c_file: Optional[Path] = None
+        if c_file:
+            generated_c_file = Path(c_file).resolve()
+
+        generated_binary_file: Optional[Path] = None
+        if binary:
+            generated_binary_file = Path(binary).resolve()
+
+        return runner.run(generated_c_file, compile, generated_binary_file, run)
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
-        glob_paths = glob("**/test_*.aaa", root_dir=self.path, recursive=True)
-        test_files = {(self.path / path).resolve() for path in glob_paths}
+        glob_paths = glob("**/test_*.aaa", root_dir=self.tests_root, recursive=True)
+        test_files = {(self.tests_root / path).resolve() for path in glob_paths}
 
         parsed_files: Dict[Path, ParsedFile] = {}
 
@@ -74,7 +85,7 @@ class TestRunner:
 
         return f"test_{alias}"
 
-    def build_main_test_file(
+    def _build_main_test_file(
         self,
     ) -> str:
         self.parsed_files = self._get_parsed_test_files()
