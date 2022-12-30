@@ -3,6 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from time import time
 from typing import Tuple
 
 import pytest
@@ -25,7 +26,7 @@ def run(source: str) -> Tuple[str, str, int]:
     exit_code = runner.run(None, True, binary_path, False)
     assert 0 == exit_code
 
-    process = subprocess.run([str(binary_path)], capture_output=True)
+    process = subprocess.run([str(binary_path)], capture_output=True, timeout=2)
 
     stdout = process.stdout.decode("utf-8")
     stderr = process.stderr.decode("utf-8")
@@ -33,16 +34,83 @@ def run(source: str) -> Tuple[str, str, int]:
 
 
 @pytest.mark.parametrize(
-    ["source", "expected_stdout", "expected_stderr", "expected_exitcode"],
+    ["source", "expected_stderr", "expected_exitcode"],
     [
-        pytest.param("assert_true.aaa", "", "", 0, id="true"),
-        pytest.param("assert_false.aaa", "", "Assertion failure!\n", -6, id="false"),
+        pytest.param("assert_true.aaa", "", 0, id="true"),
+        pytest.param("assert_false.aaa", "Assertion failure!\n", -6, id="false"),
     ],
 )
-def test_assert(
-    source: str, expected_stdout: str, expected_stderr: str, expected_exitcode: int
-) -> None:
+def test_assert(source: str, expected_stderr: str, expected_exitcode: int) -> None:
     stdout, stderr, exit_code = run(source)
-    assert expected_stdout == stdout
+    assert "" == stdout
     assert expected_stderr == stderr
     assert expected_exitcode == exit_code
+
+
+@pytest.mark.parametrize(
+    ["source", "expected_exitcode"],
+    [pytest.param("exit_0.aaa", 0, id="0"), pytest.param("exit_1.aaa", 1, id="1")],
+)
+def test_exit(source: str, expected_exitcode: int) -> None:
+    stdout, stderr, exit_code = run(source)
+    assert "" == stdout
+    assert "" == stderr
+    assert expected_exitcode == exit_code
+
+
+def test_time() -> None:
+    stdout, stderr, exit_code = run("time.aaa")
+
+    printed_time = int(stdout.strip())
+    current_time = int(time())
+
+    assert current_time - printed_time in [0, 1]
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_gettimeofday() -> None:
+    stdout, stderr, exit_code = run("gettimeofday.aaa")
+
+    printed = stdout.strip().split()
+    printed_usec = int(printed[0])
+    printed_sec = int(printed[1])
+
+    current_time = int(time())
+    assert current_time - printed_sec in [0, 1]
+    assert printed_usec in range(1_000_000)
+
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+# TODO add test for getcwd
+# TODO add test for chdir
+
+# TODO add test for execve
+# TODO add test for fork
+# TODO add test for waitpid
+
+# TODO add test for getpid
+# TODO add test for getppid
+
+# TODO add test for environ
+# TODO add test for getenv
+# TODO add test for setenv
+# TODO add test for unsetenv
+
+# TODO add test for open
+# TODO add test for read
+# TODO add test for write
+# TODO add test for close
+
+# TODO add test for socket
+# TODO add test for bind
+# TODO add test for listen
+# TODO add test for accept
+
+# TODO add test for connect
+
+# TODO add test for fsync
+
+# TODO add test for unlink

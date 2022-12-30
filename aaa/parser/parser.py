@@ -24,11 +24,11 @@ class Parser:
         self.verbose = verbose  # TODO use
 
     def run(self) -> ParserOutput:
-        self.parsed[self.builtins_path] = self._parse(self.builtins_path, False)
+        self.parsed[self.builtins_path] = self.parse(self.builtins_path, False)
 
         for file in self.parse_queue:
             try:
-                self.parsed[file] = self._parse(file, True)
+                self.parsed[file] = self.parse(file, True)
             except ParserBaseException as e:
                 self.exceptions.append(e)
             else:
@@ -43,7 +43,7 @@ class Parser:
             entrypoint=self.entrypoint,
         )
 
-    def _parse(self, file: Path, is_regular_file: bool) -> ParsedFile:
+    def parse(self, file: Path, is_regular_file: bool) -> ParsedFile:
         tokens = Tokenizer(file, self.verbose).run()
         parser = SingleFileParser(file, tokens, self.verbose)
 

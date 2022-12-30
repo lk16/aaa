@@ -63,7 +63,7 @@ class TestRunner:
 
     def _parse_file(self, file: Path) -> ParsedFile:
         parser = Parser(file, self.builtins_path, None, self.verbose)
-        return parser._parse(file, True)
+        return parser.parse(file, True)
 
     def _get_test_functions(self) -> List[Function]:
         test_functions: List[Function] = []

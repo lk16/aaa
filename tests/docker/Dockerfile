@@ -13,10 +13,10 @@ COPY pyproject.toml poetry.lock /app/
 RUN poetry config virtualenvs.create false && \
     poetry install --no-interaction
 
-COPY tests /app/tests
-COPY aaa /app/aaa
 COPY stdlib /app/stdlib
+COPY aaa /app/aaa
 COPY c /app/c
+COPY tests /app/tests
 
 ENV AAA_STDLIB_PATH=/app/stdlib
 
