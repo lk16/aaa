@@ -169,7 +169,8 @@ void aaa_stack_assert(struct aaa_stack *stack) {
     bool value = aaa_stack_pop_bool(stack);
 
     if (!value) {
-        printf("Assertion failure!\n");
+        fprintf(stderr, "Assertion failure!\n");
+        fflush(stderr);
         abort();
     }
 }

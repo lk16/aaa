@@ -45,12 +45,15 @@ def runtests() -> None:
         "pytest --cov=aaa --cov-report=term-missing --pdb -x --lf --nf",
         f"./manage.py test stdlib/ --compile --binary {binary_path}",
         f"valgrind --error-exitcode=1 --leak-check=full {binary_path}",
+        "docker build -f tests/docker/Dockerfile -t aaa-tests .",
+        "docker run aaa-tests",
     ]
 
     for command in commands:
+        print(f"Running: {command}")
         proc = subprocess.run(command.split())
         if proc.returncode != 0:
-            raise ClickException(f'Command "{command}" failed.')
+            raise ClickException(f"Command failed: {command}")
 
 
 @cli.command()
