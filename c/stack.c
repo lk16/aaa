@@ -986,6 +986,10 @@ void aaa_stack_execve(struct aaa_stack *stack) {
     env[env_length] = NULL;
 
     execve(path, argv, env);
+
+    // NOTE: if execve() succeeds, it doesn't return
+    // It can only return an error.
+    aaa_stack_push_bool(stack, false);
 }
 
 void aaa_stack_fork(struct aaa_stack *stack) {

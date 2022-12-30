@@ -1,0 +1,7 @@
+fn main {
+    "/tmp" chdir
+    assert
+
+    getcwd .
+    "\n" .
+}

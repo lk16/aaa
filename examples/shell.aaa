@@ -8,6 +8,12 @@ fn run_process args input as str {
         input " " str:split dup 0 vec:get swap
         environ
         execve
+
+        // This is unreachable if execve succeeds
+        drop
+        "Command failed\n" .
+
+        1 exit
     }
 }
 

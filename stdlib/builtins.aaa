@@ -91,7 +91,7 @@ fn str:to_int     args s as str                                return int, bool
 // Syscall list: http://faculty.nps.edu/cseagle/assembly/sys_call.html
 
 fn environ return map[str, str]
-fn execve args path as str, argv as vec[str], env as map[str, str]
+fn execve args path as str, argv as vec[str], env as map[str, str] return bool
 fn exit args code as int
 fn fork return int
 fn getcwd return str

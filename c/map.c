@@ -283,42 +283,51 @@ void aaa_map_iter_inc_ref(struct aaa_map_iter *iter) {
 
 bool aaa_map_iter_next(struct aaa_map_iter *iter, struct aaa_variable **key,
                        struct aaa_variable **value) {
-    while (true) {
-        if (iter->next_bucket >= iter->map->bucket_count) {
-            if (*key) {
-                aaa_variable_dec_ref(*key);
-                *key = NULL;
-            }
+    if (iter->next_bucket >= iter->map->bucket_count) {
+        // We are beyond the last bucket
+        if (*key) {
+            aaa_variable_dec_ref(*key);
+            *key = NULL;
 
-            if (*value) {
-                aaa_variable_dec_ref(*value);
-                *value = NULL;
-            }
-
-            return false;
+            aaa_variable_dec_ref(*value);
+            *value = NULL;
         }
+        return false;
+    }
 
+    while (true) {
         if (!iter->next_item) {
+            // We are at the end of a bucket
             iter->next_item = iter->map->buckets[iter->next_bucket];
             iter->next_bucket++;
         }
 
-        break;
+        if (iter->next_item) {
+            if (*key) {
+                aaa_variable_dec_ref(*key);
+                aaa_variable_dec_ref(*value);
+            }
+
+            *key = iter->next_item->key;
+            aaa_variable_inc_ref(*key);
+
+            *value = iter->next_item->value;
+            aaa_variable_inc_ref(*value);
+
+            iter->next_item = iter->next_item->next;
+            return true;
+        }
+
+        if (iter->next_bucket >= iter->map->bucket_count) {
+            // We are at the end of a bucket and there are no more items
+            if (*key) {
+                aaa_variable_dec_ref(*key);
+                *key = NULL;
+
+                aaa_variable_dec_ref(*value);
+                *value = NULL;
+            }
+            return false;
+        }
     }
-
-    if (*key) {
-        aaa_variable_dec_ref(*key);
-    }
-
-    if (*value) {
-        aaa_variable_dec_ref(*value);
-    }
-
-    *key = iter->next_item->key;
-    *value = iter->next_item->value;
-    iter->next_item = iter->next_item->next;
-
-    aaa_variable_inc_ref(*key);
-    aaa_variable_inc_ref(*value);
-    return true;
 }

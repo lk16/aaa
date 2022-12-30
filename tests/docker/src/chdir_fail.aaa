@@ -1,0 +1,7 @@
+fn main {
+    "/non-existent" chdir
+    not assert
+
+    getcwd .
+    "\n" .
+}

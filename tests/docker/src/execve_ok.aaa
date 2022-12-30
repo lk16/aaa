@@ -1,0 +1,13 @@
+fn main {
+    "/usr/bin/true"
+
+    vec[str]
+    dup "/usr/bin/true" vec:push
+
+    environ
+
+    execve
+
+    // if all goes well, this is unreachable
+    assert
+}
