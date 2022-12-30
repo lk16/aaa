@@ -1020,13 +1020,16 @@ void aaa_stack_waitpid(struct aaa_stack *stack) {
     int options = aaa_stack_pop_int(stack);
     int pid = aaa_stack_pop_int(stack);
 
-    int changed_pid = waitpid(pid, NULL, options);
+    int status;
+    int changed_pid = waitpid(pid, &status, options);
 
     if (changed_pid == 0) {
+        aaa_stack_push_int(stack, 0);
         aaa_stack_push_int(stack, 0);
         aaa_stack_push_bool(stack, false);
     } else {
         aaa_stack_push_int(stack, changed_pid);
+        aaa_stack_push_int(stack, status);
         aaa_stack_push_bool(stack, true);
     }
 }

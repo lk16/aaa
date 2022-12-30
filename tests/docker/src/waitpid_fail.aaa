@@ -1,0 +1,24 @@
+fn main {
+    fork
+    if dup 0 = {
+        drop
+
+        "/bin/false"
+
+        vec[str]
+        dup "/bin/false" vec:push
+
+        environ
+
+        execve
+
+        // unreachable if execve succeeds
+        not assert
+    } else {
+        0 waitpid
+
+        drop
+        1 = assert
+        drop
+    }
+}

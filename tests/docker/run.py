@@ -130,8 +130,13 @@ def test_execve(source: str, expected_stdout: str, skip_valgrind: bool) -> None:
     assert 0 == exit_code
 
 
-# TODO add test for execve
-# TODO add test for fork
+def test_fork() -> None:
+    stdout, stderr, exit_code = run("fork.aaa")
+    assert stdout in ["parent\nchild\n", "child\nparent\n"]
+    assert "" == stderr
+    assert 0 == exit_code
+
+
 # TODO add test for waitpid
 
 # TODO add test for getpid

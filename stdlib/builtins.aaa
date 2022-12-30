@@ -115,5 +115,5 @@ fn open args path as str, flag as int, mode as int return int, bool
 fn read args fd as int, n as int return str, bool
 fn socket args family as int, type_ as int, protocol as int return int, bool
 fn unlink args path as str return bool
-fn waitpid args pid as int, options as int return int, bool
+fn waitpid args pid as int, options as int return int, int, bool
 fn write args fd as int, data as str return int, bool
