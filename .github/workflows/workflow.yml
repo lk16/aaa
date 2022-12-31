@@ -46,7 +46,7 @@ jobs:
       run: |
         poetry install
         export AAA_STDLIB_PATH=$(pwd)/stdlib
-        poetry run pytest --cov=aaa --cov-report=term-missing -x -vv
+        poetry run pytest --color=yes --cov=aaa --cov-report=term-missing -x -vv
     - name: Run C tests
       run : |
         export AAA_STDLIB_PATH=$(pwd)/stdlib
