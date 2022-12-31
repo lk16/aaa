@@ -180,14 +180,11 @@ class Transpiler:
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"aaa_user_func_{hash}"
 
-    def _generate_c_member_function_name_from_parts(
-        self, var_type: VariableType, func_name: str
-    ) -> str:
+    def _get_member_function(self, var_type: VariableType, func_name: str) -> Function:
         # TODO this assumes the func is defined in same file as type
         file = var_type.type.position.file
         name = f"{var_type.name}:{func_name}"
-        function = self.functions[(file, name)]
-        return self._generate_c_function_name(function)
+        return self.functions[(file, name)]
 
     def _generate_c_function(self, function: Function) -> str:
         indentation = "    "
@@ -296,9 +293,9 @@ class Transpiler:
         while (true) {
             dup iterator
             next
-            if dup not {
-                drop everything next added
-                drop iterable
+            if popped boolean is true {
+                drop everything `next` added
+                drop iterator
                 break
             }
             loop body
@@ -306,8 +303,37 @@ class Transpiler:
         drop iterable
         """
 
-        print("_generate_c_foreach_loop not implemented")  # TODO
-        exit(1)
+        # TODO tell Transpiler what the iterable_type is
+        iterable_type: VariableType
+
+        iter_func = self._get_member_function(iterable_type, "iter")
+        iterator_type = iter_func.return_types[0]
+        next_func = self._get_member_function(iterator_type, "next")
+
+        dup = self._generate_c_builtin_function_name_from_str("dup")
+        drop = self._generate_c_builtin_function_name_from_str("drop")
+        iter = self._generate_c_function_name(iter_func)
+        next = self._generate_c_function_name(next_func)
+        break_drop_count = len(next_func.return_types)
+
+        output = ""
+        output += f"{self._indent(indent)}{dup}(stack);\n"
+        output += f"{self._indent(indent)}{iter}(stack);\n"
+        output += f"{self._indent(indent)}while (true) {{\n"
+        output += f"{self._indent(indent+1)}{dup}(stack);\n"
+        output += f"{self._indent(indent+1)}{next}(stack);\n"
+        output += f"{self._indent(indent+1)}if (!aaa_stack_pop_bool(stack)) {{\n"
+
+        for _ in range(break_drop_count):
+            output += f"{self._indent(indent+2)}{drop}(stack);\n"
+
+        output += f"{self._indent(indent+2)}break;\n"
+        output += f"{self._indent(indent+1)}}}\n"
+        output += self._generate_c_function_body(foreach_loop.body, indent + 1)
+        output += f"{self._indent(indent)}}}\n"
+        output += f"{self._indent(indent)}{drop}(stack);\n"
+
+        return output
 
     def _generate_c_call_function_code(
         self, call_func: CallFunction, indent: int
