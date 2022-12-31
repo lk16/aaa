@@ -12,7 +12,7 @@ def test_readme_command(capfd: CaptureFixture[str]) -> None:
 
     with open("README.md") as readme:
         for line in readme:
-            if 'manage.py cmd \'fn main { "a"' in line:
+            if 'manage.py cmd -cr \'fn main { "a"' in line:
                 readme_commands.append(line)
 
     command = '"a" 0 while dup 3 < { over . 1 + } drop drop "\\n" .'

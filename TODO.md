@@ -1,6 +1,5 @@
 # TODO
 
-
 ### Transpiling to C
 - [x] Implement `repr`
 - [x] Update python tests to use `repr` instead of `.`
@@ -14,22 +13,7 @@
 - [x] Add some C source code linter
 - [x] Add all of that to CI
 - [ ] Add transpiling to `README.md`
-
-### Tests
-- add tests for all instructions
-- add tests for vscode extension
-- add tests that stackbug doesn't happen anymore:
-```
-fn main {
-    while true {
-        if false {
-            nop
-        } else {
-            0 drop
-        }
-    }
-}
-```
+- [ ] Add remaining tests for syscalls
 
 ### Containers
 - Check that key type is hashable (currently: not a `vec`, `map` or `set`)
@@ -43,7 +27,6 @@ fn main {
 ### Support syscalls
 - Add binary or/and/not integer operations
 - Consider adding buffer type
-- Add network-related functions: socket, bind, listen, accept, ...
 
 ### Language features
 - `float` type

@@ -12,34 +12,29 @@ The following tools for the Aaa language can be found is this repo
 ### Examples
 ```sh
 # Run the obligatory hello world example
-./manage.py cmd 'fn main { "Hello world\n" . }'
+./manage.py cmd -cr 'fn main { "Hello world\n" . }'
 
 # Print "aaa\n" using a loop to count to 3
-./manage.py cmd 'fn main { "a" 0 while dup 3 < { over . 1 + } drop drop "\n" . }'
+./manage.py cmd -cr 'fn main { "a" 0 while dup 3 < { over . 1 + } drop drop "\n" . }'
 
 # Run code from a file. Implements the famous fizzbuzz interview question.
-./manage.py run examples/fizzbuzz.aaa
+./manage.py run -cr examples/fizzbuzz.aaa
 
 # Run unit tests
 ./manage.py runtests
 
 # Run bare-bones HTTP server in Aaa
-./manage.py run examples/http_server.aaa
+./manage.py run -cr examples/http_server.aaa
 
 # Send request from different shell
 curl http://localhost:8080
 ```
 
 ### Aaa features
-- types and static type checking: (`int`, `bool`, `str`)
-- integers and integer instructions (`+`, `-`, `*`, `/`, `%`)
-- booleans and boolean instructions (`and`, `or`, `not`)
-- strings and string instructions (`+`, `=`)
-- stack instructions (`drop`, `dup`, `swap`, `over`, `rot`)
-- branching (`if`, `else`)
-- loops (`while`)
-- functions (`fn`)
-- comments (`//`)
+- elementary types (`int`, `bool`, `str`)
+- container types (`vec`, `map`)
+- type checking
+- branching, loops (`if`, `else`, `while`)
 - multi-file support (`import`)
 - [upcoming](./TODO.md)
 
@@ -75,7 +70,7 @@ poetry shell
 export AAA_STDLIB_PATH=$(pwd)/stdlib
 
 # Run hello world program
-./manage.py cmd 'fn main { "Hello world\n" . }'
+./manage.py cmd -cr 'fn main { "Hello world\n" . }'
 
 # Run tests
 ./manage.py runtests
