@@ -113,3 +113,7 @@ void aaa_stack_setenv(struct aaa_stack *stack);
 void aaa_stack_time(struct aaa_stack *stack);
 void aaa_stack_unlink(struct aaa_stack *stack);
 void aaa_stack_unsetenv(struct aaa_stack *stack);
+void aaa_stack_vec_iter(struct aaa_stack *stack);
+void aaa_stack_vec_iter_next(struct aaa_stack *stack);
+void aaa_stack_map_iter(struct aaa_stack *stack);
+void aaa_stack_map_iter_next(struct aaa_stack *stack);

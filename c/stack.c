@@ -1208,3 +1208,20 @@ void aaa_stack_unsetenv(struct aaa_stack *stack) {
 
     aaa_string_dec_ref(name);
 }
+
+void aaa_stack_vec_iter(struct aaa_stack *stack) {
+    (void)stack; // TODO
+}
+
+void aaa_stack_vec_iter_next(struct aaa_stack *stack) {
+    (void)stack; // TODO
+}
+
+void aaa_stack_map_iter(struct aaa_stack *stack) {
+    (void)stack; // TODO
+}
+
+void aaa_stack_map_iter_next(struct aaa_stack *stack) {
+    (void)stack; // TODO
+}
+
