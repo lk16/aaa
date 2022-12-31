@@ -24,6 +24,7 @@ from aaa.cross_referencer.models import (
     VariableType,
     WhileLoop,
 )
+from aaa.type_checker.models import TypeCheckerOutput
 
 AAA_C_BUILTIN_FUNCS = {
     "-": "aaa_stack_minus",
@@ -47,6 +48,7 @@ class Transpiler:
     def __init__(
         self,
         cross_referencer_output: CrossReferencerOutput,
+        type_checker_output: TypeCheckerOutput,
         generated_c_file: Optional[Path],
         generated_binary_file: Optional[Path],
         verbose: bool,
@@ -55,6 +57,7 @@ class Transpiler:
         self.functions = cross_referencer_output.functions
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
+        self.foreach_loop_stacks = type_checker_output.foreach_loop_stacks
         self.verbose = verbose  # TODO use
 
         self.generated_c_file = generated_c_file or Path(
@@ -303,8 +306,9 @@ class Transpiler:
         drop iterable
         """
 
-        # TODO tell Transpiler what the iterable_type is
-        iterable_type: VariableType
+        # If any of these next two lines fail, TypeChecker is broken.
+        stack = self.foreach_loop_stacks[foreach_loop.position]
+        iterable_type = stack[-1]
 
         iter_func = self._get_member_function(iterable_type, "iter")
         iterator_type = iter_func.return_types[0]

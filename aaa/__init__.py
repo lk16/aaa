@@ -23,6 +23,9 @@ class Position:
     def __str__(self) -> str:
         return f"{self.file}:{self.line}:{self.column}"
 
+    def __hash__(self) -> int:
+        return hash((self.file, self.line, self.column))
+
 
 class AaaException(Exception):
     ...

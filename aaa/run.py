@@ -86,10 +86,12 @@ class Runner:
 
             cross_referencer_output = CrossReferencer(parser_output, self.verbose).run()
 
-            TypeChecker(cross_referencer_output, self.verbose).run()
+            type_checker = TypeChecker(cross_referencer_output, self.verbose)
+            type_checker_output = type_checker.run()
 
             transpiler = Transpiler(
                 cross_referencer_output,
+                type_checker_output,
                 generated_c_file,
                 generated_binary_file,
                 self.verbose,

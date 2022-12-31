@@ -36,6 +36,7 @@ from aaa.type_checker.exceptions import (
     UnknownField,
     WhileLoopTypeError,
 )
+from aaa.type_checker.models import TypeCheckerOutput
 
 
 class TypeChecker:
@@ -48,9 +49,10 @@ class TypeChecker:
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
         self.exceptions: List[TypeCheckerException] = []
+        self.foreach_loop_stacks: Dict[Position, List[VariableType]] = {}
         self.verbose = verbose  # TODO use
 
-    def run(self) -> None:
+    def run(self) -> TypeCheckerOutput:
         for function in self.functions.values():
             if self._is_builtin(function):
                 # builtins can't be type-checked
@@ -59,9 +61,11 @@ class TypeChecker:
             checker = SingleFunctionTypeChecker(function, self)
 
             try:
-                checker.run()
+                foreach_loop_stacks = checker.run()
             except TypeCheckerException as e:
                 self.exceptions.append(e)
+
+            self.foreach_loop_stacks.update(foreach_loop_stacks)
 
         try:
             self._check_main_function()
@@ -70,6 +74,8 @@ class TypeChecker:
 
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
+
+        return TypeCheckerOutput(self.foreach_loop_stacks)
 
     def _is_builtin(self, function: Function) -> bool:
         return function.position.file == self.builtins_path
@@ -97,8 +103,9 @@ class SingleFunctionTypeChecker:
         self.types = type_checker.types
         self.functions = type_checker.functions
         self.builtins_path = type_checker.builtins_path
+        self.foreach_loop_stacks: Dict[Position, List[VariableType]] = {}
 
-    def run(self) -> None:
+    def run(self) -> Dict[Position, List[VariableType]]:
         if self.function.is_test():
             self._check_test_function()
 
@@ -110,6 +117,8 @@ class SingleFunctionTypeChecker:
 
         if computed_return_types != self.function.return_types:
             raise FunctionTypeError(self.function, computed_return_types)
+
+        return self.foreach_loop_stacks
 
     def _match_signature_items(
         self,
@@ -454,9 +463,9 @@ class SingleFunctionTypeChecker:
     def _check_foreach_loop(
         self, foreach_loop: ForeachLoop, type_stack: List[VariableType]
     ) -> List[VariableType]:
+        self.foreach_loop_stacks[foreach_loop.position] = copy(type_stack)
 
         type_stack_before = copy(type_stack)
-        print("  type_stack_before:", self._fmt_stack(type_stack_before))
 
         if not type_stack:
             # TODO missing iterable
@@ -465,7 +474,6 @@ class SingleFunctionTypeChecker:
         iterable_type = type_stack[-1]
 
         type_stack.append(iterable_type)
-        print(" duplicate iterable:", self._fmt_stack(type_stack))
 
         iter_func = self._lookup_function(iterable_type, "iter")
 
@@ -485,7 +493,6 @@ class SingleFunctionTypeChecker:
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(iter_func, [], dummy_path)
         type_stack = self._check_call_function(call_function, type_stack)
-        print("          call iter:", self._fmt_stack(type_stack))
 
         iterator_type = iter_func.return_types[0]
         next_func = self._lookup_function(iterator_type, "next")
@@ -508,13 +515,8 @@ class SingleFunctionTypeChecker:
         call_function = CallFunction(next_func, [], dummy_path)
 
         type_stack = self._check_call_function(call_function, type_stack)
-        print("          call next:", self._fmt_stack(type_stack))
-
         type_stack.pop()
-        print("drop condition bool:", self._fmt_stack(type_stack))
-
         type_stack = self._check_function_body(foreach_loop.body, type_stack)
-        print("           run body:", self._fmt_stack(type_stack))
 
         if type_stack != type_stack_before:
             # TODO type error
@@ -522,6 +524,5 @@ class SingleFunctionTypeChecker:
 
         # pop iterable
         type_stack.pop()
-        print("      drop iterable:", self._fmt_stack(type_stack))
 
         return type_stack
