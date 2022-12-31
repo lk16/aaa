@@ -1,0 +1,17 @@
+
+fn main {
+    vec[int]
+    dup 2 vec:push
+    dup 4 vec:push
+    dup 6 vec:push
+    dup 8 vec:push
+
+    foreach {
+        .
+        "\n" .
+    }
+
+    // TODO loop over map
+
+    // TODO pytest should run this example
+}

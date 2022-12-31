@@ -40,7 +40,7 @@ class BooleanLiteral(FunctionBodyItem):
         super().__init__(position)
 
 
-class Loop(FunctionBodyItem):
+class WhileLoop(FunctionBodyItem):
     def __init__(
         self, position: Position, condition: FunctionBody, body: FunctionBody
     ) -> None:
@@ -208,6 +208,12 @@ class FunctionName(FunctionBodyItem):
         if self.struct_name:
             return f"{self.struct_name.name}:{self.func_name.name}"
         return self.func_name.name
+
+
+class ForeachLoop(FunctionBodyItem):
+    def __init__(self, position: Position, body: FunctionBody) -> None:
+        self.body = body
+        super().__init__(position)
 
 
 class ParserOutput(AaaModel):

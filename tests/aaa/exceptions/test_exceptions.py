@@ -20,12 +20,12 @@ from aaa.type_checker.exceptions import (
     FunctionTypeError,
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
-    LoopTypeError,
     MainFunctionNotFound,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
     UnknownField,
+    WhileLoopTypeError,
 )
 from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
 
@@ -56,7 +56,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:1:17 Function main has a condition type error\n"
             + "stack before: \n"
             + " stack after: int bool\n",
-            id="condition-type-loop",
+            id="condition-type-while-loop",
         ),
         pytest.param(
             """
@@ -92,11 +92,11 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             "fn main { while true { 0 } }",
-            LoopTypeError,
-            "/foo/main.aaa:1:11 Function main has a stack modification inside loop body\n"
-            + "before loop: \n"
-            + " after loop: int\n",
-            id="loop-type",
+            WhileLoopTypeError,
+            "/foo/main.aaa:1:11 Function main has a stack modification inside while loop body\n"
+            + "before while loop: \n"
+            + " after while loop: int\n",
+            id="while-loop-type",
         ),
         pytest.param(
             'fn main { 3 " " + . }',

@@ -27,6 +27,7 @@ FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
     ("as", TokenType.AS),
     ("else", TokenType.ELSE),
     ("false", TokenType.FALSE),
+    ("foreach", TokenType.FOREACH),
     ("fn", TokenType.FUNCTION),
     ("from", TokenType.FROM),
     ("if", TokenType.IF),

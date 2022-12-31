@@ -50,6 +50,7 @@ ELSE:        "else"
 FROM:        "from"
 IF:          "if"
 WHILE:       "while"
+FOREACH:     "foreach"
 
 // keywords for builtin constants
 FALSE:       "false"
@@ -117,18 +118,20 @@ function_body_item: ( \
       literal
     | function_call
     | branch
-    | loop
+    | while_loop
     | struct_field_query
     | struct_field_update \
+    | foreach_loop
 )
 
 // --- branch ---
 
 branch: IF function_body BEGIN function_body _END [ELSE BEGIN function_body _END]
 
-// --- loop ---
+// --- loops ---
 
-loop: WHILE function_body BEGIN function_body _END
+while_loop: WHILE function_body BEGIN function_body _END
+foreach_loop: FOREACH BEGIN function_body END
 
 // --- identifier ---
 

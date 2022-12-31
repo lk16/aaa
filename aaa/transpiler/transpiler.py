@@ -16,11 +16,11 @@ from aaa.cross_referencer.models import (
     FunctionBody,
     FunctionBodyItem,
     IntegerLiteral,
-    Loop,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
     Type,
+    WhileLoop,
 )
 
 AAA_C_BUILTIN_FUNCS = {
@@ -231,7 +231,7 @@ class Transpiler:
             if not item.value:
                 bool_value = "false"
             return f"{indentation}aaa_stack_push_bool(stack, {bool_value});\n"
-        elif isinstance(item, Loop):
+        elif isinstance(item, WhileLoop):
             return self._generate_c_loop(item, indent)
         elif isinstance(item, CallFunction):
             return self._generate_c_call_function_code(item, indent)
@@ -255,9 +255,11 @@ class Transpiler:
         else:  # pragma: nocover
             assert False
 
-    def _generate_c_loop(self, loop: Loop, indent: int) -> str:
-        condition_code = self._generate_c_function_body(loop.condition, indent + 1)
-        body_code = self._generate_c_function_body(loop.body, indent + 1)
+    def _generate_c_loop(self, while_loop: WhileLoop, indent: int) -> str:
+        condition_code = self._generate_c_function_body(
+            while_loop.condition, indent + 1
+        )
+        body_code = self._generate_c_function_body(while_loop.body, indent + 1)
 
         return (
             f"{self._indent(indent)}while (true) {{\n"

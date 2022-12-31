@@ -12,6 +12,7 @@ from aaa.parser.models import (
     Argument,
     BooleanLiteral,
     Branch,
+    ForeachLoop,
     Function,
     FunctionBody,
     FunctionBodyItem,
@@ -20,13 +21,13 @@ from aaa.parser.models import (
     Import,
     ImportItem,
     IntegerLiteral,
-    Loop,
     ParsedFile,
     StringLiteral,
     Struct,
     StructFieldQuery,
     StructFieldUpdate,
     TypeLiteral,
+    WhileLoop,
 )
 from aaa.tokenizer.models import Token, TokenType
 
@@ -472,15 +473,15 @@ class SingleFileParser:
 
         return branch, offset
 
-    def _parse_loop(self, offset: int) -> Tuple[Loop, int]:
+    def _parse_while_loop(self, offset: int) -> Tuple[WhileLoop, int]:
         while_token, offset = self._token(offset, [TokenType.WHILE])
         condition, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
         body, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.END])
 
-        loop = Loop(while_token.position, condition, body)
-        return loop, offset
+        while_loop = WhileLoop(while_token.position, condition, body)
+        return while_loop, offset
 
     def _parse_struct_field_query(self, offset: int) -> Tuple[StructFieldQuery, int]:
         field_name, offset = self._parse_string(offset)
@@ -533,7 +534,9 @@ class SingleFileParser:
         if token.type == TokenType.IF:
             return self._parse_branch(offset)
         if token.type == TokenType.WHILE:
-            return self._parse_loop(offset)
+            return self._parse_while_loop(offset)
+        if token.type == TokenType.FOREACH:
+            return self._parse_foreach_loop(offset)
 
         raise ParserException(
             position=token.position,
@@ -617,3 +620,12 @@ class SingleFileParser:
         )
 
         return parsed_file, offset
+
+    def _parse_foreach_loop(self, offset: int) -> Tuple[ForeachLoop, int]:
+        foreach_token, offset = self._token(offset, [TokenType.FOREACH])
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        body, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        foreach = ForeachLoop(foreach_token.position, body)
+        return foreach, offset

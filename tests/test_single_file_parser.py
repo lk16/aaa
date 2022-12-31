@@ -941,11 +941,11 @@ def test_parse_loop(
     parser = SingleFileParser(file, tokens, False)
 
     if expected_exception is None:
-        _, offset = parser._parse_loop(0)
+        _, offset = parser._parse_while_loop(0)
         assert expected_offset == offset
     else:
         with pytest.raises(expected_exception):
-            parser._parse_loop(0)
+            parser._parse_while_loop(0)
 
 
 @pytest.mark.parametrize(

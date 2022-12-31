@@ -13,6 +13,7 @@ class TokenType(Enum):
     ELSE = "ELSE"
     END = "END"
     FALSE = "FALSE"
+    FOREACH = "FOREACH"
     FROM = "FROM"
     FUNCTION = "FUNCTION"
     GET_FIELD = "GET_FIELD"

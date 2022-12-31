@@ -9,15 +9,16 @@ from aaa.cross_referencer.models import (
     CallFunction,
     CallType,
     CrossReferencerOutput,
+    ForeachLoop,
     Function,
     FunctionBody,
     IntegerLiteral,
-    Loop,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
     Type,
     VariableType,
+    WhileLoop,
 )
 from aaa.type_checker.exceptions import (
     BranchTypeError,
@@ -26,13 +27,13 @@ from aaa.type_checker.exceptions import (
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     InvalidTestSignuture,
-    LoopTypeError,
     MainFunctionNotFound,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
     TypeCheckerException,
     UnknownField,
+    WhileLoopTypeError,
 )
 
 
@@ -227,18 +228,18 @@ class SingleFunctionTypeChecker:
         # we can return either one, since they are the same
         return if_stack
 
-    def _check_loop(
-        self, loop: Loop, type_stack: List[VariableType]
+    def _check_while_loop(
+        self, while_loop: WhileLoop, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        self._check_condition(loop.condition, copy(type_stack))
+        self._check_condition(while_loop.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
-        loop_stack = self._check_function_body(loop.body, copy(type_stack))
+        loop_stack = self._check_function_body(while_loop.body, copy(type_stack))
 
         if loop_stack != type_stack:
-            raise LoopTypeError(
-                position=loop.position,
+            raise WhileLoopTypeError(
+                position=while_loop.position,
                 function=self.function,
                 type_stack=type_stack,
                 loop_stack=loop_stack,
@@ -255,13 +256,14 @@ class SingleFunctionTypeChecker:
             BooleanLiteral: self._check_boolean_literal,
             Branch: self._check_branch,
             IntegerLiteral: self._check_integer_literal,
-            Loop: self._check_loop,
+            WhileLoop: self._check_while_loop,
             StringLiteral: self._check_string_literal,
-            StructFieldQuery: self._check_type_struct_field_query,
-            StructFieldUpdate: self._check_type_struct_field_update,
+            StructFieldQuery: self._check_struct_field_query,
+            StructFieldUpdate: self._check_struct_field_update,
             CallArgument: self._check_call_argument,
             CallFunction: self._check_call_function,
             CallType: self._check_call_type,
+            ForeachLoop: self._check_foreach_loop,
         }
 
         stack = copy(type_stack)
@@ -360,7 +362,7 @@ class SingleFunctionTypeChecker:
 
         return field_type
 
-    def _check_type_struct_field_query(
+    def _check_struct_field_query(
         self, field_query: StructFieldQuery, type_stack: List[VariableType]
     ) -> List[VariableType]:
         literal = StringLiteral(field_query.field_name)
@@ -384,7 +386,7 @@ class SingleFunctionTypeChecker:
         # pop struct and field name, push field
         return type_stack[:-2] + [field_type]
 
-    def _check_type_struct_field_update(
+    def _check_struct_field_update(
         self, field_update: StructFieldUpdate, type_stack: List[VariableType]
     ) -> List[VariableType]:
         literal = StringLiteral(field_update.field_name)
@@ -434,3 +436,15 @@ class SingleFunctionTypeChecker:
 
         # pop struct, field name and new value
         return type_stack[:-3]
+
+    def _check_foreach_loop(
+        self, foreach_loop: ForeachLoop, type_stack: List[VariableType]
+    ) -> List[VariableType]:
+        # find type of item on top of stack
+        # this type should have a iter() function returning an iterator
+        # this iterator type should have a next() function
+        # pretend this function has been called
+        # execute loop body
+        # make sure stack is same as before the loop
+
+        raise NotImplementedError  # TODO

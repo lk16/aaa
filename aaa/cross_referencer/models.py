@@ -184,12 +184,12 @@ class BooleanLiteral(FunctionBodyItem, parser.BooleanLiteral):
         super().__init__(parsed.position)
 
 
-class Loop(FunctionBodyItem):
+class WhileLoop(FunctionBodyItem):
     def __init__(
         self,
         condition: FunctionBody,
         body: FunctionBody,
-        parsed: parser.Loop,
+        parsed: parser.WhileLoop,
     ) -> None:
         self.condition = condition
         self.body = body
@@ -243,6 +243,12 @@ class StructFieldUpdate(FunctionBodyItem):
     ) -> None:
         self.field_name = parsed.field_name
         self.new_value_expr = new_value_expr
+        super().__init__(parsed.position)
+
+
+class ForeachLoop(FunctionBodyItem):
+    def __init__(self, parsed: parser.ForeachLoop, body: FunctionBody) -> None:
+        self.body = body
         super().__init__(parsed.position)
 
 

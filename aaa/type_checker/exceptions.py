@@ -136,7 +136,7 @@ class BranchTypeError(TypeCheckerException):
         )
 
 
-class LoopTypeError(TypeCheckerException):
+class WhileLoopTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
@@ -153,9 +153,9 @@ class LoopTypeError(TypeCheckerException):
         after_stack = format_typestack(self.loop_stack)
 
         return (
-            f"{self.position} Function {self.function.name} has a stack modification inside loop body\n"
-            + f"before loop: {before_stack}\n"
-            + f" after loop: {after_stack}\n"
+            f"{self.position} Function {self.function.name} has a stack modification inside while loop body\n"
+            + f"before while loop: {before_stack}\n"
+            + f" after while loop: {after_stack}\n"
         )
 
 

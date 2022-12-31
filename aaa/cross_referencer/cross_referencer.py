@@ -23,6 +23,7 @@ from aaa.cross_referencer.models import (
     CallFunction,
     CallType,
     CrossReferencerOutput,
+    ForeachLoop,
     Function,
     FunctionBody,
     FunctionBodyItem,
@@ -30,7 +31,6 @@ from aaa.cross_referencer.models import (
     IdentifiablesDict,
     Import,
     IntegerLiteral,
-    Loop,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -39,6 +39,7 @@ from aaa.cross_referencer.models import (
     UnresolvedImport,
     UnresolvedType,
     VariableType,
+    WhileLoop,
 )
 from aaa.parser import models as parser
 
@@ -552,15 +553,15 @@ class CrossReferencer:
             parsed=branch,
         )
 
-    def _resolve_loop(
+    def _resolve_while_loop(
         self,
         function: Function,
-        loop: parser.Loop,
-    ) -> Loop:
-        return Loop(
-            condition=self._resolve_function_body(function, loop.condition),
-            body=self._resolve_function_body(function, loop.body),
-            parsed=loop,
+        while_loop: parser.WhileLoop,
+    ) -> WhileLoop:
+        return WhileLoop(
+            condition=self._resolve_function_body(function, while_loop.condition),
+            body=self._resolve_function_body(function, while_loop.body),
+            parsed=while_loop,
         )
 
     def _resolve_function_name(
@@ -630,8 +631,8 @@ class CrossReferencer:
             return StringLiteral(parsed_item)
         elif isinstance(parsed_item, parser.BooleanLiteral):
             return BooleanLiteral(parsed_item)
-        elif isinstance(parsed_item, parser.Loop):
-            return self._resolve_loop(function, parsed_item)
+        elif isinstance(parsed_item, parser.WhileLoop):
+            return self._resolve_while_loop(function, parsed_item)
         elif isinstance(parsed_item, parser.Branch):
             return self._resolve_branch(function, parsed_item)
         elif isinstance(parsed_item, parser.FunctionName):
@@ -640,8 +641,16 @@ class CrossReferencer:
             return StructFieldQuery(parsed_item)
         elif isinstance(parsed_item, parser.StructFieldUpdate):
             return self._resolve_struct_field_update(function, parsed_item)
+        elif isinstance(parsed_item, parser.ForeachLoop):
+            return self._resolve_foreach_loop(function, parsed_item)
         else:  # pragma: nocover
             assert False
+
+    def _resolve_foreach_loop(
+        self, function: Function, parsed: parser.ForeachLoop
+    ) -> ForeachLoop:
+        body = self._resolve_function_body(function, parsed.body)
+        return ForeachLoop(parsed, body)
 
     def _resolve_function_bodies(self, functions: List[UnresolvedFunction]) -> None:
         for unresolved_function in functions:
