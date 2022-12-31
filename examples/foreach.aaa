@@ -11,7 +11,21 @@ fn main {
         "\n" .
     }
 
-    // TODO loop over map
+    "\n" .
+
+    map[int, str]
+    dup 2 "two" map:set
+    dup 4 "four" map:set
+    dup 6 "six" map:set
+    dup 8 "eight" map:set
+
+    foreach {
+        swap
+        .
+        " -> " .
+        .
+        "\n" .
+    }
 
     // TODO pytest should run this example
 }

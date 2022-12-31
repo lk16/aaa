@@ -1,7 +1,8 @@
 from copy import copy
-from typing import Any, Callable, Dict, List
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
 
-from aaa import AaaRunnerException
+from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.models import (
     BooleanLiteral,
     Branch,
@@ -92,7 +93,9 @@ class TypeChecker:
 class SingleFunctionTypeChecker:
     def __init__(self, function: Function, type_checker: TypeChecker) -> None:
         self.function = function
+
         self.types = type_checker.types
+        self.functions = type_checker.functions
         self.builtins_path = type_checker.builtins_path
 
     def run(self) -> None:
@@ -437,14 +440,86 @@ class SingleFunctionTypeChecker:
         # pop struct, field name and new value
         return type_stack[:-3]
 
+    def _lookup_function(
+        self, var_type: VariableType, func_name: str
+    ) -> Optional[Function]:
+        # TODO this may fail if the function is defined in a different file than the type
+        file = var_type.type.position.file
+        name = f"{var_type.name}:{func_name}"
+        return self.functions.get((file, name))
+
+    def _fmt_stack(self, type_stack: List[VariableType]) -> str:  # TODO remove
+        return " ".join(str(type) for type in type_stack)
+
     def _check_foreach_loop(
         self, foreach_loop: ForeachLoop, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        # find type of item on top of stack
-        # this type should have a iter() function returning an iterator
-        # this iterator type should have a next() function
-        # pretend this function has been called
-        # execute loop body
-        # make sure stack is same as before the loop
 
-        raise NotImplementedError  # TODO
+        type_stack_before = copy(type_stack)
+        print("  type_stack_before:", self._fmt_stack(type_stack_before))
+
+        if not type_stack:
+            # TODO missing iterable
+            raise NotImplementedError
+
+        iterable_type = type_stack[-1]
+
+        iter_func = self._lookup_function(iterable_type, "iter")
+
+        if not iter_func:
+            # TODO iterable has no iter() function
+            raise NotImplementedError
+
+        if not all(
+            [
+                len(iter_func.arguments) == 1,
+                len(iter_func.return_types) == 1,
+            ]
+        ):
+            # TODO iter() func has wrong signature
+            raise NotImplementedError
+
+        # TODO find less hacky way of transfering type params
+        iterator_type = copy(iter_func.return_types[0])
+        iterator_type.params = iterable_type.params
+
+        type_stack.append(iterator_type)
+        print("      push iterator:", self._fmt_stack(type_stack))
+
+        next_func = self._lookup_function(iterator_type, "next")
+
+        if not next_func:
+            # TODO iterator has no next() function
+            raise NotImplementedError
+
+        if not all(
+            [
+                len(next_func.arguments) == 1,
+                len(next_func.return_types) >= 2,
+                next_func.return_types[-1] == self._get_bool_var_type(),
+            ]
+        ):
+            # TODO next() func has wrong signature
+            raise NotImplementedError
+
+        dummy_path = Position(Path("/dev/null"), -1, -1)
+        call_function = CallFunction(next_func, [], dummy_path)
+
+        type_stack = self._check_call_function(call_function, type_stack)
+        print("          call next:", self._fmt_stack(type_stack))
+
+        type_stack.pop()
+        print("drop condition bool:", self._fmt_stack(type_stack))
+
+        type_stack = self._check_function_body(foreach_loop.body, type_stack)
+        print("           run body:", self._fmt_stack(type_stack))
+
+        if type_stack != type_stack_before:
+            # TODO type error
+            raise NotImplementedError
+
+        # pop iterable
+        type_stack.pop()
+        print("      drop iterable:", self._fmt_stack(type_stack))
+
+        return type_stack
