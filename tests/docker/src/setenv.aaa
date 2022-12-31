@@ -1,0 +1,12 @@
+fn main {
+    "KEY" "VALUE" setenv
+    "WITH_EQUALS_CHAR" "FOO=BAR" setenv
+
+    "KEY" getenv
+    assert
+    "VALUE" str:equals assert
+
+    "WITH_EQUALS_CHAR" getenv
+    assert
+    "FOO=BAR" str:equals assert
+}

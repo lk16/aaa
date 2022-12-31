@@ -29,24 +29,27 @@ def compile(source: str) -> str:
     return binary
 
 
+def run_with_valgrind(binary: str, env: Optional[Dict[str, Any]] = None) -> None:
+    command = ["valgrind", "--error-exitcode=1", "--leak-check=full", binary]
+    process = subprocess.run(command, capture_output=True, timeout=2, env=env)
+
+    if process.returncode != 0:
+        print(process.stdout.decode())
+        print(process.stderr.decode(), file=sys.stderr)
+        assert False, "Valgrind found memory errors"
+
+
 def run(
     binary: str, skip_valgrind: bool = False, env: Optional[Dict[str, str]] = None
 ) -> Tuple[str, str, int]:
-    run_kwargs: Dict[str, Any] = {"capture_output": True, "timeout": 2, "env": env}
-    process = subprocess.run([binary], **run_kwargs)
+    process = subprocess.run([binary], capture_output=True, timeout=2, env=env)
 
     stdout = process.stdout.decode("utf-8")
     stderr = process.stderr.decode("utf-8")
     exit_code = process.returncode
 
     if exit_code == 0 and not skip_valgrind:
-        command = ["valgrind", "--error-exitcode=1", "--leak-check=full", binary]
-        process = subprocess.run(command, **run_kwargs)
-
-        if process.returncode != 0:
-            print(process.stdout.decode())
-            print(process.stderr.decode(), file=sys.stderr)
-            assert False, "Valgrind found memory errors"
+        run_with_valgrind(binary, env)
 
     return stdout, stderr, exit_code
 
@@ -209,8 +212,51 @@ def test_getenv(source: str) -> None:
     assert 0 == exit_code
 
 
-# TODO add test for setenv
-# TODO add test for unsetenv
+def test_setenv() -> None:
+    binary = compile("setenv.aaa")
+    stdout, stderr, exit_code = run(binary, env={})
+    assert "" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_unsetenv() -> None:
+    binary = compile("unsetenv.aaa")
+    stdout, stderr, exit_code = run(binary, env=DUMMY_ENV_VARS)
+    assert "" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+@pytest.mark.parametrize(
+    ["source", "success"],
+    [
+        pytest.param("unlink_ok.aaa", True, id="ok"),
+        pytest.param("unlink_fail.aaa", False, id="fail"),
+    ],
+)
+def test_unlink(source: str, success: bool) -> None:
+
+    dummy_file = Path("/tmp/unlink_dummy")
+
+    if success:
+        dummy_file.touch()
+
+    binary = compile(source)
+    stdout, stderr, exit_code = run(binary, skip_valgrind=True)
+
+    if success:
+        dummy_file.touch()
+
+    run_with_valgrind(binary)
+
+    if success:
+        assert not dummy_file.exists()
+
+    assert "" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
 
 # TODO add test for open
 # TODO add test for read
@@ -225,5 +271,3 @@ def test_getenv(source: str) -> None:
 # TODO add test for connect
 
 # TODO add test for fsync
-
-# TODO add test for unlink

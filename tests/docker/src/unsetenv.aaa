@@ -1,0 +1,6 @@
+fn main {
+    "KEY" unsetenv
+    "KEY" getenv
+    not assert
+    drop
+}
