@@ -21,6 +21,7 @@ from aaa.cross_referencer.models import (
     StructFieldQuery,
     StructFieldUpdate,
     Type,
+    VariableType,
     WhileLoop,
 )
 
@@ -162,10 +163,13 @@ class Transpiler:
         )
 
     def _generate_c_builtin_function_name(self, function: Function) -> str:
-        if function.name in AAA_C_BUILTIN_FUNCS:
-            return AAA_C_BUILTIN_FUNCS[function.name]
+        return self._generate_c_builtin_function_name_from_str(function.name)
 
-        return "aaa_stack_" + function.name.replace(":", "_")
+    def _generate_c_builtin_function_name_from_str(self, name: str) -> str:
+        if name in AAA_C_BUILTIN_FUNCS:
+            return AAA_C_BUILTIN_FUNCS[name]
+
+        return "aaa_stack_" + name.replace(":", "_")
 
     def _generate_c_function_name(self, function: Function) -> str:
         if function.position.file == self.builtins_path:
@@ -175,6 +179,15 @@ class Transpiler:
         hash_input = f"{function.position.file} {function.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"aaa_user_func_{hash}"
+
+    def _generate_c_member_function_name_from_parts(
+        self, var_type: VariableType, func_name: str
+    ) -> str:
+        # TODO this assumes the func is defined in same file as type
+        file = var_type.type.position.file
+        name = f"{var_type.name}:{func_name}"
+        function = self.functions[(file, name)]
+        return self._generate_c_function_name(function)
 
     def _generate_c_function(self, function: Function) -> str:
         indentation = "    "
@@ -275,6 +288,24 @@ class Transpiler:
         )
 
     def _generate_c_foreach_loop(self, foreach_loop: ForeachLoop, indent: int) -> str:
+        """
+        TODO:
+        dup iterable
+        iter
+
+        while (true) {
+            dup iterator
+            next
+            if dup not {
+                drop everything next added
+                drop iterable
+                break
+            }
+            loop body
+        }
+        drop iterable
+        """
+
         print("_generate_c_foreach_loop not implemented")  # TODO
         exit(1)
 
