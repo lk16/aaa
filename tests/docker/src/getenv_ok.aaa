@@ -1,0 +1,5 @@
+fn main {
+    "KEY" getenv
+    assert
+    "VALUE" str:equals assert
+}

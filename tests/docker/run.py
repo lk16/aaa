@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from time import time
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import pytest
 
@@ -32,7 +32,8 @@ def compile(source: str) -> str:
 def run(
     binary: str, skip_valgrind: bool = False, env: Optional[Dict[str, str]] = None
 ) -> Tuple[str, str, int]:
-    process = subprocess.run([binary], capture_output=True, timeout=2, env=env)
+    run_kwargs: Dict[str, Any] = {"capture_output": True, "timeout": 2, "env": env}
+    process = subprocess.run([binary], **run_kwargs)
 
     stdout = process.stdout.decode("utf-8")
     stderr = process.stderr.decode("utf-8")
@@ -40,7 +41,7 @@ def run(
 
     if exit_code == 0 and not skip_valgrind:
         command = ["valgrind", "--error-exitcode=1", "--leak-check=full", binary]
-        process = subprocess.run(command, capture_output=True, timeout=2)
+        process = subprocess.run(command, **run_kwargs)
 
         if process.returncode != 0:
             print(process.stdout.decode())
@@ -177,22 +178,37 @@ def test_getppid() -> None:
     assert 0 == exit_code
 
 
-def test_environ() -> None:
-    env_vars = {
-        "KEY": "VALUE",
-        "WITH_EQUALS_CHAR": "FOO=BAR",
-    }
+DUMMY_ENV_VARS = {
+    "KEY": "VALUE",
+    "WITH_EQUALS_CHAR": "FOO=BAR",
+}
 
+
+def test_environ() -> None:
     binary = compile("environ.aaa")
-    stdout, stderr, exit_code = run(binary, env=env_vars)
+    stdout, stderr, exit_code = run(binary, env=DUMMY_ENV_VARS)
 
     # NOTE: loading this output as json is a hack and may break in the future
-    assert env_vars == json.loads(stdout)
+    assert DUMMY_ENV_VARS == json.loads(stdout)
     assert "" == stderr
     assert 0 == exit_code
 
 
-# TODO add test for getenv
+@pytest.mark.parametrize(
+    ["source"],
+    [
+        pytest.param("getenv_ok.aaa", id="ok"),
+        pytest.param("getenv_fail.aaa", id="fail"),
+    ],
+)
+def test_getenv(source: str) -> None:
+    binary = compile(source)
+    stdout, stderr, exit_code = run(binary, env=DUMMY_ENV_VARS)
+    assert "" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
 # TODO add test for setenv
 # TODO add test for unsetenv
 
