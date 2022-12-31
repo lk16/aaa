@@ -12,6 +12,7 @@ from aaa.cross_referencer.models import (
     CallFunction,
     CallType,
     CrossReferencerOutput,
+    ForeachLoop,
     Function,
     FunctionBody,
     FunctionBodyItem,
@@ -232,7 +233,9 @@ class Transpiler:
                 bool_value = "false"
             return f"{indentation}aaa_stack_push_bool(stack, {bool_value});\n"
         elif isinstance(item, WhileLoop):
-            return self._generate_c_loop(item, indent)
+            return self._generate_c_while_loop(item, indent)
+        elif isinstance(item, ForeachLoop):
+            return self._generate_c_foreach_loop(item, indent)
         elif isinstance(item, CallFunction):
             return self._generate_c_call_function_code(item, indent)
         elif isinstance(item, CallType):
@@ -255,7 +258,7 @@ class Transpiler:
         else:  # pragma: nocover
             assert False
 
-    def _generate_c_loop(self, while_loop: WhileLoop, indent: int) -> str:
+    def _generate_c_while_loop(self, while_loop: WhileLoop, indent: int) -> str:
         condition_code = self._generate_c_function_body(
             while_loop.condition, indent + 1
         )
@@ -270,6 +273,10 @@ class Transpiler:
             + body_code
             + f"{self._indent(indent)}}}\n"
         )
+
+    def _generate_c_foreach_loop(self, foreach_loop: ForeachLoop, indent: int) -> str:
+        print("_generate_c_foreach_loop not implemented")  # TODO
+        exit(1)
 
     def _generate_c_call_function_code(
         self, call_func: CallFunction, indent: int

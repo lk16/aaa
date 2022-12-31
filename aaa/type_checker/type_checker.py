@@ -443,7 +443,7 @@ class SingleFunctionTypeChecker:
     def _lookup_function(
         self, var_type: VariableType, func_name: str
     ) -> Optional[Function]:
-        # TODO this may fail if the function is defined in a different file than the type
+        # TODO this will fail if the function is defined in a different file than the type
         file = var_type.type.position.file
         name = f"{var_type.name}:{func_name}"
         return self.functions.get((file, name))
@@ -464,6 +464,9 @@ class SingleFunctionTypeChecker:
 
         iterable_type = type_stack[-1]
 
+        type_stack.append(iterable_type)
+        print(" duplicate iterable:", self._fmt_stack(type_stack))
+
         iter_func = self._lookup_function(iterable_type, "iter")
 
         if not iter_func:
@@ -479,13 +482,12 @@ class SingleFunctionTypeChecker:
             # TODO iter() func has wrong signature
             raise NotImplementedError
 
-        # TODO find less hacky way of transfering type params
-        iterator_type = copy(iter_func.return_types[0])
-        iterator_type.params = iterable_type.params
+        dummy_path = Position(Path("/dev/null"), -1, -1)
+        call_function = CallFunction(iter_func, [], dummy_path)
+        type_stack = self._check_call_function(call_function, type_stack)
+        print("          call iter:", self._fmt_stack(type_stack))
 
-        type_stack.append(iterator_type)
-        print("      push iterator:", self._fmt_stack(type_stack))
-
+        iterator_type = iter_func.return_types[0]
         next_func = self._lookup_function(iterator_type, "next")
 
         if not next_func:
