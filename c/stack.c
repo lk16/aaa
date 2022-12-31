@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <assert.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <netdb.h>
@@ -919,21 +920,37 @@ void aaa_stack_fsync(struct aaa_stack *stack) {
 void aaa_stack_environ(struct aaa_stack *stack) {
     struct aaa_map *map = aaa_map_new();
 
-    struct aaa_string *splitter = aaa_string_new("=", false);
+    struct aaa_string *equals_char = aaa_string_new("=", false);
 
     for (char **env_item = environ; *env_item; env_item++) {
         struct aaa_string *item = aaa_string_new(*env_item, false);
-        struct aaa_vector *split = aaa_string_split(item, splitter);
 
-        struct aaa_variable *key = aaa_vector_get(split, 0);
-        struct aaa_variable *value = aaa_vector_get(split, 1);
+        size_t equals_char_offset;
+        bool success;
+        aaa_string_find(item, equals_char, &equals_char_offset, &success);
+        assert(success);
+
+        size_t item_length = aaa_string_len(item);
+
+        struct aaa_string *key_str =
+            aaa_string_substr(item, 0, equals_char_offset, &success);
+        assert(success);
+
+        struct aaa_string *value_str = aaa_string_substr(
+            item, equals_char_offset + 1, item_length, &success);
+        assert(success);
+
+        struct aaa_variable *key = aaa_variable_new_str(key_str);
+        struct aaa_variable *value = aaa_variable_new_str(value_str);
 
         aaa_map_set(map, key, value);
 
+        aaa_variable_dec_ref(key);
+        aaa_variable_dec_ref(value);
         aaa_string_dec_ref(item);
-        aaa_vector_dec_ref(split);
     }
 
+    aaa_string_dec_ref(equals_char);
     aaa_stack_push_map(stack, map);
 }
 

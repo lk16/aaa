@@ -1,10 +1,11 @@
+import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from time import time
-from typing import Tuple
+from typing import Dict, Optional, Tuple
 
 import pytest
 
@@ -18,15 +19,20 @@ if __name__ == "__main__":
     pytest.main(["-vv", "--color=yes", __file__])
 
 
-def run(source: str, skip_valgrind: bool = False) -> Tuple[str, str, int]:
+def compile(source: str) -> str:
     binary = NamedTemporaryFile(delete=False).name
     source_path = Path(__file__).parent / "src" / source
 
     runner = Runner(source_path, None, False)
     exit_code = runner.run(None, True, binary, False)
     assert 0 == exit_code
+    return binary
 
-    process = subprocess.run([binary], capture_output=True, timeout=2)
+
+def run(
+    binary: str, skip_valgrind: bool = False, env: Optional[Dict[str, str]] = None
+) -> Tuple[str, str, int]:
+    process = subprocess.run([binary], capture_output=True, timeout=2, env=env)
 
     stdout = process.stdout.decode("utf-8")
     stderr = process.stderr.decode("utf-8")
@@ -44,6 +50,11 @@ def run(source: str, skip_valgrind: bool = False) -> Tuple[str, str, int]:
     return stdout, stderr, exit_code
 
 
+def compile_run(source: str, skip_valgrind: bool = False) -> Tuple[str, str, int]:
+    binary = compile(source)
+    return run(binary, skip_valgrind)
+
+
 @pytest.mark.parametrize(
     ["source", "expected_stderr", "expected_exitcode"],
     [
@@ -52,7 +63,7 @@ def run(source: str, skip_valgrind: bool = False) -> Tuple[str, str, int]:
     ],
 )
 def test_assert(source: str, expected_stderr: str, expected_exitcode: int) -> None:
-    stdout, stderr, exit_code = run(source)
+    stdout, stderr, exit_code = compile_run(source)
     assert "" == stdout
     assert expected_stderr == stderr
     assert expected_exitcode == exit_code
@@ -63,14 +74,14 @@ def test_assert(source: str, expected_stderr: str, expected_exitcode: int) -> No
     [pytest.param("exit_0.aaa", 0, id="0"), pytest.param("exit_1.aaa", 1, id="1")],
 )
 def test_exit(source: str, expected_exitcode: int) -> None:
-    stdout, stderr, exit_code = run(source)
+    stdout, stderr, exit_code = compile_run(source)
     assert "" == stdout
     assert "" == stderr
     assert expected_exitcode == exit_code
 
 
 def test_time() -> None:
-    stdout, stderr, exit_code = run("time.aaa")
+    stdout, stderr, exit_code = compile_run("time.aaa")
 
     printed_time = int(stdout.strip())
     current_time = int(time())
@@ -81,7 +92,7 @@ def test_time() -> None:
 
 
 def test_gettimeofday() -> None:
-    stdout, stderr, exit_code = run("gettimeofday.aaa")
+    stdout, stderr, exit_code = compile_run("gettimeofday.aaa")
 
     printed = stdout.strip().split()
     printed_usec = int(printed[0])
@@ -96,7 +107,7 @@ def test_gettimeofday() -> None:
 
 
 def test_getcwd() -> None:
-    stdout, stderr, exit_code = run("getcwd.aaa")
+    stdout, stderr, exit_code = compile_run("getcwd.aaa")
     assert "/app\n" == stdout
     assert "" == stderr
     assert 0 == exit_code
@@ -110,7 +121,7 @@ def test_getcwd() -> None:
     ],
 )
 def test_chdir(source: str, expected_stdout: str) -> None:
-    stdout, stderr, exit_code = run(source)
+    stdout, stderr, exit_code = compile_run(source)
     assert expected_stdout == stdout
     assert "" == stderr
     assert 0 == exit_code
@@ -124,14 +135,14 @@ def test_chdir(source: str, expected_stdout: str) -> None:
     ],
 )
 def test_execve(source: str, expected_stdout: str, skip_valgrind: bool) -> None:
-    stdout, stderr, exit_code = run(source, skip_valgrind)
+    stdout, stderr, exit_code = compile_run(source, skip_valgrind)
     assert expected_stdout == stdout
     assert "" == stderr
     assert 0 == exit_code
 
 
 def test_fork() -> None:
-    stdout, stderr, exit_code = run("fork.aaa")
+    stdout, stderr, exit_code = compile_run("fork.aaa")
     assert stdout in ["parent\nchild\n", "child\nparent\n"]
     assert "" == stderr
     assert 0 == exit_code
@@ -145,16 +156,42 @@ def test_fork() -> None:
     ],
 )
 def test_waitpid(source: str) -> None:
-    stdout, stderr, exit_code = run(source)
+    stdout, stderr, exit_code = compile_run(source)
     assert "" == stdout
     assert "" == stderr
     assert 0 == exit_code
 
 
-# TODO add test for getpid
-# TODO add test for getppid
+def test_getpid() -> None:
+    stdout, stderr, exit_code = compile_run("getpid.aaa")
+    int(stdout.strip())
+    assert "" == stderr
+    assert 0 == exit_code
 
-# TODO add test for environ
+
+def test_getppid() -> None:
+    stdout, stderr, exit_code = compile_run("getppid.aaa")
+
+    assert f"{os.getpid()}\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_environ() -> None:
+    env_vars = {
+        "KEY": "VALUE",
+        "WITH_EQUALS_CHAR": "FOO=BAR",
+    }
+
+    binary = compile("environ.aaa")
+    stdout, stderr, exit_code = run(binary, env=env_vars)
+
+    # NOTE: loading this output as json is a hack and may break in the future
+    assert env_vars == json.loads(stdout)
+    assert "" == stderr
+    assert 0 == exit_code
+
+
 # TODO add test for getenv
 # TODO add test for setenv
 # TODO add test for unsetenv
