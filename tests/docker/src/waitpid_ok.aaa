@@ -18,6 +18,7 @@ fn main {
         0 waitpid
 
         drop
+        assert
         0 = assert
         drop
     }

@@ -1020,16 +1020,29 @@ void aaa_stack_waitpid(struct aaa_stack *stack) {
     int options = aaa_stack_pop_int(stack);
     int pid = aaa_stack_pop_int(stack);
 
-    int status;
-    int changed_pid = waitpid(pid, &status, options);
+    int status_raw;
+    int changed_pid = waitpid(pid, &status_raw, options);
 
     if (changed_pid == 0) {
         aaa_stack_push_int(stack, 0);
         aaa_stack_push_int(stack, 0);
         aaa_stack_push_bool(stack, false);
+        aaa_stack_push_bool(stack, false);
     } else {
+        int status;
+        bool child_exited;
+
+        if (WIFEXITED(status_raw)) {
+            child_exited = true;
+            status = WEXITSTATUS(status_raw);
+        } else {
+            child_exited = false;
+            status = 0;
+        }
+
         aaa_stack_push_int(stack, changed_pid);
         aaa_stack_push_int(stack, status);
+        aaa_stack_push_bool(stack, child_exited);
         aaa_stack_push_bool(stack, true);
     }
 }

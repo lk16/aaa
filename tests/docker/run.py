@@ -137,7 +137,19 @@ def test_fork() -> None:
     assert 0 == exit_code
 
 
-# TODO add test for waitpid
+@pytest.mark.parametrize(
+    ["source"],
+    [
+        pytest.param("waitpid_ok.aaa", id="ok"),
+        pytest.param("waitpid_fail.aaa", id="fail"),
+    ],
+)
+def test_waitpid(source: str) -> None:
+    stdout, stderr, exit_code = run(source)
+    assert "" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
 
 # TODO add test for getpid
 # TODO add test for getppid
