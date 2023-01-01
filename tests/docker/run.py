@@ -273,9 +273,16 @@ def test_unlink(source: str, success: bool) -> None:
 # TODO add test for fsync
 
 
-def test_foreach_vec() -> None:
+def test_foreach_vector() -> None:
     stdout, stderr, exit_code = compile_run("foreach_vector.aaa")
     assert "2\n4\n6\n8\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_foreach_vector_empty() -> None:
+    stdout, stderr, exit_code = compile_run("foreach_vector_empty.aaa")
+    assert "" == stdout
     assert "" == stderr
     assert 0 == exit_code
 
@@ -287,6 +294,13 @@ def test_foreach_map() -> None:
     expected_lines = {"2 -> two", "4 -> four", "6 -> six", "8 -> eight"}
 
     assert expected_lines == lines
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_foreach_map_empty() -> None:
+    stdout, stderr, exit_code = compile_run("foreach_map_empty.aaa")
+    assert "" == stdout
     assert "" == stderr
     assert 0 == exit_code
 

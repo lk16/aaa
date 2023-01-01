@@ -1,0 +1,11 @@
+fn main {
+    map[int, str]
+
+    foreach {
+        swap
+        .
+        " -> " .
+        .
+        "\n" .
+    }
+}
