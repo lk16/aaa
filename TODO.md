@@ -22,7 +22,6 @@
     - `map:values`
     - `map:items`
 - Add `set` container and member functions
-- Add a way to iterate over `vec`, `map` and `set`
 
 ### Support syscalls
 - Add binary or/and/not integer operations
