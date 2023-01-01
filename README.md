@@ -34,7 +34,7 @@ curl http://localhost:8080
 - elementary types (`int`, `bool`, `str`)
 - container types (`vec`, `map`)
 - type checking
-- branching, loops (`if`, `else`, `while`)
+- branching, loops (`if`, `else`, `while`, `foreach`)
 - multi-file support (`import`)
 - [upcoming](./TODO.md)
 
