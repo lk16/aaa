@@ -15,27 +15,34 @@
 - [ ] Add transpiling to `README.md`
 - [ ] Add remaining tests for syscalls
 
-### Containers
-- Check that key type is hashable (currently: not a `vec`, `map` or `set`)
-- Add member functions:
-    - `map:keys`
-    - `map:values`
-    - `map:items`
-- Add `set` container and member functions
+### Improve import system
+- Start using colon-separated env var `AAA_PATH` like `PYTHON_PATH`
+- Ban absolute imports
 
-### Support syscalls
-- Add binary or/and/not integer operations
-- Consider adding buffer type
+### Builtin functions
+- Add member functions `map:keys` and `map:values`
+- add binary or/and/not integer operations
+
+### Builtin types and typing-features
+- `set` type
+- `float` type
+- union types
+- `tuple` type
+- interfaces
+- better type params for functions
+- type params for structs
+- `buffer` type (maybe)
 
 ### Language features
-- `float` type
-- rust-like enums
 - return early (`return`)
 - debug tools (`breakpoint`)
-- allow type params for struct
-- support `fn main args vec[str] return int { ... }`
-- compile to native executable
-- compile itself
+- global variable (`global`)
+- support `vec[str]` argument for main function
+- support `int` return type for main function
+- parse itself
+- cross reference itself
+- type check itself
+- transpile itself to C
 
 ### Language tools
 - add command to show instructions per file/function
