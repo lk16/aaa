@@ -16,9 +16,8 @@ def format_typestack(type_stack: List[VariableType]) -> str:
 
 
 class TypeCheckerException(AaaException):
-    def __init__(self, position: Position, function: Function) -> None:
+    def __init__(self, position: Position) -> None:
         self.position = position
-        self.function = function  # TODO remove function from this base exception class
 
 
 class FunctionTypeError(TypeCheckerException):
@@ -26,14 +25,15 @@ class FunctionTypeError(TypeCheckerException):
         self, function: Function, computed_return_types: List[VariableType]
     ) -> None:
         self.computed_return_types = computed_return_types
-        super().__init__(function.position, function)
+        self.function = function
+        super().__init__(function.position)
 
     def __str__(self) -> str:
         expected = format_typestack(self.function.return_types)
         found = format_typestack(self.computed_return_types)
 
         return (
-            f"{self.function.position}: Function {self.function.name} returns wrong type(s)\n"
+            f"{self.position}: Function {self.function.name} returns wrong type(s)\n"
             + f"expected return types: {expected}\n"
             + f"   found return types: {found}\n"
         )
@@ -43,13 +43,12 @@ class StackTypesError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: Function,
         type_stack: List[VariableType],
         func_like: Union[Function, StructFieldUpdate, StructFieldQuery],
     ) -> None:
         self.type_stack = type_stack
         self.func_like = func_like
-        super().__init__(position, function)
+        super().__init__(position)
 
     def func_like_name(self) -> str:
         if isinstance(self.func_like, Function):
@@ -74,7 +73,7 @@ class StackTypesError(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"{self.position} Function {self.function.name} has invalid stack types when calling {self.func_like_name()}\n"
+            f"{self.position}: Invalid stack types when calling {self.func_like_name()}\n"
             + f"Expected stack top: {self.format_typestack()}\n"
             + f"       Found stack: {format_typestack(self.type_stack)}\n"
         )
@@ -84,20 +83,19 @@ class ConditionTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: Function,
         type_stack: List[VariableType],
         condition_stack: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.condition_stack = condition_stack
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         stack_before = format_typestack(self.type_stack)
         stack_after = format_typestack(self.condition_stack)
 
         return (
-            f"{self.position} Function {self.function.name} has a condition type error\n"
+            f"{self.position}: Condition type error\n"
             + f"stack before: {stack_before}\n"
             + f" stack after: {stack_after}\n"
         )
@@ -107,7 +105,6 @@ class BranchTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: Function,
         type_stack: List[VariableType],
         if_stack: List[VariableType],
         else_stack: List[VariableType],
@@ -115,7 +112,7 @@ class BranchTypeError(TypeCheckerException):
         self.type_stack = type_stack
         self.if_stack = if_stack
         self.else_stack = else_stack
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         before_stack = format_typestack(self.type_stack)
@@ -123,7 +120,7 @@ class BranchTypeError(TypeCheckerException):
         else_stack = format_typestack(self.else_stack)
 
         return (
-            f"{self.position} Function {self.function.name} has inconsistent stacks for branches\n"
+            f"{self.position}: Inconsistent stacks for branches\n"
             + f"           before: {before_stack}\n"
             + f"  after if-branch: {if_stack}\n"
             + f"after else-branch: {else_stack}\n"
@@ -134,20 +131,19 @@ class WhileLoopTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: Function,
         type_stack: List[VariableType],
         loop_stack: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.loop_stack = loop_stack
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         before_stack = format_typestack(self.type_stack)
         after_stack = format_typestack(self.loop_stack)
 
         return (
-            f"{self.position} Function {self.function.name} has a stack modification inside while loop body\n"
+            f"{self.position}: Invalid stack modification inside while loop body\n"
             + f"before while loop: {before_stack}\n"
             + f" after while loop: {after_stack}\n"
         )
@@ -155,37 +151,37 @@ class WhileLoopTypeError(TypeCheckerException):
 
 class InvalidMainSignuture(TypeCheckerException):
     def __str__(self) -> str:
-        return f"{self.position} Main function should have no type parameters, no arguments and no return types\n"
+        return f"{self.position}: Main function should have no type parameters, no arguments and no return types\n"
 
 
 class InvalidTestSignuture(TypeCheckerException):
     def __init__(self, function: Function) -> None:
-        super().__init__(function.position, function)
+        self.function = function
+        super().__init__(function.position)
 
     def __str__(self) -> str:
-        return f"{self.position} Test function {self.function.name} should have no arguments and no return types\n"
+        return f"{self.position}: Test function {self.function.name} should have no arguments and no return types\n"
 
 
 class StructUpdateStackError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: Function,
         type_stack: List[VariableType],
         type_stack_before: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.type_stack_before = type_stack_before
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         expected_stack = format_typestack(self.type_stack_before)
         found_stack = format_typestack(self.type_stack)
 
         return (
-            f"{self.position} Function {self.function.name} modifies stack incorrectly when updating struct field\n"
+            f"{self.position}: Incorrect stack modification when updating struct field\n"
             + f"  Expected: {expected_stack} <new field value> \n"
-            + f"    Found: {found_stack}\n"
+            + f"     Found: {found_stack}\n"
         )
 
 
@@ -193,7 +189,6 @@ class StructUpdateTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: Function,
         type_stack: List[VariableType],
         struct_type: Type,
         field_name: str,
@@ -205,12 +200,11 @@ class StructUpdateTypeError(TypeCheckerException):
         self.field_name = field_name
         self.expected_type = expected_type
         self.found_type = found_type
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         return (
-            f"{self.position} Function {self.function.name} tries to update struct field with wrong type\n"
-            + f"Attempt to set field {self.field_name} of {self.struct_type.name} to wrong type in {self.function.name}\n"
+            f"{self.position}: Attempt to set field {self.field_name} of {self.struct_type.name} to wrong type\n"
             + f"Expected type: {self.expected_type}\n"
             + f"   Found type: {self.found_type}\n"
             + "\n"
@@ -221,17 +215,14 @@ class StructUpdateTypeError(TypeCheckerException):
 
 
 class InvalidMemberFunctionSignature(TypeCheckerException):
-    def __init__(
-        self,
-        function: Function,
-        struct_type: Type,
-    ) -> None:
+    def __init__(self, function: Function, struct_type: Type) -> None:
         self.struct_type = struct_type
-        super().__init__(function.position, function)
+        self.function = function
+        super().__init__(function.position)
 
     def __str__(self) -> str:
         full_func_name = f"{self.function.struct_name}:{self.function.func_name}"
-        formatted = f"{self.position} Function {full_func_name} has invalid member-function signature\n\n"
+        formatted = f"{self.position}: Function {full_func_name} has invalid member-function signature\n\n"
 
         arguments = [arg.var_type for arg in self.function.arguments]
 
@@ -245,16 +236,10 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
 
 
 class UnknownField(TypeCheckerException):
-    def __init__(
-        self,
-        position: Position,
-        function: Function,
-        struct_type: Type,
-        field_name: str,
-    ) -> None:
+    def __init__(self, position: Position, struct_type: Type, field_name: str) -> None:
         self.struct_type = struct_type
         self.field_name = field_name
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         return f"{self.position}: Usage of unknown field {self.field_name} of type {self.struct_type.name}\n"
@@ -274,11 +259,9 @@ class MissingIterable(TypeCheckerException):
 
 
 class InvalidIterable(TypeCheckerException):
-    def __init__(
-        self, position: Position, function: Function, iterable_type: VariableType
-    ) -> None:
+    def __init__(self, position: Position, iterable_type: VariableType) -> None:
         self.iterable_type = iterable_type
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         return (
@@ -293,13 +276,12 @@ class InvalidIterator(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: Function,
         iterable_type: VariableType,
         iterator_type: VariableType,
     ) -> None:
         self.iterable_type = iterable_type
         self.iterator_type = iterator_type
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         return (
@@ -315,20 +297,19 @@ class ForeachLoopTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        function: Function,
         type_stack: List[VariableType],
         foreach_stack: List[VariableType],
     ) -> None:
         self.type_stack = type_stack
         self.foreach_stack = foreach_stack
-        super().__init__(position, function)
+        super().__init__(position)
 
     def __str__(self) -> str:
         before_stack = format_typestack(self.type_stack)
         after_stack = format_typestack(self.foreach_stack)
 
         return (
-            f"{self.position} Function {self.function.name} has a stack modification inside foreach loop body\n"
+            f"{self.position}: Invalid stack modification inside foreach loop body\n"
             + f"before foreach loop: {before_stack}\n"
             + f" after foreach loop: {after_stack}\n"
         )

@@ -97,7 +97,7 @@ class TypeChecker:
                 len(function.type_params) == 0,
             ]
         ):
-            raise InvalidMainSignuture(function.position, function)
+            raise InvalidMainSignuture(function.position)
 
 
 class SingleFunctionTypeChecker:
@@ -193,9 +193,7 @@ class SingleFunctionTypeChecker:
         return type_stack + [self._get_str_var_type()]
 
     def _check_boolean_literal(
-        self,
-        literal: BooleanLiteral,
-        type_stack: List[VariableType],
+        self, literal: BooleanLiteral, type_stack: List[VariableType]
     ) -> List[VariableType]:
         return type_stack + [self._get_bool_var_type()]
 
@@ -208,16 +206,11 @@ class SingleFunctionTypeChecker:
 
         if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
-                function=self.function,
-                position=function_body.position,
-                type_stack=type_stack,
-                condition_stack=condition_stack,
+                function_body.position, type_stack, condition_stack
             )
 
     def _check_branch(
-        self,
-        branch: Branch,
-        type_stack: List[VariableType],
+        self, branch: Branch, type_stack: List[VariableType]
     ) -> List[VariableType]:
         self._check_condition(branch.condition, copy(type_stack))
 
@@ -233,13 +226,7 @@ class SingleFunctionTypeChecker:
         # Regardless whether the if- or else- branch is taken,
         # afterwards the stack should be the same.
         if if_stack != else_stack:
-            raise BranchTypeError(
-                position=branch.position,
-                function=self.function,
-                type_stack=type_stack,
-                if_stack=if_stack,
-                else_stack=else_stack,
-            )
+            raise BranchTypeError(branch.position, type_stack, if_stack, else_stack)
 
         # we can return either one, since they are the same
         return if_stack
@@ -254,12 +241,7 @@ class SingleFunctionTypeChecker:
         loop_stack = self._check_function_body(while_loop.body, copy(type_stack))
 
         if loop_stack != type_stack:
-            raise WhileLoopTypeError(
-                position=while_loop.position,
-                function=self.function,
-                type_stack=type_stack,
-                loop_stack=loop_stack,
-            )
+            raise WhileLoopTypeError(while_loop.position, type_stack, loop_stack)
 
         # we can return either one, since they are the same
         return loop_stack
@@ -306,10 +288,7 @@ class SingleFunctionTypeChecker:
 
         if len(stack) < arg_count:
             raise StackTypesError(
-                function=self.function,
-                type_stack=type_stack,
-                func_like=call_function.function,
-                position=call_function.position,
+                call_function.position, type_stack, call_function.function
             )
 
         placeholder_types: Dict[str, VariableType] = {}
@@ -322,10 +301,7 @@ class SingleFunctionTypeChecker:
 
             if not match_result:
                 raise StackTypesError(
-                    function=self.function,
-                    type_stack=type_stack,
-                    func_like=call_function.function,
-                    position=call_function.position,
+                    call_function.position, type_stack, call_function.function
                 )
 
         stack = stack[: len(stack) - arg_count]
@@ -369,12 +345,7 @@ class SingleFunctionTypeChecker:
         try:
             field_type = struct_type.fields[field_name]
         except KeyError as e:
-            raise UnknownField(
-                position=node.position,
-                function=self.function,
-                struct_type=struct_type,
-                field_name=field_name,
-            ) from e
+            raise UnknownField(node.position, struct_type, field_name) from e
 
         return field_type
 
@@ -385,12 +356,7 @@ class SingleFunctionTypeChecker:
         type_stack = self._check_string_literal(literal, copy(type_stack))
 
         if len(type_stack) < 2:
-            raise StackTypesError(
-                position=field_query.position,
-                function=self.function,
-                type_stack=type_stack,
-                func_like=field_query,
-            )
+            raise StackTypesError(field_query.position, type_stack, field_query)
 
         struct_var_type, field_selector_type = type_stack[-2:]
 
@@ -414,12 +380,7 @@ class SingleFunctionTypeChecker:
         )
 
         if len(type_stack) < 3:
-            raise StackTypesError(
-                position=field_update.position,
-                function=self.function,
-                type_stack=type_stack,
-                func_like=field_update,
-            )
+            raise StackTypesError(field_update.position, type_stack, field_update)
 
         struct_var_type, field_selector_type, update_expr_type = type_stack[-3:]
         struct_type = struct_var_type.type
@@ -431,10 +392,7 @@ class SingleFunctionTypeChecker:
             ]
         ):
             raise StructUpdateStackError(
-                position=field_update.position,
-                function=self.function,
-                type_stack=type_stack,
-                type_stack_before=type_stack_before,
+                field_update.position, type_stack, type_stack_before
             )
 
         field_type = self._get_struct_field_type(field_update, struct_type)
@@ -442,7 +400,6 @@ class SingleFunctionTypeChecker:
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
                 position=field_update.new_value_expr.position,
-                function=self.function,
                 type_stack=type_stack,
                 struct_type=struct_type,
                 field_name=field_update.field_name.value,
@@ -469,7 +426,7 @@ class SingleFunctionTypeChecker:
         type_stack_before = copy(type_stack)
 
         if not type_stack:
-            raise MissingIterable(foreach_loop.position, self.function)
+            raise MissingIterable(foreach_loop.position)
 
         iterable_type = type_stack[-1]
 
@@ -478,7 +435,7 @@ class SingleFunctionTypeChecker:
         iter_func = self._lookup_function(iterable_type, "iter")
 
         if not iter_func:
-            raise InvalidIterable(foreach_loop.position, self.function, iterable_type)
+            raise InvalidIterable(foreach_loop.position, iterable_type)
 
         if not all(
             [
@@ -486,7 +443,7 @@ class SingleFunctionTypeChecker:
                 len(iter_func.return_types) == 1,
             ]
         ):
-            raise InvalidIterable(foreach_loop.position, self.function, iterable_type)
+            raise InvalidIterable(foreach_loop.position, iterable_type)
 
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(iter_func, [], dummy_path)
@@ -496,9 +453,7 @@ class SingleFunctionTypeChecker:
         next_func = self._lookup_function(iterator_type, "next")
 
         if not next_func:
-            raise InvalidIterator(
-                foreach_loop.position, self.function, iterable_type, iterator_type
-            )
+            raise InvalidIterator(foreach_loop.position, iterable_type, iterator_type)
 
         if not all(
             [
@@ -507,9 +462,7 @@ class SingleFunctionTypeChecker:
                 next_func.return_types[-1] == self._get_bool_var_type(),
             ]
         ):
-            raise InvalidIterator(
-                foreach_loop.position, self.function, iterable_type, iterator_type
-            )
+            raise InvalidIterator(foreach_loop.position, iterable_type, iterator_type)
 
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(next_func, [], dummy_path)
@@ -520,7 +473,7 @@ class SingleFunctionTypeChecker:
 
         if type_stack != type_stack_before:
             raise ForeachLoopTypeError(
-                foreach_loop.position, self.function, type_stack_before, type_stack
+                foreach_loop.position, type_stack_before, type_stack
             )
 
         # pop iterable

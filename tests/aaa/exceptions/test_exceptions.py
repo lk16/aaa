@@ -40,7 +40,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             'fn main { if true { 3 } else { "" } }',
             BranchTypeError,
-            "/foo/main.aaa:1:11 Function main has inconsistent stacks for branches\n"
+            "/foo/main.aaa:1:11: Inconsistent stacks for branches\n"
             + "           before: \n"
             + "  after if-branch: int\n"
             + "after else-branch: str\n",
@@ -49,7 +49,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { if 3 true { nop } }",
             ConditionTypeError,
-            "/foo/main.aaa:1:14 Function main has a condition type error\n"
+            "/foo/main.aaa:1:14: Condition type error\n"
             + "stack before: \n"
             + " stack after: int bool\n",
             id="condition-type-branch",
@@ -57,7 +57,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { while 3 true { nop } }",
             ConditionTypeError,
-            "/foo/main.aaa:1:17 Function main has a condition type error\n"
+            "/foo/main.aaa:1:17: Condition type error\n"
             + "stack before: \n"
             + " stack after: int bool\n",
             id="condition-type-while-loop",
@@ -97,7 +97,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { while true { 0 } }",
             WhileLoopTypeError,
-            "/foo/main.aaa:1:11 Function main has a stack modification inside while loop body\n"
+            "/foo/main.aaa:1:11: Invalid stack modification inside while loop body\n"
             + "before while loop: \n"
             + " after while loop: int\n",
             id="while-loop-type",
@@ -105,7 +105,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             'fn main { 3 " " + . }',
             StackTypesError,
-            "/foo/main.aaa:1:17 Function main has invalid stack types when calling +\n"
+            "/foo/main.aaa:1:17: Invalid stack types when calling +\n"
             + "Expected stack top: int int\n"
             + "       Found stack: int str\n",
             id="stack-types",
@@ -113,7 +113,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main { drop }",
             StackTypesError,
-            "/foo/main.aaa:1:11 Function main has invalid stack types when calling drop\n"
+            "/foo/main.aaa:1:11: Invalid stack types when calling drop\n"
             + "Expected stack top: A\n"
             + "       Found stack: \n",
             id="stack-types-underflow",
@@ -138,7 +138,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main args a as int { nop }",
             InvalidMainSignuture,
-            "/foo/main.aaa:1:1 Main function should have no type parameters, no arguments and no return types\n",
+            "/foo/main.aaa:1:1: Main function should have no type parameters, no arguments and no return types\n",
             id="invalid-main-signature-argument",
         ),
         pytest.param(
@@ -152,7 +152,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main[A] { nop }",
             InvalidMainSignuture,
-            "/foo/main.aaa:1:1 Main function should have no type parameters, no arguments and no return types\n",
+            "/foo/main.aaa:1:1: Main function should have no type parameters, no arguments and no return types\n",
             id="invalid-main-type-params",
         ),
         pytest.param(
@@ -191,9 +191,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             StructUpdateStackError,
-            "/foo/main.aaa:3:26 Function foo modifies stack incorrectly when updating struct field\n"
+            "/foo/main.aaa:3:26: Incorrect stack modification when updating struct field\n"
             + "  Expected: bar str <new field value> \n"
-            + "    Found: bar str int int\n",
+            + "     Found: bar str int int\n",
             id="struct-update-stack-error",
         ),
         pytest.param(
@@ -203,8 +203,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             StructUpdateTypeError,
-            "/foo/main.aaa:3:32 Function foo tries to update struct field with wrong type\n"
-            + "Attempt to set field x of bar to wrong type in foo\n"
+            "/foo/main.aaa:3:32: Attempt to set field x of bar to wrong type\n"
             + "Expected type: str"
             + "\n   Found type: bool\n"
             + "\n"
@@ -218,7 +217,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             InvalidMemberFunctionSignature,
-            "/foo/main.aaa:3:13 Function bar:foo has invalid member-function signature\n"
+            "/foo/main.aaa:3:13: Function bar:foo has invalid member-function signature\n"
             + "\n"
             + "Expected arg types: bar ...\n"
             + "   Found arg types: \n",
@@ -231,7 +230,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             InvalidMemberFunctionSignature,
-            "/foo/main.aaa:3:13 Function bar:foo has invalid member-function signature\n"
+            "/foo/main.aaa:3:13: Function bar:foo has invalid member-function signature\n"
             + "\n"
             + "Expected arg types: bar ...\n"
             + "   Found arg types: \n",
@@ -507,7 +506,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { vec[int] foreach { nop } }
             """,
             ForeachLoopTypeError,
-            f"/foo/main.aaa:2:32 Function main has a stack modification inside foreach loop body\n"
+            f"/foo/main.aaa:2:32: Invalid stack modification inside foreach loop body\n"
             + f"before foreach loop: vec[int]\n"
             + f" after foreach loop: vec[int] int\n",
             id="foreach-loop-type-error",

@@ -19,7 +19,7 @@ class TokenizerException(BaseTokenizerException):
 
     def __str__(self) -> str:  # pragma: nocover
         # TODO confirm this looks correct
-        return f"{self.position} Tokenizing failed\n{self.context()}\n"
+        return f"{self.position}: Tokenizing failed\n{self.context()}\n"
 
 
 class FileReadError(BaseTokenizerException):
