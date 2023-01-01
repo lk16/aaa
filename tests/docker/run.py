@@ -274,7 +274,7 @@ def test_unlink(source: str, success: bool) -> None:
 
 
 def test_foreach_vec() -> None:
-    stdout, stderr, exit_code = compile_run("foreach_vec.aaa")
+    stdout, stderr, exit_code = compile_run("foreach_vector.aaa")
     assert "2\n4\n6\n8\n" == stdout
     assert "" == stderr
     assert 0 == exit_code
