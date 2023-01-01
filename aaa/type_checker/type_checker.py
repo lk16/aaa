@@ -24,11 +24,15 @@ from aaa.cross_referencer.models import (
 from aaa.type_checker.exceptions import (
     BranchTypeError,
     ConditionTypeError,
+    ForeachLoopTypeError,
     FunctionTypeError,
+    InvalidIterable,
+    InvalidIterator,
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     InvalidTestSignuture,
     MainFunctionNotFound,
+    MissingIterable,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
@@ -64,8 +68,8 @@ class TypeChecker:
                 foreach_loop_stacks = checker.run()
             except TypeCheckerException as e:
                 self.exceptions.append(e)
-
-            self.foreach_loop_stacks.update(foreach_loop_stacks)
+            else:
+                self.foreach_loop_stacks.update(foreach_loop_stacks)
 
         try:
             self._check_main_function()
@@ -465,8 +469,7 @@ class SingleFunctionTypeChecker:
         type_stack_before = copy(type_stack)
 
         if not type_stack:
-            # TODO missing iterable
-            raise NotImplementedError
+            raise MissingIterable(foreach_loop.position, self.function)
 
         iterable_type = type_stack[-1]
 
@@ -475,8 +478,7 @@ class SingleFunctionTypeChecker:
         iter_func = self._lookup_function(iterable_type, "iter")
 
         if not iter_func:
-            # TODO iterable has no iter() function
-            raise NotImplementedError
+            raise InvalidIterable(foreach_loop.position, self.function, iterable_type)
 
         if not all(
             [
@@ -484,8 +486,7 @@ class SingleFunctionTypeChecker:
                 len(iter_func.return_types) == 1,
             ]
         ):
-            # TODO iter() func has wrong signature
-            raise NotImplementedError
+            raise InvalidIterable(foreach_loop.position, self.function, iterable_type)
 
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(iter_func, [], dummy_path)
@@ -495,8 +496,9 @@ class SingleFunctionTypeChecker:
         next_func = self._lookup_function(iterator_type, "next")
 
         if not next_func:
-            # TODO iterator has no next() function
-            raise NotImplementedError
+            raise InvalidIterator(
+                foreach_loop.position, self.function, iterable_type, iterator_type
+            )
 
         if not all(
             [
@@ -505,8 +507,9 @@ class SingleFunctionTypeChecker:
                 next_func.return_types[-1] == self._get_bool_var_type(),
             ]
         ):
-            # TODO next() func has wrong signature
-            raise NotImplementedError
+            raise InvalidIterator(
+                foreach_loop.position, self.function, iterable_type, iterator_type
+            )
 
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(next_func, [], dummy_path)
@@ -516,8 +519,9 @@ class SingleFunctionTypeChecker:
         type_stack = self._check_function_body(foreach_loop.body, type_stack)
 
         if type_stack != type_stack_before:
-            # TODO type error
-            raise NotImplementedError
+            raise ForeachLoopTypeError(
+                foreach_loop.position, self.function, type_stack_before, type_stack
+            )
 
         # pop iterable
         type_stack.pop()

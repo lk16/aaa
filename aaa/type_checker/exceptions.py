@@ -11,20 +11,14 @@ from aaa.cross_referencer.models import (
 )
 
 
-def format_typestack(
-    type_stack: List[VariableType],
-) -> str:
-    return " ".join(repr(type_stack_item) for type_stack_item in type_stack)
+def format_typestack(type_stack: List[VariableType]) -> str:
+    return " ".join(repr(item) for item in type_stack)
 
 
 class TypeCheckerException(AaaException):
     def __init__(self, position: Position, function: Function) -> None:
         self.position = position
-        self.function = function
-
-
-class TypeException(TypeCheckerException):
-    ...
+        self.function = function  # TODO remove function from this base exception class
 
 
 class FunctionTypeError(TypeCheckerException):
@@ -263,7 +257,7 @@ class UnknownField(TypeCheckerException):
         super().__init__(position, function)
 
     def __str__(self) -> str:
-        return f"{self.position}: Usage of unknown field {self.field_name} of type {self.struct_type.name}"
+        return f"{self.position}: Usage of unknown field {self.field_name} of type {self.struct_type.name}\n"
 
 
 class MainFunctionNotFound(TypeCheckerException):
@@ -271,4 +265,70 @@ class MainFunctionNotFound(TypeCheckerException):
         self.file = file
 
     def __str__(self) -> str:
-        return f"{self.file}: No main function found"
+        return f"{self.file}: No main function found\n"
+
+
+class MissingIterable(TypeCheckerException):
+    def __str__(self) -> str:
+        return f"{self.position}: Cannot use foreach, function stack is empty.\n"
+
+
+class InvalidIterable(TypeCheckerException):
+    def __init__(
+        self, position: Position, function: Function, iterable_type: VariableType
+    ) -> None:
+        self.iterable_type = iterable_type
+        super().__init__(position, function)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Invalid iterable type {self.iterable_type}.\n"
+            + "Iterable types need to have a function named iter which:\n"
+            + "- takes one argument (the iterable)\n"
+            + "- returns one value (an iterator)\n"
+        )
+
+
+class InvalidIterator(TypeCheckerException):
+    def __init__(
+        self,
+        position: Position,
+        function: Function,
+        iterable_type: VariableType,
+        iterator_type: VariableType,
+    ) -> None:
+        self.iterable_type = iterable_type
+        self.iterator_type = iterator_type
+        super().__init__(position, function)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Invalid iterator type {self.iterator_type} to iterate over {self.iterable_type}.\n"
+            + "Iterator types need to have a function named next which:\n"
+            + "- takes one argument (the iterator)\n"
+            + "- returns at least 2 values, the last being a boolean\n"
+            + "- indicates if more data is present in the iterable with this last return value\n"
+        )
+
+
+class ForeachLoopTypeError(TypeCheckerException):
+    def __init__(
+        self,
+        position: Position,
+        function: Function,
+        type_stack: List[VariableType],
+        foreach_stack: List[VariableType],
+    ) -> None:
+        self.type_stack = type_stack
+        self.foreach_stack = foreach_stack
+        super().__init__(position, function)
+
+    def __str__(self) -> str:
+        before_stack = format_typestack(self.type_stack)
+        after_stack = format_typestack(self.foreach_stack)
+
+        return (
+            f"{self.position} Function {self.function.name} has a stack modification inside foreach loop body\n"
+            + f"before foreach loop: {before_stack}\n"
+            + f" after foreach loop: {after_stack}\n"
+        )

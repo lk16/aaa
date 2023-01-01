@@ -289,7 +289,6 @@ class Transpiler:
 
     def _generate_c_foreach_loop(self, foreach_loop: ForeachLoop, indent: int) -> str:
         """
-        TODO:
         dup iterable
         iter
 

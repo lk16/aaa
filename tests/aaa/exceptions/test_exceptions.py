@@ -17,10 +17,14 @@ from aaa.tokenizer.exceptions import FileReadError
 from aaa.type_checker.exceptions import (
     BranchTypeError,
     ConditionTypeError,
+    ForeachLoopTypeError,
     FunctionTypeError,
+    InvalidIterable,
+    InvalidIterator,
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     MainFunctionNotFound,
+    MissingIterable,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
@@ -158,7 +162,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:3:26: Usage of unknown field y of type bar",
+            "/foo/main.aaa:3:26: Usage of unknown field y of type bar\n",
             id="unknown-struct-field-get",
         ),
         pytest.param(
@@ -168,7 +172,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:3:26: Usage of unknown field y of type bar",
+            "/foo/main.aaa:3:26: Usage of unknown field y of type bar\n",
             id="unknown-struct-field-set",
         ),
         pytest.param(
@@ -177,7 +181,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:2:24: Usage of unknown field x of type int",
+            "/foo/main.aaa:2:24: Usage of unknown field x of type int\n",
             id="set-field-of-non-struct",
         ),
         pytest.param(
@@ -249,7 +253,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             struct main { x as int }
             """,
             MainFunctionNotFound,
-            "/foo/main.aaa: No main function found",
+            "/foo/main.aaa: No main function found\n",
             id="struct-named-main",
         ),
         pytest.param(
@@ -257,7 +261,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { nop }
             """,
             MainFunctionNotFound,
-            "/foo/main.aaa: No main function found",
+            "/foo/main.aaa: No main function found\n",
             id="main-not-found",
         ),
         pytest.param(
@@ -376,6 +380,137 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Expected parameter count: 1\n"
             + "   Found parameter count: 2\n",
             id="returntype-with-too-many-type-params",
+        ),
+        pytest.param(
+            """
+            fn main { foreach { nop } }
+            """,
+            MissingIterable,
+            "/foo/main.aaa:2:23: Cannot use foreach, function stack is empty.\n",
+            id="missing-iterable",
+        ),
+        pytest.param(
+            """
+            fn main { 0 foreach { nop } }
+            """,
+            InvalidIterable,
+            "/foo/main.aaa:2:25: Invalid iterable type int.\n"
+            + "Iterable types need to have a function named iter which:\n"
+            + "- takes one argument (the iterable)\n"
+            + "- returns one value (an iterator)\n",
+            id="invalid-iterable-no-next-func",
+        ),
+        pytest.param(
+            """
+            struct foo { x as int }
+            fn foo:iter args f as foo, y as int return int { 0 }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterable,
+            "/foo/main.aaa:4:27: Invalid iterable type foo.\n"
+            + "Iterable types need to have a function named iter which:\n"
+            + "- takes one argument (the iterable)\n"
+            + "- returns one value (an iterator)\n",
+            id="invalid-iterable-next-two-arguments",
+        ),
+        pytest.param(
+            """
+            struct foo { x as int }
+            fn foo:iter args f as foo return int, int { 0 0 }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterable,
+            "/foo/main.aaa:4:27: Invalid iterable type foo.\n"
+            + "Iterable types need to have a function named iter which:\n"
+            + "- takes one argument (the iterable)\n"
+            + "- returns one value (an iterator)\n",
+            id="invalid-iterable-next-two-return-values",
+        ),
+        pytest.param(
+            """
+            struct foo { x as int }
+            fn foo:iter args f as foo { nop }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterable,
+            "/foo/main.aaa:4:27: Invalid iterable type foo.\n"
+            + "Iterable types need to have a function named iter which:\n"
+            + "- takes one argument (the iterable)\n"
+            + "- returns one value (an iterator)\n",
+            id="invalid-iterable-next-no-return-values",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            struct foo { x as int }
+            fn foo:iter args f as foo return bar { bar }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterator,
+            f"/foo/main.aaa:5:27: Invalid iterator type bar to iterate over foo.\n"
+            + "Iterator types need to have a function named next which:\n"
+            + "- takes one argument (the iterator)\n"
+            + "- returns at least 2 values, the last being a boolean\n"
+            + "- indicates if more data is present in the iterable with this last return value\n",
+            id="invalid-iterator-no-iter-func",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn bar:next args b as bar, y as int return int, bool { 0 false }
+            struct foo { x as int }
+            fn foo:iter args f as foo return bar { bar }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterator,
+            f"/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
+            + "Iterator types need to have a function named next which:\n"
+            + "- takes one argument (the iterator)\n"
+            + "- returns at least 2 values, the last being a boolean\n"
+            + "- indicates if more data is present in the iterable with this last return value\n",
+            id="invalid-iterator-two-arguments",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn bar:next args b as bar, y as int return bool { false }
+            struct foo { x as int }
+            fn foo:iter args f as foo return bar { bar }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterator,
+            f"/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
+            + "Iterator types need to have a function named next which:\n"
+            + "- takes one argument (the iterator)\n"
+            + "- returns at least 2 values, the last being a boolean\n"
+            + "- indicates if more data is present in the iterable with this last return value\n",
+            id="invalid-iterator-one-return-value",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn bar:next args b as bar, y as int return int, int { 0 0 }
+            struct foo { x as int }
+            fn foo:iter args f as foo return bar { bar }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterator,
+            f"/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
+            + "Iterator types need to have a function named next which:\n"
+            + "- takes one argument (the iterator)\n"
+            + "- returns at least 2 values, the last being a boolean\n"
+            + "- indicates if more data is present in the iterable with this last return value\n",
+            id="invalid-iterator-no-last-bool-return-value",
+        ),
+        pytest.param(
+            """
+            fn main { vec[int] foreach { nop } }
+            """,
+            ForeachLoopTypeError,
+            f"/foo/main.aaa:2:32 Function main has a stack modification inside foreach loop body\n"
+            + f"before foreach loop: vec[int]\n"
+            + f" after foreach loop: vec[int] int\n",
+            id="foreach-loop-type-error",
         ),
     ],
 )
