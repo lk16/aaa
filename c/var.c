@@ -18,6 +18,8 @@ enum aaa_kind {
     AAA_VECTOR,
     AAA_MAP,
     AAA_STRUCT,
+    AAA_VECTOR_ITER,
+    AAA_MAP_ITER,
 };
 
 struct aaa_variable {
@@ -30,6 +32,8 @@ struct aaa_variable {
         struct aaa_vector *vector;
         struct aaa_map *map;
         struct aaa_struct *struct_;
+        struct aaa_vector_iter *vector_iter;
+        struct aaa_map_iter *map_iter;
     };
 };
 

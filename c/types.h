@@ -12,3 +12,6 @@ struct aaa_string;
 struct aaa_map;
 struct aaa_vector;
 struct aaa_struct;
+
+struct aaa_vector_iter;
+struct aaa_map_iter;

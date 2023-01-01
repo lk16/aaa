@@ -21,3 +21,11 @@ void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed);
 bool aaa_vector_set(struct aaa_vector *vec, size_t offset,
                     struct aaa_variable *value);
 size_t aaa_vector_size(const struct aaa_vector *vec);
+
+struct aaa_vector_iter *aaa_vector_iter_new(struct aaa_vector *vec);
+
+void aaa_vector_iter_dec_ref(struct aaa_vector_iter *iter);
+void aaa_vector_iter_inc_ref(struct aaa_vector_iter *iter);
+
+bool aaa_vector_iter_next(struct aaa_vector_iter *iter,
+                          struct aaa_variable **item);

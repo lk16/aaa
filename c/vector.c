@@ -157,3 +157,50 @@ bool aaa_vector_set(struct aaa_vector *vec, size_t offset,
 }
 
 size_t aaa_vector_size(const struct aaa_vector *vec) { return vec->size; }
+
+struct aaa_vector_iter {
+    struct aaa_ref_count ref_count;
+    struct aaa_vector *vector;
+    size_t next_offset;
+};
+
+struct aaa_vector_iter *aaa_vector_iter_new(struct aaa_vector *vec) {
+    struct aaa_vector_iter *iter = malloc(sizeof(*iter));
+    aaa_ref_count_init(&iter->ref_count);
+    iter->vector = vec;
+    iter->next_offset = 0;
+    return iter;
+}
+
+void aaa_vector_iter_dec_ref(struct aaa_vector_iter *iter) {
+    aaa_ref_count_inc(&iter->ref_count);
+}
+
+void aaa_vector_iter_inc_ref(struct aaa_vector_iter *iter) {
+    if (aaa_ref_count_dec(&iter->ref_count) == 0) {
+        aaa_vector_dec_ref(iter->vector);
+        free(iter);
+    }
+}
+
+bool aaa_vector_iter_next(struct aaa_vector_iter *iter,
+                          struct aaa_variable **item) {
+    if (iter->next_offset >= iter->vector->size) {
+        // We are beyond the end of the the vector
+        if (*item) {
+            aaa_variable_dec_ref(*item);
+            *item = NULL;
+        }
+
+        return false;
+    }
+
+    if (*item) {
+        aaa_variable_dec_ref(*item);
+    }
+
+    *item = iter->vector->data[iter->next_offset];
+    aaa_variable_inc_ref(*item);
+
+    return true;
+}
