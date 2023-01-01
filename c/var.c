@@ -306,6 +306,10 @@ bool aaa_variable_equals(const struct aaa_variable *lhs,
 }
 
 void aaa_variable_dec_ref(struct aaa_variable *var) {
+    if (!var) {
+        return;
+    }
+
     switch (var->kind) {
         case AAA_BOOLEAN:
             return;
