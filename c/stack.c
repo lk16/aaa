@@ -1234,9 +1234,13 @@ void aaa_stack_vec_iter_next(struct aaa_stack *stack) {
 
 void aaa_stack_map_iter(struct aaa_stack *stack) {
     struct aaa_map *map = aaa_stack_pop_map(stack);
+
     struct aaa_map_iter *iter = aaa_map_iter_new(map);
     struct aaa_variable *var = aaa_variable_new_map_iter(iter);
+
     aaa_stack_push(stack, var);
+
+    aaa_map_dec_ref(map);
 }
 
 void aaa_stack_map_iter_next(struct aaa_stack *stack) {

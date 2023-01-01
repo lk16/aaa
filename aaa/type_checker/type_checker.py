@@ -457,9 +457,6 @@ class SingleFunctionTypeChecker:
         name = f"{var_type.name}:{func_name}"
         return self.functions.get((file, name))
 
-    def _fmt_stack(self, type_stack: List[VariableType]) -> str:  # TODO remove
-        return " ".join(str(type) for type in type_stack)
-
     def _check_foreach_loop(
         self, foreach_loop: ForeachLoop, type_stack: List[VariableType]
     ) -> List[VariableType]:

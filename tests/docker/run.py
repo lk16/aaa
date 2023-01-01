@@ -271,3 +271,28 @@ def test_unlink(source: str, success: bool) -> None:
 # TODO add test for connect
 
 # TODO add test for fsync
+
+
+def test_foreach_vec() -> None:
+    stdout, stderr, exit_code = compile_run("foreach_vec.aaa")
+    assert "2\n4\n6\n8\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_foreach_map() -> None:
+    stdout, stderr, exit_code = compile_run("foreach_map.aaa")
+
+    lines = set(stdout.strip().split("\n"))
+    expected_lines = {"2 -> two", "4 -> four", "6 -> six", "8 -> eight"}
+
+    assert expected_lines == lines
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_foreach_custom() -> None:
+    stdout, stderr, exit_code = compile_run("foreach_custom.aaa")
+    assert "1\n2\n3\n4\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
