@@ -67,7 +67,7 @@
 		},
 		"builtin_types": {
 			"name": "support.type.aaa",
-			"match": "\\b(bool|int|str|vec|map)\\b"
+			"match": "\\b(bool|int|str|vec|map|set)\\b"
 		}
 	},
 	"scopeName": "source.aaa"
