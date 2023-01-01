@@ -1230,13 +1230,29 @@ void aaa_stack_vec_iter_next(struct aaa_stack *stack) {
     aaa_stack_push_bool(stack, has_next);
 
     aaa_vector_iter_dec_ref(iter);
-    (void)stack; // TODO
 }
 
 void aaa_stack_map_iter(struct aaa_stack *stack) {
-    (void)stack; // TODO
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+    struct aaa_map_iter *iter = aaa_map_iter_new(map);
+    struct aaa_variable *var = aaa_variable_new_map_iter(iter);
+    aaa_stack_push(stack, var);
 }
 
 void aaa_stack_map_iter_next(struct aaa_stack *stack) {
-    (void)stack; // TODO
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    struct aaa_map_iter *iter = aaa_variable_get_map_iter(top);
+
+    aaa_map_iter_inc_ref(iter);
+    aaa_variable_dec_ref(top);
+
+    struct aaa_variable *key = NULL;
+    struct aaa_variable *value = NULL;
+    bool has_next = aaa_map_iter_next(iter, &key, &value);
+
+    aaa_stack_push(stack, key);
+    aaa_stack_push(stack, value);
+    aaa_stack_push_bool(stack, has_next);
+
+    aaa_map_iter_dec_ref(iter);
 }

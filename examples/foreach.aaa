@@ -1,31 +1,31 @@
 
-// fn range args start as int, end as int return range_iter {
-//     range_iter
-//     dup "end" { end } !
-//     dup "next" { start } !
-// }
-//
-// struct range_iter {
-//     end as int,
-//     next as int,
-// }
-//
-// fn range_iter:iter args r as range_iter return range_iter {
-//     r
-// }
-//
-// fn range_iter:next args r as range_iter return int, bool {
-//     if
-//         r "next" ?
-//         r "end" ?
-//         >=
-//     {
-//         0 false
-//     } else {
-//         r "next" ? true
-//         r "next" { r "next" ? 1 + } !
-//     }
-// }
+fn range args start as int, end as int return range_iter {
+    range_iter
+    dup "end" { end } !
+    dup "next" { start } !
+}
+
+struct range_iter {
+    end as int,
+    next as int,
+}
+
+fn range_iter:iter args r as range_iter return range_iter {
+    r
+}
+
+fn range_iter:next args r as range_iter return int, bool {
+    if
+        r "next" ?
+        r "end" ?
+        >=
+    {
+        0 false
+    } else {
+        r "next" ? true
+        r "next" { r "next" ? 1 + } !
+    }
+}
 
 fn main {
     vec[int]
@@ -39,27 +39,29 @@ fn main {
         "\n" .
     }
 
-// TODO uncomment
-//    map[int, str]
-//    dup 2 "two" map:set
-//    dup 4 "four" map:set
-//    dup 6 "six" map:set
-//    dup 8 "eight" map:set
-//
-//    foreach {
-//        swap
-//        .
-//        " -> " .
-//        .
-//        "\n" .
-//    }
-//
-//    1 5 range
-//    foreach {
-//        .
-//        "\n" .
-//    }
+    "\n" .
 
+    map[int, str]
+    dup 2 "two" map:set
+    dup 4 "four" map:set
+    dup 6 "six" map:set
+    dup 8 "eight" map:set
+
+    foreach {
+        swap
+        .
+        " -> " .
+        .
+        "\n" .
+    }
+
+    "\n" .
+
+    1 5 range
+    foreach {
+        .
+        "\n" .
+    }
 
     // TODO pytest should run this example
 }

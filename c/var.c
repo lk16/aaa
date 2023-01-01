@@ -410,3 +410,14 @@ aaa_variable_new_vector_iter(struct aaa_vector_iter *iter) {
 struct aaa_vector_iter *aaa_variable_get_vector_iter(struct aaa_variable *var) {
     return var->vector_iter;
 }
+
+struct aaa_variable *aaa_variable_new_map_iter(struct aaa_map_iter *iter) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->map_iter = iter;
+    var->kind = AAA_MAP_ITER;
+    return var;
+}
+
+struct aaa_map_iter *aaa_variable_get_map_iter(struct aaa_variable *var) {
+    return var->map_iter;
+}
