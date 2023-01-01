@@ -1210,10 +1210,26 @@ void aaa_stack_unsetenv(struct aaa_stack *stack) {
 }
 
 void aaa_stack_vec_iter(struct aaa_stack *stack) {
-    (void)stack; // TODO
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+    struct aaa_vector_iter *iter = aaa_vector_iter_new(vec);
+    struct aaa_variable *var = aaa_variable_new_vector_iter(iter);
+    aaa_stack_push(stack, var);
 }
 
 void aaa_stack_vec_iter_next(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    struct aaa_vector_iter *iter = aaa_variable_get_vector_iter(top);
+
+    aaa_vector_iter_inc_ref(iter);
+    aaa_variable_dec_ref(top);
+
+    struct aaa_variable *item = NULL;
+    bool has_next = aaa_vector_iter_next(iter, &item);
+
+    aaa_stack_push(stack, item);
+    aaa_stack_push_bool(stack, has_next);
+
+    aaa_vector_iter_dec_ref(iter);
     (void)stack; // TODO
 }
 
@@ -1224,4 +1240,3 @@ void aaa_stack_map_iter(struct aaa_stack *stack) {
 void aaa_stack_map_iter_next(struct aaa_stack *stack) {
     (void)stack; // TODO
 }
-

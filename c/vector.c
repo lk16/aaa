@@ -172,11 +172,11 @@ struct aaa_vector_iter *aaa_vector_iter_new(struct aaa_vector *vec) {
     return iter;
 }
 
-void aaa_vector_iter_dec_ref(struct aaa_vector_iter *iter) {
+void aaa_vector_iter_inc_ref(struct aaa_vector_iter *iter) {
     aaa_ref_count_inc(&iter->ref_count);
 }
 
-void aaa_vector_iter_inc_ref(struct aaa_vector_iter *iter) {
+void aaa_vector_iter_dec_ref(struct aaa_vector_iter *iter) {
     if (aaa_ref_count_dec(&iter->ref_count) == 0) {
         aaa_vector_dec_ref(iter->vector);
         free(iter);
@@ -201,6 +201,7 @@ bool aaa_vector_iter_next(struct aaa_vector_iter *iter,
 
     *item = iter->vector->data[iter->next_offset];
     aaa_variable_inc_ref(*item);
+    iter->next_offset++;
 
     return true;
 }

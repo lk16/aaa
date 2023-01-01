@@ -228,6 +228,8 @@ struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
         case AAA_MAP:
             return aaa_map_repr(var->map);
         case AAA_STRUCT:
+        case AAA_VECTOR_ITER:
+        case AAA_MAP_ITER:
         default:
             fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
             abort();
@@ -270,6 +272,8 @@ size_t aaa_variable_hash(const struct aaa_variable *var) {
             fprintf(stderr, "Cannot hash a map!\n");
             abort();
         case AAA_STRUCT:
+        case AAA_VECTOR_ITER:
+        case AAA_MAP_ITER:
         default:
             fprintf(stderr, "aaa_variable_hash Unhandled variable kind\n");
             abort();
@@ -293,6 +297,8 @@ bool aaa_variable_equals(const struct aaa_variable *lhs,
             return aaa_vector_equals(lhs->vector, rhs->vector);
         case AAA_MAP:
         case AAA_STRUCT:
+        case AAA_VECTOR_ITER:
+        case AAA_MAP_ITER:
         default:
             fprintf(stderr, "aaa_variable_equals Unhandled variable kind\n");
             abort();
@@ -320,6 +326,12 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
         case AAA_STRUCT:
             aaa_struct_dec_ref(var->struct_);
             break;
+        case AAA_VECTOR_ITER:
+            aaa_vector_iter_dec_ref(var->vector_iter);
+            break;
+        case AAA_MAP_ITER:
+            aaa_map_iter_dec_ref(var->map_iter);
+            break;
         default:
             fprintf(stderr, "aaa_variable_dec_ref unhandled variable kind\n");
             abort();
@@ -346,6 +358,12 @@ void aaa_variable_inc_ref(struct aaa_variable *var) {
             break;
         case AAA_STRUCT:
             aaa_struct_inc_ref(var->struct_);
+            break;
+        case AAA_VECTOR_ITER:
+            aaa_vector_iter_inc_ref(var->vector_iter);
+            break;
+        case AAA_MAP_ITER:
+            aaa_map_iter_inc_ref(var->map_iter);
             break;
         default:
             fprintf(stderr, "aaa_variable_inc_ref unhandled variable kind\n");
@@ -375,4 +393,16 @@ struct aaa_variable *aaa_variable_new_vector_zero_value(void) {
 struct aaa_variable *aaa_variable_new_map_zero_value(void) {
     struct aaa_map *map = aaa_map_new();
     return aaa_variable_new_map(map);
+}
+
+struct aaa_variable *
+aaa_variable_new_vector_iter(struct aaa_vector_iter *iter) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->vector_iter = iter;
+    var->kind = AAA_VECTOR_ITER;
+    return var;
+}
+
+struct aaa_vector_iter *aaa_variable_get_vector_iter(struct aaa_variable *var) {
+    return var->vector_iter;
 }
