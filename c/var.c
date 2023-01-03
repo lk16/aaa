@@ -18,8 +18,10 @@ enum aaa_kind {
     AAA_VECTOR,
     AAA_MAP,
     AAA_STRUCT,
+    AAA_SET,
     AAA_VECTOR_ITER,
     AAA_MAP_ITER,
+    AAA_SET_ITER,
 };
 
 struct aaa_variable {
@@ -109,6 +111,12 @@ struct aaa_variable *aaa_variable_new_struct(struct aaa_struct *struct_) {
     return var;
 }
 
+struct aaa_variable *aaa_variable_new_set(struct aaa_map *set) {
+    struct aaa_variable *var = aaa_variable_new_map(set);
+    var->kind = AAA_SET;
+    return var;
+}
+
 static struct aaa_string *aaa_variable_repr_bool(bool boolean) {
     char *raw = NULL;
     if (boolean) {
@@ -121,10 +129,12 @@ static struct aaa_string *aaa_variable_repr_bool(bool boolean) {
 
 static void aaa_variable_check_kind(const struct aaa_variable *var,
                                     enum aaa_kind kind) {
-    if (var->kind != kind) {
-        fprintf(stderr, "Aaa type error\n");
-        abort();
+    if (var->kind == kind || (var->kind == AAA_SET && kind == AAA_MAP)) {
+        return;
     }
+
+    fprintf(stderr, "Aaa type error\n");
+    abort();
 }
 
 int aaa_variable_get_int(struct aaa_variable *var) {
@@ -227,9 +237,12 @@ struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
             return aaa_vector_repr(var->vector);
         case AAA_MAP:
             return aaa_map_repr(var->map);
+        case AAA_SET:
+            return aaa_set_repr(var->map);
         case AAA_STRUCT:
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
+        case AAA_SET_ITER:
         default:
             fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
             abort();
@@ -271,9 +284,13 @@ size_t aaa_variable_hash(const struct aaa_variable *var) {
         case AAA_MAP:
             fprintf(stderr, "Cannot hash a map!\n");
             abort();
+        case AAA_SET:
+            fprintf(stderr, "Cannot hash a set!\n");
+            abort();
         case AAA_STRUCT:
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
+        case AAA_SET_ITER:
         default:
             fprintf(stderr, "aaa_variable_hash Unhandled variable kind\n");
             abort();
@@ -296,9 +313,11 @@ bool aaa_variable_equals(const struct aaa_variable *lhs,
         case AAA_VECTOR:
             return aaa_vector_equals(lhs->vector, rhs->vector);
         case AAA_MAP:
+        case AAA_SET:
         case AAA_STRUCT:
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
+        case AAA_SET_ITER:
         default:
             fprintf(stderr, "aaa_variable_equals Unhandled variable kind\n");
             abort();
@@ -325,6 +344,7 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
             aaa_vector_dec_ref(var->vector);
             break;
         case AAA_MAP:
+        case AAA_SET:
             aaa_map_dec_ref(var->map);
             break;
         case AAA_STRUCT:
@@ -334,6 +354,7 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
             aaa_vector_iter_dec_ref(var->vector_iter);
             break;
         case AAA_MAP_ITER:
+        case AAA_SET_ITER:
             aaa_map_iter_dec_ref(var->map_iter);
             break;
         default:
@@ -346,6 +367,10 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
 }
 
 void aaa_variable_inc_ref(struct aaa_variable *var) {
+    if (!var) {
+        return;
+    }
+
     switch (var->kind) {
         case AAA_BOOLEAN:
             return;
@@ -358,6 +383,7 @@ void aaa_variable_inc_ref(struct aaa_variable *var) {
             aaa_vector_inc_ref(var->vector);
             break;
         case AAA_MAP:
+        case AAA_SET:
             aaa_map_inc_ref(var->map);
             break;
         case AAA_STRUCT:
@@ -367,6 +393,7 @@ void aaa_variable_inc_ref(struct aaa_variable *var) {
             aaa_vector_iter_inc_ref(var->vector_iter);
             break;
         case AAA_MAP_ITER:
+        case AAA_SET_ITER:
             aaa_map_iter_inc_ref(var->map_iter);
             break;
         default:
@@ -397,6 +424,11 @@ struct aaa_variable *aaa_variable_new_vector_zero_value(void) {
 struct aaa_variable *aaa_variable_new_map_zero_value(void) {
     struct aaa_map *map = aaa_map_new();
     return aaa_variable_new_map(map);
+}
+
+struct aaa_variable *aaa_variable_new_set_zero_value(void) {
+    struct aaa_map *set = aaa_set_new();
+    return aaa_variable_new_set(set);
 }
 
 struct aaa_variable *

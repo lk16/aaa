@@ -310,3 +310,14 @@ def test_foreach_custom() -> None:
     assert "1\n2\n3\n4\n" == stdout
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_foreach_set() -> None:
+    stdout, stderr, exit_code = compile_run("foreach_set.aaa")
+
+    lines = set(stdout.strip().split("\n"))
+    expected_lines = {"2", "4", "6", "8"}
+
+    assert expected_lines == lines
+    assert "" == stderr
+    assert 0 == exit_code

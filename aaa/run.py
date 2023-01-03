@@ -96,7 +96,7 @@ class Runner:
                 generated_binary_file,
                 self.verbose,
             )
-            transpiler.run(compile, run)
+            return transpiler.run(compile, run)
 
         except AaaRunnerException as e:
             self.exceptions = e.exceptions
@@ -106,5 +106,3 @@ class Runner:
             self.exceptions = [e]
             self._print_exceptions(AaaRunnerException([e]))
             return 1
-
-        return 0

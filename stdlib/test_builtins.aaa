@@ -869,3 +869,77 @@ fn test_struct_member_function {
 
     1 = assert
 }
+
+fn test_set_add {
+    set[int]
+    dup 5 set:add
+    repr "{5}" str:equals assert
+}
+
+fn test_set_clear {
+    set[int]
+    dup 5 set:add
+    dup set:clear
+    set:size 0 = assert
+}
+
+fn test_set_copy {
+    set[int]
+    dup 5 set:add
+    dup set:copy
+    dup 6 set:add
+    set:size 2 = assert
+    set:size 1 = assert
+}
+
+fn test_set_empty_true {
+    set[int]
+    set:empty
+    assert
+}
+
+fn test_set_empty_false {
+    set[int]
+    dup 5 set:add
+    set:empty
+    not assert
+}
+
+fn test_set_has_false {
+    set[int]
+    5 set:has
+    not assert
+}
+
+fn test_set_has_true {
+    set[int]
+    dup 5 set:add
+    5 set:has
+    assert
+}
+
+fn test_set_remove_present {
+    set[int]
+    dup 5 set:add
+    dup 5 set:remove
+    5 set:has
+    not assert
+}
+
+fn test_set_remove_abscent {
+    set[int]
+    dup 5 set:remove
+    5 set:has
+    not assert
+}
+
+fn test_set_size_zero {
+    set[int]
+    set:size 0 = assert
+}
+
+fn test_set_size_one {
+    set[int]
+    dup 5 set:add
+    set:size 1 = assert
+}

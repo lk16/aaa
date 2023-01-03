@@ -598,6 +598,11 @@ void aaa_stack_push_map(struct aaa_stack *stack, struct aaa_map *map) {
     aaa_stack_push(stack, var);
 }
 
+void aaa_stack_push_set(struct aaa_stack *stack, struct aaa_map *map) {
+    struct aaa_variable *var = aaa_variable_new_set(map);
+    aaa_stack_push(stack, var);
+}
+
 void aaa_stack_map_set(struct aaa_stack *stack) {
     struct aaa_variable *value = aaa_stack_pop(stack);
     struct aaa_variable *key = aaa_stack_pop(stack);
@@ -1259,4 +1264,94 @@ void aaa_stack_map_iter_next(struct aaa_stack *stack) {
     aaa_stack_push_bool(stack, has_next);
 
     aaa_map_iter_dec_ref(iter);
+}
+
+void aaa_stack_set_add(struct aaa_stack *stack) {
+    struct aaa_variable *item = aaa_stack_pop(stack);
+    struct aaa_map *set = aaa_stack_pop_map(stack);
+
+    // TODO This is ugly. We add a value to each `set` item, such that the
+    // `has_key` function works correctly. That function returns NULL for maps
+    // when a key is not present, but this won't work with sets if all values
+    // inside the container have NULL values.
+    struct aaa_variable *dummy = aaa_variable_new_int(0);
+
+    aaa_map_set(set, item, dummy);
+
+    aaa_map_dec_ref(set);
+}
+
+void aaa_stack_set_clear(struct aaa_stack *stack) {
+    struct aaa_map *set = aaa_stack_pop_map(stack);
+
+    aaa_map_clear(set);
+
+    aaa_map_dec_ref(set);
+}
+
+void aaa_stack_set_copy(struct aaa_stack *stack) {
+    struct aaa_map *set = aaa_stack_pop_map(stack);
+
+    struct aaa_map *copy = aaa_map_copy(set);
+
+    aaa_stack_push_map(stack, copy);
+
+    aaa_map_dec_ref(set);
+}
+
+void aaa_stack_set_empty(struct aaa_stack *stack) {
+    struct aaa_map *set = aaa_stack_pop_map(stack);
+
+    bool is_empty = aaa_map_empty(set);
+
+    aaa_stack_push_bool(stack, is_empty);
+
+    aaa_map_dec_ref(set);
+}
+
+void aaa_stack_set_has(struct aaa_stack *stack) {
+    struct aaa_variable *item = aaa_stack_pop(stack);
+    struct aaa_map *set = aaa_stack_pop_map(stack);
+
+    bool has_key = aaa_map_has_key(set, item);
+
+    aaa_stack_push_bool(stack, has_key);
+
+    aaa_map_dec_ref(set);
+    aaa_variable_dec_ref(item);
+}
+
+void aaa_stack_set_iter(struct aaa_stack *stack) { aaa_stack_map_iter(stack); }
+
+void aaa_stack_set_remove(struct aaa_stack *stack) {
+    struct aaa_variable *item = aaa_stack_pop(stack);
+    struct aaa_map *set = aaa_stack_pop_map(stack);
+
+    aaa_map_pop(set, item);
+}
+
+void aaa_stack_set_size(struct aaa_stack *stack) {
+    return aaa_stack_map_size(stack);
+}
+
+void aaa_stack_set_iter_next(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_pop(stack);
+    struct aaa_map_iter *iter = aaa_variable_get_map_iter(top);
+
+    aaa_map_iter_inc_ref(iter);
+    aaa_variable_dec_ref(top);
+
+    struct aaa_variable *key = NULL;
+    struct aaa_variable *value = NULL;
+    bool has_next = aaa_map_iter_next(iter, &key, &value);
+
+    aaa_stack_push(stack, key);
+    aaa_stack_push_bool(stack, has_next);
+
+    aaa_map_iter_dec_ref(iter);
+}
+
+void aaa_stack_push_set_empty(struct aaa_stack *stack) {
+    struct aaa_map *set = aaa_set_new();
+    aaa_stack_push_set(stack, set);
 }

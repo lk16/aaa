@@ -40,6 +40,7 @@ void aaa_vector_inc_ref(struct aaa_vector *vec) {
 }
 
 struct aaa_string *aaa_vector_repr(const struct aaa_vector *vec) {
+    // TODO use vector iterator
     struct aaa_buffer *buff = aaa_buffer_new();
     aaa_buffer_append(buff, "[");
 

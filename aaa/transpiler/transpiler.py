@@ -362,6 +362,8 @@ class Transpiler:
                 return f"{indentation}aaa_stack_push_vec_empty(stack);\n"
             elif var_type.name == "map":
                 return f"{indentation}aaa_stack_push_map_empty(stack);\n"
+            elif var_type.name == "set":
+                return f"{indentation}aaa_stack_push_set_empty(stack);\n"
             else:  # pragma: nocover
                 assert False
 

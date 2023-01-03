@@ -6,12 +6,12 @@ type str
 
 // container types
 type map[K, V]
-type set[T] // TODO implement
+type set[T]
 type vec[T]
 
 // container iterator types
 type map_iter[K, V]
-type set_iter[T]  // TODO implement
+type set_iter[T]
 type vec_iter[T]
 
 // stack operations
@@ -73,21 +73,21 @@ fn map[K, V]:pop     args m as map[K, V], key as K             return V
 fn map[K, V]:set     args m as map[K, V], key as K, value as V
 fn map[K, V]:size    args m as map[K, V]                       return int
 
-fn set[T]:add        args s as set[T], item as T  // TODO implement
-fn set[T]:clear      args s as set[T]  // TODO implement
-fn set[T]:copy       args s as set[T]                          return set[T]  // TODO implement
-fn set[T]:empty      args s as set[T]                          return bool  // TODO implement
-fn set[T]:has        args s as set[T], item as T               return bool  // TODO implement
-fn set[T]:iter       args s as set[T]                          return set_iter[T]  // TODO implement
-fn set[T]:remove     args s as set[T], item as T  // TODO implement
-fn set[T]:size       args s as set[T]                          return int  // TODO implement
+fn set[T]:add        args s as set[T], item as T
+fn set[T]:clear      args s as set[T]
+fn set[T]:copy       args s as set[T]                          return set[T]
+fn set[T]:empty      args s as set[T]                          return bool
+fn set[T]:has        args s as set[T], item as T               return bool
+fn set[T]:iter       args s as set[T]                          return set_iter[T]
+fn set[T]:remove     args s as set[T], item as T
+fn set[T]:size       args s as set[T]                          return int
 
 // TODO: rename size functions of containers to len
 
 // container iteration
 fn map_iter[K, V]:next args iter as map_iter[K, V] return K, V, bool
 fn set_iter[T]:next args iter as set_iter[T] return T, bool
-fn vec_iter[T]:next args iter as vec_iter[T] return T, bool // TODO implement
+fn vec_iter[T]:next args iter as vec_iter[T] return T, bool
 
 // string functions
 fn str:append     args s as str, other as str                  return str
