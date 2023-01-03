@@ -9,7 +9,7 @@ struct aaa_vector *aaa_vector_new(void);
 void aaa_vector_inc_ref(struct aaa_vector *vec);
 void aaa_vector_dec_ref(struct aaa_vector *vec);
 
-struct aaa_string *aaa_vector_repr(const struct aaa_vector *vec);
+struct aaa_string *aaa_vector_repr(struct aaa_vector *vec);
 bool aaa_vector_equals(struct aaa_vector *lhs, struct aaa_vector *rhs);
 
 void aaa_vector_clear(struct aaa_vector *vec);

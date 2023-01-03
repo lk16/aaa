@@ -39,26 +39,31 @@ void aaa_vector_inc_ref(struct aaa_vector *vec) {
     aaa_ref_count_inc(&vec->ref_count);
 }
 
-struct aaa_string *aaa_vector_repr(const struct aaa_vector *vec) {
-    // TODO use vector iterator
+struct aaa_string *aaa_vector_repr(struct aaa_vector *vec) {
     struct aaa_buffer *buff = aaa_buffer_new();
     aaa_buffer_append(buff, "[");
 
-    for (size_t i = 0; i < vec->size; i++) {
-        struct aaa_variable *item = vec->data[i];
+    struct aaa_vector_iter *iter = aaa_vector_iter_new(vec);
+    struct aaa_variable *item = NULL;
+    bool is_first = true;
+
+    while (aaa_vector_iter_next(iter, &item)) {
+        if (!is_first) {
+            aaa_buffer_append(buff, ", ");
+        }
 
         struct aaa_string *item_repr = aaa_variable_repr(item);
         aaa_buffer_append(buff, aaa_string_raw(item_repr));
         aaa_string_dec_ref(item_repr);
-
-        if (i != vec->size - 1) {
-            aaa_buffer_append(buff, ", ");
-        }
+        is_first = false;
     }
     aaa_buffer_append(buff, "]");
 
     struct aaa_string *string = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);
+
+    aaa_vector_iter_dec_ref(iter);
+
     return string;
 }
 
