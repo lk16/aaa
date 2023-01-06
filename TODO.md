@@ -14,7 +14,7 @@
 - [x] Add all of that to CI
 - [ ] Add transpiling to `README.md`
 - [ ] Add remaining tests for syscalls
-- [ ] Build static library of aaa stdlib so we don't compile it everytime
+- [x] Build static library of aaa stdlib so we don't compile it everytime
 
 ### Testing
 - [ ] Collect coverage stats from dockerized tests
