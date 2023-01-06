@@ -14,6 +14,12 @@
 - [x] Add all of that to CI
 - [ ] Add transpiling to `README.md`
 - [ ] Add remaining tests for syscalls
+- [ ] Build static library of aaa stdlib so we don't compile it everytime
+
+### Testing
+- [ ] Collect coverage stats from dockerized tests
+- [ ] Merge coverage of tests in- and outside of docker
+- [ ] Cache compiled executables
 
 ### Improve import system
 - Start using colon-separated env var `AAA_PATH` like `PYTHON_PATH`
