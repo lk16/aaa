@@ -16,6 +16,19 @@
 - [ ] Add remaining tests for syscalls
 - [x] Build static library of aaa stdlib so we don't compile it everytime
 
+### Variables and assignment
+- [ ] Tokenizing
+- [ ] Parsing
+- [ ] Cross-referencing
+- [ ] Type-checking
+- [ ] Handle edge cases:
+    - [ ] `use` Identifier clash
+    - [ ] `use` with empty stack
+    - [ ] assignment with missmatching types
+    - [ ] assignment with missmatching count of variables and return types
+    - [ ] usage of variable outside `use` block
+    - [ ] using same variable name in 2 non-overlapping `use` blocks
+
 ### Testing
 - [ ] Collect coverage stats from dockerized tests
 - [ ] Merge coverage of tests in- and outside of docker

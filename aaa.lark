@@ -48,13 +48,17 @@ SET_FIELD:    "!"
 // control flow keywords
 ELSE:        "else"
 FROM:        "from"
-IF:          "if"
-WHILE:       "while"
 FOREACH:     "foreach"
+IF:          "if"
+USE:         "use"
+WHILE:       "while"
 
 // keywords for builtin constants
 FALSE:       "false"
 TRUE:        "true"
+
+// assignment operator
+ASSIGN:      "<-"
 
 // --- file roots ---
 
@@ -121,7 +125,9 @@ function_body_item: ( \
     | while_loop
     | struct_field_query
     | struct_field_update \
-    | foreach_loop
+    | foreach_loop \
+    | use_block \
+    | assignment
 )
 
 // --- branch ---
@@ -132,6 +138,13 @@ branch: IF function_body BEGIN function_body _END [ELSE BEGIN function_body _END
 
 while_loop: WHILE function_body BEGIN function_body _END
 foreach_loop: FOREACH BEGIN function_body END
+
+// --- use and assignment ---
+
+variables: identifier ("," identifier)* [","]
+
+use_block: USE variables BEGIN function_body END
+assignment: variables ASSIGN BEGIN function_body END
 
 // --- identifier ---
 

@@ -20,7 +20,7 @@
 		},
 		{
 			"name": "keyword.operator.arithmetic.aaa",
-			"match": "\\+|\\-|\\*|/|%"
+			"match": "\\+|\\-|\\*|/|%|<-"
 		},
 		{
 			"name": "keyword.operator.logical.aaa",
@@ -47,7 +47,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.aaa",
-				"match": "\\b(if|else|while|fn|as|args|return|import|from|type|struct|foreach)\\b"
+				"match": "\\b(if|else|while|fn|as|args|return|import|from|type|struct|foreach|use)\\b"
 			}]
 		},
 		"strings": {
