@@ -110,27 +110,30 @@ static void aaa_map_rehash(struct aaa_map *map, size_t new_bucket_count) {
     free(old_buckets);
 }
 
-static struct aaa_map_item *aaa_map_get_item(struct aaa_map *map,
-                                             const struct aaa_variable *key) {
+static bool aaa_map_get_item(struct aaa_map *map,
+                             const struct aaa_variable *key,
+                             struct aaa_map_item **found_item) {
     size_t hash = aaa_variable_hash(key);
     size_t bucket = hash % map->bucket_count;
     struct aaa_map_item *item = map->buckets[bucket];
 
     while (item) {
         if (item->hash == hash && aaa_variable_equals(key, item->key)) {
-            return item;
+            *found_item = item;
+            return true;
         }
         item = item->next;
     }
 
-    return NULL;
+    *found_item = NULL;
+    return false;
 }
 
 struct aaa_variable *aaa_map_get(struct aaa_map *map,
                                  const struct aaa_variable *key) {
-    struct aaa_map_item *item = aaa_map_get_item(map, key);
+    struct aaa_map_item *item = NULL;
 
-    if (item) {
+    if (aaa_map_get_item(map, key, &item)) {
         aaa_variable_inc_ref(item->value);
         return item->value;
     }
@@ -139,14 +142,8 @@ struct aaa_variable *aaa_map_get(struct aaa_map *map,
 }
 
 bool aaa_map_has_key(struct aaa_map *map, const struct aaa_variable *key) {
-    struct aaa_variable *value = aaa_map_get(map, key);
-
-    if (value) {
-        aaa_variable_dec_ref(value);
-        return true;
-    }
-
-    return false;
+    struct aaa_map_item *item = NULL;
+    return aaa_map_get_item(map, key, &item);
 }
 
 struct aaa_variable *aaa_map_pop(struct aaa_map *map,
@@ -179,9 +176,9 @@ struct aaa_variable *aaa_map_pop(struct aaa_map *map,
 
 void aaa_map_set(struct aaa_map *map, struct aaa_variable *key,
                  struct aaa_variable *new_value) {
-    struct aaa_map_item *item = aaa_map_get_item(map, key);
+    struct aaa_map_item *item = NULL;
 
-    if (item) {
+    if (aaa_map_get_item(map, key, &item)) {
         aaa_variable_dec_ref(item->value);
     } else {
         item = malloc(sizeof(*item));

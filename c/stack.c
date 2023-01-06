@@ -1273,13 +1273,7 @@ void aaa_stack_set_add(struct aaa_stack *stack) {
     struct aaa_variable *item = aaa_stack_pop(stack);
     struct aaa_map *set = aaa_stack_pop_map(stack);
 
-    // TODO This is ugly. We add a value to each `set` item, such that the
-    // `has_key` function works correctly. That function returns NULL for maps
-    // when a key is not present, but this won't work with sets if all values
-    // inside the container have NULL values.
-    struct aaa_variable *dummy = aaa_variable_new_int(0);
-
-    aaa_map_set(set, item, dummy);
+    aaa_map_set(set, item, NULL);
 
     aaa_map_dec_ref(set);
 }
