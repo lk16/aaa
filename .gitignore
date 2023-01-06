@@ -5,5 +5,11 @@ __pycache__
 .envrc
 *.idea
 *.prof
+
 dump.c
 dump
+
+c/cmake_install.cmake
+c/CMakeCache.txt
+c/libaaa_stdlib.a
+c/Makefile

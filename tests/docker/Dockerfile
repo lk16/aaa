@@ -3,7 +3,7 @@ FROM python:3.10
 ENV AAA_TESTS_CONTAINER=1
 
 RUN apt-get update && \
-    apt-get install -y gdb valgrind
+    apt-get install -y gdb valgrind cmake
 
 RUN pip install --upgrade pip && \
     pip install 'poetry==1.2.2'

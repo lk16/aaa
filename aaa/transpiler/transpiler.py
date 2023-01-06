@@ -1,5 +1,5 @@
 import subprocess
-from glob import glob
+import sys
 from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -68,18 +68,39 @@ class Transpiler:
             NamedTemporaryFile(delete=False).name
         )
 
+    def _build_stdlib(self) -> int:
+        proc = subprocess.run(["cmake", "."], cwd=("./c"), capture_output=True)
+        exit_code = proc.returncode
+
+        if exit_code != 0:
+            print(proc.stdout)
+            print(proc.stderr, file=sys.stderr)
+            return exit_code
+
+        proc = subprocess.run(["make"], cwd=("./c"), capture_output=True)
+
+        if exit_code != 0:
+            print(proc.stdout)
+            print(proc.stderr, file=sys.stderr)
+
+        return exit_code
+
     def run(self, compile: bool, run_binary: bool) -> int:
         code = self._generate_c_file()
         self.generated_c_file.write_text(code)
 
         if compile:  # pragma: nocover
-            c_files = [str(self.generated_c_file)] + glob("./c/*.c")
+            exit_code = self._build_stdlib()
+            if exit_code != 0:
+                return exit_code
 
             command = [
                 "gcc",
                 # "--coverage", TODO enable this flag with flag
                 "-I",
                 "./c/",
+                str(self.generated_c_file),
+                "./c/libaaa_stdlib.a",
                 "-o",
                 str(self.generated_binary_file),
                 "-std=gnu99",
@@ -105,7 +126,7 @@ class Transpiler:
                 "-Wswitch-enum",
                 "-Wundef",
                 "-Wunreachable-code",
-            ] + c_files
+            ]
 
             exit_code = subprocess.run(command).returncode
 
