@@ -173,6 +173,7 @@ struct aaa_vector_iter {
 struct aaa_vector_iter *aaa_vector_iter_new(struct aaa_vector *vec) {
     struct aaa_vector_iter *iter = malloc(sizeof(*iter));
     aaa_ref_count_init(&iter->ref_count);
+    aaa_vector_inc_ref(vec);
     iter->vector = vec;
     iter->next_offset = 0;
     return iter;

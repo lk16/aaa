@@ -1218,7 +1218,10 @@ void aaa_stack_vec_iter(struct aaa_stack *stack) {
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
     struct aaa_vector_iter *iter = aaa_vector_iter_new(vec);
     struct aaa_variable *var = aaa_variable_new_vector_iter(iter);
+
     aaa_stack_push(stack, var);
+
+    aaa_vector_dec_ref(vec);
 }
 
 void aaa_stack_vec_iter_next(struct aaa_stack *stack) {
@@ -1328,6 +1331,8 @@ void aaa_stack_set_remove(struct aaa_stack *stack) {
     struct aaa_map *set = aaa_stack_pop_map(stack);
 
     aaa_map_pop(set, item);
+
+    aaa_map_dec_ref(set);
 }
 
 void aaa_stack_set_size(struct aaa_stack *stack) {
