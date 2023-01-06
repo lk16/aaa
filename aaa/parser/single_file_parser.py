@@ -10,6 +10,7 @@ from aaa.parser.exceptions import (
 )
 from aaa.parser.models import (
     Argument,
+    Assignment,
     BooleanLiteral,
     Branch,
     ForeachLoop,
@@ -27,6 +28,7 @@ from aaa.parser.models import (
     StructFieldQuery,
     StructFieldUpdate,
     TypeLiteral,
+    UseBlock,
     WhileLoop,
 )
 from aaa.tokenizer.models import Token, TokenType
@@ -529,14 +531,23 @@ class SingleFileParser:
 
         if token.type in literal_token_types:
             return self._parse_literal(offset)
+
         if token.type == TokenType.IDENTIFIER:
-            return self._parse_function_call(offset)
+            try:
+                return self._parse_function_call(offset)
+            except ParserBaseException:
+                pass
+
+            return self._parse_assignment(offset)
+
         if token.type == TokenType.IF:
             return self._parse_branch(offset)
         if token.type == TokenType.WHILE:
             return self._parse_while_loop(offset)
         if token.type == TokenType.FOREACH:
             return self._parse_foreach_loop(offset)
+        if token.type == TokenType.USE:
+            return self._parse_use_block(offset)
 
         raise ParserException(
             position=token.position,
@@ -629,3 +640,46 @@ class SingleFileParser:
 
         foreach = ForeachLoop(foreach_token.position, body)
         return foreach, offset
+
+    def _parse_variables(self, offset: int) -> Tuple[List[Identifier], int]:
+        identifiers: List[Identifier] = []
+        token: Optional[Token]
+
+        while True:
+            identifier, offset = self._parse_identifier(offset)
+            identifiers.append(identifier)
+
+            token, offset = self._token(
+                offset, [TokenType.TYPE_PARAM_END, TokenType.COMMA]
+            )
+
+            if token.type == TokenType.TYPE_PARAM_END:
+                break
+
+            # Handle comma at the end, for example `[A,]` or `[A,B,]`
+            token = self._peek_token(offset)
+            if token and token.type == TokenType.TYPE_PARAM_END:
+                _, offset = self._token(offset, [TokenType.TYPE_PARAM_END])
+                break
+
+        return identifiers, offset
+
+    def _parse_use_block(self, offset: int) -> Tuple[UseBlock, int]:
+        use_token, offset = self._token(offset, [TokenType.USE])
+        variables, offset = self._parse_variables(offset)
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        body, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        use_block = UseBlock(use_token.position, variables, body)
+        return use_block, offset
+
+    def _parse_assignment(self, offset: int) -> Tuple[Assignment, int]:
+        variables, offset = self._parse_variables(offset)
+        _, offset = self._token(offset, [TokenType.ASSIGN])
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        body, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        assignment = Assignment(variables[0].position, variables, body)
+        return assignment, offset

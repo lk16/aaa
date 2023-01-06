@@ -6,6 +6,7 @@ from aaa import Position
 class TokenType(Enum):
     ARGS = "ARGS"
     AS = "AS"
+    ASSIGN = "ASSIGN"
     BEGIN = "BEGIN"
     COMMA = "COMMA"
     COLON = "COLON"
@@ -29,6 +30,7 @@ class TokenType(Enum):
     TYPE = "TYPE"
     TYPE_PARAM_BEGIN = "TYPE_PARAM_BEGIN"
     TYPE_PARAM_END = "TYPE_PARAM_END"
+    USE = "USE"
     WHILE = "WHILE"
     WHITESPACE = "WHITESPACE"
 

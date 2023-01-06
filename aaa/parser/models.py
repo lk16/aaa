@@ -216,6 +216,24 @@ class ForeachLoop(FunctionBodyItem):
         super().__init__(position)
 
 
+class UseBlock(FunctionBodyItem):
+    def __init__(
+        self, position: Position, variables: List[Identifier], body: FunctionBody
+    ) -> None:
+        self.variables = variables
+        self.body = body
+        super().__init__(position)
+
+
+class Assignment(FunctionBodyItem):
+    def __init__(
+        self, position: Position, variables: List[Identifier], body: FunctionBody
+    ) -> None:
+        self.variables = variables
+        self.body = body
+        super().__init__(position)
+
+
 class ParserOutput(AaaModel):
     def __init__(
         self,
