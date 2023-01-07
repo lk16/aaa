@@ -202,6 +202,12 @@ class CallArgument(FunctionBodyItem):
         super().__init__(position)
 
 
+class CallVariable(FunctionBodyItem):
+    def __init__(self, variable: Variable, position: Position) -> None:
+        self.variable = variable
+        super().__init__(position)
+
+
 class CallFunction(FunctionBodyItem):
     def __init__(
         self, function: Function, type_params: List[VariableType], position: Position
@@ -248,6 +254,30 @@ class StructFieldUpdate(FunctionBodyItem):
 
 class ForeachLoop(FunctionBodyItem):
     def __init__(self, parsed: parser.ForeachLoop, body: FunctionBody) -> None:
+        self.body = body
+        super().__init__(parsed.position)
+
+
+class Variable(FunctionBodyItem):
+    def __init__(self, parsed: parser.Identifier) -> None:
+        self.name = parsed.name
+        super().__init__(parsed.position)
+
+
+class Assignment(FunctionBodyItem):
+    def __init__(
+        self, parsed: parser.Assignment, variables: List[Variable], body: FunctionBody
+    ) -> None:
+        self.variables = variables
+        self.body = body
+        super().__init__(parsed.position)
+
+
+class UseBlock(FunctionBodyItem):
+    def __init__(
+        self, parsed: parser.UseBlock, variables: List[Variable], body: FunctionBody
+    ) -> None:
+        self.variables = variables
         self.body = body
         super().__init__(parsed.position)
 

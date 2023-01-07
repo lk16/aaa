@@ -17,11 +17,13 @@ from aaa.cross_referencer.exceptions import (
 from aaa.cross_referencer.models import (
     AaaCrossReferenceModel,
     Argument,
+    Assignment,
     BooleanLiteral,
     Branch,
     CallArgument,
     CallFunction,
     CallType,
+    CallVariable,
     CrossReferencerOutput,
     ForeachLoop,
     Function,
@@ -38,6 +40,8 @@ from aaa.cross_referencer.models import (
     UnresolvedFunction,
     UnresolvedImport,
     UnresolvedType,
+    UseBlock,
+    Variable,
     VariableType,
     WhileLoop,
 )
@@ -255,24 +259,14 @@ class CrossReferencer:
         return Import(import_, source)
 
     def _get_identifiable(self, identifier: parser.Identifier) -> Identifiable:
-        return self.__get_identifiable(identifier.name, identifier.position)
+        return self._get_identifiable_generic(identifier.name, identifier.position)
 
     def _get_type(self, identifier: parser.Identifier) -> Type:
         type = self._get_identifiable(identifier)
         assert isinstance(type, Type)
         return type
 
-    def _get_identifiable_from_function_name(
-        self, func_name: parser.FunctionName
-    ) -> Identifiable:
-        return self.__get_identifiable(func_name.name(), func_name.position)
-
-    def _get_identifiable_from_type_literal(
-        self, type: parser.TypeLiteral
-    ) -> Identifiable:
-        return self.__get_identifiable(type.identifier.name, type.position)
-
-    def __get_identifiable(self, name: str, position: Position) -> Identifiable:
+    def _get_identifiable_generic(self, name: str, position: Position) -> Identifiable:
 
         builtins_key = (self.builtins_path, name)
         key = (position.file, name)
@@ -510,13 +504,55 @@ class CrossReferencer:
             return_types.append(return_type)
         return return_types
 
-    def _resolve_function_body(
-        self, function: Function, parsed_body: parser.FunctionBody
-    ) -> FunctionBody:
+    def _resolve_function_bodies(self, functions: List[UnresolvedFunction]) -> None:
+        for unresolved_function in functions:
+            key = (unresolved_function.position.file, unresolved_function.name)
+
+            try:
+                function = self.identifiers[key]
+            except KeyError:
+                # Function signature loading failed, so no body to resolve
+                continue
+
+            if not isinstance(function, Function):
+                # Name collision of function and something else
+                continue
+
+            # TODO forward vars everywhere instead of function
+            _ = vars
+
+            parsed_body = unresolved_function.parsed.body
+            resolver = FunctionBodyResolver(self, function, parsed_body)
+
+            try:
+                body = resolver.run()
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+            else:
+                function.body = body
+
+
+class FunctionBodyResolver:
+    def __init__(
+        self,
+        cross_referencer: CrossReferencer,
+        function: Function,
+        parsed: parser.FunctionBody,
+    ) -> None:
+        self.function = function
+        self.parsed = parsed
+        self.cross_referencer = cross_referencer
+        self.vars: Dict[str, Argument | Variable] = {
+            arg.name: arg for arg in self.function.arguments
+        }
+
+    def run(self) -> FunctionBody:
+        return self._resolve_function_body(self.parsed)
+
+    def _resolve_function_body(self, parsed_body: parser.FunctionBody) -> FunctionBody:
         return FunctionBody(
             items=[
-                self._resolve_function_body_item(function, item)
-                for item in parsed_body.items
+                self._resolve_function_body_item(item) for item in parsed_body.items
             ],
             parsed=parsed_body,
         )
@@ -540,43 +576,46 @@ class CrossReferencer:
 
         return VariableType(identifiable, [], False, type_literal.position)
 
-    def _resolve_branch(self, function: Function, branch: parser.Branch) -> Branch:
+    def _resolve_branch(self, branch: parser.Branch) -> Branch:
         resolved_else_body: Optional[FunctionBody] = None
 
         if branch.else_body:
-            resolved_else_body = self._resolve_function_body(function, branch.else_body)
+            resolved_else_body = self._resolve_function_body(branch.else_body)
 
         return Branch(
-            condition=self._resolve_function_body(function, branch.condition),
-            if_body=self._resolve_function_body(function, branch.if_body),
+            condition=self._resolve_function_body(branch.condition),
+            if_body=self._resolve_function_body(branch.if_body),
             else_body=resolved_else_body,
             parsed=branch,
         )
 
-    def _resolve_while_loop(
-        self,
-        function: Function,
-        while_loop: parser.WhileLoop,
-    ) -> WhileLoop:
+    def _resolve_while_loop(self, while_loop: parser.WhileLoop) -> WhileLoop:
         return WhileLoop(
-            condition=self._resolve_function_body(function, while_loop.condition),
-            body=self._resolve_function_body(function, while_loop.body),
+            condition=self._resolve_function_body(while_loop.condition),
+            body=self._resolve_function_body(while_loop.body),
             parsed=while_loop,
         )
 
     def _resolve_function_name(
-        self,
-        function: Function,
-        function_name: parser.FunctionName,
-    ) -> CallArgument | CallFunction | CallType:
+        self, function_name: parser.FunctionName
+    ) -> CallArgument | CallVariable | CallFunction | CallType:
 
-        for argument in function.arguments:
-            if function_name.name() == argument.name:
-                if function_name.type_params:
-                    # TODO handle handle case like: fn foo args a as int { a[b] drop }
-                    raise NotImplementedError
+        try:
+            var = self.vars[function_name.name()]
+        except KeyError:
+            pass
+        else:
+            if function_name.type_params:
+                # TODO handle handle case like: fn foo args a as int { a[b] drop }
+                # TODO handle handle case like: fn foo { 0 use c { c[b] } }
+                raise NotImplementedError
 
-                return CallArgument(argument, function_name.position)
+            if isinstance(var, Argument):
+                return CallArgument(var, function_name.position)
+            elif isinstance(var, Variable):
+                return CallVariable(var, function_name.position)
+            else:  # pragma: nocover
+                assert False
 
         identifiable = self._get_identifiable_from_function_name(function_name)
 
@@ -584,7 +623,7 @@ class CrossReferencer:
             return CallFunction(
                 identifiable,
                 [
-                    self._resolve_function_type_param(function, param)
+                    self._resolve_function_type_param(self.function, param)
                     for param in function_name.type_params
                 ],
                 function_name.position,
@@ -594,7 +633,7 @@ class CrossReferencer:
             var_type = VariableType(
                 identifiable,
                 [
-                    self._lookup_function_param(function.type_params, param)
+                    self._lookup_function_param(self.function.type_params, param)
                     for param in function_name.type_params
                 ],
                 False,
@@ -613,17 +652,15 @@ class CrossReferencer:
         assert False  # pragma: nocover
 
     def _resolve_struct_field_update(
-        self,
-        function: Function,
-        update: parser.StructFieldUpdate,
+        self, update: parser.StructFieldUpdate
     ) -> StructFieldUpdate:
         return StructFieldUpdate(
             parsed=update,
-            new_value_expr=self._resolve_function_body(function, update.new_value_expr),
+            new_value_expr=self._resolve_function_body(update.new_value_expr),
         )
 
     def _resolve_function_body_item(
-        self, function: Function, parsed_item: parser.FunctionBodyItem
+        self, parsed_item: parser.FunctionBodyItem
     ) -> FunctionBodyItem:
         if isinstance(parsed_item, parser.IntegerLiteral):
             return IntegerLiteral(parsed_item)
@@ -632,47 +669,53 @@ class CrossReferencer:
         elif isinstance(parsed_item, parser.BooleanLiteral):
             return BooleanLiteral(parsed_item)
         elif isinstance(parsed_item, parser.WhileLoop):
-            return self._resolve_while_loop(function, parsed_item)
+            return self._resolve_while_loop(parsed_item)
         elif isinstance(parsed_item, parser.Branch):
-            return self._resolve_branch(function, parsed_item)
+            return self._resolve_branch(parsed_item)
         elif isinstance(parsed_item, parser.FunctionName):
-            return self._resolve_function_name(function, parsed_item)
+            return self._resolve_function_name(parsed_item)
         elif isinstance(parsed_item, parser.StructFieldQuery):
             return StructFieldQuery(parsed_item)
         elif isinstance(parsed_item, parser.StructFieldUpdate):
-            return self._resolve_struct_field_update(function, parsed_item)
+            return self._resolve_struct_field_update(parsed_item)
         elif isinstance(parsed_item, parser.ForeachLoop):
-            return self._resolve_foreach_loop(function, parsed_item)
+            return self._resolve_foreach_loop(parsed_item)
+        elif isinstance(parsed_item, parser.Assignment):
+            return self._resolve_assignment(parsed_item)
+        elif isinstance(parsed_item, parser.UseBlock):
+            return self._resolve_use_block(parsed_item)
         else:  # pragma: nocover
             assert False
 
-    def _resolve_foreach_loop(
-        self, function: Function, parsed: parser.ForeachLoop
-    ) -> ForeachLoop:
-        body = self._resolve_function_body(function, parsed.body)
+    def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
+        body = self._resolve_function_body(parsed.body)
+        variables = [Variable(var) for var in parsed.variables]
+        return Assignment(parsed, variables, body)
+
+    def _resolve_use_block(self, parsed: parser.UseBlock) -> UseBlock:
+        # TODO mark variables somehow such that they can be used in body
+        body = self._resolve_function_body(parsed.body)
+        variables = [Variable(var) for var in parsed.variables]
+        return UseBlock(parsed, variables, body)
+
+    def _resolve_foreach_loop(self, parsed: parser.ForeachLoop) -> ForeachLoop:
+        body = self._resolve_function_body(parsed.body)
         return ForeachLoop(parsed, body)
 
-    def _resolve_function_bodies(self, functions: List[UnresolvedFunction]) -> None:
-        for unresolved_function in functions:
-            key = (unresolved_function.position.file, unresolved_function.name)
+    def _get_identifiable_from_function_name(
+        self, func_name: parser.FunctionName
+    ) -> Identifiable:
+        return self._get_identifiable_generic(func_name.name(), func_name.position)
 
-            try:
-                function_identifier = self.identifiers[key]
-            except KeyError:
-                # Function signature loading failed, so no body to resolve
-                continue
+    def _get_identifiable_from_type_literal(
+        self, type: parser.TypeLiteral
+    ) -> Identifiable:
+        return self._get_identifiable_generic(type.identifier.name, type.position)
 
-            if not isinstance(function_identifier, Function):
-                # Name collision of function and something else
-                continue
+    def _get_identifiable_generic(self, name: str, position: Position) -> Identifiable:
+        return self.cross_referencer._get_identifiable_generic(name, position)
 
-            function = function_identifier
-
-            try:
-                body = self._resolve_function_body(
-                    function, unresolved_function.parsed.body
-                )
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-            else:
-                function.body = body
+    def _lookup_function_param(
+        self, type_params: Dict[str, Type], param: parser.TypeLiteral
+    ) -> VariableType:
+        return self.cross_referencer._lookup_function_param(type_params, param)

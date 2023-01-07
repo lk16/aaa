@@ -191,7 +191,7 @@ class TypeLiteral(AaaParseModel):
         super().__init__(position)
 
 
-class FunctionName(FunctionBodyItem):
+class FunctionName(FunctionBodyItem):  # TODO rename to something more accurate
     def __init__(
         self,
         position: Position,

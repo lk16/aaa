@@ -17,8 +17,8 @@
 - [x] Build static library of aaa stdlib so we don't compile it everytime
 
 ### Variables and assignment
-- [ ] Tokenizing
-- [ ] Parsing
+- [x] Tokenizing
+- [x] Parsing
 - [ ] Cross-referencing
 - [ ] Type-checking
 - [ ] Handle edge cases:
