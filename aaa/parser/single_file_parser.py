@@ -534,11 +534,11 @@ class SingleFileParser:
 
         if token.type == TokenType.IDENTIFIER:
             try:
-                return self._parse_function_call(offset)
+                return self._parse_assignment(offset)
             except ParserBaseException:
                 pass
 
-            return self._parse_assignment(offset)
+            return self._parse_function_call(offset)
 
         if token.type == TokenType.IF:
             return self._parse_branch(offset)
@@ -645,22 +645,22 @@ class SingleFileParser:
         identifiers: List[Identifier] = []
         token: Optional[Token]
 
+        identifier, offset = self._parse_identifier(offset)
+        identifiers.append(identifier)
+
         while True:
+            token = self._peek_token(offset)
+            if token and token.type != TokenType.COMMA:
+                break
+
+            _, offset = self._token(offset, [TokenType.COMMA])
+
+            token = self._peek_token(offset)
+            if token and token.type != TokenType.IDENTIFIER:
+                break
+
             identifier, offset = self._parse_identifier(offset)
             identifiers.append(identifier)
-
-            token, offset = self._token(
-                offset, [TokenType.TYPE_PARAM_END, TokenType.COMMA]
-            )
-
-            if token.type == TokenType.TYPE_PARAM_END:
-                break
-
-            # Handle comma at the end, for example `[A,]` or `[A,B,]`
-            token = self._peek_token(offset)
-            if token and token.type == TokenType.TYPE_PARAM_END:
-                _, offset = self._token(offset, [TokenType.TYPE_PARAM_END])
-                break
 
         return identifiers, offset
 

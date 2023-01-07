@@ -116,6 +116,17 @@ class Tokenizer:
             else:
                 offset += 1
 
+    def _print_tokens(self, tokens: List[Token]) -> None:
+        if not self.verbose:
+            return
+
+        for token in tokens:
+            file = token.position.file.relative_to(Path.cwd())
+            line = token.position.line
+            column = token.position.column
+            pos = f"{file}:{line}:{column}"
+            print(f"{pos:<30} | {token.type.value:>16} | {token.value}")
+
     def run(self) -> List[Token]:
         # TODO catch TokenizerException
         # TODO return model with tokens and exceptions
@@ -130,6 +141,8 @@ class Tokenizer:
                 TokenType.COMMENT,
             ]:
                 filtered.append(token)
+
+        self._print_tokens(filtered)
 
         return filtered
 
