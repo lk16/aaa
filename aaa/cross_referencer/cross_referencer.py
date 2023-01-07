@@ -518,9 +518,6 @@ class CrossReferencer:
                 # Name collision of function and something else
                 continue
 
-            # TODO forward vars everywhere instead of function
-            _ = vars
-
             parsed_body = unresolved_function.parsed.body
             resolver = FunctionBodyResolver(self, function, parsed_body)
 
@@ -688,14 +685,39 @@ class FunctionBodyResolver:
             assert False
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
-        body = self._resolve_function_body(parsed.body)
         variables = [Variable(var) for var in parsed.variables]
+
+        for var in variables:
+            if var.name not in self.vars:
+                # TODO assigned variable not in scope
+                raise NotImplementedError
+
+        body = self._resolve_function_body(parsed.body)
         return Assignment(parsed, variables, body)
 
     def _resolve_use_block(self, parsed: parser.UseBlock) -> UseBlock:
-        # TODO mark variables somehow such that they can be used in body
+        variables = [Variable(parsed_var) for parsed_var in parsed.variables]
+
+        for var in variables:
+            if var.name in self.vars:
+                # TODO name collission with arg / other var
+                raise NotImplementedError
+
+            try:
+                self._get_identifiable_generic(var.name, var.position)
+            except UnknownIdentifier:
+                pass
+            else:
+                # TODO collision with identifiable
+                raise NotImplementedError
+
+            self.vars[var.name] = var
+
         body = self._resolve_function_body(parsed.body)
-        variables = [Variable(var) for var in parsed.variables]
+
+        for var in variables:
+            del self.vars[var.name]
+
         return UseBlock(parsed, variables, body)
 
     def _resolve_foreach_loop(self, parsed: parser.ForeachLoop) -> ForeachLoop:
