@@ -125,7 +125,7 @@ class Tokenizer:
             line = token.position.line
             column = token.position.column
             pos = f"{file}:{line}:{column}"
-            print(f"{pos:<30} | {token.type.value:>16} | {token.value}")
+            print(f"tokenizer | {pos:<30} | {token.type.value:>16} | {token.value}")
 
     def run(self) -> List[Token]:
         # TODO catch TokenizerException

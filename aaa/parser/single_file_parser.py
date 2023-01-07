@@ -76,11 +76,17 @@ class SingleFileParser:
         return token, offset + 1
 
     def _parse_identifier(self, offset: int) -> Tuple[Identifier, int]:
+        start_offset = offset
+
         token, offset = self._token(offset, [TokenType.IDENTIFIER])
         identifier = Identifier(token.position, token.value)
+
+        self._print_parse_tree_node("Identifier", start_offset, offset)
         return identifier, offset
 
     def _parse_flat_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+        start_offset = offset
+
         _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
 
         identifiers: List[Identifier] = []
@@ -108,9 +114,12 @@ class SingleFileParser:
             for identifier in identifiers
         ]
 
+        self._print_parse_tree_node("TypeParams", start_offset, offset)
         return type_params, offset
 
     def _parse_flat_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
+        start_offset = offset
+
         identifier, offset = self._parse_identifier(offset)
 
         type_params: List[TypeLiteral] = []
@@ -120,15 +129,21 @@ class SingleFileParser:
         except ParserBaseException:
             pass
 
+        self._print_parse_tree_node("FlatTypeLiteral", start_offset, offset)
         type_literal = TypeLiteral(identifier.position, identifier, type_params)
         return type_literal, offset
 
     def _parse_type_declaration(self, offset: int) -> Tuple[TypeLiteral, int]:
+        start_offset = offset
+
         _, offset = self._token(offset, [TokenType.TYPE])
+        self._print_parse_tree_node("TypeLiteral", start_offset, offset)
         type_literal, offset = self._parse_flat_type_literal(offset)
         return type_literal, offset
 
     def _parse_function_name(self, offset: int) -> Tuple[FunctionName, int]:
+        start_offset = offset
+
         type_literal, offset = self._parse_flat_type_literal(offset)
         identifier: Optional[Identifier] = None
 
@@ -153,9 +168,12 @@ class SingleFileParser:
             type_literal.position, struct_name, type_literal.params, func_name
         )
 
+        self._print_parse_tree_node("FunctionName", start_offset, offset)
         return function_name, offset
 
     def _parse_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+        start_offset = offset
+
         _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
 
         type_params: List[TypeLiteral] = []
@@ -178,9 +196,12 @@ class SingleFileParser:
                 _, offset = self._token(offset, [TokenType.TYPE_PARAM_END])
                 break
 
+        self._print_parse_tree_node("TypeParams", start_offset, offset)
         return type_params, offset
 
     def _parse_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
+        start_offset = offset
+
         identifier, offset = self._parse_identifier(offset)
 
         type_params: List[TypeLiteral] = []
@@ -191,17 +212,23 @@ class SingleFileParser:
             pass
 
         type_literal = TypeLiteral(identifier.position, identifier, type_params)
+        self._print_parse_tree_node("TypeLiteral", start_offset, offset)
         return type_literal, offset
 
     def _parse_argument(self, offset: int) -> Tuple[Argument, int]:
+        start_offset = offset
+
         identifier, offset = self._parse_identifier(offset)
         _, offset = self._token(offset, [TokenType.AS])
         type, offset = self._parse_type_literal(offset)
 
         argument = Argument(identifier.position, identifier, type)
+        self._print_parse_tree_node("Argument", start_offset, offset)
         return argument, offset
 
     def _parse_arguments(self, offset: int) -> Tuple[List[Argument], int]:
+        start_offset = offset
+
         arguments: List[Argument] = []
 
         argument, offset = self._parse_argument(offset)
@@ -220,9 +247,12 @@ class SingleFileParser:
             else:
                 arguments.append(argument)
 
+        self._print_parse_tree_node("Arguments", start_offset, offset)
         return arguments, offset
 
     def _parse_return_types(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+        start_offset = offset
+
         return_types: List[TypeLiteral] = []
 
         return_type, offset = self._parse_type_literal(offset)
@@ -241,9 +271,12 @@ class SingleFileParser:
             else:
                 return_types.append(return_type)
 
+        self._print_parse_tree_node("ReturnTypes", start_offset, offset)
         return return_types, offset
 
     def _parse_function_declaration(self, offset: int) -> Tuple[Function, int]:
+        start_offset = offset
+
         fn_token, offset = self._token(offset, [TokenType.FUNCTION])
         function_name, offset = self._parse_function_name(offset)
         arguments: List[Argument] = []
@@ -271,9 +304,11 @@ class SingleFileParser:
             body=empty_body,
         )
 
+        self._print_parse_tree_node("FunctionDeclaration", start_offset, offset)
         return function, offset
 
     def _parse_builtins_file_root(self, offset: int) -> Tuple[ParsedFile, int]:
+        start_offset = offset
 
         first_token = self._peek_token(offset)
 
@@ -312,9 +347,12 @@ class SingleFileParser:
             types=types,
         )
 
+        self._print_parse_tree_node("ParsedFile", start_offset, offset)
         return parsed_file, offset
 
     def _parse_struct_definition(self, offset: int) -> Tuple[Struct, int]:
+        start_offset = offset
+
         struct_token, offset = self._token(offset, [TokenType.STRUCT])
         identifier, offset = self._parse_identifier(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
@@ -327,9 +365,12 @@ class SingleFileParser:
             fields={field.identifier.name: field.type for field in fields},
         )
 
+        self._print_parse_tree_node("StructDefinition", start_offset, offset)
         return struct, offset
 
     def _parse_string(self, offset: int) -> Tuple[StringLiteral, int]:
+        start_offset = offset
+
         token, offset = self._token(offset, [TokenType.STRING])
 
         value = token.value[1:-1]
@@ -339,9 +380,12 @@ class SingleFileParser:
         value = value.replace('\\"', '"')
 
         string = StringLiteral(token.position, value)
+        self._print_parse_tree_node("String", start_offset, offset)
         return string, offset
 
     def _parse_import_item(self, offset: int) -> Tuple[ImportItem, int]:
+        start_offset = offset
+
         original_name, offset = self._parse_identifier(offset)
 
         token = self._peek_token(offset)
@@ -357,9 +401,12 @@ class SingleFileParser:
             imported_name=imported_name.name,
         )
 
+        self._print_parse_tree_node("ImportItem", start_offset, offset)
         return import_item, offset
 
     def _parse_import_items(self, offset: int) -> Tuple[List[ImportItem], int]:
+        start_offset = offset
+
         import_items: List[ImportItem] = []
 
         import_item, offset = self._parse_import_item(offset)
@@ -378,9 +425,12 @@ class SingleFileParser:
             else:
                 import_items.append(import_item)
 
+        self._print_parse_tree_node("ImportItems", start_offset, offset)
         return import_items, offset
 
     def _parse_import_statement(self, offset: int) -> Tuple[Import, int]:
+        start_offset = offset
+
         from_token, offset = self._token(offset, [TokenType.FROM])
         source, offset = self._parse_string(offset)
         _, offset = self._token(offset, [TokenType.IMPORT])
@@ -391,17 +441,26 @@ class SingleFileParser:
             source=source.value,
             imported_items=import_items,
         )
+
+        self._print_parse_tree_node("Import", start_offset, offset)
         return import_, offset
 
     def _parse_boolean(self, offset: int) -> Tuple[BooleanLiteral, int]:
+        start_offset = offset
+
         token, offset = self._token(offset, [TokenType.TRUE, TokenType.FALSE])
         boolean = BooleanLiteral(token.position, token.value == "true")
+
+        self._print_parse_tree_node("BooleanLiteral", start_offset, offset)
         return boolean, offset
 
     def _parse_integer(self, offset: int) -> Tuple[IntegerLiteral, int]:
+        start_offset = offset
+
         token, offset = self._token(offset, [TokenType.INTEGER])
 
         integer = IntegerLiteral(token.position, int(token.value))
+        self._print_parse_tree_node("IntegerLiteral", start_offset, offset)
         return integer, offset
 
     def _parse_literal(
@@ -431,6 +490,8 @@ class SingleFileParser:
         raise ParserException(token.position, expected_types, token.type)
 
     def _parse_function_call(self, offset: int) -> Tuple[FunctionName, int]:
+        start_offset = offset
+
         token: Optional[Token]
         identifier, offset = self._parse_identifier(offset)
 
@@ -453,9 +514,12 @@ class SingleFileParser:
         func_call = FunctionName(
             identifier.position, struct_name, type_params, func_name
         )
+        self._print_parse_tree_node("FunctionCall", start_offset, offset)
         return func_call, offset
 
     def _parse_branch(self, offset: int) -> Tuple[Branch, int]:
+        start_offset = offset
+
         if_token, offset = self._token(offset, [TokenType.IF])
         condition, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
@@ -473,9 +537,12 @@ class SingleFileParser:
 
         branch = Branch(if_token.position, condition, if_body, else_body)
 
+        self._print_parse_tree_node("Branch", start_offset, offset)
         return branch, offset
 
     def _parse_while_loop(self, offset: int) -> Tuple[WhileLoop, int]:
+        start_offset = offset
+
         while_token, offset = self._token(offset, [TokenType.WHILE])
         condition, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
@@ -483,16 +550,23 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.END])
 
         while_loop = WhileLoop(while_token.position, condition, body)
+        self._print_parse_tree_node("WhileLoop", start_offset, offset)
         return while_loop, offset
 
     def _parse_struct_field_query(self, offset: int) -> Tuple[StructFieldQuery, int]:
+        start_offset = offset
+
         field_name, offset = self._parse_string(offset)
         _, offset = self._token(offset, [TokenType.GET_FIELD])
 
         field_query = StructFieldQuery(field_name.position, field_name)
+
+        self._print_parse_tree_node("StructFieldQuery", start_offset, offset)
         return field_query, offset
 
     def _parse_struct_field_update(self, offset: int) -> Tuple[StructFieldUpdate, int]:
+        start_offset = offset
+
         field_name, offset = self._parse_string(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
         new_value_expr, offset = self._parse_function_body(offset)
@@ -502,10 +576,18 @@ class SingleFileParser:
         field_update = StructFieldUpdate(
             field_name.position, field_name, new_value_expr
         )
+        self._print_parse_tree_node("StructFieldUpdate", start_offset, offset)
         return field_update, offset
 
     def _parse_function_body_item(self, offset: int) -> Tuple[FunctionBodyItem, int]:
+        start_offset = offset
+        item, offset = self.__parse_function_body_item(offset)
+        self._print_parse_tree_node("FunctionBodyItem", start_offset, offset)
+        return item, offset
+
+    def __parse_function_body_item(self, offset: int) -> Tuple[FunctionBodyItem, int]:
         token = self._peek_token(offset)
+        next_token = self._peek_token(offset + 1)
 
         if not token:
             raise EndOfFileException(self.file)
@@ -519,24 +601,18 @@ class SingleFileParser:
         ]
 
         if token.type == TokenType.STRING:
-            try:
+            if next_token and next_token.type == TokenType.GET_FIELD:
                 return self._parse_struct_field_query(offset)
-            except ParserBaseException:
-                pass
 
-            try:
+            if next_token and next_token.type == TokenType.BEGIN:
                 return self._parse_struct_field_update(offset)
-            except ParserBaseException:
-                pass
 
         if token.type in literal_token_types:
             return self._parse_literal(offset)
 
         if token.type == TokenType.IDENTIFIER:
-            try:
+            if next_token and next_token.type in [TokenType.COMMA, TokenType.ASSIGN]:
                 return self._parse_assignment(offset)
-            except ParserBaseException:
-                pass
 
             return self._parse_function_call(offset)
 
@@ -557,6 +633,8 @@ class SingleFileParser:
         )
 
     def _parse_function_body(self, offset: int) -> Tuple[FunctionBody, int]:
+        start_offset = offset
+
         items: List[FunctionBodyItem] = []
 
         item, offset = self._parse_function_body_item(offset)
@@ -571,18 +649,23 @@ class SingleFileParser:
             items.append(item)
 
         function_body = FunctionBody(items[0].position, items)
+        self._print_parse_tree_node("FunctionBody", start_offset, offset)
         return function_body, offset
 
     def _parse_function_definition(self, offset: int) -> Tuple[Function, int]:
+        start_offset = offset
+
         function, offset = self._parse_function_declaration(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
         body, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.END])
 
         function.body = body
+        self._print_parse_tree_node("FunctionDefinition", start_offset, offset)
         return function, offset
 
     def _parse_regular_file_root(self, offset: int) -> Tuple[ParsedFile, int]:
+        start_offset = offset
 
         first_token = self._peek_token(offset)
 
@@ -630,18 +713,24 @@ class SingleFileParser:
             types=[],
         )
 
+        self._print_parse_tree_node("ParsedFileRoot", start_offset, offset)
         return parsed_file, offset
 
     def _parse_foreach_loop(self, offset: int) -> Tuple[ForeachLoop, int]:
+        start_offset = offset
+
         foreach_token, offset = self._token(offset, [TokenType.FOREACH])
         _, offset = self._token(offset, [TokenType.BEGIN])
         body, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.END])
 
         foreach = ForeachLoop(foreach_token.position, body)
+        self._print_parse_tree_node("ForeachLoop", start_offset, offset)
         return foreach, offset
 
     def _parse_variables(self, offset: int) -> Tuple[List[Identifier], int]:
+        start_offset = offset
+
         identifiers: List[Identifier] = []
         token: Optional[Token]
 
@@ -662,9 +751,11 @@ class SingleFileParser:
             identifier, offset = self._parse_identifier(offset)
             identifiers.append(identifier)
 
+        self._print_parse_tree_node("Variables", start_offset, offset)
         return identifiers, offset
 
     def _parse_use_block(self, offset: int) -> Tuple[UseBlock, int]:
+        start_offset = offset
         use_token, offset = self._token(offset, [TokenType.USE])
         variables, offset = self._parse_variables(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
@@ -672,9 +763,12 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.END])
 
         use_block = UseBlock(use_token.position, variables, body)
+        self._print_parse_tree_node("UseBlock", start_offset, offset)
         return use_block, offset
 
     def _parse_assignment(self, offset: int) -> Tuple[Assignment, int]:
+        start_offset = offset
+
         variables, offset = self._parse_variables(offset)
         _, offset = self._token(offset, [TokenType.ASSIGN])
         _, offset = self._token(offset, [TokenType.BEGIN])
@@ -682,4 +776,15 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.END])
 
         assignment = Assignment(variables[0].position, variables, body)
+        self._print_parse_tree_node("Assignment", start_offset, offset)
         return assignment, offset
+
+    def _print_parse_tree_node(
+        self, kind: str, start_token_offset: int, end_token_offset: int
+    ) -> None:
+        if not self.verbose:
+            return
+
+        tokens = self.tokens[start_token_offset:end_token_offset]
+        tokens_joined = " ".join(token.value for token in tokens)
+        print(f"parser | {kind:>20} | {tokens_joined}")
