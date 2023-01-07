@@ -121,7 +121,13 @@ class Tokenizer:
             return
 
         for token in tokens:
-            file = token.position.file.relative_to(Path.cwd())
+            try:
+                file = token.position.file.relative_to(Path.cwd())
+            except ValueError:
+                # It is possible the file is not in the subpath of cwd
+                # We just print the absolute path then
+                file = token.position.file
+
             line = token.position.line
             column = token.position.column
             pos = f"{file}:{line}:{column}"
