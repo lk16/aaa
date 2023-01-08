@@ -453,3 +453,40 @@ struct aaa_variable *aaa_variable_new_map_iter(struct aaa_map_iter *iter) {
 struct aaa_map_iter *aaa_variable_get_map_iter(struct aaa_variable *var) {
     return var->map_iter;
 }
+
+void aaa_variable_assign(struct aaa_variable *var,
+                         struct aaa_variable *source) {
+    switch (source->kind) {
+        case AAA_INTEGER:
+            var->integer = source->integer;
+            break;
+        case AAA_BOOLEAN:
+            var->boolean = source->boolean;
+            break;
+        case AAA_STRING:
+            // TODO prevent memory leak
+            var->string = source->string;
+            break;
+        case AAA_VECTOR:
+            // TODO prevent memory leak
+            var->vector = source->vector;
+            break;
+        case AAA_MAP:
+        case AAA_SET:
+            // TODO prevent memory leak
+            var->map = source->map;
+            break;
+        case AAA_STRUCT:
+            // TODO prevent memory leak
+            var->struct_ = source->struct_;
+            break;
+        case AAA_VECTOR_ITER:
+        case AAA_MAP_ITER:
+        case AAA_SET_ITER:
+        default:
+            fprintf(stderr, "Attempt to assign iterator\n");
+            fflush(stderr);
+            abort();
+            break;
+    }
+}

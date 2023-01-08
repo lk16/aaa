@@ -40,3 +40,5 @@ bool aaa_variable_equals(const struct aaa_variable *lhs,
 
 void aaa_variable_dec_ref(struct aaa_variable *var);
 void aaa_variable_inc_ref(struct aaa_variable *var);
+
+void aaa_variable_assign(struct aaa_variable *var, struct aaa_variable *source);

@@ -6,11 +6,13 @@ from tempfile import NamedTemporaryFile
 from typing import Optional
 
 from aaa.cross_referencer.models import (
+    Assignment,
     BooleanLiteral,
     Branch,
     CallArgument,
     CallFunction,
     CallType,
+    CallVariable,
     CrossReferencerOutput,
     ForeachLoop,
     Function,
@@ -21,6 +23,7 @@ from aaa.cross_referencer.models import (
     StructFieldQuery,
     StructFieldUpdate,
     Type,
+    UseBlock,
     VariableType,
     WhileLoop,
 )
@@ -289,6 +292,12 @@ class Transpiler:
                 + self._generate_c_function_body(item.new_value_expr, indent)
                 + f"{indentation}aaa_stack_field_update(stack);\n"
             )
+        elif isinstance(item, UseBlock):
+            return self._generate_c_use_block_code(item, indent)
+        elif isinstance(item, CallVariable):
+            return self._generate_c_call_variable_code(item, indent)
+        elif isinstance(item, Assignment):
+            return self._generate_c_assignment_code(item, indent)
         else:  # pragma: nocover
             assert False
 
@@ -465,5 +474,39 @@ class Transpiler:
 
         code += f"{C_IDENTATION}return s;\n"
         code += "}\n\n"
+
+        return code
+
+    def _generate_c_use_block_code(self, use_block: UseBlock, indent: int) -> str:
+        code = f"{self._indent(indent)}{{\n"
+        for var in use_block.variables:
+            code += f"{self._indent(indent+1)}struct aaa_variable *aaa_local_{var.name} = aaa_stack_pop(stack);\n"
+
+        code += self._generate_c_function_body(use_block.body, indent + 1)
+
+        for var in use_block.variables:
+            code += (
+                f"{self._indent(indent+1)}aaa_variable_dec_ref(aaa_local_{var.name});\n"
+            )
+
+        code += f"{self._indent(indent)}}}\n"
+        return code
+
+    def _generate_c_call_variable_code(
+        self, call_var: CallVariable, indent: int
+    ) -> str:
+        indentation = self._indent(indent)
+        var_name = call_var.variable.name
+
+        return (
+            f"{indentation}aaa_variable_inc_ref(aaa_local_{var_name});\n"
+            + f"{indentation}aaa_stack_push(stack, aaa_local_{var_name});\n"
+        )
+
+    def _generate_c_assignment_code(self, assignment: Assignment, indent: int) -> str:
+        code = self._generate_c_function_body(assignment.body, indent)
+
+        for var in reversed(assignment.variables):
+            code += f"{self._indent(indent)}aaa_variable_assign(aaa_local_{var.name}, aaa_stack_pop(stack));\n"
 
         return code

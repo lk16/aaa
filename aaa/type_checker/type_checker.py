@@ -4,11 +4,13 @@ from typing import Any, Callable, Dict, List, Optional
 
 from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.models import (
+    Assignment,
     BooleanLiteral,
     Branch,
     CallArgument,
     CallFunction,
     CallType,
+    CallVariable,
     CrossReferencerOutput,
     ForeachLoop,
     Function,
@@ -18,6 +20,7 @@ from aaa.cross_referencer.models import (
     StructFieldQuery,
     StructFieldUpdate,
     Type,
+    UseBlock,
     VariableType,
     WhileLoop,
 )
@@ -108,6 +111,9 @@ class SingleFunctionTypeChecker:
         self.functions = type_checker.functions
         self.builtins_path = type_checker.builtins_path
         self.foreach_loop_stacks: Dict[Position, List[VariableType]] = {}
+        self.vars: Dict[str, VariableType] = {
+            arg.name: arg.var_type for arg in function.arguments
+        }
 
     def run(self) -> Dict[Position, List[VariableType]]:
         if self.function.is_test():
@@ -251,17 +257,20 @@ class SingleFunctionTypeChecker:
     ) -> List[VariableType]:
 
         checkers: Dict[Any, Callable[[Any, List[VariableType]], List[VariableType]]] = {
+            Assignment: self._check_assignment,
             BooleanLiteral: self._check_boolean_literal,
             Branch: self._check_branch,
-            IntegerLiteral: self._check_integer_literal,
-            WhileLoop: self._check_while_loop,
-            StringLiteral: self._check_string_literal,
-            StructFieldQuery: self._check_struct_field_query,
-            StructFieldUpdate: self._check_struct_field_update,
             CallArgument: self._check_call_argument,
             CallFunction: self._check_call_function,
             CallType: self._check_call_type,
+            CallVariable: self._check_call_variable,
             ForeachLoop: self._check_foreach_loop,
+            IntegerLiteral: self._check_integer_literal,
+            StringLiteral: self._check_string_literal,
+            StructFieldQuery: self._check_struct_field_query,
+            StructFieldUpdate: self._check_struct_field_update,
+            UseBlock: self._check_use_block,
+            WhileLoop: self._check_while_loop,
         }
 
         stack = copy(type_stack)
@@ -277,7 +286,14 @@ class SingleFunctionTypeChecker:
         self, call_arg: CallArgument, type_stack: List[VariableType]
     ) -> List[VariableType]:
         # Push argument on stack
-        arg_var_type = call_arg.argument.var_type
+        arg_var_type = self.vars[call_arg.argument.name]
+        return type_stack + [arg_var_type]
+
+    def _check_call_variable(
+        self, call_var: CallVariable, type_stack: List[VariableType]
+    ) -> List[VariableType]:
+        # Push variable on stack
+        arg_var_type = self.vars[call_var.variable.name]
         return type_stack + [arg_var_type]
 
     def _check_call_function(
@@ -479,4 +495,44 @@ class SingleFunctionTypeChecker:
         # pop iterable
         type_stack.pop()
 
+        return type_stack
+
+    def _check_use_block(
+        self, use_block: UseBlock, type_stack: List[VariableType]
+    ) -> List[VariableType]:
+
+        use_var_count = len(use_block.variables)
+
+        if len(type_stack) < use_var_count:
+            # TODO use more vars than stack has
+            raise NotImplementedError
+
+        for var, type_stack_item in zip(
+            use_block.variables, type_stack[-use_var_count:], strict=True
+        ):
+            self.vars[var.name] = type_stack_item
+
+        body_stack = self._check_function_body(use_block.body, [])
+
+        return type_stack[:-use_var_count] + body_stack
+
+    def _check_assignment(
+        self, assignment: Assignment, type_stack: List[VariableType]
+    ) -> List[VariableType]:
+        assign_var_count = len(assignment.variables)
+
+        assign_stack = self._check_function_body(assignment.body, [])
+
+        if len(assign_stack) != assign_var_count:
+            # TODO assign stack size does not match assign args count
+            raise NotImplementedError
+
+        for var, found_var_type in zip(assignment.variables, assign_stack, strict=True):
+            expected_var_type = self.vars[var.name]
+
+            if expected_var_type != found_var_type:
+                # TODO type error
+                raise NotImplementedError
+
+        # The type stack remains unchanged
         return type_stack

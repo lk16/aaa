@@ -1,17 +1,23 @@
 fn main {
     vec[int]
-    dup 1 vec:push
-    dup 2 vec:push
-    dup 3 vec:push
-    dup 4 vec:push
-
     0
 
-    use total {
+    use my_vec, total {
+        my_vec 1 vec:push
+        my_vec 2 vec:push
+        my_vec 3 vec:push
+        my_vec 4 vec:push
+
+        my_vec
+
         foreach {
-            total <- { total + }
+            use item {
+                total <- { total item + }
+            }
         }
+
         total .
         "\n" .
+
     }
 }
