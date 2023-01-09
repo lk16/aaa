@@ -10,12 +10,13 @@ from aaa.cross_referencer.models import (
     Type,
     UnresolvedImport,
     UnresolvedType,
+    Variable,
 )
 from aaa.parser.models import TypeLiteral
 
 
 class CrossReferenceBaseException(AaaException):
-    def describe(self, item: Identifiable | Argument) -> str:
+    def describe(self, item: Identifiable | Argument | Variable) -> str:
         if isinstance(item, Function):
             return f"function {item.name}"
         elif isinstance(item, (Import, UnresolvedImport)):
@@ -24,6 +25,8 @@ class CrossReferenceBaseException(AaaException):
             return f"type {item.name}"
         elif isinstance(item, Argument):
             return f"function argument {item.name}"
+        elif isinstance(item, Variable):
+            return f"local variable {item.name}"
         else:  # pragma: nocover
             assert False
 
@@ -49,7 +52,9 @@ class IndirectImportException(CrossReferenceBaseException):
 
 class CollidingIdentifier(CrossReferenceBaseException):
     def __init__(
-        self, colliding: Identifiable | Argument, found: Identifiable | Argument
+        self,
+        colliding: Identifiable | Argument | Variable,
+        found: Identifiable | Argument | Variable,
     ) -> None:
         self.colliding = colliding
         self.found = found
@@ -126,3 +131,12 @@ class CircularDependencyError(CrossReferenceBaseException):
         for dep in self.dependencies:
             message += f"- {dep}\n"
         return message
+
+
+class UnknownVariable(CrossReferenceBaseException):
+    def __init__(self, var: Variable) -> None:
+        self.position = var.position
+        self.name = var.name
+
+    def __str__(self) -> str:
+        return f"{self.position}: Usage of unknown variable {self.name}\n"

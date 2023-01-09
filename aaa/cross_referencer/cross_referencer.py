@@ -13,6 +13,7 @@ from aaa.cross_referencer.exceptions import (
     InvalidType,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
+    UnknownVariable,
 )
 from aaa.cross_referencer.models import (
     AaaCrossReferenceModel,
@@ -689,8 +690,7 @@ class FunctionBodyResolver:
 
         for var in variables:
             if var.name not in self.vars:
-                # TODO assigned variable not in scope
-                raise NotImplementedError
+                raise UnknownVariable(var)
 
         body = self._resolve_function_body(parsed.body)
         return Assignment(parsed, variables, body)
@@ -700,16 +700,14 @@ class FunctionBodyResolver:
 
         for var in variables:
             if var.name in self.vars:
-                # TODO name collission with arg / other var
-                raise NotImplementedError
+                raise CollidingIdentifier(var, self.vars[var.name])
 
             try:
-                self._get_identifiable_generic(var.name, var.position)
+                identifiable = self._get_identifiable_generic(var.name, var.position)
             except UnknownIdentifier:
                 pass
             else:
-                # TODO collision with identifiable
-                raise NotImplementedError
+                raise CollidingIdentifier(var, identifiable)
 
             self.vars[var.name] = var
 

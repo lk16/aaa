@@ -12,6 +12,7 @@ from aaa.cross_referencer.exceptions import (
     InvalidType,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
+    UnknownVariable,
 )
 from aaa.tokenizer.exceptions import FileReadError
 from aaa.type_checker.exceptions import (
@@ -562,6 +563,43 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "expected types: int\n"
             + "   found types: int int\n",
             id="assignment-type-error-one-too-much",
+        ),
+        pytest.param(
+            """
+            fn main { a <- { nop } }
+            """,
+            UnknownVariable,
+            "/foo/main.aaa:2:23: Usage of unknown variable a\n",
+            id="unknown-var",
+        ),
+        pytest.param(
+            """
+            fn main { 0 use a { use a { nop } } }
+            """,
+            CollidingIdentifier,
+            "/foo/main.aaa:2:37: local variable a collides with:\n"
+            + "/foo/main.aaa:2:29: local variable a\n",
+            id="colliding-identifier-var-var",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo args a as int { 0 use a { nop } }
+            """,
+            CollidingIdentifier,
+            "/foo/main.aaa:3:42: local variable a collides with:\n"
+            + "/foo/main.aaa:3:25: function argument a\n",
+            id="colliding-identifier-var-arg",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn main { 0 use bar { nop } }
+            """,
+            CollidingIdentifier,
+            "/foo/main.aaa:3:29: local variable bar collides with:\n"
+            + "/foo/main.aaa:2:13: type bar\n",
+            id="colliding-identifier-var-identifier",
         ),
     ],
 )
