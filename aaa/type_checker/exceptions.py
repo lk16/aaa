@@ -3,10 +3,12 @@ from typing import List, Union
 
 from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
+    Assignment,
     Function,
     StructFieldQuery,
     StructFieldUpdate,
     Type,
+    UseBlock,
     VariableType,
 )
 
@@ -312,4 +314,41 @@ class ForeachLoopTypeError(TypeCheckerException):
             f"{self.position}: Invalid stack modification inside foreach loop body\n"
             + f"before foreach loop: {before_stack}\n"
             + f" after foreach loop: {after_stack}\n"
+        )
+
+
+class UseBlockStackUnderflow(TypeCheckerException):
+    def __init__(self, stack_size: int, use_block: UseBlock) -> None:
+        self.stack_size = stack_size
+        self.use_block_vars = len(use_block.variables)
+        super().__init__(use_block.position)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Use block consumes more values than can be found on the stack\n"
+            + f"    stack size: {self.stack_size}\n"
+            + f"used variables: {self.use_block_vars}\n"
+        )
+
+
+class AssignmentTypeError(TypeCheckerException):
+    def __init__(
+        self,
+        expected_var_types: List[VariableType],
+        found_var_types: List[VariableType],
+        assignment: Assignment,
+    ) -> None:
+        self.expected_var_types = expected_var_types
+        self.found_var_types = found_var_types
+        super().__init__(assignment.position)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Assignment with wrong number and/or type of values\n"
+            + f"expected types: "
+            + " ".join(str(var_type) for var_type in self.expected_var_types)
+            + "\n"
+            + f"   found types: "
+            + " ".join(str(var_type) for var_type in self.found_var_types)
+            + "\n"
         )

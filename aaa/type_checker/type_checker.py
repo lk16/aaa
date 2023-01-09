@@ -25,6 +25,7 @@ from aaa.cross_referencer.models import (
     WhileLoop,
 )
 from aaa.type_checker.exceptions import (
+    AssignmentTypeError,
     BranchTypeError,
     ConditionTypeError,
     ForeachLoopTypeError,
@@ -41,6 +42,7 @@ from aaa.type_checker.exceptions import (
     StructUpdateTypeError,
     TypeCheckerException,
     UnknownField,
+    UseBlockStackUnderflow,
     WhileLoopTypeError,
 )
 from aaa.type_checker.models import TypeCheckerOutput
@@ -504,35 +506,30 @@ class SingleFunctionTypeChecker:
         use_var_count = len(use_block.variables)
 
         if len(type_stack) < use_var_count:
-            # TODO use more vars than stack has
-            raise NotImplementedError
+            raise UseBlockStackUnderflow(len(type_stack), use_block)
 
         for var, type_stack_item in zip(
             use_block.variables, type_stack[-use_var_count:], strict=True
         ):
             self.vars[var.name] = type_stack_item
 
-        body_stack = self._check_function_body(use_block.body, [])
-
-        return type_stack[:-use_var_count] + body_stack
+        type_stack = type_stack[:-use_var_count]
+        return self._check_function_body(use_block.body, type_stack)
 
     def _check_assignment(
         self, assignment: Assignment, type_stack: List[VariableType]
     ) -> List[VariableType]:
-        assign_var_count = len(assignment.variables)
-
         assign_stack = self._check_function_body(assignment.body, [])
+        expected_var_types: List[VariableType] = []
 
-        if len(assign_stack) != assign_var_count:
-            # TODO assign stack size does not match assign args count
-            raise NotImplementedError
+        for var in assignment.variables:
+            expected_var_types.append(self.vars[var.name])
 
-        for var, found_var_type in zip(assignment.variables, assign_stack, strict=True):
-            expected_var_type = self.vars[var.name]
+        if len(assign_stack) != len(expected_var_types):
+            raise AssignmentTypeError(expected_var_types, assign_stack, assignment)
 
-            if expected_var_type != found_var_type:
-                # TODO type error
-                raise NotImplementedError
+        for expected, found in zip(expected_var_types, assign_stack, strict=True):
+            if expected != found:
+                raise AssignmentTypeError(expected_var_types, assign_stack, assignment)
 
-        # The type stack remains unchanged
         return type_stack

@@ -15,6 +15,7 @@ from aaa.cross_referencer.exceptions import (
 )
 from aaa.tokenizer.exceptions import FileReadError
 from aaa.type_checker.exceptions import (
+    AssignmentTypeError,
     BranchTypeError,
     ConditionTypeError,
     ForeachLoopTypeError,
@@ -29,6 +30,7 @@ from aaa.type_checker.exceptions import (
     StructUpdateStackError,
     StructUpdateTypeError,
     UnknownField,
+    UseBlockStackUnderflow,
     WhileLoopTypeError,
 )
 from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
@@ -446,7 +448,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { foo foreach { nop } }
             """,
             InvalidIterator,
-            f"/foo/main.aaa:5:27: Invalid iterator type bar to iterate over foo.\n"
+            "/foo/main.aaa:5:27: Invalid iterator type bar to iterate over foo.\n"
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
@@ -462,7 +464,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { foo foreach { nop } }
             """,
             InvalidIterator,
-            f"/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
+            "/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
@@ -478,7 +480,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { foo foreach { nop } }
             """,
             InvalidIterator,
-            f"/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
+            "/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
@@ -494,7 +496,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { foo foreach { nop } }
             """,
             InvalidIterator,
-            f"/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
+            "/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
@@ -506,10 +508,60 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { vec[int] foreach { nop } }
             """,
             ForeachLoopTypeError,
-            f"/foo/main.aaa:2:32: Invalid stack modification inside foreach loop body\n"
+            "/foo/main.aaa:2:32: Invalid stack modification inside foreach loop body\n"
             + f"before foreach loop: vec[int]\n"
             + f" after foreach loop: vec[int] int\n",
             id="foreach-loop-type-error",
+        ),
+        pytest.param(
+            """
+            fn main { use a { nop } }
+            """,
+            UseBlockStackUnderflow,
+            "/foo/main.aaa:2:23: Use block consumes more values than can be found on the stack\n"
+            + "    stack size: 0\n"
+            + "used variables: 1\n",
+            id="use-block-stack-underflow",
+        ),
+        pytest.param(
+            """
+            fn main { 0 use a { a <- { false } } }
+            """,
+            AssignmentTypeError,
+            "/foo/main.aaa:2:33: Assignment with wrong number and/or type of values\n"
+            + "expected types: int\n"
+            + "   found types: bool\n",
+            id="assignment-type-error-wrong-type",
+        ),
+        pytest.param(
+            """
+            fn main { 0 use a { a <- { nop } } }
+            """,
+            AssignmentTypeError,
+            "/foo/main.aaa:2:33: Assignment with wrong number and/or type of values\n"
+            + "expected types: int\n"
+            + "   found types: \n",
+            id="assignment-type-error-empty-stack",
+        ),
+        pytest.param(
+            """
+            fn main { 0 use a { a <- { "" false } } }
+            """,
+            AssignmentTypeError,
+            "/foo/main.aaa:2:33: Assignment with wrong number and/or type of values\n"
+            + "expected types: int\n"
+            + "   found types: str bool\n",
+            id="assignment-type-error-too-many-types",
+        ),
+        pytest.param(
+            """
+            fn main { 0 use a { a <- { 0 0 } } }
+            """,
+            AssignmentTypeError,
+            "/foo/main.aaa:2:33: Assignment with wrong number and/or type of values\n"
+            + "expected types: int\n"
+            + "   found types: int int\n",
+            id="assignment-type-error-one-too-much",
         ),
     ],
 )
