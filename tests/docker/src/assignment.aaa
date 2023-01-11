@@ -1,0 +1,56 @@
+
+fn main {
+
+//    0
+//    use a {
+//        a <- { 1 }
+//        a .
+//        "\n" .
+//    }
+
+    false
+    use b {
+        b <- { true }
+        b .
+        "\n" .
+    }
+
+
+//    vec[int]
+//    dup 1 vec:push
+//
+//    use c {
+//        c <- {
+//            vec[int]
+//            dup 2 vec:push
+//        }
+//        c .
+//        "\n" .
+//    }
+//
+//    map[str, int]
+//    dup "one" 1 map:set
+//
+//    use d {
+//        d <- {
+//            map[str, int]
+//            dup "two" 2 map:set
+//        }
+//        d .
+//        "\n" .
+//    }
+//
+//    set[int]
+//    dup 1 set:add
+//
+//    use e {
+//        e <- {
+//            set[int]
+//            dup 2 set:add
+//        }
+//        e .
+//        "\n" .
+//    }
+
+
+}

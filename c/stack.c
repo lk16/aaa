@@ -1276,6 +1276,7 @@ void aaa_stack_set_add(struct aaa_stack *stack) {
     aaa_map_set(set, item, NULL);
 
     aaa_map_dec_ref(set);
+    aaa_variable_dec_ref(item);
 }
 
 void aaa_stack_set_clear(struct aaa_stack *stack) {

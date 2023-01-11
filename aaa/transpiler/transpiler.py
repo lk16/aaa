@@ -479,7 +479,7 @@ class Transpiler:
 
     def _generate_c_use_block_code(self, use_block: UseBlock, indent: int) -> str:
         code = f"{self._indent(indent)}{{\n"
-        for var in use_block.variables:
+        for var in reversed(use_block.variables):
             code += f"{self._indent(indent+1)}struct aaa_variable *aaa_local_{var.name} = aaa_stack_pop(stack);\n"
 
         code += self._generate_c_function_body(use_block.body, indent + 1)

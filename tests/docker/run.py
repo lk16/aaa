@@ -323,8 +323,8 @@ def test_foreach_set() -> None:
     assert 0 == exit_code
 
 
-def test_vector_sum() -> None:
-    stdout, stderr, exit_code = compile_run("vector_sum.aaa")
-    assert "10\n" == stdout
+def test_assignment() -> None:
+    stdout, stderr, exit_code = compile_run("assignment.aaa")
+    assert '1\ntrue\n[2]\n{"two": 2}\n2\n' == stdout
     assert "" == stderr
     assert 0 == exit_code

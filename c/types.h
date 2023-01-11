@@ -8,6 +8,7 @@ struct aaa_variable;
 struct aaa_buffer;
 struct aaa_ref_count;
 
+struct aaa_boolean;
 struct aaa_string;
 struct aaa_map;
 struct aaa_vector;
