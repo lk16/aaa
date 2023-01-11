@@ -507,6 +507,7 @@ class Transpiler:
         code = self._generate_c_function_body(assignment.body, indent)
 
         for var in reversed(assignment.variables):
+            # TODO generate better code
             code += f"{self._indent(indent)}aaa_variable_assign(aaa_local_{var.name}, aaa_stack_pop(stack));\n"
 
         return code
