@@ -739,13 +739,13 @@ class SingleFileParser:
 
         while True:
             token = self._peek_token(offset)
-            if token and token.type != TokenType.COMMA:
+            if not token or token.type != TokenType.COMMA:
                 break
 
             _, offset = self._token(offset, [TokenType.COMMA])
 
             token = self._peek_token(offset)
-            if token and token.type != TokenType.IDENTIFIER:
+            if not token or token.type != TokenType.IDENTIFIER:
                 break
 
             identifier, offset = self._parse_identifier(offset)

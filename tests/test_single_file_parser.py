@@ -15,6 +15,16 @@ from aaa.parser.single_file_parser import SingleFileParser
 from aaa.tokenizer.tokenizer import Tokenizer
 
 
+def parse_code(code: str) -> SingleFileParser:
+    temp_file = NamedTemporaryFile(delete=False)
+    file = Path(gettempdir()) / temp_file.name
+
+    file.write_text(code)
+
+    tokens = Tokenizer(file, False).run()
+    return SingleFileParser(file, tokens, False)
+
+
 @pytest.mark.parametrize(
     ["code", "expected"],
     [
@@ -29,13 +39,7 @@ def test_parse_identifier(
     code: str,
     expected: str | Type[ParserBaseException],
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected, str):
         identifier, offset = parser._parse_identifier(0)
@@ -70,13 +74,7 @@ def test_parse_flat_type_params(
     expected_result: List[str] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, list):
         type_params, offset = parser._parse_flat_type_params(0)
@@ -114,13 +112,7 @@ def test_parse_flat_type_literal(
     expected_result: Tuple[str, List[str]] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, tuple):
         type_literal, offset = parser._parse_flat_type_literal(0)
@@ -160,13 +152,7 @@ def test_parse_type_declaration(
     expected_result: Tuple[str, List[str]] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, tuple):
         type_literal, offset = parser._parse_type_declaration(0)
@@ -212,13 +198,7 @@ def test_parse_function_name(
     expected_result: Tuple[str, List[str], Optional[str]] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, tuple):
         function_name, offset = parser._parse_function_name(0)
@@ -266,13 +246,7 @@ def test_parse_type_params(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_type_params(0)
@@ -310,13 +284,7 @@ def test_parse_type_literal(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_type_literal(0)
@@ -348,13 +316,7 @@ def test_parse_argument(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_argument(0)
@@ -384,13 +346,7 @@ def test_parse_arguments(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_arguments(0)
@@ -420,13 +376,7 @@ def test_parse_return_types(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_return_types(0)
@@ -467,13 +417,7 @@ def test_parse_function_declaration(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_function_declaration(0)
@@ -510,13 +454,7 @@ def test_parse_builtins_root(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_builtins_file_root(0)
@@ -548,13 +486,7 @@ def test_parse_struct_definition(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_struct_definition(0)
@@ -582,13 +514,7 @@ def test_parse_string(
     expected_result: str | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, str):
         string, offset = parser._parse_string(0)
@@ -614,13 +540,7 @@ def test_parse_import_item(
     expected_result: Tuple[str, str] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, tuple):
         expected_original_name, expected_imported_name = expected_result
@@ -661,13 +581,7 @@ def test_parse_import_items(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_import_items(0)
@@ -704,13 +618,7 @@ def test_parse_import_statement(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_import_statement(0)
@@ -734,13 +642,7 @@ def test_parse_boolean(
     expected_result: bool | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, bool):
         boolean, offset = parser._parse_boolean(0)
@@ -766,13 +668,7 @@ def test_parse_integer(
     expected_result: int | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, int):
         boolean, offset = parser._parse_integer(0)
@@ -801,13 +697,7 @@ def test_parse_literal(
     expected_result: int | bool | str | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, (int, str, bool)):
         literal, offset = parser._parse_literal(0)
@@ -837,13 +727,7 @@ def test_parse_function_call(
     expected_result: Tuple[Optional[str], List[str], str] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if isinstance(expected_result, tuple):
         expected_struct_name, expected_type_params, expected_func_name = expected_result
@@ -893,13 +777,7 @@ def test_parse_branch(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_branch(0)
@@ -932,13 +810,7 @@ def test_parse_loop(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_while_loop(0)
@@ -962,13 +834,7 @@ def test_parse_field_query(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_struct_field_query(0)
@@ -1001,13 +867,7 @@ def test_parse_struct_field_update(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_struct_field_update(0)
@@ -1043,13 +903,7 @@ def test_parse_function_body_item(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_function_body_item(0)
@@ -1099,13 +953,7 @@ def test_parse_function_body(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_function_body(0)
@@ -1134,13 +982,7 @@ def test_parse_function_definition(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     if expected_exception is None:
         _, offset = parser._parse_function_definition(0)
@@ -1199,13 +1041,7 @@ def test_parse_builtins_file() -> None:
 def test_parse_regular_file_fail() -> None:
     code = "fn foo { nop } 3"
 
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     with pytest.raises(NewParserUnhandledTopLevelToken):
         parser.parse_regular_file()
@@ -1214,13 +1050,90 @@ def test_parse_regular_file_fail() -> None:
 def test_parse_builtins_file_fail() -> None:
     code = "fn foo args a as int return bool 3"
 
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
+    parser = parse_code(code)
 
     with pytest.raises(NewParserUnhandledTopLevelToken):
         parser.parse_builtins_file()
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("a", None, 1),
+        ("a,", None, 2),
+        ("a,b", None, 3),
+        ("a,b,", None, 4),
+        ("a,b,c", None, 5),
+        ("a,b,c,", None, 6),
+        ("3", ParserException, 0),
+    ],
+)
+def test_parse_variables(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    parser = parse_code(code)
+
+    if expected_exception is None:
+        _, offset = parser._parse_variables(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_variables(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("use { nop } ", ParserException, 0),
+        ("use a { nop } ", None, 5),
+        ("use a, { nop } ", None, 6),
+        ("use a,b { nop } ", None, 7),
+        ("use a,b, { nop } ", None, 8),
+        ("use a,b,c { nop } ", None, 9),
+        ("use a,b,c, { nop } ", None, 10),
+        ("3", ParserException, 0),
+    ],
+)
+def test_parse_use_block(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    parser = parse_code(code)
+
+    if expected_exception is None:
+        _, offset = parser._parse_use_block(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_use_block(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("<- { nop } ", ParserException, 0),
+        ("a <- { nop } ", None, 5),
+        ("a, <- { nop } ", None, 6),
+        ("a,b <- { nop } ", None, 7),
+        ("a,b, <- { nop } ", None, 8),
+        ("a,b,c <- { nop } ", None, 9),
+        ("a,b,c, <- { nop } ", None, 10),
+        ("3", ParserException, 0),
+    ],
+)
+def test_parse_assignment(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    parser = parse_code(code)
+
+    if expected_exception is None:
+        _, offset = parser._parse_assignment(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_assignment(0)

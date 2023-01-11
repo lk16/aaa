@@ -145,7 +145,6 @@ variables: identifier ("," identifier)* [","]
 
 use_block: USE variables BEGIN function_body END
 assignment: variables ASSIGN BEGIN function_body END
-// TODO add tests to parser for variables, use_block and assignment
 
 // --- identifier ---
 
