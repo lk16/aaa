@@ -321,3 +321,10 @@ def test_foreach_set() -> None:
     assert expected_lines == lines
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_vector_sum() -> None:
+    stdout, stderr, exit_code = compile_run("vector_sum.aaa")
+    assert "10\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
