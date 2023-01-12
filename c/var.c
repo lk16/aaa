@@ -346,7 +346,7 @@ void aaa_variable_inc_ref(struct aaa_variable *var) {
 
     switch (var->kind) {
         case AAA_BOOLEAN:
-            return;
+            break;
         case AAA_INTEGER:
             break;
         case AAA_STRING:

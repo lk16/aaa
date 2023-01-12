@@ -1355,3 +1355,10 @@ void aaa_stack_push_set_empty(struct aaa_stack *stack) {
     struct aaa_map *set = aaa_set_new();
     aaa_stack_push_set(stack, set);
 }
+
+void aaa_stack_variable_assign(struct aaa_stack *stack,
+                               struct aaa_variable *var) {
+    struct aaa_variable *popped = aaa_stack_pop(stack);
+    aaa_variable_assign(var, popped);
+    aaa_variable_dec_ref(popped);
+}
