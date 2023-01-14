@@ -196,15 +196,9 @@ class WhileLoop(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class CallArgument(FunctionBodyItem):
-    def __init__(self, argument: Argument, position: Position) -> None:
-        self.argument = argument
-        super().__init__(position)
-
-
 class CallVariable(FunctionBodyItem):
-    def __init__(self, variable: Variable, position: Position) -> None:
-        self.variable = variable
+    def __init__(self, name: str, position: Position) -> None:
+        self.name = name
         super().__init__(position)
 
 
@@ -259,8 +253,9 @@ class ForeachLoop(FunctionBodyItem):
 
 
 class Variable(FunctionBodyItem):
-    def __init__(self, parsed: parser.Identifier) -> None:
+    def __init__(self, parsed: parser.Identifier, is_func_arg: bool) -> None:
         self.name = parsed.name
+        self.is_func_arg = is_func_arg
         super().__init__(parsed.position)
 
 

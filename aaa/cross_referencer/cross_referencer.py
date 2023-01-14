@@ -21,7 +21,6 @@ from aaa.cross_referencer.models import (
     Assignment,
     BooleanLiteral,
     Branch,
-    CallArgument,
     CallFunction,
     CallType,
     CallVariable,
@@ -596,7 +595,7 @@ class FunctionBodyResolver:
 
     def _resolve_function_name(
         self, function_name: parser.FunctionName
-    ) -> CallArgument | CallVariable | CallFunction | CallType:
+    ) -> CallVariable | CallFunction | CallType:
 
         try:
             var = self.vars[function_name.name()]
@@ -608,10 +607,8 @@ class FunctionBodyResolver:
                 # TODO handle handle case like: fn foo { 0 use c { c[b] } }
                 raise NotImplementedError
 
-            if isinstance(var, Argument):
-                return CallArgument(var, function_name.position)
-            elif isinstance(var, Variable):
-                return CallVariable(var, function_name.position)
+            if isinstance(var, (Argument, Variable)):
+                return CallVariable(var.name, function_name.position)
             else:  # pragma: nocover
                 assert False
 
@@ -686,7 +683,7 @@ class FunctionBodyResolver:
             assert False
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
-        variables = [Variable(var) for var in parsed.variables]
+        variables = [Variable(var, False) for var in parsed.variables]
 
         for var in variables:
             if var.name not in self.vars:
@@ -696,7 +693,7 @@ class FunctionBodyResolver:
         return Assignment(parsed, variables, body)
 
     def _resolve_use_block(self, parsed: parser.UseBlock) -> UseBlock:
-        variables = [Variable(parsed_var) for parsed_var in parsed.variables]
+        variables = [Variable(parsed_var, False) for parsed_var in parsed.variables]
 
         for var in variables:
             if var.name in self.vars:

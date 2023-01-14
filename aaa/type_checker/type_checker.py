@@ -7,7 +7,6 @@ from aaa.cross_referencer.models import (
     Assignment,
     BooleanLiteral,
     Branch,
-    CallArgument,
     CallFunction,
     CallType,
     CallVariable,
@@ -262,7 +261,6 @@ class SingleFunctionTypeChecker:
             Assignment: self._check_assignment,
             BooleanLiteral: self._check_boolean_literal,
             Branch: self._check_branch,
-            CallArgument: self._check_call_argument,
             CallFunction: self._check_call_function,
             CallType: self._check_call_type,
             CallVariable: self._check_call_variable,
@@ -284,19 +282,12 @@ class SingleFunctionTypeChecker:
 
         return stack
 
-    def _check_call_argument(
-        self, call_arg: CallArgument, type_stack: List[VariableType]
-    ) -> List[VariableType]:
-        # Push argument on stack
-        arg_var_type = self.vars[call_arg.argument.name]
-        return type_stack + [arg_var_type]
-
     def _check_call_variable(
         self, call_var: CallVariable, type_stack: List[VariableType]
     ) -> List[VariableType]:
         # Push variable on stack
-        arg_var_type = self.vars[call_var.variable.name]
-        return type_stack + [arg_var_type]
+        type = self.vars[call_var.name]
+        return type_stack + [type]
 
     def _check_call_function(
         self, call_function: CallFunction, type_stack: List[VariableType]

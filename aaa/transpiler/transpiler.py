@@ -9,7 +9,6 @@ from aaa.cross_referencer.models import (
     Assignment,
     BooleanLiteral,
     Branch,
-    CallArgument,
     CallFunction,
     CallType,
     CallVariable,
@@ -278,8 +277,6 @@ class Transpiler:
             return self._generate_c_call_function_code(item, indent)
         elif isinstance(item, CallType):
             return self._generate_c_call_type_code(item, indent)
-        elif isinstance(item, CallArgument):
-            return self._generate_c_call_argument_code(item, indent)
         elif isinstance(item, Branch):
             return self._generate_c_branch(item, indent)
         elif isinstance(item, StructFieldQuery):
@@ -401,12 +398,6 @@ class Transpiler:
         c_struct_name = self._generate_c_struct_name(var_type.type)
         return f"{indentation}aaa_stack_push_struct(stack, {c_struct_name}_new());\n"
 
-    def _generate_c_call_argument_code(
-        self, call_arg: CallArgument, indent: int
-    ) -> str:
-        arg_name = call_arg.argument.name
-        return self._generate_c_call_local_var_code(arg_name, indent)
-
     def _generate_c_branch(self, branch: Branch, indent: int) -> str:
         indentation = self._indent(indent)
 
@@ -491,10 +482,7 @@ class Transpiler:
     def _generate_c_call_variable_code(
         self, call_var: CallVariable, indent: int
     ) -> str:
-        var_name = call_var.variable.name
-        return self._generate_c_call_local_var_code(var_name, indent)
-
-    def _generate_c_call_local_var_code(self, name: str, indent: int) -> str:
+        name = call_var.name
         indentation = self._indent(indent)
 
         return (
