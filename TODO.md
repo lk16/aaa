@@ -18,6 +18,11 @@
 
 ### Const
 - [ ] Constant function arguments
+    - [ ] Test assign to const function arg
+    - [ ] Test modify field of const function arg
+    - [ ] Test query field of const function arg and then modifying it
+    - [ ] Test call function with non-const arg using const value
+    - [ ] Add `const` to `builtins.aaa`
 - [ ] Constant type params
 - [ ] File-scope constants
 

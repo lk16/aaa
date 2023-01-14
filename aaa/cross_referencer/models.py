@@ -138,11 +138,13 @@ class VariableType(AaaCrossReferenceModel):
         params: List[VariableType],
         is_placeholder: bool,
         position: Position,
+        is_const: bool,
     ) -> None:
         self.type = type
         self.params = params
         self.is_placeholder = is_placeholder
         self.name = self.type.name
+        self.is_const = is_const
         super().__init__(position)
 
     def __repr__(self) -> str:  # pragma: nocover
@@ -159,11 +161,12 @@ class VariableType(AaaCrossReferenceModel):
         if not isinstance(other, VariableType):  # pragma: nocover
             return False
 
-        # NOTE: Type instances are unique, we can use identity here
-        if self.type is not other.type:
-            return False
-
-        return self.params == other.params
+        return (
+            # NOTE: Type instances are unique, we can use identity here
+            self.type is other.type
+            and self.params == other.params
+            and self.is_const == other.is_const
+        )
 
 
 class IntegerLiteral(FunctionBodyItem):

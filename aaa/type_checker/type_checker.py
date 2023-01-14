@@ -18,7 +18,6 @@ from aaa.cross_referencer.models import (
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
-    Type,
     UseBlock,
     VariableType,
     WhileLoop,
@@ -124,12 +123,31 @@ class SingleFunctionTypeChecker:
             self._check_member_function()
 
         assert self.function.body
+        # TODO print type stack while walking through the tree for debugging
         computed_return_types = self._check_function_body(self.function.body, [])
 
-        if computed_return_types != self.function.return_types:
+        if not self._confirm_return_types(computed_return_types):
             raise FunctionTypeError(self.function, computed_return_types)
 
         return self.foreach_loop_stacks
+
+    def _confirm_return_types(self, computed: List[VariableType]) -> bool:
+        expected = self.function.return_types
+
+        if len(expected) != len(computed):
+            return False
+
+        for expected_value, computed_value in zip(expected, computed):
+            if computed_value.type is not expected_value.type:
+                return False
+
+            if computed_value.params != expected_value.params:
+                return False
+
+            if expected_value.is_const and not computed_value.is_const:
+                return False
+
+        return True
 
     def _match_signature_items(
         self,
@@ -178,7 +196,7 @@ class SingleFunctionTypeChecker:
 
     def _get_builtin_var_type(self, type_name: str) -> VariableType:
         type = self.types[(self.builtins_path, type_name)]
-        return VariableType(type, [], False, type.position)
+        return VariableType(type, [], False, type.position, False)
 
     def _get_bool_var_type(self) -> VariableType:
         return self._get_builtin_var_type("bool")
@@ -304,6 +322,10 @@ class SingleFunctionTypeChecker:
         types = stack[len(stack) - arg_count :]
 
         for argument, type in zip(call_function.function.arguments, types, strict=True):
+            if type.is_const and not argument.var_type.is_const:
+                # TODO cannot hand const value to non-const argument
+                raise NotImplementedError
+
             match_result = self._match_signature_items(
                 argument.var_type, type, placeholder_types
             )
@@ -348,13 +370,19 @@ class SingleFunctionTypeChecker:
             raise InvalidMemberFunctionSignature(self.function, struct_type)
 
     def _get_struct_field_type(
-        self, node: StructFieldQuery | StructFieldUpdate, struct_type: Type
+        self, node: StructFieldQuery | StructFieldUpdate, struct_var_type: VariableType
     ) -> VariableType:
+        struct_type = struct_var_type.type
+
         field_name = node.field_name.value
         try:
             field_type = struct_type.fields[field_name]
         except KeyError as e:
             raise UnknownField(node.position, struct_type, field_name) from e
+
+        if struct_var_type.is_const:
+            field_type = copy(field_type)
+            field_type.is_const = True
 
         return field_type
 
@@ -372,7 +400,7 @@ class SingleFunctionTypeChecker:
         # This is enforced by the parser
         assert field_selector_type == self._get_str_var_type()
 
-        field_type = self._get_struct_field_type(field_query, struct_var_type.type)
+        field_type = self._get_struct_field_type(field_query, struct_var_type)
 
         # pop struct and field name, push field
         return type_stack[:-2] + [field_type]
@@ -404,7 +432,11 @@ class SingleFunctionTypeChecker:
                 field_update.position, type_stack, type_stack_before
             )
 
-        field_type = self._get_struct_field_type(field_update, struct_type)
+        if struct_var_type.is_const:
+            # TODO cannot set field on const struct
+            raise NotImplementedError
+
+        field_type = self._get_struct_field_type(field_update, struct_var_type)
 
         if field_type != update_expr_type:
             raise StructUpdateTypeError(
@@ -514,7 +546,13 @@ class SingleFunctionTypeChecker:
         expected_var_types: List[VariableType] = []
 
         for var in assignment.variables:
-            expected_var_types.append(self.vars[var.name])
+            type = self.vars[var.name]
+
+            if type.is_const:
+                # TODO cannot assign to variable with const type
+                raise NotImplementedError
+
+            expected_var_types.append(type)
 
         if len(assign_stack) != len(expected_var_types):
             raise AssignmentTypeError(expected_var_types, assign_stack, assignment)

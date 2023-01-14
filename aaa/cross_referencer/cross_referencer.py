@@ -301,6 +301,7 @@ class CrossReferencer:
                     params=[],
                     is_placeholder=False,
                     position=parsed_param.position,
+                    is_const=False,
                 )
             )
 
@@ -309,6 +310,7 @@ class CrossReferencer:
             params=params,
             is_placeholder=False,
             position=parsed_field.position,
+            is_const=False,
         )
 
     def _resolve_type(self, unresolved: AaaCrossReferenceModel) -> Type:
@@ -390,6 +392,7 @@ class CrossReferencer:
                 params=params,
                 is_placeholder=arg_type_name in type_params,
                 position=parsed_type.position,
+                is_const=parsed_type.const,
             ),
         )
 
@@ -424,6 +427,7 @@ class CrossReferencer:
             is_placeholder=is_placeholder,
             params=self._lookup_function_params(type_params, param),
             position=param.position,
+            is_const=param.const,
         )
 
     def _lookup_function_params(
@@ -492,6 +496,7 @@ class CrossReferencer:
                 params=params,
                 is_placeholder=return_type_name in type_params,
                 position=parsed_return_type.position,
+                is_const=parsed_return_type.const,
             )
 
             expected_param_count = return_type.type.param_count
@@ -559,7 +564,9 @@ class FunctionBodyResolver:
     ) -> VariableType:
         for param_name, param in function.type_params.items():
             if type_literal.identifier.name == param_name:
-                return VariableType(param, [], True, type_literal.position)
+                return VariableType(
+                    param, [], True, type_literal.position, type_literal.const
+                )
 
         try:
             identifiable = self._get_identifiable_from_type_literal(type_literal)
@@ -571,7 +578,9 @@ class FunctionBodyResolver:
             # Use non-type as type param
             raise NotImplementedError
 
-        return VariableType(identifiable, [], False, type_literal.position)
+        return VariableType(
+            identifiable, [], False, type_literal.position, type_literal.const
+        )
 
     def _resolve_branch(self, branch: parser.Branch) -> Branch:
         resolved_else_body: Optional[FunctionBody] = None
@@ -633,6 +642,7 @@ class FunctionBodyResolver:
                 ],
                 False,
                 function_name.position,
+                False,
             )
 
             expected_param_count = var_type.type.param_count
