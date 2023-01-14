@@ -1,0 +1,4 @@
+[run]
+omit =
+    aaa/run.py
+    aaa/run_tests.py
