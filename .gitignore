@@ -11,5 +11,5 @@ dump
 
 c/cmake_install.cmake
 c/CMakeCache.txt
-c/libaaa_stdlib.a
+c/aaa_stdlib.a
 c/Makefile

@@ -39,3 +39,5 @@ ADD_LIBRARY(
     var.c
     vector.c
 )
+
+set_target_properties(aaa_stdlib PROPERTIES PREFIX "")

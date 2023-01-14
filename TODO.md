@@ -22,12 +22,12 @@
 - [ ] Cross-referencing
 - [ ] Type-checking
 - [ ] Handle edge cases:
-    - [ ] `use` Identifier clash
-    - [ ] `use` with empty stack
-    - [ ] assignment with missmatching types
-    - [ ] assignment with missmatching count of variables and return types
+    - [x] `use` Identifier clash
+    - [x] `use` with empty stack
+    - [x] assignment with missmatching types
+    - [x] assignment with missmatching count of variables and return types
     - [ ] usage of variable outside `use` block
-    - [ ] using same variable name in 2 non-overlapping `use` blocks
+    - [x] using same variable name in 2 non-overlapping `use` blocks
 
 ### Testing
 - [ ] Collect coverage stats from dockerized tests
