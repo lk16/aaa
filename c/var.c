@@ -437,16 +437,24 @@ void aaa_variable_assign(struct aaa_variable *var,
             var->boolean = source->boolean;
             break;
         case AAA_STRING:
+            aaa_string_dec_ref(var->string);
+            aaa_string_inc_ref(source->string);
             var->string = source->string;
             break;
         case AAA_VECTOR:
+            aaa_vector_dec_ref(var->vector);
+            aaa_vector_inc_ref(source->vector);
             var->vector = source->vector;
             break;
         case AAA_MAP:
         case AAA_SET:
+            aaa_map_dec_ref(var->map);
+            aaa_map_inc_ref(source->map);
             var->map = source->map;
             break;
         case AAA_STRUCT:
+            aaa_struct_dec_ref(var->struct_);
+            aaa_struct_inc_ref(source->struct_);
             var->struct_ = source->struct_;
             break;
         case AAA_VECTOR_ITER:

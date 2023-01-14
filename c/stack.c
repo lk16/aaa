@@ -1327,6 +1327,7 @@ void aaa_stack_set_remove(struct aaa_stack *stack) {
 
     aaa_map_pop(set, item);
 
+    aaa_variable_dec_ref(item);
     aaa_map_dec_ref(set);
 }
 

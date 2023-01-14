@@ -76,15 +76,16 @@ class Transpiler:
         exit_code = proc.returncode
 
         if exit_code != 0:
-            print(proc.stdout)
-            print(proc.stderr, file=sys.stderr)
+            print(proc.stdout.decode())
+            print(proc.stderr.decode(), file=sys.stderr)
             return exit_code
 
         proc = subprocess.run(["make"], cwd=("./c"), capture_output=True)
+        exit_code = proc.returncode
 
         if exit_code != 0:
-            print(proc.stdout)
-            print(proc.stderr, file=sys.stderr)
+            print(proc.stdout.decode())
+            print(proc.stderr.decode(), file=sys.stderr)
 
         return exit_code
 
@@ -103,7 +104,7 @@ class Transpiler:
                 "-I",
                 "./c/",
                 str(self.generated_c_file),
-                "./c/libaaa_stdlib.a",
+                "./c/aaa_stdlib.a",
                 "-o",
                 str(self.generated_binary_file),
                 "-std=gnu99",

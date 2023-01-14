@@ -15,39 +15,47 @@ fn main {
         "\n" .
     }
 
+    "foo"
+    use c {
+        c <- { "bar" }
+        c .
+        "\n" .
+    }
+
+
     vec[int]
     dup 1 vec:push
 
-    use c {
-        c <- {
+    use d {
+        d <- {
             vec[int]
             dup 2 vec:push
         }
-        c .
+        d .
         "\n" .
     }
 
     map[str, int]
     dup "one" 1 map:set
 
-    use d {
-        d <- {
+    use e {
+        e <- {
             map[str, int]
             dup "two" 2 map:set
         }
-        d .
+        e .
         "\n" .
     }
 
     set[int]
     dup 1 set:add
 
-    use e {
-        e <- {
+    use f {
+        f <- {
             set[int]
             dup 2 set:add
         }
-        e .
+        f .
         "\n" .
     }
 }
