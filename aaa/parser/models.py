@@ -184,10 +184,15 @@ class ParsedFile(AaaParseModel):
 
 class TypeLiteral(AaaParseModel):
     def __init__(
-        self, position: Position, identifier: Identifier, params: List[TypeLiteral]
+        self,
+        position: Position,
+        identifier: Identifier,
+        params: List[TypeLiteral],
+        const: bool,
     ) -> None:
         self.identifier = identifier
         self.params = params
+        self.const = const
         super().__init__(position)
 
 

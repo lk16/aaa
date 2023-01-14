@@ -1,0 +1,11 @@
+
+// const function arg example
+
+fn add args x as const int, y as const int return int {
+    x y +
+}
+
+fn main {
+    34 35 + .
+    "\n" .
+}

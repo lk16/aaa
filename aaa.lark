@@ -60,6 +60,9 @@ TRUE:        "true"
 // assignment operator
 ASSIGN:      "<-"
 
+// const
+CONST:       "const"
+
 // --- file roots ---
 
 builtins_file_root: (function_declaration | type_declaration)+
@@ -90,7 +93,7 @@ function_declaration: FN function_name [_ARGS arguments] [_RETURN return_types]
 
 function_definition: function_declaration BEGIN function_body _END
 
-flat_type_literal: identifier [flat_type_params]
+flat_type_literal: [CONST] identifier [flat_type_params]
 
 type_literal: identifier [type_params]
 

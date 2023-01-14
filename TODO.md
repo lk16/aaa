@@ -17,9 +17,9 @@
 - [x] Build static library of aaa stdlib so we don't compile it everytime
 
 ### Const
-- [ ] File-scope constants
 - [ ] Constant function arguments
 - [ ] Constant type params
+- [ ] File-scope constants
 
 ### Testing
 - [ ] Collect coverage stats from dockerized tests

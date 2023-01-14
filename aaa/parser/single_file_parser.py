@@ -85,6 +85,8 @@ class SingleFileParser:
         return identifier, offset
 
     def _parse_flat_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+        # TODO handle const
+
         start_offset = offset
 
         _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
@@ -110,7 +112,7 @@ class SingleFileParser:
                 break
 
         type_params = [
-            TypeLiteral(identifier.position, identifier, [])
+            TypeLiteral(identifier.position, identifier, [], False)
             for identifier in identifiers
         ]
 
@@ -118,6 +120,8 @@ class SingleFileParser:
         return type_params, offset
 
     def _parse_flat_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
+        # TODO handle const
+
         start_offset = offset
 
         identifier, offset = self._parse_identifier(offset)
@@ -130,7 +134,7 @@ class SingleFileParser:
             pass
 
         self._print_parse_tree_node("FlatTypeLiteral", start_offset, offset)
-        type_literal = TypeLiteral(identifier.position, identifier, type_params)
+        type_literal = TypeLiteral(identifier.position, identifier, type_params, False)
         return type_literal, offset
 
     def _parse_type_declaration(self, offset: int) -> Tuple[TypeLiteral, int]:
@@ -202,6 +206,13 @@ class SingleFileParser:
     def _parse_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
         start_offset = offset
 
+        token = self._peek_token(offset)
+        const = False
+
+        if token and token.type == TokenType.CONST:
+            _, offset = self._token(offset, [TokenType.CONST])
+            const = True
+
         identifier, offset = self._parse_identifier(offset)
 
         type_params: List[TypeLiteral] = []
@@ -211,7 +222,7 @@ class SingleFileParser:
         except ParserBaseException:
             pass
 
-        type_literal = TypeLiteral(identifier.position, identifier, type_params)
+        type_literal = TypeLiteral(identifier.position, identifier, type_params, const)
         self._print_parse_tree_node("TypeLiteral", start_offset, offset)
         return type_literal, offset
 
