@@ -43,8 +43,6 @@ AAA_C_BUILTIN_FUNCS = {
     ">=": "aaa_stack_greater_equal",
 }
 
-C_IDENTATION = " " * 4
-
 
 class Transpiler:
     def __init__(
@@ -61,6 +59,7 @@ class Transpiler:
         self.entrypoint = cross_referencer_output.entrypoint
         self.foreach_loop_stacks = type_checker_output.foreach_loop_stacks
         self.verbose = verbose  # TODO use
+        self.indent_level = 0
 
         self.generated_c_file = generated_c_file or Path(
             NamedTemporaryFile(delete=False, suffix=".c").name
@@ -141,8 +140,9 @@ class Transpiler:
 
         return 0
 
-    def _indent(self, indent: int) -> str:
-        return C_IDENTATION * indent
+    def _indent(self, line: str) -> str:
+        indentation = "    " * self.indent_level
+        return indentation + line
 
     def _generate_c_file(self) -> str:
         content = '#include "aaa.h"\n'
@@ -214,8 +214,6 @@ class Transpiler:
         return self.functions[(file, name)]
 
     def _generate_c_function(self, function: Function) -> str:
-        indentation = "    "
-
         assert function.body
 
         func_name = self._generate_c_function_name(function)
@@ -223,99 +221,108 @@ class Transpiler:
         content = f"// Generated from: {function.position.file} {function.name}\n"
         content += f"void {func_name}(struct aaa_stack *stack) {{\n"
 
-        if function.arguments:
-            content += f"{indentation}// load arguments\n"
-            for arg in reversed(function.arguments):
-                content += f"{indentation}struct aaa_variable *aaa_local_{arg.name} = aaa_stack_pop(stack);\n"
-            content += "\n"
-
-        content += self._generate_c_function_body(function.body, 1)
+        self.indent_level += 1
 
         if function.arguments:
-            content += "\n"
-            content += f"{indentation}// decrease arguments' ref_count\n"
+            content += self._indent("// load arguments\n")
             for arg in reversed(function.arguments):
-                content += f"{indentation}aaa_variable_dec_ref(aaa_local_{arg.name});\n"
+                content += self._indent(
+                    f"struct aaa_variable *aaa_local_{arg.name} = aaa_stack_pop(stack);\n"
+                )
+            content += "\n"
+
+        content += self._generate_c_function_body(function.body)
+
+        if function.arguments:
+            content += "\n"
+            content += self._indent("// decrease arguments' ref_count\n")
+            for arg in reversed(function.arguments):
+                content += self._indent(
+                    f"aaa_variable_dec_ref(aaa_local_{arg.name});\n"
+                )
+
+        self.indent_level -= 1
 
         content += "}\n\n"
 
         return content
 
-    def _generate_c_function_body(
-        self, function_body: FunctionBody, indent: int
-    ) -> str:
+    def _generate_c_function_body(self, function_body: FunctionBody) -> str:
         code = ""
 
         for item in function_body.items:
-            code += self._generate_c_function_body_item(item, indent)
+            code += self._generate_c_function_body_item(item)
 
         return code
 
-    def _generate_c_function_body_item(
-        self, item: FunctionBodyItem, indent: int
-    ) -> str:
-        indentation = self._indent(indent)
-
+    def _generate_c_function_body_item(self, item: FunctionBodyItem) -> str:
         if isinstance(item, IntegerLiteral):
-            return f"{indentation}aaa_stack_push_int(stack, {item.value});\n"
+            return self._indent(f"aaa_stack_push_int(stack, {item.value});\n")
         elif isinstance(item, StringLiteral):
             # TODO this is horrible
             string_value = '"' + repr(item.value)[1:-1].replace('"', '\\"') + '"'
-            return (
-                f"{indentation}aaa_stack_push_str_raw(stack, {string_value}, false);\n"
+            return self._indent(
+                f"aaa_stack_push_str_raw(stack, {string_value}, false);\n"
             )
         elif isinstance(item, BooleanLiteral):
             bool_value = "true"
             if not item.value:
                 bool_value = "false"
-            return f"{indentation}aaa_stack_push_bool(stack, {bool_value});\n"
+            return self._indent(f"aaa_stack_push_bool(stack, {bool_value});\n")
         elif isinstance(item, WhileLoop):
-            return self._generate_c_while_loop(item, indent)
+            return self._generate_c_while_loop(item)
         elif isinstance(item, ForeachLoop):
-            return self._generate_c_foreach_loop(item, indent)
+            return self._generate_c_foreach_loop(item)
         elif isinstance(item, CallFunction):
-            return self._generate_c_call_function_code(item, indent)
+            return self._generate_c_call_function_code(item)
         elif isinstance(item, CallType):
-            return self._generate_c_call_type_code(item, indent)
+            return self._generate_c_call_type_code(item)
         elif isinstance(item, Branch):
-            return self._generate_c_branch(item, indent)
+            return self._generate_c_branch(item)
         elif isinstance(item, StructFieldQuery):
-            return (
-                f'{indentation}aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
-                + f"{indentation}aaa_stack_field_query(stack);\n"
-            )
+            return self._indent(
+                f'aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
+            ) + self._indent("aaa_stack_field_query(stack);\n")
         elif isinstance(item, StructFieldUpdate):
             return (
-                f'{indentation}aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
-                + self._generate_c_function_body(item.new_value_expr, indent)
-                + f"{indentation}aaa_stack_field_update(stack);\n"
+                self._indent(
+                    f'aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
+                )
+                + self._generate_c_function_body(item.new_value_expr)
+                + self._indent(f"aaa_stack_field_update(stack);\n")
             )
         elif isinstance(item, UseBlock):
-            return self._generate_c_use_block_code(item, indent)
+            return self._generate_c_use_block_code(item)
         elif isinstance(item, CallVariable):
-            return self._generate_c_call_variable_code(item, indent)
+            return self._generate_c_call_variable_code(item)
         elif isinstance(item, Assignment):
-            return self._generate_c_assignment_code(item, indent)
+            return self._generate_c_assignment_code(item)
         else:  # pragma: nocover
             assert False
 
-    def _generate_c_while_loop(self, while_loop: WhileLoop, indent: int) -> str:
-        condition_code = self._generate_c_function_body(
-            while_loop.condition, indent + 1
-        )
-        body_code = self._generate_c_function_body(while_loop.body, indent + 1)
+    def _generate_c_while_loop(self, while_loop: WhileLoop) -> str:
 
-        return (
-            f"{self._indent(indent)}while (true) {{\n"
-            + condition_code
-            + f"{self._indent(indent+1)}if (!aaa_stack_pop_bool(stack)) {{\n"
-            + f"{self._indent(indent+2)}break;\n"
-            + f"{self._indent(indent+1)}}}\n"
-            + body_code
-            + f"{self._indent(indent)}}}\n"
-        )
+        code = self._indent("while (true) {\n")
+        self.indent_level += 1
 
-    def _generate_c_foreach_loop(self, foreach_loop: ForeachLoop, indent: int) -> str:
+        code += self._generate_c_function_body(while_loop.condition)
+
+        code += self._indent("if (!aaa_stack_pop_bool(stack)) {\n")
+        self.indent_level += 1
+
+        code += self._indent("break;\n")
+
+        self.indent_level -= 1
+        code += self._indent("}\n")
+
+        code += self._generate_c_function_body(while_loop.body)
+
+        self.indent_level -= 1
+        code += self._indent("}\n")
+
+        return code
+
+    def _generate_c_foreach_loop(self, foreach_loop: ForeachLoop) -> str:
         """
         dup iterable
         iter
@@ -347,74 +354,81 @@ class Transpiler:
         next = self._generate_c_function_name(next_func)
         break_drop_count = len(next_func.return_types)
 
-        output = ""
-        output += f"{self._indent(indent)}{dup}(stack);\n"
-        output += f"{self._indent(indent)}{iter}(stack);\n"
-        output += f"{self._indent(indent)}while (true) {{\n"
-        output += f"{self._indent(indent+1)}{dup}(stack);\n"
-        output += f"{self._indent(indent+1)}{next}(stack);\n"
-        output += f"{self._indent(indent+1)}if (!aaa_stack_pop_bool(stack)) {{\n"
+        code = ""
+        code += self._indent(f"{dup}(stack);\n")
+        code += self._indent(f"{iter}(stack);\n")
+
+        code += self._indent("while (true) {\n")
+        self.indent_level += 1
+
+        code += self._indent(f"{dup}(stack);\n")
+        code += self._indent(f"{next}(stack);\n")
+
+        code += self._indent("if (!aaa_stack_pop_bool(stack)) {\n")
+        self.indent_level += 1
 
         for _ in range(break_drop_count):
-            output += f"{self._indent(indent+2)}{drop}(stack);\n"
+            code += self._indent(f"{drop}(stack);\n")
 
-        output += f"{self._indent(indent+2)}break;\n"
-        output += f"{self._indent(indent+1)}}}\n"
-        output += self._generate_c_function_body(foreach_loop.body, indent + 1)
-        output += f"{self._indent(indent)}}}\n"
-        output += f"{self._indent(indent)}{drop}(stack);\n"
+        code += self._indent(f"break;\n")
 
-        return output
+        self.indent_level -= 1
+        code += self._indent("}\n")
 
-    def _generate_c_call_function_code(
-        self, call_func: CallFunction, indent: int
-    ) -> str:
-        indentation = self._indent(indent)
+        code += self._generate_c_function_body(foreach_loop.body)
+
+        self.indent_level -= 1
+        code += self._indent("}\n")
+
+        code += self._indent(f"{drop}(stack);\n")
+
+        return code
+
+    def _generate_c_call_function_code(self, call_func: CallFunction) -> str:
         called = call_func.function
         c_func_name = self._generate_c_function_name(called)
 
-        return f"{indentation}{c_func_name}(stack);\n"
+        return self._indent(f"{c_func_name}(stack);\n")
 
-    def _generate_c_call_type_code(self, call_type: CallType, indent: int) -> str:
-        indentation = self._indent(indent)
+    def _generate_c_call_type_code(self, call_type: CallType) -> str:
         var_type = call_type.var_type
 
         if var_type.type.position.file == self.builtins_path:
             if var_type.name == "int":
-                return f"{indentation}aaa_stack_push_int(stack, 0);\n"
+                return self._indent("aaa_stack_push_int(stack, 0);\n")
             elif var_type.name == "str":
-                return f'{indentation}aaa_stack_push_str_raw(stack, "", false);\n'
+                return self._indent('aaa_stack_push_str_raw(stack, "", false);\n')
             elif var_type.name == "bool":
-                return f"{indentation}aaa_stack_push_bool(stack, false);\n"
+                return self._indent("aaa_stack_push_bool(stack, false);\n")
             elif var_type.name == "vec":
-                return f"{indentation}aaa_stack_push_vec_empty(stack);\n"
+                return self._indent("aaa_stack_push_vec_empty(stack);\n")
             elif var_type.name == "map":
-                return f"{indentation}aaa_stack_push_map_empty(stack);\n"
+                return self._indent("aaa_stack_push_map_empty(stack);\n")
             elif var_type.name == "set":
-                return f"{indentation}aaa_stack_push_set_empty(stack);\n"
+                return self._indent("aaa_stack_push_set_empty(stack);\n")
             else:  # pragma: nocover
                 assert False
 
         c_struct_name = self._generate_c_struct_name(var_type.type)
-        return f"{indentation}aaa_stack_push_struct(stack, {c_struct_name}_new());\n"
+        return self._indent(f"aaa_stack_push_struct(stack, {c_struct_name}_new());\n")
 
-    def _generate_c_branch(self, branch: Branch, indent: int) -> str:
-        indentation = self._indent(indent)
+    def _generate_c_branch(self, branch: Branch) -> str:
+        code = self._generate_c_function_body(branch.condition)
 
-        condition_code = self._generate_c_function_body(branch.condition, indent)
-        if_code = self._generate_c_function_body(branch.if_body, indent + 1)
+        code += self._indent("if (aaa_stack_pop_bool(stack)) {\n")
+        self.indent_level += 1
 
-        code = (
-            condition_code
-            + f"{indentation}if (aaa_stack_pop_bool(stack)) {{\n"
-            + if_code
-        )
+        code += self._generate_c_function_body(branch.if_body)
 
         if branch.else_body:
-            else_code = self._generate_c_function_body(branch.else_body, indent + 1)
-            code += f"{indentation}}} else {{\n" + else_code
+            self.indent_level -= 1
+            code += self._indent("} else {\n")
+            self.indent_level += 1
 
-        code += f"{indentation}}}\n"
+            code += self._generate_c_function_body(branch.else_body)
+
+        self.indent_level -= 1
+        code += self._indent("}\n")
 
         return code
 
@@ -438,10 +452,12 @@ class Transpiler:
 
         code = f"// Generated for: {type.position.file} {type.name}\n"
         code += f"struct aaa_struct *{c_struct_name}_new(void) {{\n"
-        code += f'{C_IDENTATION}struct aaa_struct *s = aaa_struct_new("{type.name}");\n'
+
+        self.indent_level += 1
+        code += self._indent(f'struct aaa_struct *s = aaa_struct_new("{type.name}");\n')
 
         for field_name, field_type in type.fields.items():
-            code += f"{C_IDENTATION}struct aaa_variable *{field_name} = "
+            code += self._indent(f"struct aaa_variable *{field_name} = ")
             if field_type.name == "int":
                 code += "aaa_variable_new_int_zero_value();\n"
             elif field_type.name == "bool":
@@ -456,44 +472,51 @@ class Transpiler:
                 c_field_struct_name = self._generate_c_struct_name(field_type.type)
                 code += f"aaa_variable_new_struct({c_field_struct_name}_new());\n"
 
-            code += f'{C_IDENTATION}aaa_struct_create_field(s, "{field_name}", {field_name});\n'
-            code += f"{C_IDENTATION}aaa_variable_dec_ref({field_name});\n"
+            code += self._indent(
+                f'aaa_struct_create_field(s, "{field_name}", {field_name});\n'
+            )
+            code += self._indent(f"aaa_variable_dec_ref({field_name});\n")
 
-        code += f"{C_IDENTATION}return s;\n"
+        code += self._indent("return s;\n")
+
+        self.indent_level -= 1
         code += "}\n\n"
 
         return code
 
-    def _generate_c_use_block_code(self, use_block: UseBlock, indent: int) -> str:
-        code = f"{self._indent(indent)}{{\n"
+    def _generate_c_use_block_code(self, use_block: UseBlock) -> str:
+
+        code = self._indent("{\n")
+        self.indent_level += 1
+
         for var in reversed(use_block.variables):
-            code += f"{self._indent(indent+1)}struct aaa_variable *aaa_local_{var.name} = aaa_stack_pop(stack);\n"
-
-        code += self._generate_c_function_body(use_block.body, indent + 1)
-
-        for var in use_block.variables:
-            code += (
-                f"{self._indent(indent+1)}aaa_variable_dec_ref(aaa_local_{var.name});\n"
+            code += self._indent(
+                f"struct aaa_variable *aaa_local_{var.name} = aaa_stack_pop(stack);\n"
             )
 
-        code += f"{self._indent(indent)}}}\n"
+        code += self._generate_c_function_body(use_block.body)
+
+        for var in use_block.variables:
+            code += self._indent(f"aaa_variable_dec_ref(aaa_local_{var.name});\n")
+
+        self.indent_level -= 1
+        code += self._indent("}\n")
+
         return code
 
-    def _generate_c_call_variable_code(
-        self, call_var: CallVariable, indent: int
-    ) -> str:
+    def _generate_c_call_variable_code(self, call_var: CallVariable) -> str:
         name = call_var.name
-        indentation = self._indent(indent)
 
-        return (
-            f"{indentation}aaa_variable_inc_ref(aaa_local_{name});\n"
-            + f"{indentation}aaa_stack_push(stack, aaa_local_{name});\n"
-        )
+        return self._indent(
+            f"aaa_variable_inc_ref(aaa_local_{name});\n"
+        ) + self._indent(f"aaa_stack_push(stack, aaa_local_{name});\n")
 
-    def _generate_c_assignment_code(self, assignment: Assignment, indent: int) -> str:
-        code = self._generate_c_function_body(assignment.body, indent)
+    def _generate_c_assignment_code(self, assignment: Assignment) -> str:
+        code = self._generate_c_function_body(assignment.body)
 
         for var in reversed(assignment.variables):
-            code += f"{self._indent(indent)}aaa_stack_variable_assign(stack, aaa_local_{var.name});\n"
+            code += self._indent(
+                f"aaa_stack_variable_assign(stack, aaa_local_{var.name});\n"
+            )
 
         return code
