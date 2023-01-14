@@ -325,6 +325,6 @@ def test_foreach_set() -> None:
 
 def test_assignment() -> None:
     stdout, stderr, exit_code = compile_run("assignment.aaa")
-    assert '1\ntrue\nbar\n[2]\n{"two": 2}\n{2}\n' == stdout
+    assert '1\ntrue\nbar\n[2]\n{"two": 2}\n{2}\n6\n' == stdout
     assert "" == stderr
     assert 0 == exit_code

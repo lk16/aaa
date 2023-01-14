@@ -227,7 +227,7 @@ class Transpiler:
         if function.arguments:
             content += f"{indentation}// load arguments\n"
             for arg in reversed(function.arguments):
-                content += f"{indentation}struct aaa_variable *aaa_arg_{arg.name} = aaa_stack_pop(stack);\n"
+                content += f"{indentation}struct aaa_variable *aaa_local_{arg.name} = aaa_stack_pop(stack);\n"
             content += "\n"
 
         content += self._generate_c_function_body(function.body, 1)
@@ -236,7 +236,7 @@ class Transpiler:
             content += "\n"
             content += f"{indentation}// decrease arguments' ref_count\n"
             for arg in reversed(function.arguments):
-                content += f"{indentation}aaa_variable_dec_ref(aaa_arg_{arg.name});\n"
+                content += f"{indentation}aaa_variable_dec_ref(aaa_local_{arg.name});\n"
 
         content += "}\n\n"
 
@@ -404,13 +404,8 @@ class Transpiler:
     def _generate_c_call_argument_code(
         self, call_arg: CallArgument, indent: int
     ) -> str:
-        indentation = self._indent(indent)
         arg_name = call_arg.argument.name
-
-        return (
-            f"{indentation}aaa_variable_inc_ref(aaa_arg_{arg_name});\n"
-            + f"{indentation}aaa_stack_push(stack, aaa_arg_{arg_name});\n"
-        )
+        return self._generate_c_call_local_var_code(arg_name, indent)
 
     def _generate_c_branch(self, branch: Branch, indent: int) -> str:
         indentation = self._indent(indent)
@@ -496,12 +491,15 @@ class Transpiler:
     def _generate_c_call_variable_code(
         self, call_var: CallVariable, indent: int
     ) -> str:
-        indentation = self._indent(indent)
         var_name = call_var.variable.name
+        return self._generate_c_call_local_var_code(var_name, indent)
+
+    def _generate_c_call_local_var_code(self, name: str, indent: int) -> str:
+        indentation = self._indent(indent)
 
         return (
-            f"{indentation}aaa_variable_inc_ref(aaa_local_{var_name});\n"
-            + f"{indentation}aaa_stack_push(stack, aaa_local_{var_name});\n"
+            f"{indentation}aaa_variable_inc_ref(aaa_local_{name});\n"
+            + f"{indentation}aaa_stack_push(stack, aaa_local_{name});\n"
         )
 
     def _generate_c_assignment_code(self, assignment: Assignment, indent: int) -> str:
