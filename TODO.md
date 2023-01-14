@@ -21,10 +21,18 @@
     - [ ] Test assign to const function arg
     - [ ] Test modify field of const function arg
     - [ ] Test query field of const function arg and then modifying it
-    - [ ] Test call function with non-const arg using const value
-    - [ ] Add `const` to `builtins.aaa`
+    - [ ] Test calling function with non-const arg using non-const value
+    - [ ] Test calling function with non-const arg using const value
+    - [ ] Test calling function with const arg using const value
+    - [ ] Test calling function with const arg using non-const value
+    - [ ] Add remaining `const` to `builtins.aaa`
 - [ ] Constant type params
 - [ ] File-scope constants
+
+### This
+- [ ] Introduce the special local variable `this` which can only be used in member functions
+- [ ] First arg of member functions needs to be called `this` and has no type annotations
+- [ ] If this is const, the syntax is `const this`
 
 ### Testing
 - [ ] Collect coverage stats from dockerized tests
