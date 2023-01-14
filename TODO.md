@@ -16,6 +16,11 @@
 - [ ] Add remaining tests for syscalls
 - [x] Build static library of aaa stdlib so we don't compile it everytime
 
+### Const
+- [ ] File-scope constants
+- [ ] Constant function arguments
+- [ ] Constant type params
+
 ### Testing
 - [ ] Collect coverage stats from dockerized tests
 - [ ] Merge coverage of tests in- and outside of docker
@@ -30,7 +35,6 @@
 - add binary or/and/not integer operations
 
 ### Builtin types and typing-features
-- `set` type
 - `float` type
 - union types
 - `tuple` type
