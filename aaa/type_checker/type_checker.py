@@ -44,6 +44,7 @@ from aaa.type_checker.exceptions import (
     UpdateConstStructError,
     UseBlockStackUnderflow,
     WhileLoopTypeError,
+    format_typestack,
 )
 from aaa.type_checker.models import TypeCheckerOutput
 
@@ -59,7 +60,7 @@ class TypeChecker:
         self.entrypoint = cross_referencer_output.entrypoint
         self.exceptions: List[TypeCheckerException] = []
         self.foreach_loop_stacks: Dict[Position, List[VariableType]] = {}
-        self.verbose = verbose  # TODO use
+        self.verbose = verbose
 
     def run(self) -> TypeCheckerOutput:
         for function in self.functions.values():
@@ -116,6 +117,7 @@ class SingleFunctionTypeChecker:
         self.vars: Dict[str, VariableType] = {
             arg.name: arg.var_type for arg in function.arguments
         }
+        self.verbose = type_checker.verbose
 
     def run(self) -> Dict[Position, List[VariableType]]:
         if self.function.is_test():
@@ -125,7 +127,6 @@ class SingleFunctionTypeChecker:
             self._check_member_function()
 
         assert self.function.body
-        # TODO print type stack while walking through the tree for debugging
         computed_return_types = self._check_function_body(self.function.body, [])
 
         if not self._confirm_return_types(computed_return_types):
@@ -277,6 +278,20 @@ class SingleFunctionTypeChecker:
         # we can return either one, since they are the same
         return loop_stack
 
+    def _print_types(
+        self, position: Position, type_stack: List[VariableType]
+    ) -> None:  # pragma: nocover
+        if not self.verbose:
+            return
+
+        formatted_position = str(position)
+        formatted_stack = format_typestack(type_stack)
+
+        if len(formatted_position) > 40:
+            formatted_position = "…" + formatted_position[-39:]
+
+        print(f"type checker | {formatted_position:>40} | {formatted_stack}")
+
     def _check_function_body(
         self, function_body: FunctionBody, type_stack: List[VariableType]
     ) -> List[VariableType]:
@@ -303,6 +318,9 @@ class SingleFunctionTypeChecker:
 
             checker = checkers[type(item)]
             stack = checker(item, stack)
+            # TODO print the position of the last token, instead of the first.
+            # This looks odd in the output for if-blocks and so on.
+            self._print_types(item.position, stack)
 
         return stack
 
