@@ -84,3 +84,14 @@ struct aaa_string *aaa_struct_get_type_name(struct aaa_struct *s) {
     aaa_string_inc_ref(s->type_name);
     return s->type_name;
 }
+
+struct aaa_struct *aaa_struct_copy(const struct aaa_struct *s) {
+    struct aaa_struct *copy = malloc(sizeof(*copy));
+    aaa_ref_count_init(&copy->ref_count);
+    copy->map = aaa_map_copy(s->map);
+
+    aaa_string_inc_ref(s->type_name);
+    copy->type_name = s->type_name;
+
+    return copy;
+}

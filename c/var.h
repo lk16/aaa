@@ -33,6 +33,7 @@ struct aaa_vector_iter *aaa_variable_get_vector_iter(struct aaa_variable *var);
 struct aaa_map_iter *aaa_variable_get_map_iter(struct aaa_variable *var);
 
 struct aaa_string *aaa_variable_repr(const struct aaa_variable *var);
+struct aaa_variable *aaa_variable_copy(const struct aaa_variable *var);
 struct aaa_string *aaa_variable_printed(const struct aaa_variable *var);
 size_t aaa_variable_hash(const struct aaa_variable *var);
 bool aaa_variable_equals(const struct aaa_variable *lhs,

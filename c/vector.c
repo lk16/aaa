@@ -94,12 +94,18 @@ void aaa_vector_clear(struct aaa_vector *vec) {
 }
 
 struct aaa_vector *aaa_vector_copy(struct aaa_vector *vec) {
-    struct aaa_vector *copy = aaa_vector_new();
-    for (size_t i = 0; i < vec->size; i++) {
-        struct aaa_variable *item = aaa_vector_get(vec, i);
-        aaa_vector_push(copy, item);
+    struct aaa_vector *vec_copy = aaa_vector_new();
+
+    struct aaa_vector_iter *iter = aaa_vector_iter_new(vec);
+    struct aaa_variable *item = NULL;
+
+    while (aaa_vector_iter_next(iter, &item)) {
+        struct aaa_variable *item_copy = aaa_variable_copy(item);
+        aaa_vector_push(vec_copy, item_copy);
     }
-    return copy;
+
+    aaa_vector_iter_dec_ref(iter);
+    return vec_copy;
 }
 
 bool aaa_vector_empty(const struct aaa_vector *vec) { return vec->size == 0; }

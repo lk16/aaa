@@ -17,11 +17,12 @@ type vec_const_iter[T]
 type vec_iter[T]
 
 // stack operations
-fn drop[A]      args a as const A
-fn dup[A]       args a as const A                             return A, A
-fn over[A, B]   args a as const A, b as const B               return A, B, A
-fn rot[A, B, C] args a as const A, b as const B, c as const C return B, C, A
-fn swap[A, B]   args a as const A, b as const B               return B, A
+fn copy[A]      args a as const A                 return const A, A  // TODO implement, TODO current syntax cannot express this well
+fn drop[A]      args a as       A
+fn dup[A]       args a as       A                 return A, A
+fn over[A, B]   args a as       A, b as B         return A, B, A
+fn rot[A, B, C] args a as       A, b as B, c as C return B, C, A
+fn swap[A, B]   args a as       A, b as B         return B, A
 
 // special operators
 fn . [A]      args a as const A

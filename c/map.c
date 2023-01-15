@@ -241,17 +241,20 @@ struct aaa_string *aaa_map_repr(struct aaa_map *map) {
 }
 
 struct aaa_map *aaa_map_copy(struct aaa_map *map) {
-    struct aaa_map *copy = aaa_map_new();
-    for (size_t b = 0; b < map->bucket_count; b++) {
-        struct aaa_map_item *item = map->buckets[b];
+    struct aaa_map *map_copy = aaa_map_new();
 
-        while (item) {
-            aaa_map_set(copy, item->key, item->value);
-            item = item->next;
-        }
+    struct aaa_map_iter *iter = aaa_map_iter_new(map);
+    struct aaa_variable *key = NULL;
+    struct aaa_variable *value = NULL;
+
+    while (aaa_map_iter_next(iter, &key, &value)) {
+        struct aaa_variable *key_copy = aaa_variable_copy(key);
+        struct aaa_variable *value_copy = aaa_variable_copy(value);
+        aaa_map_set(map_copy, key_copy, value_copy);
     }
 
-    return copy;
+    aaa_map_iter_dec_ref(iter);
+    return map_copy;
 }
 
 struct aaa_map_iter {

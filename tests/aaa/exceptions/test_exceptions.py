@@ -119,7 +119,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "fn main { drop }",
             StackTypesError,
             "/foo/main.aaa:1:11: Invalid stack types when calling drop\n"
-            + "Expected stack top: (const A)\n"
+            + "Expected stack top: A\n"
             + "       Found stack: \n",
             id="stack-types-underflow",
         ),

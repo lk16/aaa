@@ -24,6 +24,20 @@
     - [ ] Add remaining `const` to `builtins.aaa`
 - [ ] Standard lib
     - [ ] `vec:push`, `vec:set`, `map:set` and `set:add` should insert copies and take const arguments
+        - [ ] implement `aaa_variable_copy`
+            - [ ] use with new `copy` builtin func `fn copy[A] args a as const A return const A, A`
+            - [ ] test copying for all types
+
+```sh
+# does not work:
+./manage.py cmd 'fn main { nop } struct foo { x as int } fn bar args f as const foo { f copy drop drop }' -v
+# type checker |                    /tmp/tmpbptcmcfi:1:11 |
+# type checker |                    /tmp/tmpbptcmcfi:1:70 | (const foo)
+# type checker |                    /tmp/tmpbptcmcfi:1:72 | (const foo) (const foo)     <--- should be (const foo) foo
+# type checker |                    /tmp/tmpbptcmcfi:1:77 | (const foo)
+# type checker |                    /tmp/tmpbptcmcfi:1:82 |
+```
+
     - [ ] `./manage.py cmd 'fn main { 3 use x { vec[int] dup x vec:push x <- { 4 } . "\n" .  } }' -cr` should print `[3]`
     - [ ] Add tests similar to above
     - [ ] Require all iterators to have an `iter` member function returning itself

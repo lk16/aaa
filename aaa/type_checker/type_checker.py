@@ -162,6 +162,7 @@ class SingleFunctionTypeChecker:
             if expected_var_type.name in placeholder_types:
                 return placeholder_types[expected_var_type.name] == var_type
 
+            # TODO updating an argument passed by reference is a hack
             placeholder_types[expected_var_type.name] = var_type
             return True
 

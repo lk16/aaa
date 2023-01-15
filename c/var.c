@@ -467,3 +467,41 @@ void aaa_variable_assign(struct aaa_variable *var,
             break;
     }
 }
+
+struct aaa_variable *aaa_variable_copy(const struct aaa_variable *var) {
+    if (!var) {
+        return NULL;
+    }
+
+    switch (var->kind) {
+        case AAA_INTEGER:
+            return aaa_variable_new_int(var->integer);
+        case AAA_BOOLEAN:
+            return aaa_variable_new_bool(var->boolean);
+        case AAA_STRING:
+            return aaa_variable_new_str(var->string);
+        case AAA_VECTOR:
+            (void)0;
+            struct aaa_vector *vec_copy = aaa_vector_copy(var->vector);
+            return aaa_variable_new_vector(vec_copy);
+        case AAA_MAP:
+        case AAA_SET:
+            (void)0;
+            struct aaa_map *map_copy = aaa_map_copy(var->map);
+            struct aaa_variable *map_copy_var = aaa_variable_new_map(map_copy);
+            map_copy_var->kind = var->kind;
+            return map_copy_var;
+        case AAA_STRUCT:
+            (void)0;
+            struct aaa_struct *struct_copy = aaa_struct_copy(var->struct_);
+            return aaa_variable_new_struct(struct_copy);
+        case AAA_VECTOR_ITER:
+        case AAA_MAP_ITER:
+        case AAA_SET_ITER:
+        default:
+            fprintf(stderr, "Attempt to copy iterator\n");
+            fflush(stderr);
+            abort();
+            break;
+    }
+}
