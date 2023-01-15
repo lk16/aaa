@@ -155,6 +155,9 @@ class VariableType(AaaCrossReferenceModel):
             output += ", ".join(repr(param) for param in self.params)
             output += "]"
 
+        if self.is_const:
+            return f"(const {output})"
+
         return output
 
     def __eq__(self, other: object) -> bool:

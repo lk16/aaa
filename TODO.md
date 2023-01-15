@@ -18,14 +18,19 @@
 
 ### Const
 - [ ] Constant function arguments
-    - [ ] Test assign to const function arg
-    - [ ] Test modify field of const function arg
-    - [ ] Test query field of const function arg and then modifying it
-    - [ ] Test calling function with non-const arg using non-const value
-    - [ ] Test calling function with non-const arg using const value
-    - [ ] Test calling function with const arg using const value
-    - [ ] Test calling function with const arg using non-const value
+    - [x] Test assign to const function arg
+    - [x] Test modify field of const function arg
+    - [x] Test query field of const function arg and then modifying it
     - [ ] Add remaining `const` to `builtins.aaa`
+- [ ] Standard lib
+    - [ ] `vec:push`, `vec:set`, `map:set` and `set:add` should insert copies and take const arguments
+    - [ ] `./manage.py cmd 'fn main { 3 use x { vec[int] dup x vec:push x <- { 4 } . "\n" .  } }' -cr` should print `[3]`
+    - [ ] Add tests similar to above
+    - [ ] Require all iterators to have an `iter` member function returning itself
+    - [ ] Add `vec_const_iter` and `map_const_iter`
+    - [ ] Make sure `foreach` calls const versions on `const vec` and `const map`.
+    - [ ] Make `copy` recursive containers (and other types) and make the copied container `const`
+
 - [ ] Constant type params
 - [ ] File-scope constants
 

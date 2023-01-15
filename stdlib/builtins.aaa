@@ -10,8 +10,10 @@ type set[T]
 type vec[T]
 
 // container iterator types
+type map_const_iter[K, V]
 type map_iter[K, V]
 type set_iter[T]
+type vec_const_iter[T]
 type vec_iter[T]
 
 // stack operations
@@ -22,9 +24,9 @@ fn rot[A, B, C] args a as const A, b as const B, c as const C return B, C, A
 fn swap[A, B]   args a as const A, b as const B               return B, A
 
 // special operators
-fn . [A]   args a as const A
-fn repr[A] args a as const A    return str
-fn assert  args a as const bool
+fn . [A]      args a as const A
+fn repr[A]    args a as const A    return str
+fn assert     args a as const bool
 fn nop
 
 // integer arithmetic
@@ -52,42 +54,49 @@ fn not args a as const bool                  return bool
 fn or  args a as const bool, b as const bool return bool
 
 // container functions
-fn vec[T]:clear args v as       vec[T]
-fn vec[T]:copy  args v as       vec[T]                                 return vec[T]
-fn vec[T]:empty args v as const vec[T]                                 return bool
-fn vec[T]:get   args v as       vec[T], offset as const int            return T
-fn vec[T]:iter  args v as       vec[T]                                 return vec_iter[T]
-fn vec[T]:pop   args v as       vec[T]                                 return T
-fn vec[T]:push  args v as       vec[T], item as T
-fn vec[T]:set   args v as       vec[T], offset as const int, item as T return bool
-fn vec[T]:size  args v as const vec[T]                                 return int
+fn vec[T]:clear      args v as       vec[T]
+fn vec[T]:const_get  args v as const vec[T], offset as const int            return const T  // TODO implement
+fn vec[T]:const_iter args v as const vec[T]                                 return vec_const_iter[T] // TODO implement
+fn vec[T]:copy       args v as       vec[T]                                 return vec[T]
+fn vec[T]:empty      args v as const vec[T]                                 return bool
+fn vec[T]:get        args v as       vec[T], offset as const int            return T
+fn vec[T]:iter       args v as       vec[T]                                 return vec_iter[T]
+fn vec[T]:pop        args v as       vec[T]                                 return T
+fn vec[T]:push       args v as       vec[T], item as T
+fn vec[T]:set        args v as       vec[T], offset as const int, item as T return bool
+fn vec[T]:size       args v as const vec[T]                                 return int
 
-fn map[K, V]:clear   args m as       map[K, V]
-fn map[K, V]:copy    args m as       map[K, V]                       return map[K, V]
-fn map[K, V]:drop    args m as       map[K, V], key as const K
-fn map[K, V]:empty   args m as const map[K, V]                       return bool
-fn map[K, V]:get     args m as       map[K, V], key as const K       return V
-fn map[K, V]:has_key args m as const map[K, V], key as const K       return bool
-fn map[K, V]:iter    args m as       map[K, V]                       return map_iter[K, V]
-fn map[K, V]:pop     args m as       map[K, V], key as const K       return V
-fn map[K, V]:set     args m as       map[K, V], key as K, value as V
-fn map[K, V]:size    args m as const map[K, V]                       return int
+fn map[K, V]:clear      args m as       map[K, V]
+fn map[K, V]:const_get  args m as const map[K, V], key as const K       return const V // TODO implement
+fn map[K, V]:const_iter args m as const map[K, V]                       return map_const_iter[K, V] // TODO implement
+fn map[K, V]:copy       args m as       map[K, V]                       return map[K, V]
+fn map[K, V]:drop       args m as       map[K, V], key as const K
+fn map[K, V]:empty      args m as const map[K, V]                       return bool
+fn map[K, V]:get        args m as       map[K, V], key as const K       return V
+fn map[K, V]:has_key    args m as const map[K, V], key as const K       return bool
+fn map[K, V]:iter       args m as       map[K, V]                       return map_iter[K, V]
+fn map[K, V]:pop        args m as       map[K, V], key as const K       return V
+fn map[K, V]:set        args m as       map[K, V], key as K, value as V
+fn map[K, V]:size       args m as const map[K, V]                       return int
 
-fn set[T]:add    args s as set[T], item as T
-fn set[T]:clear  args s as set[T]
-fn set[T]:copy   args s as set[T]                   return set[T]
-fn set[T]:empty  args s as set[T]                   return bool
-fn set[T]:has    args s as set[T], item as const T  return bool
-fn set[T]:iter   args s as set[T]                   return set_iter[T]
-fn set[T]:remove args s as set[T], item as const T
-fn set[T]:size   args s as set[T]                   return int
+fn set[T]:add        args s as       set[T], item as T
+fn set[T]:clear      args s as       set[T]
+fn set[T]:const_iter args s as const set[T]                   return set_iter[T]
+fn set[T]:copy       args s as       set[T]                   return set[T]
+fn set[T]:empty      args s as const set[T]                   return bool
+fn set[T]:has        args s as const set[T], item as const T  return bool
+fn set[T]:iter       args s as const set[T]                   return set_iter[T]
+fn set[T]:remove     args s as       set[T], item as const T
+fn set[T]:size       args s as const set[T]                   return int
 
 // TODO: rename size functions of containers to len
 
 // container iteration
-fn map_iter[K, V]:next args iter as map_iter[K, V] return const K, V, bool
-fn set_iter[T]:next args iter as set_iter[T] return const T, bool
-fn vec_iter[T]:next args iter as vec_iter[T] return T, bool
+fn map_iter[K, V]:next       args iter as map_iter[K, V] return const K, V, bool
+fn map_const_iter[K, V]:next args iter as map_iter[K, V] return const K, const V, bool  // TODO implement
+fn set_iter[T]:next          args iter as set_iter[T]    return const T, bool
+fn vec_iter[T]:next          args iter as vec_iter[T]    return T, bool
+fn vec_const_iter[T]:next    args iter as vec_iter[T]    return const T, bool  // TODO implement
 
 // string functions
 

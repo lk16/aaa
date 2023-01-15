@@ -16,6 +16,7 @@ from aaa.cross_referencer.exceptions import (
 )
 from aaa.tokenizer.exceptions import FileReadError
 from aaa.type_checker.exceptions import (
+    AssignConstValueError,
     AssignmentTypeError,
     BranchTypeError,
     ConditionTypeError,
@@ -31,6 +32,7 @@ from aaa.type_checker.exceptions import (
     StructUpdateStackError,
     StructUpdateTypeError,
     UnknownField,
+    UpdateConstStructError,
     UseBlockStackUnderflow,
     WhileLoopTypeError,
 )
@@ -109,7 +111,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             'fn main { 3 " " + . }',
             StackTypesError,
             "/foo/main.aaa:1:17: Invalid stack types when calling +\n"
-            + "Expected stack top: int int\n"
+            + "Expected stack top: (const int) (const int)\n"
             + "       Found stack: int str\n",
             id="stack-types",
         ),
@@ -117,7 +119,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "fn main { drop }",
             StackTypesError,
             "/foo/main.aaa:1:11: Invalid stack types when calling drop\n"
-            + "Expected stack top: A\n"
+            + "Expected stack top: (const A)\n"
             + "       Found stack: \n",
             id="stack-types-underflow",
         ),
@@ -600,6 +602,47 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:29: local variable bar collides with:\n"
             + "/foo/main.aaa:2:13: type bar\n",
             id="colliding-identifier-var-identifier",
+        ),
+        pytest.param(
+            """
+            fn main { 3 foo }
+            fn foo args x as const int { x bar }
+            fn bar args x as int { nop }
+            """,
+            StackTypesError,
+            "/foo/main.aaa:3:44: Invalid stack types when calling bar\n"
+            + "Expected stack top: int\n"
+            + "       Found stack: (const int)\n",
+            id="stack-types-error-const",
+        ),
+        pytest.param(
+            """
+            struct foo { x as int }
+            fn foo:bar args f as const foo { f "x" { 3 } ! }
+            fn main { nop }
+            """,
+            UpdateConstStructError,
+            "/foo/main.aaa:3:48: Cannot update field x on const struct foo\n",
+            id="update-const-struct",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo args x as const int { x <- { 3 } }
+            """,
+            AssignConstValueError,
+            "/foo/main.aaa:3:42: Cannot assign to (const int) x\n",
+            id="assign-to-const-value",
+        ),
+        pytest.param(
+            """
+            struct foo { x as int }
+            fn foo:bar args f as const foo { f "x" ? use x { x <- { 3 } } }
+            fn main { nop }
+            """,
+            AssignConstValueError,
+            "/foo/main.aaa:3:62: Cannot assign to (const int) x\n",
+            id="assign-to-const-value",
         ),
     ],
 )

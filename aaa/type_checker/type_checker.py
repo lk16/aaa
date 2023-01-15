@@ -23,6 +23,7 @@ from aaa.cross_referencer.models import (
     WhileLoop,
 )
 from aaa.type_checker.exceptions import (
+    AssignConstValueError,
     AssignmentTypeError,
     BranchTypeError,
     ConditionTypeError,
@@ -40,6 +41,7 @@ from aaa.type_checker.exceptions import (
     StructUpdateTypeError,
     TypeCheckerException,
     UnknownField,
+    UpdateConstStructError,
     UseBlockStackUnderflow,
     WhileLoopTypeError,
 )
@@ -176,6 +178,10 @@ class SingleFunctionTypeChecker:
 
                 if not match_result:
                     return False
+
+            if var_type.is_const and not expected_var_type.is_const:
+                # Cannot hand const value to non-const argument
+                return False
 
             return True
 
@@ -322,9 +328,6 @@ class SingleFunctionTypeChecker:
         types = stack[len(stack) - arg_count :]
 
         for argument, type in zip(call_function.function.arguments, types, strict=True):
-            if type.is_const and not argument.var_type.is_const:
-                # TODO cannot hand const value to non-const argument
-                raise NotImplementedError
 
             match_result = self._match_signature_items(
                 argument.var_type, type, placeholder_types
@@ -433,8 +436,7 @@ class SingleFunctionTypeChecker:
             )
 
         if struct_var_type.is_const:
-            # TODO cannot set field on const struct
-            raise NotImplementedError
+            raise UpdateConstStructError(field_update, struct_type.name)
 
         field_type = self._get_struct_field_type(field_update, struct_var_type)
 
@@ -549,8 +551,7 @@ class SingleFunctionTypeChecker:
             type = self.vars[var.name]
 
             if type.is_const:
-                # TODO cannot assign to variable with const type
-                raise NotImplementedError
+                raise AssignConstValueError(var, type)
 
             expected_var_types.append(type)
 

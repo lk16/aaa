@@ -9,6 +9,7 @@ from aaa.cross_referencer.models import (
     StructFieldUpdate,
     Type,
     UseBlock,
+    Variable,
     VariableType,
 )
 
@@ -352,3 +353,23 @@ class AssignmentTypeError(TypeCheckerException):
             + " ".join(str(var_type) for var_type in self.found_var_types)
             + "\n"
         )
+
+
+class UpdateConstStructError(TypeCheckerException):
+    def __init__(self, field_update: StructFieldUpdate, struct_name: str) -> None:
+        self.field_name = field_update.field_name.value
+        self.struct_name = struct_name
+        super().__init__(field_update.position)
+
+    def __str__(self) -> str:
+        return f"{self.position}: Cannot update field {self.field_name} on const struct {self.struct_name}\n"
+
+
+class AssignConstValueError(TypeCheckerException):
+    def __init__(self, var: Variable, type: VariableType) -> None:
+        self.var_name = var.name
+        self.type = type
+        super().__init__(var.position)
+
+    def __str__(self) -> str:
+        return f"{self.position}: Cannot assign to {self.type} {self.var_name}\n"
