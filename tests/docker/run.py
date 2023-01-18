@@ -331,7 +331,7 @@ def test_assignment() -> None:
 
 
 def test_const() -> None:
-    stdout, stderr, exit_code = compile_run("assignment.aaa")
+    stdout, stderr, exit_code = compile_run("const.aaa")
     assert "69\n[5]\n[5]\n[5]\n[]\n" == stdout
     assert "" == stderr
     assert 0 == exit_code

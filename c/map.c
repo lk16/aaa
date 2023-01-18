@@ -250,7 +250,11 @@ struct aaa_map *aaa_map_copy(struct aaa_map *map) {
     while (aaa_map_iter_next(iter, &key, &value)) {
         struct aaa_variable *key_copy = aaa_variable_copy(key);
         struct aaa_variable *value_copy = aaa_variable_copy(value);
+
         aaa_map_set(map_copy, key_copy, value_copy);
+
+        aaa_variable_dec_ref(key_copy);
+        aaa_variable_dec_ref(value_copy);
     }
 
     aaa_map_iter_dec_ref(iter);
