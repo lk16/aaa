@@ -130,3 +130,4 @@ void aaa_stack_set_iter_next(struct aaa_stack *stack);
 void aaa_stack_push_set_empty(struct aaa_stack *stack);
 void aaa_stack_variable_assign(struct aaa_stack *stack,
                                struct aaa_variable *var);
+void aaa_stack_copy(struct aaa_stack *stack);

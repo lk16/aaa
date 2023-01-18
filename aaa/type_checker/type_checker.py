@@ -191,10 +191,6 @@ class SingleFunctionTypeChecker:
         self, return_type: VariableType, placeholder_types: Dict[str, VariableType]
     ) -> VariableType:
         if return_type.is_placeholder:
-            if return_type.name not in placeholder_types:
-                # TODO
-                raise NotImplementedError
-
             return placeholder_types[return_type.name]
 
         for i, param in enumerate(return_type.params):
@@ -332,6 +328,18 @@ class SingleFunctionTypeChecker:
         type = self.vars[call_var.name]
         return type_stack + [type]
 
+    def _simplify_stack_item(self, var_type: VariableType) -> VariableType:
+        if (
+            var_type.type.name == "remove_const"
+            and var_type.type.position.file == self.builtins_path
+        ):
+            assert len(var_type.params) == 1
+
+            var_type = copy(var_type.params[0])
+            var_type.is_const = False
+
+        return var_type
+
     def _check_call_function(
         self, call_function: CallFunction, type_stack: List[VariableType]
     ) -> List[VariableType]:
@@ -360,7 +368,10 @@ class SingleFunctionTypeChecker:
         stack = stack[: len(stack) - arg_count]
 
         for return_type in call_function.function.return_types:
-            stack.append(self._update_return_type(return_type, placeholder_types))
+            stack_item = self._update_return_type(return_type, placeholder_types)
+            stack_item = self._simplify_stack_item(stack_item)
+
+            stack.append(stack_item)
 
         return stack
 

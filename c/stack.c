@@ -1363,3 +1363,10 @@ void aaa_stack_variable_assign(struct aaa_stack *stack,
     aaa_variable_assign(var, popped);
     aaa_variable_dec_ref(popped);
 }
+
+void aaa_stack_copy(struct aaa_stack *stack) {
+    struct aaa_variable *top = aaa_stack_top(stack);
+    struct aaa_variable *copy = aaa_variable_copy(top);
+
+    aaa_stack_push(stack, copy);
+}

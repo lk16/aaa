@@ -328,3 +328,10 @@ def test_assignment() -> None:
     assert '1\ntrue\nbar\n[2]\n{"two": 2}\n{2}\n6\n' == stdout
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_const() -> None:
+    stdout, stderr, exit_code = compile_run("assignment.aaa")
+    assert "69\n[5]\n[5]\n[5]\n[]\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code

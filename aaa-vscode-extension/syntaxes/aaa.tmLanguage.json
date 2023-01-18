@@ -62,7 +62,7 @@
 			]
 		},
 		"builtin_functions": {
-			"match": "(?x)\\b(assert|drop|dup|swap|over|nop|repr|rot)\\b|\\.",
+			"match": "(?x)\\b(assert|drop|dup|swap|over|nop|repr|rot|copy)\\b|\\.",
 			"name": "support.function.builtin.aaa"
 		},
 		"builtin_types": {
