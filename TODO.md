@@ -22,6 +22,7 @@
     - [x] Test modify field of const function arg
     - [x] Test query field of const function arg and then modifying it
     - [ ] Add remaining `const` to `builtins.aaa`
+    - [ ] Add tests for const-ness of all builtin functions
 - [ ] Standard lib
     - [x] add new builtin func `copy`
     - [ ] `vec:push`, `vec:set`, `map:set` and `set:add` should insert copies and take const arguments
