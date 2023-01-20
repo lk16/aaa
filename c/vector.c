@@ -146,14 +146,14 @@ static void aaa_vector_resize(struct aaa_vector *vec, size_t new_capacity) {
     vec->capacity = new_capacity;
 }
 
-void aaa_vector_push(struct aaa_vector *vec, struct aaa_variable *pushed) {
+void aaa_vector_push(struct aaa_vector *vec,
+                     const struct aaa_variable *pushed) {
     if (vec->size == vec->capacity) {
         aaa_vector_resize(vec, 2 * vec->capacity);
     }
 
-    vec->data[vec->size] = pushed;
+    vec->data[vec->size] = aaa_variable_copy(pushed);
     vec->size++;
-    aaa_variable_inc_ref(pushed);
 }
 
 bool aaa_vector_set(struct aaa_vector *vec, size_t offset,

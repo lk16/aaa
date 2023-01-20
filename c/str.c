@@ -26,6 +26,12 @@ struct aaa_string *aaa_string_new(const char *raw, bool freeable) {
     return string;
 }
 
+struct aaa_string *aaa_string_copy(const struct aaa_string *string) {
+    char *raw = (char *)malloc((string->length + 1) * sizeof(char));
+    strcpy(raw, string->raw);
+    return aaa_string_new(raw, string->freeable);
+}
+
 const char *aaa_string_raw(const struct aaa_string *string) {
     return string->raw;
 }

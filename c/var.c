@@ -479,7 +479,9 @@ struct aaa_variable *aaa_variable_copy(const struct aaa_variable *var) {
         case AAA_BOOLEAN:
             return aaa_variable_new_bool(var->boolean);
         case AAA_STRING:
-            return aaa_variable_new_str(var->string);
+            (void)0;
+            struct aaa_string *string_copy = aaa_string_copy(var->string);
+            return aaa_variable_new_str(string_copy);
         case AAA_VECTOR:
             (void)0;
             struct aaa_vector *vec_copy = aaa_vector_copy(var->vector);

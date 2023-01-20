@@ -20,15 +20,12 @@ type vec_iter[T]
 type remove_const[T]
 
 // stack operations
-fn copy[A]      args a as A                 return A, remove_const[A]  // TODO implement
+fn copy[A]      args a as A                 return A, remove_const[A]
 fn drop[A]      args a as A
 fn dup[A]       args a as A                 return A, A
 fn over[A, B]   args a as A, b as B         return A, B, A
 fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
 fn swap[A, B]   args a as A, b as B         return B, A
-
-fn modifies args a as int  // TODO remove
-
 
 // special operators
 fn . [A]      args a as const A
@@ -69,7 +66,7 @@ fn vec[T]:empty      args v as const vec[T]                                 retu
 fn vec[T]:get        args v as       vec[T], offset as const int            return T
 fn vec[T]:iter       args v as       vec[T]                                 return vec_iter[T]
 fn vec[T]:pop        args v as       vec[T]                                 return T
-fn vec[T]:push       args v as       vec[T], item as T
+fn vec[T]:push       args v as const vec[T], item as T
 fn vec[T]:set        args v as       vec[T], offset as const int, item as T return bool
 fn vec[T]:size       args v as const vec[T]                                 return int
 

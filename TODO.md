@@ -25,7 +25,10 @@
     - [ ] Add tests for const-ness of all builtin functions
 - [ ] Standard lib
     - [x] add new builtin func `copy`
-    - [ ] `vec:push`, `vec:set`, `map:set` and `set:add` should insert copies and take const arguments
+    - [x] `vec:push` should take a const argument and add a copy to the container
+    - [ ] `vec:set` should take a const argument and add a copy to the container
+    - [ ] `map:set` should take a const argument and add a copy to the container
+    - [ ] `set:add` should take a const argument and add a copy to the container
     - [ ] `./manage.py cmd 'fn main { 3 use x { vec[int] dup x vec:push x <- { 4 } . "\n" .  } }' -cr` should print `[3]`
     - [ ] Add tests similar to above
     - [ ] Require all iterators to have an `iter` member function returning itself

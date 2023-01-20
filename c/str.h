@@ -3,6 +3,7 @@
 #include "types.h"
 
 struct aaa_string *aaa_string_new(const char *raw, bool freeable);
+struct aaa_string *aaa_string_copy(const struct aaa_string *string);
 
 void aaa_string_dec_ref(struct aaa_string *string);
 void aaa_string_inc_ref(struct aaa_string *string);
