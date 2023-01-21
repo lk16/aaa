@@ -25,6 +25,7 @@
     - [ ] Add tests for const-ness of all builtin functions
 - [ ] Standard lib
     - [x] add new builtin func `copy`
+    - [ ] add tests for `copy`
     - [x] `vec:push` should take a const argument and add a copy to the container
     - [ ] `vec:set` should take a const argument and add a copy to the container
     - [ ] `map:set` should take a const argument and add a copy to the container

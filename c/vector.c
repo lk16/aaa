@@ -102,6 +102,8 @@ struct aaa_vector *aaa_vector_copy(struct aaa_vector *vec) {
     while (aaa_vector_iter_next(iter, &item)) {
         struct aaa_variable *item_copy = aaa_variable_copy(item);
         aaa_vector_push(vec_copy, item_copy);
+
+        aaa_variable_dec_ref(item_copy);
     }
 
     aaa_vector_iter_dec_ref(iter);
