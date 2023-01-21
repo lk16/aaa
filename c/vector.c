@@ -112,13 +112,14 @@ struct aaa_vector *aaa_vector_copy(struct aaa_vector *vec) {
 
 bool aaa_vector_empty(const struct aaa_vector *vec) { return vec->size == 0; }
 
-struct aaa_variable *aaa_vector_get(struct aaa_vector *vec, size_t offset) {
+struct aaa_variable *aaa_vector_get(const struct aaa_vector *vec,
+                                    size_t offset) {
     if (offset >= vec->size) {
         fprintf(stderr, "aaa_vector_get out of range\n");
         abort();
     }
 
-    return vec->data[offset];
+    return aaa_variable_copy(vec->data[offset]);
 }
 
 struct aaa_variable *aaa_vector_pop(struct aaa_vector *vec) {

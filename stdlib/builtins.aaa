@@ -63,7 +63,7 @@ fn vec[T]:const_get  args v as const vec[T], offset as const int                
 fn vec[T]:const_iter args v as const vec[T]                                       return vec_const_iter[T] // TODO implement
 fn vec[T]:copy       args v as       vec[T]                                       return vec[T]
 fn vec[T]:empty      args v as const vec[T]                                       return bool
-fn vec[T]:get        args v as       vec[T], offset as const int                  return T
+fn vec[T]:get        args v as const vec[T], offset as const int                  return T
 fn vec[T]:iter       args v as       vec[T]                                       return vec_iter[T]
 fn vec[T]:pop        args v as       vec[T]                                       return T
 fn vec[T]:push       args v as const vec[T], item as const T
