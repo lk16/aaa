@@ -159,14 +159,13 @@ void aaa_vector_push(struct aaa_vector *vec,
 }
 
 bool aaa_vector_set(struct aaa_vector *vec, size_t offset,
-                    struct aaa_variable *value) {
+                    const struct aaa_variable *value) {
     if (offset >= vec->size) {
-        aaa_variable_dec_ref(value);
         return false;
     }
 
     aaa_variable_dec_ref(vec->data[offset]);
-    vec->data[offset] = value;
+    vec->data[offset] = aaa_variable_copy(value);
     return true;
 }
 

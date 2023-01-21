@@ -174,8 +174,8 @@ struct aaa_variable *aaa_map_pop(struct aaa_map *map,
     return NULL;
 }
 
-void aaa_map_set(struct aaa_map *map, struct aaa_variable *key,
-                 struct aaa_variable *new_value) {
+void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key,
+                 const struct aaa_variable *new_value) {
     struct aaa_map_item *item = NULL;
 
     if (aaa_map_get_item(map, key, &item)) {
@@ -189,9 +189,7 @@ void aaa_map_set(struct aaa_map *map, struct aaa_variable *key,
         item->next = map->buckets[bucket_id];
         map->buckets[bucket_id] = item;
 
-        item->key = key;
-        aaa_variable_inc_ref(key);
-
+        item->key = aaa_variable_copy(key);
         map->size++;
 
         if (aaa_map_load_factor(map) > 0.75) {
@@ -199,8 +197,7 @@ void aaa_map_set(struct aaa_map *map, struct aaa_variable *key,
         }
     }
 
-    item->value = new_value;
-    aaa_variable_inc_ref(new_value);
+    item->value = aaa_variable_copy(new_value);
 }
 
 size_t aaa_map_size(const struct aaa_map *map) { return map->size; }

@@ -19,8 +19,8 @@ struct aaa_variable *aaa_map_get(struct aaa_map *map,
 bool aaa_map_has_key(struct aaa_map *map, const struct aaa_variable *key);
 struct aaa_variable *aaa_map_pop(struct aaa_map *map,
                                  const struct aaa_variable *key);
-void aaa_map_set(struct aaa_map *map, struct aaa_variable *key,
-                 struct aaa_variable *value);
+void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key,
+                 const struct aaa_variable *value);
 size_t aaa_map_size(const struct aaa_map *map);
 
 struct aaa_map_iter *aaa_map_iter_new(struct aaa_map *map);

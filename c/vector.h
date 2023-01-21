@@ -19,7 +19,7 @@ struct aaa_variable *aaa_vector_get(struct aaa_vector *vec, size_t offset);
 struct aaa_variable *aaa_vector_pop(struct aaa_vector *vec);
 void aaa_vector_push(struct aaa_vector *vec, const struct aaa_variable *pushed);
 bool aaa_vector_set(struct aaa_vector *vec, size_t offset,
-                    struct aaa_variable *value);
+                    const struct aaa_variable *value);
 size_t aaa_vector_size(const struct aaa_vector *vec);
 
 struct aaa_vector_iter *aaa_vector_iter_new(struct aaa_vector *vec);

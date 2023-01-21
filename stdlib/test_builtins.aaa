@@ -265,6 +265,17 @@ fn test_vec_print_nested_one_item {
     "[[]]" str:equals assert
 }
 
+fn test_vec_push_copy {
+    3
+    use x {
+        vec[int]
+        dup x vec:push
+        x <- { 4 }
+        0 vec:get
+        3 = assert
+    }
+}
+
 fn test_vec_push_twenty {
     vec[int]
     0
@@ -317,6 +328,18 @@ fn test_vec_set_ok {
     dup vec:pop
     7 = assert
     repr "[]" str:equals assert
+}
+
+fn test_vec_set_copies {
+    vec[int]
+    dup 3 vec:push
+    4
+    use v, x {
+        v 0 x vec:set drop
+        x <- { 5 }
+        v 0 vec:get
+        4 = assert
+    }
 }
 
 fn test_vec_set_fail {
@@ -382,6 +405,16 @@ fn test_vec_nested_one_item {
     dup 5 vec:push
     vec:push
     repr "[[5]]" str:equals assert
+}
+
+fn test_map_set_copies {
+    map[int, str] 0 "zero"
+    use m, k, v {
+        m k v map:set
+        k <- { 1 }
+        v <- {"one"}
+        m repr "{0: \"zero\"}" str:equals assert
+    }
 }
 
 fn test_map_print_zero_items {
@@ -876,6 +909,15 @@ fn test_set_add {
     repr "{5}" str:equals assert
 }
 
+fn test_set_add_copies {
+    set[int] 5
+    use s, x {
+        s x set:add
+        x <- { 6 }
+        s repr "{5}" str:equals assert
+    }
+}
+
 fn test_set_clear {
     set[int]
     dup 5 set:add
@@ -942,4 +984,28 @@ fn test_set_size_one {
     set[int]
     dup 5 set:add
     set:size 1 = assert
+}
+
+fn test_copy_int {
+    0 copy drop drop
+}
+
+fn test_copy_bool {
+    false copy drop drop
+}
+
+fn test_copy_str {
+    "foo" copy drop drop
+}
+
+fn test_copy_vec {
+    vec[int]
+    dup 5 vec:push
+    copy drop drop
+}
+
+fn test_copy_map {
+    map[int, str]
+    dup 5 "five" map:set
+    copy drop drop
 }
