@@ -30,13 +30,11 @@
 - [ ] Standard lib
     - [x] add new builtin func `copy`
     - [x] add tests for `copy`
-    - [x] `vec:push` should take a const argument and add a copy to the container
-    - [x] `vec:set` should take a const argument and add a copy to the container
-    - [x] `map:set` should take a const arguments and add a copy to the container
-    - [x] `set:add` should take a const argument and add a copy to the container
-    - [x] `vec:get` should be made const and return a copy of the container value
-    - [x] `map:get` should be made const and return a copy of the container value
-    - [ ] Add tests similar to above
+    - [x] rename `vec:get` to `vec:get_copy`
+    - [x] make `vec:get` return a duplicate of item in container
+    - [x] rename `map:get` to `map:get_copy`
+    - [x] make `map:get` return a duplicate of item in container
+    - [x] Add tests similar to above
     - [ ] Require all iterators to have an `iter` member function returning itself
     - [ ] Add `vec_const_iter` and `map_const_iter`
     - [ ] Make sure `foreach` calls const versions on `const vec` and `const map`.

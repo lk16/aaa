@@ -550,6 +550,16 @@ void aaa_stack_vec_get(struct aaa_stack *stack) {
     aaa_vector_dec_ref(vec);
 }
 
+void aaa_stack_vec_get_copy(struct aaa_stack *stack) {
+    int offset = aaa_stack_pop_int(stack);
+    struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+    struct aaa_variable *gotten = aaa_vector_get_copy(vec, (size_t)offset);
+
+    aaa_stack_push(stack, gotten);
+
+    aaa_vector_dec_ref(vec);
+}
+
 void aaa_stack_vec_set(struct aaa_stack *stack) {
     struct aaa_variable *value = aaa_stack_pop(stack);
     int offset = aaa_stack_pop_int(stack);
@@ -619,11 +629,29 @@ void aaa_stack_map_get(struct aaa_stack *stack) {
     struct aaa_variable *key = aaa_stack_pop(stack);
     struct aaa_map *map = aaa_stack_pop_map(stack);
 
-    struct aaa_variable *value = aaa_map_get_copy(map, key);
+    struct aaa_variable *value = aaa_map_get(map, key);
 
     if (!value) {
         // TODO this requires changes in signature of map:get
         fprintf(stderr, "map:get does not handle missing keys\n");
+        abort();
+    }
+
+    aaa_stack_push(stack, value);
+
+    aaa_map_dec_ref(map);
+    aaa_variable_dec_ref(key);
+}
+
+void aaa_stack_map_get_copy(struct aaa_stack *stack) {
+    struct aaa_variable *key = aaa_stack_pop(stack);
+    struct aaa_map *map = aaa_stack_pop_map(stack);
+
+    struct aaa_variable *value = aaa_map_get_copy(map, key);
+
+    if (!value) {
+        // TODO this requires changes in signature of map:get_copy
+        fprintf(stderr, "map:get_copy does not handle missing keys\n");
         abort();
     }
 

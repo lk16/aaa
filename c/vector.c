@@ -119,7 +119,17 @@ struct aaa_variable *aaa_vector_get(const struct aaa_vector *vec,
         abort();
     }
 
-    return aaa_variable_copy(vec->data[offset]);
+    aaa_variable_inc_ref(vec->data[offset]);
+    return vec->data[offset];
+}
+
+struct aaa_variable *aaa_vector_get_copy(const struct aaa_vector *vec,
+                                         size_t offset) {
+    struct aaa_variable *item = aaa_vector_get(vec, offset);
+    struct aaa_variable *copy = aaa_variable_copy(item);
+
+    aaa_variable_dec_ref(item);
+    return copy;
 }
 
 struct aaa_variable *aaa_vector_pop(struct aaa_vector *vec) {

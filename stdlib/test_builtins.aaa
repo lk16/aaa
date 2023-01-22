@@ -320,11 +320,24 @@ fn test_vec_get_fail {
     todo
 }
 
-fn test_vec_get_copies {
+fn test_vec_get {
     vec[int]
     use v {
         v 3 vec:push
         v 0 vec:get
+        use x {
+            x <- { 4 }
+        }
+        v 0 vec:get
+        4 = assert
+    }
+}
+
+fn test_vec_get_copy {
+    vec[int]
+    use v {
+        v 3 vec:push
+        v 0 vec:get_copy
         use x {
             x <- { 4 }
         }
@@ -485,12 +498,26 @@ fn test_map_get_set {
     1 = assert
 }
 
-fn test_map_get_copies {
+fn test_map_get {
     map[str, int]
     "one"
     use m, k {
         m k 1 map:set
         m k map:get
+        use v {
+            v <- { 2 }
+        }
+        m k map:get
+        2 = assert
+    }
+}
+
+fn test_map_get_copy {
+    map[str, int]
+    "one"
+    use m, k {
+        m k 1 map:set
+        m k map:get_copy
         use v {
             v <- { 2 }
         }
