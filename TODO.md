@@ -35,6 +35,7 @@
     - [x] rename `map:get` to `map:get_copy`
     - [x] make `map:get` return a duplicate of item in container
     - [x] Add tests similar to above
+    - [ ] Add tests for `make_const`
     - [ ] Require all iterators to have an `iter` member function returning itself
     - [ ] Add `vec_const_iter` and `map_const_iter`
     - [ ] Make sure `foreach` calls const versions on `const vec` and `const map`.

@@ -191,7 +191,12 @@ class SingleFunctionTypeChecker:
         self, return_type: VariableType, placeholder_types: Dict[str, VariableType]
     ) -> VariableType:
         if return_type.is_placeholder:
-            return placeholder_types[return_type.name]
+            updated_return_type = copy(placeholder_types[return_type.name])
+
+            if return_type.is_const:
+                updated_return_type.is_const = True
+
+            return updated_return_type
 
         for i, param in enumerate(return_type.params):
             return_type.params[i] = self._update_return_type(param, placeholder_types)

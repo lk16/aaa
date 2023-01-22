@@ -660,7 +660,6 @@ void aaa_stack_map_get_copy(struct aaa_stack *stack) {
     aaa_map_dec_ref(map);
     aaa_variable_dec_ref(key);
 }
-
 void aaa_stack_map_has_key(struct aaa_stack *stack) {
     struct aaa_variable *key = aaa_stack_pop(stack);
     struct aaa_map *map = aaa_stack_pop_map(stack);
@@ -1397,4 +1396,10 @@ void aaa_stack_copy(struct aaa_stack *stack) {
     struct aaa_variable *copy = aaa_variable_copy(top);
 
     aaa_stack_push(stack, copy);
+}
+
+void aaa_stack_make_const(struct aaa_stack *stack) {
+    // NOTE: This function is just used to inform the type-checker the stack top
+    // is now a const value. It doesn't do anything at runtime.
+    (void)stack;
 }
