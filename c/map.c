@@ -131,8 +131,11 @@ static bool aaa_map_get_item(struct aaa_map *map,
 
 struct aaa_variable *aaa_map_get_copy(struct aaa_map *map,
                                       const struct aaa_variable *key) {
-    const struct aaa_variable *value = aaa_map_get(map, key);
-    return aaa_variable_copy(value);
+    struct aaa_variable *value = aaa_map_get(map, key);
+    struct aaa_variable *copy = aaa_variable_copy(value);
+
+    aaa_variable_dec_ref(value);
+    return copy;
 }
 
 struct aaa_variable *aaa_map_get(struct aaa_map *map,

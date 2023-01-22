@@ -35,8 +35,7 @@
     - [x] `map:set` should take a const arguments and add a copy to the container
     - [x] `set:add` should take a const argument and add a copy to the container
     - [x] `vec:get` should be made const and return a copy of the container value
-    - [ ] This crashes: `fn main { map[int, str] use m { m 1 "one" map:set m 1 map:get use v { v <- { "two" } } m . "\n" . } }`
-    - [ ] `map:get` should be made const and return a copy of the container value
+    - [x] `map:get` should be made const and return a copy of the container value
     - [ ] Add tests similar to above
     - [ ] Require all iterators to have an `iter` member function returning itself
     - [ ] Add `vec_const_iter` and `map_const_iter`

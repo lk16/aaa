@@ -485,6 +485,20 @@ fn test_map_get_set {
     1 = assert
 }
 
+fn test_map_get_copies {
+    map[str, int]
+    "one"
+    use m, k {
+        m k 1 map:set
+        m k map:get
+        use v {
+            v <- { 2 }
+        }
+        m k map:get
+        1 = assert
+    }
+}
+
 fn test_map_get_set_update {
     map[str, int]
     dup "one" 1 map:set

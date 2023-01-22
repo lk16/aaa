@@ -81,6 +81,8 @@ struct aaa_string *aaa_string_join(const struct aaa_string *string,
         var = aaa_vector_get(parts, 0);
         part = aaa_variable_get_str(var);
         aaa_buffer_append(buff, part->raw);
+
+        aaa_variable_dec_ref(var);
     }
 
     for (size_t i = 1; i < part_count; i++) {
@@ -89,6 +91,8 @@ struct aaa_string *aaa_string_join(const struct aaa_string *string,
 
         aaa_buffer_append(buff, string->raw);
         aaa_buffer_append(buff, part->raw);
+
+        aaa_variable_dec_ref(var);
     }
 
     struct aaa_string *joined = aaa_buffer_to_string(buff);
