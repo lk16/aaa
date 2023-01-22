@@ -129,6 +129,12 @@ static bool aaa_map_get_item(struct aaa_map *map,
     return false;
 }
 
+struct aaa_variable *aaa_map_get_copy(struct aaa_map *map,
+                                      const struct aaa_variable *key) {
+    const struct aaa_variable *value = aaa_map_get(map, key);
+    return aaa_variable_copy(value);
+}
+
 struct aaa_variable *aaa_map_get(struct aaa_map *map,
                                  const struct aaa_variable *key) {
     struct aaa_map_item *item = NULL;

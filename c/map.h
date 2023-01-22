@@ -17,6 +17,8 @@ bool aaa_map_empty(const struct aaa_map *map);
 struct aaa_variable *aaa_map_get(struct aaa_map *map,
                                  const struct aaa_variable *key);
 bool aaa_map_has_key(struct aaa_map *map, const struct aaa_variable *key);
+struct aaa_variable *aaa_map_get_copy(struct aaa_map *map,
+                                      const struct aaa_variable *key);
 struct aaa_variable *aaa_map_pop(struct aaa_map *map,
                                  const struct aaa_variable *key);
 void aaa_map_set(struct aaa_map *map, const struct aaa_variable *key,

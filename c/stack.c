@@ -547,7 +547,6 @@ void aaa_stack_vec_get(struct aaa_stack *stack) {
 
     aaa_stack_push(stack, gotten);
 
-    aaa_variable_inc_ref(gotten);
     aaa_vector_dec_ref(vec);
 }
 
@@ -620,7 +619,7 @@ void aaa_stack_map_get(struct aaa_stack *stack) {
     struct aaa_variable *key = aaa_stack_pop(stack);
     struct aaa_map *map = aaa_stack_pop_map(stack);
 
-    struct aaa_variable *value = aaa_map_get(map, key);
+    struct aaa_variable *value = aaa_map_get_copy(map, key);
 
     if (!value) {
         // TODO this requires changes in signature of map:get
