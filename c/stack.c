@@ -997,7 +997,7 @@ void aaa_stack_execve(struct aaa_stack *stack) {
     const char *path = aaa_string_raw(path_str);
     char **argv = malloc((argv_length + 1) * sizeof(*argv));
 
-    for (size_t i = 0; i < argv_length; i++) {
+    for (size_t i = 0; i < argv_length; i++) { // TODO use an iterator
         struct aaa_variable *argv_item_var = aaa_vector_get(argv_vec, i);
         struct aaa_string *argv_item = aaa_variable_get_str(argv_item_var);
 

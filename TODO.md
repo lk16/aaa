@@ -25,9 +25,6 @@
     - [x] Test assign to const function arg
     - [x] Test modify field of const function arg
     - [x] Test query field of const function arg and then modifying it
-    - [ ] Add remaining `const` to `builtins.aaa`
-    - [ ] Add tests for const-ness of all builtin functions
-- [ ] Standard lib
     - [x] add new builtin func `copy`
     - [x] add tests for `copy`
     - [x] rename `vec:get` to `vec:get_copy`
@@ -35,11 +32,12 @@
     - [x] rename `map:get` to `map:get_copy`
     - [x] make `map:get` return a duplicate of item in container
     - [x] Add tests similar to above
-    - [ ] Add tests for `make_const`
-    - [ ] Require all iterators to have an `iter` member function returning itself
-    - [ ] Add `vec_const_iter` and `map_const_iter`
-    - [ ] Make sure `foreach` calls const versions on `const vec` and `const map`.
-    - [ ] Make `copy` recursive containers (and other types) and make the copied container `const`
+    - [x] Require all iterators to have an `iter` member function returning itself
+    - [x] Add `vec_const_iter` and `map_const_iter`
+    - [x] Make sure `foreach` calls const versions on `const vec` and `const map`.
+    - [x] Add tests for `make_const`
+    - [x] Add remaining `const` to `builtins.aaa`
+    - [ ] Add tests for const-ness of all builtin functions
 
 - [ ] Constant type params
 - [ ] File-scope constants
@@ -47,7 +45,7 @@
 ### This
 - [ ] Introduce the special local variable `this` which can only be used in member functions
 - [ ] First arg of member functions needs to be called `this` and has no type annotations
-- [ ] If this is const, the syntax is `const this`
+- [ ] If `this` is const, the syntax is `const this`
 
 ### Testing
 - [ ] Collect coverage stats from dockerized tests

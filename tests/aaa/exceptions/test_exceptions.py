@@ -648,6 +648,14 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:62: Cannot assign to (const int) x\n",
             id="assign-to-const-value",
         ),
+        pytest.param(
+            """
+            fn main { 3 make_const use x { x <- { 5 } } }
+            """,
+            AssignConstValueError,
+            "/foo/main.aaa:2:44: Cannot assign to (const int) x\n",
+            id="assign-to-const-value-makeconst",
+        ),
     ],
 )
 def test_one_error(

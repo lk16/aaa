@@ -98,10 +98,10 @@ fn set[T]:size       args s as const set[T]                   return int
 // TODO: rename size functions of containers to len
 
 // container iteration
-fn map_iter[K, V]:next       args iter as map_iter[K, V] return const K, V, bool
+fn map_iter[K, V]:next       args iter as map_iter[K, V]       return const K, V, bool
 fn map_const_iter[K, V]:next args iter as map_const_iter[K, V] return const K, const V, bool
-fn set_iter[T]:next          args iter as set_iter[T]    return const T, bool
-fn vec_iter[T]:next          args iter as vec_iter[T]    return T, bool
+fn set_iter[T]:next          args iter as set_iter[T]          return const T, bool
+fn vec_iter[T]:next          args iter as vec_iter[T]          return T, bool
 fn vec_const_iter[T]:next    args iter as vec_const_iter[T]    return const T, bool
 
 fn map_iter[K, V]:iter       args iter as map_iter[K, V]       return map_iter[K, V]
@@ -127,9 +127,9 @@ fn str:upper      args s as       str                                return str
 // TODO: return enum indicating success/failure instead of extra bool
 fn str:find_after args s as const str, other as str, offset as int   return int, bool
 fn str:find       args s as const str, other as str                  return int, bool
-fn str:substr     args s as       str, start as int, end as int      return str, bool
-fn str:to_bool    args s as       str                                return bool, bool
-fn str:to_int     args s as       str                                return int, bool
+fn str:substr     args s as const str, start as int, end as int      return str, bool
+fn str:to_bool    args s as const str                                return bool, bool
+fn str:to_int     args s as const str                                return int, bool
 
 // TODO everything below should be moved to separate file in stdlib
 // Function and type names should not be reserved / builtin
@@ -138,15 +138,15 @@ fn str:to_int     args s as       str                                return int,
 
 fn environ return map[str, str]
 fn execve args path as const str, argv as const vec[str], env as const map[str, str] return bool
-fn exit args code as int
+fn exit args code as const int
 fn fork return int
 fn getcwd return str
 fn gettimeofday return int, int
 fn getpid return int
 fn getppid return int
-fn setenv args name as str, value as str
+fn setenv args name as const str, value as const str
 fn time return int
-fn unsetenv args name as str
+fn unsetenv args name as const str
 
 // TODO: return enum indicating success/failure instead of extra bool
 fn accept args fd as const int return str, int, int, bool
