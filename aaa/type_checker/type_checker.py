@@ -510,7 +510,10 @@ class SingleFunctionTypeChecker:
 
         type_stack.append(iterable_type)
 
-        iter_func = self._lookup_function(iterable_type, "iter")
+        if iterable_type.is_const:
+            iter_func = self._lookup_function(iterable_type, "const_iter")
+        else:
+            iter_func = self._lookup_function(iterable_type, "iter")
 
         if not iter_func:
             raise InvalidIterable(foreach_loop.position, iterable_type)
@@ -541,6 +544,13 @@ class SingleFunctionTypeChecker:
             ]
         ):
             raise InvalidIterator(foreach_loop.position, iterable_type, iterator_type)
+
+        if iterable_type.is_const:
+            for return_type in next_func.return_types[:-1]:
+                if not return_type.is_const:
+                    raise InvalidIterator(
+                        foreach_loop.position, iterable_type, iterator_type
+                    )
 
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(next_func, [], dummy_path)

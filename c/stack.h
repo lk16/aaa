@@ -134,3 +134,13 @@ void aaa_stack_variable_assign(struct aaa_stack *stack,
                                struct aaa_variable *var);
 void aaa_stack_copy(struct aaa_stack *stack);
 void aaa_stack_make_const(struct aaa_stack *stack);
+void aaa_stack_vec_const_iter(struct aaa_stack *stack);
+void aaa_stack_vec_const_iter_next(struct aaa_stack *stack);
+void aaa_stack_map_const_iter(struct aaa_stack *stack);
+void aaa_stack_map_const_iter_next(struct aaa_stack *stack);
+void aaa_stack_set_const_iter(struct aaa_stack *stack);
+void aaa_stack_map_iter_iter(struct aaa_stack *stack);
+void aaa_stack_map_const_iter_iter(struct aaa_stack *stack);
+void aaa_stack_set_iter_iter(struct aaa_stack *stack);
+void aaa_stack_vec_iter_iter(struct aaa_stack *stack);
+void aaa_stack_vec_const_iter_iter(struct aaa_stack *stack);

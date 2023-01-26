@@ -293,6 +293,7 @@ class InvalidIterator(TypeCheckerException):
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
             + "- indicates if more data is present in the iterable with this last return value\n"
+            + "- for const iterators all return values of `next` except the last one must be const\n"
         )
 
 

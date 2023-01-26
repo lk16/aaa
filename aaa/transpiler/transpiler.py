@@ -344,7 +344,11 @@ class Transpiler:
         stack = self.foreach_loop_stacks[foreach_loop.position]
         iterable_type = stack[-1]
 
-        iter_func = self._get_member_function(iterable_type, "iter")
+        if iterable_type.is_const:
+            iter_func = self._get_member_function(iterable_type, "const_iter")
+        else:
+            iter_func = self._get_member_function(iterable_type, "iter")
+
         iterator_type = iter_func.return_types[0]
         next_func = self._get_member_function(iterator_type, "next")
 

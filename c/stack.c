@@ -1403,3 +1403,50 @@ void aaa_stack_make_const(struct aaa_stack *stack) {
     // is now a const value. It doesn't do anything at runtime.
     (void)stack;
 }
+
+void aaa_stack_vec_const_iter(struct aaa_stack *stack) {
+    aaa_stack_vec_iter(stack);
+}
+
+void aaa_stack_vec_const_iter_next(struct aaa_stack *stack) {
+    aaa_stack_vec_iter_next(stack);
+}
+
+void aaa_stack_map_const_iter(struct aaa_stack *stack) {
+    aaa_stack_map_iter(stack);
+}
+
+void aaa_stack_map_const_iter_next(struct aaa_stack *stack) {
+    aaa_stack_map_iter_next(stack);
+}
+
+void aaa_stack_set_const_iter(struct aaa_stack *stack) {
+    aaa_stack_set_iter(stack);
+}
+
+void aaa_stack_map_iter_iter(struct aaa_stack *stack) {
+    // NOTE calling iter on an iterator returns itself, so the stack is
+    // unchanged.
+    (void)stack;
+}
+void aaa_stack_map_const_iter_iter(struct aaa_stack *stack) {
+    // NOTE calling iter on an iterator returns itself, so the stack is
+    // unchanged.
+    (void)stack;
+}
+void aaa_stack_set_iter_iter(struct aaa_stack *stack) {
+    // NOTE calling iter on an iterator returns itself, so the stack is
+    // unchanged.
+    (void)stack;
+}
+void aaa_stack_vec_iter_iter(struct aaa_stack *stack) {
+    // NOTE calling iter on an iterator returns itself, so the stack is
+    // unchanged.
+    (void)stack;
+}
+
+void aaa_stack_vec_const_iter_iter(struct aaa_stack *stack) {
+    // NOTE calling iter on an iterator returns itself, so the stack is
+    // unchanged.
+    (void)stack;
+}

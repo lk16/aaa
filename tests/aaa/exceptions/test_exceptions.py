@@ -455,7 +455,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
-            + "- indicates if more data is present in the iterable with this last return value\n",
+            + "- indicates if more data is present in the iterable with this last return value\n"
+            + "- for const iterators all return values of `next` except the last one must be const\n",
             id="invalid-iterator-no-iter-func",
         ),
         pytest.param(
@@ -471,7 +472,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
-            + "- indicates if more data is present in the iterable with this last return value\n",
+            + "- indicates if more data is present in the iterable with this last return value\n"
+            + "- for const iterators all return values of `next` except the last one must be const\n",
             id="invalid-iterator-two-arguments",
         ),
         pytest.param(
@@ -487,7 +489,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
-            + "- indicates if more data is present in the iterable with this last return value\n",
+            + "- indicates if more data is present in the iterable with this last return value\n"
+            + "- for const iterators all return values of `next` except the last one must be const\n",
             id="invalid-iterator-one-return-value",
         ),
         pytest.param(
@@ -503,7 +506,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
-            + "- indicates if more data is present in the iterable with this last return value\n",
+            + "- indicates if more data is present in the iterable with this last return value\n"
+            + "- for const iterators all return values of `next` except the last one must be const\n",
             id="invalid-iterator-no-last-bool-return-value",
         ),
         pytest.param(

@@ -61,7 +61,7 @@ fn or  args a as const bool, b as const bool return bool
 
 // container functions
 fn vec[T]:clear      args v as       vec[T]
-fn vec[T]:const_iter args v as const vec[T]                                       return vec_const_iter[T] // TODO implement
+fn vec[T]:const_iter args v as const vec[T]                                       return vec_const_iter[T]
 fn vec[T]:copy       args v as       vec[T]                                       return vec[T]
 fn vec[T]:empty      args v as const vec[T]                                       return bool
 fn vec[T]:get        args v as       vec[T], offset as const int                  return T
@@ -73,7 +73,7 @@ fn vec[T]:set        args v as       vec[T], offset as const int, item as const 
 fn vec[T]:size       args v as const vec[T]                                       return int
 
 fn map[K, V]:clear      args m as       map[K, V]
-fn map[K, V]:const_iter args m as const map[K, V]                                   return map_const_iter[K, V] // TODO implement
+fn map[K, V]:const_iter args m as const map[K, V]                                   return map_const_iter[K, V]
 fn map[K, V]:copy       args m as       map[K, V]                                   return map[K, V]
 fn map[K, V]:drop       args m as       map[K, V], key as const K
 fn map[K, V]:empty      args m as const map[K, V]                                   return bool
@@ -99,16 +99,16 @@ fn set[T]:size       args s as const set[T]                   return int
 
 // container iteration
 fn map_iter[K, V]:next       args iter as map_iter[K, V] return const K, V, bool
-fn map_const_iter[K, V]:next args iter as map_iter[K, V] return const K, const V, bool  // TODO implement
+fn map_const_iter[K, V]:next args iter as map_const_iter[K, V] return const K, const V, bool
 fn set_iter[T]:next          args iter as set_iter[T]    return const T, bool
 fn vec_iter[T]:next          args iter as vec_iter[T]    return T, bool
-fn vec_const_iter[T]:next    args iter as vec_iter[T]    return const T, bool  // TODO implement
+fn vec_const_iter[T]:next    args iter as vec_const_iter[T]    return const T, bool
 
-fn map_iter[K, V]:iter       args iter as map_iter[K, V]       return map_iter[K, V]  // TODO implement
-fn map_const_iter[K, V]:iter args iter as map_const_iter[K, V] return map_const_iter[K, V]  // TODO implement
-fn set_iter[T]:iter          args iter as set_iter[T]          return set_iter[T]  // TODO implement
-fn vec_iter[T]:iter          args iter as vec_iter[T]          return vec_iter[T]  // TODO implement
-fn vec_const_iter[T]:iter    args iter as vec_const_iter[T]    return vec_const_iter[T]  // TODO implement
+fn map_iter[K, V]:iter       args iter as map_iter[K, V]       return map_iter[K, V]
+fn map_const_iter[K, V]:iter args iter as map_const_iter[K, V] return map_const_iter[K, V]
+fn set_iter[T]:iter          args iter as set_iter[T]          return set_iter[T]
+fn vec_iter[T]:iter          args iter as vec_iter[T]          return vec_iter[T]
+fn vec_const_iter[T]:iter    args iter as vec_const_iter[T]    return vec_const_iter[T]
 
 // string functions
 
