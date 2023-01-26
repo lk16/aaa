@@ -12,7 +12,7 @@ class Tokenizer:
     def __init__(self, file: Path, verbose: bool) -> None:
         self.file = file
         self.code = ""
-        self.verbose = verbose  # TODO use
+        self.verbose = verbose
 
     def _fail(self, offset: int) -> NoReturn:
         position = self._get_position(offset)

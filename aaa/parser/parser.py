@@ -21,7 +21,7 @@ class Parser:
         self.parsed: Dict[Path, ParsedFile] = parsed_files or {}
         self.parse_queue = [self.entrypoint]
         self.exceptions: List[ParserBaseException] = []
-        self.verbose = verbose  # TODO use
+        self.verbose = verbose
 
     def run(self) -> ParserOutput:
         self.parsed[self.builtins_path] = self.parse(self.builtins_path, False)
