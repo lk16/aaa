@@ -997,8 +997,11 @@ void aaa_stack_execve(struct aaa_stack *stack) {
     const char *path = aaa_string_raw(path_str);
     char **argv = malloc((argv_length + 1) * sizeof(*argv));
 
-    for (size_t i = 0; i < argv_length; i++) { // TODO use an iterator
-        struct aaa_variable *argv_item_var = aaa_vector_get(argv_vec, i);
+    struct aaa_vector_iter *argv_vec_iter = aaa_vector_iter_new(argv_vec);
+    struct aaa_variable *argv_item_var = NULL;
+    size_t i = 0;
+
+    while (aaa_vector_iter_next(argv_vec_iter, &argv_item_var)) {
         struct aaa_string *argv_item = aaa_variable_get_str(argv_item_var);
 
         const char *argv_item_raw = aaa_string_raw(argv_item);
@@ -1006,7 +1009,11 @@ void aaa_stack_execve(struct aaa_stack *stack) {
 
         argv[i] = malloc((argv_item_length + 1) * sizeof(char));
         strcpy(argv[i], argv_item_raw);
+        i++;
     }
+
+    aaa_vector_iter_dec_ref(argv_vec_iter);
+
     argv[argv_length] = NULL;
 
     char **env = malloc((env_length + 1) * sizeof(*env));
@@ -1038,13 +1045,13 @@ void aaa_stack_execve(struct aaa_stack *stack) {
 
     // NOTE: execve() only returns when it fails.
 
-    for (size_t i = 0; i < argv_length; i++) {
+    for (i = 0; i < argv_length; i++) {
         free(argv[i]);
     }
 
     free(argv);
 
-    for (size_t i = 0; i < env_length; i++) {
+    for (i = 0; i < env_length; i++) {
         free(env[i]);
     }
 
