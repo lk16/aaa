@@ -18,7 +18,6 @@ class TokenizerException(BaseTokenizerException):
         return line + "\n" + ((self.position.column - 1) * " ") + "^\n"
 
     def __str__(self) -> str:  # pragma: nocover
-        # TODO confirm this looks correct
         return f"{self.position}: Tokenizing failed\n{self.context()}\n"
 
 
