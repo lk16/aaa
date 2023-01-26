@@ -303,8 +303,6 @@ class SingleFileParser:
             _, offset = self._token(offset, [TokenType.RETURN])
             return_types, offset = self._parse_return_types(offset)
 
-        empty_body = FunctionBody(items=[], position=Position(self.file, -1, -1))
-
         function = Function(
             position=fn_token.position,
             struct_name=function_name.struct_name,
@@ -312,7 +310,7 @@ class SingleFileParser:
             type_params=function_name.type_params,
             arguments=arguments,
             return_types=return_types,
-            body=empty_body,
+            body=None,
         )
 
         self._print_parse_tree_node("FunctionDeclaration", start_offset, offset)

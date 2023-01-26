@@ -524,6 +524,10 @@ class CrossReferencer:
                 continue
 
             parsed_body = unresolved_function.parsed.body
+
+            if not parsed_body:
+                return
+
             resolver = FunctionBodyResolver(self, function, parsed_body)
 
             try:

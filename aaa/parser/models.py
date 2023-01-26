@@ -111,14 +111,14 @@ class Function(AaaParseModel):
         type_params: List[TypeLiteral],
         arguments: List[Argument],
         return_types: List[TypeLiteral],
-        body: FunctionBody,
+        body: Optional[FunctionBody],
     ) -> None:
         self.struct_name = struct_name
         self.func_name = func_name
         self.type_params = type_params
         self.arguments = arguments
         self.return_types = return_types
-        self.body = body  # TODO make optional
+        self.body = body
         super().__init__(position)
 
     def is_test(self) -> bool:
