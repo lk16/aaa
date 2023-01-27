@@ -20,24 +20,6 @@
 
 extern char **environ;
 
-static void aaa_stack_prevent_underflow(const struct aaa_stack *stack,
-                                        size_t pop_count) {
-    if (stack->size < pop_count) {
-        fprintf(stderr, "Aaa stack underflow\n");
-        abort();
-    }
-}
-
-static void aaa_stack_prevent_overflow(
-    const struct aaa_stack *stack,
-    size_t push_count) { // TODO remove this and re-allocate the stack if it
-                         // gets too big
-    if (stack->size + push_count >= stack->max_size) {
-        fprintf(stderr, "Aaa stack overflow\n");
-        abort();
-    }
-}
-
 void aaa_stack_init(struct aaa_stack *stack) {
     stack->size = 0;
     stack->max_size = 1024;
@@ -51,13 +33,27 @@ static struct aaa_variable *aaa_stack_top(struct aaa_stack *stack) {
 }
 
 void aaa_stack_push(struct aaa_stack *stack, struct aaa_variable *variable) {
-    aaa_stack_prevent_overflow(stack, 1);
+    if (stack->size == stack->max_size) {
+        struct aaa_variable **data =
+            malloc(2 * stack->max_size * sizeof(*data));
+        for (size_t i = 0; i < stack->size; i++) {
+            data[i] = stack->data[i];
+        }
+
+        free(stack->data);
+        stack->data = data;
+    }
+
     stack->data[stack->size] = variable;
     stack->size++;
 }
 
 struct aaa_variable *aaa_stack_pop(struct aaa_stack *stack) {
-    aaa_stack_prevent_underflow(stack, 1);
+    if (stack->size < 1) {
+        printf("Stack underflow\n");
+        fflush(stderr);
+        abort();
+    }
 
     struct aaa_variable *popped = aaa_stack_top(stack);
     stack->size--;
@@ -150,8 +146,6 @@ void aaa_stack_dup(struct aaa_stack *stack) {
 }
 
 void aaa_stack_swap(struct aaa_stack *stack) {
-    aaa_stack_prevent_underflow(stack, 2);
-
     struct aaa_variable *a = aaa_stack_pop(stack);
     struct aaa_variable *b = aaa_stack_pop(stack);
 
@@ -170,7 +164,11 @@ void aaa_stack_assert(struct aaa_stack *stack) {
 }
 
 void aaa_stack_over(struct aaa_stack *stack) {
-    aaa_stack_prevent_underflow(stack, 2);
+    if (stack->size < 2) {
+        printf("Stack underflow\n");
+        fflush(stderr);
+        abort();
+    }
 
     struct aaa_variable *copied = stack->data[stack->size - 2];
     aaa_stack_push(stack, copied);
