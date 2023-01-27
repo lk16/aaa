@@ -623,7 +623,7 @@ void aaa_stack_map_get(struct aaa_stack *stack) {
     struct aaa_variable *value = aaa_map_get(map, key);
 
     if (!value) {
-        // TODO this requires changes in signature of map:get
+        // TODO push bool indicating if map:get succeeded
         fprintf(stderr, "map:get does not handle missing keys\n");
         abort();
     }
@@ -641,7 +641,7 @@ void aaa_stack_map_get_copy(struct aaa_stack *stack) {
     struct aaa_variable *value = aaa_map_get_copy(map, key);
 
     if (!value) {
-        // TODO this requires changes in signature of map:get_copy
+        // TODO push bool indicating if map:get_copy succeeded
         fprintf(stderr, "map:get_copy does not handle missing keys\n");
         abort();
     }
@@ -695,7 +695,7 @@ void aaa_stack_map_pop(struct aaa_stack *stack) {
     struct aaa_variable *value = aaa_map_pop(map, key);
 
     if (!value) {
-        // TODO this requires changes in signature of map:pop
+        // TODO push bool indicating if map:pop succeeded
         fprintf(stderr, "map:pop does not handle missing keys\n");
         abort();
     }

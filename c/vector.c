@@ -64,15 +64,25 @@ struct aaa_string *aaa_vector_repr(struct aaa_vector *vec) {
     return aaa_string_buffer_to_string(buff);
 }
 
-bool aaa_vector_equals(struct aaa_vector *lhs,
-                       struct aaa_vector *rhs) { // TODO make arguments const
+bool aaa_vector_equals(struct aaa_vector *lhs, struct aaa_vector *rhs) {
     if (lhs->size != rhs->size) {
         return false;
     }
 
-    for (size_t i = 0; i < lhs->size; i++) {
-        struct aaa_variable *lhs_item = aaa_vector_get(lhs, i);
-        struct aaa_variable *rhs_item = aaa_vector_get(rhs, i);
+    struct aaa_variable *lhs_item = NULL;
+    struct aaa_variable *rhs_item = NULL;
+
+    struct aaa_vector_iter *lhs_iter = aaa_vector_iter_new(lhs);
+    struct aaa_vector_iter *rhs_iter = aaa_vector_iter_new(rhs);
+
+    while (aaa_vector_iter_next(lhs_iter, &lhs_item)) {
+        if (!aaa_vector_iter_next(rhs_iter, &rhs_item)) {
+            fprintf(
+                stderr,
+                "aaa_vector_equals: lhs or rhs vector lied about length!\n");
+            fflush(stderr);
+            abort();
+        }
 
         if (!aaa_variable_equals(lhs_item, rhs_item)) {
             return false;
@@ -171,7 +181,7 @@ void aaa_vector_push(struct aaa_vector *vec,
 bool aaa_vector_set(struct aaa_vector *vec, size_t offset,
                     const struct aaa_variable *value) {
     if (offset >= vec->size) {
-        return false;
+        return false; // TODO just crash here instead
     }
 
     aaa_variable_dec_ref(vec->data[offset]);
