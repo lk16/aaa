@@ -85,7 +85,7 @@ bool aaa_vector_equals(struct aaa_vector *lhs,
 void aaa_vector_clear(struct aaa_vector *vec) {
     for (size_t i = 0; i < vec->size; i++) {
         aaa_variable_dec_ref(vec->data[i]);
-        // TODO set cleared pointers to NULL
+        vec->data[i] = NULL;
     }
 
     vec->size = 0;
@@ -137,7 +137,7 @@ struct aaa_variable *aaa_vector_pop(struct aaa_vector *vec) {
     }
 
     struct aaa_variable *popped = vec->data[vec->size - 1];
-    // TODO set vector slot to NULL
+    vec->data[vec->size - 1] = NULL;
     vec->size--;
     return popped;
 }
