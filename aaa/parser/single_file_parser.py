@@ -472,32 +472,6 @@ class SingleFileParser:
         self._print_parse_tree_node("IntegerLiteral", start_offset, offset)
         return integer, offset
 
-    def _parse_literal(
-        self, offset: int
-    ) -> Tuple[BooleanLiteral | StringLiteral | IntegerLiteral, int]:
-        token = self._peek_token(offset)
-
-        if not token:
-            raise EndOfFileException(self.file)
-
-        if token.type in [TokenType.TRUE, TokenType.FALSE]:
-            return self._parse_boolean(offset)
-
-        if token.type == TokenType.STRING:
-            return self._parse_string(offset)
-
-        if token.type == TokenType.INTEGER:
-            return self._parse_integer(offset)
-
-        expected_types = [
-            TokenType.TRUE,
-            TokenType.FALSE,
-            TokenType.STRING,
-            TokenType.INTEGER,
-        ]
-
-        raise ParserException(token.position, expected_types, token.type)
-
     def _parse_function_call(self, offset: int) -> Tuple[FunctionName, int]:
         start_offset = offset
 
@@ -601,14 +575,6 @@ class SingleFileParser:
         if not token:
             raise EndOfFileException(self.file)
 
-        # TODO consider inlining _parse_literal in this function
-        literal_token_types = [
-            TokenType.TRUE,
-            TokenType.FALSE,
-            TokenType.INTEGER,
-            TokenType.STRING,
-        ]
-
         if token.type == TokenType.STRING:
             if next_token and next_token.type == TokenType.GET_FIELD:
                 return self._parse_struct_field_query(offset)
@@ -616,8 +582,14 @@ class SingleFileParser:
             if next_token and next_token.type == TokenType.BEGIN:
                 return self._parse_struct_field_update(offset)
 
-        if token.type in literal_token_types:
-            return self._parse_literal(offset)
+        if token.type in [TokenType.TRUE, TokenType.FALSE]:
+            return self._parse_boolean(offset)
+
+        if token.type == TokenType.STRING:
+            return self._parse_string(offset)
+
+        if token.type == TokenType.INTEGER:
+            return self._parse_integer(offset)
 
         if token.type == TokenType.IDENTIFIER:
             if next_token and next_token.type in [TokenType.COMMA, TokenType.ASSIGN]:
@@ -636,8 +608,18 @@ class SingleFileParser:
 
         raise ParserException(
             position=token.position,
-            expected_token_types=literal_token_types
-            + [TokenType.IDENTIFIER, TokenType.IF, TokenType.WHILE],
+            expected_token_types=[
+                TokenType.FALSE,
+                TokenType.FOREACH,
+                TokenType.IDENTIFIER,
+                TokenType.IDENTIFIER,
+                TokenType.IF,
+                TokenType.INTEGER,
+                TokenType.STRING,
+                TokenType.TRUE,
+                TokenType.WHILE,
+                TokenType.USE,
+            ],
             found_token_type=token.type,
         )
 

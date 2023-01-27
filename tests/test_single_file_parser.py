@@ -684,33 +684,31 @@ def test_parse_integer(
 
 
 @pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
+    ["code", "expected_exception", "expected_offset"],
     [
-        ("0", 0, 1),
-        ("123", 123, 1),
-        ("-456", -456, 1),
-        ("true", True, 1),
-        ("false", False, 1),
-        ('"foo"', "foo", 1),
+        ("0", None, 1),
+        ("123", None, 1),
+        ("-456", None, 1),
+        ("true", None, 1),
+        ("false", None, 1),
+        ('"foo"', None, 1),
         ("fn", ParserException, 0),
         ("", EndOfFileException, 0),
     ],
 )
 def test_parse_literal(
     code: str,
-    expected_result: int | bool | str | Type[ParserBaseException],
+    expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
     parser = parse_code(code)
 
-    if isinstance(expected_result, (int, str, bool)):
-        literal, offset = parser._parse_literal(0)
-        assert expected_result == literal.value
-        assert type(expected_result) == type(literal.value)  # noqa: E721
+    if not expected_exception:
+        _, offset = parser._parse_function_body_item(0)
         assert expected_offset == offset
     else:
-        with pytest.raises(expected_result):
-            parser._parse_literal(0)
+        with pytest.raises(expected_exception):
+            parser._parse_function_body_item(0)
 
 
 @pytest.mark.parametrize(
