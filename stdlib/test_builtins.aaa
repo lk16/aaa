@@ -346,11 +346,10 @@ fn test_vec_get_copy {
     }
 }
 
-fn test_vec_set_ok {
+fn test_vec_set {
     vec[int]
     dup 5 vec:push
     dup 0 7 vec:set
-    assert
     dup vec:pop
     7 = assert
     repr "[]" str:equals assert
@@ -361,17 +360,11 @@ fn test_vec_set_copies {
     dup 3 vec:push
     4
     use v, x {
-        v 0 x vec:set drop
+        v 0 x vec:set
         x <- { 5 }
         v 0 vec:get
         4 = assert
     }
-}
-
-fn test_vec_set_fail {
-    vec[int]
-    3 3 vec:set
-    not assert
 }
 
 fn test_vec_size_zero_items {

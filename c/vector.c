@@ -143,6 +143,7 @@ struct aaa_variable *aaa_vector_get_copy(const struct aaa_vector *vec,
 struct aaa_variable *aaa_vector_pop(struct aaa_vector *vec) {
     if (vec->size == 0) {
         fprintf(stderr, "aaa_vector_pop out of range\n");
+        fflush(stderr);
         abort();
     }
 
@@ -178,15 +179,16 @@ void aaa_vector_push(struct aaa_vector *vec,
     vec->size++;
 }
 
-bool aaa_vector_set(struct aaa_vector *vec, size_t offset,
+void aaa_vector_set(struct aaa_vector *vec, size_t offset,
                     const struct aaa_variable *value) {
     if (offset >= vec->size) {
-        return false; // TODO just crash here instead
+        fprintf(stderr, "aaa_vector_set out of range\n");
+        fflush(stderr);
+        abort();
     }
 
     aaa_variable_dec_ref(vec->data[offset]);
     vec->data[offset] = aaa_variable_copy(value);
-    return true;
 }
 
 size_t aaa_vector_size(const struct aaa_vector *vec) { return vec->size; }

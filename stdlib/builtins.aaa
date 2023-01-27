@@ -69,7 +69,7 @@ fn vec[T]:get_copy   args v as const vec[T], offset as const int                
 fn vec[T]:iter       args v as       vec[T]                                       return vec_iter[T]
 fn vec[T]:pop        args v as       vec[T]                                       return T
 fn vec[T]:push       args v as const vec[T], item as const T
-fn vec[T]:set        args v as       vec[T], offset as const int, item as const T return bool
+fn vec[T]:set        args v as       vec[T], offset as const int, item as const T
 fn vec[T]:size       args v as const vec[T]                                       return int
 
 fn map[K, V]:clear      args m as       map[K, V]

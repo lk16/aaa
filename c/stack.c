@@ -556,8 +556,7 @@ void aaa_stack_vec_set(struct aaa_stack *stack) {
     int offset = aaa_stack_pop_int(stack);
     struct aaa_vector *vec = aaa_stack_pop_vec(stack);
 
-    bool success = aaa_vector_set(vec, (size_t)offset, value);
-    aaa_stack_push_bool(stack, success);
+    aaa_vector_set(vec, (size_t)offset, value);
 
     aaa_variable_dec_ref(value);
     aaa_vector_dec_ref(vec);
