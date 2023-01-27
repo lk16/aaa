@@ -75,7 +75,7 @@ fn vec[T]:size       args v as const vec[T]                                     
 fn map[K, V]:clear      args m as       map[K, V]
 fn map[K, V]:const_iter args m as const map[K, V]                                   return map_const_iter[K, V]
 fn map[K, V]:copy       args m as       map[K, V]                                   return map[K, V]
-fn map[K, V]:drop       args m as       map[K, V], key as const K
+fn map[K, V]:drop       args m as       map[K, V], key as const K                   return bool
 fn map[K, V]:empty      args m as const map[K, V]                                   return bool
 fn map[K, V]:get        args m as const map[K, V], key as const K                   return V, bool
 fn map[K, V]:get_copy   args m as const map[K, V], key as const K                   return V, bool

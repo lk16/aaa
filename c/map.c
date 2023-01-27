@@ -67,9 +67,10 @@ void aaa_map_clear(struct aaa_map *map) {
     map->size = 0;
 }
 
-void aaa_map_drop(struct aaa_map *map, const struct aaa_variable *key) {
+bool aaa_map_drop(struct aaa_map *map, const struct aaa_variable *key) {
     struct aaa_variable *popped = aaa_map_pop(map, key);
     aaa_variable_dec_ref(popped);
+    return popped != NULL;
 }
 
 static float aaa_map_load_factor(const struct aaa_map *map) {

@@ -1,8 +1,4 @@
 
-fn todo {
-    "TODO not implemented\n" .
-}
-
 fn test_drop {
     1 drop
 }
@@ -296,7 +292,7 @@ fn test_vec_push_twenty {
     drop
 }
 
-fn test_vec_pop_ok {
+fn test_vec_pop {
     vec[int]
     dup 5 vec:push
     dup vec:pop
@@ -304,11 +300,7 @@ fn test_vec_pop_ok {
     repr "[]" str:equals assert // TODO use vector equality
 }
 
-fn test_vec_pop_fail {
-    todo
-}
-
-fn test_vec_get_ok {
+fn test_vec_get {
     vec[int]
     dup 5 vec:push
     dup 0 vec:get
@@ -316,11 +308,7 @@ fn test_vec_get_ok {
     repr "[5]" str:equals assert
 }
 
-fn test_vec_get_fail {
-    todo
-}
-
-fn test_vec_get {
+fn test_vec_get_does_not_copy {
     vec[int]
     use v {
         v 3 vec:push
@@ -534,7 +522,11 @@ fn test_map_get_set_update {
 }
 
 fn test_map_get_fail {
-    todo
+    map[str, int]
+    dup "one" 1 map:set
+    "two" map:get
+    not assert
+    drop
 }
 
 fn test_map_has_key_true {
@@ -623,12 +615,17 @@ fn test_map_drop_ok {
     map[str, int]
     dup "one" 1 map:set
     dup "one" map:drop
+    assert
     repr
     "{}" str:equals assert
 }
 
 fn test_map_drop_fail {
-    todo
+    map[str, int]
+    dup "one" 1 map:set
+    dup "two" map:drop
+    not assert
+    drop
 }
 
 fn test_str_zero_value {
