@@ -75,26 +75,24 @@ struct aaa_string *aaa_string_join(const struct aaa_string *string,
     struct aaa_string *part = NULL;
     struct aaa_variable *var = NULL;
 
-    size_t part_count = aaa_vector_size(parts);
+    bool is_first = true;
 
-    // TODO use vector iteration
+    struct aaa_vector_iter *parts_iter = aaa_vector_iter_new(parts);
+    struct aaa_variable *part_var = NULL;
 
-    if (part_count >= 1) {
-        var = aaa_vector_get(parts, 0);
-        part = aaa_variable_get_str(var);
+    while (aaa_vector_iter_next(parts_iter, &part_var)) {
+        part = aaa_variable_get_str(part_var);
+
+        if (!is_first) {
+            aaa_string_buffer_append_string(buff, string);
+        }
+
+        is_first = false;
         aaa_string_buffer_append_string(buff, part);
         aaa_variable_dec_ref(var);
     }
 
-    for (size_t i = 1; i < part_count; i++) {
-        var = aaa_vector_get(parts, i);
-        part = aaa_variable_get_str(var);
-
-        aaa_string_buffer_append_string(buff, string);
-        aaa_string_buffer_append_string(buff, part);
-
-        aaa_variable_dec_ref(var);
-    }
+    aaa_vector_iter_dec_ref(parts_iter);
 
     return aaa_string_buffer_to_string(buff);
 }
