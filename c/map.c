@@ -213,7 +213,7 @@ size_t aaa_map_size(const struct aaa_map *map) { return map->size; }
 
 struct aaa_string *aaa_map_repr(struct aaa_map *map) {
     struct aaa_buffer *buff = aaa_buffer_new();
-    aaa_buffer_append(buff, "{");
+    aaa_buffer_append_c_string(buff, "{");
     bool is_first = true;
 
     struct aaa_map_iter *iter = aaa_map_iter_new(map);
@@ -224,21 +224,21 @@ struct aaa_string *aaa_map_repr(struct aaa_map *map) {
         if (is_first) {
             is_first = false;
         } else {
-            aaa_buffer_append(buff, ", ");
+            aaa_buffer_append_c_string(buff, ", ");
         }
 
         struct aaa_string *key_repr = aaa_variable_repr(key);
         struct aaa_string *value_repr = aaa_variable_repr(value);
 
-        aaa_buffer_append(buff, aaa_string_raw(key_repr));
-        aaa_buffer_append(buff, ": ");
-        aaa_buffer_append(buff, aaa_string_raw(value_repr));
+        aaa_buffer_append_string(buff, key_repr);
+        aaa_buffer_append_c_string(buff, ": ");
+        aaa_buffer_append_string(buff, value_repr);
 
         aaa_string_dec_ref(key_repr);
         aaa_string_dec_ref(value_repr);
     }
 
-    aaa_buffer_append(buff, "}");
+    aaa_buffer_append_c_string(buff, "}");
 
     struct aaa_string *string = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);
@@ -348,7 +348,7 @@ bool aaa_map_iter_next(struct aaa_map_iter *iter, struct aaa_variable **key,
 
 struct aaa_string *aaa_set_repr(struct aaa_map *map) {
     struct aaa_buffer *buff = aaa_buffer_new();
-    aaa_buffer_append(buff, "{");
+    aaa_buffer_append_c_string(buff, "{");
     bool is_first = true;
 
     struct aaa_map_iter *iter = aaa_map_iter_new(map);
@@ -359,17 +359,15 @@ struct aaa_string *aaa_set_repr(struct aaa_map *map) {
         if (is_first) {
             is_first = false;
         } else {
-            aaa_buffer_append(buff, ", ");
+            aaa_buffer_append_c_string(buff, ", ");
         }
 
         struct aaa_string *key_repr = aaa_variable_repr(key);
-
-        aaa_buffer_append(buff, aaa_string_raw(key_repr));
-
+        aaa_buffer_append_string(buff, key_repr);
         aaa_string_dec_ref(key_repr);
     }
 
-    aaa_buffer_append(buff, "}");
+    aaa_buffer_append_c_string(buff, "}");
 
     struct aaa_string *string = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);

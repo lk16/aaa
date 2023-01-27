@@ -152,50 +152,50 @@ static struct aaa_string *aaa_variable_repr_int(int integer) {
 
 static struct aaa_string *aaa_variable_repr_str(struct aaa_string *string) {
     struct aaa_buffer *buff = aaa_buffer_new();
-    aaa_buffer_append(buff, "\"");
+    aaa_buffer_append_c_string(buff, "\"");
     const char *c = aaa_string_raw(string);
 
     while (*c) {
         switch (*c) {
             case '\a':
-                aaa_buffer_append(buff, "\\a");
+                aaa_buffer_append_c_string(buff, "\\a");
                 break;
             case '\b':
-                aaa_buffer_append(buff, "\\b");
+                aaa_buffer_append_c_string(buff, "\\b");
                 break;
             case '\f':
-                aaa_buffer_append(buff, "\\f");
+                aaa_buffer_append_c_string(buff, "\\f");
                 break;
             case '\n':
-                aaa_buffer_append(buff, "\\n");
+                aaa_buffer_append_c_string(buff, "\\n");
                 break;
             case '\r':
-                aaa_buffer_append(buff, "\\r");
+                aaa_buffer_append_c_string(buff, "\\r");
                 break;
             case '\t':
-                aaa_buffer_append(buff, "\\t");
+                aaa_buffer_append_c_string(buff, "\\t");
                 break;
             case '\v':
-                aaa_buffer_append(buff, "\\v");
+                aaa_buffer_append_c_string(buff, "\\v");
                 break;
             case '\\':
-                aaa_buffer_append(buff, "\\\\");
+                aaa_buffer_append_c_string(buff, "\\\\");
                 break;
             case '\'':
-                aaa_buffer_append(buff, "\\'");
+                aaa_buffer_append_c_string(buff, "\\'");
                 break;
             case '\"':
-                aaa_buffer_append(buff, "\\\"");
+                aaa_buffer_append_c_string(buff, "\\\"");
                 break;
             default:
                 (void)0;
                 char str[2] = "\0";
                 str[0] = *c;
-                aaa_buffer_append(buff, str);
+                aaa_buffer_append_c_string(buff, str);
         }
         c++;
     }
-    aaa_buffer_append(buff, "\"");
+    aaa_buffer_append_c_string(buff, "\"");
     struct aaa_string *repr = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);
     return repr;

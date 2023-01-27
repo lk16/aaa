@@ -41,7 +41,7 @@ void aaa_vector_inc_ref(struct aaa_vector *vec) {
 
 struct aaa_string *aaa_vector_repr(struct aaa_vector *vec) {
     struct aaa_buffer *buff = aaa_buffer_new();
-    aaa_buffer_append(buff, "[");
+    aaa_buffer_append_c_string(buff, "[");
 
     struct aaa_vector_iter *iter = aaa_vector_iter_new(vec);
     struct aaa_variable *item = NULL;
@@ -49,15 +49,15 @@ struct aaa_string *aaa_vector_repr(struct aaa_vector *vec) {
 
     while (aaa_vector_iter_next(iter, &item)) {
         if (!is_first) {
-            aaa_buffer_append(buff, ", ");
+            aaa_buffer_append_c_string(buff, ", ");
         }
 
         struct aaa_string *item_repr = aaa_variable_repr(item);
-        aaa_buffer_append(buff, aaa_string_raw(item_repr));
+        aaa_buffer_append_string(buff, item_repr);
         aaa_string_dec_ref(item_repr);
         is_first = false;
     }
-    aaa_buffer_append(buff, "]");
+    aaa_buffer_append_c_string(buff, "]");
 
     struct aaa_string *string = aaa_buffer_to_string(buff);
     aaa_buffer_dec_ref(buff);
@@ -88,6 +88,7 @@ bool aaa_vector_equals(struct aaa_vector *lhs,
 void aaa_vector_clear(struct aaa_vector *vec) {
     for (size_t i = 0; i < vec->size; i++) {
         aaa_variable_dec_ref(vec->data[i]);
+        // TODO set cleared pointers to NULL
     }
 
     vec->size = 0;
@@ -139,6 +140,7 @@ struct aaa_variable *aaa_vector_pop(struct aaa_vector *vec) {
     }
 
     struct aaa_variable *popped = vec->data[vec->size - 1];
+    // TODO set vector slot to NULL
     vec->size--;
     return popped;
 }

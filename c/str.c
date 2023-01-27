@@ -77,11 +77,12 @@ struct aaa_string *aaa_string_join(const struct aaa_string *string,
 
     size_t part_count = aaa_vector_size(parts);
 
+    // TODO use vector iteration
+
     if (part_count >= 1) {
         var = aaa_vector_get(parts, 0);
         part = aaa_variable_get_str(var);
-        aaa_buffer_append(buff, part->raw);
-
+        aaa_buffer_append_string(buff, part);
         aaa_variable_dec_ref(var);
     }
 
@@ -89,8 +90,8 @@ struct aaa_string *aaa_string_join(const struct aaa_string *string,
         var = aaa_vector_get(parts, i);
         part = aaa_variable_get_str(var);
 
-        aaa_buffer_append(buff, string->raw);
-        aaa_buffer_append(buff, part->raw);
+        aaa_buffer_append_string(buff, string);
+        aaa_buffer_append_string(buff, part);
 
         aaa_variable_dec_ref(var);
     }
