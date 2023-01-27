@@ -20,13 +20,6 @@
 
 extern char **environ;
 
-void aaa_stack_not_implemented(struct aaa_stack *stack,
-                               const char *aaa_func_name) {
-    (void)stack;
-    fprintf(stderr, "%s is not implemented yet!\n", aaa_func_name);
-    abort();
-}
-
 static void aaa_stack_prevent_underflow(const struct aaa_stack *stack,
                                         size_t pop_count) {
     if (stack->size < pop_count) {
