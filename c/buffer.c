@@ -49,8 +49,10 @@ void aaa_buffer_append_string(struct aaa_buffer *buff,
     aaa_buffer_append_sized_c_string(buff, c_str, length);
 }
 
-struct aaa_string *aaa_buffer_to_string(const struct aaa_buffer *buff) {
-    return aaa_string_new(buff->data, true);
+struct aaa_string *aaa_buffer_to_string(struct aaa_buffer *buff) {
+    char *data = buff->data;
+    aaa_buffer_dec_ref(buff);
+    return aaa_string_new(data, true);
 }
 
 void aaa_buffer_dec_ref(struct aaa_buffer *buff) {

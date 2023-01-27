@@ -241,7 +241,6 @@ struct aaa_string *aaa_map_repr(struct aaa_map *map) {
     aaa_buffer_append_c_string(buff, "}");
 
     struct aaa_string *string = aaa_buffer_to_string(buff);
-    aaa_buffer_dec_ref(buff);
     aaa_map_iter_dec_ref(iter);
     return string;
 }
@@ -370,7 +369,6 @@ struct aaa_string *aaa_set_repr(struct aaa_map *map) {
     aaa_buffer_append_c_string(buff, "}");
 
     struct aaa_string *string = aaa_buffer_to_string(buff);
-    aaa_buffer_dec_ref(buff);
     aaa_map_iter_dec_ref(iter);
     return string;
 }

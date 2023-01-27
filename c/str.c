@@ -96,9 +96,7 @@ struct aaa_string *aaa_string_join(const struct aaa_string *string,
         aaa_variable_dec_ref(var);
     }
 
-    struct aaa_string *joined = aaa_buffer_to_string(buff);
-    aaa_buffer_dec_ref(buff);
-    return joined;
+    return aaa_buffer_to_string(buff);
 }
 
 size_t aaa_string_len(const struct aaa_string *string) {

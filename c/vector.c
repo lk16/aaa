@@ -59,12 +59,9 @@ struct aaa_string *aaa_vector_repr(struct aaa_vector *vec) {
     }
     aaa_buffer_append_c_string(buff, "]");
 
-    struct aaa_string *string = aaa_buffer_to_string(buff);
-    aaa_buffer_dec_ref(buff);
-
     aaa_vector_iter_dec_ref(iter);
 
-    return string;
+    return aaa_buffer_to_string(buff);
 }
 
 bool aaa_vector_equals(struct aaa_vector *lhs,

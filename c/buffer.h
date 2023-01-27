@@ -9,4 +9,4 @@ void aaa_buffer_append_c_string(struct aaa_buffer *buff, const char *str);
 void aaa_buffer_append_string(struct aaa_buffer *buff,
                               const struct aaa_string *string);
 
-struct aaa_string *aaa_buffer_to_string(const struct aaa_buffer *buff);
+struct aaa_string *aaa_buffer_to_string(struct aaa_buffer *buff);

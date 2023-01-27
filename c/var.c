@@ -196,9 +196,7 @@ static struct aaa_string *aaa_variable_repr_str(struct aaa_string *string) {
         c++;
     }
     aaa_buffer_append_c_string(buff, "\"");
-    struct aaa_string *repr = aaa_buffer_to_string(buff);
-    aaa_buffer_dec_ref(buff);
-    return repr;
+    return aaa_buffer_to_string(buff);
 }
 
 struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
