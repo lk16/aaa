@@ -688,31 +688,22 @@ class SingleFileParser:
         imports: List[Import] = []
 
         while True:
-            try:
+            token = self._peek_token(offset)
+
+            if not token:
+                break
+
+            if token.type == TokenType.FUNCTION:
                 function, offset = self._parse_function_definition(offset)
-            except ParserBaseException:
-                pass
-            else:
                 functions.append(function)
-                continue
-
-            try:
+            elif token.type == TokenType.STRUCT:
                 struct, offset = self._parse_struct_definition(offset)
-            except ParserBaseException:
-                pass
-            else:
                 structs.append(struct)
-                continue
-
-            try:
+            elif token.type == TokenType.FROM:
                 import_, offset = self._parse_import_statement(offset)
-            except ParserBaseException:
-                pass
-            else:
                 imports.append(import_)
-                continue
-
-            break
+            else:
+                break
 
         parsed_file = ParsedFile(
             position=position,
