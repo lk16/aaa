@@ -476,6 +476,7 @@ fn test_map_twenty_items {
     0
     while dup 20 < {
         over over map:get
+        assert
         over = assert
         1 +
     }
@@ -487,7 +488,7 @@ fn test_map_twenty_items {
 fn test_map_get_set {
     map[str, int]
     dup "one" 1 map:set
-    "one" map:get
+    "one" map:get assert
     1 = assert
 }
 
@@ -497,10 +498,12 @@ fn test_map_get {
     use m, k {
         m k 1 map:set
         m k map:get
+        assert
         use v {
             v <- { 2 }
         }
         m k map:get
+        assert
         2 = assert
     }
 }
@@ -511,10 +514,12 @@ fn test_map_get_copy {
     use m, k {
         m k 1 map:set
         m k map:get_copy
+        assert
         use v {
             v <- { 2 }
         }
         m k map:get
+        assert
         1 = assert
     }
 }
@@ -524,6 +529,7 @@ fn test_map_get_set_update {
     dup "one" 1 map:set
     dup "one" 2 map:set
     "one" map:get
+    assert
     2 = assert
 }
 
@@ -602,12 +608,15 @@ fn test_map_dup {
 fn test_map_pop_ok {
     map[str, int]
     dup "one" 1 map:set
-    "one" map:pop
+    "one" map:pop assert
     1 = assert
 }
 
 fn test_map_pop_fail {
-    todo
+    map[str, int]
+    dup "one" 1 map:set
+    "two" map:pop not assert
+    drop
 }
 
 fn test_map_drop_ok {

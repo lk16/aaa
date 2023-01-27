@@ -621,13 +621,8 @@ void aaa_stack_map_get(struct aaa_stack *stack) {
 
     struct aaa_variable *value = aaa_map_get(map, key);
 
-    if (!value) {
-        // TODO push bool indicating if map:get succeeded
-        fprintf(stderr, "map:get does not handle missing keys\n");
-        abort();
-    }
-
     aaa_stack_push(stack, value);
+    aaa_stack_push_bool(stack, value != NULL);
 
     aaa_map_dec_ref(map);
     aaa_variable_dec_ref(key);
@@ -639,13 +634,8 @@ void aaa_stack_map_get_copy(struct aaa_stack *stack) {
 
     struct aaa_variable *value = aaa_map_get_copy(map, key);
 
-    if (!value) {
-        // TODO push bool indicating if map:get_copy succeeded
-        fprintf(stderr, "map:get_copy does not handle missing keys\n");
-        abort();
-    }
-
     aaa_stack_push(stack, value);
+    aaa_stack_push_bool(stack, value != NULL);
 
     aaa_map_dec_ref(map);
     aaa_variable_dec_ref(key);
@@ -693,13 +683,8 @@ void aaa_stack_map_pop(struct aaa_stack *stack) {
 
     struct aaa_variable *value = aaa_map_pop(map, key);
 
-    if (!value) {
-        // TODO push bool indicating if map:pop succeeded
-        fprintf(stderr, "map:pop does not handle missing keys\n");
-        abort();
-    }
-
     aaa_stack_push(stack, value);
+    aaa_stack_push_bool(stack, value != NULL);
 
     aaa_variable_dec_ref(key);
     aaa_map_dec_ref(map);
