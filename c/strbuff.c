@@ -1,19 +1,19 @@
 #include <malloc.h>
 #include <string.h>
 
-#include "buffer.h"
 #include "ref_count.h"
 #include "str.h"
+#include "strbuff.h"
 
-struct aaa_buffer { // TODO rename to aaa_string_buffer
+struct aaa_string_buffer {
     struct aaa_ref_count ref_count;
     size_t max_size;
     char *data;
     size_t size;
 };
 
-struct aaa_buffer *aaa_buffer_new(void) {
-    struct aaa_buffer *buff = malloc(sizeof(*buff));
+struct aaa_string_buffer *aaa_string_buffer_new(void) {
+    struct aaa_string_buffer *buff = malloc(sizeof(*buff));
     aaa_ref_count_init(&buff->ref_count);
     buff->max_size = 1024;
     buff->data = malloc(buff->max_size * sizeof(char));
@@ -22,8 +22,9 @@ struct aaa_buffer *aaa_buffer_new(void) {
     return buff;
 }
 
-static void aaa_buffer_append_sized_c_string(struct aaa_buffer *buff,
-                                             const char *str, size_t length) {
+static void
+aaa_string_buffer_append_sized_c_string(struct aaa_string_buffer *buff,
+                                        const char *str, size_t length) {
     while (buff->size + length + 1 > buff->max_size) {
         char *new_data = malloc(2 * buff->max_size * sizeof(char));
         memcpy(new_data, buff->data, buff->max_size);
@@ -37,25 +38,26 @@ static void aaa_buffer_append_sized_c_string(struct aaa_buffer *buff,
     buff->data[buff->size] = '\0';
 }
 
-void aaa_buffer_append_c_string(struct aaa_buffer *buff, const char *str) {
+void aaa_string_buffer_append_c_string(struct aaa_string_buffer *buff,
+                                       const char *str) {
     size_t length = strlen(str);
-    aaa_buffer_append_sized_c_string(buff, str, length);
+    aaa_string_buffer_append_sized_c_string(buff, str, length);
 }
 
-void aaa_buffer_append_string(struct aaa_buffer *buff,
-                              const struct aaa_string *string) {
+void aaa_string_buffer_append_string(struct aaa_string_buffer *buff,
+                                     const struct aaa_string *string) {
     size_t length = aaa_string_len(string);
     const char *c_str = aaa_string_raw(string);
-    aaa_buffer_append_sized_c_string(buff, c_str, length);
+    aaa_string_buffer_append_sized_c_string(buff, c_str, length);
 }
 
-struct aaa_string *aaa_buffer_to_string(struct aaa_buffer *buff) {
+struct aaa_string *aaa_string_buffer_to_string(struct aaa_string_buffer *buff) {
     char *data = buff->data;
-    aaa_buffer_dec_ref(buff);
+    aaa_string_buffer_dec_ref(buff);
     return aaa_string_new(data, true);
 }
 
-void aaa_buffer_dec_ref(struct aaa_buffer *buff) {
+void aaa_string_buffer_dec_ref(struct aaa_string_buffer *buff) {
     if (aaa_ref_count_dec(&buff->ref_count) == 0) {
         free(buff);
     }

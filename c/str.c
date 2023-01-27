@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "buffer.h"
 #include "ref_count.h"
 #include "str.h"
+#include "strbuff.h"
 #include "var.h"
 #include "vector.h"
 
@@ -71,7 +71,7 @@ bool aaa_string_equals(const struct aaa_string *string,
 
 struct aaa_string *aaa_string_join(const struct aaa_string *string,
                                    struct aaa_vector *parts) {
-    struct aaa_buffer *buff = aaa_buffer_new();
+    struct aaa_string_buffer *buff = aaa_string_buffer_new();
     struct aaa_string *part = NULL;
     struct aaa_variable *var = NULL;
 
@@ -82,7 +82,7 @@ struct aaa_string *aaa_string_join(const struct aaa_string *string,
     if (part_count >= 1) {
         var = aaa_vector_get(parts, 0);
         part = aaa_variable_get_str(var);
-        aaa_buffer_append_string(buff, part);
+        aaa_string_buffer_append_string(buff, part);
         aaa_variable_dec_ref(var);
     }
 
@@ -90,13 +90,13 @@ struct aaa_string *aaa_string_join(const struct aaa_string *string,
         var = aaa_vector_get(parts, i);
         part = aaa_variable_get_str(var);
 
-        aaa_buffer_append_string(buff, string);
-        aaa_buffer_append_string(buff, part);
+        aaa_string_buffer_append_string(buff, string);
+        aaa_string_buffer_append_string(buff, part);
 
         aaa_variable_dec_ref(var);
     }
 
-    return aaa_buffer_to_string(buff);
+    return aaa_string_buffer_to_string(buff);
 }
 
 size_t aaa_string_len(const struct aaa_string *string) {

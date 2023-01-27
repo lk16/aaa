@@ -30,11 +30,11 @@ add_compile_options(
 
 ADD_LIBRARY(
     aaa_stdlib STATIC
-    buffer.c
     map.c
     ref_count.c
     stack.c
     str.c
+    strbuff.c
     struct.c
     var.c
     vector.c

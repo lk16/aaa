@@ -5,7 +5,7 @@
 
 struct aaa_variable;
 
-struct aaa_buffer;
+struct aaa_string_buffer;
 struct aaa_ref_count;
 
 struct aaa_boolean;

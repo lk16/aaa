@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "buffer.h"
 #include "ref_count.h"
 #include "str.h"
+#include "strbuff.h"
 #include "var.h"
 #include "vector.h"
 
@@ -40,8 +40,8 @@ void aaa_vector_inc_ref(struct aaa_vector *vec) {
 }
 
 struct aaa_string *aaa_vector_repr(struct aaa_vector *vec) {
-    struct aaa_buffer *buff = aaa_buffer_new();
-    aaa_buffer_append_c_string(buff, "[");
+    struct aaa_string_buffer *buff = aaa_string_buffer_new();
+    aaa_string_buffer_append_c_string(buff, "[");
 
     struct aaa_vector_iter *iter = aaa_vector_iter_new(vec);
     struct aaa_variable *item = NULL;
@@ -49,19 +49,19 @@ struct aaa_string *aaa_vector_repr(struct aaa_vector *vec) {
 
     while (aaa_vector_iter_next(iter, &item)) {
         if (!is_first) {
-            aaa_buffer_append_c_string(buff, ", ");
+            aaa_string_buffer_append_c_string(buff, ", ");
         }
 
         struct aaa_string *item_repr = aaa_variable_repr(item);
-        aaa_buffer_append_string(buff, item_repr);
+        aaa_string_buffer_append_string(buff, item_repr);
         aaa_string_dec_ref(item_repr);
         is_first = false;
     }
-    aaa_buffer_append_c_string(buff, "]");
+    aaa_string_buffer_append_c_string(buff, "]");
 
     aaa_vector_iter_dec_ref(iter);
 
-    return aaa_buffer_to_string(buff);
+    return aaa_string_buffer_to_string(buff);
 }
 
 bool aaa_vector_equals(struct aaa_vector *lhs,
