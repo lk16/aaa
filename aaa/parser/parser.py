@@ -20,17 +20,14 @@ class Parser:
         self.entrypoint = entrypoint.resolve()
         self.builtins_path = builtins_path
         self.parsed: Dict[Path, ParsedFile] = parsed_files or {}
-        self.parse_queue = [self.entrypoint]
+        self.parse_queue = [self.builtins_path, self.entrypoint]
         self.exceptions: List[ParserBaseException | TokenizerBaseException] = []
         self.verbose = verbose
 
     def run(self) -> ParserOutput:
-        # TODO add to parse queue instead of parsing separately
-        self.parsed[self.builtins_path] = self.parse(self.builtins_path, False)
-
         for file in self.parse_queue:
             try:
-                self.parsed[file] = self.parse(file, True)
+                self.parsed[file] = self.parse(file)
             except ParserBaseException as e:
                 self.exceptions.append(e)
             else:
@@ -45,13 +42,14 @@ class Parser:
             entrypoint=self.entrypoint,
         )
 
-    def parse(self, file: Path, is_regular_file: bool) -> ParsedFile:
+    def parse(self, file: Path) -> ParsedFile:
         tokens = Tokenizer(file, self.verbose).run()
         parser = SingleFileParser(file, tokens, self.verbose)
 
-        if is_regular_file:
-            return parser.parse_regular_file()
-        return parser.parse_builtins_file()
+        if file == self.builtins_path:
+            return parser.parse_builtins_file()
+
+        return parser.parse_regular_file()
 
     def _enqueue_dependencies(self, parsed_file: ParsedFile) -> None:
         for dependency in parsed_file.dependencies():

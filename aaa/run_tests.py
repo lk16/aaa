@@ -53,8 +53,9 @@ class TestRunner:
         return parsed_files
 
     def _parse_file(self, file: Path) -> ParsedFile:
+        # TODO: we create a new Parser for every parsed file
         parser = Parser(file, self.builtins_path, None, self.verbose)
-        return parser.parse(file, True)
+        return parser.parse(file)
 
     def _get_test_functions(self) -> List[Function]:
         test_functions: List[Function] = []
