@@ -550,8 +550,8 @@ def test_parse_import_item(
         expected_original_name, expected_imported_name = expected_result
 
         import_item, offset = parser._parse_import_item(0)
-        assert expected_original_name == import_item.original_name
-        assert expected_imported_name == import_item.imported_name
+        assert expected_original_name == import_item.original.name
+        assert expected_imported_name == import_item.imported.name
         assert expected_offset == offset
     else:
         with pytest.raises(expected_result):

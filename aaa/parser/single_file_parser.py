@@ -395,19 +395,17 @@ class SingleFileParser:
     def _parse_import_item(self, offset: int) -> Tuple[ImportItem, int]:
         start_offset = offset
 
-        original_name, offset = self._parse_identifier(offset)
+        original, offset = self._parse_identifier(offset)
 
         token = self._peek_token(offset)
         if token and token.type == TokenType.AS:
             _, offset = self._token(offset, [TokenType.AS])
-            imported_name, offset = self._parse_identifier(offset)
+            imported, offset = self._parse_identifier(offset)
         else:
-            imported_name = original_name
+            imported = original
 
         import_item = ImportItem(
-            position=original_name.position,
-            origninal_name=original_name.name,
-            imported_name=imported_name.name,
+            position=original.position, origninal=original, imported=imported
         )
 
         self._print_parse_tree_node("ImportItem", start_offset, offset)

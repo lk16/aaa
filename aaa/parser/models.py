@@ -127,11 +127,10 @@ class Function(AaaParseModel):
 
 class ImportItem(AaaParseModel):
     def __init__(
-        self, position: Position, origninal_name: str, imported_name: str
+        self, position: Position, origninal: Identifier, imported: Identifier
     ) -> None:
-        # TODO inconsisted typing, original_name and imported_name should be an Identifier
-        self.original_name = origninal_name
-        self.imported_name = imported_name
+        self.original = origninal
+        self.imported = imported
         super().__init__(position)
 
 

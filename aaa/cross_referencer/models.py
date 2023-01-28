@@ -93,8 +93,8 @@ class FunctionBody(FunctionBodyItem):
 class UnresolvedImport(AaaCrossReferenceModel):
     def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
         self.source_file = import_.source_file
-        self.source_name = import_item.original_name
-        self.name = import_item.imported_name
+        self.source_name = import_item.original.name
+        self.name = import_item.imported.name
         super().__init__(import_item.position)
 
 
