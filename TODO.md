@@ -54,7 +54,10 @@
 
 ### Builtin functions
 - Add member functions `map:keys` and `map:values`
-- add binary or/and/not integer operations
+- add bitwise or/and/not integer operations
+- `/` and `%` should just crash when dividing by zero
+- rename `size` functions of `map`, `vec` and `set` to `len`
+- move syscalls and env-related functions out of `builtins.aaa`
 
 ### Builtin types and typing-features
 - `float` type

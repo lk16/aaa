@@ -39,12 +39,8 @@ fn nop
 fn - args a as const int, b as const int return int
 fn * args a as const int, b as const int return int
 fn + args a as const int, b as const int return int
-
-// TODO: return enum indicating success/failure instead of extra bool
 fn / args a as const int, b as const int return int, bool
 fn % args a as const int, b as const int return int, bool
-
-// TODO add bitwise operators
 
 // integer comparison
 fn != args a as const int, b as const int return bool
@@ -95,8 +91,6 @@ fn set[T]:iter       args s as const set[T]                   return set_iter[T]
 fn set[T]:remove     args s as       set[T], item as const T
 fn set[T]:size       args s as const set[T]                   return int
 
-// TODO: rename size functions of containers to len
-
 // container iteration
 fn map_iter[K, V]:next       args iter as map_iter[K, V]       return const K, V, bool
 fn map_const_iter[K, V]:next args iter as map_const_iter[K, V] return const K, const V, bool
@@ -112,7 +106,6 @@ fn vec_const_iter[T]:iter    args iter as vec_const_iter[T]    return vec_const_
 
 // string functions
 
-// TODO find out const-ness of string functions
 fn str:append     args s as       str, other as str                  return str
 fn str:contains   args s as const str, other as const str            return bool
 fn str:equals     args s as const str, other as const str            return bool
@@ -124,42 +117,38 @@ fn str:split      args s as       str, sep as str                    return vec[
 fn str:strip      args s as       str                                return str
 fn str:upper      args s as       str                                return str
 
-// TODO: return enum indicating success/failure instead of extra bool
 fn str:find_after args s as const str, other as str, offset as int   return int, bool
 fn str:find       args s as const str, other as str                  return int, bool
 fn str:substr     args s as const str, start as int, end as int      return str, bool
 fn str:to_bool    args s as const str                                return bool, bool
 fn str:to_int     args s as const str                                return int, bool
 
-// TODO everything below should be moved to separate file in stdlib
 // Function and type names should not be reserved / builtin
 
 // Syscall list: http://faculty.nps.edu/cseagle/assembly/sys_call.html
 
-fn environ return map[str, str]
-fn execve args path as const str, argv as const vec[str], env as const map[str, str] return bool
-fn exit args code as const int
-fn fork return int
-fn getcwd return str
-fn gettimeofday return int, int
-fn getpid return int
-fn getppid return int
-fn setenv args name as const str, value as const str
-fn time return int
-fn unsetenv args name as const str
-
-// TODO: return enum indicating success/failure instead of extra bool
 fn accept args fd as const int return str, int, int, bool
 fn bind args fd as const int, ip_addr as str, port as int return bool
 fn chdir args dir as const str return bool
 fn close args fd as const int return bool
 fn connect args fd as const int, ip_addr as const str, port as const int return bool
+fn environ return map[str, str]
+fn execve args path as const str, argv as const vec[str], env as const map[str, str] return bool
+fn exit args code as const int
+fn fork return int
 fn fsync args fd as const int return bool
+fn getcwd return str
 fn getenv args name as const str return str, bool
+fn getpid return int
+fn getppid return int
+fn gettimeofday return int, int
 fn listen args fd as const int, backlog as const int return bool
 fn open args path as const str, flag as const int, mode as const int return int, bool
 fn read args fd as const int, n as const int return str, bool
+fn setenv args name as const str, value as const str
 fn socket args family as const int, type_ as const int, protocol as const int return int, bool
+fn time return int
 fn unlink args path as const str return bool
+fn unsetenv args name as const str
 fn waitpid args pid as const int, options as const int return int, int, bool, bool
 fn write args fd as const int, data as const str return int, bool
