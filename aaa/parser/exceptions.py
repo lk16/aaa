@@ -40,7 +40,7 @@ class EndOfFileException(ParserBaseException):
         self.file = file
 
     def __str__(self) -> str:
-        return f"{self.file} Parsing failed, unexpected end of file."
+        return f"{self.file}: Parsing failed, unexpected end of file.\n"
 
 
 class NewParserUnhandledTopLevelToken(ParserBaseException):

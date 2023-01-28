@@ -68,7 +68,7 @@ class SingleFileParser:
         token = self._peek_token(offset)
 
         if not token:
-            raise EndOfFileException(file=self.file)
+            raise EndOfFileException(self.file)
 
         if token.type not in expected:
             raise ParserException(token.position, expected, token.type)

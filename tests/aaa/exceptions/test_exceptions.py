@@ -14,6 +14,7 @@ from aaa.cross_referencer.exceptions import (
     UnknownIdentifier,
     UnknownVariable,
 )
+from aaa.parser.exceptions import EndOfFileException
 from aaa.tokenizer.exceptions import FileReadError
 from aaa.type_checker.exceptions import (
     AssignConstValueError,
@@ -655,6 +656,12 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             AssignConstValueError,
             "/foo/main.aaa:2:44: Cannot assign to (const int) x\n",
             id="assign-to-const-value-makeconst",
+        ),
+        pytest.param(
+            "fn",
+            EndOfFileException,
+            "/foo/main.aaa: Parsing failed, unexpected end of file.\n",
+            id="end-of-file-exception",
         ),
     ],
 )
