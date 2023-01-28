@@ -26,6 +26,11 @@ class Position:
     def __hash__(self) -> int:
         return hash((self.file, self.line, self.column))
 
+    def context(self) -> str:  # pragma: nocover
+        code = self.file.read_text()
+        line = code.split("\n")[self.line - 1]
+        return line + "\n" + ((self.column - 1) * " ") + "^\n"
+
 
 class AaaException(Exception):
     ...
