@@ -66,8 +66,6 @@ def runtests() -> None:
         "pytest --cov=aaa --cov-report=term-missing --pdb -x --lf --nf",
         f"./manage.py test stdlib/ --compile --binary {binary_path}",
         f"valgrind --error-exitcode=1 --leak-check=full {binary_path}",
-        "docker build -f tests/docker/Dockerfile -t aaa-tests .",
-        "docker run aaa-tests",
     ]
 
     for command in commands:

@@ -52,7 +52,3 @@ jobs:
         export AAA_STDLIB_PATH=$(pwd)/stdlib
         poetry run ./manage.py test stdlib/ --compile --binary /tmp/aaa_stdlib_tests
         valgrind --error-exitcode=1 --leak-check=full /tmp/aaa_stdlib_tests
-    - name: Run dockerized tests
-      run: |
-        docker build -f tests/docker/Dockerfile -t aaa-tests .
-        docker run aaa-tests

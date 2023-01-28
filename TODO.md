@@ -15,6 +15,7 @@
 - [ ] Add transpiling to `README.md`
 - [ ] Add remaining tests for syscalls
 - [x] Build static library of aaa stdlib so we don't compile it everytime
+- [ ] Don't rebuild executables if it's newer than its dependencies
 
 ### Improving aaa_stdlib.a
 - [ ] container types should contain `aaa_variable` values, not pointers to `aaa_variable`
@@ -46,11 +47,6 @@
 - [ ] Introduce the special local variable `this` which can only be used in member functions
 - [ ] First arg of member functions needs to be called `this` and has no type annotations
 - [ ] If `this` is const, the syntax is `const this`
-
-### Testing
-- [ ] Collect coverage stats from dockerized tests
-- [ ] Merge coverage of tests in- and outside of docker
-- [ ] Cache compiled executables
 
 ### Improve import system
 - Start using colon-separated env var `AAA_PATH` like `PYTHON_PATH`

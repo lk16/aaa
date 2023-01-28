@@ -11,13 +11,6 @@ import pytest
 
 from aaa.run import Runner
 
-if __name__ == "__main__":
-    if "AAA_TESTS_CONTAINER" not in os.environ:
-        print("Tests should only be run in test container!", file=sys.stderr)
-        exit(1)
-
-    pytest.main(["-vv", "--color=yes", __file__])
-
 
 def compile(source: str) -> str:
     binary = NamedTemporaryFile(delete=False).name
@@ -112,7 +105,7 @@ def test_gettimeofday() -> None:
 
 def test_getcwd() -> None:
     stdout, stderr, exit_code = compile_run("getcwd.aaa")
-    assert "/app\n" == stdout
+    assert f"{os.getcwd()}\n" == stdout
     assert "" == stderr
     assert 0 == exit_code
 
@@ -121,7 +114,7 @@ def test_getcwd() -> None:
     ["source", "expected_stdout"],
     [
         pytest.param("chdir_ok.aaa", "/tmp\n", id="ok"),
-        pytest.param("chdir_fail.aaa", "/app\n", id="fail"),
+        pytest.param("chdir_fail.aaa", f"{os.getcwd()}\n", id="fail"),
     ],
 )
 def test_chdir(source: str, expected_stdout: str) -> None:
