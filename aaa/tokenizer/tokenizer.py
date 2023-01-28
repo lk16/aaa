@@ -134,9 +134,6 @@ class Tokenizer:
             print(f"tokenizer | {pos:<30} | {token.type.value:>16} | {token.value}")
 
     def run(self) -> List[Token]:
-        # TODO catch TokenizerException
-        # TODO return model with tokens and exceptions
-
         tokens = self.tokenize_unfiltered()
 
         filtered: List[Token] = []

@@ -5,6 +5,7 @@ from aaa import AaaRunnerException
 from aaa.parser.exceptions import ParserBaseException
 from aaa.parser.models import ParsedFile, ParserOutput
 from aaa.parser.single_file_parser import SingleFileParser
+from aaa.tokenizer.exceptions import TokenizerBaseException
 from aaa.tokenizer.tokenizer import Tokenizer
 
 
@@ -20,10 +21,11 @@ class Parser:
         self.builtins_path = builtins_path
         self.parsed: Dict[Path, ParsedFile] = parsed_files or {}
         self.parse_queue = [self.entrypoint]
-        self.exceptions: List[ParserBaseException] = []
+        self.exceptions: List[ParserBaseException | TokenizerBaseException] = []
         self.verbose = verbose
 
     def run(self) -> ParserOutput:
+        # TODO add to parse queue instead of parsing separately
         self.parsed[self.builtins_path] = self.parse(self.builtins_path, False)
 
         for file in self.parse_queue:

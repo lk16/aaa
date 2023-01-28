@@ -3,11 +3,11 @@ from pathlib import Path
 from aaa import AaaException, Position
 
 
-class BaseTokenizerException(AaaException):
+class TokenizerBaseException(AaaException):
     ...
 
 
-class TokenizerException(BaseTokenizerException):
+class TokenizerException(TokenizerBaseException):
     def __init__(self, position: Position) -> None:
         self.position = position
 
@@ -15,7 +15,7 @@ class TokenizerException(BaseTokenizerException):
         return f"{self.position}: Tokenizing failed\n{self.position.context()}\n"
 
 
-class FileReadError(BaseTokenizerException):
+class FileReadError(TokenizerBaseException):
     def __init__(self, file: Path) -> None:
         self.file = file
 
