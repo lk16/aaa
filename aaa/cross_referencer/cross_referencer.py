@@ -75,6 +75,8 @@ class CrossReferencer:
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
 
+        self._print_values()
+
         return CrossReferencerOutput(
             functions={
                 k: v for (k, v) in self.identifiers.items() if isinstance(v, Function)
@@ -159,42 +161,69 @@ class CrossReferencer:
 
         return function
 
-    def print_values(self) -> None:  # pragma: nocover
-        # TODO use this function with a commandline switch
+    def _print_values(self) -> None:  # pragma: nocover
+        if not self.verbose:
+            return
 
-        for (file, identifier), identifiable in self.identifiers.items():
+        def short_path(file: Path) -> str:
+            # TODO move out and re-use in Tokenizer
+            try:
+                short = file.relative_to(Path.cwd())
+            except ValueError:
+                # It is possible the file is not in the subpath of cwd
+                # We just print the absolute path then
+                short = file
 
-            print(f"{type(identifiable).__name__} {file}:{identifier}")
+            return str(short)
+
+        for (_, identifier), identifiable in self.identifiers.items():
 
             if isinstance(identifiable, Function):
+                file = short_path(identifiable.position.file)
+                prefix = f"cross_referencer | Function {file}:{identifier}"
+
+                print(prefix)
+
                 for arg in identifiable.arguments:
+                    file = short_path(arg.var_type.position.file)
+                    name = arg.name
+                    var_type = arg.var_type
+
                     if arg.var_type.is_placeholder:
-                        print(
-                            f"- arg {arg.name} of placeholder type {arg.var_type.name}"
-                        )
+                        print(f"{prefix} | Argument {name} of type {var_type}")
                     else:
-                        print(
-                            f"- arg {arg.name} of type {arg.var_type.position.file}:{arg.var_type.name}"
-                        )
+                        print(f"{prefix} | Argument {name} of type {file}:{var_type}")
 
                 for return_type in identifiable.return_types:
+                    file = short_path(return_type.type.position.file)
+
                     if return_type.is_placeholder:
-                        print(f"- return placeholder type {return_type.type.name}")
+                        print(f"{prefix} | Return type {return_type}")
                     else:
-                        print(
-                            f"- return type {return_type.type.position.file}:{return_type.type.name}"
-                        )
+                        print(f"{prefix} | Return type {file}:{return_type}")
 
             elif isinstance(identifiable, Type):
-                for field_name, field_var_type in identifiable.fields.items():
-                    print(
-                        f"- field {field_name} of type {field_var_type.position.file}:{field_var_type.name}"
-                    )
+                file = short_path(identifiable.position.file)
+                prefix = f"cross_referencer | Type {file}:{identifier}"
+
+                print(prefix)
+
+                for name, var_type in identifiable.fields.items():
+                    file = short_path(var_type.position.file)
+                    print(f"{prefix} | Field {name} of type {file}:{var_type}")
+
+            elif isinstance(identifiable, Import):
+                file = short_path(identifiable.position.file)
+                prefix = f"cross_referencer | Import {file}:{identifier}"
+                source_type = type(identifiable.source).__name__
+
+                print(
+                    f"{prefix} | Import {source_type} from {identifiable.source_file}:{identifiable.source_name}"
+                )
 
             else:
                 # TODO add debug print for import
                 raise NotImplementedError
-            print("\n")
 
     def _load_identifiers(
         self, file: Path
