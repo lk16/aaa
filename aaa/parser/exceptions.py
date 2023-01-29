@@ -43,7 +43,7 @@ class EndOfFileException(ParserBaseException):
         return f"{self.file}: Parsing failed, unexpected end of file.\n"
 
 
-class NewParserUnhandledTopLevelToken(ParserBaseException):
+class UnhandledTopLevelToken(ParserBaseException):
     def __init__(self, position: Position, token_type: TokenType) -> None:
         self.position = position
         self.token_type = token_type

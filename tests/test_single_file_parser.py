@@ -7,9 +7,9 @@ import pytest
 
 from aaa.parser.exceptions import (
     EndOfFileException,
-    NewParserUnhandledTopLevelToken,
     ParserBaseException,
     ParserException,
+    UnhandledTopLevelToken,
 )
 from aaa.parser.single_file_parser import SingleFileParser
 from aaa.tokenizer.tokenizer import Tokenizer
@@ -1045,7 +1045,7 @@ def test_parse_regular_file_fail() -> None:
 
     parser = parse_code(code)
 
-    with pytest.raises(NewParserUnhandledTopLevelToken):
+    with pytest.raises(UnhandledTopLevelToken):
         parser.parse_regular_file()
 
 
@@ -1054,7 +1054,7 @@ def test_parse_builtins_file_fail() -> None:
 
     parser = parse_code(code)
 
-    with pytest.raises(NewParserUnhandledTopLevelToken):
+    with pytest.raises(UnhandledTopLevelToken):
         parser.parse_builtins_file()
 
 

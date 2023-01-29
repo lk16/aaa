@@ -4,9 +4,9 @@ from typing import List, Optional, Tuple
 from aaa import Position
 from aaa.parser.exceptions import (
     EndOfFileException,
-    NewParserUnhandledTopLevelToken,
     ParserBaseException,
     ParserException,
+    UnhandledTopLevelToken,
 )
 from aaa.parser.models import (
     Argument,
@@ -46,7 +46,7 @@ class SingleFileParser:
 
         if offset != len(self.tokens):
             token = self.tokens[offset]
-            raise NewParserUnhandledTopLevelToken(token.position, token.type)
+            raise UnhandledTopLevelToken(token.position, token.type)
 
         return parsed_file
 
@@ -55,7 +55,7 @@ class SingleFileParser:
 
         if offset != len(self.tokens):
             token = self.tokens[offset]
-            raise NewParserUnhandledTopLevelToken(token.position, token.type)
+            raise UnhandledTopLevelToken(token.position, token.type)
 
         return parsed_file
 
@@ -561,64 +561,61 @@ class SingleFileParser:
 
     def _parse_function_body_item(self, offset: int) -> Tuple[FunctionBodyItem, int]:
         start_offset = offset
-        item, offset = self.__parse_function_body_item(offset)  # TODO inline
-        self._print_parse_tree_node("FunctionBodyItem", start_offset, offset)
-        return item, offset
-
-    def __parse_function_body_item(self, offset: int) -> Tuple[FunctionBodyItem, int]:
         token = self._peek_token(offset)
         next_token = self._peek_token(offset + 1)
+        item: FunctionBodyItem
 
         if not token:
             raise EndOfFileException(self.file)
 
         if token.type == TokenType.STRING:
             if next_token and next_token.type == TokenType.GET_FIELD:
-                return self._parse_struct_field_query(offset)
+                item, offset = self._parse_struct_field_query(offset)
+            elif next_token and next_token.type == TokenType.BEGIN:
+                item, offset = self._parse_struct_field_update(offset)
+            else:
+                item, offset = self._parse_string(offset)
 
-            if next_token and next_token.type == TokenType.BEGIN:
-                return self._parse_struct_field_update(offset)
+        elif token.type in [TokenType.TRUE, TokenType.FALSE]:
+            item, offset = self._parse_boolean(offset)
 
-        if token.type in [TokenType.TRUE, TokenType.FALSE]:
-            return self._parse_boolean(offset)
+        elif token.type == TokenType.INTEGER:
+            item, offset = self._parse_integer(offset)
 
-        if token.type == TokenType.STRING:
-            return self._parse_string(offset)
-
-        if token.type == TokenType.INTEGER:
-            return self._parse_integer(offset)
-
-        if token.type == TokenType.IDENTIFIER:
+        elif token.type == TokenType.IDENTIFIER:
             if next_token and next_token.type in [TokenType.COMMA, TokenType.ASSIGN]:
-                return self._parse_assignment(offset)
+                item, offset = self._parse_assignment(offset)
+            else:
+                item, offset = self._parse_call(offset)
 
-            return self._parse_call(offset)
+        elif token.type == TokenType.IF:
+            item, offset = self._parse_branch(offset)
+        elif token.type == TokenType.WHILE:
+            item, offset = self._parse_while_loop(offset)
+        elif token.type == TokenType.FOREACH:
+            item, offset = self._parse_foreach_loop(offset)
+        elif token.type == TokenType.USE:
+            item, offset = self._parse_use_block(offset)
 
-        if token.type == TokenType.IF:
-            return self._parse_branch(offset)
-        if token.type == TokenType.WHILE:
-            return self._parse_while_loop(offset)
-        if token.type == TokenType.FOREACH:
-            return self._parse_foreach_loop(offset)
-        if token.type == TokenType.USE:
-            return self._parse_use_block(offset)
+        else:
+            raise ParserException(
+                position=token.position,
+                expected_token_types=[
+                    TokenType.FALSE,
+                    TokenType.FOREACH,
+                    TokenType.IDENTIFIER,
+                    TokenType.IF,
+                    TokenType.INTEGER,
+                    TokenType.STRING,
+                    TokenType.TRUE,
+                    TokenType.WHILE,
+                    TokenType.USE,
+                ],
+                found_token_type=token.type,
+            )
 
-        raise ParserException(
-            position=token.position,
-            expected_token_types=[
-                TokenType.FALSE,
-                TokenType.FOREACH,
-                TokenType.IDENTIFIER,
-                TokenType.IDENTIFIER,
-                TokenType.IF,
-                TokenType.INTEGER,
-                TokenType.STRING,
-                TokenType.TRUE,
-                TokenType.WHILE,
-                TokenType.USE,
-            ],
-            found_token_type=token.type,
-        )
+        self._print_parse_tree_node("FunctionBodyItem", start_offset, offset)
+        return item, offset
 
     def _parse_function_body(self, offset: int) -> Tuple[FunctionBody, int]:
         start_offset = offset
