@@ -606,35 +606,35 @@ class FunctionBodyResolver:
             parsed=while_loop,
         )
 
-    def _resolve_function_name(
-        self, function_name: parser.FunctionName
+    def _resolve_call(
+        self, call: parser.Call
     ) -> CallVariable | CallFunction | CallType:
 
         try:
-            var = self.vars[function_name.name()]
+            var = self.vars[call.name()]
         except KeyError:
             pass
         else:
-            if function_name.type_params:
+            if call.type_params:
                 # TODO handle handle case like: fn foo args a as int { a[b] drop }
                 # TODO handle handle case like: fn foo { 0 use c { c[b] } }
                 raise NotImplementedError
 
             if isinstance(var, (Argument, Variable)):
-                return CallVariable(var.name, function_name.position)
+                return CallVariable(var.name, call.position)
             else:  # pragma: nocover
                 assert False
 
-        identifiable = self._get_identifiable_from_function_name(function_name)
+        identifiable = self._get_identifiable_from_call(call)
 
         if isinstance(identifiable, Function):
             return CallFunction(
                 identifiable,
                 [
                     self._resolve_function_type_param(self.function, param)
-                    for param in function_name.type_params
+                    for param in call.type_params
                 ],
-                function_name.position,
+                call.position,
             )
 
         if isinstance(identifiable, Type):
@@ -642,10 +642,10 @@ class FunctionBodyResolver:
                 identifiable,
                 [
                     self._lookup_function_param(self.function.type_params, param)
-                    for param in function_name.type_params
+                    for param in call.type_params
                 ],
                 False,
-                function_name.position,
+                call.position,
                 False,
             )
 
@@ -653,7 +653,7 @@ class FunctionBodyResolver:
             found_param_count = len(var_type.params)
             if expected_param_count != found_param_count:
                 raise UnexpectedTypeParameterCount(
-                    function_name.position, expected_param_count, found_param_count
+                    call.position, expected_param_count, found_param_count
                 )
 
             return CallType(var_type)
@@ -681,8 +681,8 @@ class FunctionBodyResolver:
             return self._resolve_while_loop(parsed_item)
         elif isinstance(parsed_item, parser.Branch):
             return self._resolve_branch(parsed_item)
-        elif isinstance(parsed_item, parser.FunctionName):
-            return self._resolve_function_name(parsed_item)
+        elif isinstance(parsed_item, parser.Call):
+            return self._resolve_call(parsed_item)
         elif isinstance(parsed_item, parser.StructFieldQuery):
             return StructFieldQuery(parsed_item)
         elif isinstance(parsed_item, parser.StructFieldUpdate):
@@ -733,10 +733,8 @@ class FunctionBodyResolver:
         body = self._resolve_function_body(parsed.body)
         return ForeachLoop(parsed, body)
 
-    def _get_identifiable_from_function_name(
-        self, func_name: parser.FunctionName
-    ) -> Identifiable:
-        return self._get_identifiable_generic(func_name.name(), func_name.position)
+    def _get_identifiable_from_call(self, call: parser.Call) -> Identifiable:
+        return self._get_identifiable_generic(call.name(), call.position)
 
     def _get_identifiable_from_type_literal(
         self, type: parser.TypeLiteral

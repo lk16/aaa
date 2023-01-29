@@ -13,6 +13,7 @@ from aaa.parser.models import (
     Assignment,
     BooleanLiteral,
     Branch,
+    Call,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -470,7 +471,7 @@ class SingleFileParser:
         self._print_parse_tree_node("IntegerLiteral", start_offset, offset)
         return integer, offset
 
-    def _parse_function_call(self, offset: int) -> Tuple[FunctionName, int]:
+    def _parse_function_call(self, offset: int) -> Tuple[Call, int]:
         start_offset = offset
 
         token: Optional[Token]
@@ -492,9 +493,7 @@ class SingleFileParser:
         else:
             func_name = identifier
 
-        func_call = FunctionName(
-            identifier.position, struct_name, type_params, func_name
-        )
+        func_call = Call(identifier.position, struct_name, type_params, func_name)
         self._print_parse_tree_node("FunctionCall", start_offset, offset)
         return func_call, offset
 
@@ -562,7 +561,7 @@ class SingleFileParser:
 
     def _parse_function_body_item(self, offset: int) -> Tuple[FunctionBodyItem, int]:
         start_offset = offset
-        item, offset = self.__parse_function_body_item(offset)
+        item, offset = self.__parse_function_body_item(offset)  # TODO inline
         self._print_parse_tree_node("FunctionBodyItem", start_offset, offset)
         return item, offset
 

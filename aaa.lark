@@ -103,7 +103,7 @@ flat_type_params: "[" identifier ("," identifier)* [","] "]"
 
 function_name: flat_type_literal [":" identifier]
 
-function_call: identifier ([type_params] | [":" identifier])
+call: identifier [(type_params) | (":" identifier)]
 
 arguments: argument ("," argument)* [","]
 
@@ -123,7 +123,7 @@ function_body: function_body_item+
 
 function_body_item: ( \
       literal
-    | function_call
+    | call
     | branch
     | while_loop
     | struct_field_query
