@@ -57,7 +57,7 @@ class CrossReferencer:
         self.exceptions: List[CrossReferenceBaseException] = []
         self.cross_referenced_files: Set[Path] = set()
         self.cross_reference_stack: List[Path] = []
-        self.verbose = verbose  # TODO use
+        self.verbose = verbose
 
     def _save_identifier(self, identifiable: Identifiable) -> None:
         key = identifiable.identify()
@@ -165,27 +165,16 @@ class CrossReferencer:
         if not self.verbose:
             return
 
-        def short_path(file: Path) -> str:
-            # TODO move out and re-use in Tokenizer
-            try:
-                short = file.relative_to(Path.cwd())
-            except ValueError:
-                # It is possible the file is not in the subpath of cwd
-                # We just print the absolute path then
-                short = file
-
-            return str(short)
-
         for (_, identifier), identifiable in self.identifiers.items():
 
             if isinstance(identifiable, Function):
-                file = short_path(identifiable.position.file)
+                file = identifiable.position.short_filename()
                 prefix = f"cross_referencer | Function {file}:{identifier}"
 
                 print(prefix)
 
                 for arg in identifiable.arguments:
-                    file = short_path(arg.var_type.position.file)
+                    file = arg.var_type.position.short_filename()
                     name = arg.name
                     var_type = arg.var_type
 
@@ -195,7 +184,7 @@ class CrossReferencer:
                         print(f"{prefix} | Argument {name} of type {file}:{var_type}")
 
                 for return_type in identifiable.return_types:
-                    file = short_path(return_type.type.position.file)
+                    file = return_type.type.position.short_filename()
 
                     if return_type.is_placeholder:
                         print(f"{prefix} | Return type {return_type}")
@@ -203,17 +192,17 @@ class CrossReferencer:
                         print(f"{prefix} | Return type {file}:{return_type}")
 
             elif isinstance(identifiable, Type):
-                file = short_path(identifiable.position.file)
+                file = identifiable.position.short_filename()
                 prefix = f"cross_referencer | Type {file}:{identifier}"
 
                 print(prefix)
 
                 for name, var_type in identifiable.fields.items():
-                    file = short_path(var_type.position.file)
+                    file = var_type.position.short_filename()
                     print(f"{prefix} | Field {name} of type {file}:{var_type}")
 
             elif isinstance(identifiable, Import):
-                file = short_path(identifiable.position.file)
+                file = identifiable.position.short_filename()
                 prefix = f"cross_referencer | Import {file}:{identifier}"
                 source_type = type(identifiable.source).__name__
 
@@ -221,8 +210,7 @@ class CrossReferencer:
                     f"{prefix} | Import {source_type} from {identifiable.source_file}:{identifiable.source_name}"
                 )
 
-            else:
-                # TODO add debug print for import
+            else:  # pragma: nocover
                 raise NotImplementedError
 
     def _load_identifiers(
