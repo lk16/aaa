@@ -580,29 +580,6 @@ class FunctionBodyResolver:
             parsed=parsed_body,
         )
 
-    def _resolve_function_type_param(
-        self, function: Function, type_literal: parser.TypeLiteral
-    ) -> VariableType:
-        for param_name, param in function.type_params.items():
-            if type_literal.identifier.name == param_name:
-                return VariableType(
-                    param, [], True, type_literal.position, type_literal.const
-                )
-
-        try:
-            identifiable = self._get_identifiable_from_type_literal(type_literal)
-        except KeyError:
-            # TODO unknown type param
-            raise NotImplementedError
-
-        if not isinstance(identifiable, Type):
-            # Use non-type as type param
-            raise NotImplementedError
-
-        return VariableType(
-            identifiable, [], False, type_literal.position, type_literal.const
-        )
-
     def _resolve_branch(self, branch: parser.Branch) -> Branch:
         resolved_else_body: Optional[FunctionBody] = None
 
@@ -645,12 +622,11 @@ class FunctionBodyResolver:
         identifiable = self._get_identifiable_from_call(call)
 
         if isinstance(identifiable, Function):
+            assert not call.type_params
+
             return CallFunction(
                 identifiable,
-                [
-                    self._resolve_function_type_param(self.function, param)
-                    for param in call.type_params
-                ],
+                [],
                 call.position,
             )
 
