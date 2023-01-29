@@ -8,6 +8,7 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
+    InvalidCallWithTypeParameters,
     InvalidReturnType,
     InvalidType,
     UnexpectedTypeParameterCount,
@@ -662,6 +663,21 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             EndOfFileException,
             "/foo/main.aaa: Parsing failed, unexpected end of file.\n",
             id="end-of-file-exception",
+        ),
+        pytest.param(
+            "fn main { 3 use c { c[int] } }",
+            InvalidCallWithTypeParameters,
+            "/foo/main.aaa:1:21: Cannot use variable c with type parameters\n",
+            id="invalid-call-with-type-params-argument",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo args a as int { a[b] drop }
+            """,
+            InvalidCallWithTypeParameters,
+            "/foo/main.aaa:3:36: Cannot use argument a with type parameters\n",
+            id="invalid-call-with-type-params-argument",
         ),
     ],
 )

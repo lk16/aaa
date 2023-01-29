@@ -9,6 +9,7 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
+    InvalidCallWithTypeParameters,
     InvalidReturnType,
     InvalidType,
     UnexpectedTypeParameterCount,
@@ -610,14 +611,12 @@ class FunctionBodyResolver:
             pass
         else:
             if call.type_params:
-                # TODO handle handle case like: fn foo args a as int { a[b] drop }
-                # TODO handle handle case like: fn foo { 0 use c { c[b] } }
-                raise NotImplementedError
+                # Handles cases like:
+                # fn foo { 0 use c { c[b] } }
+                # fn foo args a as int { a[b] drop }
+                raise InvalidCallWithTypeParameters(call, var)
 
-            if isinstance(var, (Argument, Variable)):
-                return CallVariable(var.name, call.position)
-            else:  # pragma: nocover
-                assert False
+            return CallVariable(var.name, call.position)
 
         identifiable = self._get_identifiable_from_call(call)
 

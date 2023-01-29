@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 
+import aaa.parser.models as parser
 from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
     Argument,
@@ -140,3 +141,19 @@ class UnknownVariable(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return f"{self.position}: Usage of unknown variable {self.name}\n"
+
+
+class InvalidCallWithTypeParameters(CrossReferenceBaseException):
+    def __init__(self, call: parser.Call, var: Variable | Argument) -> None:
+        self.call = call
+        self.var = var
+
+    def __str__(self) -> str:
+        if isinstance(self.var, Argument):
+            object = "argument"
+        elif isinstance(self.var, Variable):
+            object = "variable"
+        else:  # pragma: nocover
+            assert False
+
+        return f"{self.call.position}: Cannot use {object} {self.call.name()} with type parameters\n"
