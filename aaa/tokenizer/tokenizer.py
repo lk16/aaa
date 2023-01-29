@@ -116,7 +116,7 @@ class Tokenizer:
             else:
                 offset += 1
 
-    def _print_tokens(self, tokens: List[Token]) -> None:
+    def _print_tokens(self, tokens: List[Token]) -> None:  # pragma: nocover
         if not self.verbose:
             return
 

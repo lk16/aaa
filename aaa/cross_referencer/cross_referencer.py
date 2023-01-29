@@ -729,11 +729,6 @@ class FunctionBodyResolver:
     def _get_identifiable_from_call(self, call: parser.Call) -> Identifiable:
         return self._get_identifiable_generic(call.name(), call.position)
 
-    def _get_identifiable_from_type_literal(
-        self, type: parser.TypeLiteral
-    ) -> Identifiable:
-        return self._get_identifiable_generic(type.identifier.name, type.position)
-
     def _get_identifiable_generic(self, name: str, position: Position) -> Identifiable:
         return self.cross_referencer._get_identifiable_generic(name, position)
 

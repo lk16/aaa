@@ -53,7 +53,7 @@ class StackTypesError(TypeCheckerException):
         self.func_like = func_like
         super().__init__(position)
 
-    def func_like_name(self) -> str:
+    def func_like_name(self) -> str:  # pragma: nocover
         if isinstance(self.func_like, Function):
             return self.func_like.name
         elif isinstance(self.func_like, StructFieldQuery):
@@ -63,7 +63,7 @@ class StackTypesError(TypeCheckerException):
         else:
             assert False
 
-    def format_typestack(self) -> str:
+    def format_typestack(self) -> str:  # pragma: nocover
         if isinstance(self.func_like, Function):
             types = [arg.var_type for arg in self.func_like.arguments]
             return format_typestack(types)

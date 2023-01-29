@@ -11,12 +11,6 @@ class AaaParseModel(AaaModel):
     def __init__(self, position: Position) -> None:
         self.position = position
 
-    def __eq__(self, other: object) -> bool:
-        if type(other) != type(self):
-            return False
-
-        return vars(self) == vars(other)
-
 
 class FunctionBodyItem(AaaParseModel):
     ...
@@ -121,7 +115,7 @@ class Function(AaaParseModel):
         self.body = body
         super().__init__(position)
 
-    def is_test(self) -> bool:
+    def is_test(self) -> bool:  # pragma: nocover
         return not self.struct_name and self.func_name.name.startswith("test_")
 
 

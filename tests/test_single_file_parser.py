@@ -733,7 +733,7 @@ def test_parse_function_call(
 
     if isinstance(expected_result, tuple):
         expected_struct_name, expected_type_params, expected_func_name = expected_result
-        func_call, offset = parser._parse_function_call(0)
+        func_call, offset = parser._parse_call(0)
 
         if expected_struct_name is not None:
             assert func_call.struct_name
@@ -749,7 +749,7 @@ def test_parse_function_call(
         assert expected_offset == offset
     else:
         with pytest.raises(expected_result):
-            parser._parse_function_call(0)
+            parser._parse_call(0)
 
 
 @pytest.mark.parametrize(

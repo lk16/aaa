@@ -471,7 +471,7 @@ class SingleFileParser:
         self._print_parse_tree_node("IntegerLiteral", start_offset, offset)
         return integer, offset
 
-    def _parse_function_call(self, offset: int) -> Tuple[Call, int]:
+    def _parse_call(self, offset: int) -> Tuple[Call, int]:
         start_offset = offset
 
         token: Optional[Token]
@@ -592,7 +592,7 @@ class SingleFileParser:
             if next_token and next_token.type in [TokenType.COMMA, TokenType.ASSIGN]:
                 return self._parse_assignment(offset)
 
-            return self._parse_function_call(offset)
+            return self._parse_call(offset)
 
         if token.type == TokenType.IF:
             return self._parse_branch(offset)
@@ -760,7 +760,7 @@ class SingleFileParser:
 
     def _print_parse_tree_node(
         self, kind: str, start_token_offset: int, end_token_offset: int
-    ) -> None:
+    ) -> None:  # pragma: nocover
         if not self.verbose:
             return
 

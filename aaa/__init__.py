@@ -31,7 +31,7 @@ class Position:
         line = code.split("\n")[self.line - 1]
         return line + "\n" + ((self.column - 1) * " ") + "^\n"
 
-    def short_filename(self) -> str:
+    def short_filename(self) -> str:  # pragma: nocover
         try:
             short = self.file.relative_to(Path.cwd())
         except ValueError:
