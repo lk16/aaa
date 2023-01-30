@@ -374,3 +374,7 @@ class AssignConstValueError(TypeCheckerException):
 
     def __str__(self) -> str:
         return f"{self.position}: Cannot assign to {self.type} {self.var_name}\n"
+
+
+class SignatureItemMismatch(AaaException):
+    ...

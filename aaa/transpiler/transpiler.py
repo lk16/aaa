@@ -58,7 +58,7 @@ class Transpiler:
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
         self.foreach_loop_stacks = type_checker_output.foreach_loop_stacks
-        self.verbose = verbose  # TODO use
+        self.verbose = verbose
         self.indent_level = 0
 
         self.generated_c_file = generated_c_file or Path(

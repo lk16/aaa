@@ -36,6 +36,7 @@ from aaa.type_checker.exceptions import (
     InvalidTestSignuture,
     MainFunctionNotFound,
     MissingIterable,
+    SignatureItemMismatch,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
@@ -157,35 +158,33 @@ class SingleFunctionTypeChecker:
         expected_var_type: VariableType,
         var_type: VariableType,
         placeholder_types: Dict[str, VariableType],
-    ) -> bool:
+    ) -> Dict[str, VariableType]:
         if expected_var_type.is_placeholder:
             if expected_var_type.name in placeholder_types:
-                return placeholder_types[expected_var_type.name] == var_type
+                if placeholder_types[expected_var_type.name] == var_type:
+                    return placeholder_types
+                raise SignatureItemMismatch
 
-            # TODO updating an argument passed by reference is a hack
             placeholder_types[expected_var_type.name] = var_type
-            return True
+            return placeholder_types
 
         else:
             if expected_var_type.type is not var_type.type:
-                return False
+                raise SignatureItemMismatch
 
             if len(var_type.params) != len(expected_var_type.params):
-                return False
+                raise SignatureItemMismatch
 
             for expected_param, param in zip(expected_var_type.params, var_type.params):
-                match_result = self._match_signature_items(
+                placeholder_types = self._match_signature_items(
                     expected_param, param, placeholder_types
                 )
 
-                if not match_result:
-                    return False
-
             if var_type.is_const and not expected_var_type.is_const:
-                # Cannot hand const value to non-const argument
-                return False
+                # Cannot use const value as non-const argument
+                raise SignatureItemMismatch
 
-            return True
+            return placeholder_types
 
     def _update_return_type(
         self, return_type: VariableType, placeholder_types: Dict[str, VariableType]
@@ -361,14 +360,14 @@ class SingleFunctionTypeChecker:
 
         for argument, type in zip(call_function.function.arguments, types, strict=True):
 
-            match_result = self._match_signature_items(
-                argument.var_type, type, placeholder_types
-            )
-
-            if not match_result:
+            try:
+                placeholder_types = self._match_signature_items(
+                    argument.var_type, type, placeholder_types
+                )
+            except SignatureItemMismatch as e:
                 raise StackTypesError(
                     call_function.position, type_stack, call_function.function
-                )
+                ) from e
 
         stack = stack[: len(stack) - arg_count]
 
