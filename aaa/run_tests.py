@@ -44,18 +44,16 @@ class TestRunner:
 
         parsed_files: Dict[Path, ParsedFile] = {}
 
+        dummy_file = Path("/dev/null")
+        parser = Parser(dummy_file, self.builtins_path, None, self.verbose)
+
         for test_file in sorted(test_files):
             try:
-                parsed_files[test_file] = self._parse_file(test_file)
+                parsed_files[test_file] = parser.parse(test_file)
             except ParserBaseException as e:
                 self.exceptions.append(e)
 
         return parsed_files
-
-    def _parse_file(self, file: Path) -> ParsedFile:
-        # TODO: we create a new Parser for every parsed file
-        parser = Parser(file, self.builtins_path, None, self.verbose)
-        return parser.parse(file)
 
     def _get_test_functions(self) -> List[Function]:
         test_functions: List[Function] = []
