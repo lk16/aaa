@@ -59,6 +59,9 @@
 - rename `size` functions of `map`, `vec` and `set` to `len`
 - move syscalls and env-related functions out of `builtins.aaa`
 
+### Verbose mode
+- type checker outputs unituitive positiions for FunctionBodyItem's
+
 ### Builtin types and typing-features
 - `float` type
 - union types

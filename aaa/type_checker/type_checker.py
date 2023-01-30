@@ -319,8 +319,6 @@ class SingleFunctionTypeChecker:
 
             checker = checkers[type(item)]
             stack = checker(item, stack)
-            # TODO print the position of the last token, instead of the first.
-            # This looks odd in the output for if-blocks and so on.
             self._print_types(item.position, stack)
 
         return stack

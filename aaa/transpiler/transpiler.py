@@ -98,7 +98,6 @@ class Transpiler:
 
             command = [
                 "gcc",
-                # "--coverage", TODO enable this flag with flag
                 "-I",
                 "./c/",
                 str(self.generated_c_file),
