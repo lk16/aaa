@@ -259,11 +259,7 @@ class Transpiler:
         if isinstance(item, IntegerLiteral):
             return self._indent(f"aaa_stack_push_int(stack, {item.value});\n")
         elif isinstance(item, StringLiteral):
-            # TODO this is horrible
-            string_value = '"' + repr(item.value)[1:-1].replace('"', '\\"') + '"'
-            return self._indent(
-                f"aaa_stack_push_str_raw(stack, {string_value}, false);\n"
-            )
+            return self._generate_c_string_literal(item)
         elif isinstance(item, BooleanLiteral):
             bool_value = "true"
             if not item.value:
@@ -299,6 +295,12 @@ class Transpiler:
             return self._generate_c_assignment_code(item)
         else:  # pragma: nocover
             assert False
+
+    def _generate_c_string_literal(self, string_literal: StringLiteral) -> str:
+        string_value = repr(string_literal.value)[1:-1].replace('"', '\\"')
+        return self._indent(
+            f'aaa_stack_push_str_raw(stack, "{string_value}", false);\n'
+        )
 
     def _generate_c_while_loop(self, while_loop: WhileLoop) -> str:
 
