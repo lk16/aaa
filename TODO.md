@@ -13,7 +13,7 @@
 - [x] Add some C source code linter
 - [x] Add all of that to CI
 - [ ] Add transpiling to `README.md`
-- [ ] Add remaining tests for syscalls
+- [ ] Add remaining tests for syscalls `open`, `read`, `write`, `close`, `socket`, `bind`, `listen`, `accept`, `connect` and `fsync`
 - [x] Build static library of aaa stdlib so we don't compile it everytime
 - [ ] Don't rebuild executables if it's newer than its dependencies
 
