@@ -251,21 +251,6 @@ def test_unlink(source: str, success: bool) -> None:
     assert 0 == exit_code
 
 
-# TODO add test for open
-# TODO add test for read
-# TODO add test for write
-# TODO add test for close
-
-# TODO add test for socket
-# TODO add test for bind
-# TODO add test for listen
-# TODO add test for accept
-
-# TODO add test for connect
-
-# TODO add test for fsync
-
-
 def test_foreach_vector() -> None:
     stdout, stderr, exit_code = compile_run("foreach_vector.aaa")
     assert "2\n4\n6\n8\n" == stdout
