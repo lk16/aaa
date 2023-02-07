@@ -391,7 +391,6 @@ void aaa_stack_read(struct aaa_stack *stack) {
     int n = aaa_stack_pop_int(stack);
     int fd = aaa_stack_pop_int(stack);
 
-    // TODO we create a C-string here, consider using a new buffer type
     char *buff = malloc((long unsigned)(n + 1) * sizeof(char));
 
     int bytes_read = (int)read(fd, buff, (size_t)n);

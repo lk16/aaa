@@ -58,6 +58,7 @@
 - `/` and `%` should just crash when dividing by zero
 - rename `size` functions of `map`, `vec` and `set` to `len`
 - move syscalls and env-related functions out of `builtins.aaa`
+- `read` and `write` should work with a new buffer type, not a `str`
 
 ### Verbose mode
 - type checker outputs unituitive positiions for FunctionBodyItem's
