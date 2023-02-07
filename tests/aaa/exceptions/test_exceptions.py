@@ -29,6 +29,7 @@ from aaa.type_checker.exceptions import (
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     MainFunctionNotFound,
+    MemberFunctionTypeNotFound,
     MissingIterable,
     StackTypesError,
     StructUpdateStackError,
@@ -751,6 +752,18 @@ def test_one_error(
             IndirectImportException,
             "/foo/main.aaa:2:31: Indirect imports are forbidden.\n",
             id="indirect-import",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "type" import foo
+                fn foo:bar args f as foo { nop }
+                fn main { foo foo:bar }
+                """,
+                "type.aaa": "struct foo { x as int }",
+            },
+            MemberFunctionTypeNotFound,
+            "/foo/main.aaa:3:17: Cannot find type foo in same file as member function definition.\n",
         ),
     ],
 )

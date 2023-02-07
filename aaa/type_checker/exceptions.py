@@ -376,5 +376,14 @@ class AssignConstValueError(TypeCheckerException):
         return f"{self.position}: Cannot assign to {self.type} {self.var_name}\n"
 
 
+class MemberFunctionTypeNotFound(TypeCheckerException):
+    def __init__(self, function: Function) -> None:
+        self.function = function
+
+    def __str__(self) -> str:
+        struct_name = self.function.struct_name
+        return f"{self.function.position}: Cannot find type {struct_name} in same file as member function definition.\n"
+
+
 class SignatureItemMismatch(AaaException):
     ...

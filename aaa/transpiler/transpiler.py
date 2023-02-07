@@ -207,7 +207,8 @@ class Transpiler:
         return f"aaa_user_func_{hash}"
 
     def _get_member_function(self, var_type: VariableType, func_name: str) -> Function:
-        # TODO this assumes the func is defined in same file as type
+        # NOTE It is required that member funcitions are
+        # defined in same file as the type they operate on.
         file = var_type.type.position.file
         name = f"{var_type.name}:{func_name}"
         return self.functions[(file, name)]

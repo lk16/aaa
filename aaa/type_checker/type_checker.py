@@ -35,6 +35,7 @@ from aaa.type_checker.exceptions import (
     InvalidMemberFunctionSignature,
     InvalidTestSignuture,
     MainFunctionNotFound,
+    MemberFunctionTypeNotFound,
     MissingIterable,
     SignatureItemMismatch,
     StackTypesError,
@@ -393,9 +394,12 @@ class SingleFunctionTypeChecker:
             raise InvalidTestSignuture(self.function)
 
     def _check_member_function(self) -> None:
-        struct_type = self.types[
-            (self.function.position.file, self.function.struct_name)
-        ]
+        struct_type_key = (self.function.position.file, self.function.struct_name)
+
+        try:
+            struct_type = self.types[struct_type_key]
+        except KeyError:
+            raise MemberFunctionTypeNotFound(self.function)
 
         # A member function on a type foo needs to take a foo object as the first argument
         if (
@@ -488,7 +492,8 @@ class SingleFunctionTypeChecker:
     def _lookup_function(
         self, var_type: VariableType, func_name: str
     ) -> Optional[Function]:
-        # TODO this will fail if the function is defined in a different file than the type
+        # NOTE It is required that member funcitions are
+        # defined in same file as the type they operate on.
         file = var_type.type.position.file
         name = f"{var_type.name}:{func_name}"
         return self.functions.get((file, name))
