@@ -1,20 +1,10 @@
 # TODO
 
 ### Transpiling to C
-- [x] Implement `repr`
-- [x] Update python tests to use `repr` instead of `.`
-- [x] Port remaining tests to `test_builtins.aaa`
-- [x] Implement missing stdlib functions in C implementation
-- [x] Add `-Wconversion`
-- [x] Consider other C compiler warning flags
 - [ ] Reset `errno` in case C stdlib functions fail
 - [ ] Run `gcov` to find missing coverage
-- [x] Run `valgrind` to find memory issues
-- [x] Add some C source code linter
-- [x] Add all of that to CI
 - [ ] Add transpiling to `README.md`
 - [ ] Add remaining tests for syscalls `open`, `read`, `write`, `close`, `socket`, `bind`, `listen`, `accept`, `connect` and `fsync`
-- [x] Build static library of aaa stdlib so we don't compile it everytime
 - [ ] Don't rebuild executables if it's newer than its dependencies
 
 ### Improving aaa_stdlib.a
@@ -22,26 +12,8 @@
 - [ ] extend `aaa_variable` for different types to reduce `malloc` calls
 
 ### Const
-- [ ] Constant function arguments
-    - [x] Test assign to const function arg
-    - [x] Test modify field of const function arg
-    - [x] Test query field of const function arg and then modifying it
-    - [x] add new builtin func `copy`
-    - [x] add tests for `copy`
-    - [x] rename `vec:get` to `vec:get_copy`
-    - [x] make `vec:get` return a duplicate of item in container
-    - [x] rename `map:get` to `map:get_copy`
-    - [x] make `map:get` return a duplicate of item in container
-    - [x] Add tests similar to above
-    - [x] Require all iterators to have an `iter` member function returning itself
-    - [x] Add `vec_const_iter` and `map_const_iter`
-    - [x] Make sure `foreach` calls const versions on `const vec` and `const map`.
-    - [x] Add tests for `make_const`
-    - [x] Add remaining `const` to `builtins.aaa`
-    - [ ] Add tests for const-ness of all builtin functions
-
-- [ ] Constant type params
-- [ ] File-scope constants
+- [ ] Add tests for const-ness of all builtin functions
+- [ ] Add file-scope constants
 
 ### This
 - [ ] Introduce the special local variable `this` which can only be used in member functions
