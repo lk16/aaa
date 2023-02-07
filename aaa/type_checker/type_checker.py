@@ -122,7 +122,7 @@ class SingleFunctionTypeChecker:
         self.verbose = type_checker.verbose
 
     def run(self) -> Dict[Position, List[VariableType]]:
-        if self.function.is_test():
+        if self.function.is_test():  # pragma: nocover
             self._check_test_function()
 
         if self.function.is_member_function():

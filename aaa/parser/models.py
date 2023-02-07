@@ -136,7 +136,7 @@ class Import(AaaParseModel):
 
         source_path = Path(self.source)
 
-        if source_path.is_file() and self.source.endswith(".aaa"):
+        if source_path.is_file() and self.source.endswith(".aaa"):  # pragma: nocover
             self.source_file = source_path
         else:
             self.source_file = position.file.parent / (

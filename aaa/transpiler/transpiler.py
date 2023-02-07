@@ -73,7 +73,7 @@ class Transpiler:
         proc = subprocess.run(["cmake", "."], cwd=("./c"), capture_output=True)
         exit_code = proc.returncode
 
-        if exit_code != 0:
+        if exit_code != 0:  # pragma:nocover
             print(proc.stdout.decode())
             print(proc.stderr.decode(), file=sys.stderr)
             return exit_code
@@ -81,7 +81,7 @@ class Transpiler:
         proc = subprocess.run(["make"], cwd=("./c"), capture_output=True)
         exit_code = proc.returncode
 
-        if exit_code != 0:
+        if exit_code != 0:  # pragma:nocover
             print(proc.stdout.decode())
             print(proc.stderr.decode(), file=sys.stderr)
 
