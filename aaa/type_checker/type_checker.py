@@ -15,6 +15,8 @@ from aaa.cross_referencer.models import (
     Function,
     FunctionBody,
     IntegerLiteral,
+    Never,
+    Return,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -131,6 +133,8 @@ class SingleFunctionTypeChecker:
         assert self.function.body
         computed_return_types = self._check_function_body(self.function.body, [])
 
+        assert isinstance(computed_return_types, list)  # TODO handle Never here
+
         if not self._confirm_return_types(computed_return_types):
             raise FunctionTypeError(self.function, computed_return_types)
 
@@ -238,6 +242,10 @@ class SingleFunctionTypeChecker:
         # It should push exactly one boolean and not modify the type stack under it
         condition_stack = self._check_function_body(function_body, copy(type_stack))
 
+        if isinstance(condition_stack, Never):
+            # TODO condition should return: raise some error
+            raise NotImplementedError
+
         if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
                 function_body.position, type_stack, condition_stack
@@ -245,7 +253,7 @@ class SingleFunctionTypeChecker:
 
     def _check_branch(
         self, branch: Branch, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
         self._check_condition(branch.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
@@ -257,6 +265,14 @@ class SingleFunctionTypeChecker:
         else:
             else_stack = copy(type_stack)
 
+        # If a branch doesn't return, the return type will be whatever the other one returns
+        # This works even if neither branch returns
+        if isinstance(if_stack, Never):
+            return else_stack
+
+        if isinstance(else_stack, Never):
+            return if_stack
+
         # Regardless whether the if- or else- branch is taken,
         # afterwards the stack should be the same.
         if if_stack != else_stack:
@@ -267,21 +283,20 @@ class SingleFunctionTypeChecker:
 
     def _check_while_loop(
         self, while_loop: WhileLoop, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
         self._check_condition(while_loop.condition, copy(type_stack))
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
         loop_stack = self._check_function_body(while_loop.body, copy(type_stack))
 
-        if loop_stack != type_stack:
+        if not isinstance(loop_stack, Never) and loop_stack != type_stack:
             raise WhileLoopTypeError(while_loop.position, type_stack, loop_stack)
 
-        # we can return either one, since they are the same
         return loop_stack
 
     def _print_types(
-        self, position: Position, type_stack: List[VariableType]
+        self, position: Position, type_stack: List[VariableType] | Never
     ) -> None:  # pragma: nocover
         if not self.verbose:
             return
@@ -296,9 +311,11 @@ class SingleFunctionTypeChecker:
 
     def _check_function_body(
         self, function_body: FunctionBody, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
 
-        checkers: Dict[Any, Callable[[Any, List[VariableType]], List[VariableType]]] = {
+        checkers: Dict[
+            Any, Callable[[Any, List[VariableType]], List[VariableType] | Never]
+        ] = {
             Assignment: self._check_assignment,
             BooleanLiteral: self._check_boolean_literal,
             Branch: self._check_branch,
@@ -307,6 +324,7 @@ class SingleFunctionTypeChecker:
             CallVariable: self._check_call_variable,
             ForeachLoop: self._check_foreach_loop,
             IntegerLiteral: self._check_integer_literal,
+            Return: self._check_return,
             StringLiteral: self._check_string_literal,
             StructFieldQuery: self._check_struct_field_query,
             StructFieldUpdate: self._check_struct_field_update,
@@ -315,14 +333,32 @@ class SingleFunctionTypeChecker:
         }
 
         stack = copy(type_stack)
-        for item in function_body.items:
+        for item_offset, item in enumerate(function_body.items):
             stack = copy(stack)
 
             checker = checkers[type(item)]
-            stack = checker(item, stack)
+            checked = checker(item, stack)
+
+            if isinstance(checked, Never):
+                # Items following an item that never returns are dead code
+                if item_offset != len(function_body.items) - 1:
+                    # TODO dead code found, raise some error
+                    raise NotImplementedError
+
+                self._print_types(item.position, Never())
+                return Never()
+
+            stack = checked
             self._print_types(item.position, stack)
 
         return stack
+
+    def _check_return(self, return_: Return, type_stack: List[VariableType]) -> Never:
+        if not self._confirm_return_types(type_stack):
+            # TODO return with invalid stack types: raise some type error
+            raise NotImplementedError
+
+        return Never()
 
     def _check_call_variable(
         self, call_var: CallVariable, type_stack: List[VariableType]
@@ -451,9 +487,15 @@ class SingleFunctionTypeChecker:
         type_stack = self._check_string_literal(literal, copy(type_stack))
 
         type_stack_before = type_stack
-        type_stack = self._check_function_body(
+        type_stack_after = self._check_function_body(
             field_update.new_value_expr, copy(type_stack_before)
         )
+
+        if isinstance(type_stack_after, Never):
+            # TODO update body has to return, raise some type error
+            raise NotImplementedError
+
+        type_stack = type_stack_after
 
         if len(type_stack) < 3:
             raise StackTypesError(field_update.position, type_stack, field_update)
@@ -500,7 +542,7 @@ class SingleFunctionTypeChecker:
 
     def _check_foreach_loop(
         self, foreach_loop: ForeachLoop, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
         self.foreach_loop_stacks[foreach_loop.position] = copy(type_stack)
 
         type_stack_before = copy(type_stack)
@@ -559,7 +601,10 @@ class SingleFunctionTypeChecker:
 
         type_stack = self._check_call_function(call_function, type_stack)
         type_stack.pop()
-        type_stack = self._check_function_body(foreach_loop.body, type_stack)
+        type_stack_after = self._check_function_body(foreach_loop.body, type_stack)
+
+        if isinstance(type_stack_after, Never):
+            return Never()
 
         if type_stack != type_stack_before:
             raise ForeachLoopTypeError(
@@ -573,7 +618,7 @@ class SingleFunctionTypeChecker:
 
     def _check_use_block(
         self, use_block: UseBlock, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
 
         use_var_count = len(use_block.variables)
 
@@ -590,8 +635,9 @@ class SingleFunctionTypeChecker:
 
     def _check_assignment(
         self, assignment: Assignment, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
         assign_stack = self._check_function_body(assignment.body, [])
+
         expected_var_types: List[VariableType] = []
 
         for var in assignment.variables:
@@ -601,6 +647,9 @@ class SingleFunctionTypeChecker:
                 raise AssignConstValueError(var, type)
 
             expected_var_types.append(type)
+
+        if isinstance(assign_stack, Never):
+            return Never()
 
         if len(assign_stack) != len(expected_var_types):
             raise AssignmentTypeError(expected_var_types, assign_stack, assignment)

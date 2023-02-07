@@ -5,6 +5,7 @@ from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
     Assignment,
     Function,
+    Never,
     StructFieldQuery,
     StructFieldUpdate,
     Type,
@@ -14,7 +15,10 @@ from aaa.cross_referencer.models import (
 )
 
 
-def format_typestack(type_stack: List[VariableType]) -> str:
+def format_typestack(type_stack: List[VariableType] | Never) -> str:
+    if isinstance(type_stack, Never):
+        return "never"
+
     return " ".join(repr(item) for item in type_stack)
 
 

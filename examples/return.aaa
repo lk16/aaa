@@ -1,0 +1,12 @@
+
+fn main {
+    "foo\n" .
+
+    3
+    use x {
+        if true {
+            return
+        }
+        "bar\n" .
+    }
+}

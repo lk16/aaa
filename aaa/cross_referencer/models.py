@@ -172,6 +172,15 @@ class VariableType(AaaCrossReferenceModel):
         )
 
 
+class Never:
+    """
+    Indicator that a FunctionBodyItem never returns.
+    Examples for which this is useful: return, continue, break, exit
+    """
+
+    ...
+
+
 class IntegerLiteral(FunctionBodyItem):
     def __init__(self, parsed: parser.IntegerLiteral) -> None:
         self.value = parsed.value
@@ -280,6 +289,11 @@ class UseBlock(FunctionBodyItem):
     ) -> None:
         self.variables = variables
         self.body = body
+        super().__init__(parsed.position)
+
+
+class Return(FunctionBodyItem):
+    def __init__(self, parsed: parser.Return) -> None:
         super().__init__(parsed.position)
 
 

@@ -24,6 +24,7 @@ from aaa.parser.models import (
     ImportItem,
     IntegerLiteral,
     ParsedFile,
+    Return,
     StringLiteral,
     Struct,
     StructFieldQuery,
@@ -591,6 +592,8 @@ class SingleFileParser:
             item, offset = self._parse_foreach_loop(offset)
         elif token.type == TokenType.USE:
             item, offset = self._parse_use_block(offset)
+        elif token.type == TokenType.RETURN:
+            item, offset = self._parse_return(offset)
 
         else:
             raise ParserException(
@@ -601,6 +604,7 @@ class SingleFileParser:
                     TokenType.IDENTIFIER,
                     TokenType.IF,
                     TokenType.INTEGER,
+                    TokenType.RETURN,
                     TokenType.STRING,
                     TokenType.TRUE,
                     TokenType.WHILE,
@@ -611,6 +615,14 @@ class SingleFileParser:
 
         self._print_parse_tree_node("FunctionBodyItem", start_offset, offset)
         return item, offset
+
+    def _parse_return(self, offset: int) -> Tuple[Return, int]:
+        start_offset = offset
+
+        return_token, offset = self._token(offset, [TokenType.RETURN])
+
+        self._print_parse_tree_node("Return", start_offset, offset)
+        return Return(return_token.position), offset
 
     def _parse_function_body(self, offset: int) -> Tuple[FunctionBody, int]:
         start_offset = offset

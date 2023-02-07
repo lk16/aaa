@@ -87,6 +87,10 @@ class StructFieldUpdate(FunctionBodyItem):
         super().__init__(position)
 
 
+class Return(FunctionBodyItem):
+    ...
+
+
 class Argument(AaaParseModel):
     def __init__(
         self, position: Position, identifier: Identifier, type: TypeLiteral

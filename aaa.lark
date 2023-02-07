@@ -131,6 +131,7 @@ function_body_item: ( \
     | foreach_loop \
     | use_block \
     | assignment
+    | RETURN
 )
 
 // --- branch ---

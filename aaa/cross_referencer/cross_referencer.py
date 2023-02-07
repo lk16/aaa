@@ -34,6 +34,7 @@ from aaa.cross_referencer.models import (
     IdentifiablesDict,
     Import,
     IntegerLiteral,
+    Return,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -685,8 +686,13 @@ class FunctionBodyResolver:
             return self._resolve_assignment(parsed_item)
         elif isinstance(parsed_item, parser.UseBlock):
             return self._resolve_use_block(parsed_item)
+        elif isinstance(parsed_item, parser.Return):
+            return self._resolve_return(parsed_item)
         else:  # pragma: nocover
             assert False
+
+    def _resolve_return(self, parsed: parser.Return) -> Return:
+        return Return(parsed)
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
         variables = [Variable(var, False) for var in parsed.variables]
