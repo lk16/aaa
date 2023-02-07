@@ -86,10 +86,7 @@ class SingleFileParser:
         return identifier, offset
 
     def _parse_flat_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
-        # TODO handle const
-
         start_offset = offset
-
         _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
 
         identifiers: List[Identifier] = []
@@ -121,8 +118,6 @@ class SingleFileParser:
         return type_params, offset
 
     def _parse_flat_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
-        # TODO handle const
-
         start_offset = offset
 
         identifier, offset = self._parse_identifier(offset)
