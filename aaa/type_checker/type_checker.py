@@ -237,24 +237,28 @@ class SingleFunctionTypeChecker:
 
     def _check_condition(
         self, function_body: FunctionBody, type_stack: List[VariableType]
-    ) -> None:
+    ) -> List[VariableType] | Never:
         # Condition is a special type of function body:
         # It should push exactly one boolean and not modify the type stack under it
         condition_stack = self._check_function_body(function_body, copy(type_stack))
 
         if isinstance(condition_stack, Never):
-            # TODO condition should return: raise some error
-            raise NotImplementedError
+            return condition_stack
 
         if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
                 function_body.position, type_stack, condition_stack
             )
 
+        return condition_stack
+
     def _check_branch(
         self, branch: Branch, type_stack: List[VariableType]
     ) -> List[VariableType] | Never:
-        self._check_condition(branch.condition, copy(type_stack))
+        condition_stack = self._check_condition(branch.condition, copy(type_stack))
+
+        if isinstance(condition_stack, Never):
+            return condition_stack
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
@@ -284,7 +288,10 @@ class SingleFunctionTypeChecker:
     def _check_while_loop(
         self, while_loop: WhileLoop, type_stack: List[VariableType]
     ) -> List[VariableType] | Never:
-        self._check_condition(while_loop.condition, copy(type_stack))
+        condition_stack = self._check_condition(while_loop.condition, copy(type_stack))
+
+        if isinstance(condition_stack, Never):
+            return condition_stack
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
@@ -482,7 +489,7 @@ class SingleFunctionTypeChecker:
 
     def _check_struct_field_update(
         self, field_update: StructFieldUpdate, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
         literal = StringLiteral(field_update.field_name)
         type_stack = self._check_string_literal(literal, copy(type_stack))
 
@@ -492,8 +499,7 @@ class SingleFunctionTypeChecker:
         )
 
         if isinstance(type_stack_after, Never):
-            # TODO update body has to return, raise some type error
-            raise NotImplementedError
+            return type_stack_after
 
         type_stack = type_stack_after
 
@@ -605,6 +611,8 @@ class SingleFunctionTypeChecker:
 
         if isinstance(type_stack_after, Never):
             return Never()
+
+        type_stack = type_stack_after
 
         if type_stack != type_stack_before:
             raise ForeachLoopTypeError(
