@@ -18,6 +18,7 @@ from aaa.cross_referencer.models import (
     FunctionBody,
     FunctionBodyItem,
     IntegerLiteral,
+    Never,
     Return,
     StringLiteral,
     StructFieldQuery,
@@ -366,8 +367,11 @@ class Transpiler:
         else:
             iter_func = self._get_member_function(iterable_type, "iter")
 
+        assert not isinstance(iter_func.return_types, Never)
+
         iterator_type = iter_func.return_types[0]
         next_func = self._get_member_function(iterator_type, "next")
+        assert not isinstance(next_func.return_types, Never)
 
         dup = self._generate_c_builtin_function_name_from_str("dup")
         drop = self._generate_c_builtin_function_name_from_str("drop")

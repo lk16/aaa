@@ -108,7 +108,7 @@ class Function(AaaParseModel):
         func_name: Identifier,
         type_params: List[TypeLiteral],
         arguments: List[Argument],
-        return_types: List[TypeLiteral],
+        return_types: List[TypeLiteral] | Never,
         body: Optional[FunctionBody],
     ) -> None:
         self.struct_name = struct_name
@@ -248,6 +248,10 @@ class Assignment(FunctionBodyItem):
         self.variables = variables
         self.body = body
         super().__init__(position)
+
+
+class Never(AaaParseModel):
+    ...
 
 
 class ParserOutput(AaaModel):

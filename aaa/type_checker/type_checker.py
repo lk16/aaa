@@ -243,7 +243,7 @@ class SingleFunctionTypeChecker:
         condition_stack = self._check_function_body(function_body, copy(type_stack))
 
         if isinstance(condition_stack, Never):
-            return condition_stack
+            return Never()
 
         if condition_stack != type_stack + [self._get_bool_var_type()]:
             raise ConditionTypeError(
@@ -258,7 +258,7 @@ class SingleFunctionTypeChecker:
         condition_stack = self._check_condition(branch.condition, copy(type_stack))
 
         if isinstance(condition_stack, Never):
-            return condition_stack
+            return Never()
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for both the if- and else- bodies.
@@ -291,7 +291,7 @@ class SingleFunctionTypeChecker:
         condition_stack = self._check_condition(while_loop.condition, copy(type_stack))
 
         if isinstance(condition_stack, Never):
-            return condition_stack
+            return Never()
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.

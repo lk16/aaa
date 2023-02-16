@@ -49,7 +49,7 @@ class Function(Identifiable):
         unresolved: UnresolvedFunction,
         type_params: Dict[str, Type],
         arguments: List[Argument],
-        return_types: List[VariableType],
+        return_types: List[VariableType] | Never,
     ) -> None:
         self.type_params = type_params
         self.arguments = arguments

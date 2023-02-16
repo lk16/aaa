@@ -23,6 +23,7 @@ from aaa.parser.models import (
     Import,
     ImportItem,
     IntegerLiteral,
+    Never,
     ParsedFile,
     Return,
     StringLiteral,
@@ -258,8 +259,15 @@ class SingleFileParser:
         self._print_parse_tree_node("Arguments", start_offset, offset)
         return arguments, offset
 
-    def _parse_return_types(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+    def _parse_return_types(self, offset: int) -> Tuple[List[TypeLiteral] | Never, int]:
         start_offset = offset
+
+        token = self._peek_token(offset)
+
+        if token and token.type == TokenType.NEVER:
+            never_token, offset = self._token(offset, [TokenType.NEVER])
+            never = Never(never_token.position)
+            return never, offset
 
         return_types: List[TypeLiteral] = []
 
@@ -288,7 +296,7 @@ class SingleFileParser:
         fn_token, offset = self._token(offset, [TokenType.FUNCTION])
         function_name, offset = self._parse_function_name(offset)
         arguments: List[Argument] = []
-        return_types: List[TypeLiteral] = []
+        return_types: List[TypeLiteral] | Never = []
 
         token = self._peek_token(offset)
         if token and token.type == TokenType.ARGS:
