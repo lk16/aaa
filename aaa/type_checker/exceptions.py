@@ -29,7 +29,7 @@ class TypeCheckerException(AaaException):
 
 class FunctionTypeError(TypeCheckerException):
     def __init__(
-        self, function: Function, computed_return_types: List[VariableType]
+        self, function: Function, computed_return_types: List[VariableType] | Never
     ) -> None:
         self.computed_return_types = computed_return_types
         self.function = function

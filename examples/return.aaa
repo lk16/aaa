@@ -27,8 +27,7 @@ fn d return never {
 }
 
 fn e return int {
-    // NOTE: The type checker doesn't recognize `while true`
-    // without break/continue/return as an infinite loop
+    // NOTE: The type checker doesn't recognize infinite loops
     while true {
         not_returning
     }
@@ -49,6 +48,13 @@ fn g return int {
     } else {
         not_returning
     }
+}
+
+fn h return int {
+    if true {
+        5 return
+    }
+    7
 }
 
 // TODO more examples

@@ -100,6 +100,9 @@ class TypeChecker:
         except KeyError:
             raise MainFunctionNotFound(self.entrypoint)
 
+        if not isinstance(function.return_types, list):
+            raise InvalidMainSignuture(function.position)
+
         if not all(
             [
                 len(function.arguments) == 0,
@@ -133,15 +136,19 @@ class SingleFunctionTypeChecker:
         assert self.function.body
         computed_return_types = self._check_function_body(self.function.body, [])
 
-        assert isinstance(computed_return_types, list)  # TODO handle Never here
-
         if not self._confirm_return_types(computed_return_types):
             raise FunctionTypeError(self.function, computed_return_types)
 
         return self.foreach_loop_stacks
 
-    def _confirm_return_types(self, computed: List[VariableType]) -> bool:
+    def _confirm_return_types(self, computed: List[VariableType] | Never) -> bool:
         expected = self.function.return_types
+
+        if isinstance(expected, Never):
+            return isinstance(computed, Never)
+
+        if isinstance(computed, Never):
+            return False
 
         if len(expected) != len(computed):
             return False
@@ -297,7 +304,12 @@ class SingleFunctionTypeChecker:
         # so we can use type_stack as the stack for the loop body.
         loop_stack = self._check_function_body(while_loop.body, copy(type_stack))
 
-        if not isinstance(loop_stack, Never) and loop_stack != type_stack:
+        if isinstance(loop_stack, Never):
+            # NOTE: If the loop returns and the loop_stack does not,
+            # that means the loop body never ran.
+            return type_stack
+
+        if loop_stack != type_stack:
             raise WhileLoopTypeError(while_loop.position, type_stack, loop_stack)
 
         return loop_stack
@@ -388,7 +400,7 @@ class SingleFunctionTypeChecker:
 
     def _check_call_function(
         self, call_function: CallFunction, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
         stack = copy(type_stack)
         arg_count = len(call_function.function.arguments)
 
@@ -413,6 +425,9 @@ class SingleFunctionTypeChecker:
 
         stack = stack[: len(stack) - arg_count]
 
+        if isinstance(call_function.function.return_types, Never):
+            return Never()
+
         for return_type in call_function.function.return_types:
             stack_item = self._update_return_type(return_type, placeholder_types)
             stack_item = self._simplify_stack_item(stack_item)
@@ -427,6 +442,9 @@ class SingleFunctionTypeChecker:
         return type_stack + [call_type.var_type]
 
     def _check_test_function(self) -> None:
+        if isinstance(self.function.return_types, Never):
+            raise InvalidTestSignuture(self.function)
+
         if not all(
             [
                 len(self.function.arguments) == 0,
@@ -568,6 +586,9 @@ class SingleFunctionTypeChecker:
         if not iter_func:
             raise InvalidIterable(foreach_loop.position, iterable_type)
 
+        if isinstance(iter_func.return_types, Never):
+            raise InvalidIterable(foreach_loop.position, iterable_type)
+
         if not all(
             [
                 len(iter_func.arguments) == 1,
@@ -578,12 +599,18 @@ class SingleFunctionTypeChecker:
 
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(iter_func, [], dummy_path)
-        type_stack = self._check_call_function(call_function, type_stack)
+        type_stack_after_iter = self._check_call_function(call_function, type_stack)
+
+        assert isinstance(type_stack_after_iter, list)  # This was checked earlier
+        type_stack = type_stack_after_iter
 
         iterator_type = iter_func.return_types[0]
         next_func = self._lookup_function(iterator_type, "next")
 
         if not next_func:
+            raise InvalidIterator(foreach_loop.position, iterable_type, iterator_type)
+
+        if isinstance(next_func.return_types, Never):
             raise InvalidIterator(foreach_loop.position, iterable_type, iterator_type)
 
         if not all(
@@ -605,7 +632,11 @@ class SingleFunctionTypeChecker:
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(next_func, [], dummy_path)
 
-        type_stack = self._check_call_function(call_function, type_stack)
+        type_stack_after_next = self._check_call_function(call_function, type_stack)
+
+        assert isinstance(type_stack_after_next, list)  # This was checked earlier
+        type_stack = type_stack_after_next
+
         type_stack.pop()
         type_stack_after = self._check_function_body(foreach_loop.body, type_stack)
 
