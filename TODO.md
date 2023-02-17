@@ -1,10 +1,5 @@
 # TODO
 
-### Add early return
-- [ ] Add tests for using `return` in any construct that has a function body
-- [ ] Add `never` keyword to use as return type for functions that don't return
-- [ ] Reduce calls to `copy` in type checker
-
 ### Transpiling to C
 - [ ] Reset `errno` in case C stdlib functions fail
 - [ ] Run `gcov` to find missing coverage

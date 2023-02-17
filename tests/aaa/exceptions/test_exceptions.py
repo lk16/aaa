@@ -782,9 +782,6 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:42: Found unreachable code.\n",
             id="unreachable-code",
         ),
-        # TODO cover type_checker.py
-        # 184, 194, 274, 370-371, 383, 450-460, 501, 525, 530, 587,
-        # 595, 619, 631-633, 649, 696
     ],
 )
 def test_one_error(
