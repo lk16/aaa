@@ -57,17 +57,6 @@ fn h return int {
     7
 }
 
-// TODO more examples
-
-
 fn main {
-    "foo\n" .
-
-    3
-    use x {
-        if true {
-            return
-        }
-        "bar\n" .
-    }
+    nop
 }

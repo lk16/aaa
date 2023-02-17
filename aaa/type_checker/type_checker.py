@@ -149,10 +149,11 @@ class SingleFunctionTypeChecker:
     def _confirm_return_types(self, computed: List[VariableType] | Never) -> bool:
         expected = self.function.return_types
 
-        if isinstance(expected, Never):
-            return isinstance(computed, Never)
-
         if isinstance(computed, Never):
+            # If we never return, it doesn't matter what the signature promised to return.
+            return True
+
+        if isinstance(expected, Never):
             return False
 
         if len(expected) != len(computed):

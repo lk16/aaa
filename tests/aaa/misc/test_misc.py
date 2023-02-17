@@ -313,3 +313,10 @@ def test_const() -> None:
     assert "69\n[5]\n[5]\n[5]\n[]\n" == stdout
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_return() -> None:
+    stdout, stderr, exit_code = compile_run("return.aaa")
+    assert "" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
