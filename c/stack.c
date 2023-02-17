@@ -104,7 +104,7 @@ void aaa_stack_push_struct(struct aaa_stack *stack, struct aaa_struct *s) {
     aaa_stack_push(stack, var);
 }
 
-static int aaa_stack_pop_int(struct aaa_stack *stack) {
+int aaa_stack_pop_int(struct aaa_stack *stack) {
     struct aaa_variable *top = aaa_stack_pop(stack);
     int value = aaa_variable_get_int(top);
     aaa_variable_dec_ref(top);

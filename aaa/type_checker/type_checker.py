@@ -98,10 +98,31 @@ class TypeChecker:
         except KeyError:
             raise MainFunctionNotFound(self.entrypoint)
 
+        main_arguments_ok = False
+
+        if len(function.arguments) == 0:
+            main_arguments_ok = True
+
+        if (
+            len(function.arguments) == 1
+            and function.arguments[0].var_type.name == "vec"
+            and len(function.arguments[0].var_type.params) == 1
+            and function.arguments[0].var_type.params[0].name == "str"
+        ):
+            main_arguments_ok = True
+
+        main_return_type_ok = False
+
+        if len(function.return_types) == 0:
+            main_return_type_ok = True
+
+        if len(function.return_types) == 1 and function.return_types[0].name == "int":
+            main_return_type_ok = True
+
         if not all(
             [
-                len(function.arguments) == 0,
-                len(function.return_types) == 0,
+                main_arguments_ok,
+                main_return_type_ok,
                 len(function.type_params) == 0,
             ]
         ):

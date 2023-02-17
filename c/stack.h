@@ -14,6 +14,8 @@ struct aaa_stack {
 void aaa_stack_init(struct aaa_stack *stack);
 void aaa_stack_free(struct aaa_stack *stack);
 
+int aaa_stack_pop_int(struct aaa_stack *stack);
+
 void aaa_stack_push_int(struct aaa_stack *stack, int value);
 void aaa_stack_push_str(struct aaa_stack *stack, struct aaa_string *value);
 void aaa_stack_push_str_raw(struct aaa_stack *stack, const char *value,

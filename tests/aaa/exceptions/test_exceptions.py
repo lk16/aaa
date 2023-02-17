@@ -146,7 +146,10 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main args a as int { nop }",
             InvalidMainSignuture,
-            "/foo/main.aaa:1:1: Main function should have no type parameters, no arguments and no return types\n",
+            "/foo/main.aaa:1:1: Main function has wrong signature, it should have:\n"
+            + "- no type parameters\n"
+            + "- either no arguments or one vec[str] argument\n"
+            + "- return either nothing or an int\n",
             id="invalid-main-signature-argument",
         ),
         pytest.param(
@@ -160,7 +163,10 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn main[A] { nop }",
             InvalidMainSignuture,
-            "/foo/main.aaa:1:1: Main function should have no type parameters, no arguments and no return types\n",
+            "/foo/main.aaa:1:1: Main function has wrong signature, it should have:\n"
+            + "- no type parameters\n"
+            + "- either no arguments or one vec[str] argument\n"
+            + "- return either nothing or an int\n",
             id="invalid-main-type-params",
         ),
         pytest.param(

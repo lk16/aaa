@@ -173,20 +173,57 @@ class Transpiler:
         return content
 
     def _generate_c_main_function(self) -> str:
-        aaa_user_main_func = self.functions[(self.entrypoint, "main")]
-        aaa_user_main_name = self._generate_c_function_name(aaa_user_main_func)
+        main_func = self.functions[(self.entrypoint, "main")]
+        main_func_name = self._generate_c_function_name(main_func)
 
-        return (
-            "int main(int argc, char **argv) {\n"
-            + "    (void)argc;\n"
-            + "    (void)argv;\n"
-            + "    struct aaa_stack stack;\n"
-            + "    aaa_stack_init(&stack);\n"
-            + f"    {aaa_user_main_name}(&stack);\n"
-            + "    aaa_stack_free(&stack);\n"
-            + "    return 0;\n"
-            + "}\n"
-        )
+        argv_used = len(main_func.arguments) != 0
+        exit_code_returned = len(main_func.return_types) != 0
+
+        code = "int main(int argc, char **argv) {\n"
+        self.indent_level += 1
+
+        code += self._indent("struct aaa_stack stack;\n")
+        code += self._indent("aaa_stack_init(&stack);\n")
+
+        if argv_used:
+            code += self._indent("struct aaa_vector *argv_vector = aaa_vector_new();\n")
+            code += self._indent("for (int i=0; i<argc; i++) {\n")
+            self.indent_level += 1
+            code += self._indent(
+                "struct aaa_string *string = aaa_string_new(argv[i], false);\n"
+            )
+            code += self._indent(
+                "struct aaa_variable *var = aaa_variable_new_str(string);\n"
+            )
+            code += self._indent("aaa_vector_push(argv_vector, var);\n")
+            code += self._indent("aaa_variable_dec_ref(var);\n")
+
+            self.indent_level -= 1
+            code += self._indent("}\n")
+            code += self._indent(
+                "struct aaa_variable *argv_vector_var = aaa_variable_new_vector(argv_vector);\n"
+            )
+            code += self._indent("aaa_stack_push(&stack, argv_vector_var);\n")
+        else:
+            code += self._indent("(void)argc;\n")
+            code += self._indent("(void)argv;\n")
+
+        code += self._indent(f"{main_func_name}(&stack);\n")
+
+        if exit_code_returned:
+            code += self._indent(f"int exit_code = aaa_stack_pop_int(&stack);\n")
+
+        code += self._indent("aaa_stack_free(&stack);\n")
+
+        if exit_code_returned:
+            code += self._indent("return exit_code;\n")
+        else:
+            code += self._indent("return 0;\n")
+
+        self.indent_level -= 1
+        code += "}\n"
+
+        return code
 
     def _generate_c_builtin_function_name(self, function: Function) -> str:
         return self._generate_c_builtin_function_name_from_str(function.name)

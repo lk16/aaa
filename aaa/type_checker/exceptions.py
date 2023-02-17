@@ -154,7 +154,12 @@ class WhileLoopTypeError(TypeCheckerException):
 
 class InvalidMainSignuture(TypeCheckerException):
     def __str__(self) -> str:
-        return f"{self.position}: Main function should have no type parameters, no arguments and no return types\n"
+        return (
+            f"{self.position}: Main function has wrong signature, it should have:\n"
+            + "- no type parameters\n"
+            + "- either no arguments or one vec[str] argument\n"
+            + "- return either nothing or an int\n"
+        )
 
 
 class InvalidTestSignuture(TypeCheckerException):
