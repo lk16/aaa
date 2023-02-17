@@ -1,9 +1,5 @@
 # TODO
 
-### More main signatures
-- [ ] support `vec[str]` argument for main function
-- [ ] support `int` return type for main function
-
 ### Transpiling to C
 - [ ] Reset `errno` in case C stdlib functions fail
 - [ ] Run `gcov` to find missing coverage
