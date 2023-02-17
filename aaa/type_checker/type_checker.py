@@ -39,12 +39,14 @@ from aaa.type_checker.exceptions import (
     MainFunctionNotFound,
     MemberFunctionTypeNotFound,
     MissingIterable,
+    ReturnTypesError,
     SignatureItemMismatch,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
     TypeCheckerException,
     UnknownField,
+    UnreachableCode,
     UpdateConstStructError,
     UseBlockStackUnderflow,
     WhileLoopTypeError,
@@ -100,16 +102,19 @@ class TypeChecker:
         except KeyError:
             raise MainFunctionNotFound(self.entrypoint)
 
-        if not isinstance(function.return_types, list):
-            raise InvalidMainSignuture(function.position)
-
         if not all(
             [
                 len(function.arguments) == 0,
-                len(function.return_types) == 0,
                 len(function.type_params) == 0,
             ]
         ):
+            raise InvalidMainSignuture(function.position)
+
+        if isinstance(function.return_types, Never):
+            # It's fine if main never returns.
+            return
+
+        if len(function.return_types) != 0:
             raise InvalidMainSignuture(function.position)
 
 
@@ -361,8 +366,8 @@ class SingleFunctionTypeChecker:
             if isinstance(checked, Never):
                 # Items following an item that never returns are dead code
                 if item_offset != len(function_body.items) - 1:
-                    # TODO dead code found, raise some error
-                    raise NotImplementedError
+                    next_item = function_body.items[item_offset + 1]
+                    raise UnreachableCode(next_item.position)
 
                 self._print_types(item.position, Never())
                 return Never()
@@ -374,8 +379,7 @@ class SingleFunctionTypeChecker:
 
     def _check_return(self, return_: Return, type_stack: List[VariableType]) -> Never:
         if not self._confirm_return_types(type_stack):
-            # TODO return with invalid stack types: raise some type error
-            raise NotImplementedError
+            raise ReturnTypesError(return_.position, type_stack, self.function)
 
         return Never()
 
