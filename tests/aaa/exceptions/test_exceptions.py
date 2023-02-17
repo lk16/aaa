@@ -680,6 +680,45 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:36: Cannot use argument a with type parameters\n",
             id="invalid-call-with-type-params-argument",
         ),
+        pytest.param(
+            'fn main return str { "" }',
+            InvalidMainSignuture,
+            "/foo/main.aaa:1:1: Main function should have no type parameters, no arguments and no return types\n",
+            id="main-returning-wrong-type",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return never { 0 }
+            """,
+            FunctionTypeError,
+            "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
+            + "expected return types: never\n"
+            + "   found return types: int\n",
+            id="return-with-return-type-never",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return int { false }
+            """,
+            FunctionTypeError,
+            "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
+            + "expected return types: int\n"
+            + "   found return types: bool\n",
+            id="return-wrong-type",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return vec[int] { vec[bool] }
+            """,
+            FunctionTypeError,
+            "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
+            + "expected return types: vec[int]\n"
+            + "   found return types: vec[bool]\n",
+            id="return-wrong-type-param",
+        ),
     ],
 )
 def test_one_error(
