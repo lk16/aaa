@@ -1,0 +1,4 @@
+fn main args argv as vec[str] {
+    argv .
+    "\n" .
+}

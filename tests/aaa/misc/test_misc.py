@@ -313,3 +313,18 @@ def test_const() -> None:
     assert "69\n[5]\n[5]\n[5]\n[]\n" == stdout
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_main_with_exit_code() -> None:
+    stdout, stderr, exit_code = compile_run("main_with_exitcode.aaa")
+    assert "" == stdout
+    assert "" == stderr
+    assert 1 == exit_code
+
+
+def test_main_with_argv() -> None:
+    binary_path = compile("main_with_argv.aaa")
+    stdout, stderr, exit_code = run(binary_path)
+    assert f'["{binary_path}"]\n' == stdout
+    assert "" == stderr
+    assert 0 == exit_code
