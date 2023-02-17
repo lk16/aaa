@@ -404,9 +404,9 @@ class ReturnTypesError(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"{self.position}: Invalid stack types when calling {self.function.name}\n"
-            + f" Functions returns: {format_typestack(self.function.return_types)}\n"
-            + f"       Found stack: {format_typestack(self.type_stack)}\n"
+            f"{self.position}: Invalid stack types when returning.\n"
+            + f"function returns: {format_typestack(self.function.return_types)}\n"
+            + f"     found stack: {format_typestack(self.type_stack)}\n"
         )
 
 

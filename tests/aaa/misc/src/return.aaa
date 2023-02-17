@@ -1,4 +1,8 @@
 
+struct foo {
+    bar as int
+}
+
 fn not_returning return never {
     0 exit
 }
@@ -55,6 +59,32 @@ fn h return int {
         5 return
     }
     7
+}
+
+fn i return never {
+    if not_returning {
+        nop
+    }
+}
+
+fn j return never {
+    3
+    use x {
+        x <- { not_returning }
+    }
+}
+
+fn k return never {
+    foo
+    "bar" { not_returning } !
+}
+
+fn l return never {
+    vec[int]
+    foreach {
+        drop
+        not_returning
+    }
 }
 
 fn main {
