@@ -1,5 +1,8 @@
 # TODO
 
+### Enums
+- [ ] ...
+
 ### Transpiling to C
 - [ ] Reset `errno` in case C stdlib functions fail
 - [ ] Run `gcov` to find missing coverage

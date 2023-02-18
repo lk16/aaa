@@ -31,6 +31,7 @@ FN:         "fn"
 _IMPORT:    "import"
 STRUCT:     "struct"
 TYPE:       "type"
+ENUM:       "enum"
 
 // block delimiters
 BEGIN:       "{"
@@ -52,6 +53,8 @@ FOREACH:     "foreach"
 IF:          "if"
 USE:         "use"
 WHILE:       "while"
+MATCH:       "match"
+CASE:        "case"
 
 // keywords for builtin constants
 FALSE:       "false"
@@ -67,7 +70,12 @@ CONST:       "const"
 
 builtins_file_root: (function_declaration | type_declaration)+
 
-regular_file_root: (function_definition | import_statement | struct_definition)+
+regular_file_root: ( \
+      function_definition
+    | import_statement
+    | struct_definition
+    | enum_definition
+)+
 
 // --- imports ---
 
@@ -86,6 +94,18 @@ struct_definition: STRUCT identifier BEGIN arguments _END
 struct_field_query: string GET_FIELD
 
 struct_field_update: string BEGIN function_body _END SET_FIELD
+
+// --- enums ---
+
+enum_definition: ENUM identifier BEGIN enum_items END
+
+enum_items: enum_item ("," enum_item)* [","]
+
+enum_item: identifier AS identifier
+
+match_block: MATCH BEGIN (case_block)* END
+
+case_block: CASE call BEGIN function_body END
 
 // --- functions, arguments, return types ---
 
@@ -127,9 +147,9 @@ function_body_item: ( \
     | branch
     | while_loop
     | struct_field_query
-    | struct_field_update \
-    | foreach_loop \
-    | use_block \
+    | struct_field_update
+    | foreach_loop
+    | use_block
     | assignment
 )
 

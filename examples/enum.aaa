@@ -1,0 +1,126 @@
+
+
+// Rust enum for comparison
+// source: https://doc.rust-lang.org/book/ch06-01-defining-an-enum.html
+
+// enum Message {
+//     Quit,
+//     Move { x: i32, y: i32 },
+//     Write(String),
+//     ChangeColor(i32, i32, i32),
+// }
+
+struct coord {
+    x as int,
+    y as int,
+}
+
+struct empty {}
+
+struct rgb {
+    r as int,
+    g as int,
+    b as int,
+}
+
+struct written {
+    text as str,
+}
+
+enum message {
+    quit as empty,
+    move as coord,
+    write as written,
+    change_color as rgb,
+}
+
+fn main {
+    // construct enum with attached values
+
+    rgb
+    dup "r" { 1 } !
+    dup "g" { 2 } !
+    dup "b" { 3 } !
+    message:change_color
+    // stack: message:change_color{1, 2, 3}
+    drop
+
+    coord
+    dup "x" { 4 } !
+    dup "y" { 5 } !
+    message:move
+    // stack: message:move{4, 5}
+    drop
+
+    written
+    dup "text" { "something" } !
+    message:write
+    // stack: message:written{"something"}
+    drop
+
+    message:quit
+    // stack: message
+    drop
+
+
+    message:quit
+
+    match { // consumes message
+        case message:quit {
+            // stack: struct{}
+            "quit\n" .
+
+            drop
+            // stack: <empty>
+        }
+        case message:move {
+            // stack: coord
+            "move " .
+
+            use c {
+                c "x" ? .
+                " " .
+                c "y" ? .
+            }
+            "\n" .
+
+            // stack: <empty>
+
+        }
+        case message:write {
+            // stack: str
+            "write " .
+
+            use w {
+                w .
+            }
+            "\n" .
+
+            // stack: <empty>
+        }
+        case message:change_color {
+            // stack: struct { r as int, g as int, y as int, }
+            "color " .
+
+            use c {
+                c "r" ? .
+                " " .
+                c "g" ? .
+                " " .
+                c "b" ? .
+            }
+            "\n" .
+
+            // stack: <empty>
+        }
+    }
+    // stack: <empty>
+}
+
+// TODO
+// - check that stack is the same after match block for every case
+// - add default keyword, use in match
+// - make sure all enum values are handled
+// - make sure all cases handle same enum type
+// - make sure there are no duplicate cases
+// - make sure there is no default when all cases are handled
