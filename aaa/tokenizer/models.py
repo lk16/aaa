@@ -23,6 +23,7 @@ class TokenType(Enum):
     IF = "IF"
     IMPORT = "IMPORT"
     INTEGER = "INTEGER"
+    NEVER = "NEVER"
     RETURN = "RETURN"
     SET_FIELD = "SET_FIELD"
     STRING = "STRING"

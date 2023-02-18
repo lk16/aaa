@@ -3,7 +3,7 @@ import sys
 from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Optional
+from typing import Optional, Set
 
 from aaa.cross_referencer.models import (
     Assignment,
@@ -18,6 +18,8 @@ from aaa.cross_referencer.models import (
     FunctionBody,
     FunctionBodyItem,
     IntegerLiteral,
+    Never,
+    Return,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -58,6 +60,7 @@ class Transpiler:
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
         self.foreach_loop_stacks = type_checker_output.foreach_loop_stacks
+        self.func_local_vars: Set[str] = set()
         self.verbose = verbose
         self.indent_level = 0
 
@@ -177,7 +180,10 @@ class Transpiler:
         main_func_name = self._generate_c_function_name(main_func)
 
         argv_used = len(main_func.arguments) != 0
-        exit_code_returned = len(main_func.return_types) != 0
+        exit_code_returned = (
+            isinstance(main_func.return_types, list)
+            and len(main_func.return_types) != 0
+        )
 
         code = "int main(int argc, char **argv) {\n"
         self.indent_level += 1
@@ -252,6 +258,7 @@ class Transpiler:
 
     def _generate_c_function(self, function: Function) -> str:
         assert function.body
+        self.func_local_vars = set()
 
         func_name = self._generate_c_function_name(function)
 
@@ -266,6 +273,7 @@ class Transpiler:
                 content += self._indent(
                     f"struct aaa_variable *aaa_local_{arg.name} = aaa_stack_pop(stack);\n"
                 )
+                self.func_local_vars.add(arg.name)
             content += "\n"
 
         content += self._generate_c_function_body(function.body)
@@ -330,8 +338,19 @@ class Transpiler:
             return self._generate_c_call_variable_code(item)
         elif isinstance(item, Assignment):
             return self._generate_c_assignment_code(item)
+        elif isinstance(item, Return):
+            return self._generate_c_return(item)
         else:  # pragma: nocover
             assert False
+
+    def _generate_c_return(self, return_: Return) -> str:
+        code = ""
+
+        for local_var_name in self.func_local_vars:
+            code += self._indent(f"aaa_variable_dec_ref(aaa_local_{local_var_name});\n")
+
+        code += self._indent("return;\n")
+        return code
 
     def _generate_c_string_literal(self, string_literal: StringLiteral) -> str:
         string_value = repr(string_literal.value)[1:-1].replace('"', '\\"')
@@ -388,8 +407,11 @@ class Transpiler:
         else:
             iter_func = self._get_member_function(iterable_type, "iter")
 
+        assert not isinstance(iter_func.return_types, Never)
+
         iterator_type = iter_func.return_types[0]
         next_func = self._get_member_function(iterator_type, "next")
+        assert not isinstance(next_func.return_types, Never)
 
         dup = self._generate_c_builtin_function_name_from_str("dup")
         drop = self._generate_c_builtin_function_name_from_str("drop")
@@ -536,11 +558,13 @@ class Transpiler:
             code += self._indent(
                 f"struct aaa_variable *aaa_local_{var.name} = aaa_stack_pop(stack);\n"
             )
+            self.func_local_vars.add(var.name)
 
         code += self._generate_c_function_body(use_block.body)
 
         for var in use_block.variables:
             code += self._indent(f"aaa_variable_dec_ref(aaa_local_{var.name});\n")
+            self.func_local_vars.remove(var.name)
 
         self.indent_level -= 1
         code += self._indent("}\n")

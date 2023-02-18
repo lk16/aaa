@@ -134,7 +134,7 @@ fn close args fd as const int return bool
 fn connect args fd as const int, ip_addr as const str, port as const int return bool
 fn environ return map[str, str]
 fn execve args path as const str, argv as const vec[str], env as const map[str, str] return bool
-fn exit args code as const int
+fn exit args code as const int return never
 fn fork return int
 fn fsync args fd as const int return bool
 fn getcwd return str

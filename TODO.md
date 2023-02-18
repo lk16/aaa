@@ -45,7 +45,6 @@
 - `buffer` type (maybe)
 
 ### Language features
-- return early (`return`)
 - debug tools (`breakpoint`)
 - global variable (`global`)
 - parse itself

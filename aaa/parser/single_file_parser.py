@@ -23,7 +23,9 @@ from aaa.parser.models import (
     Import,
     ImportItem,
     IntegerLiteral,
+    Never,
     ParsedFile,
+    Return,
     StringLiteral,
     Struct,
     StructFieldQuery,
@@ -257,8 +259,15 @@ class SingleFileParser:
         self._print_parse_tree_node("Arguments", start_offset, offset)
         return arguments, offset
 
-    def _parse_return_types(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+    def _parse_return_types(self, offset: int) -> Tuple[List[TypeLiteral] | Never, int]:
         start_offset = offset
+
+        token = self._peek_token(offset)
+
+        if token and token.type == TokenType.NEVER:
+            never_token, offset = self._token(offset, [TokenType.NEVER])
+            never = Never(never_token.position)
+            return never, offset
 
         return_types: List[TypeLiteral] = []
 
@@ -287,7 +296,7 @@ class SingleFileParser:
         fn_token, offset = self._token(offset, [TokenType.FUNCTION])
         function_name, offset = self._parse_function_name(offset)
         arguments: List[Argument] = []
-        return_types: List[TypeLiteral] = []
+        return_types: List[TypeLiteral] | Never = []
 
         token = self._peek_token(offset)
         if token and token.type == TokenType.ARGS:
@@ -591,6 +600,8 @@ class SingleFileParser:
             item, offset = self._parse_foreach_loop(offset)
         elif token.type == TokenType.USE:
             item, offset = self._parse_use_block(offset)
+        elif token.type == TokenType.RETURN:
+            item, offset = self._parse_return(offset)
 
         else:
             raise ParserException(
@@ -601,6 +612,7 @@ class SingleFileParser:
                     TokenType.IDENTIFIER,
                     TokenType.IF,
                     TokenType.INTEGER,
+                    TokenType.RETURN,
                     TokenType.STRING,
                     TokenType.TRUE,
                     TokenType.WHILE,
@@ -611,6 +623,14 @@ class SingleFileParser:
 
         self._print_parse_tree_node("FunctionBodyItem", start_offset, offset)
         return item, offset
+
+    def _parse_return(self, offset: int) -> Tuple[Return, int]:
+        start_offset = offset
+
+        return_token, offset = self._token(offset, [TokenType.RETURN])
+
+        self._print_parse_tree_node("Return", start_offset, offset)
+        return Return(return_token.position), offset
 
     def _parse_function_body(self, offset: int) -> Tuple[FunctionBody, int]:
         start_offset = offset
