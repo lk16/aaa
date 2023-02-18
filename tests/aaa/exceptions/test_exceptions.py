@@ -31,10 +31,12 @@ from aaa.type_checker.exceptions import (
     MainFunctionNotFound,
     MemberFunctionTypeNotFound,
     MissingIterable,
+    ReturnTypesError,
     StackTypesError,
     StructUpdateStackError,
     StructUpdateTypeError,
     UnknownField,
+    UnreachableCode,
     UpdateConstStructError,
     UseBlockStackUnderflow,
     WhileLoopTypeError,
@@ -424,7 +426,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
             + "- returns one value (an iterator)\n",
-            id="invalid-iterable-next-two-arguments",
+            id="invalid-iterable-iter-two-arguments",
         ),
         pytest.param(
             """
@@ -437,7 +439,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
             + "- returns one value (an iterator)\n",
-            id="invalid-iterable-next-two-return-values",
+            id="invalid-iterable-iter-two-return-values",
         ),
         pytest.param(
             """
@@ -450,7 +452,20 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
             + "- returns one value (an iterator)\n",
-            id="invalid-iterable-next-no-return-values",
+            id="invalid-iterable-iter-no-return-values",
+        ),
+        pytest.param(
+            """
+            struct foo { x as int }
+            fn foo:iter args f as foo return never { 0 exit }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterable,
+            "/foo/main.aaa:4:27: Invalid iterable type foo.\n"
+            + "Iterable types need to have a function named iter which:\n"
+            + "- takes one argument (the iterable)\n"
+            + "- returns one value (an iterator)\n",
+            id="invalid-iterable-iter-no-return-values",
         ),
         pytest.param(
             """
@@ -518,6 +533,23 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "- indicates if more data is present in the iterable with this last return value\n"
             + "- for const iterators all return values of `next` except the last one must be const\n",
             id="invalid-iterator-no-last-bool-return-value",
+        ),
+        pytest.param(
+            """
+            struct bar { x as int }
+            fn bar:next args b as bar, y as int return never { 0 exit }
+            struct foo { x as int }
+            fn foo:iter args f as foo return bar { bar }
+            fn main { foo foreach { nop } }
+            """,
+            InvalidIterator,
+            "/foo/main.aaa:6:27: Invalid iterator type bar to iterate over foo.\n"
+            + "Iterator types need to have a function named next which:\n"
+            + "- takes one argument (the iterator)\n"
+            + "- returns at least 2 values, the last being a boolean\n"
+            + "- indicates if more data is present in the iterable with this last return value\n"
+            + "- for const iterators all return values of `next` except the last one must be const\n",
+            id="invalid-iterator-never-return",
         ),
         pytest.param(
             """
@@ -685,6 +717,79 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             InvalidCallWithTypeParameters,
             "/foo/main.aaa:3:36: Cannot use argument a with type parameters\n",
             id="invalid-call-with-type-params-argument",
+        ),
+        pytest.param(
+            'fn main return str { "" }',
+            InvalidMainSignuture,
+            "/foo/main.aaa:1:1: Main function has wrong signature, it should have:\n"
+            + "- no type parameters\n"
+            + "- either no arguments or one vec[str] argument\n"
+            + "- return either nothing or an int\n",
+            id="main-returning-wrong-type",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return never { 0 }
+            """,
+            FunctionTypeError,
+            "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
+            + "expected return types: never\n"
+            + "   found return types: int\n",
+            id="return-with-return-type-never",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return int { false }
+            """,
+            FunctionTypeError,
+            "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
+            + "expected return types: int\n"
+            + "   found return types: bool\n",
+            id="return-wrong-type",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return int { false return }
+            """,
+            ReturnTypesError,
+            "/foo/main.aaa:3:39: Invalid stack types when returning.\n"
+            + "function returns: int\n"
+            + "     found stack: bool\n",
+            id="return-wrong-type-explicit",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return vec[int] { vec[bool] }
+            """,
+            FunctionTypeError,
+            "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
+            + "expected return types: vec[int]\n"
+            + "   found return types: vec[bool]\n",
+            id="return-wrong-type-param",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return const int { 5 }
+            """,
+            FunctionTypeError,
+            "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
+            + "expected return types: (const int)\n"
+            + "   found return types: int\n",
+            id="return-not-const",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            fn foo return int { 5 return 3 }
+            """,
+            UnreachableCode,
+            "/foo/main.aaa:3:42: Found unreachable code.\n",
+            id="unreachable-code",
         ),
     ],
 )

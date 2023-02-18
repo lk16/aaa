@@ -37,6 +37,7 @@ FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
     ("if", TokenType.IF),
     ("import", TokenType.IMPORT),
     ("match", TokenType.MATCH),
+    ("never", TokenType.NEVER),
     ("return", TokenType.RETURN),
     ("struct", TokenType.STRUCT),
     ("true", TokenType.TRUE),

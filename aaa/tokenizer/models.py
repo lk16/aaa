@@ -26,6 +26,7 @@ class TokenType(Enum):
     IMPORT = "IMPORT"
     INTEGER = "INTEGER"
     MATCH = "MATCH"
+    NEVER = "NEVER"
     RETURN = "RETURN"
     SET_FIELD = "SET_FIELD"
     STRING = "STRING"

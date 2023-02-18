@@ -60,11 +60,10 @@ CASE:        "case"
 FALSE:       "false"
 TRUE:        "true"
 
-// assignment operator
+// misscelaneous
 ASSIGN:      "<-"
-
-// const
 CONST:       "const"
+NEVER:       "never"
 
 // --- file roots ---
 
@@ -129,7 +128,7 @@ arguments: argument ("," argument)* [","]
 
 argument: identifier _AS type_literal
 
-return_types: type_literal ("," type_literal)* [","]
+return_types: (type_literal ("," type_literal)* [","]) | NEVER
 
 // --- literals ---
 
@@ -152,6 +151,7 @@ function_body_item: ( \
     | use_block
     | assignment
     | match_block
+    | RETURN
 )
 
 // --- branch ---

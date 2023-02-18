@@ -327,4 +327,10 @@ def test_main_with_argv() -> None:
     stdout, stderr, exit_code = run(binary_path)
     assert f'["{binary_path}"]\n' == stdout
     assert "" == stderr
+
+
+def test_return() -> None:
+    stdout, stderr, exit_code = compile_run("return.aaa")
+    assert "" == stdout
+    assert "" == stderr
     assert 0 == exit_code

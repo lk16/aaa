@@ -36,6 +36,8 @@ from aaa.cross_referencer.models import (
     Import,
     IntegerLiteral,
     MatchBlock,
+    Never,
+    Return,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -186,13 +188,19 @@ class CrossReferencer:
                     else:
                         print(f"{prefix} | Argument {name} of type {file}:{var_type}")
 
-                for return_type in identifiable.return_types:
-                    file = return_type.type.position.short_filename()
+                if isinstance(identifiable.return_types, Never):
+                    print(f"{prefix} | Return type never")
+                elif isinstance(identifiable.return_types, list):
 
-                    if return_type.is_placeholder:
-                        print(f"{prefix} | Return type {return_type}")
-                    else:
-                        print(f"{prefix} | Return type {file}:{return_type}")
+                    for return_type in identifiable.return_types:
+                        file = return_type.type.position.short_filename()
+
+                        if return_type.is_placeholder:
+                            print(f"{prefix} | Return type {return_type}")
+                        else:
+                            print(f"{prefix} | Return type {file}:{return_type}")
+                else:
+                    assert False
 
             elif isinstance(identifiable, Type):
                 file = identifiable.position.short_filename()
@@ -546,7 +554,10 @@ class CrossReferencer:
 
     def _resolve_function_return_types(
         self, function: UnresolvedFunction, type_params: Dict[str, Type]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
+
+        if isinstance(function.parsed.return_types, parser.Never):
+            return Never()
 
         return_types: List[VariableType] = []
 
@@ -743,6 +754,8 @@ class FunctionBodyResolver:
             return self._resolve_use_block(parsed_item)
         elif isinstance(parsed_item, parser.MatchBlock):
             return self._resolve_match_block(parsed_item)
+        elif isinstance(parsed_item, parser.Return):
+            return self._resolve_return(parsed_item)
         else:  # pragma: nocover
             assert False
 
@@ -769,6 +782,9 @@ class FunctionBodyResolver:
             variant_name=variant_name,
             body=self._resolve_function_body(parsed.body),
         )
+
+    def _resolve_return(self, parsed: parser.Return) -> Return:
+        return Return(parsed)
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
         variables = [Variable(var, False) for var in parsed.variables]

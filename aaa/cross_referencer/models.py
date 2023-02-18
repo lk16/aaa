@@ -49,7 +49,7 @@ class Function(Identifiable):
         unresolved: UnresolvedFunction,
         type_params: Dict[str, Type],
         arguments: List[Argument],
-        return_types: List[VariableType],
+        return_types: List[VariableType] | Never,
     ) -> None:
         self.type_params = type_params
         self.arguments = arguments
@@ -182,6 +182,15 @@ class VariableType(AaaCrossReferenceModel):
         )
 
 
+class Never:
+    """
+    Indicator that a FunctionBodyItem never returns.
+    Examples for which this is useful: return, continue, break, exit
+    """
+
+    ...
+
+
 class IntegerLiteral(FunctionBodyItem):
     def __init__(self, parsed: parser.IntegerLiteral) -> None:
         self.value = parsed.value
@@ -307,6 +316,11 @@ class CaseBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyItem
         self.variant_name = variant_name
         self.body = body
         super().__init__(position)
+
+
+class Return(FunctionBodyItem):
+    def __init__(self, parsed: parser.Return) -> None:
+        super().__init__(parsed.position)
 
 
 class CrossReferencerOutput(AaaModel):

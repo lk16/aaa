@@ -5,6 +5,7 @@ from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
     Assignment,
     Function,
+    Never,
     StructFieldQuery,
     StructFieldUpdate,
     Type,
@@ -14,7 +15,10 @@ from aaa.cross_referencer.models import (
 )
 
 
-def format_typestack(type_stack: List[VariableType]) -> str:
+def format_typestack(type_stack: List[VariableType] | Never) -> str:
+    if isinstance(type_stack, Never):
+        return "never"
+
     return " ".join(repr(item) for item in type_stack)
 
 
@@ -25,7 +29,7 @@ class TypeCheckerException(AaaException):
 
 class FunctionTypeError(TypeCheckerException):
     def __init__(
-        self, function: Function, computed_return_types: List[VariableType]
+        self, function: Function, computed_return_types: List[VariableType] | Never
     ) -> None:
         self.computed_return_types = computed_return_types
         self.function = function
@@ -388,6 +392,27 @@ class MemberFunctionTypeNotFound(TypeCheckerException):
     def __str__(self) -> str:
         struct_name = self.function.struct_name
         return f"{self.function.position}: Cannot find type {struct_name} in same file as member function definition.\n"
+
+
+class UnreachableCode(TypeCheckerException):
+    def __str__(self) -> str:
+        return f"{self.position}: Found unreachable code.\n"
+
+
+class ReturnTypesError(TypeCheckerException):
+    def __init__(
+        self, position: Position, type_stack: List[VariableType], function: Function
+    ) -> None:
+        self.type_stack = type_stack
+        self.function = function
+        super().__init__(position)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Invalid stack types when returning.\n"
+            + f"function returns: {format_typestack(self.function.return_types)}\n"
+            + f"     found stack: {format_typestack(self.type_stack)}\n"
+        )
 
 
 class SignatureItemMismatch(AaaException):
