@@ -23,14 +23,10 @@ struct rgb {
     b as int,
 }
 
-struct written {
-    text as str,
-}
-
 enum message {
     quit as empty,
     move as coord,
-    write as written,
+    write as str,
     change_color as rgb,
 }
 
@@ -52,12 +48,12 @@ fn main {
     // stack: message:move{4, 5}
     drop
 
-    written
-    dup "text" { "something" } !
+    "something"
     message:write
     // stack: message:written{"something"}
     drop
 
+    empty
     message:quit
     // stack: message
     drop

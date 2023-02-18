@@ -216,18 +216,67 @@ class CrossReferencer:
 
     def _load_identifiers(
         self, file: Path
-    ) -> Tuple[List[UnresolvedImport], List[UnresolvedType], List[UnresolvedFunction]]:
+    ) -> Tuple[List[UnresolvedImport], List[UnresolvedType], List[UnresolvedFunction],]:
         imports: List[UnresolvedImport] = []
-        types: List[UnresolvedType] = []
         functions: List[UnresolvedFunction] = []
+        types: List[UnresolvedType] = []
 
         parsed_file = self.parsed_files[file]
 
         types += self._load_types(parsed_file.types)
         types += self._load_struct_types(parsed_file.structs)
+
+        enum_funcs, enum_types = self._load_enums(parsed_file.enums)
+        types += enum_types
+        functions += enum_funcs
+
         functions += self._load_functions(parsed_file.functions)
         imports += self._load_imports(parsed_file.imports)
         return imports, types, functions
+
+    def _load_enums(
+        self, parsed_enums: List[parser.Enum]
+    ) -> Tuple[List[UnresolvedFunction], List[UnresolvedType]]:
+        functions: List[UnresolvedFunction] = []
+        types: List[UnresolvedType] = []
+
+        for parsed_enum in parsed_enums:
+            dummy_position = Position(parsed_enum.position.file, -1, -1)
+
+            type = UnresolvedType(parsed_enum, 0)
+            types.append(type)
+
+            for variant in parsed_enum.items:
+                parsed_function = parser.Function(
+                    position=dummy_position,
+                    struct_name=parsed_enum.identifier,
+                    func_name=variant.name,
+                    type_params=[],
+                    arguments=[
+                        parser.Argument(
+                            position=dummy_position,
+                            identifier=parser.Identifier(dummy_position, "_"),
+                            type=variant.type_name,
+                        )
+                    ],
+                    return_types=[
+                        parser.TypeLiteral(
+                            position=parsed_enum.position,
+                            identifier=parsed_enum.identifier,
+                            params=[],
+                            const=False,
+                        )
+                    ],
+                    body=None,
+                )
+
+                function = UnresolvedFunction(parsed_function)
+                functions.append(function)
+
+            # TODO create functions
+
+        return functions, types
+        ...
 
     def _load_struct_types(
         self, parsed_structs: List[parser.Struct]
@@ -337,7 +386,11 @@ class CrossReferencer:
             field_name: self._resolve_type_field(parsed_field)
             for field_name, parsed_field in unresolved.parsed_field_types.items()
         }
-        return Type(unresolved, fields)
+        enum_fields = {
+            field_name: self._resolve_type_field(parsed_enum_field)
+            for field_name, parsed_enum_field in unresolved.parsed_enum_types.items()
+        }
+        return Type(unresolved, fields, enum_fields)
 
     def _resolve_function_param(
         self, function: UnresolvedFunction, parsed_type_param: parser.TypeLiteral
@@ -351,7 +404,11 @@ class CrossReferencer:
 
         assert type_literal
 
-        type = Type(UnresolvedType(parsed=type_literal, param_count=0), fields={})
+        type = Type(
+            UnresolvedType(parsed=type_literal, param_count=0),
+            fields={},
+            enum_fields={},
+        )
 
         if (function.position.file, param_name) in self.identifiers:
             # Another identifier in the same file has this name.

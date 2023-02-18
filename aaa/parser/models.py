@@ -93,6 +93,8 @@ class Argument(AaaParseModel):
     ) -> None:
         self.identifier = identifier
         self.type = type
+
+        # TODO remove position argument, use identifier.position instead
         super().__init__(position)
 
 
@@ -261,12 +263,12 @@ class MatchBlock(FunctionBodyItem):
         super().__init__(position)
 
 
-class EnumItem(FunctionBodyItem):
+class EnumItem(FunctionBodyItem):  # TODO rename to EnumVariant everywhere
     def __init__(
         self, position: Position, name: Identifier, type_name: Identifier
     ) -> None:
         self.name = name
-        self.type_name = type_name
+        self.type_name = TypeLiteral(type_name.position, type_name, [], False)
         super().__init__(position)
 
 
@@ -274,7 +276,7 @@ class Enum(FunctionBodyItem):
     def __init__(
         self, position: Position, name: Identifier, items: List[EnumItem]
     ) -> None:
-        self.name = name
+        self.identifier = name
         self.items = items
         super().__init__(position)
 

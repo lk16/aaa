@@ -109,14 +109,20 @@ class Import(Identifiable):
 class UnresolvedType(AaaCrossReferenceModel):
     def __init__(
         self,
-        parsed: parser.TypeLiteral | parser.Struct,
+        parsed: parser.TypeLiteral | parser.Struct | parser.Enum,
         param_count: int,
     ) -> None:
         self.param_count = param_count
         self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
+        self.parsed_enum_types: Dict[str, parser.TypeLiteral] = {}
 
         if isinstance(parsed, parser.Struct):
             self.parsed_field_types = parsed.fields
+
+        if isinstance(parsed, parser.Enum):
+            self.parsed_enum_types = {
+                item.name.name: item.type_name for item in parsed.items
+            }
 
         self.name = parsed.identifier.name
         super().__init__(parsed.position)
@@ -124,10 +130,14 @@ class UnresolvedType(AaaCrossReferenceModel):
 
 class Type(Identifiable):
     def __init__(
-        self, unresolved: UnresolvedType, fields: Dict[str, VariableType]
+        self,
+        unresolved: UnresolvedType,
+        fields: Dict[str, VariableType],
+        enum_fields: Dict[str, VariableType],
     ) -> None:
         self.param_count = unresolved.param_count
         self.fields = fields
+        self.enum_fields = enum_fields
         super().__init__(unresolved.position, unresolved.name)
 
 
