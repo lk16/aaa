@@ -58,9 +58,6 @@ fn main {
     // stack: message
     drop
 
-
-    message:quit
-
     match { // consumes message
         case message:quit {
             // stack: struct{}

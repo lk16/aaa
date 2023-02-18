@@ -252,7 +252,7 @@ class Assignment(FunctionBodyItem):
 
 class CaseBlock(FunctionBodyItem):
     def __init__(self, position: Position, call: Call, body: FunctionBody) -> None:
-        self.call = call
+        self.call = call  # TODO use different type with better names
         self.body = body
         super().__init__(position)
 

@@ -293,6 +293,22 @@ class UseBlock(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
+class MatchBlock(FunctionBodyItem):
+    def __init__(self, position: Position, case_blocks: List[CaseBlock]) -> None:
+        self.case_blocks = case_blocks
+        super().__init__(position)
+
+
+class CaseBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyItem
+    def __init__(
+        self, position: Position, enum_type: Type, variant_name: str, body: FunctionBody
+    ) -> None:
+        self.enum_type = enum_type
+        self.variant_name = variant_name
+        self.body = body
+        super().__init__(position)
+
+
 class CrossReferencerOutput(AaaModel):
     def __init__(
         self,

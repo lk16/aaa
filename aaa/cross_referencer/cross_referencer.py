@@ -25,6 +25,7 @@ from aaa.cross_referencer.models import (
     CallFunction,
     CallType,
     CallVariable,
+    CaseBlock,
     CrossReferencerOutput,
     ForeachLoop,
     Function,
@@ -34,6 +35,7 @@ from aaa.cross_referencer.models import (
     IdentifiablesDict,
     Import,
     IntegerLiteral,
+    MatchBlock,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -273,10 +275,7 @@ class CrossReferencer:
                 function = UnresolvedFunction(parsed_function)
                 functions.append(function)
 
-            # TODO create functions
-
         return functions, types
-        ...
 
     def _load_struct_types(
         self, parsed_structs: List[parser.Struct]
@@ -601,7 +600,7 @@ class CrossReferencer:
             parsed_body = unresolved_function.parsed.body
 
             if not parsed_body:
-                return
+                continue
 
             resolver = FunctionBodyResolver(self, function, parsed_body)
 
@@ -742,8 +741,34 @@ class FunctionBodyResolver:
             return self._resolve_assignment(parsed_item)
         elif isinstance(parsed_item, parser.UseBlock):
             return self._resolve_use_block(parsed_item)
+        elif isinstance(parsed_item, parser.MatchBlock):
+            return self._resolve_match_block(parsed_item)
         else:  # pragma: nocover
             assert False
+
+    def _resolve_match_block(self, parsed: parser.MatchBlock) -> MatchBlock:
+        return MatchBlock(
+            parsed.position,
+            [self._resolve_case_block(case) for case in parsed.case_blocks],
+        )
+
+    def _resolve_case_block(self, parsed: parser.CaseBlock) -> CaseBlock:
+        enum_type_name = parsed.call.struct_name
+        variant_name = parsed.call.func_name.name
+        assert enum_type_name  # parser ensures this doesn't fail
+
+        enum_type = self._get_identifiable_generic(enum_type_name.name, parsed.position)
+
+        if not isinstance(enum_type, Type):
+            # TODO matching something that's not a type
+            raise NotImplementedError
+
+        return CaseBlock(
+            parsed.position,
+            enum_type=enum_type,
+            variant_name=variant_name,
+            body=self._resolve_function_body(parsed.body),
+        )
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
         variables = [Variable(var, False) for var in parsed.variables]
