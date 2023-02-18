@@ -361,7 +361,14 @@ class SingleFileParser:
         struct_token, offset = self._token(offset, [TokenType.STRUCT])
         identifier, offset = self._parse_identifier(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
-        fields, offset = self._parse_arguments(offset)
+
+        token = self._peek_token(offset)
+
+        if token and token.type == TokenType.END:
+            fields: List[Argument] = []
+        else:
+            fields, offset = self._parse_arguments(offset)
+
         _, offset = self._token(offset, [TokenType.END])
 
         struct = Struct(

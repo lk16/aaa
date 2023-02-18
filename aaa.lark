@@ -89,7 +89,7 @@ import_item: identifier [_AS identifier]
 
 type_declaration: TYPE flat_type_literal
 
-struct_definition: STRUCT identifier BEGIN arguments _END
+struct_definition: STRUCT identifier BEGIN [arguments] _END
 
 struct_field_query: string GET_FIELD
 

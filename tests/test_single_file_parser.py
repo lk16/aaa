@@ -473,7 +473,7 @@ def test_parse_builtins_root(
     [
         ("struct a", EndOfFileException, 0),
         ("struct a {", EndOfFileException, 0),
-        ("struct a {}", ParserException, 0),
+        ("struct a {}", None, 4),
         ("struct a { b as int }", None, 7),
         ("struct a { b as int, }", None, 8),
         ("struct a { b as map[int,vec[int]] }", None, 15),
