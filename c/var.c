@@ -22,6 +22,7 @@ enum aaa_kind {
     AAA_VECTOR_ITER,
     AAA_MAP_ITER,
     AAA_SET_ITER,
+    AAA_ENUM,
 };
 
 struct aaa_variable {
@@ -36,6 +37,10 @@ struct aaa_variable {
         struct aaa_struct *struct_;
         struct aaa_vector_iter *vector_iter;
         struct aaa_map_iter *map_iter;
+        struct {
+            int variant_id;
+            struct aaa_variable *enum_value;
+        };
     };
 };
 
@@ -90,6 +95,15 @@ struct aaa_variable *aaa_variable_new_struct(struct aaa_struct *struct_) {
 struct aaa_variable *aaa_variable_new_set(struct aaa_map *set) {
     struct aaa_variable *var = aaa_variable_new_map(set);
     var->kind = AAA_SET;
+    return var;
+}
+
+struct aaa_variable *aaa_variable_new_enum(struct aaa_variable *enum_value,
+                                           int variant_id) {
+    struct aaa_variable *var = aaa_variable_new();
+    var->kind = AAA_ENUM;
+    var->variant_id = variant_id;
+    var->enum_value = enum_value;
     return var;
 }
 
@@ -217,6 +231,7 @@ struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
+        case AAA_ENUM: // TODO implement
         default:
             fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
             abort();
@@ -265,6 +280,7 @@ size_t aaa_variable_hash(const struct aaa_variable *var) {
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
+        case AAA_ENUM:
         default:
             fprintf(stderr, "aaa_variable_hash Unhandled variable kind\n");
             abort();
@@ -292,6 +308,7 @@ bool aaa_variable_equals(const struct aaa_variable *lhs,
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
+        case AAA_ENUM:
         default:
             fprintf(stderr, "aaa_variable_equals Unhandled variable kind\n");
             abort();
@@ -327,6 +344,8 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
             aaa_map_iter_dec_ref(var->map_iter);
+            break;
+        case AAA_ENUM:
             break;
         default:
             fprintf(stderr, "aaa_variable_dec_ref unhandled variable kind\n");
@@ -366,6 +385,8 @@ void aaa_variable_inc_ref(struct aaa_variable *var) {
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
             aaa_map_iter_inc_ref(var->map_iter);
+            break;
+        case AAA_ENUM:
             break;
         default:
             fprintf(stderr, "aaa_variable_inc_ref unhandled variable kind\n");
@@ -458,8 +479,9 @@ void aaa_variable_assign(struct aaa_variable *var,
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
+        case AAA_ENUM:
         default:
-            fprintf(stderr, "Attempt to assign iterator\n");
+            fprintf(stderr, "Attempt to assign iterator or enum\n");
             fflush(stderr);
             abort();
             break;
@@ -498,8 +520,11 @@ struct aaa_variable *aaa_variable_copy(const struct aaa_variable *var) {
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
+        case AAA_ENUM: // TODO implement
         default:
-            fprintf(stderr, "Attempt to copy iterator\n");
+            fprintf(
+                stderr,
+                "Attempt to copy iterator or enum\n"); // TODO update message
             fflush(stderr);
             abort();
             break;

@@ -114,15 +114,14 @@ class UnresolvedType(AaaCrossReferenceModel):
     ) -> None:
         self.param_count = param_count
         self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
-        self.parsed_enum_types: Dict[str, parser.TypeLiteral] = {}
+        self.parsed_variants: Dict[str, Tuple[parser.TypeLiteral, int]] = {}
 
         if isinstance(parsed, parser.Struct):
             self.parsed_field_types = parsed.fields
 
         if isinstance(parsed, parser.Enum):
-            self.parsed_enum_types = {
-                item.name.name: item.type_name for item in parsed.items
-            }
+            for i, item in enumerate(parsed.items):
+                self.parsed_variants[item.name.name] = (item.type_name, i)
 
         self.name = parsed.identifier.name
         super().__init__(parsed.position)
@@ -133,7 +132,7 @@ class Type(Identifiable):
         self,
         unresolved: UnresolvedType,
         fields: Dict[str, VariableType],
-        enum_fields: Dict[str, VariableType],
+        enum_fields: Dict[str, Tuple[VariableType, int]],
     ) -> None:
         self.param_count = unresolved.param_count
         self.fields = fields

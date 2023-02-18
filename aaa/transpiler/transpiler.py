@@ -18,6 +18,7 @@ from aaa.cross_referencer.models import (
     FunctionBody,
     FunctionBodyItem,
     IntegerLiteral,
+    MatchBlock,
     Never,
     Return,
     StringLiteral,
@@ -257,6 +258,9 @@ class Transpiler:
         return self.functions[(file, name)]
 
     def _generate_c_function(self, function: Function) -> str:
+        if not function.body:
+            return ""  # TODO make sure we skip enum constructing functions more nicely
+
         assert function.body
         self.func_local_vars = set()
 
@@ -340,8 +344,13 @@ class Transpiler:
             return self._generate_c_assignment_code(item)
         elif isinstance(item, Return):
             return self._generate_c_return(item)
+        elif isinstance(item, MatchBlock):
+            return self._generate_c_match_block_code(item)
         else:  # pragma: nocover
             assert False
+
+    def _generate_c_match_block_code(self, match_block: MatchBlock) -> str:
+        raise NotImplementedError  # TODO
 
     def _generate_c_return(self, return_: Return) -> str:
         code = ""

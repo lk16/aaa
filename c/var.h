@@ -14,6 +14,8 @@ struct aaa_variable *aaa_variable_new_struct(struct aaa_struct *struct_);
 struct aaa_variable *aaa_variable_new_vector_iter(struct aaa_vector_iter *iter);
 struct aaa_variable *aaa_variable_new_map_iter(struct aaa_map_iter *iter);
 struct aaa_variable *aaa_variable_new_set(struct aaa_map *set);
+struct aaa_variable *aaa_variable_new_enum(struct aaa_variable *enum_value,
+                                           int variant_id);
 
 struct aaa_variable *aaa_variable_new_int_zero_value(void);
 struct aaa_variable *aaa_variable_new_bool_zero_value(void);

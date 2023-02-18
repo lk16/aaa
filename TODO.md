@@ -1,7 +1,7 @@
 # TODO
 
 ### Enums
-- [ ] ...
+- [ ] add `default` case
 
 ### Transpiling to C
 - [ ] Reset `errno` in case C stdlib functions fail

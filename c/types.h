@@ -9,6 +9,7 @@ struct aaa_string_buffer;
 struct aaa_ref_count;
 
 struct aaa_boolean;
+struct aaa_enum;
 struct aaa_string;
 struct aaa_map;
 struct aaa_vector;

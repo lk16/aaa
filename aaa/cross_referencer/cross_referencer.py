@@ -393,11 +393,18 @@ class CrossReferencer:
             field_name: self._resolve_type_field(parsed_field)
             for field_name, parsed_field in unresolved.parsed_field_types.items()
         }
-        enum_fields = {
-            field_name: self._resolve_type_field(parsed_enum_field)
-            for field_name, parsed_enum_field in unresolved.parsed_enum_types.items()
-        }
-        return Type(unresolved, fields, enum_fields)
+
+        enum_variants: Dict[str, Tuple[VariableType, int]] = {}
+        for variant_name, (
+            variant_type,
+            variariant_id,
+        ) in unresolved.parsed_variants.items():
+            enum_variants[variant_name] = (
+                self._resolve_type_field(variant_type),
+                variariant_id,
+            )
+
+        return Type(unresolved, fields, enum_variants)
 
     def _resolve_function_param(
         self, function: UnresolvedFunction, parsed_type_param: parser.TypeLiteral

@@ -10,6 +10,7 @@ from aaa.cross_referencer.models import (
     CallFunction,
     CallType,
     CallVariable,
+    CaseBlock,
     CrossReferencerOutput,
     ForeachLoop,
     Function,
@@ -416,7 +417,54 @@ class SingleFunctionTypeChecker:
 
     def _check_match_block(
         self, match_block: MatchBlock, type_stack: List[VariableType]
-    ) -> List[VariableType]:
+    ) -> List[VariableType] | Never:
+        if not match_block.case_blocks:
+            return copy(type_stack)
+
+        case_type_stacks: List[List[VariableType] | Never] = []
+
+        for case_block in match_block.case_blocks:
+            case_type_stack: List[VariableType] | Never = copy(type_stack)
+
+            assert not isinstance(case_type_stack, Never)
+
+            # TODO check that stack is not empty and that top value is of correct enum
+            case_type_stack.pop()
+
+            # The variant name is checked in the cross referencer so it cannot fail here.
+            variant_type = case_block.enum_type.enum_fields[case_block.variant_name][0]
+
+            case_type_stack.append(variant_type)
+
+            case_type_stack = self._check_function_body(
+                case_block.body, case_type_stack
+            )
+            case_type_stacks.append(case_type_stack)
+
+        if isinstance(case_type_stacks[0], Never):
+            for case_type_stack in case_type_stacks[1:]:
+                if not isinstance(case_type_stack, Never):
+                    # TODO inconsistent type stacks
+                    raise NotImplementedError
+
+        elif isinstance(case_type_stacks[0], list):
+            for case_type_stack in case_type_stacks[1:]:
+                if not isinstance(case_type_stack, list):
+                    # TODO inconsistent type stacks
+                    raise NotImplementedError
+
+                if case_type_stack != case_type_stacks[0]:
+                    # TODO inconsistent type stacks
+                    raise NotImplementedError
+
+        else:  # pragma: nocover
+            assert False
+
+        return case_type_stacks[0]
+
+    def _check_case_block(
+        self, case_block: CaseBlock, type_stack: List[VariableType]
+    ) -> List[VariableType] | Never:
         raise NotImplementedError  # TODO
 
     def _check_return(self, return_: Return, type_stack: List[VariableType]) -> Never:
