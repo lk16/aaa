@@ -14,6 +14,9 @@ from aaa.parser.models import (
     BooleanLiteral,
     Branch,
     Call,
+    CaseBlock,
+    Enum,
+    EnumItem,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -23,6 +26,7 @@ from aaa.parser.models import (
     Import,
     ImportItem,
     IntegerLiteral,
+    MatchBlock,
     ParsedFile,
     StringLiteral,
     Struct,
@@ -350,6 +354,7 @@ class SingleFileParser:
             imports=[],
             structs=[],
             types=types,
+            enums=[],
         )
 
         self._print_parse_tree_node("ParsedFile", start_offset, offset)
@@ -598,6 +603,8 @@ class SingleFileParser:
             item, offset = self._parse_foreach_loop(offset)
         elif token.type == TokenType.USE:
             item, offset = self._parse_use_block(offset)
+        elif token.type == TokenType.MATCH:
+            item, offset = self._parse_match_block(offset)
 
         else:
             raise ParserException(
@@ -608,6 +615,7 @@ class SingleFileParser:
                     TokenType.IDENTIFIER,
                     TokenType.IF,
                     TokenType.INTEGER,
+                    TokenType.MATCH,
                     TokenType.STRING,
                     TokenType.TRUE,
                     TokenType.WHILE,
@@ -664,6 +672,7 @@ class SingleFileParser:
         functions: List[Function] = []
         structs: List[Struct] = []
         imports: List[Import] = []
+        enums: List[Enum] = []
 
         while True:
             token = self._peek_token(offset)
@@ -680,6 +689,9 @@ class SingleFileParser:
             elif token.type == TokenType.FROM:
                 import_, offset = self._parse_import_statement(offset)
                 imports.append(import_)
+            elif token.type == TokenType.ENUM:
+                enum, offset = self._parse_enum_definition(offset)
+                enums.append(enum)
             else:
                 break
 
@@ -688,6 +700,7 @@ class SingleFileParser:
             functions=functions,
             imports=imports,
             structs=structs,
+            enums=enums,
             types=[],
         )
 
@@ -756,6 +769,90 @@ class SingleFileParser:
         assignment = Assignment(variables[0].position, variables, body)
         self._print_parse_tree_node("Assignment", start_offset, offset)
         return assignment, offset
+
+    def _parse_case_block(self, offset: int) -> Tuple[CaseBlock, int]:
+        start_offset = offset
+
+        case_token, offset = self._token(offset, [TokenType.CASE])
+        call, offset = self._parse_call(offset)
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        body, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        case_block = CaseBlock(case_token.position, call, body)
+        self._print_parse_tree_node("CaseBlock", start_offset, offset)
+        return case_block, offset
+
+    def _parse_match_block(self, offset: int) -> Tuple[MatchBlock, int]:
+        start_offset = offset
+
+        case_blocks: List[CaseBlock] = []
+
+        match_token, offset = self._token(offset, [TokenType.MATCH])
+        _, offset = self._token(offset, [TokenType.BEGIN])
+
+        while True:
+            token = self._peek_token(offset)
+
+            if not token or token.type == TokenType.END:
+                break
+
+            case_block, offset = self._parse_case_block(offset)
+            case_blocks.append(case_block)
+
+        _, offset = self._token(offset, [TokenType.END])
+
+        match_block = MatchBlock(match_token.position, case_blocks)
+        self._print_parse_tree_node("MatchBlock", start_offset, offset)
+        return match_block, offset
+
+    def _parse_enum_item(self, offset: int) -> Tuple[EnumItem, int]:
+        start_offset = offset
+
+        name, offset = self._parse_identifier(offset)
+        _, offset = self._token(offset, [TokenType.AS])
+        type_name, offset = self._parse_identifier(offset)
+
+        enum_item = EnumItem(name.position, name, type_name)
+        self._print_parse_tree_node("EnumItem", start_offset, offset)
+        return enum_item, offset
+
+    def _parse_enum_items(self, offset: int) -> Tuple[List[EnumItem], int]:
+        start_offset = offset
+
+        enum_items: List[EnumItem] = []
+
+        enum_item, offset = self._parse_enum_item(offset)
+        enum_items.append(enum_item)
+
+        while True:
+            try:
+                _, offset = self._token(offset, [TokenType.COMMA])
+            except ParserBaseException:
+                break
+
+            try:
+                enum_item, offset = self._parse_enum_item(offset)
+            except ParserBaseException:
+                break
+            else:
+                enum_items.append(enum_item)
+
+        self._print_parse_tree_node("EnumItems", start_offset, offset)
+        return enum_items, offset
+
+    def _parse_enum_definition(self, offset: int) -> Tuple[Enum, int]:
+        start_offset = offset
+
+        enum_token, offset = self._token(offset, [TokenType.ENUM])
+        name, offset = self._parse_identifier(offset)
+        enum_token, offset = self._token(offset, [TokenType.BEGIN])
+        items, offset = self._parse_enum_items(offset)
+        enum_token, offset = self._token(offset, [TokenType.END])
+
+        enum = Enum(enum_token.position, name, items)
+        self._print_parse_tree_node("Enum", start_offset, offset)
+        return enum, offset
 
     def _print_parse_tree_node(
         self, kind: str, start_token_offset: int, end_token_offset: int

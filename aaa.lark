@@ -151,6 +151,7 @@ function_body_item: ( \
     | foreach_loop
     | use_block
     | assignment
+    | match_block
 )
 
 // --- branch ---

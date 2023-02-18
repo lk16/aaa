@@ -164,11 +164,13 @@ class ParsedFile(AaaParseModel):
         imports: List[Import],
         structs: List[Struct],
         types: List[TypeLiteral],
+        enums: List[Enum],
     ) -> None:
         self.functions = functions
         self.imports = imports
         self.structs = structs
         self.types = types
+        self.enums = enums
         super().__init__(position)
 
     def dependencies(self) -> List[Path]:
@@ -243,6 +245,37 @@ class Assignment(FunctionBodyItem):
     ) -> None:
         self.variables = variables
         self.body = body
+        super().__init__(position)
+
+
+class CaseBlock(FunctionBodyItem):
+    def __init__(self, position: Position, call: Call, body: FunctionBody) -> None:
+        self.call = call
+        self.body = body
+        super().__init__(position)
+
+
+class MatchBlock(FunctionBodyItem):
+    def __init__(self, position: Position, case_blocks: List[CaseBlock]) -> None:
+        self.case_blocks = case_blocks
+        super().__init__(position)
+
+
+class EnumItem(FunctionBodyItem):
+    def __init__(
+        self, position: Position, name: Identifier, type_name: Identifier
+    ) -> None:
+        self.name = name
+        self.type_name = type_name
+        super().__init__(position)
+
+
+class Enum(FunctionBodyItem):
+    def __init__(
+        self, position: Position, name: Identifier, items: List[EnumItem]
+    ) -> None:
+        self.name = name
+        self.items = items
         super().__init__(position)
 
 
