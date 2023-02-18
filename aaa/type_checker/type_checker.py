@@ -15,6 +15,7 @@ from aaa.cross_referencer.models import (
     Function,
     FunctionBody,
     IntegerLiteral,
+    MatchBlock,
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
@@ -345,6 +346,7 @@ class SingleFunctionTypeChecker:
             StructFieldUpdate: self._check_struct_field_update,
             UseBlock: self._check_use_block,
             WhileLoop: self._check_while_loop,
+            MatchBlock: self._check_match_block,
         }
 
         stack = copy(type_stack)
@@ -356,6 +358,11 @@ class SingleFunctionTypeChecker:
             self._print_types(item.position, stack)
 
         return stack
+
+    def _check_match_block(
+        self, match_block: MatchBlock, type_stack: List[VariableType]
+    ) -> List[VariableType]:
+        raise NotImplementedError  # TODO
 
     def _check_call_variable(
         self, call_var: CallVariable, type_stack: List[VariableType]
