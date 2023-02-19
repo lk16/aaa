@@ -785,8 +785,8 @@ class FunctionBodyResolver:
         )
 
     def _resolve_case_block(self, parsed: parser.CaseBlock) -> CaseBlock:
-        enum_type_name = parsed.call.struct_name
-        variant_name = parsed.call.func_name.name
+        enum_type_name = parsed.enum_name
+        variant_name = parsed.enum_variant_name
         assert enum_type_name  # parser ensures this doesn't fail
 
         enum_type = self._get_identifiable_generic(enum_type_name.name, parsed.position)
@@ -798,7 +798,7 @@ class FunctionBodyResolver:
         return CaseBlock(
             parsed.position,
             enum_type=enum_type,
-            variant_name=variant_name,
+            variant_name=variant_name.name,
             body=self._resolve_function_body(parsed.body),
         )
 

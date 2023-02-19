@@ -252,7 +252,8 @@ class Assignment(FunctionBodyItem):
 
 class CaseBlock(FunctionBodyItem):
     def __init__(self, position: Position, call: Call, body: FunctionBody) -> None:
-        self.call = call  # TODO use different type with better names
+        self.enum_name = call.struct_name
+        self.enum_variant_name = call.func_name
         self.body = body
         super().__init__(position)
 
