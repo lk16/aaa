@@ -9,6 +9,8 @@ from aaa.cross_referencer.exceptions import (
     IndirectImportException,
     InvalidArgument,
     InvalidCallWithTypeParameters,
+    InvalidEnumType,
+    InvalidEnumVariant,
     InvalidReturnType,
     InvalidType,
     UnexpectedTypeParameterCount,
@@ -790,6 +792,32 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UnreachableCode,
             "/foo/main.aaa:3:42: Found unreachable code.\n",
             id="unreachable-code",
+        ),
+        pytest.param(
+            """
+            enum foo { a as int }
+            fn main { match { case main:bar { nop } } }
+            """,
+            InvalidEnumType,
+            "/foo/main.aaa:3:31: Cannot use function main as enum type\n",
+            id="invalid-enum-type-non-enum",
+        ),
+        pytest.param(
+            """
+            fn main { match { case int:bar { nop } } }
+            """,
+            InvalidEnumType,
+            "/foo/main.aaa:2:31: Cannot use type int as enum type\n",
+            id="use-non-type-as-enum-type",
+        ),
+        pytest.param(
+            """
+            enum foo { a as int }
+            fn main { match { case foo:b { nop } } }
+            """,
+            InvalidEnumVariant,
+            "/foo/main.aaa:3:31: Variant b of enum foo does not exist\n",
+            id="non-existent-enum-variant",
         ),
     ],
 )

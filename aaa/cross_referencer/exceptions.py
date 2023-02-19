@@ -157,3 +157,22 @@ class InvalidCallWithTypeParameters(CrossReferenceBaseException):
             assert False
 
         return f"{self.call.position}: Cannot use {object} {self.call.name()} with type parameters\n"
+
+
+class InvalidEnumType(CrossReferenceBaseException):
+    def __init__(self, position: Position, identifiable: Identifiable) -> None:
+        self.identifiable = identifiable
+        self.position = position
+
+    def __str__(self) -> str:
+        return f"{self.position}: Cannot use {self.describe(self.identifiable)} as enum type\n"
+
+
+class InvalidEnumVariant(CrossReferenceBaseException):
+    def __init__(self, position: Position, enum: Type, variant_name: str) -> None:
+        self.enum = enum
+        self.variant_name = variant_name
+        self.position = position
+
+    def __str__(self) -> str:
+        return f"{self.position}: Variant {self.variant_name} of enum {self.enum.name} does not exist\n"

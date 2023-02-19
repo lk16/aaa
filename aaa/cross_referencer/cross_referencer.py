@@ -10,6 +10,8 @@ from aaa.cross_referencer.exceptions import (
     IndirectImportException,
     InvalidArgument,
     InvalidCallWithTypeParameters,
+    InvalidEnumType,
+    InvalidEnumVariant,
     InvalidReturnType,
     InvalidType,
     UnexpectedTypeParameterCount,
@@ -786,19 +788,24 @@ class FunctionBodyResolver:
 
     def _resolve_case_block(self, parsed: parser.CaseBlock) -> CaseBlock:
         enum_type_name = parsed.enum_name
-        variant_name = parsed.enum_variant_name
+        variant_name = parsed.enum_variant_name.name
         assert enum_type_name  # parser ensures this doesn't fail
 
         enum_type = self._get_identifiable_generic(enum_type_name.name, parsed.position)
 
         if not isinstance(enum_type, Type):
-            # TODO matching something that's not a type
-            raise NotImplementedError
+            raise InvalidEnumType(parsed.position, enum_type)
+
+        if not enum_type.enum_fields:
+            raise InvalidEnumType(parsed.position, enum_type)
+
+        if variant_name not in enum_type.enum_fields:
+            raise InvalidEnumVariant(parsed.position, enum_type, variant_name)
 
         return CaseBlock(
             parsed.position,
             enum_type=enum_type,
-            variant_name=variant_name.name,
+            variant_name=variant_name,
             body=self._resolve_function_body(parsed.body),
         )
 
