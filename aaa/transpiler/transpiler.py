@@ -391,6 +391,7 @@ class Transpiler:
         )
         code += self._indent("aaa_variable_inc_ref(enum_value);\n")
         code += self._indent("aaa_stack_pop(stack);\n")
+        code += self._indent("aaa_variable_dec_ref(enum_);\n")
         code += self._indent("aaa_stack_push(stack, enum_value);\n")
         code += self._indent("switch (variant_id) {\n")
         self.indent_level += 1
