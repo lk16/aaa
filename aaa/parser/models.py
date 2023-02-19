@@ -92,14 +92,10 @@ class Return(FunctionBodyItem):
 
 
 class Argument(AaaParseModel):
-    def __init__(
-        self, position: Position, identifier: Identifier, type: TypeLiteral
-    ) -> None:
+    def __init__(self, identifier: Identifier, type: TypeLiteral) -> None:
         self.identifier = identifier
         self.type = type
-
-        # TODO remove position argument, use identifier.position instead
-        super().__init__(position)
+        super().__init__(identifier.position)
 
 
 class Function(AaaParseModel):

@@ -277,7 +277,6 @@ class CrossReferencer:
                     type_params=[],
                     arguments=[
                         parser.Argument(
-                            position=dummy_position,
                             identifier=parser.Identifier(dummy_position, "_"),
                             type=variant.type_name,
                         )

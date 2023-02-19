@@ -235,7 +235,7 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.AS])
         type, offset = self._parse_type_literal(offset)
 
-        argument = Argument(identifier.position, identifier, type)
+        argument = Argument(identifier, type)
         self._print_parse_tree_node("Argument", start_offset, offset)
         return argument, offset
 
