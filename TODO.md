@@ -1,7 +1,7 @@
 # TODO
 
 ### Enums
-- [ ] require `enum` to have at least one variant
+- [x] require `enum` to have at least one variant
 - [ ] `match` should be have a `case` for all enum variants
 - [ ] prevent duplicate cases
 - [ ] add `default` case

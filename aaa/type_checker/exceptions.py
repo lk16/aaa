@@ -4,7 +4,9 @@ from typing import List, Union
 from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
     Assignment,
+    CaseBlock,
     Function,
+    MatchBlock,
     Never,
     StructFieldQuery,
     StructFieldUpdate,
@@ -413,6 +415,54 @@ class ReturnTypesError(TypeCheckerException):
             + f"function returns: {format_typestack(self.function.return_types)}\n"
             + f"     found stack: {format_typestack(self.type_stack)}\n"
         )
+
+
+class MatchTypeError(TypeCheckerException):
+    def __init__(self, match_block: MatchBlock, type_stack: List[VariableType]) -> None:
+        self.match_block = match_block
+        self.type_stack = type_stack
+        super().__init__(match_block.position)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Cannot match on this stack:\n"
+            + f"expected stack types: <enum type>\n"
+            + f"   found stack types: {format_typestack(self.type_stack)}\n"
+        )
+
+
+class CaseEnumTypeError(TypeCheckerException):
+    def __init__(
+        self, case_block: CaseBlock, expected_enum: Type, found_enum: Type
+    ) -> None:
+        self.match_block = case_block
+        self.expected_enum = expected_enum
+        self.found_enum = found_enum
+        super().__init__(case_block.position)
+
+    def __str__(self) -> str:
+        return f"{self.position}: Cannot use case for enum {self.found_enum.name} when matching on enum {self.expected_enum.name}\n"
+
+
+class CaseStackTypeError(TypeCheckerException):
+    def __init__(
+        self,
+        case_blocks: List[CaseBlock],
+        case_type_stacks: List[List[VariableType] | Never],
+    ) -> None:
+        self.case_blocks = case_blocks
+        self.case_type_stacks = case_type_stacks
+        super().__init__(case_blocks[0].position)
+
+    def __str__(self) -> str:
+        message = "Inconsistent stack types for match cases:\n"
+
+        for case_block, case_type_stack in zip(
+            self.case_blocks, self.case_type_stacks, strict=True
+        ):
+            message += f"{case_block.position}: {format_typestack(case_type_stack)}\n"
+
+        return message
 
 
 class SignatureItemMismatch(AaaException):

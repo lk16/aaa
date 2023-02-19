@@ -23,6 +23,8 @@ from aaa.type_checker.exceptions import (
     AssignConstValueError,
     AssignmentTypeError,
     BranchTypeError,
+    CaseEnumTypeError,
+    CaseStackTypeError,
     ConditionTypeError,
     ForeachLoopTypeError,
     FunctionTypeError,
@@ -31,6 +33,7 @@ from aaa.type_checker.exceptions import (
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
     MainFunctionNotFound,
+    MatchTypeError,
     MemberFunctionTypeNotFound,
     MissingIterable,
     ReturnTypesError,
@@ -818,6 +821,55 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             InvalidEnumVariant,
             "/foo/main.aaa:3:31: Variant b of enum foo does not exist\n",
             id="non-existent-enum-variant",
+        ),
+        pytest.param(
+            """
+            enum foo { bar as int }
+            fn main { match { case foo:bar { nop } } }
+            """,
+            MatchTypeError,
+            "/foo/main.aaa:3:23: Cannot match on this stack:\n"
+            + "expected stack types: <enum type>\n"
+            + "   found stack types: \n",
+            id="match-empty-stack",
+        ),
+        pytest.param(
+            """
+            enum foo { bar as int }
+            fn main { 3 match { case foo:bar { nop } } }
+            """,
+            MatchTypeError,
+            "/foo/main.aaa:3:25: Cannot match on this stack:\n"
+            + "expected stack types: <enum type>\n"
+            + "   found stack types: int\n",
+            id="match-non-emum",
+        ),
+        pytest.param(
+            """
+            enum foo { bar as int }
+            enum baz { quux as int }
+            fn main { 3 foo:bar match { case baz:quux { nop } } }
+            """,
+            CaseEnumTypeError,
+            "/foo/main.aaa:4:41: Cannot use case for enum baz when matching on enum foo\n",
+            id="case-from-different-enum",
+        ),
+        pytest.param(
+            """
+            enum foo { a as int, b as int }
+            fn main {
+                3 foo:a
+                match {
+                    case foo:a { nop }
+                    case foo:b { 5 }
+                }
+            }
+            """,
+            CaseStackTypeError,
+            "Inconsistent stack types for match cases:\n"
+            + "/foo/main.aaa:6:21: int\n"
+            + "/foo/main.aaa:7:21: int int\n",
+            id="case-stack-type-error",
         ),
     ],
 )
