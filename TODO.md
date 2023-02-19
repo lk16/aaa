@@ -2,8 +2,11 @@
 
 ### Enums
 - [ ] `match` should be have a `case` for all enum variants
-- [ ] prevent duplicate `case`'s
+- [ ] prevent duplicate cases
 - [ ] add `default` case
+- [ ] make sure all cases handle same enum type
+- [ ] make sure there is no `default` when all cases are handled
+
 
 ### Transpiling to C
 - [ ] Reset `errno` in case C stdlib functions fail

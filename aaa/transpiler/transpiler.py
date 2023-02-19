@@ -382,7 +382,7 @@ class Transpiler:
         # TODO prevent variable name colission
         code = ""
 
-        code += self._indent("struct aaa_variable *enum_ = aaa_stack_top(stack);\n")
+        code += self._indent("struct aaa_variable *enum_ = aaa_stack_pop(stack);\n")
         code += self._indent(
             "int variant_id = aaa_variable_get_enum_variant_id(enum_);\n"
         )
@@ -390,9 +390,11 @@ class Transpiler:
             "struct aaa_variable *enum_value = aaa_variable_get_enum_value(enum_);\n"
         )
         code += self._indent("aaa_variable_inc_ref(enum_value);\n")
-        code += self._indent("aaa_stack_pop(stack);\n")
-        code += self._indent("aaa_variable_dec_ref(enum_);\n")
         code += self._indent("aaa_stack_push(stack, enum_value);\n")
+
+        code += self._indent("aaa_variable_inc_ref(enum_value);\n")
+        code += self._indent("aaa_variable_dec_ref(enum_);\n")
+
         code += self._indent("switch (variant_id) {\n")
         self.indent_level += 1
 
