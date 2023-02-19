@@ -356,8 +356,11 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
             aaa_map_iter_dec_ref(var->map_iter);
             break;
         case AAA_ENUM:
-            aaa_variable_dec_ref(var->enum_value);
-            break;
+            if (aaa_ref_count_dec(&var->ref_count) == 0) {
+                aaa_variable_dec_ref(var->enum_value);
+                free(var);
+            }
+            return;
         default:
             fprintf(stderr, "aaa_variable_dec_ref unhandled variable kind\n");
             abort();

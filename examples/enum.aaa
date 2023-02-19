@@ -41,15 +41,86 @@ fn is_quit_message args m as message return bool {
 }
 
 fn main {
+    // construct enum with attached values
+
+    rgb
+    dup "r" { 1 } !
+    dup "g" { 2 } !
+    dup "b" { 3 } !
+    message:change_color
+    // stack: message:change_color{1, 2, 3}
+    drop
+
+    coord
+    dup "x" { 4 } !
+    dup "y" { 5 } !
+    message:move
+    // stack: message:move{4, 5}
+    drop
+
+    "something"
+    message:write
+    // stack: message:written{"something"}
+    drop
+
+    empty
+    message:quit
+    // stack: message
+    drop
+
     empty
     message:quit
 
-    match {
+    match { // consumes message
         case message:quit {
+            // stack: struct{}
             "quit\n" .
+
             drop
+            // stack: <empty>
+        }
+        case message:move {
+            // stack: coord
+            "move " .
+
+            use c {
+                c "x" ? .
+                " " .
+                c "y" ? .
+            }
+            "\n" .
+
+            // stack: <empty>
+
+        }
+        case message:write {
+            // stack: str
+            "write " .
+
+            use w {
+                w .
+            }
+            "\n" .
+
+            // stack: <empty>
+        }
+        case message:change_color {
+            // stack: struct { r as int, g as int, y as int, }
+            "color " .
+
+            use c {
+                c "r" ? .
+                " " .
+                c "g" ? .
+                " " .
+                c "b" ? .
+            }
+            "\n" .
+
+            // stack: <empty>
         }
     }
+    // stack: <empty>
 
     empty
     message:quit
