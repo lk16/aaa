@@ -5,10 +5,10 @@
 - [ ] `match` should be have a `case` for all enum variants
 - [ ] prevent duplicate cases
 - [ ] add `default` case
-- [ ] make sure all cases handle same enum type
+- [x] make sure all cases handle same enum type
 - [ ] make sure there is no `default` when all cases are handled
-- [ ] recursive enums don't work: `enum foo { x as foo }`
-- [ ] enums with type param variants don't work: `enum foo { x as vec[int] }`
+- [ ] enums with type param variants: `enum foo { x as vec[int] }`
+- [ ] recursive enums: `enum foo { x as vec[foo] }`
 
 ### Transpiling to C
 - [ ] Reset `errno` in case C stdlib functions fail

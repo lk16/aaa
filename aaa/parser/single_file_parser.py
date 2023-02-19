@@ -831,9 +831,9 @@ class SingleFileParser:
 
         name, offset = self._parse_identifier(offset)
         _, offset = self._token(offset, [TokenType.AS])
-        type_name, offset = self._parse_identifier(offset)
+        type_literal, offset = self._parse_type_literal(offset)
 
-        enum_variant = EnumVariant(name.position, name, type_name)
+        enum_variant = EnumVariant(name.position, name, type_literal)
         self._print_parse_tree_node("EnumVariant", start_offset, offset)
         return enum_variant, offset
 
