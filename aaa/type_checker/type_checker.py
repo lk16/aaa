@@ -156,10 +156,10 @@ class SingleFunctionTypeChecker:
         self.verbose = type_checker.verbose
 
     def run(self) -> Dict[Position, List[VariableType]]:
-        if not self.function.body:
-            if self.has_enum_create_function():
-                return self.foreach_loop_stacks
+        if self.function.is_enum_ctor:
+            return self.foreach_loop_stacks
 
+        if not self.function.body:
             # TODO unexpected function without body
             raise NotImplementedError
 
@@ -175,12 +175,6 @@ class SingleFunctionTypeChecker:
             raise FunctionTypeError(self.function, computed_return_types)
 
         return self.foreach_loop_stacks
-
-    def has_enum_create_function(self) -> bool:
-        # Check if self.function is an enum create function
-
-        type = self.types[(self.function.position.file, self.function.struct_name)]
-        return self.function.func_name in type.enum_fields
 
     def _confirm_return_types(self, computed: List[VariableType] | Never) -> bool:
         expected = self.function.return_types

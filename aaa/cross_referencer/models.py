@@ -50,11 +50,13 @@ class Function(Identifiable):
         type_params: Dict[str, Type],
         arguments: List[Argument],
         return_types: List[VariableType] | Never,
+        is_enum_ctor: bool,
     ) -> None:
         self.type_params = type_params
         self.arguments = arguments
         self.return_types = return_types
         self.body: Optional[FunctionBody] = None
+        self.is_enum_ctor = is_enum_ctor
 
         self.func_name = unresolved.func_name
         self.struct_name = unresolved.struct_name

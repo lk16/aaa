@@ -12,6 +12,7 @@ from aaa.cross_referencer.models import (
     CallFunction,
     CallType,
     CallVariable,
+    CaseBlock,
     CrossReferencerOutput,
     ForeachLoop,
     Function,
@@ -248,6 +249,9 @@ class Transpiler:
         # hash file and name to prevent naming collisions
         hash_input = f"{function.position.file} {function.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
+
+        if function.is_enum_ctor:
+            return f"aaa_enum_ctor_func_{hash}"
         return f"aaa_user_func_{hash}"
 
     def _get_member_function(self, var_type: VariableType, func_name: str) -> Function:
@@ -257,9 +261,33 @@ class Transpiler:
         name = f"{var_type.name}:{func_name}"
         return self.functions[(file, name)]
 
+    def _generate_c_enum_ctor_function(self, function: Function) -> str:
+        func_name = self._generate_c_function_name(function)
+
+        enum_type_key = (function.position.file, function.struct_name)
+        enum_type = self.types[enum_type_key]
+        variant_id = enum_type.enum_fields[function.func_name][1]
+
+        content = f"// Generated for: {function.position.file} enum {function.struct_name}, variant {function.func_name}\n"
+        content += f"void {func_name}(struct aaa_stack *stack) {{\n"
+
+        self.indent_level += 1
+
+        content += self._indent("struct aaa_variable *var = aaa_stack_pop(stack);\n")
+        content += self._indent(
+            f"struct aaa_variable *enum_var = aaa_variable_new_enum(var, {variant_id});\n"
+        )
+        content += self._indent("aaa_stack_push(stack, enum_var);\n")
+
+        self.indent_level -= 1
+
+        content += "}\n\n"
+
+        return content
+
     def _generate_c_function(self, function: Function) -> str:
-        if not function.body:
-            return ""  # TODO make sure we skip enum constructing functions more nicely
+        if function.is_enum_ctor:
+            return self._generate_c_enum_ctor_function(function)
 
         assert function.body
         self.func_local_vars = set()
@@ -350,7 +378,52 @@ class Transpiler:
             assert False
 
     def _generate_c_match_block_code(self, match_block: MatchBlock) -> str:
-        raise NotImplementedError  # TODO
+
+        # TODO prevent variable name colission
+        code = ""
+
+        code += self._indent("struct aaa_variable *enum_ = aaa_stack_top(stack);\n")
+        code += self._indent(
+            "int variant_id = aaa_variable_get_enum_variant_id(enum_);\n"
+        )
+        code += self._indent(
+            "struct aaa_variable *enum_value = aaa_variable_get_enum_value(enum_);\n"
+        )
+        code += self._indent("aaa_variable_inc_ref(enum_value);\n")
+        code += self._indent("aaa_stack_pop(stack);\n")
+        code += self._indent("switch (variant_id) {\n")
+        self.indent_level += 1
+
+        for case_block in match_block.case_blocks:
+            code += self._generate_c_case_block_code(case_block)
+
+        code += self._indent("default:\n")
+
+        self.indent_level += 1
+        code += self._indent("break;\n")
+        self.indent_level -= 1
+
+        self.indent_level -= 1
+
+        code += self._indent("}\n")
+
+        return code
+
+    def _generate_c_case_block_code(self, case_block: CaseBlock) -> str:
+        # TODO make case-indentation consistent with Aaa C lib
+
+        enum_type = case_block.enum_type
+        variant_id = enum_type.enum_fields[case_block.variant_name][1]
+
+        code = self._indent(
+            f"case {variant_id}: // {enum_type.name}:{case_block.variant_name}\n"
+        )
+        self.indent_level += 1
+        code += self._generate_c_function_body(case_block.body)
+        code += self._indent("break;\n")
+        self.indent_level -= 1
+
+        return code
 
     def _generate_c_return(self, return_: Return) -> str:
         code = ""

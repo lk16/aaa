@@ -28,7 +28,7 @@ void aaa_stack_init(struct aaa_stack *stack) {
 
 void aaa_stack_free(struct aaa_stack *stack) { free(stack->data); }
 
-static struct aaa_variable *aaa_stack_top(struct aaa_stack *stack) {
+struct aaa_variable *aaa_stack_top(struct aaa_stack *stack) {
     return stack->data[stack->size - 1];
 }
 

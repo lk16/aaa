@@ -33,6 +33,8 @@ struct aaa_map *aaa_variable_get_set(struct aaa_variable *var);
 struct aaa_struct *aaa_variable_get_struct(struct aaa_variable *var);
 struct aaa_vector_iter *aaa_variable_get_vector_iter(struct aaa_variable *var);
 struct aaa_map_iter *aaa_variable_get_map_iter(struct aaa_variable *var);
+struct aaa_variable *aaa_variable_get_enum_value(struct aaa_variable *var);
+int aaa_variable_get_enum_variant_id(struct aaa_variable *var);
 
 struct aaa_string *aaa_variable_repr(const struct aaa_variable *var);
 struct aaa_variable *aaa_variable_copy(const struct aaa_variable *var);

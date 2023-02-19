@@ -1,6 +1,8 @@
 # TODO
 
 ### Enums
+- [ ] `match` should be have a `case` for all enum variants
+- [ ] prevent duplicate `case`'s
 - [ ] add `default` case
 
 ### Transpiling to C

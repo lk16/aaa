@@ -161,7 +161,20 @@ class CrossReferencer:
         params = self._resolve_function_params(unresolved)
         arguments = self._resolve_function_arguments(unresolved, params)
         return_types = self._resolve_function_return_types(unresolved, params)
-        function = Function(unresolved, params, arguments, return_types)
+
+        is_enum_ctor = False
+
+        try:
+            enum_type = self._get_identifiable_generic(
+                unresolved.struct_name, unresolved.position
+            )
+        except UnknownIdentifier:
+            pass
+        else:
+            if isinstance(enum_type, Type):
+                is_enum_ctor = unresolved.func_name in enum_type.enum_fields
+
+        function = Function(unresolved, params, arguments, return_types, is_enum_ctor)
         self._check_function_identifiers_collision(function)
 
         return function

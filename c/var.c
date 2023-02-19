@@ -38,7 +38,7 @@ struct aaa_variable {
         struct aaa_vector_iter *vector_iter;
         struct aaa_map_iter *map_iter;
         struct {
-            int variant_id;
+            int enum_variant_id;
             struct aaa_variable *enum_value;
         };
     };
@@ -102,7 +102,7 @@ struct aaa_variable *aaa_variable_new_enum(struct aaa_variable *enum_value,
                                            int variant_id) {
     struct aaa_variable *var = aaa_variable_new();
     var->kind = AAA_ENUM;
-    var->variant_id = variant_id;
+    var->enum_variant_id = variant_id;
     var->enum_value = enum_value;
     return var;
 }
@@ -155,6 +155,16 @@ struct aaa_map *aaa_variable_get_map(struct aaa_variable *var) {
 struct aaa_struct *aaa_variable_get_struct(struct aaa_variable *var) {
     aaa_variable_check_kind(var, AAA_STRUCT);
     return var->struct_;
+}
+
+struct aaa_variable *aaa_variable_get_enum_value(struct aaa_variable *var) {
+    aaa_variable_check_kind(var, AAA_ENUM);
+    return var->enum_value;
+}
+
+int aaa_variable_get_enum_variant_id(struct aaa_variable *var) {
+    aaa_variable_check_kind(var, AAA_ENUM);
+    return var->enum_variant_id;
 }
 
 static struct aaa_string *aaa_variable_repr_int(int integer) {
@@ -346,6 +356,7 @@ void aaa_variable_dec_ref(struct aaa_variable *var) {
             aaa_map_iter_dec_ref(var->map_iter);
             break;
         case AAA_ENUM:
+            aaa_variable_dec_ref(var->enum_value);
             break;
         default:
             fprintf(stderr, "aaa_variable_dec_ref unhandled variable kind\n");
