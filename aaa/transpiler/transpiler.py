@@ -378,23 +378,25 @@ class Transpiler:
             assert False
 
     def _generate_c_match_block_code(self, match_block: MatchBlock) -> str:
+        # Use hash suffix for variables to prevent name colission
+        hash_input = str(match_block.position)
+        hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
 
-        # TODO prevent variable name colission
-        code = ""
-
-        code += self._indent("struct aaa_variable *enum_ = aaa_stack_pop(stack);\n")
-        code += self._indent(
-            "int variant_id = aaa_variable_get_enum_variant_id(enum_);\n"
+        code = self._indent(
+            f"struct aaa_variable *enum_{hash} = aaa_stack_pop(stack);\n"
         )
         code += self._indent(
-            "struct aaa_variable *enum_value = aaa_variable_get_enum_value(enum_);\n"
+            f"int variant_id_{hash} = aaa_variable_get_enum_variant_id(enum_{hash});\n"
         )
-        code += self._indent("aaa_variable_inc_ref(enum_value);\n")
-        code += self._indent("aaa_stack_push(stack, enum_value);\n")
+        code += self._indent(
+            f"struct aaa_variable *enum_value_{hash} = aaa_variable_get_enum_value(enum_{hash});\n"
+        )
+        code += self._indent(f"aaa_variable_inc_ref(enum_value_{hash});\n")
+        code += self._indent(f"aaa_stack_push(stack, enum_value_{hash});\n")
 
-        code += self._indent("aaa_variable_dec_ref(enum_);\n")
+        code += self._indent(f"aaa_variable_dec_ref(enum_{hash});\n")
 
-        code += self._indent("switch (variant_id) {\n")
+        code += self._indent(f"switch (variant_id_{hash}) {{\n")
         self.indent_level += 1
 
         for case_block in match_block.case_blocks:
@@ -413,8 +415,6 @@ class Transpiler:
         return code
 
     def _generate_c_case_block_code(self, case_block: CaseBlock) -> str:
-        # TODO make case-indentation consistent with Aaa C lib
-
         enum_type = case_block.enum_type
         variant_id = enum_type.enum_fields[case_block.variant_name][1]
 
