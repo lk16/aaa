@@ -122,7 +122,7 @@ class UnresolvedType(AaaCrossReferenceModel):
             self.parsed_field_types = parsed.fields
 
         if isinstance(parsed, parser.Enum):
-            for i, item in enumerate(parsed.items):
+            for i, item in enumerate(parsed.variants):
                 self.parsed_variants[item.name.name] = (item.type_name, i)
 
         self.name = parsed.identifier.name

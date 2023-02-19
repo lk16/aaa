@@ -96,11 +96,11 @@ struct_field_update: string BEGIN function_body _END SET_FIELD
 
 // --- enums ---
 
-enum_definition: ENUM identifier BEGIN enum_items END
+enum_definition: ENUM identifier BEGIN enum_variants END
 
-enum_items: enum_item ("," enum_item)* [","]
+enum_variants: enum_variant ("," enum_variant)* [","]
 
-enum_item: identifier AS identifier
+enum_variant: identifier AS identifier
 
 match_block: MATCH BEGIN (case_block)* END
 

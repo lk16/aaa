@@ -263,7 +263,7 @@ class MatchBlock(FunctionBodyItem):
         super().__init__(position)
 
 
-class EnumItem(FunctionBodyItem):  # TODO rename to EnumVariant everywhere
+class EnumVariant(FunctionBodyItem):
     def __init__(
         self, position: Position, name: Identifier, type_name: Identifier
     ) -> None:
@@ -274,10 +274,10 @@ class EnumItem(FunctionBodyItem):  # TODO rename to EnumVariant everywhere
 
 class Enum(FunctionBodyItem):
     def __init__(
-        self, position: Position, name: Identifier, items: List[EnumItem]
+        self, position: Position, name: Identifier, variants: List[EnumVariant]
     ) -> None:
         self.identifier = name
-        self.items = items
+        self.variants = variants
         super().__init__(position)
 
 

@@ -16,7 +16,7 @@ from aaa.parser.models import (
     Call,
     CaseBlock,
     Enum,
-    EnumItem,
+    EnumVariant,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -826,24 +826,24 @@ class SingleFileParser:
         self._print_parse_tree_node("MatchBlock", start_offset, offset)
         return match_block, offset
 
-    def _parse_enum_item(self, offset: int) -> Tuple[EnumItem, int]:
+    def _parse_enum_variant(self, offset: int) -> Tuple[EnumVariant, int]:
         start_offset = offset
 
         name, offset = self._parse_identifier(offset)
         _, offset = self._token(offset, [TokenType.AS])
         type_name, offset = self._parse_identifier(offset)
 
-        enum_item = EnumItem(name.position, name, type_name)
-        self._print_parse_tree_node("EnumItem", start_offset, offset)
-        return enum_item, offset
+        enum_variant = EnumVariant(name.position, name, type_name)
+        self._print_parse_tree_node("EnumVariant", start_offset, offset)
+        return enum_variant, offset
 
-    def _parse_enum_items(self, offset: int) -> Tuple[List[EnumItem], int]:
+    def _parse_enum_variants(self, offset: int) -> Tuple[List[EnumVariant], int]:
         start_offset = offset
 
-        enum_items: List[EnumItem] = []
+        enum_variants: List[EnumVariant] = []
 
-        enum_item, offset = self._parse_enum_item(offset)
-        enum_items.append(enum_item)
+        enum_variant, offset = self._parse_enum_variant(offset)
+        enum_variants.append(enum_variant)
 
         while True:
             try:
@@ -852,14 +852,14 @@ class SingleFileParser:
                 break
 
             try:
-                enum_item, offset = self._parse_enum_item(offset)
+                enum_variant, offset = self._parse_enum_variant(offset)
             except ParserBaseException:
                 break
             else:
-                enum_items.append(enum_item)
+                enum_variants.append(enum_variant)
 
-        self._print_parse_tree_node("EnumItems", start_offset, offset)
-        return enum_items, offset
+        self._print_parse_tree_node("EnumVariants", start_offset, offset)
+        return enum_variants, offset
 
     def _parse_enum_definition(self, offset: int) -> Tuple[Enum, int]:
         start_offset = offset
@@ -867,7 +867,7 @@ class SingleFileParser:
         enum_token, offset = self._token(offset, [TokenType.ENUM])
         name, offset = self._parse_identifier(offset)
         enum_token, offset = self._token(offset, [TokenType.BEGIN])
-        items, offset = self._parse_enum_items(offset)
+        items, offset = self._parse_enum_variants(offset)
         enum_token, offset = self._token(offset, [TokenType.END])
 
         enum = Enum(enum_token.position, name, items)

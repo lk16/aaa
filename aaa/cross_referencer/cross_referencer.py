@@ -269,7 +269,7 @@ class CrossReferencer:
             type = UnresolvedType(parsed_enum, 0)
             types.append(type)
 
-            for variant in parsed_enum.items:
+            for variant in parsed_enum.variants:
                 parsed_function = parser.Function(
                     position=dummy_position,
                     struct_name=parsed_enum.identifier,
