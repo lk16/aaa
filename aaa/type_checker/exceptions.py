@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union
+from typing import List, Set, Union
 
 from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
@@ -463,6 +463,42 @@ class CaseStackTypeError(TypeCheckerException):
             message += f"{case_block.position}: {format_typestack(case_type_stack)}\n"
 
         return message
+
+
+class DuplicateEnumCase(TypeCheckerException):
+    def __init__(self, first: CaseBlock, second: CaseBlock) -> None:
+        self.first = first
+        self.second = second
+
+    def __str__(self) -> str:
+        enum_name = self.first.enum_type.name
+        variant_name = self.first.variant_name
+        return (
+            f"Enum case is used twice in same match block:\n"
+            + f"{self.first.position}: case {enum_name}:{variant_name}\n"
+            + f"{self.second.position}: case {enum_name}:{variant_name}\n"
+        )
+
+
+class MissingEnumCases(TypeCheckerException):
+    def __init__(
+        self, match_block: MatchBlock, enum_type: Type, missing_variants: Set[str]
+    ) -> None:
+        self.match_block = match_block
+        self.missing_variants = missing_variants
+        self.enum_type = enum_type
+
+    def __str__(self) -> str:
+        return (
+            f"{self.match_block.position}: Missing cases for enum {self.enum_type.name}.\n"
+            + "\n".join(
+                [
+                    f"- {self.enum_type.name}:{variant}"
+                    for variant in self.missing_variants
+                ]
+            )
+            + "\n"
+        )
 
 
 class SignatureItemMismatch(AaaException):

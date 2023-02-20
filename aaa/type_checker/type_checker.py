@@ -10,6 +10,7 @@ from aaa.cross_referencer.models import (
     CallFunction,
     CallType,
     CallVariable,
+    CaseBlock,
     CrossReferencerOutput,
     ForeachLoop,
     Function,
@@ -32,6 +33,7 @@ from aaa.type_checker.exceptions import (
     CaseEnumTypeError,
     CaseStackTypeError,
     ConditionTypeError,
+    DuplicateEnumCase,
     ForeachLoopTypeError,
     FunctionTypeError,
     InvalidIterable,
@@ -42,6 +44,7 @@ from aaa.type_checker.exceptions import (
     MainFunctionNotFound,
     MatchTypeError,
     MemberFunctionTypeNotFound,
+    MissingEnumCases,
     MissingIterable,
     ReturnTypesError,
     SignatureItemMismatch,
@@ -423,6 +426,8 @@ class SingleFunctionTypeChecker:
 
         enum_type = matched_var_type.type
 
+        found_enum_variants: Dict[str, CaseBlock] = {}
+
         case_type_stacks: List[List[VariableType] | Never] = []
         for case_block in match_block.case_blocks:
             case_type_stack: List[VariableType] | Never = copy(type_stack[:-1])
@@ -431,8 +436,21 @@ class SingleFunctionTypeChecker:
             if case_block.enum_type != enum_type:
                 raise CaseEnumTypeError(case_block, enum_type, case_block.enum_type)
 
+            variant_name = case_block.variant_name
+
+            try:
+                colliding_case_block = found_enum_variants[variant_name]
+            except KeyError:
+                pass
+            else:
+                raise DuplicateEnumCase(
+                    colliding_case_block, case_block
+                )  # TODO add test
+
+            found_enum_variants[variant_name] = case_block
+
             # The variant name is checked in the cross referencer so it cannot fail here.
-            variant_type = case_block.enum_type.enum_fields[case_block.variant_name][0]
+            variant_type = enum_type.enum_fields[variant_name][0]
 
             case_type_stack.append(variant_type)
 
@@ -440,6 +458,15 @@ class SingleFunctionTypeChecker:
                 case_block.body, case_type_stack
             )
             case_type_stacks.append(case_type_stack)
+
+        missing_enum_variants = set(enum_type.enum_fields.keys()) - set(
+            found_enum_variants.keys()
+        )
+
+        if missing_enum_variants:
+            raise MissingEnumCases(
+                match_block, enum_type, missing_enum_variants
+            )  # TODO add test
 
         match_stack: Never | List[VariableType] = Never()
 
