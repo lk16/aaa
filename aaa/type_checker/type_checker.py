@@ -34,7 +34,7 @@ from aaa.type_checker.exceptions import (
     CaseEnumTypeError,
     CaseStackTypeError,
     ConditionTypeError,
-    DuplicateEnumCase,
+    DuplicateCase,
     ForeachLoopTypeError,
     FunctionTypeError,
     InvalidIterable,
@@ -55,6 +55,7 @@ from aaa.type_checker.exceptions import (
     TypeCheckerException,
     UnknownField,
     UnreachableCode,
+    UnreachableDefaultBlock,
     UpdateConstStructError,
     UseBlockStackUnderflow,
     WhileLoopTypeError,
@@ -446,7 +447,7 @@ class SingleFunctionTypeChecker:
                 except KeyError:
                     pass
                 else:
-                    raise DuplicateEnumCase(colliding_case_block, block)
+                    raise DuplicateCase(colliding_case_block, block)
 
                 found_enum_variants[variant_name] = block
 
@@ -457,9 +458,7 @@ class SingleFunctionTypeChecker:
 
             elif isinstance(block, DefaultBlock):
                 if found_default_block:
-                    # TODO found 2 default blocks
-                    # test with `enum foo { a as int, b as int } fn main { 3 foo:a match { case foo:a { drop } default { nop } default { nop } } }`
-                    raise NotImplementedError
+                    raise DuplicateCase(found_default_block, block)
 
                 found_default_block = block
 
@@ -477,9 +476,7 @@ class SingleFunctionTypeChecker:
             raise MissingEnumCases(match_block, enum_type, missing_enum_variants)
 
         if not missing_enum_variants and found_default_block:
-            # TODO default block is unreachable
-            # test with `enum foo { a as int, b as int } fn main { 3 foo:a match { case foo:a { drop } case foo:b { drop } default { nop } } }`
-            raise NotImplementedError
+            raise UnreachableDefaultBlock(found_default_block)
 
         match_stack: Never | List[VariableType] = Never()
 

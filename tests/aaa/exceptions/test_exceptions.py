@@ -26,7 +26,7 @@ from aaa.type_checker.exceptions import (
     CaseEnumTypeError,
     CaseStackTypeError,
     ConditionTypeError,
-    DuplicateEnumCase,
+    DuplicateCase,
     ForeachLoopTypeError,
     FunctionTypeError,
     InvalidIterable,
@@ -45,6 +45,7 @@ from aaa.type_checker.exceptions import (
     StructUpdateTypeError,
     UnknownField,
     UnreachableCode,
+    UnreachableDefaultBlock,
     UpdateConstStructError,
     UseBlockStackUnderflow,
     WhileLoopTypeError,
@@ -888,11 +889,31 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             enum foo { a as int, b as int }
             fn main { 3 foo:a match { case foo:a { nop } case foo:a { nop } } }
             """,
-            DuplicateEnumCase,
-            "Enum case is used twice in same match block:\n"
+            DuplicateCase,
+            "Duplicate case found in match block:\n"
             + "/foo/main.aaa:3:39: case foo:a\n"
             + "/foo/main.aaa:3:58: case foo:a\n",
-            id="duplicate-enum-case",
+            id="duplicate-case",
+        ),
+        pytest.param(
+            """
+            enum foo { a as int, b as int }
+            fn main { 3 foo:a match { default { nop } default { nop } } }
+            """,
+            DuplicateCase,
+            "Duplicate case found in match block:\n"
+            + "/foo/main.aaa:3:39: default\n"
+            + "/foo/main.aaa:3:55: default\n",
+            id="duplicate-default",
+        ),
+        pytest.param(
+            """
+            enum foo { a as int, b as int }
+            fn main { 3 foo:a match { case foo:a { drop } case foo:b { drop } default { nop } } }
+            """,
+            UnreachableDefaultBlock,
+            "/foo/main.aaa:3:79: Unreachable default block.\n",
+            id="unreachable-default-block",
         ),
     ],
 )

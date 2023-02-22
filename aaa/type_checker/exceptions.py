@@ -445,6 +445,13 @@ class CaseEnumTypeError(TypeCheckerException):
         return f"{self.position}: Cannot use case for enum {self.found_enum.name} when matching on enum {self.expected_enum.name}\n"
 
 
+def describe_block(block: CaseBlock | DefaultBlock) -> str:
+    if isinstance(block, CaseBlock):
+        return f"case {block.enum_type.name}:{block.variant_name}"
+    else:
+        return "default"
+
+
 class CaseStackTypeError(TypeCheckerException):
     def __init__(
         self,
@@ -459,12 +466,7 @@ class CaseStackTypeError(TypeCheckerException):
         message = "Inconsistent stack types for match cases:\n"
 
         for block, type_stack in zip(self.blocks, self.block_type_stacks, strict=True):
-            if isinstance(block, CaseBlock):
-                description = f"case {block.enum_type.name}:{block.variant_name}"
-            elif isinstance(block, DefaultBlock):
-                description = "default case"
-            else:  # pragma: nocover
-                assert False
+            description = describe_block(block)
 
             message += (
                 f"{block.position}: ({description}) {format_typestack(type_stack)}\n"
@@ -473,18 +475,18 @@ class CaseStackTypeError(TypeCheckerException):
         return message
 
 
-class DuplicateEnumCase(TypeCheckerException):
-    def __init__(self, first: CaseBlock, second: CaseBlock) -> None:
+class DuplicateCase(TypeCheckerException):
+    def __init__(
+        self, first: CaseBlock | DefaultBlock, second: CaseBlock | DefaultBlock
+    ) -> None:
         self.first = first
         self.second = second
 
     def __str__(self) -> str:
-        enum_name = self.first.enum_type.name
-        variant_name = self.first.variant_name
         return (
-            f"Enum case is used twice in same match block:\n"
-            + f"{self.first.position}: case {enum_name}:{variant_name}\n"
-            + f"{self.second.position}: case {enum_name}:{variant_name}\n"
+            f"Duplicate case found in match block:\n"
+            + f"{self.first.position}: {describe_block(self.first)}\n"
+            + f"{self.second.position}: {describe_block(self.second)}\n"
         )
 
 
@@ -507,6 +509,14 @@ class MissingEnumCases(TypeCheckerException):
             )
             + "\n"
         )
+
+
+class UnreachableDefaultBlock(TypeCheckerException):
+    def __init__(self, block: DefaultBlock) -> None:
+        self.block = block
+
+    def __str__(self) -> str:
+        return f"{self.block.position}: Unreachable default block.\n"
 
 
 class SignatureItemMismatch(AaaException):

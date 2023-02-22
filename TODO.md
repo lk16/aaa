@@ -5,9 +5,9 @@
 - [x] `match` should be have a `case` for all enum variants
 - [x] prevent duplicate cases
 - [x] make sure all cases handle same enum type
-- [ ] add `default` case
-- [ ] make sure there is no `default` when all cases are handled
-- [ ] make sure there is at most one `default` case in a `match` block
+- [x] add `default` case
+- [x] make sure there is no `default` when all cases are handled
+- [x] make sure there is at most one `default` case in a `match` block
 - [x] enums with type param variants: `enum foo { x as vec[int] }`
 - [ ] recursive enums: `enum foo { x as vec[foo] }`
 

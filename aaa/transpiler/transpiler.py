@@ -441,6 +441,7 @@ class Transpiler:
     def _generate_c_default_block_code(self, default_block: DefaultBlock) -> str:
         code = self._indent(f"default:\n")
         self.indent_level += 1
+        code += self._indent("aaa_stack_drop(stack);\n")
         code += self._generate_c_function_body(default_block.body)
         code += self._indent("break;\n")
         self.indent_level -= 1

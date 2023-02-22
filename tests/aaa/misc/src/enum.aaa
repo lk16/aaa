@@ -34,9 +34,7 @@ fn is_quit_message args m as message return bool {
     m
     match {
         case message:quit { drop true }
-        case message:move { drop false }
-        case message:write { drop false }
-        case message:change_color { drop false }
+        default { false }
     }
 }
 
