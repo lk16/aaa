@@ -2,8 +2,8 @@
 
 ### Enums
 - [x] require `enum` to have at least one variant
-- [ ] `match` should be have a `case` for all enum variants
-- [ ] prevent duplicate cases
+- [x] `match` should be have a `case` for all enum variants
+- [x] prevent duplicate cases
 - [x] make sure all cases handle same enum type
 - [ ] add `default` case
 - [ ] make sure there is no `default` when all cases are handled

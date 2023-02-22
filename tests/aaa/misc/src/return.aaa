@@ -87,6 +87,13 @@ fn l return never {
     }
 }
 
+fn m return int {
+    3 use x {
+        5 return
+    }
+}
+
+
 fn main {
     nop
 }
