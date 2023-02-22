@@ -443,9 +443,7 @@ class SingleFunctionTypeChecker:
             except KeyError:
                 pass
             else:
-                raise DuplicateEnumCase(
-                    colliding_case_block, case_block
-                )  # TODO add test
+                raise DuplicateEnumCase(colliding_case_block, case_block)
 
             found_enum_variants[variant_name] = case_block
 
@@ -464,9 +462,7 @@ class SingleFunctionTypeChecker:
         )
 
         if missing_enum_variants:
-            raise MissingEnumCases(
-                match_block, enum_type, missing_enum_variants
-            )  # TODO add test
+            raise MissingEnumCases(match_block, enum_type, missing_enum_variants)
 
         match_stack: Never | List[VariableType] = Never()
 

@@ -26,15 +26,18 @@ from aaa.type_checker.exceptions import (
     CaseEnumTypeError,
     CaseStackTypeError,
     ConditionTypeError,
+    DuplicateEnumCase,
     ForeachLoopTypeError,
     FunctionTypeError,
     InvalidIterable,
     InvalidIterator,
     InvalidMainSignuture,
     InvalidMemberFunctionSignature,
+    InvalidTestSignuture,
     MainFunctionNotFound,
     MatchTypeError,
     MemberFunctionTypeNotFound,
+    MissingEnumCases,
     MissingIterable,
     ReturnTypesError,
     StackTypesError,
@@ -871,6 +874,26 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "/foo/main.aaa:7:21: int int\n",
             id="case-stack-type-error",
         ),
+        pytest.param(
+            """
+            enum foo { a as int, b as int }
+            fn main { 3 foo:a match { case foo:a { nop } } }
+            """,
+            MissingEnumCases,
+            "/foo/main.aaa:3:31: Missing cases for enum foo.\n- foo:b\n",
+            id="missing-enum-case",
+        ),
+        pytest.param(
+            """
+            enum foo { a as int, b as int }
+            fn main { 3 foo:a match { case foo:a { nop } case foo:a { nop } } }
+            """,
+            DuplicateEnumCase,
+            "Enum case is used twice in same match block:\n"
+            + "/foo/main.aaa:3:39: case foo:a\n"
+            + "/foo/main.aaa:3:58: case foo:a\n",
+            id="duplicate-enum-case",
+        ),
     ],
 )
 def test_one_error(
@@ -955,6 +978,43 @@ def test_one_error(
             },
             MemberFunctionTypeNotFound,
             "/foo/main.aaa:3:17: Cannot find type foo in same file as member function definition.\n",
+            id="member-function-in-different-file",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "test_foo" import test_bar
+                fn main { nop }
+                """,
+                "test_foo.aaa": "fn test_bar args a as int { nop }",
+            },
+            InvalidTestSignuture,
+            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types\n",
+            id="invalid-test-signature-args",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "test_foo" import test_bar
+                fn main { nop }
+                """,
+                "test_foo.aaa": "fn test_bar return int { 4 }",
+            },
+            InvalidTestSignuture,
+            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types\n",
+            id="invalid-test-signature-return-types",
+        ),
+        pytest.param(
+            {
+                "main.aaa": """
+                from "test_foo" import test_bar
+                fn main { nop }
+                """,
+                "test_foo.aaa": "fn test_bar return never { 0 exit }",
+            },
+            InvalidTestSignuture,
+            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types\n",
+            id="invalid-test-signature-return-never",
         ),
     ],
 )

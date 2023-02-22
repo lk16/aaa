@@ -40,6 +40,16 @@ fn is_quit_message args m as message return bool {
     }
 }
 
+fn returns_sometimes args m as message return int {
+    m
+    match {
+        case message:quit { 0 exit }
+        case message:move { drop 6 }
+        case message:write { 0 exit }
+        case message:change_color { drop 5 }
+    }
+}
+
 fn main {
     // construct enum with attached values
 

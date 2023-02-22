@@ -334,3 +334,10 @@ def test_return() -> None:
     assert "" == stdout
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_enum() -> None:
+    stdout, stderr, exit_code = compile_run("enum.aaa")
+    assert "quit\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
