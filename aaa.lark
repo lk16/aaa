@@ -47,14 +47,15 @@ GET_FIELD:    "?"
 SET_FIELD:    "!"
 
 // control flow keywords
+CASE:        "case"
+DEFAULT:     "default"
 ELSE:        "else"
-FROM:        "from"
 FOREACH:     "foreach"
+FROM:        "from"
 IF:          "if"
+MATCH:       "match"
 USE:         "use"
 WHILE:       "while"
-MATCH:       "match"
-CASE:        "case"
 
 // keywords for builtin constants
 FALSE:       "false"
@@ -104,7 +105,7 @@ enum_variant: identifier AS type_literal
 
 match_block: MATCH BEGIN (case_block)* END
 
-case_block: CASE call BEGIN function_body END
+case_block: (DEFAULT | (CASE call)) BEGIN function_body END
 
 // --- functions, arguments, return types ---
 

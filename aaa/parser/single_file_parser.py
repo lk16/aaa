@@ -15,6 +15,7 @@ from aaa.parser.models import (
     Branch,
     Call,
     CaseBlock,
+    DefaultBlock,
     Enum,
     EnumVariant,
     ForeachLoop,
@@ -78,7 +79,7 @@ class SingleFileParser:
             raise EndOfFileException(self.file)
 
         if token.type not in expected:
-            raise ParserException(token.position, expected, token.type)
+            raise ParserException(token, expected)
 
         return token, offset + 1
 
@@ -619,8 +620,8 @@ class SingleFileParser:
 
         else:
             raise ParserException(
-                position=token.position,
-                expected_token_types=[
+                token,
+                [
                     TokenType.FALSE,
                     TokenType.FOREACH,
                     TokenType.IDENTIFIER,
@@ -633,7 +634,6 @@ class SingleFileParser:
                     TokenType.WHILE,
                     TokenType.USE,
                 ],
-                found_token_type=token.type,
             )
 
         self._print_parse_tree_node("FunctionBodyItem", start_offset, offset)
@@ -803,10 +803,22 @@ class SingleFileParser:
         self._print_parse_tree_node("CaseBlock", start_offset, offset)
         return case_block, offset
 
+    def _parse_default_block(self, offset: int) -> Tuple[DefaultBlock, int]:
+        start_offset = offset
+
+        default_token, offset = self._token(offset, [TokenType.DEFAULT])
+        _, offset = self._token(offset, [TokenType.BEGIN])
+        body, offset = self._parse_function_body(offset)
+        _, offset = self._token(offset, [TokenType.END])
+
+        default_block = DefaultBlock(default_token.position, body)
+        self._print_parse_tree_node("DefaultBlock", start_offset, offset)
+        return default_block, offset
+
     def _parse_match_block(self, offset: int) -> Tuple[MatchBlock, int]:
         start_offset = offset
 
-        case_blocks: List[CaseBlock] = []
+        blocks: List[CaseBlock | DefaultBlock] = []
 
         match_token, offset = self._token(offset, [TokenType.MATCH])
         _, offset = self._token(offset, [TokenType.BEGIN])
@@ -817,12 +829,19 @@ class SingleFileParser:
             if not token or token.type == TokenType.END:
                 break
 
-            case_block, offset = self._parse_case_block(offset)
-            case_blocks.append(case_block)
+            block: CaseBlock | DefaultBlock
+
+            if token.type == TokenType.CASE:
+                block, offset = self._parse_case_block(offset)
+            elif token.type == TokenType.DEFAULT:
+                block, offset = self._parse_default_block(offset)
+            else:  # pragma: nocover
+                assert False
+            blocks.append(block)
 
         _, offset = self._token(offset, [TokenType.END])
 
-        match_block = MatchBlock(match_token.position, case_blocks)
+        match_block = MatchBlock(match_token.position, blocks)
         self._print_parse_tree_node("MatchBlock", start_offset, offset)
         return match_block, offset
 

@@ -258,9 +258,17 @@ class CaseBlock(FunctionBodyItem):
         super().__init__(position)
 
 
+class DefaultBlock(FunctionBodyItem):
+    def __init__(self, position: Position, body: FunctionBody) -> None:
+        self.body = body
+        super().__init__(position)
+
+
 class MatchBlock(FunctionBodyItem):
-    def __init__(self, position: Position, case_blocks: List[CaseBlock]) -> None:
-        self.case_blocks = case_blocks
+    def __init__(
+        self, position: Position, blocks: List[CaseBlock | DefaultBlock]
+    ) -> None:
+        self.blocks = blocks
         super().__init__(position)
 
 

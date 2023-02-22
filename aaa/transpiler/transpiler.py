@@ -14,6 +14,7 @@ from aaa.cross_referencer.models import (
     CallVariable,
     CaseBlock,
     CrossReferencerOutput,
+    DefaultBlock,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -399,14 +400,23 @@ class Transpiler:
         code += self._indent(f"switch (variant_id_{hash}) {{\n")
         self.indent_level += 1
 
-        for case_block in match_block.case_blocks:
-            code += self._generate_c_case_block_code(case_block)
+        has_default = False
 
-        code += self._indent("default:\n")
+        for block in match_block.blocks:
+            if isinstance(block, CaseBlock):
+                code += self._generate_c_case_block_code(block)
+            elif isinstance(block, DefaultBlock):
+                has_default = True
+                code += self._generate_c_default_block_code(block)
+            else:  # pragma: nocover
+                assert False
 
-        self.indent_level += 1
-        code += self._indent("break;\n")
-        self.indent_level -= 1
+        if not has_default:
+            code += self._indent("default:\n")
+
+            self.indent_level += 1
+            code += self._indent("break;\n")
+            self.indent_level -= 1
 
         self.indent_level -= 1
 
@@ -423,6 +433,15 @@ class Transpiler:
         )
         self.indent_level += 1
         code += self._generate_c_function_body(case_block.body)
+        code += self._indent("break;\n")
+        self.indent_level -= 1
+
+        return code
+
+    def _generate_c_default_block_code(self, default_block: DefaultBlock) -> str:
+        code = self._indent(f"default:\n")
+        self.indent_level += 1
+        code += self._generate_c_function_body(default_block.body)
         code += self._indent("break;\n")
         self.indent_level -= 1
 

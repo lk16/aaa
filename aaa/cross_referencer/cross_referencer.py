@@ -29,6 +29,7 @@ from aaa.cross_referencer.models import (
     CallVariable,
     CaseBlock,
     CrossReferencerOutput,
+    DefaultBlock,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -781,10 +782,17 @@ class FunctionBodyResolver:
             assert False
 
     def _resolve_match_block(self, parsed: parser.MatchBlock) -> MatchBlock:
-        return MatchBlock(
-            parsed.position,
-            [self._resolve_case_block(case) for case in parsed.case_blocks],
-        )
+        blocks: List[CaseBlock | DefaultBlock] = []
+
+        for block in parsed.blocks:
+            if isinstance(block, parser.CaseBlock):
+                blocks.append(self._resolve_case_block(block))
+            elif isinstance(block, parser.DefaultBlock):
+                blocks.append(self._resolve_default_block(block))
+            else:  # pragma: nocover
+                assert False
+
+        return MatchBlock(parsed.position, blocks)
 
     def _resolve_case_block(self, parsed: parser.CaseBlock) -> CaseBlock:
         enum_type_name = parsed.enum_name
@@ -808,6 +816,9 @@ class FunctionBodyResolver:
             variant_name=variant_name,
             body=self._resolve_function_body(parsed.body),
         )
+
+    def _resolve_default_block(self, parsed: parser.DefaultBlock) -> DefaultBlock:
+        return DefaultBlock(parsed.position, self._resolve_function_body(parsed.body))
 
     def _resolve_return(self, parsed: parser.Return) -> Return:
         return Return(parsed)

@@ -13,6 +13,7 @@ class TokenType(Enum):
     COMMA = "COMMA"
     COMMENT = "COMMENT"
     CONST = "CONST"
+    DEFAULT = "DEFAULT"
     ELSE = "ELSE"
     END = "END"
     ENUM = "ENUM"

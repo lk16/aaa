@@ -870,8 +870,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             CaseStackTypeError,
             "Inconsistent stack types for match cases:\n"
-            + "/foo/main.aaa:6:21: int\n"
-            + "/foo/main.aaa:7:21: int int\n",
+            + "/foo/main.aaa:6:21: (case foo:a) int\n"
+            + "/foo/main.aaa:7:21: (case foo:b) int int\n",
             id="case-stack-type-error",
         ),
         pytest.param(

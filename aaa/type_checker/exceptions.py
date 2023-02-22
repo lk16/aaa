@@ -5,6 +5,7 @@ from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
     Assignment,
     CaseBlock,
+    DefaultBlock,
     Function,
     MatchBlock,
     Never,
@@ -447,20 +448,27 @@ class CaseEnumTypeError(TypeCheckerException):
 class CaseStackTypeError(TypeCheckerException):
     def __init__(
         self,
-        case_blocks: List[CaseBlock],
-        case_type_stacks: List[List[VariableType] | Never],
+        blocks: List[CaseBlock | DefaultBlock],
+        block_type_stacks: List[List[VariableType] | Never],
     ) -> None:
-        self.case_blocks = case_blocks
-        self.case_type_stacks = case_type_stacks
-        super().__init__(case_blocks[0].position)
+        self.blocks = blocks
+        self.block_type_stacks = block_type_stacks
+        super().__init__(blocks[0].position)
 
     def __str__(self) -> str:
         message = "Inconsistent stack types for match cases:\n"
 
-        for case_block, case_type_stack in zip(
-            self.case_blocks, self.case_type_stacks, strict=True
-        ):
-            message += f"{case_block.position}: {format_typestack(case_type_stack)}\n"
+        for block, type_stack in zip(self.blocks, self.block_type_stacks, strict=True):
+            if isinstance(block, CaseBlock):
+                description = f"case {block.enum_type.name}:{block.variant_name}"
+            elif isinstance(block, DefaultBlock):
+                description = "default case"
+            else:  # pragma: nocover
+                assert False
+
+            message += (
+                f"{block.position}: ({description}) {format_typestack(type_stack)}\n"
+            )
 
         return message
 

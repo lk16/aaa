@@ -28,6 +28,7 @@ FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
     ("as", TokenType.AS),
     ("case", TokenType.CASE),
     ("const", TokenType.CONST),
+    ("default", TokenType.DEFAULT),
     ("else", TokenType.ELSE),
     ("enum", TokenType.ENUM),
     ("false", TokenType.FALSE),

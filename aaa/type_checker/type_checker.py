@@ -12,6 +12,7 @@ from aaa.cross_referencer.models import (
     CallVariable,
     CaseBlock,
     CrossReferencerOutput,
+    DefaultBlock,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -427,55 +428,71 @@ class SingleFunctionTypeChecker:
         enum_type = matched_var_type.type
 
         found_enum_variants: Dict[str, CaseBlock] = {}
+        found_default_block: Optional[DefaultBlock] = None
 
-        case_type_stacks: List[List[VariableType] | Never] = []
-        for case_block in match_block.case_blocks:
-            case_type_stack: List[VariableType] | Never = copy(type_stack[:-1])
-            assert not isinstance(case_type_stack, Never)
+        block_type_stacks: List[List[VariableType] | Never] = []
+        for block in match_block.blocks:
+            block_type_stack: List[VariableType] | Never = copy(type_stack[:-1])
+            assert not isinstance(block_type_stack, Never)
 
-            if case_block.enum_type != enum_type:
-                raise CaseEnumTypeError(case_block, enum_type, case_block.enum_type)
+            if isinstance(block, CaseBlock):
+                if block.enum_type != enum_type:
+                    raise CaseEnumTypeError(block, enum_type, block.enum_type)
 
-            variant_name = case_block.variant_name
+                variant_name = block.variant_name
 
-            try:
-                colliding_case_block = found_enum_variants[variant_name]
-            except KeyError:
-                pass
-            else:
-                raise DuplicateEnumCase(colliding_case_block, case_block)
+                try:
+                    colliding_case_block = found_enum_variants[variant_name]
+                except KeyError:
+                    pass
+                else:
+                    raise DuplicateEnumCase(colliding_case_block, block)
 
-            found_enum_variants[variant_name] = case_block
+                found_enum_variants[variant_name] = block
 
-            # The variant name is checked in the cross referencer so it cannot fail here.
-            variant_type = enum_type.enum_fields[variant_name][0]
+                # The variant name is checked in the cross referencer so it cannot fail here.
+                variant_type = enum_type.enum_fields[variant_name][0]
 
-            case_type_stack.append(variant_type)
+                block_type_stack.append(variant_type)
 
-            case_type_stack = self._check_function_body(
-                case_block.body, case_type_stack
-            )
-            case_type_stacks.append(case_type_stack)
+            elif isinstance(block, DefaultBlock):
+                if found_default_block:
+                    # TODO found 2 default blocks
+                    # test with `enum foo { a as int, b as int } fn main { 3 foo:a match { case foo:a { drop } default { nop } default { nop } } }`
+                    raise NotImplementedError
+
+                found_default_block = block
+
+            else:  # pragma: nocover
+                assert False
+
+            block_type_stack = self._check_function_body(block.body, block_type_stack)
+            block_type_stacks.append(block_type_stack)
 
         missing_enum_variants = set(enum_type.enum_fields.keys()) - set(
             found_enum_variants.keys()
         )
 
-        if missing_enum_variants:
+        if missing_enum_variants and not found_default_block:
             raise MissingEnumCases(match_block, enum_type, missing_enum_variants)
+
+        if not missing_enum_variants and found_default_block:
+            # TODO default block is unreachable
+            # test with `enum foo { a as int, b as int } fn main { 3 foo:a match { case foo:a { drop } case foo:b { drop } default { nop } } }`
+            raise NotImplementedError
 
         match_stack: Never | List[VariableType] = Never()
 
-        for case_type_stack in case_type_stacks:
-            if isinstance(case_type_stack, Never):
+        for block_type_stack in block_type_stacks:
+            if isinstance(block_type_stack, Never):
                 continue
 
             if isinstance(match_stack, Never):
-                match_stack = case_type_stack
+                match_stack = block_type_stack
                 continue
 
-            if match_stack != case_type_stack:
-                raise CaseStackTypeError(match_block.case_blocks, case_type_stacks)
+            if match_stack != block_type_stack:
+                raise CaseStackTypeError(match_block.blocks, block_type_stacks)
 
         return match_stack
 

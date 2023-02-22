@@ -304,8 +304,10 @@ class UseBlock(FunctionBodyItem):
 
 
 class MatchBlock(FunctionBodyItem):
-    def __init__(self, position: Position, case_blocks: List[CaseBlock]) -> None:
-        self.case_blocks = case_blocks
+    def __init__(
+        self, position: Position, blocks: List[CaseBlock | DefaultBlock]
+    ) -> None:
+        self.blocks = blocks
         super().__init__(position)
 
 
@@ -315,6 +317,12 @@ class CaseBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyItem
     ) -> None:
         self.enum_type = enum_type
         self.variant_name = variant_name
+        self.body = body
+        super().__init__(position)
+
+
+class DefaultBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyItem
+    def __init__(self, position: Position, body: FunctionBody) -> None:
         self.body = body
         super().__init__(position)
 
