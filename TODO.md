@@ -1,15 +1,8 @@
 # TODO
 
-### Enums
-- [x] require `enum` to have at least one variant
-- [x] `match` should be have a `case` for all enum variants
-- [x] prevent duplicate cases
-- [x] make sure all cases handle same enum type
-- [x] add `default` case
-- [x] make sure there is no `default` when all cases are handled
-- [x] make sure there is at most one `default` case in a `match` block
-- [x] enums with type param variants: `enum foo { x as vec[int] }`
+### Recursion
 - [ ] recursive enums: `enum foo { x as vec[foo] }`
+- [ ] recursive structs: `struct foo { x as vec[foo] }`
 
 ### Transpiling to C
 - [ ] Reset `errno` in case C stdlib functions fail
