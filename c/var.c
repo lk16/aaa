@@ -117,6 +117,37 @@ static struct aaa_string *aaa_variable_repr_bool(bool boolean) {
     return aaa_string_new(raw, false);
 }
 
+static struct aaa_string *aaa_variable_repr_int(int integer) {
+    size_t buff_size = (size_t)snprintf(NULL, 0, "%d", integer);
+    char *buff = malloc(buff_size + 1);
+    snprintf(buff, buff_size + 1, "%d", integer);
+    return aaa_string_new(buff, true);
+}
+
+static struct aaa_string *
+aaa_variable_repr_enum(const struct aaa_variable *var) {
+    struct aaa_string *variant_id_repr =
+        aaa_variable_repr_int(var->enum_variant_id);
+    struct aaa_string *variant_repr = aaa_variable_repr(var->enum_value);
+
+    struct aaa_string_buffer *buff = aaa_string_buffer_new();
+
+    aaa_string_buffer_append_c_string(buff, "(enum variant=");
+    aaa_string_buffer_append_string(buff, variant_id_repr);
+    aaa_string_buffer_append_c_string(buff, ")");
+
+    aaa_string_buffer_append_c_string(buff, "<");
+    aaa_string_buffer_append_string(buff, variant_repr);
+    aaa_string_buffer_append_c_string(buff, ">");
+
+    struct aaa_string *string = aaa_string_buffer_to_string(buff);
+
+    aaa_string_dec_ref(variant_repr);
+    aaa_string_dec_ref(variant_id_repr);
+
+    return string;
+}
+
 static void aaa_variable_check_kind(const struct aaa_variable *var,
                                     enum aaa_kind kind) {
     if (var->kind == kind || (var->kind == AAA_SET && kind == AAA_MAP)) {
@@ -165,13 +196,6 @@ struct aaa_variable *aaa_variable_get_enum_value(struct aaa_variable *var) {
 int aaa_variable_get_enum_variant_id(struct aaa_variable *var) {
     aaa_variable_check_kind(var, AAA_ENUM);
     return var->enum_variant_id;
-}
-
-static struct aaa_string *aaa_variable_repr_int(int integer) {
-    size_t buff_size = (size_t)snprintf(NULL, 0, "%d", integer);
-    char *buff = malloc(buff_size + 1);
-    snprintf(buff, buff_size + 1, "%d", integer);
-    return aaa_string_new(buff, true);
 }
 
 static struct aaa_string *aaa_variable_repr_str(struct aaa_string *string) {
@@ -238,10 +262,12 @@ struct aaa_string *aaa_variable_repr(const struct aaa_variable *var) {
         case AAA_SET:
             return aaa_set_repr(var->map);
         case AAA_STRUCT:
+            return aaa_struct_repr(var->struct_);
+        case AAA_ENUM:
+            return aaa_variable_repr_enum(var);
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
-        case AAA_ENUM: // TODO implement
         default:
             fprintf(stderr, "aaa_variable_repr Unhandled variable kind\n");
             abort();
@@ -542,9 +568,7 @@ struct aaa_variable *aaa_variable_copy(const struct aaa_variable *var) {
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
         default:
-            fprintf(
-                stderr,
-                "Attempt to copy iterator or enum\n"); // TODO update message
+            fprintf(stderr, "Attempt to copy iterator\n");
             fflush(stderr);
             abort();
             break;

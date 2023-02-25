@@ -19,3 +19,4 @@ void aaa_struct_set_field(struct aaa_struct *s, const char *field_name,
 
 struct aaa_string *aaa_struct_get_type_name(struct aaa_struct *s);
 struct aaa_struct *aaa_struct_copy(const struct aaa_struct *s);
+struct aaa_string *aaa_struct_repr(struct aaa_struct *s);

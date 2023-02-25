@@ -344,9 +344,16 @@ def test_enum() -> None:
     assert 0 == exit_code
 
 
-@pytest.mark.skip()  # TODO
 def test_recursion() -> None:
     stdout, stderr, exit_code = compile_run("recursion.aaa")
-    assert "" == stdout
+
+    expected_output = (
+        '(struct s)<{"a": [(struct s)<{"a": []}>]}>\n'
+        + "(enum variant=0)<(struct empty)<{}>>\n"
+        + "(enum variant=4)<[(enum variant=2)<5>]>\n"
+        + '(enum variant=5)<{"key": (enum variant=1)<false>}>\n'
+    )
+
+    assert expected_output == stdout
     assert "" == stderr
     assert 0 == exit_code

@@ -1,0 +1,43 @@
+
+struct s {
+    a as vec[s]
+}
+
+struct empty {}
+
+enum json {
+    null as empty,
+    boolean as bool,
+    integer as int,
+    string as str,
+    array as vec[json],
+    object as map[str, json]
+}
+
+
+fn main {
+    s
+    dup "a" {
+        vec[s]
+        dup s vec:push
+    } !
+    .
+    "\n" .
+
+    empty
+    json:null
+    .
+    "\n" .
+
+    vec[json]
+    dup 5 json:integer vec:push
+    json:array
+    .
+    "\n" .
+
+    map[str, json]
+    dup "key" false json:boolean map:set
+    json:object
+    .
+    "\n" .
+}

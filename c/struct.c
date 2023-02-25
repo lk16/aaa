@@ -5,6 +5,7 @@
 #include "map.h"
 #include "ref_count.h"
 #include "str.h"
+#include "strbuff.h"
 #include "struct.h"
 #include "var.h"
 
@@ -94,4 +95,23 @@ struct aaa_struct *aaa_struct_copy(const struct aaa_struct *s) {
     copy->type_name = s->type_name;
 
     return copy;
+}
+
+struct aaa_string *aaa_struct_repr(struct aaa_struct *s) {
+    struct aaa_string_buffer *buff = aaa_string_buffer_new();
+
+    aaa_string_buffer_append_c_string(buff, "(struct ");
+    aaa_string_buffer_append_string(buff, s->type_name);
+    aaa_string_buffer_append_c_string(buff, ")");
+
+    aaa_string_buffer_append_c_string(buff, "<");
+    struct aaa_string *fields_repr = aaa_map_repr(s->map);
+    aaa_string_buffer_append_string(buff, fields_repr);
+    aaa_string_buffer_append_c_string(buff, ">");
+
+    struct aaa_string *string = aaa_string_buffer_to_string(buff);
+
+    aaa_string_dec_ref(fields_repr);
+
+    return string;
 }
