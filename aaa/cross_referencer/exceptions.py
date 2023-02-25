@@ -10,7 +10,6 @@ from aaa.cross_referencer.models import (
     Import,
     Type,
     UnresolvedImport,
-    UnresolvedType,
     Variable,
 )
 from aaa.parser.models import TypeLiteral
@@ -22,7 +21,7 @@ class CrossReferenceBaseException(AaaException):
             return f"function {item.name}"
         elif isinstance(item, (Import, UnresolvedImport)):
             return f"imported identifier {item.name}"
-        elif isinstance(item, (Type, UnresolvedType)):
+        elif isinstance(item, Type):
             return f"type {item.name}"
         elif isinstance(item, Argument):
             return f"function argument {item.name}"

@@ -342,3 +342,11 @@ def test_enum() -> None:
     assert "quit\n" == stdout
     assert "" == stderr
     assert 0 == exit_code
+
+
+@pytest.mark.skip()  # TODO
+def test_recursion() -> None:
+    stdout, stderr, exit_code = compile_run("recursion.aaa")
+    assert "" == stdout
+    assert "" == stderr
+    assert 0 == exit_code

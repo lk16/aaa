@@ -108,38 +108,74 @@ class Import(Identifiable):
         super().__init__(unresolved.position, unresolved.name)
 
 
-class UnresolvedType(AaaCrossReferenceModel):
+class Type(Identifiable):
+    class Resolved:
+        def __init__(
+            self,
+            fields: Dict[str, VariableType],
+            enum_fields: Dict[str, Tuple[VariableType, int]],
+            param_count: int,  # TODO remove?
+        ) -> None:
+            self.fields = fields
+            self.enum_fields = enum_fields
+            self.param_count = param_count
+
+    class Unresolved:
+        def __init__(
+            self,
+            parsed: parser.TypeLiteral | parser.Struct | parser.Enum,
+            param_count: int,  # TODO remove?
+        ) -> None:
+            self.param_count = param_count
+            self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
+            self.parsed_variants: Dict[str, Tuple[parser.TypeLiteral, int]] = {}
+
+            if isinstance(parsed, parser.Struct):
+                self.parsed_field_types = parsed.fields
+
+            if isinstance(parsed, parser.Enum):
+                for i, item in enumerate(parsed.variants):
+                    self.parsed_variants[item.name.name] = (item.type, i)
+
     def __init__(
         self,
         parsed: parser.TypeLiteral | parser.Struct | parser.Enum,
         param_count: int,
     ) -> None:
-        self.param_count = param_count
-        self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
-        self.parsed_variants: Dict[str, Tuple[parser.TypeLiteral, int]] = {}
+        self.state: Type.Resolved | Type.Unresolved = Type.Unresolved(
+            parsed, param_count
+        )
+        super().__init__(parsed.position, parsed.identifier.name)
 
-        if isinstance(parsed, parser.Struct):
-            self.parsed_field_types = parsed.fields
+    @property
+    def fields(self) -> Dict[str, VariableType]:
+        assert isinstance(self.state, Type.Resolved)
+        return self.state.fields
 
-        if isinstance(parsed, parser.Enum):
-            for i, item in enumerate(parsed.variants):
-                self.parsed_variants[item.name.name] = (item.type, i)
+    @property
+    def enum_fields(self) -> Dict[str, Tuple[VariableType, int]]:
+        assert isinstance(self.state, Type.Resolved)
+        return self.state.enum_fields
 
-        self.name = parsed.identifier.name
-        super().__init__(parsed.position)
+    @property
+    def param_count(self) -> int:
+        return self.state.param_count
 
+    def get_unresolved(self) -> Type.Unresolved:
+        assert isinstance(self.state, Type.Unresolved)
+        return self.state
 
-class Type(Identifiable):
-    def __init__(
+    def resolve(
         self,
-        unresolved: UnresolvedType,
         fields: Dict[str, VariableType],
         enum_fields: Dict[str, Tuple[VariableType, int]],
+        param_count: int,
     ) -> None:
-        self.param_count = unresolved.param_count
-        self.fields = fields
-        self.enum_fields = enum_fields
-        super().__init__(unresolved.position, unresolved.name)
+        assert isinstance(self.state, Type.Unresolved)
+        self.state = Type.Resolved(fields, enum_fields, param_count)
+
+    def is_resolved(self) -> bool:
+        return isinstance(self.state, Type.Resolved)
 
 
 class VariableType(AaaCrossReferenceModel):

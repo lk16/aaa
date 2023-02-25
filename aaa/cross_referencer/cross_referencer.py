@@ -19,7 +19,6 @@ from aaa.cross_referencer.exceptions import (
     UnknownVariable,
 )
 from aaa.cross_referencer.models import (
-    AaaCrossReferenceModel,
     Argument,
     Assignment,
     BooleanLiteral,
@@ -47,7 +46,6 @@ from aaa.cross_referencer.models import (
     Type,
     UnresolvedFunction,
     UnresolvedImport,
-    UnresolvedType,
     UseBlock,
     Variable,
     VariableType,
@@ -85,7 +83,7 @@ class CrossReferencer:
 
         self._print_values()
 
-        return CrossReferencerOutput(
+        output = CrossReferencerOutput(
             functions={
                 k: v for (k, v) in self.identifiers.items() if isinstance(v, Function)
             },
@@ -96,6 +94,13 @@ class CrossReferencer:
             builtins_path=self.builtins_path,
             entrypoint=self.entrypoint,
         )
+
+        for type in output.types.values():
+            assert type.is_resolved()
+
+        # TODO check if imports/functions are resolved
+
+        return output
 
     def _get_remaining_dependencies(self, file: Path) -> List[Path]:
         deps: List[Path] = []
@@ -125,6 +130,9 @@ class CrossReferencer:
 
         imports, types, functions = self._load_identifiers(file)
 
+        for type in types:
+            self._save_identifier(type)
+
         for import_ in imports:
             self._resolve(import_)
 
@@ -140,33 +148,34 @@ class CrossReferencer:
         self.cross_referenced_files.add(file)
 
     def _resolve(
-        self, unresolved: UnresolvedImport | UnresolvedType | UnresolvedFunction
+        self, unresolved: UnresolvedImport | Type | UnresolvedFunction
     ) -> None:
 
-        resolvers = {
-            UnresolvedImport: self._resolve_import,
-            UnresolvedType: self._resolve_type,
-            UnresolvedFunction: self._resolve_function_signature,
-        }
+        identifiable: Identifiable
 
         try:
-            identifiable = resolvers[type(unresolved)](unresolved)
+            if isinstance(unresolved, Type):
+                self._resolve_type(unresolved)
+                return
+            elif isinstance(unresolved, UnresolvedImport):
+                identifiable = self._resolve_import(unresolved)
+            elif isinstance(unresolved, UnresolvedFunction):
+                identifiable = self._resolve_function_signature(unresolved)
+            else:  # pragma: nocover
+                assert False
         except CrossReferenceBaseException as e:
             self.exceptions.append(e)
         else:
             self._save_identifier(identifiable)
 
-    def _resolve_function_signature(
-        self, unresolved: AaaCrossReferenceModel
-    ) -> Function:
-        assert isinstance(unresolved, UnresolvedFunction)
-
+    def _resolve_function_signature(self, unresolved: UnresolvedFunction) -> Function:
         params = self._resolve_function_params(unresolved)
         arguments = self._resolve_function_arguments(unresolved, params)
         return_types = self._resolve_function_return_types(unresolved, params)
 
         is_enum_ctor = False
 
+        # TODO Find a better way to detect enum ctors
         try:
             enum_type = self._get_identifiable_generic(
                 unresolved.struct_name, unresolved.position
@@ -242,10 +251,10 @@ class CrossReferencer:
 
     def _load_identifiers(
         self, file: Path
-    ) -> Tuple[List[UnresolvedImport], List[UnresolvedType], List[UnresolvedFunction],]:
+    ) -> Tuple[List[UnresolvedImport], List[Type], List[UnresolvedFunction],]:
         imports: List[UnresolvedImport] = []
         functions: List[UnresolvedFunction] = []
-        types: List[UnresolvedType] = []
+        types: List[Type] = []
 
         parsed_file = self.parsed_files[file]
 
@@ -262,14 +271,14 @@ class CrossReferencer:
 
     def _load_enums(
         self, parsed_enums: List[parser.Enum]
-    ) -> Tuple[List[UnresolvedFunction], List[UnresolvedType]]:
+    ) -> Tuple[List[UnresolvedFunction], List[Type]]:
         functions: List[UnresolvedFunction] = []
-        types: List[UnresolvedType] = []
+        types: List[Type] = []
 
         for parsed_enum in parsed_enums:
             dummy_position = Position(parsed_enum.position.file, -1, -1)
 
-            type = UnresolvedType(parsed_enum, 0)
+            type = Type(parsed_enum, 0)
             types.append(type)
 
             for variant in parsed_enum.variants:
@@ -300,13 +309,8 @@ class CrossReferencer:
 
         return functions, types
 
-    def _load_struct_types(
-        self, parsed_structs: List[parser.Struct]
-    ) -> List[UnresolvedType]:
-        return [
-            UnresolvedType(parsed=parsed_struct, param_count=0)
-            for parsed_struct in parsed_structs
-        ]
+    def _load_struct_types(self, parsed_structs: List[parser.Struct]) -> List[Type]:
+        return [Type(parsed_struct, 0) for parsed_struct in parsed_structs]
 
     def _load_functions(
         self, parsed: List[parser.Function]
@@ -327,14 +331,10 @@ class CrossReferencer:
 
         return imports
 
-    def _load_types(self, types: List[parser.TypeLiteral]) -> List[UnresolvedType]:
-        return [
-            UnresolvedType(param_count=len(type.params), parsed=type) for type in types
-        ]
+    def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
+        return [Type(type, len(type.params)) for type in types]
 
-    def _resolve_import(self, import_: AaaCrossReferenceModel) -> Import:
-        assert isinstance(import_, UnresolvedImport)
-
+    def _resolve_import(self, import_: UnresolvedImport) -> Import:
         key = (import_.source_file, import_.source_name)
 
         try:
@@ -402,24 +402,23 @@ class CrossReferencer:
             is_const=False,
         )
 
-    def _resolve_type(self, unresolved: AaaCrossReferenceModel) -> Type:
-        assert isinstance(unresolved, UnresolvedType)
+    def _resolve_type(self, type: Type) -> None:
         fields = {
             field_name: self._resolve_type_field(parsed_field)
-            for field_name, parsed_field in unresolved.parsed_field_types.items()
+            for field_name, parsed_field in type.get_unresolved().parsed_field_types.items()
         }
 
         enum_variants: Dict[str, Tuple[VariableType, int]] = {}
         for variant_name, (
             variant_type,
             variariant_id,
-        ) in unresolved.parsed_variants.items():
+        ) in type.get_unresolved().parsed_variants.items():
             enum_variants[variant_name] = (
                 self._resolve_type_field(variant_type),
                 variariant_id,
             )
 
-        return Type(unresolved, fields, enum_variants)
+        type.resolve(fields, enum_variants, type.param_count)
 
     def _resolve_function_param(
         self, function: UnresolvedFunction, parsed_type_param: parser.TypeLiteral
@@ -433,11 +432,7 @@ class CrossReferencer:
 
         assert type_literal
 
-        type = Type(
-            UnresolvedType(parsed=type_literal, param_count=0),
-            fields={},
-            enum_fields={},
-        )
+        type = Type(type_literal, 0)
 
         if (function.position.file, param_name) in self.identifiers:
             # Another identifier in the same file has this name.

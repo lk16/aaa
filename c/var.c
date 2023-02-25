@@ -531,10 +531,16 @@ struct aaa_variable *aaa_variable_copy(const struct aaa_variable *var) {
             (void)0;
             struct aaa_struct *struct_copy = aaa_struct_copy(var->struct_);
             return aaa_variable_new_struct(struct_copy);
+        case AAA_ENUM:
+            (void)0;
+            struct aaa_variable *enum_value_copy =
+                aaa_variable_copy(var->enum_value);
+            struct aaa_variable *enum_copy =
+                aaa_variable_new_enum(enum_value_copy, var->enum_variant_id);
+            return enum_copy;
         case AAA_VECTOR_ITER:
         case AAA_MAP_ITER:
         case AAA_SET_ITER:
-        case AAA_ENUM: // TODO implement
         default:
             fprintf(
                 stderr,

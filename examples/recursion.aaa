@@ -1,0 +1,20 @@
+
+struct s {
+    a as vec[s]
+}
+
+enum e {
+    a as vec[e]
+}
+
+
+fn main {
+    s
+    dup "a" { vec[s] } !
+    drop
+
+    vec[e]
+    dup vec[e] e:a vec:push
+    e:a
+    drop
+}
