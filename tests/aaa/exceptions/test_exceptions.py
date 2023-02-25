@@ -1193,8 +1193,8 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:17: type five collides with:\n"
-            + "/foo/main.aaa:2:36: imported identifier five\n",
+            "/foo/main.aaa:2:36: imported identifier five collides with:\n"
+            + "/foo/main.aaa:3:17: type five\n",
             id="struct-import",
         ),
         pytest.param(
