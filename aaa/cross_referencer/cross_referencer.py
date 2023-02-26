@@ -60,7 +60,7 @@ class CrossReferencer:
         self.identifiers: IdentifiablesDict = {}
         self.exceptions: List[CrossReferenceBaseException] = []
         self.cross_referenced_files: Set[Path] = set()
-        self.cross_reference_stack: List[Path] = []
+        self.dependency_stack: List[Path] = []
         self.verbose = verbose
 
     def _save_identifier(self, identifiable: Identifiable) -> None:
@@ -122,26 +122,18 @@ class CrossReferencer:
         return remaining_deps
 
     def _cross_reference_file(self, file: Path) -> None:
-        if file in self.cross_reference_stack:
-            raise CircularDependencyError(self.cross_reference_stack + [file])
+        if file in self.dependency_stack:
+            raise CircularDependencyError(self.dependency_stack + [file])
 
-        self.cross_reference_stack.append(file)
+        self.dependency_stack.append(file)
 
         for dependency in self._get_remaining_dependencies(file):
             self._cross_reference_file(dependency)
 
         imports, types, functions = self._load_identifiers(file)
 
-        for type in types:
-            self._save_identifier(type)
-
-        for function in functions:
-            self._save_identifier(function)
-
-        for import_ in imports:
-            self._save_identifier(import_)
-
-        # TODO wrap all calls to self._resolve_* functions in try except for CrossReferenceBaseException
+        for identifier in types + functions + imports:
+            self._save_identifier(identifier)
 
         for import_ in imports:
             self._resolve_import(import_)
@@ -157,7 +149,7 @@ class CrossReferencer:
                 continue
             self._resolve_function_body(function)
 
-        self.cross_reference_stack.pop()
+        self.dependency_stack.pop()
         self.cross_referenced_files.add(file)
 
     def _is_enum_constructor(self, function: Function) -> bool:

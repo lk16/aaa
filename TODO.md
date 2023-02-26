@@ -1,12 +1,5 @@
 # TODO
 
-### Recursion
-- [x] recursive enums: `enum foo { x as vec[foo] }`
-- [x] recursive structs: `struct foo { x as vec[foo] }`
-- [x] get rid of `UnresolvedImport`
-- [ ] refactor `CrossReferencer`
-
-
 ### Transpiling to C
 - [ ] Reset `errno` in case C stdlib functions fail
 - [ ] Run `gcov` to find missing coverage
