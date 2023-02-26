@@ -3,7 +3,7 @@
 ### Recursion
 - [x] recursive enums: `enum foo { x as vec[foo] }`
 - [x] recursive structs: `struct foo { x as vec[foo] }`
-- [ ] get rid of `UnresolvedImport`
+- [x] get rid of `UnresolvedImport`
 - [ ] refactor `CrossReferencer`
 
 

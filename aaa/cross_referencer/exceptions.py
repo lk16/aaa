@@ -15,20 +15,23 @@ from aaa.cross_referencer.models import (
 from aaa.parser.models import TypeLiteral
 
 
+def describe(item: Identifiable | Argument | Variable) -> str:
+    if isinstance(item, Function):
+        return f"function {item.name}"
+    elif isinstance(item, Import):
+        return f"imported identifier {item.name}"
+    elif isinstance(item, Type):
+        return f"type {item.name}"
+    elif isinstance(item, Argument):
+        return f"function argument {item.name}"
+    elif isinstance(item, Variable):
+        return f"local variable {item.name}"
+    else:  # pragma: nocover
+        assert False
+
+
 class CrossReferenceBaseException(AaaException):
-    def describe(self, item: Identifiable | Argument | Variable) -> str:
-        if isinstance(item, Function):
-            return f"function {item.name}"
-        elif isinstance(item, Import):
-            return f"imported identifier {item.name}"
-        elif isinstance(item, Type):
-            return f"type {item.name}"
-        elif isinstance(item, Argument):
-            return f"function argument {item.name}"
-        elif isinstance(item, Variable):
-            return f"local variable {item.name}"
-        else:  # pragma: nocover
-            assert False
+    ...
 
 
 class ImportedItemNotFound(CrossReferenceBaseException):
@@ -64,7 +67,7 @@ class CollidingIdentifier(CrossReferenceBaseException):
         msg = "Found name collision:\n"
 
         for item in self.colliding:
-            msg += f"{item.position}: {self.describe(item)}\n"
+            msg += f"{item.position}: {describe(item)}\n"
 
         return msg
 
@@ -83,7 +86,7 @@ class InvalidReturnType(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def __str__(self) -> str:
-        return f"{self.identifiable.position}: Cannot use {self.describe(self.identifiable)} as return type\n"
+        return f"{self.identifiable.position}: Cannot use {describe(self.identifiable)} as return type\n"
 
 
 class InvalidArgument(CrossReferenceBaseException):
@@ -94,7 +97,7 @@ class InvalidArgument(CrossReferenceBaseException):
     def __str__(self) -> str:
         return (
             f"{self.used.position}: Cannot use {self.used.identifier.name} as argument\n"
-            + f"{self.found.position}: {self.describe(self.found)} collides\n"
+            + f"{self.found.position}: {describe(self.found)} collides\n"
         )
 
 
@@ -103,7 +106,7 @@ class InvalidType(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def __str__(self) -> str:
-        return f"{self.identifiable.position}: Cannot use {self.describe(self.identifiable)} as type\n"
+        return f"{self.identifiable.position}: Cannot use {describe(self.identifiable)} as type\n"
 
 
 class UnexpectedTypeParameterCount(CrossReferenceBaseException):
@@ -167,7 +170,9 @@ class InvalidEnumType(CrossReferenceBaseException):
         self.position = position
 
     def __str__(self) -> str:
-        return f"{self.position}: Cannot use {self.describe(self.identifiable)} as enum type\n"
+        return (
+            f"{self.position}: Cannot use {describe(self.identifiable)} as enum type\n"
+        )
 
 
 class InvalidEnumVariant(CrossReferenceBaseException):

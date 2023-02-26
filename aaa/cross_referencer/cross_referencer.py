@@ -153,6 +153,8 @@ class CrossReferencer:
             self._resolve_function_signature(function)
 
         for function in functions:
+            if not isinstance(function.state, Function.WithSignature):
+                continue
             self._resolve_function_body(function)
 
         self.cross_reference_stack.pop()
@@ -171,16 +173,19 @@ class CrossReferencer:
         return function.func_name in enum_type.enum_fields
 
     def _resolve_function_signature(self, function: Function) -> None:
-        params = self._resolve_function_params(function)
-        arguments = self._resolve_function_arguments(function, params)
-        return_types = self._resolve_function_return_types(function, params)
-        is_enum_ctor = self._is_enum_constructor(function)
-        parsed_body = function.get_unresolved().parsed.body
+        try:
+            params = self._resolve_function_params(function)
+            arguments = self._resolve_function_arguments(function, params)
+            return_types = self._resolve_function_return_types(function, params)
+            is_enum_ctor = self._is_enum_constructor(function)
+            parsed_body = function.get_unresolved().parsed.body
 
-        function.add_signature(
-            parsed_body, params, arguments, return_types, is_enum_ctor
-        )
-        self._check_function_identifiers_collision(function)
+            function.add_signature(
+                parsed_body, params, arguments, return_types, is_enum_ctor
+            )
+            self._check_function_identifiers_collision(function)
+        except CrossReferenceBaseException as e:
+            self.exceptions.append(e)
 
     def _print_values(self) -> None:  # pragma: nocover
         if not self.verbose:
@@ -327,10 +332,14 @@ class CrossReferencer:
         try:
             source = self.identifiers[key]
         except KeyError:
-            raise ImportedItemNotFound(import_)
+            e: CrossReferenceBaseException = ImportedItemNotFound(import_)
+            self.exceptions.append(e)
+            return
 
         if isinstance(source, Import):
-            raise IndirectImportException(import_)
+            e = IndirectImportException(import_)
+            self.exceptions.append(e)
+            return
 
         return import_.resolve(source)
 
@@ -355,6 +364,10 @@ class CrossReferencer:
             raise UnknownIdentifier(position, name)
 
         if isinstance(found, Import):
+            if not isinstance(found.state, Import.Resolved):
+                # Something went wrong resolving the import earlier, so we can't proceed.
+                raise UnknownIdentifier(position, name)
+
             assert not isinstance(found.source, Import)
             return found.source
 
@@ -400,10 +413,13 @@ class CrossReferencer:
             variant_type,
             variariant_id,
         ) in type.get_unresolved().parsed_variants.items():
-            enum_variants[variant_name] = (
-                self._resolve_type_field(variant_type),
-                variariant_id,
-            )
+            try:
+                resolved_variant_type = self._resolve_type_field(variant_type)
+            except CrossReferenceBaseException as e:
+                self.exceptions.append(e)
+                continue
+
+            enum_variants[variant_name] = (resolved_variant_type, variariant_id)
 
         type.resolve(fields, enum_variants)
 
@@ -614,8 +630,9 @@ class CrossReferencer:
             body = resolver.run()
         except CrossReferenceBaseException as e:
             self.exceptions.append(e)
-        else:
-            function.resolve(body)
+            return
+
+        function.resolve(body)
 
 
 class FunctionBodyResolver:

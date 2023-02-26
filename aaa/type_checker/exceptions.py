@@ -520,4 +520,8 @@ class UnreachableDefaultBlock(TypeCheckerException):
 
 
 class SignatureItemMismatch(AaaException):
+    """
+    Raised when stack doesn't match the signature of a function.
+    """
+
     ...
