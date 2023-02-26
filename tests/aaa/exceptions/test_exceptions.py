@@ -88,8 +88,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:13: function foo collides with:\n"
-            + "/foo/main.aaa:2:13: function foo\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:13: function foo\n"
+            + "/foo/main.aaa:3:13: function foo\n",
             id="funcname-funcname-collision",
         ),
         pytest.param(
@@ -98,8 +99,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn bar[main] { nop }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:20: type main collides with:\n"
-            + "/foo/main.aaa:2:13: function main\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:13: function main\n"
+            + "/foo/main.aaa:3:20: type main\n",
             id="funcname-param-collision",
         ),
         pytest.param(
@@ -268,7 +270,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             struct bar { x as int }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:13: function bar collides with:\n"
+            "Found name collision:\n"
+            + "/foo/main.aaa:3:13: function bar\n"
             + "/foo/main.aaa:4:13: type bar\n",
             id="struct-name-collision",
         ),
@@ -313,7 +316,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn bar[bar] { nop }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:13: function bar collides with:\n"
+            "Found name collision:\n"
+            + "/foo/main.aaa:3:13: function bar\n"
             + "/foo/main.aaa:3:20: type bar\n",
             id="funcname-param-collision",
         ),
@@ -323,7 +327,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo[bar] args bar as int { nop }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:20: type bar collides with:\n"
+            "Found name collision:\n"
+            + "/foo/main.aaa:3:20: type bar\n"
             + "/foo/main.aaa:3:30: function argument bar\n",
             id="argument-param-collision",
         ),
@@ -633,8 +638,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { 0 use a { use a { nop } } }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:2:37: local variable a collides with:\n"
-            + "/foo/main.aaa:2:29: local variable a\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:29: local variable a\n"
+            + "/foo/main.aaa:2:37: local variable a\n",
             id="colliding-identifier-var-var",
         ),
         pytest.param(
@@ -643,8 +649,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args a as int { 0 use a { nop } }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:42: local variable a collides with:\n"
-            + "/foo/main.aaa:3:25: function argument a\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:3:25: function argument a\n"
+            + "/foo/main.aaa:3:42: local variable a\n",
             id="colliding-identifier-var-arg",
         ),
         pytest.param(
@@ -653,8 +660,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { 0 use bar { nop } }
             """,
             CollidingIdentifier,
-            "/foo/main.aaa:3:29: local variable bar collides with:\n"
-            + "/foo/main.aaa:2:13: type bar\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:13: type bar\n"
+            + "/foo/main.aaa:3:29: local variable bar\n",
             id="colliding-identifier-var-identifier",
         ),
         pytest.param(
@@ -1066,8 +1074,9 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:3:29: function argument bar collides with:\n"
-            + "/foo/main.aaa:2:17: function bar\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:17: function bar\n"
+            + "/foo/main.aaa:3:29: function argument bar\n",
             id="argname-other-func-name",
         ),
         pytest.param(
@@ -1077,7 +1086,8 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:2:17: function foo collides with:\n"
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:17: function foo\n"
             + "/foo/main.aaa:2:29: function argument foo\n",
             id="argname-same-funcname",
         ),
@@ -1088,7 +1098,8 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:2:29: function argument bar collides with:\n"
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:29: function argument bar\n"
             + "/foo/main.aaa:2:41: function argument bar\n",
             id="argname-argname",
         ),
@@ -1100,8 +1111,9 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:3:29: function argument bar collides with:\n"
-            + "/foo/main.aaa:2:17: type bar\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:17: type bar\n"
+            + "/foo/main.aaa:3:29: function argument bar\n",
             id="argname-struct",
         ),
         pytest.param(
@@ -1115,8 +1127,9 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:29: function argument five collides with:\n"
-            + "/foo/main.aaa:2:36: imported identifier five\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:36: imported identifier five\n"
+            + "/foo/main.aaa:3:29: function argument five\n",
             id="argname-import",
         ),
         pytest.param(
@@ -1127,8 +1140,9 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:3:17: function foo collides with:\n"
-            + "/foo/main.aaa:2:17: function foo\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:17: function foo\n"
+            + "/foo/main.aaa:3:17: function foo\n",
             id="funcname-funcname",
         ),
         pytest.param(
@@ -1139,8 +1153,9 @@ def test_multi_file_errors(
                 fn main { nop }
                 """
             },
-            "/foo/main.aaa:3:17: function foo collides with:\n"
-            + "/foo/main.aaa:2:17: type foo\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:17: type foo\n"
+            + "/foo/main.aaa:3:17: function foo\n",
             id="funcname-struct",
         ),
         pytest.param(
@@ -1154,8 +1169,9 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:17: function five collides with:\n"
-            + "/foo/main.aaa:2:36: imported identifier five\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:36: imported identifier five\n"
+            + "/foo/main.aaa:3:17: function five\n",
             id="funcname-import",
         ),
         pytest.param(
@@ -1166,7 +1182,8 @@ def test_multi_file_errors(
                 fn main { nop }
                 """,
             },
-            "/foo/main.aaa:2:17: function foo collides with:\n"
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:17: function foo\n"
             + "/foo/main.aaa:3:17: type foo\n",
             id="struct-funcname",
         ),
@@ -1178,8 +1195,9 @@ def test_multi_file_errors(
                 fn main { nop }
                 """,
             },
-            "/foo/main.aaa:3:17: type foo collides with:\n"
-            + "/foo/main.aaa:2:17: type foo\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:17: type foo\n"
+            + "/foo/main.aaa:3:17: type foo\n",
             id="struct-struct",
         ),
         pytest.param(
@@ -1193,7 +1211,8 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:2:36: imported identifier five collides with:\n"
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:36: imported identifier five\n"
             + "/foo/main.aaa:3:17: type five\n",
             id="struct-import",
         ),
@@ -1208,8 +1227,9 @@ def test_multi_file_errors(
                fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:29: function argument bar collides with:\n"
-            + "/foo/main.aaa:2:36: imported identifier bar\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:36: imported identifier bar\n"
+            + "/foo/main.aaa:3:29: function argument bar\n",
             id="argname-import-renamed",
         ),
         pytest.param(
@@ -1223,8 +1243,9 @@ def test_multi_file_errors(
                 fn five return int { 5 }
                 """,
             },
-            "/foo/main.aaa:3:36: imported identifier foo collides with:\n"
-            + "/foo/main.aaa:2:36: imported identifier foo\n",
+            "Found name collision:\n"
+            + "/foo/main.aaa:2:36: imported identifier foo\n"
+            + "/foo/main.aaa:3:36: imported identifier foo\n",
             id="import-import",
         ),
     ],

@@ -72,7 +72,7 @@ class CrossReferencer:
         except KeyError:
             self.identifiers[key] = identifiable
         else:
-            self.exceptions += [CollidingIdentifier(identifiable, found)]
+            self.exceptions += [CollidingIdentifier([identifiable, found])]
 
     def run(self) -> CrossReferencerOutput:
         self._cross_reference_file(self.entrypoint)
@@ -434,10 +434,10 @@ class CrossReferencer:
 
         if (function.position.file, param_name) in self.identifiers:
             # Another identifier in the same file has this name.
-            raise CollidingIdentifier(
-                found=type,
-                colliding=self.identifiers[(function.position.file, param_name)],
-            )
+            colliding_identifier = self.identifiers[
+                (function.position.file, param_name)
+            ]
+            raise CollidingIdentifier([type, colliding_identifier])
 
         return type
 
@@ -542,17 +542,18 @@ class CrossReferencer:
             for rhs_arg in function.arguments[lhs_index + 1 :]:
                 if lhs_arg.name == rhs_arg.name:
                     # Argument names collide
-                    raise CollidingIdentifier(lhs_arg, rhs_arg)
+                    raise CollidingIdentifier([lhs_arg, rhs_arg])
 
         for argument in function.arguments:
             key = (function.position.file, argument.name)
             if key in self.identifiers:
+                identifier = self.identifiers[key]
                 # Argument collides with file-scoped identifier
-                raise CollidingIdentifier(self.identifiers[key], argument)
+                raise CollidingIdentifier([identifier, argument])
 
             if function.name == argument.name:
                 # Argument collides with function
-                raise CollidingIdentifier(function, argument)
+                raise CollidingIdentifier([function, argument])
 
         for param_name, param in function.type_params.items():
             # If a param name collides with file-scoped identifier,
@@ -560,12 +561,12 @@ class CrossReferencer:
 
             if function.name == param_name:
                 # Param name collides with function
-                raise CollidingIdentifier(function, param)
+                raise CollidingIdentifier([function, param])
 
             for argument in function.arguments:
                 # Param name collides with argument
                 if param_name == argument.name:
-                    raise CollidingIdentifier(param, argument)
+                    raise CollidingIdentifier([param, argument])
 
     def _resolve_function_return_types(
         self, function: Function, type_params: Dict[str, Type]
@@ -821,14 +822,15 @@ class FunctionBodyResolver:
 
         for var in variables:
             if var.name in self.vars:
-                raise CollidingIdentifier(var, self.vars[var.name])
+                colliding_var = self.vars[var.name]
+                raise CollidingIdentifier([var, colliding_var])
 
             try:
                 identifiable = self._get_identifiable_generic(var.name, var.position)
             except UnknownIdentifier:
                 pass
             else:
-                raise CollidingIdentifier(var, identifiable)
+                raise CollidingIdentifier([var, identifiable])
 
             self.vars[var.name] = var
 

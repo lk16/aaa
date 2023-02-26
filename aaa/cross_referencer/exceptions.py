@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import aaa.parser.models as parser
 from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
+    AaaCrossReferenceModel,
     Argument,
     Function,
     Identifiable,
@@ -51,19 +52,22 @@ class IndirectImportException(CrossReferenceBaseException):
 
 
 class CollidingIdentifier(CrossReferenceBaseException):
-    def __init__(
-        self,
-        colliding: Identifiable | Argument | Variable,
-        found: Identifiable | Argument | Variable,
-    ) -> None:
-        self.colliding = colliding
-        self.found = found
+    def __init__(self, colliding: List[Identifiable | Argument | Variable]) -> None:
+        assert len(colliding) == 2
+        assert colliding[0].position.file == colliding[1].position.file
+
+        def sort_key(item: AaaCrossReferenceModel) -> Tuple[int, int]:
+            return (item.position.line, item.position.column)
+
+        self.colliding = sorted(colliding, key=sort_key)
 
     def __str__(self) -> str:
-        return (
-            f"{self.colliding.position}: {self.describe(self.colliding)} collides with:\n"
-            f"{self.found.position}: {self.describe(self.found)}\n"
-        )
+        msg = "Found name collision:\n"
+
+        for item in self.colliding:
+            msg += f"{item.position}: {self.describe(item)}\n"
+
+        return msg
 
 
 class UnknownIdentifier(CrossReferenceBaseException):
