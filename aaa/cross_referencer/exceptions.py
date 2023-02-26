@@ -72,6 +72,26 @@ class CollidingIdentifier(CrossReferenceBaseException):
         return msg
 
 
+class CollidingEnumVariant(CrossReferenceBaseException):
+    def __init__(self, enum: parser.Enum, variants: List[parser.EnumVariant]) -> None:
+        assert len(variants) == 2
+        assert variants[0].position.file == variants[1].position.file
+
+        def sort_key(item: parser.EnumVariant) -> Tuple[int, int]:
+            return (item.position.line, item.position.column)
+
+        self.colliding = sorted(variants, key=sort_key)
+        self.enum = enum
+
+    def __str__(self) -> str:
+        msg = "Duplicate enum variant name collision:\n"
+
+        for item in self.colliding:
+            msg += f"{item.position}: enum variant {self.enum.identifier.name}:{item.name.name}\n"
+
+        return msg
+
+
 class UnknownIdentifier(CrossReferenceBaseException):
     def __init__(self, position: Position, name: str) -> None:
         self.position = position

@@ -4,6 +4,7 @@ import pytest
 
 from aaa.cross_referencer.exceptions import (
     CircularDependencyError,
+    CollidingEnumVariant,
     CollidingIdentifier,
     ImportedItemNotFound,
     IndirectImportException,
@@ -922,6 +923,17 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UnreachableDefaultBlock,
             "/foo/main.aaa:3:79: Unreachable default block.\n",
             id="unreachable-default-block",
+        ),
+        pytest.param(
+            """
+            enum foo { x as int, x as int }
+            fn main { nop }
+            """,
+            CollidingEnumVariant,
+            "Duplicate enum variant name collision:\n"
+            + "/foo/main.aaa:2:24: enum variant foo:x\n"
+            + "/foo/main.aaa:2:34: enum variant foo:x\n",
+            id="colliding-enum-variant",
         ),
     ],
 )

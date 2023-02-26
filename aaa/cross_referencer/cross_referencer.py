@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Set, Tuple
 from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.exceptions import (
     CircularDependencyError,
+    CollidingEnumVariant,
     CollidingIdentifier,
     CrossReferenceBaseException,
     ImportedItemNotFound,
@@ -269,6 +270,17 @@ class CrossReferencer:
             type = Type(parsed_enum, 0)
             types.append(type)
 
+            variants: Dict[str, parser.EnumVariant] = {}
+            for variant in parsed_enum.variants:
+                try:
+                    found = variants[variant.name.name]
+                except KeyError:
+                    pass
+                else:
+                    raise CollidingEnumVariant(parsed_enum, [variant, found])
+
+                variants[variant.name.name] = variant
+
             for variant in parsed_enum.variants:
                 parsed_function = parser.Function(
                     position=dummy_position,
@@ -395,16 +407,16 @@ class CrossReferencer:
         )
 
     def _resolve_type(self, type: Type) -> None:
+        parsed_field_types = type.get_unresolved().parsed_field_types
+        parsed_variants = type.get_unresolved().parsed_variants
+
         fields = {
             field_name: self._resolve_type_field(parsed_field)
-            for field_name, parsed_field in type.get_unresolved().parsed_field_types.items()
+            for field_name, parsed_field in parsed_field_types.items()
         }
 
         enum_variants: Dict[str, Tuple[VariableType, int]] = {}
-        for variant_name, (
-            variant_type,
-            variariant_id,
-        ) in type.get_unresolved().parsed_variants.items():
+        for variant_name, (variant_type, variariant_id) in parsed_variants.items():
             try:
                 resolved_variant_type = self._resolve_type_field(variant_type)
             except CrossReferenceBaseException as e:
