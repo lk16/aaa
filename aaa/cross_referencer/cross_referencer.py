@@ -44,7 +44,6 @@ from aaa.cross_referencer.models import (
     StructFieldQuery,
     StructFieldUpdate,
     Type,
-    UnresolvedFunction,
     UnresolvedImport,
     UseBlock,
     Variable,
@@ -98,6 +97,9 @@ class CrossReferencer:
         for type in output.types.values():
             assert type.is_resolved()
 
+        for function in output.functions.values():
+            assert function.is_resolved()
+
         # TODO check if imports/functions are resolved
 
         return output
@@ -133,63 +135,59 @@ class CrossReferencer:
         for type in types:
             self._save_identifier(type)
 
+        for function in functions:
+            self._save_identifier(function)
+
         for import_ in imports:
             self._resolve(import_)
 
         for type in types:
-            self._resolve(type)
+            self._resolve_type(type)
 
         for function in functions:
-            self._resolve(function)
+            self._resolve_function_signature(function)
 
-        self._resolve_function_bodies(functions)
+        for function in functions:
+            self._resolve_function_body(function)
 
         self.cross_reference_stack.pop()
         self.cross_referenced_files.add(file)
 
-    def _resolve(
-        self, unresolved: UnresolvedImport | Type | UnresolvedFunction
-    ) -> None:
+    def _resolve(self, import_: UnresolvedImport) -> None:
 
         identifiable: Identifiable
 
         try:
-            if isinstance(unresolved, Type):
-                self._resolve_type(unresolved)
-                return
-            elif isinstance(unresolved, UnresolvedImport):
-                identifiable = self._resolve_import(unresolved)
-            elif isinstance(unresolved, UnresolvedFunction):
-                identifiable = self._resolve_function_signature(unresolved)
-            else:  # pragma: nocover
-                assert False
+            identifiable = self._resolve_import(import_)
         except CrossReferenceBaseException as e:
             self.exceptions.append(e)
         else:
             self._save_identifier(identifiable)
 
-    def _resolve_function_signature(self, unresolved: UnresolvedFunction) -> Function:
-        params = self._resolve_function_params(unresolved)
-        arguments = self._resolve_function_arguments(unresolved, params)
-        return_types = self._resolve_function_return_types(unresolved, params)
+    def _resolve_function_signature(self, function: Function) -> None:
+        params = self._resolve_function_params(function)
+        arguments = self._resolve_function_arguments(function, params)
+        return_types = self._resolve_function_return_types(function, params)
 
         is_enum_ctor = False
 
         # TODO Find a better way to detect enum ctors
         try:
             enum_type = self._get_identifiable_generic(
-                unresolved.struct_name, unresolved.position
+                function.struct_name, function.position
             )
         except UnknownIdentifier:
             pass
         else:
             if isinstance(enum_type, Type):
-                is_enum_ctor = unresolved.func_name in enum_type.enum_fields
+                is_enum_ctor = function.func_name in enum_type.enum_fields
 
-        function = Function(unresolved, params, arguments, return_types, is_enum_ctor)
+        parsed_body = function.get_unresolved().parsed.body
+
+        function.add_signature(
+            parsed_body, params, arguments, return_types, is_enum_ctor
+        )
         self._check_function_identifiers_collision(function)
-
-        return function
 
     def _print_values(self) -> None:  # pragma: nocover
         if not self.verbose:
@@ -251,9 +249,9 @@ class CrossReferencer:
 
     def _load_identifiers(
         self, file: Path
-    ) -> Tuple[List[UnresolvedImport], List[Type], List[UnresolvedFunction],]:
+    ) -> Tuple[List[UnresolvedImport], List[Type], List[Function]]:
         imports: List[UnresolvedImport] = []
-        functions: List[UnresolvedFunction] = []
+        functions: List[Function] = []
         types: List[Type] = []
 
         parsed_file = self.parsed_files[file]
@@ -271,8 +269,8 @@ class CrossReferencer:
 
     def _load_enums(
         self, parsed_enums: List[parser.Enum]
-    ) -> Tuple[List[UnresolvedFunction], List[Type]]:
-        functions: List[UnresolvedFunction] = []
+    ) -> Tuple[List[Function], List[Type]]:
+        functions: List[Function] = []
         types: List[Type] = []
 
         for parsed_enum in parsed_enums:
@@ -304,7 +302,7 @@ class CrossReferencer:
                     body=None,
                 )
 
-                function = UnresolvedFunction(parsed_function)
+                function = Function(parsed_function)
                 functions.append(function)
 
         return functions, types
@@ -313,9 +311,9 @@ class CrossReferencer:
         return [Type(parsed_struct, 0) for parsed_struct in parsed_structs]
 
     def _load_functions(
-        self, parsed: List[parser.Function]
-    ) -> List[UnresolvedFunction]:
-        return [UnresolvedFunction(parsed_function) for parsed_function in parsed]
+        self, parsed_functions: List[parser.Function]
+    ) -> List[Function]:
+        return [Function(parsed_function) for parsed_function in parsed_functions]
 
     def _load_imports(
         self, parsed_imports: List[parser.Import]
@@ -421,12 +419,12 @@ class CrossReferencer:
         type.resolve(fields, enum_variants, type.param_count)
 
     def _resolve_function_param(
-        self, function: UnresolvedFunction, parsed_type_param: parser.TypeLiteral
+        self, function: Function, parsed_type_param: parser.TypeLiteral
     ) -> Type:
         param_name = parsed_type_param.identifier.name
         type_literal: Optional[parser.TypeLiteral] = None
 
-        for param in function.parsed.type_params:
+        for param in function.get_unresolved().parsed.type_params:
             if param.identifier.name == param_name:
                 type_literal = param
 
@@ -437,23 +435,23 @@ class CrossReferencer:
         if (function.position.file, param_name) in self.identifiers:
             # Another identifier in the same file has this name.
             raise CollidingIdentifier(
-                colliding=type,
-                found=self.identifiers[(function.position.file, param_name)],
+                found=type,
+                colliding=self.identifiers[(function.position.file, param_name)],
             )
 
         return type
 
-    def _resolve_function_params(self, function: UnresolvedFunction) -> Dict[str, Type]:
+    def _resolve_function_params(self, function: Function) -> Dict[str, Type]:
         return {
             parsed_type_param.identifier.name: self._resolve_function_param(
                 function, parsed_type_param
             )
-            for parsed_type_param in function.parsed.type_params
+            for parsed_type_param in function.get_unresolved().parsed.type_params
         }
 
     def _resolve_function_argument(
         self,
-        function: UnresolvedFunction,
+        function: Function,
         type_params: Dict[str, Type],
         parsed_arg: parser.Argument,
     ) -> Argument:
@@ -462,7 +460,7 @@ class CrossReferencer:
         type: Identifiable
 
         found_type_param: Optional[parser.TypeLiteral] = None
-        for type_param in function.parsed.type_params:
+        for type_param in function.get_unresolved().parsed.type_params:
             if type_param.identifier.name == arg_type_name:
                 found_type_param = type_param
 
@@ -496,11 +494,11 @@ class CrossReferencer:
         )
 
     def _resolve_function_arguments(
-        self, function: UnresolvedFunction, type_params: Dict[str, Type]
+        self, function: Function, type_params: Dict[str, Type]
     ) -> List[Argument]:
         return [
             self._resolve_function_argument(function, type_params, parsed_arg)
-            for parsed_arg in function.parsed.arguments
+            for parsed_arg in function.get_unresolved().parsed.arguments
         ]
 
     def _lookup_function_param(
@@ -550,7 +548,7 @@ class CrossReferencer:
             key = (function.position.file, argument.name)
             if key in self.identifiers:
                 # Argument collides with file-scoped identifier
-                raise CollidingIdentifier(argument, self.identifiers[key])
+                raise CollidingIdentifier(self.identifiers[key], argument)
 
             if function.name == argument.name:
                 # Argument collides with function
@@ -570,15 +568,17 @@ class CrossReferencer:
                     raise CollidingIdentifier(param, argument)
 
     def _resolve_function_return_types(
-        self, function: UnresolvedFunction, type_params: Dict[str, Type]
+        self, function: Function, type_params: Dict[str, Type]
     ) -> List[VariableType] | Never:
 
-        if isinstance(function.parsed.return_types, parser.Never):
+        parsed_return_types = function.get_unresolved().parsed.return_types
+
+        if isinstance(parsed_return_types, parser.Never):
             return Never()
 
         return_types: List[VariableType] = []
 
-        for parsed_return_type in function.parsed.return_types:
+        for parsed_return_type in parsed_return_types:
             return_type_name = parsed_return_type.identifier.name
             type: Identifiable
 
@@ -611,33 +611,21 @@ class CrossReferencer:
             return_types.append(return_type)
         return return_types
 
-    def _resolve_function_bodies(self, functions: List[UnresolvedFunction]) -> None:
-        for unresolved_function in functions:
-            key = (unresolved_function.position.file, unresolved_function.name)
+    def _resolve_function_body(self, function: Function) -> None:
+        parsed_body = function.get_with_signature().parsed_body
 
-            try:
-                function = self.identifiers[key]
-            except KeyError:
-                # Function signature loading failed, so no body to resolve
-                continue
+        if not parsed_body:
+            function.resolve(None)
+            return
 
-            if not isinstance(function, Function):
-                # Name collision of function and something else
-                continue
+        resolver = FunctionBodyResolver(self, function, parsed_body)
 
-            parsed_body = unresolved_function.parsed.body
-
-            if not parsed_body:
-                continue
-
-            resolver = FunctionBodyResolver(self, function, parsed_body)
-
-            try:
-                body = resolver.run()
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-            else:
-                function.body = body
+        try:
+            body = resolver.run()
+        except CrossReferenceBaseException as e:
+            self.exceptions.append(e)
+        else:
+            function.resolve(body)
 
 
 class FunctionBodyResolver:

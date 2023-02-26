@@ -24,9 +24,47 @@ class Identifiable(AaaCrossReferenceModel):
 IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
-class UnresolvedFunction(AaaCrossReferenceModel):
+class Function(Identifiable):
+    class Unresolved:
+        def __init__(self, parsed: parser.Function) -> None:
+            self.parsed = parsed
+
+    class WithSignature:
+        def __init__(
+            self,
+            parsed_body: Optional[parser.FunctionBody],
+            type_params: Dict[str, Type],
+            arguments: List[Argument],
+            return_types: List[VariableType] | Never,
+            is_enum_ctor: bool,
+        ) -> None:
+            self.parsed_body = parsed_body
+            self.type_params = type_params
+            self.arguments = arguments
+            self.return_types = return_types
+            self.is_enum_ctor = is_enum_ctor
+
+    class Resolved:
+        def __init__(
+            self,
+            type_params: Dict[str, Type],
+            arguments: List[Argument],
+            return_types: List[VariableType] | Never,
+            is_enum_ctor: bool,
+            body: Optional[FunctionBody],
+        ) -> None:
+            self.type_params = type_params
+            self.arguments = arguments
+            self.return_types = return_types
+            self.body: Optional[FunctionBody] = None
+            self.is_enum_ctor = is_enum_ctor
+            self.body = body
+
     def __init__(self, parsed: parser.Function) -> None:
-        self.parsed = parsed
+        self.state: Function.Resolved | Function.Unresolved | Function.WithSignature = (
+            Function.Unresolved(parsed)
+        )
+
         self.func_name = parsed.func_name.name
 
         if parsed.struct_name:
@@ -39,28 +77,15 @@ class UnresolvedFunction(AaaCrossReferenceModel):
         else:
             name = self.func_name
 
-        self.name = name
-        super().__init__(parsed.position)
+        super().__init__(parsed.position, name)
 
+    def get_unresolved(self) -> Function.Unresolved:
+        assert isinstance(self.state, Function.Unresolved)
+        return self.state
 
-class Function(Identifiable):
-    def __init__(
-        self,
-        unresolved: UnresolvedFunction,
-        type_params: Dict[str, Type],
-        arguments: List[Argument],
-        return_types: List[VariableType] | Never,
-        is_enum_ctor: bool,
-    ) -> None:
-        self.type_params = type_params
-        self.arguments = arguments
-        self.return_types = return_types
-        self.body: Optional[FunctionBody] = None
-        self.is_enum_ctor = is_enum_ctor
-
-        self.func_name = unresolved.func_name
-        self.struct_name = unresolved.struct_name
-        super().__init__(unresolved.position, unresolved.name)
+    def get_with_signature(self) -> Function.WithSignature:
+        assert isinstance(self.state, Function.WithSignature)
+        return self.state
 
     def is_member_function(self) -> bool:
         return self.struct_name != ""
@@ -70,6 +95,58 @@ class Function(Identifiable):
             not self.is_member_function()
             and self.func_name.startswith("test_")
             and self.position.file.name.startswith("test_")
+        )
+
+    @property
+    def arguments(self) -> List[Argument]:
+        assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
+        return self.state.arguments
+
+    @property
+    def return_types(self) -> List[VariableType] | Never:
+        assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
+        return self.state.return_types
+
+    @property
+    def type_params(self) -> Dict[str, Type]:
+        assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
+        return self.state.type_params
+
+    @property
+    def body(self) -> FunctionBody:
+        assert isinstance(self.state, Function.Resolved)
+        assert self.state.body
+        return self.state.body
+
+    @property
+    def is_enum_ctor(self) -> bool:
+        assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
+        return self.state.is_enum_ctor
+
+    def add_signature(
+        self,
+        parsed_body: Optional[parser.FunctionBody],
+        type_params: Dict[str, Type],
+        arguments: List[Argument],
+        return_types: List[VariableType] | Never,
+        is_enum_ctor: bool,
+    ) -> None:
+        assert isinstance(self.state, Function.Unresolved)
+        self.state = Function.WithSignature(
+            parsed_body, type_params, arguments, return_types, is_enum_ctor
+        )
+
+    def is_resolved(self) -> bool:
+        return isinstance(self.state, Function.Resolved)
+
+    def resolve(self, body: Optional[FunctionBody]) -> None:
+        assert isinstance(self.state, Function.WithSignature)
+        self.state = Function.Resolved(
+            self.state.type_params,
+            self.state.arguments,
+            self.state.return_types,
+            self.state.is_enum_ctor,
+            body,
         )
 
 
@@ -109,17 +186,6 @@ class Import(Identifiable):
 
 
 class Type(Identifiable):
-    class Resolved:
-        def __init__(
-            self,
-            fields: Dict[str, VariableType],
-            enum_fields: Dict[str, Tuple[VariableType, int]],
-            param_count: int,  # TODO remove?
-        ) -> None:
-            self.fields = fields
-            self.enum_fields = enum_fields
-            self.param_count = param_count
-
     class Unresolved:
         def __init__(
             self,
@@ -136,6 +202,17 @@ class Type(Identifiable):
             if isinstance(parsed, parser.Enum):
                 for i, item in enumerate(parsed.variants):
                     self.parsed_variants[item.name.name] = (item.type, i)
+
+    class Resolved:
+        def __init__(
+            self,
+            fields: Dict[str, VariableType],
+            enum_fields: Dict[str, Tuple[VariableType, int]],
+            param_count: int,  # TODO remove?
+        ) -> None:
+            self.fields = fields
+            self.enum_fields = enum_fields
+            self.param_count = param_count
 
     def __init__(
         self,
