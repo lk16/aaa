@@ -169,20 +169,47 @@ class FunctionBody(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class UnresolvedImport(AaaCrossReferenceModel):
-    def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
-        self.source_file = import_.source_file
-        self.source_name = import_item.original.name
-        self.name = import_item.imported.name
-        super().__init__(import_item.position)
-
-
 class Import(Identifiable):
-    def __init__(self, unresolved: UnresolvedImport, source: Identifiable) -> None:
-        self.source_file = unresolved.source_file
-        self.source_name = unresolved.source_name
-        self.source = source
-        super().__init__(unresolved.position, unresolved.name)
+    class Unresolved:
+        def __init__(
+            self, import_item: parser.ImportItem, import_: parser.Import
+        ) -> None:
+            # TODO move both fields to Import and remove from Unresolved and Resolved
+            self.source_file = import_.source_file
+            self.source_name = import_item.original.name
+
+    class Resolved:
+        def __init__(
+            self, source: Identifiable, source_file: Path, source_name: str
+        ) -> None:
+            self.source = source
+            self.source_file = source_file
+            self.source_name = source_name
+
+    def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
+        self.state: Import.Resolved | Import.Unresolved = Import.Unresolved(
+            import_item, import_
+        )
+        super().__init__(import_item.position, import_item.imported.name)
+
+    @property
+    def source_file(self) -> Path:
+        return self.state.source_file
+
+    @property
+    def source_name(self) -> str:
+        return self.state.source_name
+
+    @property
+    def source(self) -> Identifiable:
+        assert isinstance(self.state, Import.Resolved)
+        return self.state.source
+
+    def resolve(self, source: Identifiable) -> None:
+        assert isinstance(self.state, Import.Unresolved)
+        self.state = Import.Resolved(
+            source, self.state.source_file, self.state.source_name
+        )
 
 
 class Type(Identifiable):

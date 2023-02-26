@@ -44,7 +44,6 @@ from aaa.cross_referencer.models import (
     StructFieldQuery,
     StructFieldUpdate,
     Type,
-    UnresolvedImport,
     UseBlock,
     Variable,
     VariableType,
@@ -100,7 +99,7 @@ class CrossReferencer:
         for function in output.functions.values():
             assert function.is_resolved()
 
-        # TODO check if imports/functions are resolved
+        # TODO check if imports are resolved
 
         return output
 
@@ -139,7 +138,12 @@ class CrossReferencer:
             self._save_identifier(function)
 
         for import_ in imports:
-            self._resolve(import_)
+            self._save_identifier(import_)
+
+        # TODO wrap all calls to self._resolve_* functions in try except for CrossReferenceBaseException
+
+        for import_ in imports:
+            self._resolve_import(import_)
 
         for type in types:
             self._resolve_type(type)
@@ -152,17 +156,6 @@ class CrossReferencer:
 
         self.cross_reference_stack.pop()
         self.cross_referenced_files.add(file)
-
-    def _resolve(self, import_: UnresolvedImport) -> None:
-
-        identifiable: Identifiable
-
-        try:
-            identifiable = self._resolve_import(import_)
-        except CrossReferenceBaseException as e:
-            self.exceptions.append(e)
-        else:
-            self._save_identifier(identifiable)
 
     def _resolve_function_signature(self, function: Function) -> None:
         params = self._resolve_function_params(function)
@@ -249,8 +242,8 @@ class CrossReferencer:
 
     def _load_identifiers(
         self, file: Path
-    ) -> Tuple[List[UnresolvedImport], List[Type], List[Function]]:
-        imports: List[UnresolvedImport] = []
+    ) -> Tuple[List[Import], List[Type], List[Function]]:
+        imports: List[Import] = []
         functions: List[Function] = []
         types: List[Type] = []
 
@@ -315,16 +308,12 @@ class CrossReferencer:
     ) -> List[Function]:
         return [Function(parsed_function) for parsed_function in parsed_functions]
 
-    def _load_imports(
-        self, parsed_imports: List[parser.Import]
-    ) -> List[UnresolvedImport]:
-        imports: List[UnresolvedImport] = []
+    def _load_imports(self, parsed_imports: List[parser.Import]) -> List[Import]:
+        imports: List[Import] = []
 
         for parsed_import in parsed_imports:
             for imported_item in parsed_import.imported_items:
-                import_ = UnresolvedImport(
-                    import_item=imported_item, import_=parsed_import
-                )
+                import_ = Import(imported_item, parsed_import)
                 imports.append(import_)
 
         return imports
@@ -332,7 +321,7 @@ class CrossReferencer:
     def _load_types(self, types: List[parser.TypeLiteral]) -> List[Type]:
         return [Type(type, len(type.params)) for type in types]
 
-    def _resolve_import(self, import_: UnresolvedImport) -> Import:
+    def _resolve_import(self, import_: Import) -> None:
         key = (import_.source_file, import_.source_name)
 
         try:
@@ -343,7 +332,7 @@ class CrossReferencer:
         if isinstance(source, Import):
             raise IndirectImportException(import_)
 
-        return Import(import_, source)
+        return import_.resolve(source)
 
     def _get_identifiable(self, identifier: parser.Identifier) -> Identifiable:
         return self._get_identifiable_generic(identifier.name, identifier.position)

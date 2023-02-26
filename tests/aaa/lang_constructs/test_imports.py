@@ -2,7 +2,7 @@ from typing import Dict, List, Type
 
 import pytest
 
-from aaa.cross_referencer.exceptions import ImportedItemNotFound, UnknownIdentifier
+from aaa.cross_referencer.exceptions import ImportedItemNotFound
 from aaa.tokenizer.exceptions import FileReadError
 from tests.aaa import check_aaa_full_source_multi_file
 
@@ -34,7 +34,7 @@ from tests.aaa import check_aaa_full_source_multi_file
                 "main.aaa": 'from "add" import foo,\n fn main { 3 2 foo . }',
             },
             "5",
-            [ImportedItemNotFound, UnknownIdentifier],
+            [ImportedItemNotFound],
             id="two-files-nonexistent-function",
         ),
         pytest.param(
