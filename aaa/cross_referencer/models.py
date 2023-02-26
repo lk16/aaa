@@ -171,34 +171,17 @@ class FunctionBody(FunctionBodyItem):
 
 class Import(Identifiable):
     class Unresolved:
-        def __init__(
-            self, import_item: parser.ImportItem, import_: parser.Import
-        ) -> None:
-            # TODO move both fields to Import and remove from Unresolved and Resolved
-            self.source_file = import_.source_file
-            self.source_name = import_item.original.name
+        ...
 
     class Resolved:
-        def __init__(
-            self, source: Identifiable, source_file: Path, source_name: str
-        ) -> None:
+        def __init__(self, source: Identifiable) -> None:
             self.source = source
-            self.source_file = source_file
-            self.source_name = source_name
 
     def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
-        self.state: Import.Resolved | Import.Unresolved = Import.Unresolved(
-            import_item, import_
-        )
+        self.state: Import.Resolved | Import.Unresolved = Import.Unresolved()
+        self.source_file = import_.source_file
+        self.source_name = import_item.original.name
         super().__init__(import_item.position, import_item.imported.name)
-
-    @property
-    def source_file(self) -> Path:
-        return self.state.source_file
-
-    @property
-    def source_name(self) -> str:
-        return self.state.source_name
 
     @property
     def source(self) -> Identifiable:
@@ -207,9 +190,7 @@ class Import(Identifiable):
 
     def resolve(self, source: Identifiable) -> None:
         assert isinstance(self.state, Import.Unresolved)
-        self.state = Import.Resolved(
-            source, self.state.source_file, self.state.source_name
-        )
+        self.state = Import.Resolved(source)
 
     def is_resolved(self) -> bool:
         return isinstance(self.state, Import.Resolved)
@@ -218,11 +199,8 @@ class Import(Identifiable):
 class Type(Identifiable):
     class Unresolved:
         def __init__(
-            self,
-            parsed: parser.TypeLiteral | parser.Struct | parser.Enum,
-            param_count: int,  # TODO remove?
+            self, parsed: parser.TypeLiteral | parser.Struct | parser.Enum
         ) -> None:
-            self.param_count = param_count
             self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
             self.parsed_variants: Dict[str, Tuple[parser.TypeLiteral, int]] = {}
 
@@ -238,20 +216,17 @@ class Type(Identifiable):
             self,
             fields: Dict[str, VariableType],
             enum_fields: Dict[str, Tuple[VariableType, int]],
-            param_count: int,  # TODO remove?
         ) -> None:
             self.fields = fields
             self.enum_fields = enum_fields
-            self.param_count = param_count
 
     def __init__(
         self,
         parsed: parser.TypeLiteral | parser.Struct | parser.Enum,
         param_count: int,
     ) -> None:
-        self.state: Type.Resolved | Type.Unresolved = Type.Unresolved(
-            parsed, param_count
-        )
+        self.state: Type.Resolved | Type.Unresolved = Type.Unresolved(parsed)
+        self.param_count = param_count
         super().__init__(parsed.position, parsed.identifier.name)
 
     @property
@@ -264,10 +239,6 @@ class Type(Identifiable):
         assert isinstance(self.state, Type.Resolved)
         return self.state.enum_fields
 
-    @property
-    def param_count(self) -> int:
-        return self.state.param_count
-
     def get_unresolved(self) -> Type.Unresolved:
         assert isinstance(self.state, Type.Unresolved)
         return self.state
@@ -279,7 +250,7 @@ class Type(Identifiable):
         param_count: int,
     ) -> None:
         assert isinstance(self.state, Type.Unresolved)
-        self.state = Type.Resolved(fields, enum_fields, param_count)
+        self.state = Type.Resolved(fields, enum_fields)
 
     def is_resolved(self) -> bool:
         return isinstance(self.state, Type.Resolved)

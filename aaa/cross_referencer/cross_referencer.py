@@ -102,8 +102,6 @@ class CrossReferencer:
         for import_ in output.imports.values():
             assert import_.is_resolved()
 
-        # TODO check if imports are resolved
-
         return output
 
     def _get_remaining_dependencies(self, file: Path) -> List[Path]:
