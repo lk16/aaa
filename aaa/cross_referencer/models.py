@@ -211,6 +211,9 @@ class Import(Identifiable):
             source, self.state.source_file, self.state.source_name
         )
 
+    def is_resolved(self) -> bool:
+        return isinstance(self.state, Import.Resolved)
+
 
 class Type(Identifiable):
     class Unresolved:

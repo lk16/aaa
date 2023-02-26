@@ -99,6 +99,9 @@ class CrossReferencer:
         for function in output.functions.values():
             assert function.is_resolved()
 
+        for import_ in output.imports.values():
+            assert import_.is_resolved()
+
         # TODO check if imports are resolved
 
         return output
