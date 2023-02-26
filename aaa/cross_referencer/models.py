@@ -247,7 +247,6 @@ class Type(Identifiable):
         self,
         fields: Dict[str, VariableType],
         enum_fields: Dict[str, Tuple[VariableType, int]],
-        param_count: int,
     ) -> None:
         assert isinstance(self.state, Type.Unresolved)
         self.state = Type.Resolved(fields, enum_fields)

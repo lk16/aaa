@@ -158,24 +158,23 @@ class CrossReferencer:
         self.cross_reference_stack.pop()
         self.cross_referenced_files.add(file)
 
-    def _resolve_function_signature(self, function: Function) -> None:
-        params = self._resolve_function_params(function)
-        arguments = self._resolve_function_arguments(function, params)
-        return_types = self._resolve_function_return_types(function, params)
-
-        is_enum_ctor = False
-
-        # TODO Find a better way to detect enum ctors
+    def _is_enum_constructor(self, function: Function) -> bool:
         try:
             enum_type = self._get_identifiable_generic(
                 function.struct_name, function.position
             )
         except UnknownIdentifier:
-            pass
-        else:
-            if isinstance(enum_type, Type):
-                is_enum_ctor = function.func_name in enum_type.enum_fields
+            return False
+        if not isinstance(enum_type, Type):
+            return False
 
+        return function.func_name in enum_type.enum_fields
+
+    def _resolve_function_signature(self, function: Function) -> None:
+        params = self._resolve_function_params(function)
+        arguments = self._resolve_function_arguments(function, params)
+        return_types = self._resolve_function_return_types(function, params)
+        is_enum_ctor = self._is_enum_constructor(function)
         parsed_body = function.get_unresolved().parsed.body
 
         function.add_signature(
@@ -406,7 +405,7 @@ class CrossReferencer:
                 variariant_id,
             )
 
-        type.resolve(fields, enum_variants, type.param_count)
+        type.resolve(fields, enum_variants)
 
     def _resolve_function_param(
         self, function: Function, parsed_type_param: parser.TypeLiteral
