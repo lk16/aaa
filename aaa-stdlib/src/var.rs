@@ -4,6 +4,7 @@ use std::{
     rc::Rc,
 };
 
+#[derive(Clone)]
 pub enum Variable {
     Integer(isize),
     Boolean(bool),
