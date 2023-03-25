@@ -5,7 +5,9 @@ use aaa_stdlib::stack::Stack;
 fn main() {
     let mut stack = Stack::new();
 
-    stack.push_int(69);
+    stack.push_int(34);
+    stack.push_int(35);
+    stack.plus();
     stack.print_top();
 
     stack.push_str("\n".to_owned());

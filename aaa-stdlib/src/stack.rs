@@ -22,7 +22,7 @@ impl Stack {
     }
 
     fn push(&mut self, v: Variable) {
-        self.items.push(v)
+        self.items.push(v);
     }
 
     fn len(&self) -> usize {
@@ -31,32 +31,32 @@ impl Stack {
 
     pub fn push_int(&mut self, v: isize) {
         let item = Variable::Integer(v);
-        self.push(item)
+        self.push(item);
     }
 
     pub fn push_bool(&mut self, v: bool) {
         let item = Variable::Boolean(v);
-        self.push(item)
+        self.push(item);
     }
 
     pub fn push_str(&mut self, v: String) {
         let item = Variable::String(Rc::new(RefCell::new(v)));
-        self.push(item)
+        self.push(item);
     }
 
     pub fn push_vector(&mut self, v: Vec<Variable>) {
         let item = Variable::Vector(Rc::new(RefCell::new(v)));
-        self.push(item)
+        self.push(item);
     }
 
     pub fn push_set(&mut self, v: HashSet<Variable>) {
         let item = Variable::Set(Rc::new(RefCell::new(v)));
-        self.push(item)
+        self.push(item);
     }
 
     pub fn push_map(&mut self, v: HashMap<Variable, Variable>) {
         let item = Variable::Map(Rc::new(RefCell::new(v)));
-        self.push(item)
+        self.push(item);
     }
 
     fn pop(&mut self) -> Variable {
@@ -117,46 +117,46 @@ impl Stack {
 
     pub fn print_top(&mut self) {
         let top = self.pop();
-        print!("{top:?}")
+        print!("{top:?}");
     }
 
-    fn dup(&mut self) {
+    pub fn dup(&mut self) {
         let len = self.len();
 
         if len < 1 {
             panic!("Stack underflow!\n");
         }
 
-        self.push(self.items[len - 1].clone())
+        self.push(self.items[len - 1].clone());
     }
 
-    fn swap(&mut self) {
+    pub fn swap(&mut self) {
         let len = self.len();
 
         if len < 2 {
             panic!("Stack underflow!\n");
         }
 
-        self.items.swap(len - 1, len - 2)
+        self.items.swap(len - 1, len - 2);
     }
 
-    fn assert(&mut self) {
+    pub fn assert(&mut self) {
         if !self.pop_bool() {
             panic!("Assertion failure!\n"); // TODO consider nicer alternatives
         }
     }
 
-    fn over(&mut self) {
+    pub fn over(&mut self) {
         let len = self.len();
 
         if len < 2 {
             panic!("Stack underflow!\n");
         }
 
-        self.push(self.items[len - 2].clone())
+        self.push(self.items[len - 2].clone());
     }
 
-    fn rot(&mut self) {
+    pub fn rot(&mut self) {
         let len = self.len();
 
         if len < 3 {
@@ -164,171 +164,170 @@ impl Stack {
         }
 
         self.items.swap(len - 3, len - 2);
-        self.items.swap(len - 2, len - 1)
+        self.items.swap(len - 2, len - 1);
     }
 
-    fn plus(&mut self) {
+    pub fn plus(&mut self) {
         let lhs = self.pop_int();
         let rhs = self.pop_int();
-        self.push_int(lhs + rhs)
+        self.push_int(lhs + rhs);
     }
 
-    fn minus(&mut self) {
+    pub fn minus(&mut self) {
         let lhs = self.pop_int();
         let rhs = self.pop_int();
-        self.push_int(lhs - rhs)
+        self.push_int(lhs - rhs);
     }
 
-    fn multiply(&mut self) {
+    pub fn multiply(&mut self) {
         let lhs = self.pop_int();
         let rhs = self.pop_int();
-        self.push_int(lhs * rhs)
+        self.push_int(lhs * rhs);
     }
 
-    fn divide(&mut self) {
+    pub fn divide(&mut self) {
         let lhs = self.pop_int();
         let rhs = self.pop_int();
 
         if rhs == 0 {
             self.push_int(0);
-            self.push_bool(false)
+            self.push_bool(false);
         } else {
             self.push_int(lhs / rhs);
-            self.push_bool(true)
+            self.push_bool(true);
         }
     }
 
-    fn modulo(&mut self) {
+    pub fn modulo(&mut self) {
         let rhs = self.pop_int();
         let lhs = self.pop_int();
 
         if rhs == 0 {
             self.push_int(0);
-            self.push_bool(false)
+            self.push_bool(false);
         } else {
             self.push_int(lhs % rhs);
-            self.push_bool(true)
+            self.push_bool(true);
         }
     }
 
-    fn repr(&mut self) {
+    pub fn repr(&mut self) {
         let top = self.pop();
         let repr = format!("{top:?}");
-        self.push_str(repr)
+        self.push_str(repr);
     }
 
-    fn print(&mut self) {
+    pub fn print(&mut self) {
         let top = self.pop();
         print!("{top:?}");
     }
 
-    fn drop(&mut self) {
+    pub fn drop(&mut self) {
         self.pop();
     }
 
-    fn less(&mut self) {
+    pub fn less(&mut self) {
         let rhs = self.pop_int();
         let lhs = self.pop_int();
-        self.push_bool(lhs < rhs)
+        self.push_bool(lhs < rhs);
     }
 
-    fn less_equal(&mut self) {
+    pub fn less_equal(&mut self) {
         let rhs = self.pop_int();
         let lhs = self.pop_int();
-        self.push_bool(lhs <= rhs)
+        self.push_bool(lhs <= rhs);
     }
 
-    fn unequal(&mut self) {
+    pub fn unequal(&mut self) {
         let rhs = self.pop_int();
         let lhs = self.pop_int();
-        self.push_bool(lhs != rhs)
+        self.push_bool(lhs != rhs);
     }
 
-    fn greater(&mut self) {
+    pub fn greater(&mut self) {
         let rhs = self.pop_int();
         let lhs = self.pop_int();
-        self.push_bool(lhs > rhs)
+        self.push_bool(lhs > rhs);
     }
 
-    fn greater_equal(&mut self) {
+    pub fn greater_equal(&mut self) {
         let rhs = self.pop_int();
         let lhs = self.pop_int();
-        self.push_bool(lhs >= rhs)
+        self.push_bool(lhs >= rhs);
     }
 
-    fn equals(&mut self) {
+    pub fn equals(&mut self) {
         let rhs = self.pop_int();
         let lhs = self.pop_int();
-        self.push_bool(lhs == rhs)
+        self.push_bool(lhs == rhs);
     }
 
-    fn or(&mut self) {
+    pub fn or(&mut self) {
         let rhs = self.pop_bool();
         let lhs = self.pop_bool();
-        self.push_bool(lhs || rhs)
+        self.push_bool(lhs || rhs);
     }
 
-    fn and(&mut self) {
+    pub fn and(&mut self) {
         let rhs = self.pop_bool();
         let lhs = self.pop_bool();
-        self.push_bool(lhs && rhs)
+        self.push_bool(lhs && rhs);
     }
 
-    fn not(&mut self) {
+    pub fn not(&mut self) {
         let value = self.pop_bool();
-        self.push_bool(!value)
+        self.push_bool(!value);
     }
 
-    fn socket(&mut self) {
+    pub fn socket(&mut self) {
         todo!(); // Split this into UDP and TCP sockets
                  // See also https://doc.rust-lang.org/std/net/
     }
 
-    fn exit(&mut self) -> ! {
+    pub fn exit(&mut self) -> ! {
         let code = self.pop_int();
-        process::exit(code as i32)
+        process::exit(code as i32);
     }
 
-    fn write(&mut self) {
+    pub fn write(&mut self) {
         todo!(); // Split for actual files on a filesystem and sockets
     }
 
-    fn connect(&mut self) {
-        todo!()
+    pub fn connect(&mut self) {
+        todo!();
     }
 
-    fn read(&mut self) {
-        todo!()
+    pub fn read(&mut self) {
+        todo!();
     }
 
-    fn bind(&mut self) {
-        todo!()
+    pub fn bind(&mut self) {
+        todo!();
     }
 
-    fn listen(&mut self) {
-        todo!()
+    pub fn listen(&mut self) {
+        todo!();
     }
 
-    fn accept(&mut self) {
-        todo!()
+    pub fn accept(&mut self) {
+        todo!();
     }
 
-    fn nop(&mut self) {}
+    pub fn nop(&mut self) {}
 
-    fn push_vec_empty(&mut self) {
-        self.push_vector(vec![])
+    pub fn push_vec_empty(&mut self) {
+        self.push_vector(vec![]);
     }
 
-    fn vec_push(&mut self) {
+    pub fn vec_push(&mut self) {
         let pushed = self.pop();
-        let vector_rc = self.pop_vector();
-        let mut vector = (*vector_rc).borrow_mut();
-        vector.push(pushed)
+        let vector = self.pop_vector();
+        vector.borrow_mut().push(pushed);
     }
 
-    fn vec_pop(&mut self) {
+    pub fn vec_pop(&mut self) {
         let vector = self.pop_vector();
-        let popped = (*vector).borrow_mut().pop();
+        let popped = vector.borrow_mut().pop();
 
         match popped {
             Some(popped) => self.push(popped),
@@ -336,176 +335,115 @@ impl Stack {
         }
     }
 
-    fn vec_get(&mut self) {
+    pub fn vec_get(&mut self) {
+        todo!() // This will be removed, renane vec_get_copy() to vec_get()
+    }
+
+    pub fn vec_get_copy(&mut self) {
         let offset = self.pop_int();
         let vector = self.pop_vector();
 
         let gotten = vector.borrow()[offset as usize].clone();
-        self.push(gotten)
+        self.push(gotten);
     }
 
-    /*
-    fn vec_get_copy(&mut self) {
-        int offset = aaa_stack_pop_int(stack);
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-        struct aaa_variable *gotten = aaa_vector_get_copy(vec, (size_t)offset);
+    pub fn vec_set(&mut self) {
+        let value = self.pop();
+        let offset = self.pop_int();
+        let vector = self.pop_vector();
 
-        aaa_stack_push(stack, gotten);
-
-        aaa_vector_dec_ref(vec);
+        vector.borrow_mut()[offset as usize] = value;
     }
 
-    fn vec_set(&mut self) {
-        struct aaa_variable *value = aaa_stack_pop(stack);
-        int offset = aaa_stack_pop_int(stack);
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-
-        aaa_vector_set(vec, (size_t)offset, value);
-
-        aaa_variable_dec_ref(value);
-        aaa_vector_dec_ref(vec);
+    pub fn vec_size(&mut self) {
+        let vector = self.pop_vector();
+        self.push_int(vector.borrow().len() as isize);
     }
 
-    fn vec_size(&mut self) {
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-
-        size_t size = aaa_vector_size(vec);
-        aaa_stack_push_int(stack, (int)size);
-
-        aaa_vector_dec_ref(vec);
+    pub fn vec_empty(&mut self) {
+        let vector = self.pop_vector();
+        self.push_bool(vector.borrow().is_empty());
     }
 
-    fn vec_empty(&mut self) {
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-
-        int empty = aaa_vector_empty(vec);
-        aaa_stack_push_bool(stack, empty);
-
-        aaa_vector_dec_ref(vec);
+    pub fn vec_clear(&mut self) {
+        self.pop_vector().borrow_mut().clear();
     }
 
-    fn vec_clear(&mut self) {
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-
-        aaa_vector_clear(vec);
-
-        aaa_vector_dec_ref(vec);
+    pub fn push_map_empty(&mut self) {
+        self.push_map(HashMap::new())
     }
 
-    fn push_map_empty(&mut self) {
-        struct aaa_map *map = aaa_map_new();
-        aaa_stack_push_map(stack, map);
+    pub fn map_set(&mut self) {
+        let value = self.pop();
+        let key = self.pop();
+        let map_rc = self.pop_map();
+        let mut map = map_rc.borrow_mut();
+
+        (*map).insert(key, value);
     }
 
-    void aaa_stack_push_map(struct aaa_stack *stack, struct aaa_map *map) {
-        struct aaa_variable *var = aaa_variable_new_map(map);
-        aaa_stack_push(stack, var);
+    pub fn map_get(&mut self) {
+        todo!(); // this will be removed, rename map_get_copy() to map_get(), similar to vec_get_copy()
     }
 
-    void aaa_stack_push_set(struct aaa_stack *stack, struct aaa_map *map) {
-        struct aaa_variable *var = aaa_variable_new_set(map);
-        aaa_stack_push(stack, var);
+    pub fn map_get_copy(&mut self) {
+        let key = self.pop();
+        let map_rc = self.pop_map();
+        let map = map_rc.borrow_mut();
+
+        match map.get(&key) {
+            None => todo!(), // In C we would push NULL here. Figure out what to do.
+            Some(value) => {
+                self.push(value.clone());
+                self.push_bool(true);
+            }
+        }
     }
 
-    fn map_set(&mut self) {
-        struct aaa_variable *value = aaa_stack_pop(stack);
-        struct aaa_variable *key = aaa_stack_pop(stack);
-        struct aaa_map *map = aaa_stack_pop_map(stack);
-
-        aaa_map_set(map, key, value);
-
-        aaa_map_dec_ref(map);
-        aaa_variable_dec_ref(key);
-        aaa_variable_dec_ref(value);
-    }
-
-    fn map_get(&mut self) {
-        struct aaa_variable *key = aaa_stack_pop(stack);
-        struct aaa_map *map = aaa_stack_pop_map(stack);
-
-        struct aaa_variable *value = aaa_map_get(map, key);
-
-        aaa_stack_push(stack, value);
-        aaa_stack_push_bool(stack, value != NULL);
-
-        aaa_map_dec_ref(map);
-        aaa_variable_dec_ref(key);
-    }
-
-    fn map_get_copy(&mut self) {
-        struct aaa_variable *key = aaa_stack_pop(stack);
-        struct aaa_map *map = aaa_stack_pop_map(stack);
-
-        struct aaa_variable *value = aaa_map_get_copy(map, key);
-
-        aaa_stack_push(stack, value);
-        aaa_stack_push_bool(stack, value != NULL);
-
-        aaa_map_dec_ref(map);
-        aaa_variable_dec_ref(key);
-    }
-    fn map_has_key(&mut self) {
-        struct aaa_variable *key = aaa_stack_pop(stack);
-        struct aaa_map *map = aaa_stack_pop_map(stack);
-
-        bool has_key = aaa_map_has_key(map, key);
-        aaa_stack_push_bool(stack, has_key);
-
-        aaa_map_dec_ref(map);
-        aaa_variable_dec_ref(key);
+    pub fn map_has_key(&mut self) {
+        let key = self.pop();
+        let map = self.pop_map();
+        let has_key = map.borrow().contains_key(&key);
+        self.push_bool(has_key);
     }
 
     fn map_size(&mut self) {
-        struct aaa_map *map = aaa_stack_pop_map(stack);
-
-        size_t size = aaa_map_size(map);
-        aaa_stack_push_int(stack, (int)size);
-
-        aaa_map_dec_ref(map);
+        let map = self.pop_map();
+        self.push_int(map.borrow().len() as isize);
     }
 
     fn map_empty(&mut self) {
-        struct aaa_map *map = aaa_stack_pop_map(stack);
-
-        bool is_empty = aaa_map_empty(map);
-        aaa_stack_push_bool(stack, is_empty);
-
-        aaa_map_dec_ref(map);
+        let map = self.pop_map();
+        self.push_bool(map.borrow().is_empty());
     }
 
     fn map_clear(&mut self) {
-        struct aaa_map *map = aaa_stack_pop_map(stack);
-
-        aaa_map_clear(map);
-
-        aaa_map_dec_ref(map);
+        self.pop_map().borrow_mut().clear();
     }
 
     fn map_pop(&mut self) {
-        struct aaa_variable *key = aaa_stack_pop(stack);
-        struct aaa_map *map = aaa_stack_pop_map(stack);
+        let key = self.pop();
+        let map_rc = self.pop_map();
+        let mut map = map_rc.borrow_mut();
 
-        struct aaa_variable *value = aaa_map_pop(map, key);
-
-        aaa_stack_push(stack, value);
-        aaa_stack_push_bool(stack, value != NULL);
-
-        aaa_variable_dec_ref(key);
-        aaa_map_dec_ref(map);
+        match map.remove_entry(&key) {
+            None => todo!(), // In C we push NULL here, see also map_get_copy()
+            Some((k, v)) => self.push(v),
+        }
     }
 
     fn map_drop(&mut self) {
-        struct aaa_variable *key = aaa_stack_pop(stack);
-        struct aaa_map *map = aaa_stack_pop_map(stack);
+        let key = self.pop();
+        let map_rc = self.pop_map();
+        let mut map = map_rc.borrow_mut();
 
-        bool found = aaa_map_drop(map, key);
-
-        aaa_stack_push_bool(stack, found);
-
-        aaa_variable_dec_ref(key);
-        aaa_map_dec_ref(map);
+        match map.remove_entry(&key) {
+            None => todo!(), // In C we push NULL here, see also map_get_copy()
+            Some(_) => (),
+        }
     }
 
+    /*
     fn str_append(&mut self) {
         struct aaa_string *rhs = aaa_stack_pop_str(stack);
         struct aaa_string *lhs = aaa_stack_pop_str(stack);
