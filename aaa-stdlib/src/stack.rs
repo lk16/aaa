@@ -4,6 +4,7 @@
 #![allow(unreachable_code)]
 
 use std::{
+    cell::RefCell,
     collections::{HashMap, HashSet},
     process,
     rc::Rc,
@@ -39,22 +40,22 @@ impl Stack {
     }
 
     pub fn push_str(&mut self, v: String) {
-        let item = Variable::String(Rc::new(v));
+        let item = Variable::String(Rc::new(RefCell::new(v)));
         self.push(item)
     }
 
     pub fn push_vector(&mut self, v: Vec<Variable>) {
-        let item = Variable::Vector(Rc::new(v));
+        let item = Variable::Vector(Rc::new(RefCell::new(v)));
         self.push(item)
     }
 
     pub fn push_set(&mut self, v: HashSet<Variable>) {
-        let item = Variable::Set(Rc::new(v));
+        let item = Variable::Set(Rc::new(RefCell::new(v)));
         self.push(item)
     }
 
     pub fn push_map(&mut self, v: HashMap<Variable, Variable>) {
-        let item = Variable::Map(Rc::new(v));
+        let item = Variable::Map(Rc::new(RefCell::new(v)));
         self.push(item)
     }
 
@@ -86,28 +87,28 @@ impl Stack {
         }
     }
 
-    pub fn pop_str(&mut self) -> Rc<String> {
+    pub fn pop_str(&mut self) -> Rc<RefCell<String>> {
         match self.pop() {
             Variable::String(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_vector(&mut self) -> Rc<Vec<Variable>> {
+    pub fn pop_vector(&mut self) -> Rc<RefCell<Vec<Variable>>> {
         match self.pop() {
             Variable::Vector(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_set(&mut self) -> Rc<HashSet<Variable>> {
+    pub fn pop_set(&mut self) -> Rc<RefCell<HashSet<Variable>>> {
         match self.pop() {
             Variable::Set(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_map(&mut self) -> Rc<HashMap<Variable, Variable>> {
+    pub fn pop_map(&mut self) -> Rc<RefCell<HashMap<Variable, Variable>>> {
         match self.pop() {
             Variable::Map(v) => v,
             _ => todo!(), // TODO handle type error
@@ -315,41 +316,35 @@ impl Stack {
     fn nop(&mut self) {}
 
     fn push_vec_empty(&mut self) {
-        let vec = Rc::new(vec![]);
-        self.push(Variable::Vector(vec))
+        self.push_vector(vec![])
     }
 
-    /* TODO edit below:
-
     fn vec_push(&mut self) {
-        struct aaa_variable *pushed = aaa_stack_pop(stack);
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-
-        aaa_vector_push(vec, pushed);
-
-        aaa_vector_dec_ref(vec);
-        aaa_variable_dec_ref(pushed);
+        let pushed = self.pop();
+        let vector_rc = self.pop_vector();
+        let mut vector = (*vector_rc).borrow_mut();
+        vector.push(pushed)
     }
 
     fn vec_pop(&mut self) {
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-        struct aaa_variable *popped = aaa_vector_pop(vec);
+        let vector = self.pop_vector();
+        let popped = (*vector).borrow_mut().pop();
 
-        aaa_stack_push(stack, popped);
-
-        aaa_vector_dec_ref(vec);
+        match popped {
+            Some(popped) => self.push(popped),
+            None => todo!(),
+        }
     }
 
     fn vec_get(&mut self) {
-        int offset = aaa_stack_pop_int(stack);
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-        struct aaa_variable *gotten = aaa_vector_get(vec, (size_t)offset);
+        let offset = self.pop_int();
+        let vector = self.pop_vector();
 
-        aaa_stack_push(stack, gotten);
-
-        aaa_vector_dec_ref(vec);
+        let gotten = vector.borrow()[offset as usize].clone();
+        self.push(gotten)
     }
 
+    /*
     fn vec_get_copy(&mut self) {
         int offset = aaa_stack_pop_int(stack);
         struct aaa_vector *vec = aaa_stack_pop_vec(stack);
