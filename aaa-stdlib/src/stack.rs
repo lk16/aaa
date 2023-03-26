@@ -470,56 +470,53 @@ impl Stack {
         self.push_bool(found);
     }
 
-    /*
     pub fn str_equals(&mut self) {
-        struct aaa_string *rhs = aaa_stack_pop_str(stack);
-        struct aaa_string *lhs = aaa_stack_pop_str(stack);
+        let lhs_rc = self.pop_str();
+        let lhs = lhs_rc.borrow();
 
-        bool contained = aaa_string_equals(lhs, rhs);
-        aaa_stack_push_bool(stack, contained);
+        let rhs_rc = self.pop_str();
+        let rhs = lhs_rc.borrow();
 
-        aaa_string_dec_ref(lhs);
-        aaa_string_dec_ref(rhs);
+        self.push_bool(lhs.as_str() == rhs.as_str());
     }
 
     pub fn str_join(&mut self) {
-        struct aaa_vector *parts = aaa_stack_pop_vec(stack);
-        struct aaa_string *string = aaa_stack_pop_str(stack);
+        let vector_rc = self.pop_vector();
+        let vector = vector_rc.borrow();
 
-        struct aaa_string *joined = aaa_string_join(string, parts);
-        aaa_stack_push_str(stack, joined);
+        let mut parts = vec![];
+        for part in vector.iter() {
+            match part {
+                Variable::String(part) => parts.push(part.borrow().clone()),
+                _ => todo!(), // type error
+            }
+        }
 
-        aaa_vector_dec_ref(parts);
-        aaa_string_dec_ref(string);
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
+
+        let joined = parts.join(&string);
+        self.push_str(joined);
     }
 
     pub fn str_len(&mut self) {
-        struct aaa_string *string = aaa_stack_pop_str(stack);
-
-        size_t length = aaa_string_len(string);
-        aaa_stack_push_int(stack, (int)length);
-
-        aaa_string_dec_ref(string);
+        let len = self.pop_str().borrow().len();
+        self.push_int(len as isize);
     }
 
     pub fn str_lower(&mut self) {
-        struct aaa_string *string = aaa_stack_pop_str(stack);
-
-        struct aaa_string *lower = aaa_string_lower(string);
-        aaa_stack_push_str(stack, lower);
-
-        aaa_string_dec_ref(string);
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
+        self.push_str(string.to_lowercase());
     }
 
     pub fn str_upper(&mut self) {
-        struct aaa_string *string = aaa_stack_pop_str(stack);
-
-        struct aaa_string *upper = aaa_string_upper(string);
-        aaa_stack_push_str(stack, upper);
-
-        aaa_string_dec_ref(string);
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
+        self.push_str(string.to_uppercase());
     }
 
+    /*
     pub fn str_replace(&mut self) {
         struct aaa_string *replace = aaa_stack_pop_str(stack);
         struct aaa_string *search = aaa_stack_pop_str(stack);
