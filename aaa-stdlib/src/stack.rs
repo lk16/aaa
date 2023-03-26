@@ -341,9 +341,11 @@ impl Stack {
 
     pub fn vec_get_copy(&mut self) {
         let offset = self.pop_int();
-        let vector = self.pop_vector();
 
-        let gotten = vector.borrow()[offset as usize].clone();
+        let vector_rc = self.pop_vector();
+        let vector = vector_rc.borrow();
+
+        let gotten = vector[offset as usize].clone();
         self.push(gotten);
     }
 
@@ -356,13 +358,13 @@ impl Stack {
     }
 
     pub fn vec_size(&mut self) {
-        let vector = self.pop_vector();
-        self.push_int(vector.borrow().len() as isize);
+        let size = self.pop_vector().borrow().len();
+        self.push_int(size as isize);
     }
 
     pub fn vec_empty(&mut self) {
-        let vector = self.pop_vector();
-        self.push_bool(vector.borrow().is_empty());
+        let is_empty = self.pop_vector().borrow().is_empty();
+        self.push_bool(is_empty);
     }
 
     pub fn vec_clear(&mut self) {
@@ -402,26 +404,29 @@ impl Stack {
 
     pub fn map_has_key(&mut self) {
         let key = self.pop();
-        let map = self.pop_map();
-        let has_key = map.borrow().contains_key(&key);
+
+        let map_rc = self.pop_map();
+        let map = map_rc.borrow();
+
+        let has_key = map.contains_key(&key);
         self.push_bool(has_key);
     }
 
-    fn map_size(&mut self) {
-        let map = self.pop_map();
-        self.push_int(map.borrow().len() as isize);
+    pub fn map_size(&mut self) {
+        let size = self.pop_map().borrow().len();
+        self.push_int(size as isize);
     }
 
-    fn map_empty(&mut self) {
-        let map = self.pop_map();
-        self.push_bool(map.borrow().is_empty());
+    pub fn map_empty(&mut self) {
+        let is_empty = self.pop_map().borrow().is_empty();
+        self.push_bool(is_empty);
     }
 
-    fn map_clear(&mut self) {
+    pub fn map_clear(&mut self) {
         self.pop_map().borrow_mut().clear();
     }
 
-    fn map_pop(&mut self) {
+    pub fn map_pop(&mut self) {
         let key = self.pop();
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
@@ -432,7 +437,7 @@ impl Stack {
         }
     }
 
-    fn map_drop(&mut self) {
+    pub fn map_drop(&mut self) {
         let key = self.pop();
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
@@ -443,30 +448,30 @@ impl Stack {
         }
     }
 
+    pub fn str_append(&mut self) {
+        let lhs_rc = self.pop_str();
+        let lhs = lhs_rc.borrow();
+
+        let rhs_rc = self.pop_str();
+        let rhs = lhs_rc.borrow();
+
+        let combined = lhs.clone() + &rhs;
+        self.push_str(combined);
+    }
+
+    pub fn str_contains(&mut self) {
+        let search_rc = self.pop_str();
+        let search = search_rc.borrow();
+
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
+
+        let found = string.contains(&*search);
+        self.push_bool(found);
+    }
+
     /*
-    fn str_append(&mut self) {
-        struct aaa_string *rhs = aaa_stack_pop_str(stack);
-        struct aaa_string *lhs = aaa_stack_pop_str(stack);
-
-        struct aaa_string *combined = aaa_string_append(lhs, rhs);
-        aaa_stack_push_str(stack, combined);
-
-        aaa_string_dec_ref(lhs);
-        aaa_string_dec_ref(rhs);
-    }
-
-    fn str_contains(&mut self) {
-        struct aaa_string *search = aaa_stack_pop_str(stack);
-        struct aaa_string *string = aaa_stack_pop_str(stack);
-
-        bool contained = aaa_string_contains(string, search);
-        aaa_stack_push_bool(stack, contained);
-
-        aaa_string_dec_ref(search);
-        aaa_string_dec_ref(string);
-    }
-
-    fn str_equals(&mut self) {
+    pub fn str_equals(&mut self) {
         struct aaa_string *rhs = aaa_stack_pop_str(stack);
         struct aaa_string *lhs = aaa_stack_pop_str(stack);
 
@@ -477,7 +482,7 @@ impl Stack {
         aaa_string_dec_ref(rhs);
     }
 
-    fn str_join(&mut self) {
+    pub fn str_join(&mut self) {
         struct aaa_vector *parts = aaa_stack_pop_vec(stack);
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
@@ -488,7 +493,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_len(&mut self) {
+    pub fn str_len(&mut self) {
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
         size_t length = aaa_string_len(string);
@@ -497,7 +502,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_lower(&mut self) {
+    pub fn str_lower(&mut self) {
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
         struct aaa_string *lower = aaa_string_lower(string);
@@ -506,7 +511,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_upper(&mut self) {
+    pub fn str_upper(&mut self) {
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
         struct aaa_string *upper = aaa_string_upper(string);
@@ -515,7 +520,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_replace(&mut self) {
+    pub fn str_replace(&mut self) {
         struct aaa_string *replace = aaa_stack_pop_str(stack);
         struct aaa_string *search = aaa_stack_pop_str(stack);
         struct aaa_string *string = aaa_stack_pop_str(stack);
@@ -528,7 +533,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_split(&mut self) {
+    pub fn str_split(&mut self) {
         struct aaa_string *sep = aaa_stack_pop_str(stack);
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
@@ -539,7 +544,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_strip(&mut self) {
+    pub fn str_strip(&mut self) {
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
         struct aaa_string *stripped = aaa_string_strip(string);
@@ -548,7 +553,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_find_after(&mut self) {
+    pub fn str_find_after(&mut self) {
         int start = aaa_stack_pop_int(stack);
         struct aaa_string *search = aaa_stack_pop_str(stack);
         struct aaa_string *string = aaa_stack_pop_str(stack);
@@ -563,7 +568,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_find(&mut self) {
+    pub fn str_find(&mut self) {
         struct aaa_string *search = aaa_stack_pop_str(stack);
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
@@ -577,7 +582,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_substr(&mut self) {
+    pub fn str_substr(&mut self) {
         int end = aaa_stack_pop_int(stack);
         int start = aaa_stack_pop_int(stack);
         struct aaa_string *string = aaa_stack_pop_str(stack);
@@ -591,7 +596,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_to_bool(&mut self) {
+    pub fn str_to_bool(&mut self) {
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
         bool boolean, success;
@@ -602,7 +607,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn str_to_int(&mut self) {
+    pub fn str_to_int(&mut self) {
         struct aaa_string *string = aaa_stack_pop_str(stack);
 
         bool success;
@@ -614,7 +619,7 @@ impl Stack {
         aaa_string_dec_ref(string);
     }
 
-    fn vec_copy(&mut self) {
+    pub fn vec_copy(&mut self) {
         struct aaa_vector *vec = aaa_stack_pop_vec(stack);
 
         struct aaa_vector *copy = aaa_vector_copy(vec);
@@ -623,7 +628,7 @@ impl Stack {
         aaa_vector_dec_ref(vec);
     }
 
-    fn map_copy(&mut self) {
+    pub fn map_copy(&mut self) {
         struct aaa_map *map = aaa_stack_pop_map(stack);
 
         struct aaa_map *copy = aaa_map_copy(map);
@@ -632,7 +637,7 @@ impl Stack {
         aaa_map_dec_ref(map);
     }
 
-    fn field_query(&mut self) {
+    pub fn field_query(&mut self) {
         struct aaa_string *field_name = aaa_stack_pop_str(stack);
         struct aaa_struct *s = aaa_stack_pop_struct(stack);
 
@@ -645,7 +650,7 @@ impl Stack {
         aaa_struct_dec_ref(s);
     }
 
-    fn field_update(&mut self) {
+    pub fn field_update(&mut self) {
         struct aaa_variable *new_value = aaa_stack_pop(stack);
         struct aaa_string *field_name = aaa_stack_pop_str(stack);
         struct aaa_struct *s = aaa_stack_pop_struct(stack);
@@ -658,7 +663,7 @@ impl Stack {
         aaa_struct_dec_ref(s);
     }
 
-    fn fsync(&mut self) {
+    pub fn fsync(&mut self) {
         int fd = aaa_stack_pop_int(stack);
 
         if (fsync(fd) == -1) {
@@ -668,7 +673,7 @@ impl Stack {
         aaa_stack_push_bool(stack, true);
     }
 
-    fn environ(&mut self) {
+    pub fn environ(&mut self) {
         struct aaa_map *map = aaa_map_new();
 
         struct aaa_string *equals_char = aaa_string_new("=", false);
@@ -705,7 +710,7 @@ impl Stack {
         aaa_stack_push_map(stack, map);
     }
 
-    fn execve(&mut self) {
+    pub fn execve(&mut self) {
         struct aaa_map *env_map = aaa_stack_pop_map(stack);
         struct aaa_vector *argv_vec = aaa_stack_pop_vec(stack);
         struct aaa_string *path_str = aaa_stack_pop_str(stack);
@@ -785,13 +790,13 @@ impl Stack {
         aaa_stack_push_bool(stack, false);
     }
 
-    fn fork(&mut self) {
+    pub fn fork(&mut self) {
         int pid = fork();
 
         aaa_stack_push_int(stack, pid);
     }
 
-    fn waitpid(&mut self) {
+    pub fn waitpid(&mut self) {
         int options = aaa_stack_pop_int(stack);
         int pid = aaa_stack_pop_int(stack);
 
@@ -822,7 +827,7 @@ impl Stack {
         }
     }
 
-    fn getcwd(&mut self) {
+    pub fn getcwd(&mut self) {
         size_t buff_size = PATH_MAX;
         char *buff = malloc(buff_size);
 
@@ -834,7 +839,7 @@ impl Stack {
         aaa_stack_push_str_raw(stack, buff, true);
     }
 
-    fn chdir(&mut self) {
+    pub fn chdir(&mut self) {
         struct aaa_string *path = aaa_stack_pop_str(stack);
         const char *path_raw = aaa_string_raw(path);
 
@@ -847,7 +852,7 @@ impl Stack {
         aaa_string_dec_ref(path);
     }
 
-    fn close(&mut self) {
+    pub fn close(&mut self) {
         int fd = aaa_stack_pop_int(stack);
 
         if (close(fd) == 0) {
@@ -857,19 +862,19 @@ impl Stack {
         }
     }
 
-    fn getpid(&mut self) {
+    pub fn getpid(&mut self) {
         int pid = getpid();
 
         aaa_stack_push_int(stack, pid);
     }
 
-    fn getppid(&mut self) {
+    pub fn getppid(&mut self) {
         int ppid = getppid();
 
         aaa_stack_push_int(stack, ppid);
     }
 
-    fn getenv(&mut self) {
+    pub fn getenv(&mut self) {
         struct aaa_string *name = aaa_stack_pop_str(stack);
         const char *name_raw = aaa_string_raw(name);
 
@@ -886,7 +891,7 @@ impl Stack {
         aaa_string_dec_ref(name);
     }
 
-    fn gettimeofday(&mut self) {
+    pub fn gettimeofday(&mut self) {
         struct timeval tv;
 
         if (gettimeofday(&tv, NULL) != 0) {
@@ -898,7 +903,7 @@ impl Stack {
         aaa_stack_push_int(stack, (int)tv.tv_usec);
     }
 
-    fn open(&mut self) {
+    pub fn open(&mut self) {
         int mode = aaa_stack_pop_int(stack);
         int flags = aaa_stack_pop_int(stack);
         struct aaa_string *path = aaa_stack_pop_str(stack);
@@ -918,7 +923,7 @@ impl Stack {
         aaa_string_dec_ref(path);
     }
 
-    fn setenv(&mut self) {
+    pub fn setenv(&mut self) {
         struct aaa_string *value = aaa_stack_pop_str(stack);
         struct aaa_string *name = aaa_stack_pop_str(stack);
 
@@ -934,13 +939,13 @@ impl Stack {
         aaa_string_dec_ref(name);
     }
 
-    fn time(&mut self) {
+    pub fn time(&mut self) {
         time_t timestamp = time(NULL);
 
         aaa_stack_push_int(stack, (int)timestamp);
     }
 
-    fn unlink(&mut self) {
+    pub fn unlink(&mut self) {
         struct aaa_string *path = aaa_stack_pop_str(stack);
 
         const char *path_raw = aaa_string_raw(path);
@@ -954,7 +959,7 @@ impl Stack {
         aaa_string_dec_ref(path);
     }
 
-    fn unsetenv(&mut self) {
+    pub fn unsetenv(&mut self) {
         struct aaa_string *name = aaa_stack_pop_str(stack);
 
         const char *name_raw = aaa_string_raw(name);
@@ -967,7 +972,7 @@ impl Stack {
         aaa_string_dec_ref(name);
     }
 
-    fn vec_iter(&mut self) {
+    pub fn vec_iter(&mut self) {
         struct aaa_vector *vec = aaa_stack_pop_vec(stack);
         struct aaa_vector_iter *iter = aaa_vector_iter_new(vec);
         struct aaa_variable *var = aaa_variable_new_vector_iter(iter);
@@ -977,7 +982,7 @@ impl Stack {
         aaa_vector_dec_ref(vec);
     }
 
-    fn vec_iter_next(&mut self) {
+    pub fn vec_iter_next(&mut self) {
         struct aaa_variable *top = aaa_stack_pop(stack);
         struct aaa_vector_iter *iter = aaa_variable_get_vector_iter(top);
 
@@ -993,7 +998,7 @@ impl Stack {
         aaa_vector_iter_dec_ref(iter);
     }
 
-    fn map_iter(&mut self) {
+    pub fn map_iter(&mut self) {
         struct aaa_map *map = aaa_stack_pop_map(stack);
 
         struct aaa_map_iter *iter = aaa_map_iter_new(map);
@@ -1004,7 +1009,7 @@ impl Stack {
         aaa_map_dec_ref(map);
     }
 
-    fn map_iter_next(&mut self) {
+    pub fn map_iter_next(&mut self) {
         struct aaa_variable *top = aaa_stack_pop(stack);
         struct aaa_map_iter *iter = aaa_variable_get_map_iter(top);
 
@@ -1022,7 +1027,7 @@ impl Stack {
         aaa_map_iter_dec_ref(iter);
     }
 
-    fn set_add(&mut self) {
+    pub fn set_add(&mut self) {
         struct aaa_variable *item = aaa_stack_pop(stack);
         struct aaa_map *set = aaa_stack_pop_map(stack);
 
@@ -1032,7 +1037,7 @@ impl Stack {
         aaa_variable_dec_ref(item);
     }
 
-    fn set_clear(&mut self) {
+    pub fn set_clear(&mut self) {
         struct aaa_map *set = aaa_stack_pop_map(stack);
 
         aaa_map_clear(set);
@@ -1040,7 +1045,7 @@ impl Stack {
         aaa_map_dec_ref(set);
     }
 
-    fn set_copy(&mut self) {
+    pub fn set_copy(&mut self) {
         struct aaa_map *set = aaa_stack_pop_map(stack);
 
         struct aaa_map *copy = aaa_map_copy(set);
@@ -1050,7 +1055,7 @@ impl Stack {
         aaa_map_dec_ref(set);
     }
 
-    fn set_empty(&mut self) {
+    pub fn set_empty(&mut self) {
         struct aaa_map *set = aaa_stack_pop_map(stack);
 
         bool is_empty = aaa_map_empty(set);
@@ -1060,7 +1065,7 @@ impl Stack {
         aaa_map_dec_ref(set);
     }
 
-    fn set_has(&mut self) {
+    pub fn set_has(&mut self) {
         struct aaa_variable *item = aaa_stack_pop(stack);
         struct aaa_map *set = aaa_stack_pop_map(stack);
 
@@ -1072,9 +1077,9 @@ impl Stack {
         aaa_variable_dec_ref(item);
     }
 
-    fn set_iter(&mut self) { aaa_stack_map_iter(stack); }
+    pub fn set_iter(&mut self) { aaa_stack_map_iter(stack); }
 
-    fn set_remove(&mut self) {
+    pub fn set_remove(&mut self) {
         struct aaa_variable *item = aaa_stack_pop(stack);
         struct aaa_map *set = aaa_stack_pop_map(stack);
 
@@ -1084,11 +1089,11 @@ impl Stack {
         aaa_map_dec_ref(set);
     }
 
-    fn set_size(&mut self) {
+    pub fn set_size(&mut self) {
         return aaa_stack_map_size(stack);
     }
 
-    fn set_iter_next(&mut self) {
+    pub fn set_iter_next(&mut self) {
         struct aaa_variable *top = aaa_stack_pop(stack);
         struct aaa_map_iter *iter = aaa_variable_get_map_iter(top);
 
@@ -1105,7 +1110,7 @@ impl Stack {
         aaa_map_iter_dec_ref(iter);
     }
 
-    fn push_set_empty(&mut self) {
+    pub fn push_set_empty(&mut self) {
         struct aaa_map *set = aaa_set_new();
         aaa_stack_push_set(stack, set);
     }
@@ -1117,13 +1122,13 @@ impl Stack {
         aaa_variable_dec_ref(popped);
     }
 
-    fn copy(&mut self) {
+    pub fn copy(&mut self) {
         struct aaa_variable *top = aaa_stack_top(stack);
         struct aaa_variable *copy = aaa_variable_copy(top);
 
         aaa_stack_push(stack, copy);
     }
 
-    fn make_const(&mut self) {
+    pub fn make_const(&mut self) {
     } */
 }
