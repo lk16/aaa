@@ -315,10 +315,6 @@ impl Stack {
 
     pub fn nop(&mut self) {}
 
-    pub fn push_vec_empty(&mut self) {
-        self.push_vector(vec![]);
-    }
-
     pub fn vec_push(&mut self) {
         let pushed = self.pop();
         let vector = self.pop_vector();
@@ -449,11 +445,12 @@ impl Stack {
     }
 
     pub fn str_append(&mut self) {
+        // TODO we crash if lhs and rhs are referring the same String
         let lhs_rc = self.pop_str();
         let lhs = lhs_rc.borrow();
 
         let rhs_rc = self.pop_str();
-        let rhs = lhs_rc.borrow();
+        let rhs = rhs_rc.borrow();
 
         let combined = lhs.clone() + &rhs;
         self.push_str(combined);
@@ -516,106 +513,90 @@ impl Stack {
         self.push_str(string.to_uppercase());
     }
 
-    /*
     pub fn str_replace(&mut self) {
-        struct aaa_string *replace = aaa_stack_pop_str(stack);
-        struct aaa_string *search = aaa_stack_pop_str(stack);
-        struct aaa_string *string = aaa_stack_pop_str(stack);
+        let replace_rc = self.pop_str();
+        let replace = replace_rc.borrow();
 
-        struct aaa_string *replaced = aaa_string_replace(string, search, replace);
-        aaa_stack_push_str(stack, replaced);
+        let search_rc = self.pop_str();
+        let search = search_rc.borrow();
 
-        aaa_string_dec_ref(replace);
-        aaa_string_dec_ref(search);
-        aaa_string_dec_ref(string);
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
+
+        let replaced = search.replace(&*search, &replace);
+        self.push_str(replaced);
     }
 
     pub fn str_split(&mut self) {
-        struct aaa_string *sep = aaa_stack_pop_str(stack);
-        struct aaa_string *string = aaa_stack_pop_str(stack);
+        let sep_rc = self.pop_str();
+        let sep = sep_rc.borrow();
 
-        struct aaa_vector *split = aaa_string_split(string, sep);
-        aaa_stack_push_vec(stack, split);
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
 
-        aaa_string_dec_ref(sep);
-        aaa_string_dec_ref(string);
+        let split: Vec<Variable> = string
+            .split(&*sep)
+            .map(|s| Variable::String(Rc::new(RefCell::new(s.to_owned()))))
+            .collect();
+        self.push_vector(split);
     }
 
     pub fn str_strip(&mut self) {
-        struct aaa_string *string = aaa_stack_pop_str(stack);
-
-        struct aaa_string *stripped = aaa_string_strip(string);
-        aaa_stack_push_str(stack, stripped);
-
-        aaa_string_dec_ref(string);
+        todo!(); // TODO remove or rename this
     }
 
     pub fn str_find_after(&mut self) {
-        int start = aaa_stack_pop_int(stack);
-        struct aaa_string *search = aaa_stack_pop_str(stack);
-        struct aaa_string *string = aaa_stack_pop_str(stack);
+        let start = self.pop_int() as usize;
 
-        size_t offset;
-        bool success;
-        aaa_string_find_after(string, search, (size_t)start, &offset, &success);
-        aaa_stack_push_int(stack, (int)offset);
-        aaa_stack_push_bool(stack, success);
+        let search_rc = self.pop_str();
+        let search = search_rc.borrow();
 
-        aaa_string_dec_ref(search);
-        aaa_string_dec_ref(string);
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
+
+        // TODO what happens if start < 0 or start >= string.len() ?
+
+        let found = string[start..].find(&*search).map(|i| i + start);
+
+        self.push_int(found.unwrap_or(0) as isize);
+        self.push_bool(found.is_some());
     }
 
     pub fn str_find(&mut self) {
-        struct aaa_string *search = aaa_stack_pop_str(stack);
-        struct aaa_string *string = aaa_stack_pop_str(stack);
+        let search_rc = self.pop_str();
+        let search = search_rc.borrow();
 
-        bool success;
-        size_t offset;
-        aaa_string_find(string, search, &offset, &success);
-        aaa_stack_push_int(stack, (int)offset);
-        aaa_stack_push_bool(stack, success);
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
 
-        aaa_string_dec_ref(search);
-        aaa_string_dec_ref(string);
+        let found = string.find(&*search);
+
+        self.push_int(found.unwrap_or(0) as isize);
+        self.push_bool(found.is_some());
     }
 
     pub fn str_substr(&mut self) {
-        int end = aaa_stack_pop_int(stack);
-        int start = aaa_stack_pop_int(stack);
-        struct aaa_string *string = aaa_stack_pop_str(stack);
+        let end = self.pop_int() as usize;
+        let start = self.pop_int() as usize;
 
-        bool success;
-        struct aaa_string *substr =
-            aaa_string_substr(string, (size_t)start, (size_t)end, &success);
-        aaa_stack_push_str(stack, substr);
-        aaa_stack_push_bool(stack, success);
+        let string_rc = self.pop_str();
+        let string = string_rc.borrow();
 
-        aaa_string_dec_ref(string);
+        // TODO be sure to fail in controlled manner if this doesn't hold: start <= end <= string.len()
+
+        let substr = string[start..end].to_owned();
+        self.push_str(substr);
     }
 
     pub fn str_to_bool(&mut self) {
-        struct aaa_string *string = aaa_stack_pop_str(stack);
-
-        bool boolean, success;
-        aaa_string_to_bool(string, &boolean, &success);
-        aaa_stack_push_bool(stack, boolean);
-        aaa_stack_push_bool(stack, success);
-
-        aaa_string_dec_ref(string);
+        todo!(); // Decide if we want to keep this at all
     }
 
     pub fn str_to_int(&mut self) {
-        struct aaa_string *string = aaa_stack_pop_str(stack);
-
-        bool success;
-        int integer;
-        aaa_string_to_int(string, &integer, &success);
-        aaa_stack_push_int(stack, integer);
-        aaa_stack_push_bool(stack, success);
-
-        aaa_string_dec_ref(string);
+        todo!(); // Decide if we want to keep this at all
     }
 
+    /*
     pub fn vec_copy(&mut self) {
         struct aaa_vector *vec = aaa_stack_pop_vec(stack);
 
