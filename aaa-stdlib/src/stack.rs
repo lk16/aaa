@@ -6,7 +6,7 @@
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
-    process,
+    env, process,
     rc::Rc,
 };
 
@@ -291,6 +291,7 @@ impl Stack {
 
     pub fn write(&mut self) {
         todo!(); // Split for actual files on a filesystem and sockets
+                 // or consider using the nix library
     }
 
     pub fn connect(&mut self) {
@@ -596,98 +597,49 @@ impl Stack {
         todo!(); // Decide if we want to keep this at all
     }
 
-    /*
     pub fn vec_copy(&mut self) {
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
+        let vector_rc = self.pop_vector();
+        let vector = vector_rc.borrow();
 
-        struct aaa_vector *copy = aaa_vector_copy(vec);
-        aaa_stack_push_vec(stack, copy);
-
-        aaa_vector_dec_ref(vec);
+        self.push_vector(vector.clone());
     }
 
     pub fn map_copy(&mut self) {
-        struct aaa_map *map = aaa_stack_pop_map(stack);
+        let map_rc = self.pop_map();
+        let map = map_rc.borrow();
 
-        struct aaa_map *copy = aaa_map_copy(map);
-        aaa_stack_push_map(stack, copy);
-
-        aaa_map_dec_ref(map);
+        self.push_map(map.clone());
     }
 
     pub fn field_query(&mut self) {
-        struct aaa_string *field_name = aaa_stack_pop_str(stack);
-        struct aaa_struct *s = aaa_stack_pop_struct(stack);
-
-        const char *field_name_raw = aaa_string_raw(field_name);
-        struct aaa_variable *field = aaa_struct_get_field(s, field_name_raw);
-
-        aaa_stack_push(stack, field);
-
-        aaa_string_dec_ref(field_name);
-        aaa_struct_dec_ref(s);
+        todo!(); // structs are not implemented yet in the Rust aaa-stdlib
     }
 
     pub fn field_update(&mut self) {
-        struct aaa_variable *new_value = aaa_stack_pop(stack);
-        struct aaa_string *field_name = aaa_stack_pop_str(stack);
-        struct aaa_struct *s = aaa_stack_pop_struct(stack);
-
-        const char *field_name_raw = aaa_string_raw(field_name);
-        aaa_struct_set_field(s, field_name_raw, new_value);
-
-        aaa_variable_dec_ref(new_value);
-        aaa_string_dec_ref(field_name);
-        aaa_struct_dec_ref(s);
+        todo!(); // structs are not implemented yet in the Rust aaa-stdlib
     }
 
     pub fn fsync(&mut self) {
-        int fd = aaa_stack_pop_int(stack);
-
-        if (fsync(fd) == -1) {
-            aaa_stack_push_bool(stack, false);
-        }
-
-        aaa_stack_push_bool(stack, true);
+        todo!(); // will be removed, there is no Rust equivalent
     }
 
     pub fn environ(&mut self) {
-        struct aaa_map *map = aaa_map_new();
+        let mut env_vars = HashMap::new();
+        for (key, val) in env::vars_os() {
+            // Use pattern bindings instead of testing .is_some() followed by .unwrap()
+            if let (Ok(k), Ok(v)) = (key.into_string(), val.into_string()) {
+                let key_var = Variable::String(Rc::new(RefCell::new(k)));
+                let value_var = Variable::String(Rc::new(RefCell::new(v)));
 
-        struct aaa_string *equals_char = aaa_string_new("=", false);
-
-        for (char **env_item = environ; *env_item; env_item++) {
-            struct aaa_string *item = aaa_string_new(*env_item, false);
-
-            size_t equals_char_offset;
-            bool success;
-            aaa_string_find(item, equals_char, &equals_char_offset, &success);
-            assert(success);
-
-            size_t item_length = aaa_string_len(item);
-
-            struct aaa_string *key_str =
-                aaa_string_substr(item, 0, equals_char_offset, &success);
-            assert(success);
-
-            struct aaa_string *value_str = aaa_string_substr(
-                item, equals_char_offset + 1, item_length, &success);
-            assert(success);
-
-            struct aaa_variable *key = aaa_variable_new_str(key_str);
-            struct aaa_variable *value = aaa_variable_new_str(value_str);
-
-            aaa_map_set(map, key, value);
-
-            aaa_variable_dec_ref(key);
-            aaa_variable_dec_ref(value);
-            aaa_string_dec_ref(item);
+                env_vars.insert(key_var, value_var);
+            }
         }
 
-        aaa_string_dec_ref(equals_char);
-        aaa_stack_push_map(stack, map);
+        self.push_map(env_vars)
     }
+}
 
+/*
     pub fn execve(&mut self) {
         struct aaa_map *env_map = aaa_stack_pop_map(stack);
         struct aaa_vector *argv_vec = aaa_stack_pop_vec(stack);
@@ -1108,5 +1060,5 @@ impl Stack {
     }
 
     pub fn make_const(&mut self) {
-    } */
-}
+    }
+*/
