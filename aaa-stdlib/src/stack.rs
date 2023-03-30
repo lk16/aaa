@@ -4,9 +4,12 @@
 #![allow(unreachable_code)]
 
 use std::{
+    borrow::Borrow,
     cell::RefCell,
     collections::{HashMap, HashSet},
-    env, process,
+    env,
+    path::Path,
+    process,
     rc::Rc,
 };
 
@@ -637,151 +640,42 @@ impl Stack {
 
         self.push_map(env_vars)
     }
-}
 
-/*
     pub fn execve(&mut self) {
-        struct aaa_map *env_map = aaa_stack_pop_map(stack);
-        struct aaa_vector *argv_vec = aaa_stack_pop_vec(stack);
-        struct aaa_string *path_str = aaa_stack_pop_str(stack);
-
-        size_t argv_length = aaa_vector_size(argv_vec);
-        size_t env_length = aaa_map_size(env_map);
-
-        const char *path = aaa_string_raw(path_str);
-        char **argv = malloc((argv_length + 1) * sizeof(*argv));
-
-        struct aaa_vector_iter *argv_vec_iter = aaa_vector_iter_new(argv_vec);
-        struct aaa_variable *argv_item_var = NULL;
-        size_t i = 0;
-
-        while (aaa_vector_iter_next(argv_vec_iter, &argv_item_var)) {
-            struct aaa_string *argv_item = aaa_variable_get_str(argv_item_var);
-
-            const char *argv_item_raw = aaa_string_raw(argv_item);
-            size_t argv_item_length = aaa_string_len(argv_item);
-
-            argv[i] = malloc((argv_item_length + 1) * sizeof(char));
-            strcpy(argv[i], argv_item_raw);
-            i++;
-        }
-
-        aaa_vector_iter_dec_ref(argv_vec_iter);
-
-        argv[argv_length] = NULL;
-
-        char **env = malloc((env_length + 1) * sizeof(*env));
-
-        struct aaa_map_iter *env_iter = aaa_map_iter_new(env_map);
-
-        struct aaa_variable *env_key_var = NULL;
-        struct aaa_variable *env_value_var = NULL;
-
-        size_t env_offset = 0;
-        while (aaa_map_iter_next(env_iter, &env_key_var, &env_value_var)) {
-            struct aaa_string *env_key = aaa_variable_get_str(env_key_var);
-            struct aaa_string *env_value = aaa_variable_get_str(env_value_var);
-
-            size_t key_length = aaa_string_len(env_key);
-            size_t value_length = aaa_string_len(env_value);
-
-            char *env_item = malloc(key_length + value_length + 2 * sizeof(char));
-            sprintf(env_item, "%s=%s", aaa_string_raw(env_key),
-                    aaa_string_raw(env_value));
-
-            env[env_offset] = env_item;
-            env_offset++;
-        }
-
-        env[env_length] = NULL;
-
-        execve(path, argv, env);
-
-        // NOTE: execve() only returns when it fails.
-
-        for (i = 0; i < argv_length; i++) {
-            free(argv[i]);
-        }
-
-        free(argv);
-
-        for (i = 0; i < env_length; i++) {
-            free(env[i]);
-        }
-
-        free(env);
-
-        aaa_map_iter_dec_ref(env_iter);
-
-        aaa_string_dec_ref(path_str);
-        aaa_vector_dec_ref(argv_vec);
-        aaa_map_dec_ref(env_map);
-
-        aaa_stack_push_bool(stack, false);
+        todo!(); // Consider using nix
     }
 
     pub fn fork(&mut self) {
-        int pid = fork();
-
-        aaa_stack_push_int(stack, pid);
+        todo!(); // Consider using nix
     }
 
     pub fn waitpid(&mut self) {
-        int options = aaa_stack_pop_int(stack);
-        int pid = aaa_stack_pop_int(stack);
-
-        int status_raw;
-        int changed_pid = waitpid(pid, &status_raw, options);
-
-        if (changed_pid == 0) {
-            aaa_stack_push_int(stack, 0);
-            aaa_stack_push_int(stack, 0);
-            aaa_stack_push_bool(stack, false);
-            aaa_stack_push_bool(stack, false);
-        } else {
-            int status;
-            bool child_exited;
-
-            if (WIFEXITED(status_raw)) {
-                child_exited = true;
-                status = WEXITSTATUS(status_raw);
-            } else {
-                child_exited = false;
-                status = 0;
-            }
-
-            aaa_stack_push_int(stack, changed_pid);
-            aaa_stack_push_int(stack, status);
-            aaa_stack_push_bool(stack, child_exited);
-            aaa_stack_push_bool(stack, true);
-        }
+        todo!(); // Consider using nix
     }
 
     pub fn getcwd(&mut self) {
-        size_t buff_size = PATH_MAX;
-        char *buff = malloc(buff_size);
+        let dir = env::current_dir();
 
-        if (getcwd(buff, buff_size) == NULL) {
-            fprintf(stderr, "getcwd() failed\n");
-            abort();
+        match dir {
+            Ok(dir) => {
+                let path: String = dir.to_str().unwrap().to_owned(); // TODO remove unwrap(), figure out what can fail
+                self.push_str(path);
+            }
+            Err(_) => todo!(), // getcwd() can fail, but the signature doesn't reflect that
         }
-
-        aaa_stack_push_str_raw(stack, buff, true);
     }
 
     pub fn chdir(&mut self) {
-        struct aaa_string *path = aaa_stack_pop_str(stack);
-        const char *path_raw = aaa_string_raw(path);
+        let path_str_rc = self.pop_str();
+        let path_str = *(*path_str_rc).borrow();
+        let path = Path::new(&path_str);
 
-        if (chdir(path_raw) == 0) {
-            aaa_stack_push_bool(stack, true);
-        } else {
-            aaa_stack_push_bool(stack, false);
-        }
-
-        aaa_string_dec_ref(path);
+        let success = env::set_current_dir(path).is_ok();
+        self.push_bool(success);
     }
+}
 
+/*
     pub fn close(&mut self) {
         int fd = aaa_stack_pop_int(stack);
 
