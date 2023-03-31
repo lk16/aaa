@@ -1,5 +1,4 @@
 import subprocess
-import sys
 from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -33,19 +32,19 @@ from aaa.cross_referencer.models import (
 )
 from aaa.type_checker.models import TypeCheckerOutput
 
-AAA_C_BUILTIN_FUNCS = {
-    "-": "aaa_stack_minus",
-    "!=": "aaa_stack_unequal",
-    ".": "aaa_stack_print",
-    "*": "aaa_stack_multiply",
-    "/": "aaa_stack_divide",
-    "%": "aaa_stack_modulo",
-    "+": "aaa_stack_plus",
-    "<": "aaa_stack_less",
-    "<=": "aaa_stack_less_equal",
-    "=": "aaa_stack_equals",
-    ">": "aaa_stack_greater",
-    ">=": "aaa_stack_greater_equal",
+AAA_RUST_BUILTIN_FUNCS = {
+    "-": "minus",
+    "!=": "unequal",
+    ".": "print",
+    "*": "multiply",
+    "/": "divide",
+    "%": "modulo",
+    "+": "plus",
+    "<": "less",
+    "<=": "less_equal",
+    "=": "equals",
+    ">": "greater",
+    ">=": "greater_equal",
 }
 
 
@@ -54,7 +53,6 @@ class Transpiler:
         self,
         cross_referencer_output: CrossReferencerOutput,
         type_checker_output: TypeCheckerOutput,
-        generated_c_file: Optional[Path],
         generated_binary_file: Optional[Path],
         verbose: bool,
     ) -> None:
@@ -67,81 +65,45 @@ class Transpiler:
         self.verbose = verbose
         self.indent_level = 0
 
-        self.generated_c_file = generated_c_file or Path(
-            NamedTemporaryFile(delete=False, suffix=".c").name
-        )
+        self.transpiled_rust_root = Path("/tmp/transpiled")
 
         self.generated_binary_file = generated_binary_file or Path(
             NamedTemporaryFile(delete=False).name
         )
 
-    def _build_stdlib(self) -> int:
-        proc = subprocess.run(["cmake", "."], cwd=("./c"), capture_output=True)
-        exit_code = proc.returncode
-
-        if exit_code != 0:  # pragma:nocover
-            print(proc.stdout.decode())
-            print(proc.stderr.decode(), file=sys.stderr)
-            return exit_code
-
-        proc = subprocess.run(["make"], cwd=("./c"), capture_output=True)
-        exit_code = proc.returncode
-
-        if exit_code != 0:  # pragma:nocover
-            print(proc.stdout.decode())
-            print(proc.stderr.decode(), file=sys.stderr)
-
-        return exit_code
-
     def run(self, compile: bool, run_binary: bool) -> int:
-        code = self._generate_c_file()
-        self.generated_c_file.write_text(code)
+        # TODO clean this up
+        src_folder = self.transpiled_rust_root / "src"
+        src_folder.mkdir(parents=True, exist_ok=True)
+        cargo_file = (self.transpiled_rust_root / "Cargo.toml").resolve()
+        aaa_stdlib_impl_path = (Path(__file__).parent / "../../aaa-stdlib").resolve()
+
+        cargo_file.write_text(
+            "[package]\n"
+            + 'name = "aaa-stdlib-user"\n'
+            + 'version = "0.1.0"\n'
+            + 'edition = "2021"\n'
+            + "\n"
+            + "# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html\n"
+            + "\n"
+            + "[dependencies]\n"
+            + f'aaa-stdlib = {{ version = "0.1.0", path = "{aaa_stdlib_impl_path}" }}\n'
+        )
+
+        code = self._generate_rust_file()
+
+        Path(self.transpiled_rust_root / "src/main.rs").write_text(code)
 
         if compile:  # pragma: nocover
-            exit_code = self._build_stdlib()
-            if exit_code != 0:
-                return exit_code
-
-            command = [
-                "gcc",
-                "-I",
-                "./c/",
-                str(self.generated_c_file),
-                "./c/aaa_stdlib.a",
-                "-o",
-                str(self.generated_binary_file),
-                "-std=gnu99",
-                "-g",
-                "-Wall",
-                "-Wextra",
-                "-Werror",
-                "-Wcast-align",
-                "-Wconversion",
-                "-Wfloat-equal",
-                "-Wformat=2",
-                "-Winline",
-                "-Wlogical-op",
-                "-Wmissing-prototypes",
-                "-Wno-missing-braces",
-                "-Wno-missing-field-initializers",
-                "-Wold-style-definition",
-                "-Wpointer-arith",
-                "-Wredundant-decls",
-                "-Wshadow",
-                "-Wstrict-prototypes",
-                "-Wswitch-default",
-                "-Wswitch-enum",
-                "-Wundef",
-                "-Wunreachable-code",
-            ]
-
+            command = ["cargo", "build", "--manifest-path", str(cargo_file)]
             exit_code = subprocess.run(command).returncode
 
             if exit_code != 0:
                 return exit_code
 
         if run_binary:  # pragma: nocover
-            return subprocess.run([self.generated_binary_file]).returncode
+            command = ["cargo", "run", "--manifest-path", str(cargo_file)]
+            return subprocess.run(command).returncode
 
         return 0
 
@@ -149,111 +111,59 @@ class Transpiler:
         indentation = "    " * self.indent_level
         return indentation + line
 
-    def _generate_c_file(self) -> str:
-        content = '#include "aaa.h"\n'
+    def _generate_rust_file(self) -> str:
+        content = "use aaa_stdlib::stack::Stack;\n"
         content += "\n"
 
-        for type in self.types.values():
-            content += self._generate_c_struct_new_func_prototype(type)
-
-        content += "\n"
-
-        for type in self.types.values():
-            content += self._generate_c_struct_new_func(type)
+        # TODO generate code for types
 
         for function in self.functions.values():
             if function.position.file == self.builtins_path:
                 continue
-            func_name = self._generate_c_function_name(function)
-            content += f"void {func_name}(struct aaa_stack *stack);\n"
+            content += self._generate_rust_function(function)
 
-        content += "\n"
-
-        for function in self.functions.values():
-            if function.position.file == self.builtins_path:
-                continue
-            content += self._generate_c_function(function)
-
-        content += self._generate_c_main_function()
+        content += self._generate_rust_main_function()
 
         return content
 
-    def _generate_c_main_function(self) -> str:
+    def _generate_rust_main_function(self) -> str:
+        # TODO handle argv and return code
+
         main_func = self.functions[(self.entrypoint, "main")]
-        main_func_name = self._generate_c_function_name(main_func)
+        main_func_name = self._generate_rust_function_name(main_func)
 
-        argv_used = len(main_func.arguments) != 0
-        exit_code_returned = (
-            isinstance(main_func.return_types, list)
-            and len(main_func.return_types) != 0
-        )
-
-        code = "int main(int argc, char **argv) {\n"
+        code = "fn main() {\n"
         self.indent_level += 1
-
-        code += self._indent("struct aaa_stack stack;\n")
-        code += self._indent("aaa_stack_init(&stack);\n")
-
-        if argv_used:
-            code += self._indent("struct aaa_vector *argv_vector = aaa_vector_new();\n")
-            code += self._indent("for (int i=0; i<argc; i++) {\n")
-            self.indent_level += 1
-            code += self._indent(
-                "struct aaa_string *string = aaa_string_new(argv[i], false);\n"
-            )
-            code += self._indent(
-                "struct aaa_variable *var = aaa_variable_new_str(string);\n"
-            )
-            code += self._indent("aaa_vector_push(argv_vector, var);\n")
-            code += self._indent("aaa_variable_dec_ref(var);\n")
-
-            self.indent_level -= 1
-            code += self._indent("}\n")
-            code += self._indent(
-                "struct aaa_variable *argv_vector_var = aaa_variable_new_vector(argv_vector);\n"
-            )
-            code += self._indent("aaa_stack_push(&stack, argv_vector_var);\n")
-        else:
-            code += self._indent("(void)argc;\n")
-            code += self._indent("(void)argv;\n")
-
-        code += self._indent(f"{main_func_name}(&stack);\n")
-
-        if exit_code_returned:
-            code += self._indent(f"int exit_code = aaa_stack_pop_int(&stack);\n")
-
-        code += self._indent("aaa_stack_free(&stack);\n")
-
-        if exit_code_returned:
-            code += self._indent("return exit_code;\n")
-        else:
-            code += self._indent("return 0;\n")
+        code += self._indent("let mut stack = Stack::new();\n")
+        code += self._indent(f"{main_func_name}(&mut stack);\n")
 
         self.indent_level -= 1
         code += "}\n"
 
         return code
 
-    def _generate_c_builtin_function_name(self, function: Function) -> str:
-        return self._generate_c_builtin_function_name_from_str(function.name)
+    def _generate_rust_builtin_function_name(self, function: Function) -> str:
+        return self._generate_rust_builtin_function_name_from_str(function.name)
 
-    def _generate_c_builtin_function_name_from_str(self, name: str) -> str:
-        if name in AAA_C_BUILTIN_FUNCS:
-            return AAA_C_BUILTIN_FUNCS[name]
+    def _generate_rust_builtin_function_name_from_str(self, name: str) -> str:
+        if name in AAA_RUST_BUILTIN_FUNCS:
+            return AAA_RUST_BUILTIN_FUNCS[name]
 
         return "aaa_stack_" + name.replace(":", "_")
 
-    def _generate_c_function_name(self, function: Function) -> str:
+    def _generate_rust_function_name(self, function: Function) -> str:
         if function.position.file == self.builtins_path:
-            return self._generate_c_builtin_function_name(function)
+            return self._generate_rust_builtin_function_name(function)
+
+        # TODO consider using modules in generated code so we don't have to hash at all
 
         # hash file and name to prevent naming collisions
         hash_input = f"{function.position.file} {function.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
 
         if function.is_enum_ctor:
-            return f"aaa_enum_ctor_func_{hash}"
-        return f"aaa_user_func_{hash}"
+            return f"enum_ctor_func_{hash}"
+        return f"user_func_{hash}"
 
     def _get_member_function(self, var_type: VariableType, func_name: str) -> Function:
         # NOTE It is required that member funcitions are
@@ -262,8 +172,8 @@ class Transpiler:
         name = f"{var_type.name}:{func_name}"
         return self.functions[(file, name)]
 
-    def _generate_c_enum_ctor_function(self, function: Function) -> str:
-        func_name = self._generate_c_function_name(function)
+    def _generate_rust_enum_ctor_function(self, function: Function) -> str:
+        func_name = self._generate_rust_function_name(function)
 
         enum_type_key = (function.position.file, function.struct_name)
         enum_type = self.types[enum_type_key]
@@ -286,73 +196,62 @@ class Transpiler:
 
         return content
 
-    def _generate_c_function(self, function: Function) -> str:
+    def _generate_rust_function(self, function: Function) -> str:
         if function.is_enum_ctor:
-            return self._generate_c_enum_ctor_function(function)
+            return self._generate_rust_enum_ctor_function(function)
 
         assert function.body
         self.func_local_vars = set()
 
-        func_name = self._generate_c_function_name(function)
+        func_name = self._generate_rust_function_name(function)
 
         content = f"// Generated from: {function.position.file} {function.name}\n"
-        content += f"void {func_name}(struct aaa_stack *stack) {{\n"
+        content += f"fn {func_name}(stack: &mut Stack) {{\n"
 
         self.indent_level += 1
 
         if function.arguments:
             content += self._indent("// load arguments\n")
             for arg in reversed(function.arguments):
-                content += self._indent(
-                    f"struct aaa_variable *aaa_local_{arg.name} = aaa_stack_pop(stack);\n"
-                )
+                content += self._indent(f"let mut var_{arg.name} = stack.pop();\n")
                 self.func_local_vars.add(arg.name)
             content += "\n"
 
-        content += self._generate_c_function_body(function.body)
-
-        if function.arguments:
-            content += "\n"
-            content += self._indent("// decrease arguments' ref_count\n")
-            for arg in reversed(function.arguments):
-                content += self._indent(
-                    f"aaa_variable_dec_ref(aaa_local_{arg.name});\n"
-                )
+        content += self._generate_rust_function_body(function.body)
 
         self.indent_level -= 1
-
         content += "}\n\n"
 
         return content
 
-    def _generate_c_function_body(self, function_body: FunctionBody) -> str:
+    def _generate_rust_function_body(self, function_body: FunctionBody) -> str:
         code = ""
 
         for item in function_body.items:
-            code += self._generate_c_function_body_item(item)
+            code += self._generate_rust_function_body_item(item)
 
         return code
 
-    def _generate_c_function_body_item(self, item: FunctionBodyItem) -> str:
+    def _generate_rust_function_body_item(self, item: FunctionBodyItem) -> str:
         if isinstance(item, IntegerLiteral):
-            return self._indent(f"aaa_stack_push_int(stack, {item.value});\n")
+            return self._indent(f"stack.push_int({item.value});\n")
         elif isinstance(item, StringLiteral):
-            return self._generate_c_string_literal(item)
+            return self._generate_rust_string_literal(item)
         elif isinstance(item, BooleanLiteral):
             bool_value = "true"
             if not item.value:
                 bool_value = "false"
-            return self._indent(f"aaa_stack_push_bool(stack, {bool_value});\n")
+            return self._indent(f"stack.push_bool({bool_value});\n")
         elif isinstance(item, WhileLoop):
-            return self._generate_c_while_loop(item)
+            return self._generate_rust_while_loop(item)
         elif isinstance(item, ForeachLoop):
-            return self._generate_c_foreach_loop(item)
+            return self._generate_rust_foreach_loop(item)
         elif isinstance(item, CallFunction):
-            return self._generate_c_call_function_code(item)
+            return self._generate_rust_call_function_code(item)
         elif isinstance(item, CallType):
-            return self._generate_c_call_type_code(item)
+            return self._generate_rust_call_type_code(item)
         elif isinstance(item, Branch):
-            return self._generate_c_branch(item)
+            return self._generate_rust_branch(item)
         elif isinstance(item, StructFieldQuery):
             return self._indent(
                 f'aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
@@ -362,23 +261,23 @@ class Transpiler:
                 self._indent(
                     f'aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
                 )
-                + self._generate_c_function_body(item.new_value_expr)
+                + self._generate_rust_function_body(item.new_value_expr)
                 + self._indent(f"aaa_stack_field_update(stack);\n")
             )
         elif isinstance(item, UseBlock):
-            return self._generate_c_use_block_code(item)
+            return self._generate_rust_use_block_code(item)
         elif isinstance(item, CallVariable):
-            return self._generate_c_call_variable_code(item)
+            return self._generate_rust_call_variable_code(item)
         elif isinstance(item, Assignment):
-            return self._generate_c_assignment_code(item)
+            return self._generate_rust_assignment_code(item)
         elif isinstance(item, Return):
-            return self._generate_c_return(item)
+            return self._generate_rust_return(item)
         elif isinstance(item, MatchBlock):
-            return self._generate_c_match_block_code(item)
+            return self._generate_rust_match_block_code(item)
         else:  # pragma: nocover
             assert False
 
-    def _generate_c_match_block_code(self, match_block: MatchBlock) -> str:
+    def _generate_rust_match_block_code(self, match_block: MatchBlock) -> str:
         # Use hash suffix for variables to prevent name colission
         hash_input = str(match_block.position)
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
@@ -404,10 +303,10 @@ class Transpiler:
 
         for block in match_block.blocks:
             if isinstance(block, CaseBlock):
-                code += self._generate_c_case_block_code(block)
+                code += self._generate_rust_case_block_code(block)
             elif isinstance(block, DefaultBlock):
                 has_default = True
-                code += self._generate_c_default_block_code(block)
+                code += self._generate_rust_default_block_code(block)
             else:  # pragma: nocover
                 assert False
 
@@ -424,7 +323,7 @@ class Transpiler:
 
         return code
 
-    def _generate_c_case_block_code(self, case_block: CaseBlock) -> str:
+    def _generate_rust_case_block_code(self, case_block: CaseBlock) -> str:
         enum_type = case_block.enum_type
         variant_id = enum_type.enum_fields[case_block.variant_name][1]
 
@@ -432,23 +331,23 @@ class Transpiler:
             f"case {variant_id}: // {enum_type.name}:{case_block.variant_name}\n"
         )
         self.indent_level += 1
-        code += self._generate_c_function_body(case_block.body)
+        code += self._generate_rust_function_body(case_block.body)
         code += self._indent("break;\n")
         self.indent_level -= 1
 
         return code
 
-    def _generate_c_default_block_code(self, default_block: DefaultBlock) -> str:
+    def _generate_rust_default_block_code(self, default_block: DefaultBlock) -> str:
         code = self._indent(f"default:\n")
         self.indent_level += 1
         code += self._indent("aaa_stack_drop(stack);\n")
-        code += self._generate_c_function_body(default_block.body)
+        code += self._generate_rust_function_body(default_block.body)
         code += self._indent("break;\n")
         self.indent_level -= 1
 
         return code
 
-    def _generate_c_return(self, return_: Return) -> str:
+    def _generate_rust_return(self, return_: Return) -> str:
         code = ""
 
         for local_var_name in self.func_local_vars:
@@ -457,18 +356,16 @@ class Transpiler:
         code += self._indent("return;\n")
         return code
 
-    def _generate_c_string_literal(self, string_literal: StringLiteral) -> str:
+    def _generate_rust_string_literal(self, string_literal: StringLiteral) -> str:
         string_value = repr(string_literal.value)[1:-1].replace('"', '\\"')
-        return self._indent(
-            f'aaa_stack_push_str_raw(stack, "{string_value}", false);\n'
-        )
+        return self._indent(f'stack.push_str(String::from("{string_value}"));\n')
 
-    def _generate_c_while_loop(self, while_loop: WhileLoop) -> str:
+    def _generate_rust_while_loop(self, while_loop: WhileLoop) -> str:
 
         code = self._indent("while (true) {\n")
         self.indent_level += 1
 
-        code += self._generate_c_function_body(while_loop.condition)
+        code += self._generate_rust_function_body(while_loop.condition)
 
         code += self._indent("if (!aaa_stack_pop_bool(stack)) {\n")
         self.indent_level += 1
@@ -478,14 +375,14 @@ class Transpiler:
         self.indent_level -= 1
         code += self._indent("}\n")
 
-        code += self._generate_c_function_body(while_loop.body)
+        code += self._generate_rust_function_body(while_loop.body)
 
         self.indent_level -= 1
         code += self._indent("}\n")
 
         return code
 
-    def _generate_c_foreach_loop(self, foreach_loop: ForeachLoop) -> str:
+    def _generate_rust_foreach_loop(self, foreach_loop: ForeachLoop) -> str:
         """
         dup iterable
         iter
@@ -518,10 +415,10 @@ class Transpiler:
         next_func = self._get_member_function(iterator_type, "next")
         assert not isinstance(next_func.return_types, Never)
 
-        dup = self._generate_c_builtin_function_name_from_str("dup")
-        drop = self._generate_c_builtin_function_name_from_str("drop")
-        iter = self._generate_c_function_name(iter_func)
-        next = self._generate_c_function_name(next_func)
+        dup = self._generate_rust_builtin_function_name_from_str("dup")
+        drop = self._generate_rust_builtin_function_name_from_str("drop")
+        iter = self._generate_rust_function_name(iter_func)
+        next = self._generate_rust_function_name(next_func)
         break_drop_count = len(next_func.return_types)
 
         code = ""
@@ -545,7 +442,7 @@ class Transpiler:
         self.indent_level -= 1
         code += self._indent("}\n")
 
-        code += self._generate_c_function_body(foreach_loop.body)
+        code += self._generate_rust_function_body(foreach_loop.body)
 
         self.indent_level -= 1
         code += self._indent("}\n")
@@ -554,13 +451,13 @@ class Transpiler:
 
         return code
 
-    def _generate_c_call_function_code(self, call_func: CallFunction) -> str:
+    def _generate_rust_call_function_code(self, call_func: CallFunction) -> str:
         called = call_func.function
-        c_func_name = self._generate_c_function_name(called)
+        rust_func_name = self._generate_rust_function_name(called)
 
-        return self._indent(f"{c_func_name}(stack);\n")
+        return self._indent(f"stack.{rust_func_name}();\n")
 
-    def _generate_c_call_type_code(self, call_type: CallType) -> str:
+    def _generate_rust_call_type_code(self, call_type: CallType) -> str:
         var_type = call_type.var_type
 
         if var_type.type.position.file == self.builtins_path:
@@ -579,46 +476,46 @@ class Transpiler:
             else:  # pragma: nocover
                 assert False
 
-        c_struct_name = self._generate_c_struct_name(var_type.type)
+        c_struct_name = self._generate_rust_struct_name(var_type.type)
         return self._indent(f"aaa_stack_push_struct(stack, {c_struct_name}_new());\n")
 
-    def _generate_c_branch(self, branch: Branch) -> str:
-        code = self._generate_c_function_body(branch.condition)
+    def _generate_rust_branch(self, branch: Branch) -> str:
+        code = self._generate_rust_function_body(branch.condition)
 
         code += self._indent("if (aaa_stack_pop_bool(stack)) {\n")
         self.indent_level += 1
 
-        code += self._generate_c_function_body(branch.if_body)
+        code += self._generate_rust_function_body(branch.if_body)
 
         if branch.else_body:
             self.indent_level -= 1
             code += self._indent("} else {\n")
             self.indent_level += 1
 
-            code += self._generate_c_function_body(branch.else_body)
+            code += self._generate_rust_function_body(branch.else_body)
 
         self.indent_level -= 1
         code += self._indent("}\n")
 
         return code
 
-    def _generate_c_struct_name(self, type: Type) -> str:
+    def _generate_rust_struct_name(self, type: Type) -> str:
         hash_input = f"{type.position.file} {type.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"aaa_user_struct_{hash}"
 
-    def _generate_c_struct_new_func_prototype(self, type: Type) -> str:
+    def _generate_rust_struct_new_func_prototype(self, type: Type) -> str:
         if type.position.file == self.builtins_path and not type.fields:
             return ""
 
-        c_struct_name = self._generate_c_struct_name(type)
+        c_struct_name = self._generate_rust_struct_name(type)
         return f"struct aaa_struct *{c_struct_name}_new(void);\n"
 
-    def _generate_c_struct_new_func(self, type: Type) -> str:
+    def _generate_rust_struct_new_func(self, type: Type) -> str:
         if type.position.file == self.builtins_path and not type.fields:
             return ""
 
-        c_struct_name = self._generate_c_struct_name(type)
+        c_struct_name = self._generate_rust_struct_name(type)
 
         code = f"// Generated for: {type.position.file} {type.name}\n"
         code += f"struct aaa_struct *{c_struct_name}_new(void) {{\n"
@@ -639,7 +536,7 @@ class Transpiler:
             elif field_type.name == "map":
                 code += "aaa_variable_new_map_zero_value();\n"
             else:
-                c_field_struct_name = self._generate_c_struct_name(field_type.type)
+                c_field_struct_name = self._generate_rust_struct_name(field_type.type)
                 code += f"aaa_variable_new_struct({c_field_struct_name}_new());\n"
 
             code += self._indent(
@@ -654,7 +551,7 @@ class Transpiler:
 
         return code
 
-    def _generate_c_use_block_code(self, use_block: UseBlock) -> str:
+    def _generate_rust_use_block_code(self, use_block: UseBlock) -> str:
 
         code = self._indent("{\n")
         self.indent_level += 1
@@ -665,7 +562,7 @@ class Transpiler:
             )
             self.func_local_vars.add(var.name)
 
-        code += self._generate_c_function_body(use_block.body)
+        code += self._generate_rust_function_body(use_block.body)
 
         for var in use_block.variables:
             code += self._indent(f"aaa_variable_dec_ref(aaa_local_{var.name});\n")
@@ -676,15 +573,15 @@ class Transpiler:
 
         return code
 
-    def _generate_c_call_variable_code(self, call_var: CallVariable) -> str:
+    def _generate_rust_call_variable_code(self, call_var: CallVariable) -> str:
         name = call_var.name
 
         return self._indent(
             f"aaa_variable_inc_ref(aaa_local_{name});\n"
         ) + self._indent(f"aaa_stack_push(stack, aaa_local_{name});\n")
 
-    def _generate_c_assignment_code(self, assignment: Assignment) -> str:
-        code = self._generate_c_function_body(assignment.body)
+    def _generate_rust_assignment_code(self, assignment: Assignment) -> str:
+        code = self._generate_rust_function_body(assignment.body)
 
         for var in reversed(assignment.variables):
             code += self._indent(

@@ -4,7 +4,6 @@
 #![allow(unreachable_code)]
 
 use std::{
-    borrow::Borrow,
     cell::RefCell,
     collections::{HashMap, HashSet},
     env,
@@ -118,7 +117,7 @@ impl Stack {
         }
     }
 
-    pub fn print_top(&mut self) {
+    pub fn print(&mut self) {
         let top = self.pop();
         print!("{top:?}");
     }
@@ -218,11 +217,6 @@ impl Stack {
         let top = self.pop();
         let repr = format!("{top:?}");
         self.push_str(repr);
-    }
-
-    pub fn print(&mut self) {
-        let top = self.pop();
-        print!("{top:?}");
     }
 
     pub fn drop(&mut self) {
@@ -343,7 +337,7 @@ impl Stack {
         let offset = self.pop_int();
 
         let vector_rc = self.pop_vector();
-        let vector = vector_rc.borrow();
+        let vector = (*vector_rc).borrow();
 
         let gotten = vector[offset as usize].clone();
         self.push(gotten);
@@ -358,12 +352,12 @@ impl Stack {
     }
 
     pub fn vec_size(&mut self) {
-        let size = self.pop_vector().borrow().len();
+        let size = (*(self.pop_vector())).borrow().len();
         self.push_int(size as isize);
     }
 
     pub fn vec_empty(&mut self) {
-        let is_empty = self.pop_vector().borrow().is_empty();
+        let is_empty = (*(self.pop_vector())).borrow().is_empty();
         self.push_bool(is_empty);
     }
 
@@ -406,19 +400,19 @@ impl Stack {
         let key = self.pop();
 
         let map_rc = self.pop_map();
-        let map = map_rc.borrow();
+        let map = (*map_rc).borrow();
 
         let has_key = map.contains_key(&key);
         self.push_bool(has_key);
     }
 
     pub fn map_size(&mut self) {
-        let size = self.pop_map().borrow().len();
+        let size = (*(self.pop_map())).borrow().len();
         self.push_int(size as isize);
     }
 
     pub fn map_empty(&mut self) {
-        let is_empty = self.pop_map().borrow().is_empty();
+        let is_empty = (*(self.pop_map())).borrow().is_empty();
         self.push_bool(is_empty);
     }
 
@@ -451,10 +445,10 @@ impl Stack {
     pub fn str_append(&mut self) {
         // TODO we crash if lhs and rhs are referring the same String
         let lhs_rc = self.pop_str();
-        let lhs = lhs_rc.borrow();
+        let lhs = (*lhs_rc).borrow();
 
         let rhs_rc = self.pop_str();
-        let rhs = rhs_rc.borrow();
+        let rhs = (*rhs_rc).borrow();
 
         let combined = lhs.clone() + &rhs;
         self.push_str(combined);
@@ -462,10 +456,10 @@ impl Stack {
 
     pub fn str_contains(&mut self) {
         let search_rc = self.pop_str();
-        let search = search_rc.borrow();
+        let search = (*search_rc).borrow();
 
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
 
         let found = string.contains(&*search);
         self.push_bool(found);
@@ -473,59 +467,62 @@ impl Stack {
 
     pub fn str_equals(&mut self) {
         let lhs_rc = self.pop_str();
-        let lhs = lhs_rc.borrow();
+        let lhs = (*lhs_rc).borrow();
 
         let rhs_rc = self.pop_str();
-        let rhs = lhs_rc.borrow();
+        let rhs = (*rhs_rc).borrow();
 
         self.push_bool(lhs.as_str() == rhs.as_str());
     }
 
     pub fn str_join(&mut self) {
         let vector_rc = self.pop_vector();
-        let vector = vector_rc.borrow();
+        let vector = &*(*vector_rc).borrow();
 
         let mut parts = vec![];
         for part in vector.iter() {
             match part {
-                Variable::String(part) => parts.push(part.borrow().clone()),
+                Variable::String(part) => {
+                    let part = (**part).borrow().clone();
+                    parts.push(part)
+                }
                 _ => todo!(), // type error
             }
         }
 
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
 
         let joined = parts.join(&string);
         self.push_str(joined);
     }
 
     pub fn str_len(&mut self) {
-        let len = self.pop_str().borrow().len();
+        let len = (*(self.pop_str())).borrow().len();
         self.push_int(len as isize);
     }
 
     pub fn str_lower(&mut self) {
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
         self.push_str(string.to_lowercase());
     }
 
     pub fn str_upper(&mut self) {
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
         self.push_str(string.to_uppercase());
     }
 
     pub fn str_replace(&mut self) {
         let replace_rc = self.pop_str();
-        let replace = replace_rc.borrow();
+        let replace = (*replace_rc).borrow();
 
         let search_rc = self.pop_str();
-        let search = search_rc.borrow();
+        let search = (*search_rc).borrow();
 
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
 
         let replaced = search.replace(&*search, &replace);
         self.push_str(replaced);
@@ -533,10 +530,10 @@ impl Stack {
 
     pub fn str_split(&mut self) {
         let sep_rc = self.pop_str();
-        let sep = sep_rc.borrow();
+        let sep = (*sep_rc).borrow();
 
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
 
         let split: Vec<Variable> = string
             .split(&*sep)
@@ -553,10 +550,10 @@ impl Stack {
         let start = self.pop_int() as usize;
 
         let search_rc = self.pop_str();
-        let search = search_rc.borrow();
+        let search = (*search_rc).borrow();
 
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
 
         // TODO what happens if start < 0 or start >= string.len() ?
 
@@ -568,10 +565,10 @@ impl Stack {
 
     pub fn str_find(&mut self) {
         let search_rc = self.pop_str();
-        let search = search_rc.borrow();
+        let search = (*search_rc).borrow();
 
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
 
         let found = string.find(&*search);
 
@@ -584,7 +581,7 @@ impl Stack {
         let start = self.pop_int() as usize;
 
         let string_rc = self.pop_str();
-        let string = string_rc.borrow();
+        let string = (*string_rc).borrow();
 
         // TODO be sure to fail in controlled manner if this doesn't hold: start <= end <= string.len()
 
@@ -602,14 +599,14 @@ impl Stack {
 
     pub fn vec_copy(&mut self) {
         let vector_rc = self.pop_vector();
-        let vector = vector_rc.borrow();
+        let vector = (*vector_rc).borrow();
 
         self.push_vector(vector.clone());
     }
 
     pub fn map_copy(&mut self) {
         let map_rc = self.pop_map();
-        let map = map_rc.borrow();
+        let map = (*map_rc).borrow();
 
         self.push_map(map.clone());
     }
@@ -667,53 +664,46 @@ impl Stack {
 
     pub fn chdir(&mut self) {
         let path_str_rc = self.pop_str();
-        let path_str = *(*path_str_rc).borrow();
+        let path_str = &*(*path_str_rc).borrow();
         let path = Path::new(&path_str);
 
         let success = env::set_current_dir(path).is_ok();
         self.push_bool(success);
     }
-}
 
-/*
     pub fn close(&mut self) {
-        int fd = aaa_stack_pop_int(stack);
-
-        if (close(fd) == 0) {
-            aaa_stack_push_bool(stack, true);
-        } else {
-            aaa_stack_push_bool(stack, false);
-        }
+        todo!(); // remove this or use nix
     }
 
     pub fn getpid(&mut self) {
-        int pid = getpid();
-
-        aaa_stack_push_int(stack, pid);
+        let pid = process::id();
+        self.push_int(pid as isize);
     }
 
     pub fn getppid(&mut self) {
-        int ppid = getppid();
-
-        aaa_stack_push_int(stack, ppid);
+        todo!(); // use nix
     }
 
     pub fn getenv(&mut self) {
-        struct aaa_string *name = aaa_stack_pop_str(stack);
-        const char *name_raw = aaa_string_raw(name);
+        let name_rc = self.pop_str();
+        let name = (*name_rc).borrow();
 
-        const char *value = getenv(name_raw);
+        let value = env::var(&*name);
 
-        if (value) {
-            aaa_stack_push_str_raw(stack, value, false);
-            aaa_stack_push_bool(stack, true);
-        } else {
-            aaa_stack_push_str_raw(stack, "", false);
-            aaa_stack_push_bool(stack, false);
+        match value {
+            Ok(value) => {
+                self.push_str(value);
+                self.push_bool(true);
+            }
+            Err(_) => {
+                self.push_str(String::from(""));
+                self.push_bool(false);
+            }
         }
-
-        aaa_string_dec_ref(name);
     }
+}
+
+/* TODO translate the rest to Rust
 
     pub fn gettimeofday(&mut self) {
         struct timeval tv;

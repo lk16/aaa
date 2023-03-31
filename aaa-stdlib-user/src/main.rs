@@ -8,8 +8,14 @@ fn main() {
     stack.push_int(34);
     stack.push_int(35);
     stack.plus();
-    stack.print_top();
+    stack.print();
 
     stack.push_str("\n".to_owned());
-    stack.print_top();
+    stack.print();
+
+    something(&mut stack);
+}
+
+fn something(stack: &mut Stack) {
+    stack.push_bool(true)
 }

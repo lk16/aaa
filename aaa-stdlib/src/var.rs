@@ -26,21 +26,21 @@ impl Debug for Variable {
             Self::String(v) => write!(f, "{}", (**v).borrow()),
             Self::Vector(v) => {
                 let mut reprs: Vec<String> = vec![];
-                for item in (**v).borrow().iter() {
+                for item in v.borrow().iter() {
                     reprs.push(format!("{item:?}"))
                 }
                 write!(f, "[{}]", reprs.join(", "))
             }
             Self::Set(v) => {
                 let mut reprs: Vec<String> = vec![];
-                for item in (**v).borrow().iter() {
+                for item in v.borrow().iter() {
                     reprs.push(format!("{item:?}"))
                 }
                 write!(f, "{{{}}}", reprs.join(", "))
             }
             Self::Map(v) => {
                 let mut reprs: Vec<String> = vec![];
-                for (key, value) in (**v).borrow().iter() {
+                for (key, value) in v.borrow().iter() {
                     reprs.push(format!("{key:?}: {value:?}"))
                 }
                 write!(f, "{{{}}}", reprs.join(", "))

@@ -53,9 +53,10 @@ class Runner:
     def run(
         self, c_file: Optional[str], compile: bool, binary: Optional[str], run: bool
     ) -> int:
-        if c_file is not None and not str(c_file).endswith(".c"):
-            print("Output C file should have a .c extension.", file=sys.stderr)
-            exit(1)
+        if c_file is not None:
+            # TODO adapt using c_file for Rust transpiler
+            print("c_file is currently unused")
+            raise NotImplementedError
 
         if binary is not None and not compile:
             print(
@@ -67,10 +68,6 @@ class Runner:
         if run and not compile:
             print("Can't run binary without (re-)compiling!", file=sys.stderr)
             exit(1)
-
-        generated_c_file: Optional[Path] = None
-        if c_file:
-            generated_c_file = Path(c_file).resolve()
 
         generated_binary_file: Optional[Path] = None
         if binary:
@@ -92,7 +89,6 @@ class Runner:
             transpiler = Transpiler(
                 cross_referencer_output,
                 type_checker_output,
-                generated_c_file,
                 generated_binary_file,
                 self.verbose,
             )
