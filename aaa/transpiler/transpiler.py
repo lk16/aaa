@@ -67,8 +67,9 @@ class Transpiler:
 
         self.transpiled_rust_root = Path("/tmp/transpiled")
 
-        self.generated_binary_file = generated_binary_file or Path(
-            NamedTemporaryFile(delete=False).name
+        self.generated_binary_file = (
+            generated_binary_file
+            or Path(NamedTemporaryFile(delete=False).name).resolve()
         )
 
     def run(self, compile: bool, run_binary: bool) -> int:
@@ -101,8 +102,11 @@ class Transpiler:
             if exit_code != 0:
                 return exit_code
 
+            binary_file = self.transpiled_rust_root / "target/debug/aaa-stdlib-user"
+            binary_file.rename(self.generated_binary_file)
+
         if run_binary:  # pragma: nocover
-            command = ["cargo", "run", "--manifest-path", str(cargo_file)]
+            command = [str(self.generated_binary_file)]
             return subprocess.run(command).returncode
 
         return 0
