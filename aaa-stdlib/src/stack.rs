@@ -23,7 +23,7 @@ impl Stack {
         Self { items: Vec::new() }
     }
 
-    fn push(&mut self, v: Variable) {
+    pub fn push(&mut self, v: Variable) {
         self.items.push(v);
     }
 
@@ -61,7 +61,7 @@ impl Stack {
         self.push(item);
     }
 
-    fn pop(&mut self) -> Variable {
+    pub fn pop(&mut self) -> Variable {
         match self.items.pop() {
             Some(popped) => popped,
             None => todo!(), // TODO handle popping from empty stack

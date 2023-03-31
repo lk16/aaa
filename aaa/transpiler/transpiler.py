@@ -157,7 +157,7 @@ class Transpiler:
 
     def _generate_rust_function_name(self, function: Function) -> str:
         if function.position.file == self.builtins_path:
-            return self._generate_rust_builtin_function_name(function)
+            return "stack." + self._generate_rust_builtin_function_name(function)
 
         # TODO consider using modules in generated code so we don't have to hash at all
 
@@ -217,7 +217,7 @@ class Transpiler:
         if function.arguments:
             content += self._indent("// load arguments\n")
             for arg in reversed(function.arguments):
-                content += self._indent(f"let mut var_{arg.name} = stack.pop();\n")
+                content += self._indent(f"let var_{arg.name} = stack.pop();\n")
                 self.func_local_vars.add(arg.name)
             content += "\n"
 
@@ -459,7 +459,10 @@ class Transpiler:
         called = call_func.function
         rust_func_name = self._generate_rust_function_name(called)
 
-        return self._indent(f"stack.{rust_func_name}();\n")
+        if called.position.file == self.builtins_path:
+            return self._indent(f"{rust_func_name}();\n")
+
+        return self._indent(f"{rust_func_name}(stack);\n")
 
     def _generate_rust_call_type_code(self, call_type: CallType) -> str:
         var_type = call_type.var_type
@@ -486,7 +489,7 @@ class Transpiler:
     def _generate_rust_branch(self, branch: Branch) -> str:
         code = self._generate_rust_function_body(branch.condition)
 
-        code += self._indent("if (aaa_stack_pop_bool(stack)) {\n")
+        code += self._indent("if stack.pop_bool() {\n")
         self.indent_level += 1
 
         code += self._generate_rust_function_body(branch.if_body)
@@ -579,10 +582,7 @@ class Transpiler:
 
     def _generate_rust_call_variable_code(self, call_var: CallVariable) -> str:
         name = call_var.name
-
-        return self._indent(
-            f"aaa_variable_inc_ref(aaa_local_{name});\n"
-        ) + self._indent(f"aaa_stack_push(stack, aaa_local_{name});\n")
+        return self._indent(f"stack.push(var_{name}.clone());\n")
 
     def _generate_rust_assignment_code(self, assignment: Assignment) -> str:
         code = self._generate_rust_function_body(assignment.body)
