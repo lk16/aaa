@@ -96,7 +96,7 @@ class Transpiler:
         Path(self.transpiled_rust_root / "src/main.rs").write_text(code)
 
         if compile:  # pragma: nocover
-            command = ["cargo", "build", "--manifest-path", str(cargo_file)]
+            command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_file)]
             exit_code = subprocess.run(command).returncode
 
             if exit_code != 0:
@@ -153,7 +153,7 @@ class Transpiler:
         if name in AAA_RUST_BUILTIN_FUNCS:
             return AAA_RUST_BUILTIN_FUNCS[name]
 
-        return "aaa_stack_" + name.replace(":", "_")
+        return name.replace(":", "_")
 
     def _generate_rust_function_name(self, function: Function) -> str:
         if function.position.file == self.builtins_path:
@@ -366,12 +366,12 @@ class Transpiler:
 
     def _generate_rust_while_loop(self, while_loop: WhileLoop) -> str:
 
-        code = self._indent("while (true) {\n")
+        code = self._indent("loop {\n")
         self.indent_level += 1
 
         code += self._generate_rust_function_body(while_loop.condition)
 
-        code += self._indent("if (!aaa_stack_pop_bool(stack)) {\n")
+        code += self._indent("if !stack.pop_bool() {\n")
         self.indent_level += 1
 
         code += self._indent("break;\n")
