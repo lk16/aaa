@@ -116,7 +116,9 @@ class Transpiler:
         return indentation + line
 
     def _generate_rust_file(self) -> str:
-        content = "use aaa_stdlib::stack::Stack;\n"
+        content = "#![allow(unused_imports)]\n"
+        content += "\n"
+        content += "use aaa_stdlib::stack::Stack;\n"
         content += "use aaa_stdlib::var::{Struct, Variable};\n"
         content += "use std::collections::HashMap;\n"
         content += "\n"
@@ -525,9 +527,9 @@ class Transpiler:
 
         self.indent_level += 1
         code += self._indent(f'let type_name = String::from("{type.name}");\n')
-        code += self._indent(
-            "let mut values: HashMap<String, Variable> = HashMap::new();\n"
-        )
+        code += self._indent("let values = HashMap::from([\n")
+
+        self.indent_level += 1
 
         for field_name, field_type in type.fields.items():
             if field_type.name == "int":
@@ -543,10 +545,11 @@ class Transpiler:
             else:
                 raise NotImplementedError  # TODO struct field
 
-            code += self._indent(
-                f'values.insert(String::from("{field_name}"), {value});\n'
-            )
+            code += self._indent(f'(String::from("{field_name}"), {value}),\n')
 
+        self.indent_level -= 1
+
+        code += self._indent("]);\n")
         code += self._indent("Struct { type_name, values }\n")
 
         self.indent_level -= 1
