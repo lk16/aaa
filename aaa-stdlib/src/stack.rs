@@ -8,9 +8,12 @@ use std::{
     collections::{HashMap, HashSet},
     env,
     fmt::{Debug, Formatter, Result},
+    fs,
     path::Path,
     process,
     rc::Rc,
+    time::{SystemTime, UNIX_EPOCH},
+    vec,
 };
 
 use crate::var::{Struct, Variable};
@@ -78,6 +81,15 @@ impl Stack {
         self.push(item);
     }
 
+    pub fn push_vector_iter(&mut self, v: vec::IntoIter<Variable>) {
+        let item = Variable::VectorIterator(Rc::new(RefCell::new(v)));
+        self.push(item);
+    }
+
+    pub fn push_none(&mut self) {
+        self.push(Variable::None);
+    }
+
     pub fn pop(&mut self) -> Variable {
         match self.items.pop() {
             Some(popped) => popped,
@@ -137,6 +149,13 @@ impl Stack {
     pub fn pop_struct(&mut self) -> Rc<RefCell<Struct>> {
         match self.pop() {
             Variable::Struct(v) => v,
+            _ => todo!(), // TODO handle type error
+        }
+    }
+
+    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<vec::IntoIter<Variable>>> {
+        match self.pop() {
+            Variable::VectorIterator(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
@@ -745,117 +764,80 @@ impl Stack {
         let popped = self.pop();
         var.assign(&popped);
     }
-}
-
-/* TODO translate the rest to Rust
 
     pub fn gettimeofday(&mut self) {
-        struct timeval tv;
+        // TODO consider renaming gettimeofday to time
+        let now = SystemTime::now();
 
-        if (gettimeofday(&tv, NULL) != 0) {
-            fprintf(stderr, "gettimeofday() failed\n");
-            abort();
+        match now.duration_since(UNIX_EPOCH) {
+            Ok(duration) => {
+                let duration_micro_sec = duration.as_micros();
+                self.push_int((duration_micro_sec / 1_000_000) as isize);
+                self.push_int((duration_micro_sec % 1_000_000) as isize);
+            }
+            Err(_) => todo!(), // do we just crash here?
         }
-
-        aaa_stack_push_int(stack, (int)tv.tv_sec);
-        aaa_stack_push_int(stack, (int)tv.tv_usec);
     }
 
     pub fn open(&mut self) {
-        int mode = aaa_stack_pop_int(stack);
-        int flags = aaa_stack_pop_int(stack);
-        struct aaa_string *path = aaa_stack_pop_str(stack);
-
-        const char *path_raw = aaa_string_raw(path);
-
-        int fd = open(path_raw, flags, mode);
-
-        if (fd == -1) {
-            aaa_stack_push_int(stack, 0);
-            aaa_stack_push_bool(stack, false);
-        } else {
-            aaa_stack_push_int(stack, fd);
-            aaa_stack_push_bool(stack, true);
-        }
-
-        aaa_string_dec_ref(path);
+        todo!(); // remove or use nix
     }
 
     pub fn setenv(&mut self) {
-        struct aaa_string *value = aaa_stack_pop_str(stack);
-        struct aaa_string *name = aaa_stack_pop_str(stack);
+        let value_rc = self.pop_str();
+        let value = value_rc.borrow();
 
-        const char *value_raw = aaa_string_raw(value);
-        const char *name_raw = aaa_string_raw(name);
+        let name_rc = self.pop_str();
+        let name = name_rc.borrow();
 
-        if (setenv(name_raw, value_raw, 1) == -1) {
-            fprintf(stderr, "setenv() failed\n");
-            abort();
-        }
-
-        aaa_string_dec_ref(value);
-        aaa_string_dec_ref(name);
+        env::set_var(&*name, &*value);
     }
 
     pub fn time(&mut self) {
-        time_t timestamp = time(NULL);
-
-        aaa_stack_push_int(stack, (int)timestamp);
+        todo!(); // will be removed
     }
 
     pub fn unlink(&mut self) {
-        struct aaa_string *path = aaa_stack_pop_str(stack);
+        let path_rc = self.pop_str();
+        let path = path_rc.borrow();
 
-        const char *path_raw = aaa_string_raw(path);
-
-        if (unlink(path_raw) == 0) {
-            aaa_stack_push_bool(stack, true);
-        } else {
-            aaa_stack_push_bool(stack, false);
-        }
-
-        aaa_string_dec_ref(path);
+        self.push_bool(fs::remove_file(&*path).is_ok());
     }
 
     pub fn unsetenv(&mut self) {
-        struct aaa_string *name = aaa_stack_pop_str(stack);
+        let name_rc = self.pop_str();
+        let name = name_rc.borrow();
 
-        const char *name_raw = aaa_string_raw(name);
-
-        if (unsetenv(name_raw) == -1) {
-            fprintf(stderr, "unsetenv() failed\n");
-            abort();
-        }
-
-        aaa_string_dec_ref(name);
+        env::remove_var(&*name);
     }
 
     pub fn vec_iter(&mut self) {
-        struct aaa_vector *vec = aaa_stack_pop_vec(stack);
-        struct aaa_vector_iter *iter = aaa_vector_iter_new(vec);
-        struct aaa_variable *var = aaa_variable_new_vector_iter(iter);
+        let vector_rc = self.pop_vector();
+        let vector = &*vector_rc.borrow();
 
-        aaa_stack_push(stack, var);
+        let x = vector.iter();
 
-        aaa_vector_dec_ref(vec);
+        self.push_vector_iter(vector.into_iter());
     }
 
     pub fn vec_iter_next(&mut self) {
-        struct aaa_variable *top = aaa_stack_pop(stack);
-        struct aaa_vector_iter *iter = aaa_variable_get_vector_iter(top);
+        let vector_iter_rc = self.pop_vector_iterator();
+        let vector_iter = *vector_iter_rc.borrow();
 
-        aaa_vector_iter_inc_ref(iter);
-        aaa_variable_dec_ref(top);
-
-        struct aaa_variable *item = NULL;
-        bool has_next = aaa_vector_iter_next(iter, &item);
-
-        aaa_stack_push(stack, item);
-        aaa_stack_push_bool(stack, has_next);
-
-        aaa_vector_iter_dec_ref(iter);
+        match vector_iter.next() {
+            Some(var) => {
+                self.push(var);
+                self.push_bool(true);
+            }
+            None => {
+                self.push_none();
+                self.push_bool(false);
+            }
+        }
     }
+}
 
+/* TODO translate the rest to Rust
     pub fn map_iter(&mut self) {
         struct aaa_map *map = aaa_stack_pop_map(stack);
 

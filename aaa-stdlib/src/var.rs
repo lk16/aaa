@@ -4,6 +4,7 @@ use std::{
     fmt::{Debug, Formatter, Result},
     hash::Hash,
     rc::Rc,
+    vec,
 };
 
 #[derive(PartialEq)]
@@ -16,6 +17,7 @@ pub struct Struct {
 
 #[derive(Clone)]
 pub enum Variable {
+    None, // TODO get rid of this when iterators return an enum
     Integer(isize),
     Boolean(bool),
     String(Rc<RefCell<String>>), // TODO change to &str
@@ -23,6 +25,7 @@ pub enum Variable {
     Set(Rc<RefCell<HashSet<Variable>>>),
     Map(Rc<RefCell<HashMap<Variable, Variable>>>),
     Struct(Rc<RefCell<Struct>>),
+    VectorIterator(Rc<RefCell<vec::IntoIter<Variable>>>),
     // TODO add iterators
     // TODO add enums
 }
@@ -70,6 +73,8 @@ impl Debug for Variable {
                 }
                 write!(f, "{{{}}}>", reprs.join(", "))
             }
+            Self::VectorIterator(_) => write!(f, "vec_iter"),
+            Self::None => write!(f, "None"),
         }
     }
 }
@@ -106,6 +111,8 @@ impl Hash for Variable {
             Self::Set(_) => todo!(),    // hashing is not implemented for this variant
             Self::Map(_) => todo!(),    // hashing is not implemented for this variant
             Self::Struct(_) => todo!(), // hashing is not implemented for this variant
+            Self::None => todo!(),      // hashing is not implemented for this variant
+            Self::VectorIterator(_) => todo!(), // hashing is not implemented for this variant
         }
     }
 }
