@@ -27,6 +27,13 @@ pub enum Variable {
     // TODO add enums
 }
 
+impl Variable {
+    pub fn assign(&mut self, source: &Variable) {
+        // TODO crash when source is in iterator or enum
+        *self = source.clone();
+    }
+}
+
 impl Debug for Variable {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {

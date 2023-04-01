@@ -117,10 +117,14 @@ class Transpiler:
 
     def _generate_rust_file(self) -> str:
         content = "#![allow(unused_imports)]\n"
+        content += "#![allow(unused_mut)]\n"
         content += "\n"
         content += "use aaa_stdlib::stack::Stack;\n"
         content += "use aaa_stdlib::var::{Struct, Variable};\n"
+        content += "use std::cell::RefCell;\n"
         content += "use std::collections::HashMap;\n"
+        content += "use std::rc::Rc;\n"
+
         content += "\n"
 
         for type in self.types.values():
@@ -474,22 +478,22 @@ class Transpiler:
 
         if var_type.type.position.file == self.builtins_path:
             if var_type.name == "int":
-                return self._indent("aaa_stack_push_int(stack, 0);\n")
+                return self._indent("stack.push_int(0);\n")
             elif var_type.name == "str":
-                return self._indent('aaa_stack_push_str_raw(stack, "", false);\n')
+                return self._indent('stack.push_str(String::from(""));\n')
             elif var_type.name == "bool":
-                return self._indent("aaa_stack_push_bool(stack, false);\n")
+                return self._indent("stack.push_bool(false);\n")
             elif var_type.name == "vec":
-                return self._indent("aaa_stack_push_vec_empty(stack);\n")
+                return self._indent("stack.push_vector(vec![]);\n")
             elif var_type.name == "map":
-                return self._indent("aaa_stack_push_map_empty(stack);\n")
+                return self._indent("stack.push_map(HashMap::new());\n")
             elif var_type.name == "set":
-                return self._indent("aaa_stack_push_set_empty(stack);\n")
+                return self._indent("stack.push_set(HashSet::new());\n")
             else:  # pragma: nocover
                 assert False
 
-        c_struct_name = self._generate_rust_struct_name(var_type.type)
-        return self._indent(f"stack.push_struct({c_struct_name}_new());\n")
+        rust_struct_name = self._generate_rust_struct_name(var_type.type)
+        return self._indent(f"stack.push_struct({rust_struct_name}_new());\n")
 
     def _generate_rust_branch(self, branch: Branch) -> str:
         code = self._generate_rust_function_body(branch.condition)
@@ -537,13 +541,16 @@ class Transpiler:
             elif field_type.name == "bool":
                 value = "Variable::Boolean(false)"
             elif field_type.name == "str":
-                value = 'Variable::String(String::from(""))'
+                value = 'Variable::String(Rc::new(RefCell::new(String::from(""))))'
             elif field_type.name == "vec":
-                raise NotImplementedError  # TODO
+                value = "Variable::Vector(Rc::new(RefCell::new(vec![])))"
             elif field_type.name == "map":
-                raise NotImplementedError  # TODO
+                value = "Variable::Map(Rc::new(RefCell::new(HashMap::new())))"
             else:
-                raise NotImplementedError  # TODO struct field
+                rust_struct_name = self._generate_rust_struct_name(field_type.type)
+                value = (
+                    f"Variable::Struct(Rc::new(RefCell::new({rust_struct_name}_new())))"
+                )
 
             code += self._indent(f'(String::from("{field_name}"), {value}),\n')
 
@@ -563,15 +570,12 @@ class Transpiler:
         self.indent_level += 1
 
         for var in reversed(use_block.variables):
-            code += self._indent(
-                f"struct aaa_variable *aaa_local_{var.name} = aaa_stack_pop(stack);\n"
-            )
+            code += self._indent(f"let mut var_{var.name} = stack.pop();\n")
             self.func_local_vars.add(var.name)
 
         code += self._generate_rust_function_body(use_block.body)
 
         for var in use_block.variables:
-            code += self._indent(f"aaa_variable_dec_ref(aaa_local_{var.name});\n")
             self.func_local_vars.remove(var.name)
 
         self.indent_level -= 1
@@ -587,8 +591,6 @@ class Transpiler:
         code = self._generate_rust_function_body(assignment.body)
 
         for var in reversed(assignment.variables):
-            code += self._indent(
-                f"aaa_stack_variable_assign(stack, aaa_local_{var.name});\n"
-            )
+            code += self._indent(f"stack.assign(&mut var_{var.name});\n")
 
         return code

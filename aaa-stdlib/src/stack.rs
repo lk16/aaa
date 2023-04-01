@@ -740,6 +740,11 @@ impl Stack {
             }
         }
     }
+
+    pub fn assign(&mut self, var: &mut Variable) {
+        let popped = self.pop();
+        var.assign(&popped);
+    }
 }
 
 /* TODO translate the rest to Rust
@@ -966,13 +971,6 @@ impl Stack {
     pub fn push_set_empty(&mut self) {
         struct aaa_map *set = aaa_set_new();
         aaa_stack_push_set(stack, set);
-    }
-
-    void aaa_stack_variable_assign(struct aaa_stack *stack,
-                                   struct aaa_variable *var) {
-        struct aaa_variable *popped = aaa_stack_pop(stack);
-        aaa_variable_assign(var, popped);
-        aaa_variable_dec_ref(popped);
     }
 
     pub fn copy(&mut self) {
