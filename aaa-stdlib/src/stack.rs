@@ -7,6 +7,7 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     env,
+    fmt::{Debug, Formatter, Result},
     path::Path,
     process,
     rc::Rc,
@@ -16,6 +17,17 @@ use crate::var::Variable;
 
 pub struct Stack {
     items: Vec<Variable>,
+}
+
+impl Debug for Stack {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "Stack ({}):", self.len())?;
+        for item in self.items.iter() {
+            write!(f, " ")?;
+            write!(f, "{:?}", item)?;
+        }
+        Ok(())
+    }
 }
 
 impl Stack {
@@ -170,26 +182,26 @@ impl Stack {
     }
 
     pub fn plus(&mut self) {
-        let lhs = self.pop_int();
         let rhs = self.pop_int();
+        let lhs = self.pop_int();
         self.push_int(lhs + rhs);
     }
 
     pub fn minus(&mut self) {
-        let lhs = self.pop_int();
         let rhs = self.pop_int();
+        let lhs = self.pop_int();
         self.push_int(lhs - rhs);
     }
 
     pub fn multiply(&mut self) {
-        let lhs = self.pop_int();
         let rhs = self.pop_int();
+        let lhs = self.pop_int();
         self.push_int(lhs * rhs);
     }
 
     pub fn divide(&mut self) {
-        let lhs = self.pop_int();
         let rhs = self.pop_int();
+        let lhs = self.pop_int();
 
         if rhs == 0 {
             self.push_int(0);
