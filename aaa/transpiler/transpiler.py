@@ -258,15 +258,15 @@ class Transpiler:
             return self._generate_rust_branch(item)
         elif isinstance(item, StructFieldQuery):
             return self._indent(
-                f'aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
-            ) + self._indent("aaa_stack_field_query(stack);\n")
+                f'stack.push_str(String::from("{item.field_name.value}"));\n'
+            ) + self._indent("stack.field_query();\n")
         elif isinstance(item, StructFieldUpdate):
             return (
                 self._indent(
-                    f'aaa_stack_push_str_raw(stack, "{item.field_name.value}", false);\n'
+                    f'stack.push_str(String::from("{item.field_name.value}"));\n'
                 )
                 + self._generate_rust_function_body(item.new_value_expr)
-                + self._indent(f"aaa_stack_field_update(stack);\n")
+                + self._indent(f"stack.field_update();\n")
             )
         elif isinstance(item, UseBlock):
             return self._generate_rust_use_block_code(item)
