@@ -117,9 +117,12 @@ class Transpiler:
 
     def _generate_rust_file(self) -> str:
         content = "use aaa_stdlib::stack::Stack;\n"
+        content += "use aaa_stdlib::var::{Struct, Variable};\n"
+        content += "use std::collections::HashMap;\n"
         content += "\n"
 
-        # TODO generate code for types
+        for type in self.types.values():
+            content += self._generate_rust_struct_new_func(type)
 
         for function in self.functions.values():
             if function.position.file == self.builtins_path:
@@ -484,7 +487,7 @@ class Transpiler:
                 assert False
 
         c_struct_name = self._generate_rust_struct_name(var_type.type)
-        return self._indent(f"aaa_stack_push_struct(stack, {c_struct_name}_new());\n")
+        return self._indent(f"stack.push_struct({c_struct_name}_new());\n")
 
     def _generate_rust_branch(self, branch: Branch) -> str:
         code = self._generate_rust_function_body(branch.condition)
@@ -509,14 +512,7 @@ class Transpiler:
     def _generate_rust_struct_name(self, type: Type) -> str:
         hash_input = f"{type.position.file} {type.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
-        return f"aaa_user_struct_{hash}"
-
-    def _generate_rust_struct_new_func_prototype(self, type: Type) -> str:
-        if type.position.file == self.builtins_path and not type.fields:
-            return ""
-
-        c_struct_name = self._generate_rust_struct_name(type)
-        return f"struct aaa_struct *{c_struct_name}_new(void);\n"
+        return f"user_struct_{hash}"
 
     def _generate_rust_struct_new_func(self, type: Type) -> str:
         if type.position.file == self.builtins_path and not type.fields:
@@ -525,33 +521,33 @@ class Transpiler:
         c_struct_name = self._generate_rust_struct_name(type)
 
         code = f"// Generated for: {type.position.file} {type.name}\n"
-        code += f"struct aaa_struct *{c_struct_name}_new(void) {{\n"
+        code += f"fn {c_struct_name}_new() -> Struct {{\n"
 
         self.indent_level += 1
-        code += self._indent(f'struct aaa_struct *s = aaa_struct_new("{type.name}");\n')
+        code += self._indent(f'let type_name = String::from("{type.name}");\n')
+        code += self._indent(
+            "let mut values: HashMap<String, Variable> = HashMap::new();\n"
+        )
 
         for field_name, field_type in type.fields.items():
-            code += self._indent(f"struct aaa_variable *{field_name} = ")
             if field_type.name == "int":
-                code += "aaa_variable_new_int_zero_value();\n"
+                value = "Variable::Integer(0)"
             elif field_type.name == "bool":
-                code += "aaa_variable_new_bool_zero_value();\n"
+                value = "Variable::Boolean(false)"
             elif field_type.name == "str":
-                code += "aaa_variable_new_str_zero_value();\n"
+                value = 'Variable::String(String::from(""))'
             elif field_type.name == "vec":
-                code += "aaa_variable_new_vector_zero_value();\n"
+                raise NotImplementedError  # TODO
             elif field_type.name == "map":
-                code += "aaa_variable_new_map_zero_value();\n"
+                raise NotImplementedError  # TODO
             else:
-                c_field_struct_name = self._generate_rust_struct_name(field_type.type)
-                code += f"aaa_variable_new_struct({c_field_struct_name}_new());\n"
+                raise NotImplementedError  # TODO struct field
 
             code += self._indent(
-                f'aaa_struct_create_field(s, "{field_name}", {field_name});\n'
+                f'values.insert(String::from("{field_name}"), {value});\n'
             )
-            code += self._indent(f"aaa_variable_dec_ref({field_name});\n")
 
-        code += self._indent("return s;\n")
+        code += self._indent("Struct { type_name, values }\n")
 
         self.indent_level -= 1
         code += "}\n\n"

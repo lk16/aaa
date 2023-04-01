@@ -6,14 +6,23 @@ use std::{
     rc::Rc,
 };
 
+#[derive(PartialEq)]
+pub struct Struct {
+    // TODO consider using actual Rust types
+    // instead of the hashmap approach
+    pub type_name: String,
+    pub values: HashMap<String, Variable>,
+}
+
 #[derive(Clone)]
 pub enum Variable {
     Integer(isize),
     Boolean(bool),
-    String(Rc<RefCell<String>>),
+    String(Rc<RefCell<String>>), // TODO change to &str
     Vector(Rc<RefCell<Vec<Variable>>>),
     Set(Rc<RefCell<HashSet<Variable>>>),
     Map(Rc<RefCell<HashMap<Variable, Variable>>>),
+    Struct(Rc<RefCell<Struct>>),
     // TODO add iterators
     // TODO add enums
 }
@@ -26,24 +35,33 @@ impl Debug for Variable {
             Self::String(v) => write!(f, "{}", (**v).borrow()),
             Self::Vector(v) => {
                 let mut reprs: Vec<String> = vec![];
-                for item in v.borrow().iter() {
+                for item in (**v).borrow().iter() {
                     reprs.push(format!("{item:?}"))
                 }
                 write!(f, "[{}]", reprs.join(", "))
             }
             Self::Set(v) => {
                 let mut reprs: Vec<String> = vec![];
-                for item in v.borrow().iter() {
+                for item in (**v).borrow().iter() {
                     reprs.push(format!("{item:?}"))
                 }
                 write!(f, "{{{}}}", reprs.join(", "))
             }
             Self::Map(v) => {
                 let mut reprs: Vec<String> = vec![];
-                for (key, value) in v.borrow().iter() {
+                for (key, value) in (**v).borrow().iter() {
                     reprs.push(format!("{key:?}: {value:?}"))
                 }
                 write!(f, "{{{}}}", reprs.join(", "))
+            }
+            Self::Struct(v) => {
+                let struct_ = (**v).borrow();
+                write!(f, "(struct {})<{{", struct_.type_name)?;
+                let mut reprs: Vec<String> = vec![];
+                for (field_name, field_value) in struct_.values.iter() {
+                    reprs.push(format!("{field_name:?}: {field_value:?}"));
+                }
+                write!(f, "{{{}}}>", reprs.join(", "))
             }
         }
     }
@@ -58,6 +76,7 @@ impl PartialEq for Variable {
             (Self::Vector(lhs), Self::Vector(rhs)) => lhs == rhs,
             (Self::Set(lhs), Self::Set(rhs)) => lhs == rhs,
             (Self::Map(lhs), Self::Map(rhs)) => lhs == rhs,
+            (Self::Struct(lhs), Self::Struct(rhs)) => lhs == rhs,
             _ => {
                 todo!() // Can't compare variables of different types
             }
@@ -79,6 +98,7 @@ impl Hash for Variable {
             Self::Vector(_) => todo!(), // hashing is not implemented for this variant
             Self::Set(_) => todo!(),    // hashing is not implemented for this variant
             Self::Map(_) => todo!(),    // hashing is not implemented for this variant
+            Self::Struct(_) => todo!(), // hashing is not implemented for this variant
         }
     }
 }

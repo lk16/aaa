@@ -13,7 +13,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::var::Variable;
+use crate::var::{Struct, Variable};
 
 pub struct Stack {
     items: Vec<Variable>,
@@ -73,6 +73,11 @@ impl Stack {
         self.push(item);
     }
 
+    pub fn push_struct(&mut self, v: Struct) {
+        let item = Variable::Struct(Rc::new(RefCell::new(v)));
+        self.push(item);
+    }
+
     pub fn pop(&mut self) -> Variable {
         match self.items.pop() {
             Some(popped) => popped,
@@ -125,6 +130,13 @@ impl Stack {
     pub fn pop_map(&mut self) -> Rc<RefCell<HashMap<Variable, Variable>>> {
         match self.pop() {
             Variable::Map(v) => v,
+            _ => todo!(), // TODO handle type error
+        }
+    }
+
+    pub fn pop_struct(&mut self) -> Rc<RefCell<Struct>> {
+        match self.pop() {
+            Variable::Struct(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
@@ -624,11 +636,26 @@ impl Stack {
     }
 
     pub fn field_query(&mut self) {
-        todo!(); // structs are not implemented yet in the Rust aaa-stdlib
+        let field_name_rc = self.pop_str();
+        let field_name = &*field_name_rc.borrow();
+
+        let struct_rc = self.pop_struct();
+        let struct_ = &*struct_rc.borrow();
+
+        let value = struct_.values[&*field_name].clone();
+        self.push(value);
     }
 
     pub fn field_update(&mut self) {
-        todo!(); // structs are not implemented yet in the Rust aaa-stdlib
+        let value = self.pop();
+
+        let field_name_rc = self.pop_str();
+        let field_name = &*field_name_rc.borrow();
+
+        let struct_rc = self.pop_struct();
+        let mut struct_ = struct_rc.borrow_mut();
+
+        struct_.values.insert(field_name.clone(), value);
     }
 
     pub fn fsync(&mut self) {
