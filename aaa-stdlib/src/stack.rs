@@ -16,7 +16,8 @@ use std::{
     vec,
 };
 
-use crate::var::{Struct, Variable, VectorIterator};
+use crate::var::{Struct, Variable};
+use crate::vector::VectorIterator;
 
 pub struct Stack {
     items: Vec<Variable>,
@@ -81,7 +82,7 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_vector_iter(&mut self, v: VectorIterator) {
+    pub fn push_vector_iter(&mut self, v: VectorIterator<Variable>) {
         let item = Variable::VectorIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -153,7 +154,7 @@ impl Stack {
         }
     }
 
-    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator>> {
+    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<Variable>>> {
         match self.pop() {
             Variable::VectorIterator(v) => v,
             _ => todo!(), // TODO handle type error

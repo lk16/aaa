@@ -7,36 +7,14 @@ use std::{
     vec,
 };
 
+use crate::vector::VectorIterator;
+
 #[derive(PartialEq)]
 pub struct Struct {
     // TODO consider using actual Rust types
     // instead of the hashmap approach
     pub type_name: String,
     pub values: HashMap<String, Variable>,
-}
-
-#[derive(Clone)]
-pub struct VectorIterator {
-    vector: Rc<RefCell<Vec<Variable>>>,
-    offset: usize,
-}
-
-impl VectorIterator {
-    pub fn new(vector: Rc<RefCell<Vec<Variable>>>) -> Self {
-        Self { vector, offset: 0 }
-    }
-}
-
-impl Iterator for VectorIterator {
-    type Item = Variable;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let vector = self.vector.borrow();
-        let item = vector.get(self.offset).cloned();
-        self.offset += 1;
-
-        item
-    }
 }
 
 #[derive(Clone)]
@@ -49,7 +27,7 @@ pub enum Variable {
     Set(Rc<RefCell<HashSet<Variable>>>),
     Map(Rc<RefCell<HashMap<Variable, Variable>>>),
     Struct(Rc<RefCell<Struct>>),
-    VectorIterator(Rc<RefCell<VectorIterator>>),
+    VectorIterator(Rc<RefCell<VectorIterator<Variable>>>),
     // TODO add iterators
     // TODO add enums
 }
