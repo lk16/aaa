@@ -15,7 +15,10 @@ use std::{
     vec,
 };
 
-use crate::{hashtable::HashTable, vector::VectorIterator};
+use crate::{
+    hashtable::{HashTable, HashTableIterator},
+    vector::VectorIterator,
+};
 use crate::{
     var::{Struct, Variable},
     vector::Vector,
@@ -89,6 +92,11 @@ impl Stack {
         self.push(item);
     }
 
+    pub fn push_map_iter(&mut self, v: HashTableIterator<Variable, Variable>) {
+        let item = Variable::HashTableIterator(Rc::new(RefCell::new(v)));
+        self.push(item);
+    }
+
     pub fn push_none(&mut self) {
         self.push(Variable::None);
     }
@@ -159,6 +167,13 @@ impl Stack {
     pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<Variable>>> {
         match self.pop() {
             Variable::VectorIterator(v) => v,
+            _ => todo!(), // TODO handle type error
+        }
+    }
+
+    pub fn pop_map_iterator(&mut self) -> Rc<RefCell<HashTableIterator<Variable, Variable>>> {
+        match self.pop() {
+            Variable::HashTableIterator(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
@@ -523,7 +538,7 @@ impl Stack {
 
     pub fn str_join(&mut self) {
         let vector_rc = self.pop_vector();
-        let mut vector = vector_rc.borrow_mut();
+        let vector = vector_rc.borrow();
 
         let mut parts = vec![];
         for part in vector.iter() {
@@ -830,37 +845,34 @@ impl Stack {
             }
         }
     }
-}
 
-/* TODO translate the rest to Rust
     pub fn map_iter(&mut self) {
-        struct aaa_map *map = aaa_stack_pop_map(stack);
+        let map_rc = self.pop_map();
+        let iter = map_rc.borrow_mut().iter();
 
-        struct aaa_map_iter *iter = aaa_map_iter_new(map);
-        struct aaa_variable *var = aaa_variable_new_map_iter(iter);
-
-        aaa_stack_push(stack, var);
-
-        aaa_map_dec_ref(map);
+        self.push_map_iter(iter);
     }
 
     pub fn map_iter_next(&mut self) {
-        struct aaa_variable *top = aaa_stack_pop(stack);
-        struct aaa_map_iter *iter = aaa_variable_get_map_iter(top);
+        let map_iter_rc = self.pop_map_iterator();
+        let mut map_iter = map_iter_rc.borrow_mut();
 
-        aaa_map_iter_inc_ref(iter);
-        aaa_variable_dec_ref(top);
-
-        struct aaa_variable *key = NULL;
-        struct aaa_variable *value = NULL;
-        bool has_next = aaa_map_iter_next(iter, &key, &value);
-
-        aaa_stack_push(stack, key);
-        aaa_stack_push(stack, value);
-        aaa_stack_push_bool(stack, has_next);
-
-        aaa_map_iter_dec_ref(iter);
+        match map_iter.next() {
+            Some((key, value)) => {
+                self.push(key);
+                self.push(value);
+                self.push_bool(true);
+            }
+            None => {
+                self.push_none();
+                self.push_none();
+                self.push_bool(false);
+            }
+        }
     }
+}
+
+/* TODO translate the rest to Rust
 
     pub fn set_add(&mut self) {
         struct aaa_variable *item = aaa_stack_pop(stack);

@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    hashtable::HashTable,
+    hashtable::{HashTable, HashTableIterator},
     vector::{Vector, VectorIterator},
 };
 
@@ -31,6 +31,7 @@ pub enum Variable {
     Map(Rc<RefCell<HashTable<Variable, Variable>>>),
     Struct(Rc<RefCell<Struct>>),
     VectorIterator(Rc<RefCell<VectorIterator<Variable>>>),
+    HashTableIterator(Rc<RefCell<HashTableIterator<Variable, Variable>>>),
     // TODO add iterators
     // TODO add enums
 }
@@ -79,6 +80,7 @@ impl Debug for Variable {
                 write!(f, "{{{}}}>", reprs.join(", "))
             }
             Self::VectorIterator(_) => write!(f, "vec_iter"),
+            Self::HashTableIterator(_) => write!(f, "map_iter"),
             Self::None => write!(f, "None"),
         }
     }
@@ -118,6 +120,7 @@ impl Hash for Variable {
             Self::Struct(_) => todo!(), // hashing is not implemented for this variant
             Self::None => todo!(),      // hashing is not implemented for this variant
             Self::VectorIterator(_) => todo!(), // hashing is not implemented for this variant
+            Self::HashTableIterator(_) => todo!(), // hashing is not implemented for this variant
         }
     }
 }

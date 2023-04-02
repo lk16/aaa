@@ -39,7 +39,7 @@ impl<T: Clone + PartialEq> Vector<T> {
         self.vec.borrow_mut().clear();
     }
 
-    pub fn iter(&mut self) -> VectorIterator<T> {
+    pub fn iter(&self) -> VectorIterator<T> {
         VectorIterator::new(self.vec.clone(), self.iterator_count.clone())
     }
 

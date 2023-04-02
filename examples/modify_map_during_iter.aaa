@@ -1,0 +1,71 @@
+// TODO make these functions into testcases
+
+fn main {
+    ok
+    ok_nested
+    fail
+}
+
+fn ok {
+    "running function `ok`\n" .
+
+    map[int, str]
+    use m {
+        m 1 "one" map:set
+        m 2 "two" map:set
+        m 3 "three" map:set
+        m foreach {  // TODO support `foreach m { ... }` syntax
+            .
+            " => " .
+            .
+            "\n" .
+        }
+        m 69 "many" map:set
+    }
+}
+
+fn ok_nested {
+    "running function `ok_nested`\n" .
+
+    map[int, str]
+    use m {
+        m 1 "..one" map:set
+        m 2 "..two" map:set
+        m 3 "three" map:set
+        m foreach {
+            use a, b {
+                m foreach {
+                    use c, d {
+                        a .
+                        " => " .
+                        b .
+                        " | " .
+                        c .
+                        " => " .
+                        d .
+                        "\n" .
+                    }
+                }
+            }
+        }
+        m 69 "many" map:set
+    }
+}
+
+fn fail {
+    "running function `fail`\n" .
+
+    map[int, str]
+    use m {
+        m 1 "one" map:set
+        m 2 "two" map:set
+        m 3 "three" map:set
+        m foreach {
+            .
+            " => " .
+            .
+            "\n" .
+            m 69 "many" map:set
+        }
+    }
+}

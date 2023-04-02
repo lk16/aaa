@@ -119,11 +119,11 @@ class Transpiler:
         content = "#![allow(unused_imports)]\n"
         content += "#![allow(unused_mut)]\n"
         content += "\n"
+        content += "use aaa_stdlib::hashtable::HashTable;\n"
         content += "use aaa_stdlib::stack::Stack;\n"
         content += "use aaa_stdlib::var::{Struct, Variable};\n"
-        content += "use aaa_stdlib::vector::{Vector};\n"
+        content += "use aaa_stdlib::vector::Vector;\n"
         content += "use std::cell::RefCell;\n"
-        content += "use std::collections::HashMap;\n"
         content += "use std::rc::Rc;\n"
 
         content += "\n"
@@ -485,9 +485,9 @@ class Transpiler:
             elif var_type.name == "vec":
                 return self._indent("stack.push_vector(Vector::new());\n")
             elif var_type.name == "map":
-                return self._indent("stack.push_map(HashMap::new());\n")
+                return self._indent("stack.push_map(HashTable::new());\n")
             elif var_type.name == "set":
-                return self._indent("stack.push_set(HashSet::new());\n")
+                return self._indent("stack.push_set(HashTable::new());\n")
             else:  # pragma: nocover
                 assert False
 
