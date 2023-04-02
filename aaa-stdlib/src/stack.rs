@@ -655,7 +655,21 @@ impl Stack {
     }
 
     pub fn str_to_int(&mut self) {
-        todo!(); // Decide if we want to keep this at all
+        // TODO Decide if we want to keep this at all
+
+        let string_rc = self.pop_str();
+        let string = &*string_rc.borrow();
+
+        match string.parse::<isize>() {
+            Ok(integer) => {
+                self.push_int(integer);
+                self.push_bool(true);
+            }
+            Err(_) => {
+                self.push_int(0);
+                self.push_bool(false);
+            }
+        }
     }
 
     pub fn vec_copy(&mut self) {
@@ -870,19 +884,27 @@ impl Stack {
             }
         }
     }
+
+    pub fn set_add(&mut self) {
+        let item = self.pop();
+        let set_rc = self.pop_set();
+        let mut set = set_rc.borrow_mut();
+
+        set.insert(item, ());
+    }
+
+    pub fn set_has(&mut self) {
+        let item = self.pop();
+        let set_rc = self.pop_set();
+        let set = set_rc.borrow();
+
+        let found = set.contains_key(&item);
+        self.push_bool(found);
+    }
 }
 
 /* TODO translate the rest to Rust
 
-    pub fn set_add(&mut self) {
-        struct aaa_variable *item = aaa_stack_pop(stack);
-        struct aaa_map *set = aaa_stack_pop_map(stack);
-
-        aaa_map_set(set, item, NULL);
-
-        aaa_map_dec_ref(set);
-        aaa_variable_dec_ref(item);
-    }
 
     pub fn set_clear(&mut self) {
         struct aaa_map *set = aaa_stack_pop_map(stack);
@@ -912,17 +934,6 @@ impl Stack {
         aaa_map_dec_ref(set);
     }
 
-    pub fn set_has(&mut self) {
-        struct aaa_variable *item = aaa_stack_pop(stack);
-        struct aaa_map *set = aaa_stack_pop_map(stack);
-
-        bool has_key = aaa_map_has_key(set, item);
-
-        aaa_stack_push_bool(stack, has_key);
-
-        aaa_map_dec_ref(set);
-        aaa_variable_dec_ref(item);
-    }
 
     pub fn set_iter(&mut self) { aaa_stack_map_iter(stack); }
 

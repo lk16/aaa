@@ -124,6 +124,7 @@ class Transpiler:
         content += "use aaa_stdlib::var::{Struct, Variable};\n"
         content += "use aaa_stdlib::vector::Vector;\n"
         content += "use std::cell::RefCell;\n"
+        content += "use std::collections::HashMap;\n"
         content += "use std::rc::Rc;\n"
 
         content += "\n"
@@ -435,13 +436,20 @@ class Transpiler:
 
         code = ""
         code += self._indent(f"stack.dup();\n")
-        code += self._indent(f"{iter}();\n")
+
+        if iter_func.position.file == self.builtins_path:
+            code += self._indent(f"{iter}();\n")
+        else:
+            code += self._indent(f"{iter}(stack);\n")
 
         code += self._indent("loop {\n")
         self.indent_level += 1
 
         code += self._indent(f"stack.dup();\n")
-        code += self._indent(f"{next}();\n")
+        if iter_func.position.file == self.builtins_path:
+            code += self._indent(f"{next}();\n")
+        else:
+            code += self._indent(f"{next}(stack);\n")
 
         code += self._indent("if !stack.pop_bool() {\n")
         self.indent_level += 1
