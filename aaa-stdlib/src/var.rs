@@ -16,6 +16,30 @@ pub struct Struct {
 }
 
 #[derive(Clone)]
+pub struct VectorIterator {
+    vector: Rc<RefCell<Vec<Variable>>>,
+    offset: usize,
+}
+
+impl VectorIterator {
+    pub fn new(vector: Rc<RefCell<Vec<Variable>>>) -> Self {
+        Self { vector, offset: 0 }
+    }
+}
+
+impl Iterator for VectorIterator {
+    type Item = Variable;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let vector = self.vector.borrow();
+        let item = vector.get(self.offset).cloned();
+        self.offset += 1;
+
+        item
+    }
+}
+
+#[derive(Clone)]
 pub enum Variable {
     None, // TODO get rid of this when iterators return an enum
     Integer(isize),
@@ -25,7 +49,7 @@ pub enum Variable {
     Set(Rc<RefCell<HashSet<Variable>>>),
     Map(Rc<RefCell<HashMap<Variable, Variable>>>),
     Struct(Rc<RefCell<Struct>>),
-    VectorIterator(Rc<RefCell<vec::IntoIter<Variable>>>),
+    VectorIterator(Rc<RefCell<VectorIterator>>),
     // TODO add iterators
     // TODO add enums
 }

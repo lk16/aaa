@@ -428,27 +428,25 @@ class Transpiler:
         next_func = self._get_member_function(iterator_type, "next")
         assert not isinstance(next_func.return_types, Never)
 
-        dup = self._generate_rust_builtin_function_name_from_str("dup")
-        drop = self._generate_rust_builtin_function_name_from_str("drop")
         iter = self._generate_rust_function_name(iter_func)
         next = self._generate_rust_function_name(next_func)
         break_drop_count = len(next_func.return_types)
 
         code = ""
-        code += self._indent(f"{dup}(stack);\n")
-        code += self._indent(f"{iter}(stack);\n")
+        code += self._indent(f"stack.dup();\n")
+        code += self._indent(f"{iter}();\n")
 
-        code += self._indent("while (true) {\n")
+        code += self._indent("loop {\n")
         self.indent_level += 1
 
-        code += self._indent(f"{dup}(stack);\n")
-        code += self._indent(f"{next}(stack);\n")
+        code += self._indent(f"stack.dup();\n")
+        code += self._indent(f"{next}();\n")
 
-        code += self._indent("if (!aaa_stack_pop_bool(stack)) {\n")
+        code += self._indent("if !stack.pop_bool() {\n")
         self.indent_level += 1
 
         for _ in range(break_drop_count):
-            code += self._indent(f"{drop}(stack);\n")
+            code += self._indent(f"stack.drop();\n")
 
         code += self._indent(f"break;\n")
 
@@ -460,7 +458,7 @@ class Transpiler:
         self.indent_level -= 1
         code += self._indent("}\n")
 
-        code += self._indent(f"{drop}(stack);\n")
+        code += self._indent(f"stack.drop();\n")
 
         return code
 

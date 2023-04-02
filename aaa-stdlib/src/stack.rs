@@ -16,7 +16,7 @@ use std::{
     vec,
 };
 
-use crate::var::{Struct, Variable};
+use crate::var::{Struct, Variable, VectorIterator};
 
 pub struct Stack {
     items: Vec<Variable>,
@@ -81,7 +81,7 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_vector_iter(&mut self, v: vec::IntoIter<Variable>) {
+    pub fn push_vector_iter(&mut self, v: VectorIterator) {
         let item = Variable::VectorIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -153,7 +153,7 @@ impl Stack {
         }
     }
 
-    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<vec::IntoIter<Variable>>> {
+    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator>> {
         match self.pop() {
             Variable::VectorIterator(v) => v,
             _ => todo!(), // TODO handle type error
@@ -813,16 +813,14 @@ impl Stack {
 
     pub fn vec_iter(&mut self) {
         let vector_rc = self.pop_vector();
-        let vector = &*vector_rc.borrow();
+        let iter = VectorIterator::new(vector_rc);
 
-        let x = vector.iter();
-
-        self.push_vector_iter(vector.into_iter());
+        self.push_vector_iter(iter);
     }
 
     pub fn vec_iter_next(&mut self) {
         let vector_iter_rc = self.pop_vector_iterator();
-        let vector_iter = *vector_iter_rc.borrow();
+        let mut vector_iter = vector_iter_rc.borrow_mut();
 
         match vector_iter.next() {
             Some(var) => {
