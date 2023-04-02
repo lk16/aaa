@@ -1,5 +1,6 @@
 // TODO make these functions into testcases
 
+// TODO create similar files for set and map
 
 fn main {
     ok
