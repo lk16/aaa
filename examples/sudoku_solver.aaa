@@ -1,0 +1,232 @@
+// Solves a sudoku (see main)
+// The algorithm used is extremely inefficient.
+// For a literal translation to python, see sudoku_solver.py.
+
+struct range {
+    next_value as int,
+    end as int,
+}
+
+fn make_range args start as int, end as int return range {
+    range
+    dup "next_value" { start } !
+    dup "end" { end } !
+}
+
+fn range:iter args r as range return range {
+    r
+}
+
+fn range:next args r as range return int, bool {
+    r "next_value" ?
+    if dup r "end" ? < {
+        true
+        r "next_value" { r "next_value" ? 1 + } !
+    } else {
+        drop 0
+        false
+    }
+}
+
+fn load_sudoku args s as str return vec[int] {
+    vec[int]
+    dup use v {
+        0 s str:len make_range
+        foreach {
+            use i {
+                s i i 1 + str:substr
+                drop
+                use char {
+                    char str:to_int
+                    use n, ok {
+                        if ok {
+                            v n vec:push
+                        } else {
+                            if char "." str:equals {
+                                v 0 vec:push
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        v vec:size
+        use size {
+            if size 81 != {
+                "Expected 81 chars to be either a period or a digit, found " .
+                size .
+                "\n" .
+                1 exit
+            }
+        }
+    }
+}
+
+fn print_sudoku args cells as vec[int] {
+    0 9 make_range
+    foreach {
+        use y {
+            if y 3 = y 6 = or {
+                "------+-------+------\n" .
+            }
+
+            0 9 make_range
+            foreach {
+                use x {
+                    if x 3 = x 6 = or {
+                        "| " .
+                    }
+
+                    y 9 * x +
+                    use i {
+                        cells i vec:get
+                        use c {
+                            if c 0 = {
+                                ". " .
+                            } else {
+                                c .
+                                " " .
+                            }
+                        }
+                    }
+                }
+            }
+            "\n" .
+        }
+    }
+}
+
+fn solve_sudoku args cells as vec[int] {
+    cells 0 solve_sudoku_recursive
+}
+
+fn solve_sudoku_recursive args cells as vec[int], index as int {
+    if cells check_sudoku {
+        if index 81 = {
+            cells print_sudoku
+            0 exit
+        } else {
+            if cells index vec:get 0 != {
+                cells index 1 + solve_sudoku_recursive
+            }
+            else {
+                1 10 make_range
+                foreach {
+                    use n {
+                        cells index n vec:set
+                        cells index 1 + solve_sudoku_recursive
+
+                        // If we get here the sudoku wasn't solved
+                        // Wipe cell
+                        cells index 0 vec:set
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn check_sudoku args cells as vec[int] return bool {
+    cells 0 check_sudoku_row
+    cells 1 check_sudoku_row and
+    cells 2 check_sudoku_row and
+    cells 3 check_sudoku_row and
+    cells 4 check_sudoku_row and
+    cells 5 check_sudoku_row and
+    cells 6 check_sudoku_row and
+    cells 7 check_sudoku_row and
+    cells 8 check_sudoku_row and
+    cells 0 check_sudoku_column and
+    cells 1 check_sudoku_column and
+    cells 2 check_sudoku_column and
+    cells 3 check_sudoku_column and
+    cells 4 check_sudoku_column and
+    cells 5 check_sudoku_column and
+    cells 6 check_sudoku_column and
+    cells 7 check_sudoku_column and
+    cells 8 check_sudoku_column and
+    cells 0 0 check_sudoku_block and
+    cells 0 3 check_sudoku_block and
+    cells 0 6 check_sudoku_block and
+    cells 3 0 check_sudoku_block and
+    cells 3 3 check_sudoku_block and
+    cells 3 6 check_sudoku_block and
+    cells 6 0 check_sudoku_block and
+    cells 6 3 check_sudoku_block and
+    cells 6 6 check_sudoku_block and
+}
+
+fn check_sudoku_row args cells as vec[int], y as int return bool {
+    true dup set[int]
+    use ok, values {
+        0 9 make_range
+        foreach {
+            use x {
+                cells y 9 * x + vec:get
+                use n {
+                    if n 0 != values n set:has and {
+                        ok <- { false }
+                    }
+                    values n set:add
+                }
+            }
+        }
+    }
+}
+
+fn check_sudoku_column args cells as vec[int], x as int return bool {
+    true dup set[int]
+    use ok, values {
+        0 9 make_range
+        foreach {
+            use y {
+                cells y 9 * x + vec:get
+                use n {
+                    if n 0 != values n set:has and {
+                        ok <- { false }
+                    }
+                    values n set:add
+                }
+            }
+        }
+    }
+}
+
+fn check_sudoku_block args cells as vec[int], x_start as int, y_start as int, return bool {
+    true dup set[int]
+    use ok, values {
+        0 3 make_range
+        foreach {
+            use y_delta {
+                0 3 make_range
+                foreach {
+                    use x_delta {
+                        y_start y_delta +
+                        x_start x_delta +
+                        use y, x {
+                            cells y 9 * x + vec:get
+                            use n {
+                                if n 0 != values n set:has and {
+                                    ok <- { false }
+                                }
+                                values n set:add
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn main {
+    "9.458....2.8..9..........1...5743.8...........9.8623...5..........3..6.4....571.2"
+
+    load_sudoku
+    solve_sudoku
+
+    // unreachable if sudoku is solved
+    "Sudoku solving failed\n" .
+    1 exit
+}
