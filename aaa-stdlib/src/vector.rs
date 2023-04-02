@@ -90,7 +90,10 @@ where
     offset: usize,
 }
 
-impl<T: Clone> VectorIterator<T> {
+impl<T> VectorIterator<T>
+where
+    T: Clone,
+{
     fn new(vector: Rc<RefCell<Vec<T>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
         *iterator_count.borrow_mut() += 1;
 
@@ -102,7 +105,10 @@ impl<T: Clone> VectorIterator<T> {
     }
 }
 
-impl<T: Clone> Iterator for VectorIterator<T> {
+impl<T> Iterator for VectorIterator<T>
+where
+    T: Clone,
+{
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -114,7 +120,10 @@ impl<T: Clone> Iterator for VectorIterator<T> {
     }
 }
 
-impl<T: Clone> Drop for VectorIterator<T> {
+impl<T> Drop for VectorIterator<T>
+where
+    T: Clone,
+{
     fn drop(&mut self) {
         *self.iterator_count.borrow_mut() -= 1;
     }
