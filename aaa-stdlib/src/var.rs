@@ -7,7 +7,7 @@ use std::{
     vec,
 };
 
-use crate::vector::VectorIterator;
+use crate::vector::{Vector, VectorIterator};
 
 #[derive(PartialEq)]
 pub struct Struct {
@@ -23,7 +23,7 @@ pub enum Variable {
     Integer(isize),
     Boolean(bool),
     String(Rc<RefCell<String>>), // TODO change to &str
-    Vector(Rc<RefCell<Vec<Variable>>>),
+    Vector(Rc<RefCell<Vector<Variable>>>),
     Set(Rc<RefCell<HashSet<Variable>>>),
     Map(Rc<RefCell<HashMap<Variable, Variable>>>),
     Struct(Rc<RefCell<Struct>>),
@@ -47,7 +47,7 @@ impl Debug for Variable {
             Self::String(v) => write!(f, "{}", (**v).borrow()),
             Self::Vector(v) => {
                 let mut reprs: Vec<String> = vec![];
-                for item in (**v).borrow().iter() {
+                for item in (**v).borrow_mut().iter() {
                     reprs.push(format!("{item:?}"))
                 }
                 write!(f, "[{}]", reprs.join(", "))

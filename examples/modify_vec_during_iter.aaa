@@ -1,0 +1,65 @@
+// TODO make these functions into testcases
+
+
+fn main {
+    ok
+    ok_nested
+    fail
+}
+
+fn ok {
+    "running function `ok`\n" .
+
+    vec[int]
+    use v {
+        v 1 vec:push
+        v 2 vec:push
+        v 3 vec:push
+        v foreach {
+            .
+            "\n" .
+        }
+        v 69 vec:push
+    }
+}
+
+fn ok_nested {
+    "running function `ok_nested`\n" .
+
+    vec[int]
+    use v {
+        v 1 vec:push
+        v 2 vec:push
+        v 3 vec:push
+        v
+        foreach {
+            use a {
+                v foreach {
+                    use b {
+                        a .
+                        " " .
+                        b .
+                        "\n" .
+                    }
+                }
+            }
+        }
+        v 69 vec:push
+    }
+}
+
+fn fail {
+    "running function `fail`\n" .
+
+    vec[int]
+    use v {
+        v 1 vec:push
+        v 2 vec:push
+        v 3 vec:push
+        v foreach {
+            .
+            "\n" .
+            v 69 vec:push
+        }
+    }
+}

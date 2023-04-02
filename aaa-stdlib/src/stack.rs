@@ -16,8 +16,11 @@ use std::{
     vec,
 };
 
-use crate::var::{Struct, Variable};
 use crate::vector::VectorIterator;
+use crate::{
+    var::{Struct, Variable},
+    vector::Vector,
+};
 
 pub struct Stack {
     items: Vec<Variable>,
@@ -62,7 +65,7 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_vector(&mut self, v: Vec<Variable>) {
+    pub fn push_vector(&mut self, v: Vector<Variable>) {
         let item = Variable::Vector(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -126,7 +129,7 @@ impl Stack {
         }
     }
 
-    pub fn pop_vector(&mut self) -> Rc<RefCell<Vec<Variable>>> {
+    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<Variable>>> {
         match self.pop() {
             Variable::Vector(v) => v,
             _ => todo!(), // TODO handle type error
@@ -383,7 +386,7 @@ impl Stack {
         let vector_rc = self.pop_vector();
         let vector = (*vector_rc).borrow();
 
-        let gotten = vector[offset as usize].clone();
+        let gotten = vector.get(offset as usize);
         self.push(gotten);
     }
 
@@ -392,7 +395,7 @@ impl Stack {
         let offset = self.pop_int();
         let vector = self.pop_vector();
 
-        vector.borrow_mut()[offset as usize] = value;
+        vector.borrow_mut().set(offset as usize, value);
     }
 
     pub fn vec_size(&mut self) {
@@ -521,13 +524,13 @@ impl Stack {
 
     pub fn str_join(&mut self) {
         let vector_rc = self.pop_vector();
-        let vector = &*(*vector_rc).borrow();
+        let mut vector = vector_rc.borrow_mut();
 
         let mut parts = vec![];
         for part in vector.iter() {
             match part {
                 Variable::String(part) => {
-                    let part = (**part).borrow().clone();
+                    let part = (*part).borrow().clone();
                     parts.push(part)
                 }
                 _ => todo!(), // type error
@@ -583,7 +586,7 @@ impl Stack {
             .split(&*sep)
             .map(|s| Variable::String(Rc::new(RefCell::new(s.to_owned()))))
             .collect();
-        self.push_vector(split);
+        self.push_vector(Vector::from(split));
     }
 
     pub fn str_strip(&mut self) {
@@ -642,17 +645,11 @@ impl Stack {
     }
 
     pub fn vec_copy(&mut self) {
-        let vector_rc = self.pop_vector();
-        let vector = (*vector_rc).borrow();
-
-        self.push_vector(vector.clone());
+        todo!();
     }
 
     pub fn map_copy(&mut self) {
-        let map_rc = self.pop_map();
-        let map = (*map_rc).borrow();
-
-        self.push_map(map.clone());
+        todo!();
     }
 
     pub fn field_query(&mut self) {
@@ -814,7 +811,7 @@ impl Stack {
 
     pub fn vec_iter(&mut self) {
         let vector_rc = self.pop_vector();
-        let iter = VectorIterator::new(vector_rc);
+        let iter = vector_rc.borrow_mut().iter();
 
         self.push_vector_iter(iter);
     }

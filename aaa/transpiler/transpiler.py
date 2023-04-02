@@ -121,6 +121,7 @@ class Transpiler:
         content += "\n"
         content += "use aaa_stdlib::stack::Stack;\n"
         content += "use aaa_stdlib::var::{Struct, Variable};\n"
+        content += "use aaa_stdlib::vector::{Vector};\n"
         content += "use std::cell::RefCell;\n"
         content += "use std::collections::HashMap;\n"
         content += "use std::rc::Rc;\n"
@@ -482,7 +483,7 @@ class Transpiler:
             elif var_type.name == "bool":
                 return self._indent("stack.push_bool(false);\n")
             elif var_type.name == "vec":
-                return self._indent("stack.push_vector(vec![]);\n")
+                return self._indent("stack.push_vector(Vector::new());\n")
             elif var_type.name == "map":
                 return self._indent("stack.push_map(HashMap::new());\n")
             elif var_type.name == "set":
