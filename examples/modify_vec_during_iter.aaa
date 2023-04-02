@@ -15,7 +15,7 @@ fn ok {
         v 1 vec:push
         v 2 vec:push
         v 3 vec:push
-        v foreach {
+        v foreach {  // TODO support `foreach v { ... }` syntax
             .
             "\n" .
         }
@@ -31,8 +31,7 @@ fn ok_nested {
         v 1 vec:push
         v 2 vec:push
         v 3 vec:push
-        v
-        foreach {
+        v foreach {
             use a {
                 v foreach {
                     use b {
