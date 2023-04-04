@@ -550,9 +550,9 @@ class Transpiler:
             elif field_type.name == "str":
                 value = 'Variable::String(Rc::new(RefCell::new(String::from(""))))'
             elif field_type.name == "vec":
-                value = "Variable::Vector(Rc::new(RefCell::new(vec![])))"
+                value = "Variable::Vector(Rc::new(RefCell::new(Vector::new())))"
             elif field_type.name == "map":
-                value = "Variable::Map(Rc::new(RefCell::new(HashMap::new())))"
+                value = "Variable::Map(Rc::new(RefCell::new(HashTable::new())))"
             else:
                 rust_struct_name = self._generate_rust_struct_name(field_type.type)
                 value = (
