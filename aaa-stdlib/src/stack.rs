@@ -205,7 +205,8 @@ impl Stack {
 
     pub fn assert(&mut self) {
         if !self.pop_bool() {
-            panic!("Assertion failure!\n"); // TODO consider nicer alternatives
+            eprintln!("Assertion failure!");
+            process::exit(1);
         }
     }
 

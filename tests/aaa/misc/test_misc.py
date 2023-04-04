@@ -56,7 +56,7 @@ def compile_run(source: str, skip_valgrind: bool = False) -> Tuple[str, str, int
     ["source", "expected_stderr", "expected_exitcode"],
     [
         pytest.param("assert_true.aaa", "", 0, id="true"),
-        pytest.param("assert_false.aaa", "Assertion failure!\n", -6, id="false"),
+        pytest.param("assert_false.aaa", "Assertion failure!\n", 1, id="false"),
     ],
 )
 def test_assert(source: str, expected_stderr: str, expected_exitcode: int) -> None:
