@@ -11,6 +11,7 @@ where
     V: Clone + PartialEq,
 {
     buckets: Rc<RefCell<Vec<Vec<(K, V)>>>>,
+    bucket_count: usize,
     size: usize,
     iterator_count: Rc<RefCell<usize>>,
 }
@@ -21,18 +22,20 @@ where
     V: Clone + PartialEq,
 {
     pub fn new() -> Self {
+        let bucket_count = 16;
         Self {
-            buckets: Rc::new(RefCell::new(vec![vec![]; 16])),
+            buckets: Rc::new(RefCell::new(vec![vec![]; bucket_count])),
             size: 0,
+            bucket_count,
             iterator_count: Rc::new(RefCell::new(0)),
         }
     }
 
-    fn get_bucket_id(&self, key: &K) -> usize {
+    fn get_bucket_id(&self, key: &K, bucket_count: usize) -> usize {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
         let hash = hasher.finish();
-        hash as usize % self.buckets.borrow().len()
+        hash as usize % bucket_count
     }
 
     fn find_in_bucket(&self, bucket_id: usize, key: &K) -> Option<V> {
@@ -46,8 +49,12 @@ where
         None
     }
 
+    fn load_factor(&self) -> f64 {
+        return (self.len() as f64) / (self.bucket_count as f64);
+    }
+
     pub fn get(&self, key: &K) -> Option<V> {
-        let bucket_id = self.get_bucket_id(key);
+        let bucket_id = self.get_bucket_id(key, self.bucket_count);
         self.find_in_bucket(bucket_id, key)
     }
 
@@ -57,26 +64,39 @@ where
 
     pub fn insert(&mut self, key: K, value: V) {
         self.detect_invalid_change();
+        let bucket_id = self.get_bucket_id(&key, self.bucket_count);
 
-        let bucket_id = self.get_bucket_id(&key);
-        let bucket = &mut self.buckets.borrow_mut()[bucket_id];
+        {
+            let bucket = &mut self.buckets.borrow_mut()[bucket_id];
 
-        for (k, v) in bucket.iter_mut() {
-            if key == *k {
-                *v = value;
-                return;
+            for (k, v) in bucket.iter_mut() {
+                if key == *k {
+                    *v = value;
+                    return;
+                }
+            }
+
+            bucket.push((key, value));
+            self.size += 1;
+        }
+
+        if self.load_factor() > 0.75 {
+            self.rehash(2 * self.bucket_count)
+        }
+    }
+
+    pub fn rehash(&mut self, new_bucket_count: usize) {
+        let mut new_buckets = vec![vec![]; new_bucket_count];
+
+        for bucket in self.buckets.borrow().iter() {
+            for (key, value) in bucket.iter() {
+                let index = self.get_bucket_id(&key, new_bucket_count);
+                new_buckets[index].push((key.clone(), value.clone()));
             }
         }
 
-        bucket.push((key, value));
-        self.size += 1;
-
-        // TODO maybe rehash
-    }
-
-    pub fn rehash(&mut self) {
-        self.detect_invalid_change();
-        todo!();
+        *self.buckets.borrow_mut() = new_buckets;
+        self.bucket_count = new_bucket_count;
     }
 
     pub fn len(&self) -> usize {
@@ -99,7 +119,7 @@ where
     pub fn remove_entry(&mut self, key: &K) -> Option<(K, V)> {
         self.detect_invalid_change();
 
-        let bucket_id = self.get_bucket_id(&key);
+        let bucket_id = self.get_bucket_id(&key, self.bucket_count);
         let bucket = &mut self.buckets.borrow_mut()[bucket_id];
 
         let position = bucket.iter().position(|(k, _v)| k == key);
