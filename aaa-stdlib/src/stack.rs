@@ -21,10 +21,7 @@ use crate::{
     set::{Set, SetIterator},
     vector::VectorIterator,
 };
-use crate::{
-    var::{Struct, Variable},
-    vector::Vector,
-};
+use crate::{var::Variable, vector::Vector};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum VariableEnum<T>
@@ -77,7 +74,7 @@ where
         Self { items: Vec::new() }
     }
 
-    fn push(&mut self, v: VariableEnum<T>) {
+    pub fn push(&mut self, v: VariableEnum<T>) {
         self.items.push(v);
     }
 
@@ -123,11 +120,6 @@ where
         self.push_builtin(item);
     }
 
-    pub fn push_struct(&mut self, v: Struct<T>) {
-        let item = Variable::Struct(Rc::new(RefCell::new(v)));
-        self.push_builtin(item);
-    }
-
     pub fn push_vector_iter(&mut self, v: VectorIterator<VariableEnum<T>>) {
         let item = Variable::VectorIterator(Rc::new(RefCell::new(v)));
         self.push_builtin(item);
@@ -147,7 +139,7 @@ where
         self.push_builtin(Variable::None);
     }
 
-    fn pop(&mut self) -> VariableEnum<T> {
+    pub fn pop(&mut self) -> VariableEnum<T> {
         match self.items.pop() {
             Some(popped) => popped,
             None => todo!(), // TODO handle popping from empty stack
@@ -213,13 +205,6 @@ where
     pub fn pop_map(&mut self) -> Rc<RefCell<Map<VariableEnum<T>, VariableEnum<T>>>> {
         match self.pop_builtin() {
             Variable::Map(v) => v,
-            _ => todo!(), // TODO handle type error
-        }
-    }
-
-    pub fn pop_struct(&mut self) -> Rc<RefCell<Struct<T>>> {
-        match self.pop_builtin() {
-            Variable::Struct(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
@@ -751,26 +736,11 @@ where
     }
 
     pub fn field_query(&mut self) {
-        let field_name_rc = self.pop_str();
-        let field_name = &*field_name_rc.borrow();
-
-        let struct_rc = self.pop_struct();
-        let struct_ = &*struct_rc.borrow();
-
-        let value = struct_.values[&*field_name].clone();
-        self.push(value);
+        todo!();
     }
 
     pub fn field_update(&mut self) {
-        let value = self.pop();
-
-        let field_name_rc = self.pop_str();
-        let field_name = &*field_name_rc.borrow();
-
-        let struct_rc = self.pop_struct();
-        let mut struct_ = struct_rc.borrow_mut();
-
-        struct_.values.insert(field_name.clone(), value);
+        todo!();
     }
 
     pub fn fsync(&mut self) {

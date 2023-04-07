@@ -1,6 +1,5 @@
 use std::{
     cell::RefCell,
-    collections::HashMap,
     fmt::{Debug, Formatter, Result},
     hash::Hash,
     rc::Rc,
@@ -14,17 +13,6 @@ use crate::{
     vector::{Vector, VectorIterator},
 };
 
-#[derive(PartialEq)]
-pub struct Struct<T>
-where
-    T: Debug + Clone + PartialEq + Eq + Hash,
-{
-    // TODO consider using actual Rust types
-    // instead of the hashmap approach
-    pub type_name: String,
-    pub values: HashMap<String, VariableEnum<T>>,
-}
-
 #[derive(Clone)]
 pub enum Variable<T>
 where
@@ -37,7 +25,6 @@ where
     Vector(Rc<RefCell<Vector<VariableEnum<T>>>>),
     Set(Rc<RefCell<Set<VariableEnum<T>>>>),
     Map(Rc<RefCell<Map<VariableEnum<T>, VariableEnum<T>>>>),
-    Struct(Rc<RefCell<Struct<T>>>), // TODO remove, use rust structs
     VectorIterator(Rc<RefCell<VectorIterator<VariableEnum<T>>>>),
     MapIterator(Rc<RefCell<MapIterator<VariableEnum<T>, VariableEnum<T>>>>),
     SetIterator(Rc<RefCell<SetIterator<VariableEnum<T>>>>),
@@ -84,15 +71,6 @@ where
                 }
                 write!(f, "{{{}}}", reprs.join(", "))
             }
-            Self::Struct(v) => {
-                let struct_ = (**v).borrow();
-                write!(f, "(struct {})<{{", struct_.type_name)?;
-                let mut reprs: Vec<String> = vec![];
-                for (field_name, field_value) in struct_.values.iter() {
-                    reprs.push(format!("{field_name:?}: {field_value:?}"));
-                }
-                write!(f, "{{{}}}>", reprs.join(", "))
-            }
             Self::VectorIterator(_) => write!(f, "vec_iter"),
             Self::MapIterator(_) => write!(f, "map_iter"),
             Self::SetIterator(_) => write!(f, "set_iter"),
@@ -113,7 +91,6 @@ where
             (Self::Vector(lhs), Self::Vector(rhs)) => lhs == rhs,
             (Self::Set(lhs), Self::Set(rhs)) => lhs == rhs,
             (Self::Map(lhs), Self::Map(rhs)) => lhs == rhs,
-            (Self::Struct(lhs), Self::Struct(rhs)) => lhs == rhs,
             _ => {
                 todo!() // Can't compare variables of different types
             }
@@ -138,7 +115,6 @@ where
             Self::Vector(_) => todo!(), // hashing is not implemented for this variant
             Self::Set(_) => todo!(),    // hashing is not implemented for this variant
             Self::Map(_) => todo!(),    // hashing is not implemented for this variant
-            Self::Struct(_) => todo!(), // hashing is not implemented for this variant
             Self::None => todo!(),      // hashing is not implemented for this variant
             Self::VectorIterator(_) => todo!(), // hashing is not implemented for this variant
             Self::MapIterator(_) => todo!(), // hashing is not implemented for this variant

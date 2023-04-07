@@ -118,11 +118,12 @@ class Transpiler:
     def _generate_rust_file(self) -> str:
         content = "#![allow(unused_imports)]\n"
         content += "#![allow(unused_mut)]\n"
+        content += "#![allow(non_camel_case_types)]\n"
         content += "\n"
         content += "use aaa_stdlib::map::Map;\n"
-        content += "use aaa_stdlib::stack::Stack;\n"
+        content += "use aaa_stdlib::stack::{Stack, VariableEnum};\n"
         content += "use aaa_stdlib::set::Set;\n"
-        content += "use aaa_stdlib::var::{Struct, Variable};\n"
+        content += "use aaa_stdlib::var::Variable;\n"
         content += "use aaa_stdlib::vector::Vector;\n"
         content += "use std::cell::RefCell;\n"
         content += "use std::collections::HashMap;\n"
@@ -131,7 +132,8 @@ class Transpiler:
         content += "\n"
 
         for type in self.types.values():
-            content += self._generate_rust_struct_new_func(type)
+            content += self._generate_rust_struct_definition_code(type)
+            content += self._generate_rust_struct_push_code(type)
 
         content += self._generate_custom_types_enum()
 
@@ -148,6 +150,16 @@ class Transpiler:
         code = self._indent("#[derive(Debug, Clone, PartialEq, Eq, Hash)]\n")
         code += self._indent("enum CustomTypes {\n")
         self.indent_level += 1
+
+        for type in self.types.values():
+            if type.position.file == self.builtins_path:
+                continue
+
+            rust_struct_name = self._generate_rust_struct_name(type)
+
+            variant_name = self._generate_rust_struct_variant_name(type)
+
+            code += self._indent(f"{variant_name}({rust_struct_name}),\n")
 
         self.indent_level -= 1
         code += self._indent("}\n")
@@ -514,7 +526,7 @@ class Transpiler:
                 assert False
 
         rust_struct_name = self._generate_rust_struct_name(var_type.type)
-        return self._indent(f"stack.push_struct({rust_struct_name}_new());\n")
+        return self._indent(f"push_{rust_struct_name}(stack);\n")
 
     def _generate_rust_branch(self, branch: Branch) -> str:
         code = self._generate_rust_function_body(branch.condition)
@@ -541,46 +553,88 @@ class Transpiler:
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"user_struct_{hash}"
 
-    def _generate_rust_struct_new_func(self, type: Type) -> str:
+    def _generate_rust_struct_variant_name(self, type: Type) -> str:
+        return self._generate_rust_struct_name(type).replace(
+            "user_struct_", "UserVariant"
+        )
+
+    def _generate_rust_struct_definition_code(self, type: Type) -> str:
         if type.position.file == self.builtins_path and not type.fields:
             return ""
 
-        c_struct_name = self._generate_rust_struct_name(type)
+        rust_struct_name = self._generate_rust_struct_name(type)
 
         code = f"// Generated for: {type.position.file} {type.name}\n"
-        code += f"fn {c_struct_name}_new() -> Struct {{\n"
-
-        self.indent_level += 1
-        code += self._indent(f'let type_name = String::from("{type.name}");\n')
-        code += self._indent("let values = HashMap::from([\n")
+        code += "#[derive(Debug, Clone, PartialEq, Eq, Hash)]\n"
+        code += f"struct {rust_struct_name} {{\n"
 
         self.indent_level += 1
 
         for field_name, field_type in type.fields.items():
             if field_type.name == "int":
-                value = "Variable::Integer(0)"
+                rust_type = "isize"
             elif field_type.name == "bool":
-                value = "Variable::Boolean(false)"
+                rust_type = "bool"
             elif field_type.name == "str":
-                value = 'Variable::String(Rc::new(RefCell::new(String::from(""))))'
+                rust_type = "Rc<RefCell<String>>"
             elif field_type.name == "vec":
-                value = "Variable::Vector(Rc::new(RefCell::new(Vector::new())))"
+                rust_type = "Rc<RefCell<Vec<VariableEnum<CustomTypes>>>>"
             elif field_type.name == "map":
-                value = "Variable::Map(Rc::new(RefCell::new(Map::new())))"
+                rust_type = "Rc<RefCell<Map<VariableEnum<CustomTypes>>, VariableEnum<CustomTypes>>>>"
             elif field_type.name == "set":
-                value = "Variable::Set(Rc::new(RefCell::new(Set::new())))"
+                rust_type = "Rc<RefCell<Set<VariableEnum<CustomTypes>>>>"
             else:
-                rust_struct_name = self._generate_rust_struct_name(field_type.type)
-                value = (
-                    f"Variable::Struct(Rc::new(RefCell::new({rust_struct_name}_new())))"
-                )
+                raise NotImplementedError  # TODO
 
-            code += self._indent(f'(String::from("{field_name}"), {value}),\n')
+            code += self._indent(f"{field_name}: {rust_type},\n")
 
         self.indent_level -= 1
+        code += "}\n\n"
 
-        code += self._indent("]);\n")
-        code += self._indent("Struct { type_name, values }\n")
+        return code
+
+    def _generate_rust_struct_push_code(self, type: Type) -> str:
+        if type.position.file == self.builtins_path and not type.fields:
+            return ""
+
+        rust_struct_name = self._generate_rust_struct_name(type)
+
+        code = f"// Generated for: {type.position.file} {type.name}\n"
+
+        code += f"fn push_{rust_struct_name}(stack: &mut Stack<CustomTypes>) {{\n"
+
+        self.indent_level += 1
+        code += self._indent(f"let value = {rust_struct_name} {{\n")
+
+        self.indent_level += 1
+
+        for field_name, field_type in type.fields.items():
+            if field_type.name == "int":
+                value = "0"
+            elif field_type.name == "bool":
+                value = "false"
+            elif field_type.name == "str":
+                value = 'Rc::new(RefCell::new(String::from("")))'
+            elif field_type.name == "vec":
+                value = "Rc::new(RefCell::new(Vector::new()))"
+            elif field_type.name == "map":
+                value = "Rc::new(RefCell::new(Map::new()))"
+            elif field_type.name == "set":
+                value = "Rc::new(RefCell::new(Set::new()))"
+            else:
+                raise NotImplementedError  # TODO
+
+            code += self._indent(f"{field_name}: {value},\n")
+
+        self.indent_level -= 1
+        code += self._indent("};\n")
+
+        enum_variant_name = self._generate_rust_struct_variant_name(type)
+
+        code += self._indent(
+            f"let custom_type = CustomTypes::{enum_variant_name}(value);\n"
+        )
+        code += self._indent(f"stack.push(VariableEnum::Custom(custom_type));\n")
 
         self.indent_level -= 1
         code += "}\n\n"
