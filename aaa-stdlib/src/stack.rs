@@ -26,7 +26,7 @@ use crate::{
     vector::Vector,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub enum VariableEnum<T>
 // TODO give better name
 where
@@ -34,6 +34,18 @@ where
 {
     Builtin(Variable<T>),
     Custom(T),
+}
+
+impl<T> Debug for VariableEnum<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Self::Builtin(b) => write!(f, "{b:?}"),
+            Self::Custom(c) => write!(f, "{c:?}"),
+        }
+    }
 }
 
 pub struct Stack<T>
