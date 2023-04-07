@@ -75,13 +75,3 @@ repos:
       - id: clippy
         pass_filenames: false
         args: [--manifest-path, aaa-stdlib/Cargo.toml]
-
-      - id: fmt
-        pass_filenames: false
-        args: [--manifest-path, aaa-stdlib-user/Cargo.toml]
-      - id: cargo-check
-        pass_filenames: false
-        args: [--manifest-path, aaa-stdlib-user/Cargo.toml]
-      - id: clippy
-        pass_filenames: false
-        args: [--manifest-path, aaa-stdlib-user/Cargo.toml]
