@@ -184,6 +184,13 @@ impl Stack {
         }
     }
 
+    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<Variable>>> {
+        match self.pop() {
+            Variable::SetIterator(v) => v,
+            _ => todo!(), // TODO handle type error
+        }
+    }
+
     pub fn print(&mut self) {
         let top = self.pop();
         print!("{top:?}");
@@ -933,55 +940,45 @@ impl Stack {
 
         self.push_set_iter(iter);
     }
-}
-
-/* TODO translate the rest to Rust
-
-    pub fn set_iter(&mut self) { aaa_stack_map_iter(stack); }
 
     pub fn set_remove(&mut self) {
-        struct aaa_variable *item = aaa_stack_pop(stack);
-        struct aaa_map *set = aaa_stack_pop_map(stack);
+        let item = self.pop();
+        let set_rc = self.pop_map();
+        let mut set = set_rc.borrow_mut();
 
-        aaa_map_pop(set, item);
-
-        aaa_variable_dec_ref(item);
-        aaa_map_dec_ref(set);
+        set.remove_entry(&item);
     }
 
     pub fn set_size(&mut self) {
-        return aaa_stack_map_size(stack);
+        let set_rc = self.pop_set();
+        let size = set_rc.borrow().len();
+
+        self.push_int(size as isize);
     }
 
     pub fn set_iter_next(&mut self) {
-        struct aaa_variable *top = aaa_stack_pop(stack);
-        struct aaa_map_iter *iter = aaa_variable_get_map_iter(top);
+        let set_iter_rc = self.pop_set_iterator();
+        let mut set_iter = set_iter_rc.borrow_mut();
 
-        aaa_map_iter_inc_ref(iter);
-        aaa_variable_dec_ref(top);
-
-        struct aaa_variable *key = NULL;
-        struct aaa_variable *value = NULL;
-        bool has_next = aaa_map_iter_next(iter, &key, &value);
-
-        aaa_stack_push(stack, key);
-        aaa_stack_push_bool(stack, has_next);
-
-        aaa_map_iter_dec_ref(iter);
-    }
-
-    pub fn push_set_empty(&mut self) {
-        struct aaa_map *set = aaa_set_new();
-        aaa_stack_push_set(stack, set);
+        match set_iter.next() {
+            Some((item, _)) => {
+                self.push(item);
+                self.push_bool(true);
+            }
+            None => {
+                self.push_none();
+                self.push_bool(false);
+            }
+        }
     }
 
     pub fn copy(&mut self) {
-        struct aaa_variable *top = aaa_stack_top(stack);
-        struct aaa_variable *copy = aaa_variable_copy(top);
-
-        aaa_stack_push(stack, copy);
+        todo!();
     }
 
     pub fn make_const(&mut self) {
+        // NOTE this doesn't do anything
+
+        // TODO don't generate calls to this function in transpiler
     }
-*/
+}
