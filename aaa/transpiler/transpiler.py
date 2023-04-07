@@ -294,17 +294,9 @@ class Transpiler:
         elif isinstance(item, Branch):
             return self._generate_rust_branch(item)
         elif isinstance(item, StructFieldQuery):
-            return self._indent(
-                f'stack.push_str(String::from("{item.field_name.value}"));\n'
-            ) + self._indent("stack.field_query();\n")
+            return self._generate_rust_field_query_code(item)
         elif isinstance(item, StructFieldUpdate):
-            return (
-                self._indent(
-                    f'stack.push_str(String::from("{item.field_name.value}"));\n'
-                )
-                + self._generate_rust_function_body(item.new_value_expr)
-                + self._indent(f"stack.field_update();\n")
-            )
+            return self._generate_rust_field_update_code(item)
         elif isinstance(item, UseBlock):
             return self._generate_rust_use_block_code(item)
         elif isinstance(item, CallVariable):
@@ -317,6 +309,15 @@ class Transpiler:
             return self._generate_rust_match_block_code(item)
         else:  # pragma: nocover
             assert False
+
+    def _generate_rust_field_query_code(self, field_query: StructFieldQuery) -> str:
+        # TODO find out which struct type we're getting a field from
+
+        # TODO emit code that does: pop struct, clone field, push cloned field
+        raise NotImplementedError
+
+    def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> str:
+        raise NotImplementedError  # TODO
 
     def _generate_rust_match_block_code(self, match_block: MatchBlock) -> str:
         # Use hash suffix for variables to prevent name colission

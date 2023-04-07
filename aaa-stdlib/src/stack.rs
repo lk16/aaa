@@ -735,14 +735,6 @@ where
         todo!();
     }
 
-    pub fn field_query(&mut self) {
-        todo!();
-    }
-
-    pub fn field_update(&mut self) {
-        todo!();
-    }
-
     pub fn fsync(&mut self) {
         todo!(); // will be removed, there is no Rust equivalent
     }
