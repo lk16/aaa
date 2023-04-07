@@ -10,42 +10,54 @@ use std::{
 use crate::{
     map::{Map, MapIterator},
     set::{Set, SetIterator},
+    stack::VariableEnum,
     vector::{Vector, VectorIterator},
 };
 
 #[derive(PartialEq)]
-pub struct Struct {
+pub struct Struct<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
     // TODO consider using actual Rust types
     // instead of the hashmap approach
     pub type_name: String,
-    pub values: HashMap<String, Variable>,
+    pub values: HashMap<String, VariableEnum<T>>,
 }
 
 #[derive(Clone)]
-pub enum Variable {
+pub enum Variable<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
     None, // TODO get rid of this when iterators return an enum
     Integer(isize),
     Boolean(bool),
     String(Rc<RefCell<String>>), // TODO change to &str
-    Vector(Rc<RefCell<Vector<Variable>>>),
-    Set(Rc<RefCell<Set<Variable>>>),
-    Map(Rc<RefCell<Map<Variable, Variable>>>),
-    Struct(Rc<RefCell<Struct>>),
-    VectorIterator(Rc<RefCell<VectorIterator<Variable>>>),
-    MapIterator(Rc<RefCell<MapIterator<Variable, Variable>>>),
-    SetIterator(Rc<RefCell<SetIterator<Variable>>>),
-    // TODO add iterators
+    Vector(Rc<RefCell<Vector<VariableEnum<T>>>>),
+    Set(Rc<RefCell<Set<VariableEnum<T>>>>),
+    Map(Rc<RefCell<Map<VariableEnum<T>, VariableEnum<T>>>>),
+    Struct(Rc<RefCell<Struct<T>>>), // TODO remove, use rust structs
+    VectorIterator(Rc<RefCell<VectorIterator<VariableEnum<T>>>>),
+    MapIterator(Rc<RefCell<MapIterator<VariableEnum<T>, VariableEnum<T>>>>),
+    SetIterator(Rc<RefCell<SetIterator<VariableEnum<T>>>>),
     // TODO add enums
 }
 
-impl Variable {
-    pub fn assign(&mut self, source: &Variable) {
+impl<T> Variable<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
+    pub fn assign(&mut self, source: &Variable<T>) {
         // TODO crash when source is in iterator or enum
         *self = source.clone();
     }
 }
 
-impl Debug for Variable {
+impl<T> Debug for Variable<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             Self::Boolean(v) => write!(f, "{}", v),
@@ -89,7 +101,10 @@ impl Debug for Variable {
     }
 }
 
-impl PartialEq for Variable {
+impl<T> PartialEq for Variable<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Integer(lhs), Self::Integer(rhs)) => lhs == rhs,
@@ -106,9 +121,12 @@ impl PartialEq for Variable {
     }
 }
 
-impl Eq for Variable {}
+impl<T> Eq for Variable<T> where T: Debug + Clone + PartialEq + Eq + Hash {}
 
-impl Hash for Variable {
+impl<T> Hash for Variable<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
             Self::Boolean(v) => Hash::hash(&v, state),

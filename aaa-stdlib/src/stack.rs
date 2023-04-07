@@ -8,6 +8,7 @@ use std::{
     env,
     fmt::{Debug, Formatter, Result},
     fs,
+    hash::Hash,
     path::Path,
     process,
     rc::Rc,
@@ -17,7 +18,7 @@ use std::{
 
 use crate::{
     map::{Map, MapIterator},
-    set::SetIterator,
+    set::{Set, SetIterator},
     vector::VectorIterator,
 };
 use crate::{
@@ -25,11 +26,27 @@ use crate::{
     vector::Vector,
 };
 
-pub struct Stack {
-    items: Vec<Variable>,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum VariableEnum<T>
+// TODO give better name
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
+    Builtin(Variable<T>),
+    Custom(T),
 }
 
-impl Debug for Stack {
+pub struct Stack<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
+    items: Vec<VariableEnum<T>>,
+}
+
+impl<T> Debug for Stack<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Stack ({}):", self.len())?;
         for item in self.items.iter() {
@@ -40,13 +57,24 @@ impl Debug for Stack {
     }
 }
 
-impl Stack {
+impl<T> Stack<T>
+where
+    T: Debug + Clone + PartialEq + Eq + Hash,
+{
     pub fn new() -> Self {
         Self { items: Vec::new() }
     }
 
-    pub fn push(&mut self, v: Variable) {
+    fn push(&mut self, v: VariableEnum<T>) {
         self.items.push(v);
+    }
+
+    fn push_builtin(&mut self, v: Variable<T>) {
+        self.push(VariableEnum::Builtin(v));
+    }
+
+    fn push_custom(&mut self, v: T) {
+        self.push(VariableEnum::Custom(v));
     }
 
     fn len(&self) -> usize {
@@ -55,66 +83,80 @@ impl Stack {
 
     pub fn push_int(&mut self, v: isize) {
         let item = Variable::Integer(v);
-        self.push(item);
+        self.push_builtin(item);
     }
 
     pub fn push_bool(&mut self, v: bool) {
         let item = Variable::Boolean(v);
-        self.push(item);
+        self.push_builtin(item);
     }
 
     pub fn push_str(&mut self, v: String) {
         let item = Variable::String(Rc::new(RefCell::new(v)));
-        self.push(item);
+        self.push_builtin(item);
     }
 
-    pub fn push_vector(&mut self, v: Vector<Variable>) {
+    pub fn push_vector(&mut self, v: Vector<VariableEnum<T>>) {
         let item = Variable::Vector(Rc::new(RefCell::new(v)));
-        self.push(item);
+        self.push_builtin(item);
     }
 
-    pub fn push_set(&mut self, v: Map<Variable, ()>) {
+    pub fn push_set(&mut self, v: Set<VariableEnum<T>>) {
         let item = Variable::Set(Rc::new(RefCell::new(v)));
-        self.push(item);
+        self.push_builtin(item);
     }
 
-    pub fn push_map(&mut self, v: Map<Variable, Variable>) {
+    pub fn push_map(&mut self, v: Map<VariableEnum<T>, VariableEnum<T>>) {
         let item = Variable::Map(Rc::new(RefCell::new(v)));
-        self.push(item);
+        self.push_builtin(item);
     }
 
-    pub fn push_struct(&mut self, v: Struct) {
+    pub fn push_struct(&mut self, v: Struct<T>) {
         let item = Variable::Struct(Rc::new(RefCell::new(v)));
-        self.push(item);
+        self.push_builtin(item);
     }
 
-    pub fn push_vector_iter(&mut self, v: VectorIterator<Variable>) {
+    pub fn push_vector_iter(&mut self, v: VectorIterator<VariableEnum<T>>) {
         let item = Variable::VectorIterator(Rc::new(RefCell::new(v)));
-        self.push(item);
+        self.push_builtin(item);
     }
 
-    pub fn push_map_iter(&mut self, v: MapIterator<Variable, Variable>) {
+    pub fn push_map_iter(&mut self, v: MapIterator<VariableEnum<T>, VariableEnum<T>>) {
         let item = Variable::MapIterator(Rc::new(RefCell::new(v)));
-        self.push(item);
+        self.push_builtin(item);
     }
 
-    pub fn push_set_iter(&mut self, v: SetIterator<Variable>) {
+    pub fn push_set_iter(&mut self, v: SetIterator<VariableEnum<T>>) {
         let item = Variable::SetIterator(Rc::new(RefCell::new(v)));
-        self.push(item);
+        self.push_builtin(item);
     }
 
     pub fn push_none(&mut self) {
-        self.push(Variable::None);
+        self.push_builtin(Variable::None);
     }
 
-    pub fn pop(&mut self) -> Variable {
+    fn pop(&mut self) -> VariableEnum<T> {
         match self.items.pop() {
             Some(popped) => popped,
             None => todo!(), // TODO handle popping from empty stack
         }
     }
 
-    fn top(&mut self) -> &Variable {
+    fn pop_builtin(&mut self) -> Variable<T> {
+        match self.pop() {
+            VariableEnum::Builtin(popped) => popped,
+            VariableEnum::Custom(_) => todo!(), // Type error
+        }
+    }
+
+    fn pop_custom(&mut self) -> T {
+        match self.pop() {
+            VariableEnum::Builtin(_) => todo!(), // Type error
+            VariableEnum::Custom(popped) => popped,
+        }
+    }
+
+    fn top(&mut self) -> &VariableEnum<T> {
         match self.items.last() {
             None => todo!(),
             Some(v) => v,
@@ -122,70 +164,72 @@ impl Stack {
     }
 
     pub fn pop_int(&mut self) -> isize {
-        match self.pop() {
+        match self.pop_builtin() {
             Variable::Integer(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
     pub fn pop_bool(&mut self) -> bool {
-        match self.pop() {
+        match self.pop_builtin() {
             Variable::Boolean(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
     pub fn pop_str(&mut self) -> Rc<RefCell<String>> {
-        match self.pop() {
+        match self.pop_builtin() {
             Variable::String(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<Variable>>> {
-        match self.pop() {
+    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<VariableEnum<T>>>> {
+        match self.pop_builtin() {
             Variable::Vector(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_set(&mut self) -> Rc<RefCell<Map<Variable, ()>>> {
-        match self.pop() {
+    pub fn pop_set(&mut self) -> Rc<RefCell<Set<VariableEnum<T>>>> {
+        match self.pop_builtin() {
             Variable::Set(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_map(&mut self) -> Rc<RefCell<Map<Variable, Variable>>> {
-        match self.pop() {
+    pub fn pop_map(&mut self) -> Rc<RefCell<Map<VariableEnum<T>, VariableEnum<T>>>> {
+        match self.pop_builtin() {
             Variable::Map(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_struct(&mut self) -> Rc<RefCell<Struct>> {
-        match self.pop() {
+    pub fn pop_struct(&mut self) -> Rc<RefCell<Struct<T>>> {
+        match self.pop_builtin() {
             Variable::Struct(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<Variable>>> {
-        match self.pop() {
+    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<VariableEnum<T>>>> {
+        match self.pop_builtin() {
             Variable::VectorIterator(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_map_iterator(&mut self) -> Rc<RefCell<MapIterator<Variable, Variable>>> {
-        match self.pop() {
+    pub fn pop_map_iterator(
+        &mut self,
+    ) -> Rc<RefCell<MapIterator<VariableEnum<T>, VariableEnum<T>>>> {
+        match self.pop_builtin() {
             Variable::MapIterator(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<Variable>>> {
-        match self.pop() {
+    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<VariableEnum<T>>>> {
+        match self.pop_builtin() {
             Variable::SetIterator(v) => v,
             _ => todo!(), // TODO handle type error
         }
@@ -557,7 +601,7 @@ impl Stack {
         let mut parts = vec![];
         for part in vector.iter() {
             match part {
-                Variable::String(part) => {
+                VariableEnum::Builtin(Variable::String(part)) => {
                     let part = (*part).borrow().clone();
                     parts.push(part)
                 }
@@ -610,9 +654,9 @@ impl Stack {
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
-        let split: Vec<Variable> = string
+        let split: Vec<VariableEnum<T>> = string
             .split(&*sep)
-            .map(|s| Variable::String(Rc::new(RefCell::new(s.to_owned()))))
+            .map(|s| VariableEnum::Builtin(Variable::String(Rc::new(RefCell::new(s.to_owned())))))
             .collect();
         self.push_vector(Vector::from(split));
     }
@@ -726,8 +770,10 @@ impl Stack {
         for (key, val) in env::vars_os() {
             // Use pattern bindings instead of testing .is_some() followed by .unwrap()
             if let (Ok(k), Ok(v)) = (key.into_string(), val.into_string()) {
-                let key_var = Variable::String(Rc::new(RefCell::new(k)));
-                let value_var = Variable::String(Rc::new(RefCell::new(v)));
+                let key_var =
+                    VariableEnum::Builtin(Variable::<T>::String(Rc::new(RefCell::new(k))));
+                let value_var =
+                    VariableEnum::Builtin(Variable::<T>::String(Rc::new(RefCell::new(v))));
 
                 env_vars.insert(key_var, value_var);
             }
@@ -800,9 +846,9 @@ impl Stack {
         }
     }
 
-    pub fn assign(&mut self, var: &mut Variable) {
+    pub fn assign(&mut self, var: &mut VariableEnum<T>) {
         let popped = self.pop();
-        var.assign(&popped);
+        *var = popped;
     }
 
     pub fn gettimeofday(&mut self) {

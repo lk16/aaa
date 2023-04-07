@@ -133,6 +133,8 @@ class Transpiler:
         for type in self.types.values():
             content += self._generate_rust_struct_new_func(type)
 
+        content += self._generate_custom_types_enum()
+
         for function in self.functions.values():
             if function.position.file == self.builtins_path:
                 continue
@@ -142,6 +144,17 @@ class Transpiler:
 
         return content
 
+    def _generate_custom_types_enum(self) -> str:
+        code = self._indent("#[derive(Debug, Clone, PartialEq, Eq, Hash)]\n")
+        code += self._indent("enum CustomTypes {\n")
+        self.indent_level += 1
+
+        self.indent_level -= 1
+        code += self._indent("}\n")
+        code += self._indent("\n")
+
+        return code
+
     def _generate_rust_main_function(self) -> str:
         # TODO handle argv and return code
 
@@ -150,7 +163,7 @@ class Transpiler:
 
         code = "fn main() {\n"
         self.indent_level += 1
-        code += self._indent("let mut stack = Stack::new();\n")
+        code += self._indent("let mut stack: Stack<CustomTypes> = Stack::new();\n")
         code += self._indent(f"{main_func_name}(&mut stack);\n")
 
         self.indent_level -= 1
@@ -222,7 +235,7 @@ class Transpiler:
         func_name = self._generate_rust_function_name(function)
 
         content = f"// Generated from: {function.position.file} {function.name}\n"
-        content += f"fn {func_name}(stack: &mut Stack) {{\n"
+        content += f"fn {func_name}(stack: &mut Stack<CustomTypes>) {{\n"
 
         self.indent_level += 1
 
