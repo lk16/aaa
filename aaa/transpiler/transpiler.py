@@ -119,8 +119,9 @@ class Transpiler:
         content = "#![allow(unused_imports)]\n"
         content += "#![allow(unused_mut)]\n"
         content += "\n"
-        content += "use aaa_stdlib::hashtable::HashTable;\n"
+        content += "use aaa_stdlib::map::Map;\n"
         content += "use aaa_stdlib::stack::Stack;\n"
+        content += "use aaa_stdlib::set::Set;\n"
         content += "use aaa_stdlib::var::{Struct, Variable};\n"
         content += "use aaa_stdlib::vector::Vector;\n"
         content += "use std::cell::RefCell;\n"
@@ -493,9 +494,9 @@ class Transpiler:
             elif var_type.name == "vec":
                 return self._indent("stack.push_vector(Vector::new());\n")
             elif var_type.name == "map":
-                return self._indent("stack.push_map(HashTable::new());\n")
+                return self._indent("stack.push_map(Map::new());\n")
             elif var_type.name == "set":
-                return self._indent("stack.push_set(HashTable::new());\n")
+                return self._indent("stack.push_set(Set::new());\n")
             else:  # pragma: nocover
                 assert False
 
@@ -552,7 +553,9 @@ class Transpiler:
             elif field_type.name == "vec":
                 value = "Variable::Vector(Rc::new(RefCell::new(Vector::new())))"
             elif field_type.name == "map":
-                value = "Variable::Map(Rc::new(RefCell::new(HashTable::new())))"
+                value = "Variable::Map(Rc::new(RefCell::new(Map::new())))"
+            elif field_type.name == "set":
+                value = "Variable::Set(Rc::new(RefCell::new(Set::new())))"
             else:
                 rust_struct_name = self._generate_rust_struct_name(field_type.type)
                 value = (

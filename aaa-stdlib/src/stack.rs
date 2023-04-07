@@ -16,7 +16,7 @@ use std::{
 };
 
 use crate::{
-    hashtable::{HashTable, HashTableIterator},
+    map::{HashTableIterator, Map},
     vector::VectorIterator,
 };
 use crate::{
@@ -72,12 +72,12 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_set(&mut self, v: HashTable<Variable, ()>) {
+    pub fn push_set(&mut self, v: Map<Variable, ()>) {
         let item = Variable::Set(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_map(&mut self, v: HashTable<Variable, Variable>) {
+    pub fn push_map(&mut self, v: Map<Variable, Variable>) {
         let item = Variable::Map(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -143,14 +143,14 @@ impl Stack {
         }
     }
 
-    pub fn pop_set(&mut self) -> Rc<RefCell<HashTable<Variable, ()>>> {
+    pub fn pop_set(&mut self) -> Rc<RefCell<Map<Variable, ()>>> {
         match self.pop() {
             Variable::Set(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
 
-    pub fn pop_map(&mut self) -> Rc<RefCell<HashTable<Variable, Variable>>> {
+    pub fn pop_map(&mut self) -> Rc<RefCell<Map<Variable, Variable>>> {
         match self.pop() {
             Variable::Map(v) => v,
             _ => todo!(), // TODO handle type error
@@ -428,7 +428,7 @@ impl Stack {
     }
 
     pub fn push_map_empty(&mut self) {
-        self.push_map(HashTable::new())
+        self.push_map(Map::new())
     }
 
     pub fn map_set(&mut self) {
@@ -709,7 +709,7 @@ impl Stack {
     }
 
     pub fn environ(&mut self) {
-        let mut env_vars = HashTable::new();
+        let mut env_vars = Map::new();
         for (key, val) in env::vars_os() {
             // Use pattern bindings instead of testing .is_some() followed by .unwrap()
             if let (Ok(k), Ok(v)) = (key.into_string(), val.into_string()) {

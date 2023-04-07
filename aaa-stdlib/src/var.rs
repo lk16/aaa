@@ -8,7 +8,8 @@ use std::{
 };
 
 use crate::{
-    hashtable::{HashTable, HashTableIterator},
+    map::{HashTableIterator, Map},
+    set::Set,
     vector::{Vector, VectorIterator},
 };
 
@@ -27,8 +28,8 @@ pub enum Variable {
     Boolean(bool),
     String(Rc<RefCell<String>>), // TODO change to &str
     Vector(Rc<RefCell<Vector<Variable>>>),
-    Set(Rc<RefCell<HashTable<Variable, ()>>>),
-    Map(Rc<RefCell<HashTable<Variable, Variable>>>),
+    Set(Rc<RefCell<Set<Variable>>>),
+    Map(Rc<RefCell<Map<Variable, Variable>>>),
     Struct(Rc<RefCell<Struct>>),
     VectorIterator(Rc<RefCell<VectorIterator<Variable>>>),
     HashTableIterator(Rc<RefCell<HashTableIterator<Variable, Variable>>>),

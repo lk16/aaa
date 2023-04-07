@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-pub struct HashTable<K, V>
+pub struct Map<K, V>
 where
     K: Clone + PartialEq + Hash,
     V: Clone + PartialEq,
@@ -16,7 +16,7 @@ where
     iterator_count: Rc<RefCell<usize>>,
 }
 
-impl<K, V> HashTable<K, V>
+impl<K, V> Map<K, V>
 where
     K: Clone + PartialEq + Hash,
     V: Clone + PartialEq,
@@ -146,7 +146,7 @@ where
     }
 }
 
-impl<K, V> PartialEq for HashTable<K, V>
+impl<K, V> PartialEq for Map<K, V>
 where
     K: Clone + PartialEq + Hash,
     V: Clone + PartialEq,
