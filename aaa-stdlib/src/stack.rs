@@ -16,7 +16,8 @@ use std::{
 };
 
 use crate::{
-    map::{HashTableIterator, Map},
+    map::{Map, MapIterator},
+    set::SetIterator,
     vector::VectorIterator,
 };
 use crate::{
@@ -92,8 +93,13 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_map_iter(&mut self, v: HashTableIterator<Variable, Variable>) {
-        let item = Variable::HashTableIterator(Rc::new(RefCell::new(v)));
+    pub fn push_map_iter(&mut self, v: MapIterator<Variable, Variable>) {
+        let item = Variable::MapIterator(Rc::new(RefCell::new(v)));
+        self.push(item);
+    }
+
+    pub fn push_set_iter(&mut self, v: SetIterator<Variable>) {
+        let item = Variable::SetIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
@@ -171,9 +177,9 @@ impl Stack {
         }
     }
 
-    pub fn pop_map_iterator(&mut self) -> Rc<RefCell<HashTableIterator<Variable, Variable>>> {
+    pub fn pop_map_iterator(&mut self) -> Rc<RefCell<MapIterator<Variable, Variable>>> {
         match self.pop() {
-            Variable::HashTableIterator(v) => v,
+            Variable::MapIterator(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }
@@ -902,39 +908,34 @@ impl Stack {
         let found = set.contains_key(&item);
         self.push_bool(found);
     }
-}
-
-/* TODO translate the rest to Rust
-
 
     pub fn set_clear(&mut self) {
-        struct aaa_map *set = aaa_stack_pop_map(stack);
+        let set_rc = self.pop_set();
+        let mut set = set_rc.borrow_mut();
 
-        aaa_map_clear(set);
-
-        aaa_map_dec_ref(set);
+        set.clear();
     }
 
     pub fn set_copy(&mut self) {
-        struct aaa_map *set = aaa_stack_pop_map(stack);
-
-        struct aaa_map *copy = aaa_map_copy(set);
-
-        aaa_stack_push_map(stack, copy);
-
-        aaa_map_dec_ref(set);
+        todo!();
     }
 
     pub fn set_empty(&mut self) {
-        struct aaa_map *set = aaa_stack_pop_map(stack);
+        let set_rc = self.pop_set();
+        let set = set_rc.borrow();
 
-        bool is_empty = aaa_map_empty(set);
-
-        aaa_stack_push_bool(stack, is_empty);
-
-        aaa_map_dec_ref(set);
+        self.push_bool(set.is_empty());
     }
 
+    pub fn set_iter(&mut self) {
+        let set_rc = self.pop_set();
+        let iter = set_rc.borrow_mut().iter();
+
+        self.push_set_iter(iter);
+    }
+}
+
+/* TODO translate the rest to Rust
 
     pub fn set_iter(&mut self) { aaa_stack_map_iter(stack); }
 

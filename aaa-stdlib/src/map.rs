@@ -182,6 +182,8 @@ where
     offset_in_bucket: usize,
 }
 
+pub type MapIterator<K, V> = HashTableIterator<K, V>;
+
 impl<K, V> HashTableIterator<K, V>
 where
     K: Clone + PartialEq + Hash,
