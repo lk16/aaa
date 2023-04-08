@@ -1,14 +1,17 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 pub struct Vector<T>
 where
-    T: Clone + PartialEq,
+    T: Clone + PartialEq + Debug,
 {
     vec: Rc<RefCell<Vec<T>>>,
     iterator_count: Rc<RefCell<usize>>, // vector can only be modified if no iterators exist
 }
 
-impl<T: Clone + PartialEq> Vector<T> {
+impl<T> Vector<T>
+where
+    T: Clone + PartialEq + Debug,
+{
     pub fn new() -> Self {
         Self {
             vec: Rc::new(RefCell::new(vec![])),
@@ -59,7 +62,10 @@ impl<T: Clone + PartialEq> Vector<T> {
     }
 }
 
-impl<T: Clone + PartialEq> From<Vec<T>> for Vector<T> {
+impl<T> From<Vec<T>> for Vector<T>
+where
+    T: Clone + PartialEq + Debug,
+{
     fn from(value: Vec<T>) -> Self {
         let vec = Self::new();
 
@@ -74,16 +80,34 @@ impl<T: Clone + PartialEq> From<Vec<T>> for Vector<T> {
     }
 }
 
-impl<T: Clone + PartialEq> PartialEq for Vector<T> {
+impl<T> Debug for Vector<T>
+where
+    T: Clone + PartialEq + Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut reprs: Vec<String> = vec![];
+        for item in self.iter() {
+            reprs.push(format!("{item:?}"))
+        }
+        write!(f, "[{}]", reprs.join(", "))
+    }
+}
+
+impl<T> PartialEq for Vector<T>
+where
+    T: Clone + PartialEq + Debug,
+{
     fn eq(&self, other: &Self) -> bool {
         self.vec == other.vec
     }
 }
 
+impl<T> Eq for Vector<T> where T: Clone + PartialEq + Debug {}
+
 #[derive(Clone)]
 pub struct VectorIterator<T>
 where
-    T: Clone,
+    T: Clone + PartialEq + Debug,
 {
     vector: Rc<RefCell<Vec<T>>>,
     iterator_count: Rc<RefCell<usize>>,
@@ -92,7 +116,7 @@ where
 
 impl<T> VectorIterator<T>
 where
-    T: Clone,
+    T: Clone + PartialEq + Debug,
 {
     fn new(vector: Rc<RefCell<Vec<T>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
         *iterator_count.borrow_mut() += 1;
@@ -107,7 +131,7 @@ where
 
 impl<T> Iterator for VectorIterator<T>
 where
-    T: Clone,
+    T: Clone + PartialEq + Debug,
 {
     type Item = T;
 
@@ -122,7 +146,7 @@ where
 
 impl<T> Drop for VectorIterator<T>
 where
-    T: Clone,
+    T: Clone + PartialEq + Debug,
 {
     fn drop(&mut self) {
         *self.iterator_count.borrow_mut() -= 1;

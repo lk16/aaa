@@ -609,7 +609,7 @@ class Transpiler:
         rust_struct_name = self._generate_rust_struct_name(type)
 
         code = f"// Generated for: {type.position.file} {type.name}\n"
-        code += "#[derive(Debug, Clone, PartialEq, Eq, Hash)]\n"
+        code += "#[derive(Debug, Clone, PartialEq, Eq)]\n"
         code += f"struct {rust_struct_name} {{\n"
 
         self.indent_level += 1
@@ -622,7 +622,7 @@ class Transpiler:
             elif field_type.name == "str":
                 rust_type = "Rc<RefCell<String>>"
             elif field_type.name == "vec":
-                rust_type = "Rc<RefCell<Vec<VariableEnum<CustomTypes>>>>"
+                rust_type = "Rc<RefCell<Vector<VariableEnum<CustomTypes>>>>"
             elif field_type.name == "map":
                 rust_type = "Rc<RefCell<Map<VariableEnum<CustomTypes>, VariableEnum<CustomTypes>>>>"
             elif field_type.name == "set":
