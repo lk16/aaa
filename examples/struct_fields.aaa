@@ -1,0 +1,36 @@
+struct bar {
+    i as int,
+}
+
+struct foo {
+    i as int,
+    b as bool,
+    s as str,
+    m as map[int, int],
+    se as set[int],
+    v as vec[int],
+    ba as bar,
+}
+
+fn main {
+    foo
+    use f {
+        f "i" ?
+        drop
+
+        f "b" ?
+        drop
+
+        f "s" ?
+        drop
+
+        f "m" ?
+        drop
+
+        f "se" ?
+        drop
+
+        f "v" ?
+        drop
+    }
+}

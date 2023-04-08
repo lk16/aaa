@@ -320,18 +320,40 @@ class Transpiler:
 
         rust_struct_name = self._generate_rust_struct_name(struct_type.type)
 
+        code = self._indent("{\n")
+        self.indent_level += 1
+        code += self._indent(f"let popped = pop_{rust_struct_name}(stack);\n")
+
         if field_type.name == "int":
-            code = self._indent("{\n")
-            self.indent_level += 1
+            code += self._indent(
+                f"stack.push(VariableEnum::Builtin(Variable::Integer(popped.{field_name})));\n"
+            )
+        elif field_type.name == "str":
+            code += self._indent(
+                f"stack.push(VariableEnum::Builtin(Variable::String(popped.{field_name})));\n"
+            )
+        elif field_type.name == "bool":
+            code += self._indent(
+                f"stack.push(VariableEnum::Builtin(Variable::Boolean(popped.{field_name})));\n"
+            )
+        elif field_type.name == "vec":
+            code += self._indent(
+                f"stack.push(VariableEnum::Builtin(Variable::Vector(popped.{field_name})));\n"
+            )
+        elif field_type.name == "map":
+            code += self._indent(
+                f"stack.push(VariableEnum::Builtin(Variable::Map(popped.{field_name})));\n"
+            )
+        elif field_type.name == "set":
+            code += self._indent(
+                f"stack.push(VariableEnum::Builtin(Variable::Set(popped.{field_name})));\n"
+            )
+        else:
+            raise NotImplementedError  # TODO implement for other types
 
-            code += self._indent(f"let popped = pop_{rust_struct_name}(stack);\n")
-            code += self._indent(f"stack.push_int(popped.{field_name});\n")
-            self.indent_level -= 1
-            code += self._indent("}\n")
-
-            return code
-
-        raise NotImplementedError  # TODO implement for other types
+        self.indent_level -= 1
+        code += self._indent("}\n")
+        return code
 
     def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> str:
         return ""  # TODO
@@ -602,11 +624,12 @@ class Transpiler:
             elif field_type.name == "vec":
                 rust_type = "Rc<RefCell<Vec<VariableEnum<CustomTypes>>>>"
             elif field_type.name == "map":
-                rust_type = "Rc<RefCell<Map<VariableEnum<CustomTypes>>, VariableEnum<CustomTypes>>>>"
+                rust_type = "Rc<RefCell<Map<VariableEnum<CustomTypes>, VariableEnum<CustomTypes>>>>"
             elif field_type.name == "set":
                 rust_type = "Rc<RefCell<Set<VariableEnum<CustomTypes>>>>"
             else:
-                raise NotImplementedError  # TODO
+                rust_field_type = self._generate_rust_struct_name(field_type.type)
+                rust_type = f"Rc<RefCell<{rust_field_type}>>"
 
             code += self._indent(f"{field_name}: {rust_type},\n")
 
@@ -644,7 +667,9 @@ class Transpiler:
             elif field_type.name == "set":
                 value = "Rc::new(RefCell::new(Set::new()))"
             else:
-                raise NotImplementedError  # TODO
+                rust_field_type = self._generate_rust_struct_name(field_type.type)
+
+                value = f"Rc::new(RefCell::new({rust_field_type}_new()))"
 
             code += self._indent(f"{field_name}: {value},\n")
 

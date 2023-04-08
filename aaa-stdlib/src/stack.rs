@@ -30,7 +30,7 @@ where
     T: Debug + Clone + PartialEq + Eq + Hash,
 {
     Builtin(Variable<T>),
-    Custom(T),
+    Custom(T), // TODO make this Rc<RefCell<T>>
 }
 
 impl<T> Debug for VariableEnum<T>

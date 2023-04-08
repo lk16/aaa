@@ -5,6 +5,7 @@ use std::{
     rc::Rc,
 };
 
+#[derive(Debug)]
 pub struct Map<K, V>
 where
     K: Clone + PartialEq + Hash,
@@ -169,6 +170,13 @@ where
 
         true
     }
+}
+
+impl<K, V> Eq for Map<K, V>
+where
+    K: Clone + PartialEq + Hash,
+    V: Clone + PartialEq,
+{
 }
 
 pub struct HashTableIterator<K, V>

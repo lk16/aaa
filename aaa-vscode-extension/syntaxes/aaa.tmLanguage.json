@@ -20,7 +20,7 @@
 		},
 		{
 			"name": "keyword.operator.arithmetic.aaa",
-			"match": "\\+|\\-|\\*|/|%|<-"
+			"match": "\\+|\\-|\\*|/|%|<-|!|\\?"
 		},
 		{
 			"name": "keyword.operator.logical.aaa",
