@@ -134,6 +134,7 @@ class Transpiler:
         for type in self.types.values():
             content += self._generate_rust_struct_definition_code(type)
             content += self._generate_rust_struct_push_code(type)
+            content += self._generate_rust_struct_pop_code(type)
 
         content += self._generate_custom_types_enum()
 
@@ -311,13 +312,29 @@ class Transpiler:
             assert False
 
     def _generate_rust_field_query_code(self, field_query: StructFieldQuery) -> str:
-        # TODO find out which struct type we're getting a field from
+        field_name = field_query.field_name.value
+        stack = self.position_stacks[field_query.position]
+        assert not isinstance(stack, Never)
+        struct_type = stack[-1]
+        field_type = struct_type.type.fields[field_name].type
 
-        # TODO emit code that does: pop struct, clone field, push cloned field
-        raise NotImplementedError
+        rust_struct_name = self._generate_rust_struct_name(struct_type.type)
+
+        if field_type.name == "int":
+            code = self._indent("{\n")
+            self.indent_level += 1
+
+            code += self._indent(f"let popped = pop_{rust_struct_name}(stack);\n")
+            code += self._indent(f"stack.push_int(popped.{field_name});\n")
+            self.indent_level -= 1
+            code += self._indent("}\n")
+
+            return code
+
+        raise NotImplementedError  # TODO implement for other types
 
     def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> str:
-        raise NotImplementedError  # TODO
+        return ""  # TODO
 
     def _generate_rust_match_block_code(self, match_block: MatchBlock) -> str:
         # Use hash suffix for variables to prevent name colission
@@ -640,6 +657,41 @@ class Transpiler:
             f"let custom_type = CustomTypes::{enum_variant_name}(value);\n"
         )
         code += self._indent(f"stack.push(VariableEnum::Custom(custom_type));\n")
+
+        self.indent_level -= 1
+        code += "}\n\n"
+
+        return code
+
+    def _generate_rust_struct_pop_code(self, type: Type) -> str:
+        if type.position.file == self.builtins_path and not type.fields:
+            return ""
+
+        rust_struct_name = self._generate_rust_struct_name(type)
+        rust_variant_name = self._generate_rust_struct_variant_name(type)
+
+        code = f"// Generated for: {type.position.file} {type.name}\n"
+
+        code += f"fn pop_{rust_struct_name}(stack: &mut Stack<CustomTypes>) -> {rust_struct_name} {{\n"
+
+        self.indent_level += 1
+
+        code += self._indent(
+            "if let VariableEnum::Custom("
+            + f"CustomTypes::{rust_variant_name}(value)) = stack.pop() {{\n"
+        )
+        self.indent_level += 1
+        code += self._indent("return value;\n")
+
+        self.indent_level -= 1
+        code += self._indent("} else {\n")
+        self.indent_level += 1
+
+        # TODO handle type errors
+        code += self._indent("todo!(); // type error\n")
+
+        self.indent_level -= 1
+        code += self._indent("}\n")
 
         self.indent_level -= 1
         code += "}\n\n"
