@@ -74,7 +74,7 @@ class TypeChecker:
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
         self.exceptions: List[TypeCheckerException] = []
-        self.foreach_loop_stacks: Dict[Position, List[VariableType]] = {}
+        self.position_stacks: Dict[Position, List[VariableType] | Never] = {}
         self.verbose = verbose
 
     def run(self) -> TypeCheckerOutput:
@@ -86,11 +86,14 @@ class TypeChecker:
             checker = SingleFunctionTypeChecker(function, self)
 
             try:
-                foreach_loop_stacks = checker.run()
+                # TODO extract position stacks instead and print them if verbose is enabled
+                position_stacks = checker.run()
             except TypeCheckerException as e:
                 self.exceptions.append(e)
             else:
-                self.foreach_loop_stacks.update(foreach_loop_stacks)
+                self.position_stacks.update(position_stacks)
+
+        self._print_position_stacks()
 
         try:
             self._check_main_function()
@@ -100,7 +103,22 @@ class TypeChecker:
         if self.exceptions:
             raise AaaRunnerException(self.exceptions)
 
-        return TypeCheckerOutput(self.foreach_loop_stacks)
+        return TypeCheckerOutput(self.position_stacks)
+
+    def _print_position_stacks(self) -> None:
+        if not self.verbose:
+            return
+
+        for position in sorted(self.position_stacks.keys()):
+            type_stack: List[VariableType] | Never = self.position_stacks[position]
+
+            formatted_position = str(position)
+            formatted_stack = format_typestack(type_stack)
+
+            if len(formatted_position) > 40:
+                formatted_position = "…" + formatted_position[-39:]
+
+            print(f"type checker | {formatted_position:>40} | {formatted_stack}")
 
     def _is_builtin(self, function: Function) -> bool:
         return function.position.file == self.builtins_path
@@ -156,15 +174,18 @@ class SingleFunctionTypeChecker:
         self.types = type_checker.types
         self.functions = type_checker.functions
         self.builtins_path = type_checker.builtins_path
-        self.foreach_loop_stacks: Dict[Position, List[VariableType]] = {}
         self.vars: Dict[str, VariableType] = {
             arg.name: arg.var_type for arg in function.arguments
         }
         self.verbose = type_checker.verbose
 
-    def run(self) -> Dict[Position, List[VariableType]]:
+        # NOTE: we keep track of stacks per position.
+        # This is useful for the Transpiler and for debugging.
+        self.position_stacks: Dict[Position, List[VariableType] | Never] = {}
+
+    def run(self) -> Dict[Position, List[VariableType] | Never]:
         if self.function.is_enum_ctor:
-            return self.foreach_loop_stacks
+            return self.position_stacks
 
         assert self.function.body
 
@@ -176,10 +197,12 @@ class SingleFunctionTypeChecker:
 
         computed_return_types = self._check_function_body(self.function.body, [])
 
+        # TODO add to self.position_stacks the stack at end of the function
+
         if not self._confirm_return_types(computed_return_types):
             raise FunctionTypeError(self.function, computed_return_types)
 
-        return self.foreach_loop_stacks
+        return self.position_stacks
 
     def _confirm_return_types(self, computed: List[VariableType] | Never) -> bool:
         expected = self.function.return_types
@@ -355,20 +378,6 @@ class SingleFunctionTypeChecker:
 
         return loop_stack
 
-    def _print_types(
-        self, position: Position, type_stack: List[VariableType] | Never
-    ) -> None:  # pragma: nocover
-        if not self.verbose:
-            return
-
-        formatted_position = str(position)
-        formatted_stack = format_typestack(type_stack)
-
-        if len(formatted_position) > 40:
-            formatted_position = "…" + formatted_position[-39:]
-
-        print(f"type checker | {formatted_position:>40} | {formatted_stack}")
-
     def _check_function_body(
         self, function_body: FunctionBody, type_stack: List[VariableType]
     ) -> List[VariableType] | Never:
@@ -397,6 +406,8 @@ class SingleFunctionTypeChecker:
         for item_offset, item in enumerate(function_body.items):
             stack = copy(stack)
 
+            self.position_stacks[item.position] = copy(stack)
+
             checker = checkers[type(item)]
             checked = checker(item, stack)
 
@@ -406,12 +417,9 @@ class SingleFunctionTypeChecker:
                     next_item = function_body.items[item_offset + 1]
                     raise UnreachableCode(next_item.position)
 
-                self._print_types(item.position, Never())
                 return Never()
 
             stack = checked
-            if not isinstance(item, (StructFieldQuery, StructFieldUpdate)):
-                self._print_types(item.position, stack)
 
         return stack
 
@@ -611,7 +619,10 @@ class SingleFunctionTypeChecker:
         self, field_query: StructFieldQuery, type_stack: List[VariableType]
     ) -> List[VariableType]:
         literal = StringLiteral(field_query.field_name)
+        self.position_stacks[literal.position] = copy(type_stack)
+
         type_stack = self._check_string_literal(literal, copy(type_stack))
+        self.position_stacks[field_query.operator_position] = copy(type_stack)
 
         if len(type_stack) < 2:
             raise StackTypesError(field_query.position, type_stack, field_query)
@@ -624,20 +635,21 @@ class SingleFunctionTypeChecker:
         field_type = self._get_struct_field_type(field_query, struct_var_type)
 
         # pop struct and field name, push field
-        type_stack = type_stack[:-2] + [field_type]
-        self._print_types(field_query.operator_position, type_stack)
-        return type_stack
+        return type_stack[:-2] + [field_type]
 
     def _check_struct_field_update(
         self, field_update: StructFieldUpdate, type_stack: List[VariableType]
     ) -> List[VariableType] | Never:
         literal = StringLiteral(field_update.field_name)
+        self.position_stacks[literal.position] = copy(type_stack)
+
         type_stack = self._check_string_literal(literal, copy(type_stack))
 
         type_stack_before = type_stack
         type_stack_after = self._check_function_body(
             field_update.new_value_expr, copy(type_stack_before)
         )
+        self.position_stacks[field_update.operator_position] = copy(type_stack_after)
 
         if isinstance(type_stack_after, Never):
             return type_stack_after
@@ -676,9 +688,7 @@ class SingleFunctionTypeChecker:
             )
 
         # pop struct, field name and new value
-        type_stack = type_stack[:-3]
-        self._print_types(field_update.operator_position, type_stack)
-        return type_stack
+        return type_stack[:-3]
 
     def _lookup_function(
         self, var_type: VariableType, func_name: str
@@ -692,8 +702,6 @@ class SingleFunctionTypeChecker:
     def _check_foreach_loop(
         self, foreach_loop: ForeachLoop, type_stack: List[VariableType]
     ) -> List[VariableType] | Never:
-        self.foreach_loop_stacks[foreach_loop.position] = copy(type_stack)
-
         type_stack_before = copy(type_stack)
 
         if not type_stack:

@@ -41,6 +41,13 @@ class Position:
 
         return str(short)
 
+    def __lt__(self, other: "Position") -> bool:
+        return (self.file, self.line, self.column) < (
+            other.file,
+            other.line,
+            other.column,
+        )
+
 
 class AaaException(Exception):
     ...

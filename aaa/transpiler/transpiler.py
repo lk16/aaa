@@ -60,7 +60,7 @@ class Transpiler:
         self.functions = cross_referencer_output.functions
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
-        self.foreach_loop_stacks = type_checker_output.foreach_loop_stacks
+        self.position_stacks = type_checker_output.position_stacks
         self.func_local_vars: Set[str] = set()
         self.verbose = verbose
         self.indent_level = 0
@@ -443,7 +443,11 @@ class Transpiler:
         """
 
         # If any of these next two lines fail, TypeChecker is broken.
-        stack = self.foreach_loop_stacks[foreach_loop.position]
+        stack = self.position_stacks[foreach_loop.position]
+
+        # NOTE: The typechecker prevents this from being `never`
+        assert not isinstance(stack, Never)
+
         iterable_type = stack[-1]
 
         if iterable_type.is_const:
