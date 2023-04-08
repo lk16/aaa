@@ -373,6 +373,7 @@ class Branch(FunctionBodyItem):
 class StructFieldQuery(FunctionBodyItem):
     def __init__(self, parsed: parser.StructFieldQuery) -> None:
         self.field_name = parsed.field_name
+        self.operator_position = parsed.operator_position
         super().__init__(parsed.position)
 
 
@@ -382,6 +383,7 @@ class StructFieldUpdate(FunctionBodyItem):
     ) -> None:
         self.field_name = parsed.field_name
         self.new_value_expr = new_value_expr
+        self.operator_position = parsed.operator_position
         super().__init__(parsed.position)
 
 

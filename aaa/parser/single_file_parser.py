@@ -554,9 +554,11 @@ class SingleFileParser:
         start_offset = offset
 
         field_name, offset = self._parse_string(offset)
-        _, offset = self._token(offset, [TokenType.GET_FIELD])
+        operator_token, offset = self._token(offset, [TokenType.GET_FIELD])
 
-        field_query = StructFieldQuery(field_name.position, field_name)
+        field_query = StructFieldQuery(
+            field_name.position, field_name, operator_token.position
+        )
 
         self._print_parse_tree_node("StructFieldQuery", start_offset, offset)
         return field_query, offset
@@ -568,10 +570,10 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.BEGIN])
         new_value_expr, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.END])
-        _, offset = self._token(offset, [TokenType.SET_FIELD])
+        operator_token, offset = self._token(offset, [TokenType.SET_FIELD])
 
         field_update = StructFieldUpdate(
-            field_name.position, field_name, new_value_expr
+            field_name.position, field_name, new_value_expr, operator_token.position
         )
         self._print_parse_tree_node("StructFieldUpdate", start_offset, offset)
         return field_update, offset

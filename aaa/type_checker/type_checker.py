@@ -410,7 +410,8 @@ class SingleFunctionTypeChecker:
                 return Never()
 
             stack = checked
-            self._print_types(item.position, stack)
+            if not isinstance(item, (StructFieldQuery, StructFieldUpdate)):
+                self._print_types(item.position, stack)
 
         return stack
 
@@ -623,7 +624,9 @@ class SingleFunctionTypeChecker:
         field_type = self._get_struct_field_type(field_query, struct_var_type)
 
         # pop struct and field name, push field
-        return type_stack[:-2] + [field_type]
+        type_stack = type_stack[:-2] + [field_type]
+        self._print_types(field_query.operator_position, type_stack)
+        return type_stack
 
     def _check_struct_field_update(
         self, field_update: StructFieldUpdate, type_stack: List[VariableType]
@@ -673,7 +676,9 @@ class SingleFunctionTypeChecker:
             )
 
         # pop struct, field name and new value
-        return type_stack[:-3]
+        type_stack = type_stack[:-3]
+        self._print_types(field_update.operator_position, type_stack)
+        return type_stack
 
     def _lookup_function(
         self, var_type: VariableType, func_name: str

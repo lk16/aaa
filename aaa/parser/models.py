@@ -70,8 +70,11 @@ class FunctionBody(AaaParseModel):
 
 
 class StructFieldQuery(FunctionBodyItem):
-    def __init__(self, position: Position, field_name: StringLiteral) -> None:
+    def __init__(
+        self, position: Position, field_name: StringLiteral, operator_position: Position
+    ) -> None:
         self.field_name = field_name
+        self.operator_position = operator_position
         super().__init__(position)
 
 
@@ -81,9 +84,11 @@ class StructFieldUpdate(FunctionBodyItem):
         position: Position,
         field_name: StringLiteral,
         new_value_expr: FunctionBody,
+        operator_position: Position,
     ) -> None:
         self.field_name = field_name
         self.new_value_expr = new_value_expr
+        self.operator_position = operator_position
         super().__init__(position)
 
 
