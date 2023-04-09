@@ -128,6 +128,7 @@ class Transpiler:
         content += "use aaa_stdlib::vector::Vector;\n"
         content += "use std::cell::RefCell;\n"
         content += "use std::collections::HashMap;\n"
+        content += "use std::process;\n"
         content += "use std::rc::Rc;\n"
 
         content += "\n"
@@ -150,10 +151,23 @@ class Transpiler:
         main_func = self.functions[(self.entrypoint, "main")]
         main_func_name = self._generate_rust_function_name(main_func)
 
+        argv_used = len(main_func.arguments) != 0
+        exit_code_returned = (
+            isinstance(main_func.return_types, list)
+            and len(main_func.return_types) != 0
+        )
+
         code = "fn main() {\n"
         self.indent_level += 1
         code += self._indent("let mut stack = Stack::new();\n")
         code += self._indent(f"{main_func_name}(&mut stack);\n")
+
+        if argv_used:
+            raise NotImplementedError  # TODO
+
+        if exit_code_returned:
+            code += self._indent("let exit_code = stack.pop_int() as i32;\n")
+            code += self._indent("process::exit(exit_code);\n")
 
         self.indent_level -= 1
         code += "}\n"
