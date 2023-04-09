@@ -321,6 +321,7 @@ class SingleFileParser:
             arguments=arguments,
             return_types=return_types,
             body=None,
+            end_position=None,
         )
 
         self._print_parse_tree_node("FunctionDeclaration", start_offset, offset)
@@ -675,9 +676,10 @@ class SingleFileParser:
         function, offset = self._parse_function_declaration(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
         body, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        end_token, offset = self._token(offset, [TokenType.END])
 
         function.body = body
+        function.end_position = end_token.position
         self._print_parse_tree_node("FunctionDefinition", start_offset, offset)
         return function, offset
 

@@ -64,6 +64,7 @@ class Function(Identifiable):
         self.state: Function.Resolved | Function.Unresolved | Function.WithSignature = (
             Function.Unresolved(parsed)
         )
+        self.end_position = parsed.end_position
 
         self.func_name = parsed.func_name.name
 

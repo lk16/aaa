@@ -197,7 +197,11 @@ class SingleFunctionTypeChecker:
 
         computed_return_types = self._check_function_body(self.function.body, [])
 
-        # TODO add to self.position_stacks the stack at end of the function
+        function_end_position = self.function.end_position
+        assert function_end_position
+
+        # NOTE: add computed return types so we can log it for debugging
+        self.position_stacks[function_end_position] = computed_return_types
 
         if not self._confirm_return_types(computed_return_types):
             raise FunctionTypeError(self.function, computed_return_types)

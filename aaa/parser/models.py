@@ -113,6 +113,7 @@ class Function(AaaParseModel):
         arguments: List[Argument],
         return_types: List[TypeLiteral] | Never,
         body: Optional[FunctionBody],
+        end_position: Optional[Position],
     ) -> None:
         self.struct_name = struct_name
         self.func_name = func_name
@@ -120,6 +121,7 @@ class Function(AaaParseModel):
         self.arguments = arguments
         self.return_types = return_types
         self.body = body
+        self.end_position = end_position
         super().__init__(position)
 
     def is_test(self) -> bool:  # pragma: nocover

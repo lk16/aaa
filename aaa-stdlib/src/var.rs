@@ -15,8 +15,6 @@ use crate::{
 
 #[derive(PartialEq)]
 pub struct Struct {
-    // TODO consider using actual Rust types
-    // instead of the hashmap approach
     pub type_name: String,
     pub values: HashMap<String, Variable>,
 }
@@ -26,7 +24,7 @@ pub enum Variable {
     None, // TODO get rid of this when Aaa iterators return an enum
     Integer(isize),
     Boolean(bool),
-    String(Rc<RefCell<String>>),               // TODO change to &str
+    String(Rc<RefCell<String>>),
     Vector(Rc<RefCell<Vector<Variable>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
     Set(Rc<RefCell<Set<Variable>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
     Map(Rc<RefCell<Map<Variable, Variable>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
@@ -38,7 +36,13 @@ pub enum Variable {
 
 impl Variable {
     pub fn assign(&mut self, source: &Variable) {
-        // TODO crash when source is in iterator or enum
+        match *source {
+            Self::MapIterator(_) | Self::SetIterator(_) | Self::VectorIterator(_) => {
+                panic!("Cannot assign to an iterator!")
+            }
+            Self::None => panic!("Cannot assign to None!"),
+            _ => (),
+        }
         *self = source.clone();
     }
 }
@@ -48,9 +52,10 @@ impl Debug for Variable {
         match self {
             Self::Boolean(v) => write!(f, "{}", v),
             Self::Integer(v) => write!(f, "{}", v),
-            Self::String(v) => write!(f, "{}", (**v).borrow()),
+            Self::String(v) => write!(f, "{}", v.borrow()),
             Self::Vector(v) => write!(f, "{v:?}"),
             Self::Set(v) => {
+                // TODO move to impl Debug for Set
                 let mut reprs: Vec<String> = vec![];
                 for item in (**v).borrow().iter() {
                     reprs.push(format!("{item:?}"))
@@ -58,6 +63,7 @@ impl Debug for Variable {
                 write!(f, "{{{}}}", reprs.join(", "))
             }
             Self::Map(v) => {
+                // TODO move to impl Debug for Map
                 let mut reprs: Vec<String> = vec![];
                 for (key, value) in (**v).borrow().iter() {
                     reprs.push(format!("{key:?}: {value:?}"))
@@ -65,6 +71,7 @@ impl Debug for Variable {
                 write!(f, "{{{}}}", reprs.join(", "))
             }
             Self::Struct(v) => {
+                // TODO move to impl Debug for Struct
                 let struct_ = (**v).borrow();
                 write!(f, "(struct {})<{{", struct_.type_name)?;
                 let mut reprs: Vec<String> = vec![];

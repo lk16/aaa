@@ -302,6 +302,7 @@ class CrossReferencer:
                         )
                     ],
                     body=None,
+                    end_position=dummy_position,
                 )
 
                 function = Function(parsed_function)
