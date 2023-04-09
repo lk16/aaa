@@ -159,15 +159,16 @@ class Transpiler:
 
         code = "fn main() {\n"
         self.indent_level += 1
-        code += self._indent("let mut stack = Stack::new();\n")
-        code += self._indent(f"{main_func_name}(&mut stack);\n")
 
         if argv_used:
-            raise NotImplementedError  # TODO
+            code += self._indent("let mut stack = Stack::from_argv();\n")
+        else:
+            code += self._indent("let mut stack = Stack::new();\n")
+
+        code += self._indent(f"{main_func_name}(&mut stack);\n")
 
         if exit_code_returned:
-            code += self._indent("let exit_code = stack.pop_int() as i32;\n")
-            code += self._indent("process::exit(exit_code);\n")
+            code += self._indent("stack.exit();\n")
 
         self.indent_level -= 1
         code += "}\n"

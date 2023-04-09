@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     collections::HashMap,
-    fmt::{Debug, Formatter, Result},
+    fmt::{Debug, Display, Formatter, Result},
     hash::Hash,
     rc::Rc,
     vec,
@@ -17,6 +17,17 @@ use crate::{
 pub struct Struct {
     pub type_name: String,
     pub values: HashMap<String, Variable>,
+}
+
+impl Debug for Struct {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "(struct {})<{{", self.type_name)?;
+        let mut reprs: Vec<String> = vec![];
+        for (field_name, field_value) in self.values.iter() {
+            reprs.push(format!("{field_name:?}: {field_value:?}"));
+        }
+        write!(f, "{{{}}}>", reprs.join(", "))
+    }
 }
 
 #[derive(Clone)]
@@ -47,43 +58,29 @@ impl Variable {
     }
 }
 
-impl Debug for Variable {
+impl Display for Variable {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             Self::Boolean(v) => write!(f, "{}", v),
             Self::Integer(v) => write!(f, "{}", v),
-            Self::String(v) => write!(f, "{}", v.borrow()),
-            Self::Vector(v) => write!(f, "{v:?}"),
-            Self::Set(v) => {
-                // TODO move to impl Debug for Set
-                let mut reprs: Vec<String> = vec![];
-                for item in (**v).borrow().iter() {
-                    reprs.push(format!("{item:?}"))
-                }
-                write!(f, "{{{}}}", reprs.join(", "))
-            }
-            Self::Map(v) => {
-                // TODO move to impl Debug for Map
-                let mut reprs: Vec<String> = vec![];
-                for (key, value) in (**v).borrow().iter() {
-                    reprs.push(format!("{key:?}: {value:?}"))
-                }
-                write!(f, "{{{}}}", reprs.join(", "))
-            }
-            Self::Struct(v) => {
-                // TODO move to impl Debug for Struct
-                let struct_ = (**v).borrow();
-                write!(f, "(struct {})<{{", struct_.type_name)?;
-                let mut reprs: Vec<String> = vec![];
-                for (field_name, field_value) in struct_.values.iter() {
-                    reprs.push(format!("{field_name:?}: {field_value:?}"));
-                }
-                write!(f, "{{{}}}>", reprs.join(", "))
-            }
+            Self::String(v) => write!(f, "{}", &*v.borrow()),
+            Self::Vector(v) => write!(f, "{:?}", &*v.borrow()),
+            Self::Set(v) => write!(f, "{:?}", &*v.borrow()),
+            Self::Map(v) => write!(f, "{:?}", &*v.borrow()),
+            Self::Struct(v) => write!(f, "{:?}", &*v.borrow()),
             Self::VectorIterator(_) => write!(f, "vec_iter"),
             Self::MapIterator(_) => write!(f, "map_iter"),
             Self::SetIterator(_) => write!(f, "set_iter"),
             Self::None => write!(f, "None"),
+        }
+    }
+}
+
+impl Debug for Variable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Self::String(v) => write!(f, "{:?}", &*v.borrow()),
+            _ => write!(f, "{}", self),
         }
     }
 }

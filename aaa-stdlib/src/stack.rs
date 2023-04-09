@@ -45,6 +45,16 @@ impl Stack {
         Self { items: Vec::new() }
     }
 
+    pub fn from_argv() -> Self {
+        let mut stack = Self::new();
+        let mut arg_vector = Vector::new();
+        for arg in env::args().into_iter() {
+            arg_vector.push(Variable::String(Rc::new(RefCell::new(arg))));
+        }
+        stack.push_vector(arg_vector);
+        stack
+    }
+
     pub fn push(&mut self, v: Variable) {
         self.items.push(v);
     }
@@ -193,7 +203,7 @@ impl Stack {
 
     pub fn print(&mut self) {
         let top = self.pop();
-        print!("{top:?}");
+        print!("{top}");
     }
 
     pub fn dup(&mut self) {
