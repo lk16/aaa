@@ -18,17 +18,16 @@ pub enum Variable<T>
 where
     T: Debug + Clone + PartialEq + Eq + Hash,
 {
-    None, // TODO get rid of this when iterators return an enum
+    None, // TODO get rid of this when Aaa iterators return an enum
     Integer(isize),
     Boolean(bool),
-    String(Rc<RefCell<String>>), // TODO change to &str
-    Vector(Rc<RefCell<Vector<VariableEnum<T>>>>),
-    Set(Rc<RefCell<Set<VariableEnum<T>>>>),
-    Map(Rc<RefCell<Map<VariableEnum<T>, VariableEnum<T>>>>),
+    String(Rc<RefCell<String>>),                  // TODO change to &str
+    Vector(Rc<RefCell<Vector<VariableEnum<T>>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
+    Set(Rc<RefCell<Set<VariableEnum<T>>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
+    Map(Rc<RefCell<Map<VariableEnum<T>, VariableEnum<T>>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
     VectorIterator(Rc<RefCell<VectorIterator<VariableEnum<T>>>>),
     MapIterator(Rc<RefCell<MapIterator<VariableEnum<T>, VariableEnum<T>>>>),
     SetIterator(Rc<RefCell<SetIterator<VariableEnum<T>>>>),
-    // TODO add enums
 }
 
 impl<T> Variable<T>
@@ -50,13 +49,7 @@ where
             Self::Boolean(v) => write!(f, "{}", v),
             Self::Integer(v) => write!(f, "{}", v),
             Self::String(v) => write!(f, "{}", (**v).borrow()),
-            Self::Vector(v) => {
-                let mut reprs: Vec<String> = vec![];
-                for item in (**v).borrow_mut().iter() {
-                    reprs.push(format!("{item:?}"))
-                }
-                write!(f, "[{}]", reprs.join(", "))
-            }
+            Self::Vector(v) => write!(f, "{v:?}"),
             Self::Set(v) => {
                 let mut reprs: Vec<String> = vec![];
                 for item in (**v).borrow().iter() {
