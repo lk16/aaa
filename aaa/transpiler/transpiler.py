@@ -287,46 +287,14 @@ class Transpiler:
 
     def _generate_rust_field_query_code(self, field_query: StructFieldQuery) -> str:
         field_name = field_query.field_name.value
-        stack = self.position_stacks[field_query.position]
-        assert not isinstance(stack, Never)
-        struct_type = stack[-1]
-        field_type = struct_type.type.fields[field_name].type
-
-        rust_struct_name = self._generate_rust_struct_name(struct_type.type)
-
-        code = self._indent("{\n")
-        self.indent_level += 1
-        code += self._indent(f"let popped = pop_{rust_struct_name}(stack);\n")
-
-        if field_type.name == "int":
-            code += self._indent(
-                f"stack.push(Variable::Integer(popped.{field_name}));\n"
-            )
-        elif field_type.name == "str":
-            code += self._indent(
-                f"stack.push(Variable::String(popped.{field_name}));\n"
-            )
-        elif field_type.name == "bool":
-            code += self._indent(
-                f"stack.push(Variable::Boolean(popped.{field_name}));\n"
-            )
-        elif field_type.name == "vec":
-            code += self._indent(
-                f"stack.push(Variable::Vector(popped.{field_name}));\n"
-            )
-        elif field_type.name == "map":
-            code += self._indent(f"stack.push(Variable::Map(popped.{field_name}));\n")
-        elif field_type.name == "set":
-            code += self._indent(f"stack.push(Variable::Set(popped.{field_name}));\n")
-        else:
-            raise NotImplementedError  # TODO implement for other types
-
-        self.indent_level -= 1
-        code += self._indent("}\n")
-        return code
+        return self._indent(f'stack.struct_field_query("{field_name}");\n')
 
     def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> str:
-        return ""  # TODO
+        field_name = field_update.field_name.value
+
+        code = self._generate_rust_function_body(field_update.new_value_expr)
+        code += self._indent(f'stack.struct_field_update("{field_name}");\n')
+        return code
 
     def _generate_rust_match_block_code(self, match_block: MatchBlock) -> str:
         # Use hash suffix for variables to prevent name colission

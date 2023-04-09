@@ -694,27 +694,21 @@ impl Stack {
         todo!();
     }
 
-    pub fn field_query(&mut self) {
-        let field_name_rc = self.pop_str();
-        let field_name = &*field_name_rc.borrow();
-
+    pub fn struct_field_query(&mut self, field_name: &str) {
         let struct_rc = self.pop_struct();
         let struct_ = &*struct_rc.borrow();
 
-        let value = struct_.values[&*field_name].clone();
+        let value = struct_.values[field_name].clone();
         self.push(value);
     }
 
-    pub fn field_update(&mut self) {
+    pub fn struct_field_update(&mut self, field_name: &str) {
         let value = self.pop();
-
-        let field_name_rc = self.pop_str();
-        let field_name = &*field_name_rc.borrow();
 
         let struct_rc = self.pop_struct();
         let mut struct_ = struct_rc.borrow_mut();
 
-        struct_.values.insert(field_name.clone(), value);
+        struct_.values.insert(String::from(field_name), value);
     }
 
     pub fn fsync(&mut self) {
