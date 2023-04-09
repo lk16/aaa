@@ -118,6 +118,8 @@ class Transpiler:
     def _generate_rust_file(self) -> str:
         content = "#![allow(unused_imports)]\n"
         content += "#![allow(unused_mut)]\n"
+        content += "#![allow(unused_variables)]\n"
+        content += "#![allow(dead_code)]\n"
         content += "\n"
         content += "use aaa_stdlib::map::Map;\n"
         content += "use aaa_stdlib::stack::Stack;\n"
@@ -367,13 +369,7 @@ class Transpiler:
         return code
 
     def _generate_rust_return(self, return_: Return) -> str:
-        code = ""
-
-        for local_var_name in self.func_local_vars:
-            code += self._indent(f"aaa_variable_dec_ref(aaa_local_{local_var_name});\n")
-
-        code += self._indent("return;\n")
-        return code
+        return self._indent("return;\n")
 
     def _generate_rust_string_literal(self, string_literal: StringLiteral) -> str:
         string_value = repr(string_literal.value)[1:-1].replace('"', '\\"')
