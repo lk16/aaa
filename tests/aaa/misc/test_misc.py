@@ -349,9 +349,9 @@ def test_recursion() -> None:
 
     expected_output = (
         '(struct s)<{"a": [(struct s)<{"a": []}>]}>\n'
-        + "(enum variant=0)<(struct empty)<{}>>\n"
-        + "(enum variant=4)<[(enum variant=2)<5>]>\n"
-        + '(enum variant=5)<{"key": (enum variant=1)<false>}>\n'
+        + "(enum json discriminant=0)<(struct empty)<{}>>\n"
+        + "(enum json discriminant=4)<[(enum json discriminant=2)<5>]>\n"
+        + '(enum json discriminant=5)<{"key": (enum json discriminant=1)<false>}>\n'
     )
 
     assert expected_output == stdout

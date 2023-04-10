@@ -1,4 +1,5 @@
 use std::{
+    borrow::Borrow,
     cell::RefCell,
     collections::HashMap,
     fmt::{Debug, Display, Formatter, Result},
@@ -21,7 +22,7 @@ pub struct Struct {
 
 impl Debug for Struct {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "(struct {})<{{", self.type_name)?;
+        write!(f, "(struct {})<", self.type_name)?;
         let mut reprs: Vec<String> = vec![];
         for (field_name, field_value) in self.values.iter() {
             reprs.push(format!("{field_name:?}: {field_value:?}"));
@@ -39,8 +40,13 @@ pub struct Enum {
 
 impl Debug for Enum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        _ = f;
-        todo!();
+        write!(
+            f,
+            "(enum {} discriminant={})<{:?}>",
+            self.type_name,
+            self.discriminant,
+            self.value.borrow()
+        )
     }
 }
 
@@ -78,16 +84,16 @@ impl Display for Variable {
         match self {
             Self::Boolean(v) => write!(f, "{}", v),
             Self::Integer(v) => write!(f, "{}", v),
-            Self::String(v) => write!(f, "{}", &*v.borrow()),
-            Self::Vector(v) => write!(f, "{:?}", &*v.borrow()),
-            Self::Set(v) => write!(f, "{}", &*v.borrow().fmt_as_set()),
-            Self::Map(v) => write!(f, "{:?}", &*v.borrow()),
-            Self::Struct(v) => write!(f, "{:?}", &*v.borrow()),
+            Self::String(v) => write!(f, "{}", (**v).borrow()),
+            Self::Vector(v) => write!(f, "{:?}", (**v).borrow()),
+            Self::Set(v) => write!(f, "{}", (**v).borrow().fmt_as_set()),
+            Self::Map(v) => write!(f, "{:?}", (**v).borrow()),
+            Self::Struct(v) => write!(f, "{:?}", (**v).borrow()),
             Self::VectorIterator(_) => write!(f, "vec_iter"),
             Self::MapIterator(_) => write!(f, "map_iter"),
             Self::SetIterator(_) => write!(f, "set_iter"),
             Self::None => write!(f, "None"),
-            Self::Enum(v) => write!(f, "{:?}", v),
+            Self::Enum(v) => write!(f, "{:?}", (**v).borrow()),
         }
     }
 }
@@ -95,7 +101,7 @@ impl Display for Variable {
 impl Debug for Variable {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
-            Self::String(v) => write!(f, "{:?}", &*v.borrow()),
+            Self::String(v) => write!(f, "{:?}", (**v).borrow()),
             _ => write!(f, "{}", self),
         }
     }
@@ -126,7 +132,10 @@ impl Hash for Variable {
         match self {
             Self::Boolean(v) => Hash::hash(&v, state),
             Self::Integer(v) => Hash::hash(&v, state),
-            Self::String(v) => Hash::hash(&*v.borrow().clone(), state),
+            Self::String(v) => {
+                let string = (**v).borrow().clone();
+                Hash::hash(&string, state)
+            }
             Self::Vector(_) => todo!(), // hashing is not implemented for this variant
             Self::Set(_) => todo!(),    // hashing is not implemented for this variant
             Self::Map(_) => todo!(),    // hashing is not implemented for this variant
