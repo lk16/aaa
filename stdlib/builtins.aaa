@@ -147,7 +147,6 @@ fn open args path as const str, flag as const int, mode as const int return int,
 fn read args fd as const int, n as const int return str, bool
 fn setenv args name as const str, value as const str
 fn socket args family as const int, type_ as const int, protocol as const int return int, bool
-fn time return int
 fn unlink args path as const str return bool
 fn unsetenv args name as const str
 fn waitpid args pid as const int, options as const int return int, int, bool, bool

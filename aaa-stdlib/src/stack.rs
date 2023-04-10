@@ -849,10 +849,6 @@ impl Stack {
         env::set_var(&*name, &*value);
     }
 
-    pub fn time(&mut self) {
-        todo!(); // will be removed
-    }
-
     pub fn unlink(&mut self) {
         let path_rc = self.pop_str();
         let path = path_rc.borrow();

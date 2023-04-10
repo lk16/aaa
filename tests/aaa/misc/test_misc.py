@@ -77,17 +77,6 @@ def test_exit(source: str, expected_exitcode: int) -> None:
     assert expected_exitcode == exit_code
 
 
-def test_time() -> None:
-    stdout, stderr, exit_code = compile_run("time.aaa")
-
-    printed_time = int(stdout.strip())
-    current_time = int(time())
-
-    assert current_time - printed_time in [0, 1]
-    assert "" == stderr
-    assert 0 == exit_code
-
-
 def test_gettimeofday() -> None:
     stdout, stderr, exit_code = compile_run("gettimeofday.aaa")
 
