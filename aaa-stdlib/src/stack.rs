@@ -18,6 +18,7 @@ use std::{
 use crate::{
     map::{Map, MapIterator},
     set::{Set, SetIterator},
+    var::Enum,
     vector::VectorIterator,
 };
 use crate::{
@@ -117,6 +118,10 @@ impl Stack {
         self.push(Variable::None);
     }
 
+    pub fn push_enum(&mut self, v: Enum) {
+        self.push(Variable::Enum(Rc::new(RefCell::new(v))));
+    }
+
     pub fn pop(&mut self) -> Variable {
         match self.items.pop() {
             Some(popped) => popped,
@@ -197,6 +202,13 @@ impl Stack {
     pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<Variable>>> {
         match self.pop() {
             Variable::SetIterator(v) => v,
+            _ => todo!(), // TODO handle type error
+        }
+    }
+
+    pub fn pop_enum(&mut self) -> Rc<RefCell<Enum>> {
+        match self.pop() {
+            Variable::Enum(v) => v,
             _ => todo!(), // TODO handle type error
         }
     }

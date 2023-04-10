@@ -124,7 +124,7 @@ class Transpiler:
         content += "use aaa_stdlib::map::Map;\n"
         content += "use aaa_stdlib::stack::Stack;\n"
         content += "use aaa_stdlib::set::Set;\n"
-        content += "use aaa_stdlib::var::{Struct, Variable};\n"
+        content += "use aaa_stdlib::var::{Enum, Struct, Variable};\n"
         content += "use aaa_stdlib::vector::Vector;\n"
         content += "use std::cell::RefCell;\n"
         content += "use std::collections::HashMap;\n"
@@ -193,7 +193,7 @@ class Transpiler:
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
 
         if function.is_enum_ctor:
-            return f"enum_ctor_func_{hash}"
+            return f"user_enum_func_{hash}"
         return f"user_func_{hash}"
 
     def _get_member_function(self, var_type: VariableType, func_name: str) -> Function:
@@ -211,15 +211,21 @@ class Transpiler:
         variant_id = enum_type.enum_fields[function.func_name][1]
 
         content = f"// Generated for: {function.position.file} enum {function.struct_name}, variant {function.func_name}\n"
-        content += f"void {func_name}(struct aaa_stack *stack) {{\n"
+        content += f"fn {func_name}(stack: &mut Stack) {{\n"
 
         self.indent_level += 1
 
-        content += self._indent("struct aaa_variable *var = aaa_stack_pop(stack);\n")
-        content += self._indent(
-            f"struct aaa_variable *enum_var = aaa_variable_new_enum(var, {variant_id});\n"
-        )
-        content += self._indent("aaa_stack_push(stack, enum_var);\n")
+        content += self._indent("let value = stack.pop();\n")
+        content += self._indent("let enum_ = Enum {\n")
+        self.indent_level += 1
+        content += self._indent(f'type_name: String::from("{function.struct_name}"),\n')
+        content += self._indent(f"discriminant: {variant_id},\n")
+        content += self._indent("value,\n")
+
+        self.indent_level -= 1
+        content += self._indent("};\n")
+
+        content += self._indent("stack.push_enum(enum_);\n")
 
         self.indent_level -= 1
 
@@ -316,21 +322,12 @@ class Transpiler:
         hash_input = str(match_block.position)
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
 
-        code = self._indent(
-            f"struct aaa_variable *enum_{hash} = aaa_stack_pop(stack);\n"
-        )
-        code += self._indent(
-            f"int variant_id_{hash} = aaa_variable_get_enum_variant_id(enum_{hash});\n"
-        )
-        code += self._indent(
-            f"struct aaa_variable *enum_value_{hash} = aaa_variable_get_enum_value(enum_{hash});\n"
-        )
-        code += self._indent(f"aaa_variable_inc_ref(enum_value_{hash});\n")
-        code += self._indent(f"aaa_stack_push(stack, enum_value_{hash});\n")
+        code = self._indent(f"let enum_{hash}_rc = stack.pop_enum();\n")
+        code += self._indent(f"let enum_{hash} = &*enum_{hash}_rc.borrow();\n")
+        code += self._indent(f"let discriminant_{hash} = enum_{hash}.discriminant;\n")
+        code += self._indent(f"stack.push(enum_{hash}.value.clone());\n")
 
-        code += self._indent(f"aaa_variable_dec_ref(enum_{hash});\n")
-
-        code += self._indent(f"switch (variant_id_{hash}) {{\n")
+        code += self._indent(f"match discriminant_{hash} {{\n")
         self.indent_level += 1
 
         has_default = False
@@ -345,11 +342,7 @@ class Transpiler:
                 assert False
 
         if not has_default:
-            code += self._indent("default:\n")
-
-            self.indent_level += 1
-            code += self._indent("break;\n")
-            self.indent_level -= 1
+            code += self._indent("_ => {}\n")
 
         self.indent_level -= 1
 
@@ -362,22 +355,22 @@ class Transpiler:
         variant_id = enum_type.enum_fields[case_block.variant_name][1]
 
         code = self._indent(
-            f"case {variant_id}: // {enum_type.name}:{case_block.variant_name}\n"
+            f"{variant_id} => {{ // {enum_type.name}:{case_block.variant_name}\n"
         )
         self.indent_level += 1
         code += self._generate_rust_function_body(case_block.body)
-        code += self._indent("break;\n")
         self.indent_level -= 1
+        code += self._indent("}\n")
 
         return code
 
     def _generate_rust_default_block_code(self, default_block: DefaultBlock) -> str:
-        code = self._indent(f"default:\n")
+        code = self._indent("_ => {\n")
         self.indent_level += 1
-        code += self._indent("aaa_stack_drop(stack);\n")
+        code += self._indent("stack.drop();\n")
         code += self._generate_rust_function_body(default_block.body)
-        code += self._indent("break;\n")
         self.indent_level -= 1
+        code += self._indent("}\n")
 
         return code
 

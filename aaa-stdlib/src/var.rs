@@ -30,6 +30,20 @@ impl Debug for Struct {
     }
 }
 
+#[derive(Clone, PartialEq)]
+pub struct Enum {
+    pub type_name: String,
+    pub discriminant: usize,
+    pub value: Variable,
+}
+
+impl Debug for Enum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        _ = f;
+        todo!();
+    }
+}
+
 #[derive(Clone)]
 pub enum Variable {
     None, // TODO get rid of this when Aaa iterators return an enum
@@ -43,6 +57,7 @@ pub enum Variable {
     VectorIterator(Rc<RefCell<VectorIterator<Variable>>>),
     MapIterator(Rc<RefCell<MapIterator<Variable, Variable>>>),
     SetIterator(Rc<RefCell<SetIterator<Variable>>>),
+    Enum(Rc<RefCell<Enum>>),
 }
 
 impl Variable {
@@ -72,6 +87,7 @@ impl Display for Variable {
             Self::MapIterator(_) => write!(f, "map_iter"),
             Self::SetIterator(_) => write!(f, "set_iter"),
             Self::None => write!(f, "None"),
+            Self::Enum(v) => write!(f, "{:?}", v),
         }
     }
 }
@@ -95,6 +111,7 @@ impl PartialEq for Variable {
             (Self::Set(lhs), Self::Set(rhs)) => lhs == rhs,
             (Self::Map(lhs), Self::Map(rhs)) => lhs == rhs,
             (Self::Struct(lhs), Self::Struct(rhs)) => lhs == rhs,
+            (Self::Enum(lhs), Self::Enum(rhs)) => lhs == rhs,
             _ => {
                 todo!() // Can't compare variables of different types
             }
@@ -118,6 +135,7 @@ impl Hash for Variable {
             Self::VectorIterator(_) => todo!(), // hashing is not implemented for this variant
             Self::MapIterator(_) => todo!(), // hashing is not implemented for this variant
             Self::SetIterator(_) => todo!(), // hashing is not implemented for this variant
+            Self::Enum(_) => todo!(),   // hashing is not implemented for this variant
         }
     }
 }
