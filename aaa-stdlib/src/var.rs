@@ -36,9 +36,9 @@ pub enum Variable {
     Integer(isize),
     Boolean(bool),
     String(Rc<RefCell<String>>),
-    Vector(Rc<RefCell<Vector<Variable>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
-    Set(Rc<RefCell<Set<Variable>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
-    Map(Rc<RefCell<Map<Variable, Variable>>>), // TODO instead of VariableEnum<T>, use a type that has no Rc<...> so the container owns its values
+    Vector(Rc<RefCell<Vector<Variable>>>), // TODO instead of Variable, use a type that has no Rc<...> so the container owns its values
+    Set(Rc<RefCell<Set<Variable>>>), // TODO instead of Variable, use a type that has no Rc<...> so the container owns its values
+    Map(Rc<RefCell<Map<Variable, Variable>>>), // TODO instead of Variable, use a type that has no Rc<...> so the container owns its values
     Struct(Rc<RefCell<Struct>>),
     VectorIterator(Rc<RefCell<VectorIterator<Variable>>>),
     MapIterator(Rc<RefCell<MapIterator<Variable, Variable>>>),
