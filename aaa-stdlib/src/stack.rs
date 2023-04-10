@@ -16,7 +16,10 @@ use std::{
     vec,
 };
 
-use nix::unistd::{self, ForkResult};
+use nix::{
+    sys::wait::{WaitPidFlag, WaitStatus},
+    unistd::{self, ForkResult, Pid},
+};
 
 use crate::{
     map::{Map, MapIterator},
@@ -801,7 +804,34 @@ impl Stack {
     }
 
     pub fn waitpid(&mut self) {
-        todo!(); // Consider using nix
+        // TODO use Aaa enums for return value
+        let options = self.pop_int();
+        let pid = self.pop_int();
+
+        let options = match options {
+            0 => None,
+            v => Some(WaitPidFlag::from_bits_truncate(v as i32)),
+        };
+
+        let pid = Some(Pid::from_raw(pid as i32));
+
+        let result = nix::sys::wait::waitpid(pid, options);
+
+        match result {
+            Err(_) => {
+                self.push_int(0);
+                self.push_int(0);
+                self.push_bool(false);
+                self.push_bool(false);
+            }
+            Ok(WaitStatus::Exited(pid, exit_code)) => {
+                self.push_int(pid.as_raw() as isize);
+                self.push_int(exit_code as isize);
+                self.push_bool(true);
+                self.push_bool(true);
+            }
+            Ok(_) => todo!(),
+        }
     }
 
     pub fn getcwd(&mut self) {
