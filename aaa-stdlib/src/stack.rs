@@ -997,4 +997,11 @@ impl Stack {
 
         // TODO don't generate calls to this function in transpiler
     }
+
+    pub fn get_enum_discriminant(&mut self) -> usize {
+        let enum_rc = self.pop_enum();
+        let enum_ = &*enum_rc.borrow();
+        self.push(enum_.value.clone());
+        enum_.discriminant
+    }
 }

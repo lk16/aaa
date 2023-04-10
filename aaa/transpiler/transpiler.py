@@ -318,16 +318,7 @@ class Transpiler:
         return code
 
     def _generate_rust_match_block_code(self, match_block: MatchBlock) -> str:
-        # Use hash suffix for variables to prevent name colission
-        hash_input = str(match_block.position)
-        hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
-
-        code = self._indent(f"let enum_{hash}_rc = stack.pop_enum();\n")
-        code += self._indent(f"let enum_{hash} = &*enum_{hash}_rc.borrow();\n")
-        code += self._indent(f"let discriminant_{hash} = enum_{hash}.discriminant;\n")
-        code += self._indent(f"stack.push(enum_{hash}.value.clone());\n")
-
-        code += self._indent(f"match discriminant_{hash} {{\n")
+        code = self._indent(f"match stack.get_enum_discriminant() {{\n")
         self.indent_level += 1
 
         has_default = False
