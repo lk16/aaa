@@ -146,7 +146,6 @@ class Transpiler:
         return content
 
     def _generate_rust_main_function(self) -> str:
-        # TODO handle argv and return code
 
         main_func = self.functions[(self.entrypoint, "main")]
         main_func_name = self._generate_rust_function_name(main_func)
