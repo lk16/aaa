@@ -80,6 +80,7 @@ impl Variable {
 
     // Does not copy references, but copies recursively
     pub fn clone_recursive(&self) -> Self {
+        // TODO prevent infinite recursion.
         match self {
             Self::None => Self::None,
             Self::Integer(v) => Self::Integer(*v),
