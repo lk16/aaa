@@ -109,10 +109,7 @@ impl Hash for Variable {
         match self {
             Self::Boolean(v) => Hash::hash(&v, state),
             Self::Integer(v) => Hash::hash(&v, state),
-            Self::String(v) => {
-                let x = &(**v).as_ptr(); // TODO this probably does not work
-                Hash::hash(x, state)
-            }
+            Self::String(v) => Hash::hash(&*v.borrow().clone(), state),
             Self::Vector(_) => todo!(), // hashing is not implemented for this variant
             Self::Set(_) => todo!(),    // hashing is not implemented for this variant
             Self::Map(_) => todo!(),    // hashing is not implemented for this variant
