@@ -31,14 +31,6 @@ jobs:
       with:
         path: ~/.cache/pre-commit
         key: pre-commit-${{ runner.os }}-${{ hashFiles('**/.pre-commit-config.yaml') }}
-    - name: Set up GCC
-      uses: egor-tensin/setup-gcc@v1
-      with:
-        version: latest
-        platform: x64
-    - name: Install valgrind
-      run: sudo apt-get install -y valgrind
-    - name: Run linters
       run:
         poetry add pre-commit &&
         poetry run pre-commit run --all-files
@@ -47,8 +39,8 @@ jobs:
         poetry install
         export AAA_STDLIB_PATH=$(pwd)/stdlib
         poetry run pytest --color=yes --cov=aaa --cov-report=term-missing -x -vv
-    - name: Run C tests
+    - name: Run Rust tests
       run : |
         export AAA_STDLIB_PATH=$(pwd)/stdlib
         poetry run ./manage.py test stdlib/ --compile --binary /tmp/aaa_stdlib_tests
-        valgrind --error-exitcode=1 --leak-check=full /tmp/aaa_stdlib_tests
+        /tmp/aaa_stdlib_tests

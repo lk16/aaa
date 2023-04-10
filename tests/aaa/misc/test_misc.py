@@ -1,11 +1,10 @@
 import json
 import os
 import subprocess
-import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from time import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import pytest
 
@@ -22,34 +21,19 @@ def compile(source: str) -> str:
     return binary
 
 
-def run_with_valgrind(binary: str, env: Optional[Dict[str, Any]] = None) -> None:
-    command = ["valgrind", "--error-exitcode=1", "--leak-check=full", binary]
-    process = subprocess.run(command, capture_output=True, timeout=2, env=env)
-
-    if process.returncode != 0:
-        print(process.stdout.decode())
-        print(process.stderr.decode(), file=sys.stderr)
-        assert False, "Valgrind found memory errors"
-
-
-def run(
-    binary: str, skip_valgrind: bool = False, env: Optional[Dict[str, str]] = None
-) -> Tuple[str, str, int]:
+def run(binary: str, env: Optional[Dict[str, str]] = None) -> Tuple[str, str, int]:
     process = subprocess.run([binary], capture_output=True, timeout=2, env=env)
 
     stdout = process.stdout.decode("utf-8")
     stderr = process.stderr.decode("utf-8")
     exit_code = process.returncode
 
-    if exit_code == 0 and not skip_valgrind:
-        run_with_valgrind(binary, env)
-
     return stdout, stderr, exit_code
 
 
-def compile_run(source: str, skip_valgrind: bool = False) -> Tuple[str, str, int]:
+def compile_run(source: str) -> Tuple[str, str, int]:
     binary = compile(source)
-    return run(binary, skip_valgrind)
+    return run(binary)
 
 
 @pytest.mark.parametrize(
@@ -114,14 +98,14 @@ def test_chdir(source: str, expected_stdout: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ["source", "expected_stdout", "skip_valgrind"],
+    ["source", "expected_stdout"],
     [
-        pytest.param("execve_ok.aaa", "", True, id="ok"),
-        pytest.param("execve_fail.aaa", "", False, id="fail"),
+        pytest.param("execve_ok.aaa", "", id="ok"),
+        pytest.param("execve_fail.aaa", "", id="fail"),
     ],
 )
-def test_execve(source: str, expected_stdout: str, skip_valgrind: bool) -> None:
-    stdout, stderr, exit_code = compile_run(source, skip_valgrind)
+def test_execve(source: str, expected_stdout: str) -> None:
+    stdout, stderr, exit_code = compile_run(source)
     assert expected_stdout == stdout
     assert "" == stderr
     assert 0 == exit_code
@@ -225,12 +209,10 @@ def test_unlink(source: str, success: bool) -> None:
         dummy_file.touch()
 
     binary = compile(source)
-    stdout, stderr, exit_code = run(binary, skip_valgrind=True)
+    stdout, stderr, exit_code = run(binary)
 
     if success:
         dummy_file.touch()
-
-    run_with_valgrind(binary)
 
     if success:
         assert not dummy_file.exists()
