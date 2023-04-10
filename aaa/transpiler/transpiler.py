@@ -146,7 +146,6 @@ class Transpiler:
         return content
 
     def _generate_rust_main_function(self) -> str:
-
         main_func = self.functions[(self.entrypoint, "main")]
         main_func_name = self._generate_rust_function_name(main_func)
 
@@ -245,7 +244,7 @@ class Transpiler:
         if function.arguments:
             content += self._indent("// load arguments\n")
             for arg in reversed(function.arguments):
-                content += self._indent(f"let var_{arg.name} = stack.pop();\n")
+                content += self._indent(f"let mut var_{arg.name} = stack.pop();\n")
                 self.func_local_vars.add(arg.name)
             content += "\n"
 

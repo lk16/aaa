@@ -65,7 +65,7 @@ impl Display for Variable {
             Self::Integer(v) => write!(f, "{}", v),
             Self::String(v) => write!(f, "{}", &*v.borrow()),
             Self::Vector(v) => write!(f, "{:?}", &*v.borrow()),
-            Self::Set(v) => write!(f, "{:?}", &*v.borrow()),
+            Self::Set(v) => write!(f, "{}", &*v.borrow().fmt_as_set()),
             Self::Map(v) => write!(f, "{:?}", &*v.borrow()),
             Self::Struct(v) => write!(f, "{:?}", &*v.borrow()),
             Self::VectorIterator(_) => write!(f, "vec_iter"),

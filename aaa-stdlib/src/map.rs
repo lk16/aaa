@@ -1,15 +1,15 @@
 use std::{
     cell::RefCell,
     collections::hash_map::DefaultHasher,
+    fmt::{Debug, Formatter, Result},
     hash::{Hash, Hasher},
     rc::Rc,
 };
 
-#[derive(Debug)]
 pub struct Map<K, V>
 where
-    K: Clone + PartialEq + Hash,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
 {
     buckets: Rc<RefCell<Vec<Vec<(K, V)>>>>,
     bucket_count: usize,
@@ -19,8 +19,8 @@ where
 
 impl<K, V> Map<K, V>
 where
-    K: Clone + PartialEq + Hash,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
 {
     pub fn new() -> Self {
         let bucket_count = 16;
@@ -145,12 +145,22 @@ where
             );
         }
     }
+
+    pub fn fmt_as_set(&self) -> String {
+        let mut parts = vec![];
+        for bucket in self.buckets.borrow().iter() {
+            for (k, _) in bucket.iter() {
+                parts.push(format!("{k:?}"));
+            }
+        }
+        format!("{{{}}}", parts.join(","))
+    }
 }
 
 impl<K, V> PartialEq for Map<K, V>
 where
-    K: Clone + PartialEq + Hash,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
 {
     fn eq(&self, other: &Self) -> bool {
         if self.len() != other.len() {
@@ -174,15 +184,31 @@ where
 
 impl<K, V> Eq for Map<K, V>
 where
-    K: Clone + PartialEq + Hash,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
 {
+}
+
+impl<K, V> Debug for Map<K, V>
+where
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let mut parts = vec![];
+        for bucket in self.buckets.borrow().iter() {
+            for (k, v) in bucket.iter() {
+                parts.push(format!("{k:?}: {v:?}"));
+            }
+        }
+        write!(f, "{{{}}}", parts.join(","))
+    }
 }
 
 pub struct HashTableIterator<K, V>
 where
-    K: Clone + PartialEq + Hash,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
 {
     buckets: Rc<RefCell<Vec<Vec<(K, V)>>>>,
     iterator_count: Rc<RefCell<usize>>,
@@ -194,8 +220,8 @@ pub type MapIterator<K, V> = HashTableIterator<K, V>;
 
 impl<K, V> HashTableIterator<K, V>
 where
-    K: Clone + PartialEq + Hash,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
 {
     pub fn new(buckets: Rc<RefCell<Vec<Vec<(K, V)>>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
         *iterator_count.borrow_mut() += 1;
@@ -211,8 +237,8 @@ where
 
 impl<K, V> Iterator for HashTableIterator<K, V>
 where
-    K: Clone + PartialEq + Hash,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
 {
     type Item = (K, V);
 
@@ -239,8 +265,8 @@ where
 
 impl<K, V> Drop for HashTableIterator<K, V>
 where
-    K: Clone + PartialEq + Hash,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
 {
     fn drop(&mut self) {
         *self.iterator_count.borrow_mut() -= 1;
