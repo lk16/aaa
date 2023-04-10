@@ -77,6 +77,48 @@ impl Variable {
         }
         *self = source.clone();
     }
+
+    // Does not copy references, but copies recursively
+    pub fn clone_recursive(&self) -> Self {
+        match self {
+            Self::None => Self::None,
+            Self::Integer(v) => Self::Integer(*v),
+            Self::Boolean(v) => Self::Boolean(*v),
+            Self::String(v) => {
+                let string = (**v).borrow().clone();
+                Self::String(Rc::new(RefCell::new(string)))
+            }
+            Self::Vector(v) => {
+                let mut cloned = Vector::new();
+                let source = (**v).borrow();
+                for item in source.iter() {
+                    cloned.push(item.clone_recursive())
+                }
+                Self::Vector(Rc::new(RefCell::new(cloned)))
+            }
+            Self::Set(v) => {
+                let mut cloned = Map::new();
+                let source = (**v).borrow();
+                for (item, _) in source.iter() {
+                    cloned.insert(item.clone_recursive(), ());
+                }
+                Self::Set(Rc::new(RefCell::new(cloned)))
+            }
+            Self::Map(v) => {
+                let mut cloned = Map::new();
+                let source = (**v).borrow();
+                for (key, value) in source.iter() {
+                    cloned.insert(key.clone_recursive(), value.clone_recursive());
+                }
+                Self::Map(Rc::new(RefCell::new(cloned)))
+            }
+            Self::Struct(_v) => todo!(),
+            Self::Enum(_v) => todo!(),
+            Self::VectorIterator(_) | Self::MapIterator(_) | Self::SetIterator(_) => {
+                todo!(); // Cannot recursively clone an iterator
+            }
+        }
+    }
 }
 
 impl Display for Variable {

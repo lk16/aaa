@@ -989,7 +989,9 @@ impl Stack {
     }
 
     pub fn copy(&mut self) {
-        todo!();
+        let top = self.top();
+        let copy = top.clone_recursive();
+        self.push(copy);
     }
 
     pub fn make_const(&mut self) {
