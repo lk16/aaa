@@ -6,6 +6,7 @@
 use std::{
     cell::RefCell,
     env,
+    ffi::CString,
     fmt::{Debug, Formatter, Result},
     fs,
     path::Path,
@@ -14,6 +15,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
     vec,
 };
+
+use nix::unistd::{self, ForkResult};
 
 use crate::{
     map::{Map, MapIterator},
@@ -753,11 +756,48 @@ impl Stack {
     }
 
     pub fn execve(&mut self) {
-        todo!(); // Consider using nix
+        let env_rc = self.pop_map();
+        let popped_env = &*env_rc.borrow();
+
+        let mut env: Vec<CString> = vec![];
+
+        for (key, value) in popped_env.iter() {
+            env.push(CString::new(format!("{key:}={value:}")).unwrap())
+        }
+
+        let argv_rc = self.pop_vector();
+        let popped_argv = &*argv_rc.borrow();
+
+        let mut argv: Vec<CString> = vec![];
+        for item in popped_argv.iter() {
+            match item {
+                Variable::String(v) => {
+                    let string = &*v.borrow();
+                    argv.push(CString::new(string.as_str()).unwrap())
+                }
+                _ => todo!(), // type error
+            }
+        }
+
+        let path_rc = self.pop_str();
+        let path = &*path_rc.borrow();
+        let path = CString::new(path.as_str()).unwrap();
+
+        let result = unistd::execve(&path, &argv, &env);
+
+        match result {
+            Ok(_) => (), // Cannot happen
+            Err(_) => self.push_bool(false),
+        }
     }
 
     pub fn fork(&mut self) {
-        todo!(); // Consider using nix
+        let result = unsafe { unistd::fork() };
+        match result {
+            Ok(ForkResult::Parent { child }) => self.push_int(child.as_raw() as isize),
+            Ok(ForkResult::Child) => self.push_int(0),
+            Err(_) => todo!(), // Change signature to handle errors
+        }
     }
 
     pub fn waitpid(&mut self) {
@@ -795,7 +835,8 @@ impl Stack {
     }
 
     pub fn getppid(&mut self) {
-        todo!(); // use nix
+        let ppid = unistd::getppid().as_raw();
+        self.push_int(ppid as isize);
     }
 
     pub fn getenv(&mut self) {
