@@ -60,7 +60,6 @@ fn vec[T]:clear      args v as       vec[T]
 fn vec[T]:const_iter args v as const vec[T]                                       return vec_const_iter[T]
 fn vec[T]:copy       args v as       vec[T]                                       return vec[T]
 fn vec[T]:empty      args v as const vec[T]                                       return bool
-fn vec[T]:get        args v as       vec[T], offset as const int                  return T
 fn vec[T]:get_copy   args v as const vec[T], offset as const int                  return T
 fn vec[T]:iter       args v as       vec[T]                                       return vec_iter[T]
 fn vec[T]:pop        args v as       vec[T]                                       return T
@@ -73,7 +72,6 @@ fn map[K, V]:const_iter args m as const map[K, V]                               
 fn map[K, V]:copy       args m as       map[K, V]                                   return map[K, V]
 fn map[K, V]:drop       args m as       map[K, V], key as const K                   return bool
 fn map[K, V]:empty      args m as const map[K, V]                                   return bool
-fn map[K, V]:get        args m as const map[K, V], key as const K                   return V, bool
 fn map[K, V]:get_copy   args m as const map[K, V], key as const K                   return V, bool
 fn map[K, V]:has_key    args m as const map[K, V], key as const K                   return bool
 fn map[K, V]:iter       args m as       map[K, V]                                   return map_iter[K, V]

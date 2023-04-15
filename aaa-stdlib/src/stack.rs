@@ -106,6 +106,7 @@ impl Stack {
     }
 
     pub fn push_str(&mut self, v: String) {
+        // TODO: make v a &str and remove all redundant String::from() calls
         let item = Variable::String(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -577,18 +578,15 @@ impl Stack {
         }
     }
 
-    pub fn vec_get(&mut self) {
-        todo!() // This will be removed, renane vec_get_copy() to vec_get()
-    }
-
     pub fn vec_get_copy(&mut self) {
+        // TODO rename to vec_get
         let offset = self.pop_int();
 
         let vector_rc = self.pop_vector();
         let vector = (*vector_rc).borrow();
 
         let gotten = vector.get(offset as usize);
-        self.push(gotten);
+        self.push(gotten.clone_recursive());
     }
 
     pub fn vec_set(&mut self) {
@@ -626,11 +624,8 @@ impl Stack {
         (*map).insert(key, value);
     }
 
-    pub fn map_get(&mut self) {
-        todo!(); // this will be removed, rename map_get_copy() to map_get(), similar to vec_get_copy()
-    }
-
     pub fn map_get_copy(&mut self) {
+        // TODO rename to map_get
         let key = self.pop();
         let map_rc = self.pop_map();
         let map = map_rc.borrow_mut();
@@ -641,7 +636,7 @@ impl Stack {
                 self.push_bool(false);
             }
             Some(value) => {
-                self.push(value.clone());
+                self.push(value.clone_recursive());
                 self.push_bool(true);
             }
         }
@@ -677,8 +672,14 @@ impl Stack {
         let mut map = map_rc.borrow_mut();
 
         match map.remove_entry(&key) {
-            None => self.push(Variable::None),
-            Some((k, v)) => self.push(v),
+            None => {
+                self.push(Variable::None);
+                self.push_bool(false);
+            }
+            Some((k, v)) => {
+                self.push(v);
+                self.push_bool(true);
+            }
         }
     }
 
@@ -687,15 +688,16 @@ impl Stack {
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
 
-        map.remove_entry(&key);
+        let result = map.remove_entry(&key);
+        self.push_bool(result.is_some());
     }
 
     pub fn str_append(&mut self) {
-        let lhs_rc = self.pop_str();
-        let lhs = (*lhs_rc).borrow();
-
         let rhs_rc = self.pop_str();
         let rhs = (*rhs_rc).borrow();
+
+        let lhs_rc = self.pop_str();
+        let lhs = (*lhs_rc).borrow();
 
         let combined = lhs.clone() + &rhs;
         self.push_str(combined);
@@ -771,7 +773,7 @@ impl Stack {
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
-        let replaced = search.replace(&*search, &replace);
+        let replaced = string.replace(&*search, &replace);
         self.push_str(replaced);
     }
 
@@ -790,7 +792,12 @@ impl Stack {
     }
 
     pub fn str_strip(&mut self) {
-        todo!(); // TODO remove or rename this
+        let string_rc = self.pop_str();
+        let string = &*string_rc.borrow();
+
+        let trimmed = string.trim();
+
+        self.push_str(String::from(trimmed));
     }
 
     pub fn str_find_after(&mut self) {
@@ -824,20 +831,41 @@ impl Stack {
     }
 
     pub fn str_substr(&mut self) {
-        let end = self.pop_int() as usize;
-        let start = self.pop_int() as usize;
+        let end = self.pop_int();
+        let start = self.pop_int();
 
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
-        // TODO be sure to fail in controlled manner if this doesn't hold: start <= end <= string.len()
+        if !(0 <= start && start <= end && end as usize <= string.len()) {
+            self.push_str(String::from(""));
+            self.push_bool(false);
+            return;
+        }
 
-        let substr = string[start..end].to_owned();
+        let substr = string[start as usize..end as usize].to_owned();
         self.push_str(substr);
+        self.push_bool(true);
     }
 
     pub fn str_to_bool(&mut self) {
-        todo!(); // Decide if we want to keep this at all
+        let string_rc = self.pop_str();
+        let string = (*string_rc).borrow();
+
+        match string.as_str() {
+            "true" => {
+                self.push_bool(true);
+                self.push_bool(true);
+            }
+            "false" => {
+                self.push_bool(false);
+                self.push_bool(true);
+            }
+            _ => {
+                self.push_bool(false);
+                self.push_bool(false);
+            }
+        }
     }
 
     pub fn str_to_int(&mut self) {
@@ -859,11 +887,27 @@ impl Stack {
     }
 
     pub fn vec_copy(&mut self) {
-        todo!();
+        let vector = self.pop();
+
+        match vector {
+            Variable::Vector(_) => (),
+            _ => self.pop_type_error("vec", &vector),
+        }
+
+        let copy = vector.clone_recursive();
+        self.push(copy);
     }
 
     pub fn map_copy(&mut self) {
-        todo!();
+        let map = self.pop();
+
+        match map {
+            Variable::Map(_) => (),
+            _ => self.pop_type_error("map", &map),
+        }
+
+        let copy = map.clone_recursive();
+        self.push(copy);
     }
 
     pub fn struct_field_query(&mut self, field_name: &str) {

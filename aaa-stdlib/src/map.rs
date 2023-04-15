@@ -201,7 +201,7 @@ where
                 parts.push(format!("{k:?}: {v:?}"));
             }
         }
-        write!(f, "{{{}}}", parts.join(","))
+        write!(f, "{{{}}}", parts.join(", "))
     }
 }
 
