@@ -16,7 +16,7 @@ def compile(source: str) -> str:
     source_path = Path(__file__).parent / "src" / source
 
     runner = Runner(source_path, None, False)
-    exit_code = runner.run(None, True, binary, False)
+    exit_code = runner.run(True, binary, False)
     assert 0 == exit_code
     return binary
 

@@ -25,7 +25,7 @@ def test_readme_command(capfd: CaptureFixture[str]) -> None:
         file = Path(gettempdir()) / temp_file.name
         file.write_text("fn main { " + command + " }")
         runner = Runner(file, None, False)
-        runner.run(None, True, None, True)
+        runner.run(True, None, True)
 
     stdout, stderr = capfd.readouterr()
     assert str(stderr) == ""

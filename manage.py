@@ -21,19 +21,13 @@ def cli() -> None:
 @click.argument("code", type=str)
 @click.option("-c", "--compile", is_flag=True)
 @click.option("-r", "--run", is_flag=True)
-@click.option("--c-file")
 @click.option("-o", "--binary")
 @click.option("-v", "--verbose", is_flag=True)
 def cmd(
-    code: str,
-    compile: bool,
-    run: bool,
-    verbose: bool,
-    c_file: Optional[str],
-    binary: Optional[str],
+    code: str, compile: bool, run: bool, verbose: bool, binary: Optional[str]
 ) -> None:
     runner = Runner.without_file(code, None, verbose)
-    exit_code = runner.run(c_file, compile, binary, run)
+    exit_code = runner.run(compile, binary, run)
     exit(exit_code)
 
 
@@ -41,19 +35,13 @@ def cmd(
 @click.argument("path", type=click.Path(exists=True))
 @click.option("-c", "--compile", is_flag=True)
 @click.option("-r", "--run", is_flag=True)
-@click.option("--c-file")
 @click.option("-o", "--binary")
 @click.option("-v", "--verbose", is_flag=True)
 def run(
-    path: str,
-    compile: bool,
-    run: bool,
-    verbose: bool,
-    c_file: Optional[str],
-    binary: Optional[str],
+    path: str, compile: bool, run: bool, verbose: bool, binary: Optional[str]
 ) -> None:
     runner = Runner(Path(path), None, verbose)
-    exit_code = runner.run(c_file, compile, binary, run)
+    exit_code = runner.run(compile, binary, run)
     exit(exit_code)
 
 
@@ -79,19 +67,13 @@ def runtests() -> None:
 @click.argument("path", type=click.Path(exists=True))
 @click.option("-c", "--compile", is_flag=True)
 @click.option("-r", "--run", is_flag=True)
-@click.option("--c-file")
 @click.option("-o", "--binary")
 @click.option("-v", "--verbose", is_flag=True)
 def test(
-    path: str,
-    compile: bool,
-    run: bool,
-    verbose: bool,
-    c_file: Optional[str],
-    binary: Optional[str],
+    path: str, compile: bool, run: bool, verbose: bool, binary: Optional[str]
 ) -> None:
     test_runner = TestRunner(Path(path), verbose)
-    exit_code = test_runner.run(c_file, compile, binary, run)
+    exit_code = test_runner.run(compile, binary, run)
     exit(exit_code)
 
 

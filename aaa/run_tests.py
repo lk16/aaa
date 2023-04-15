@@ -23,9 +23,7 @@ class TestRunner:
         self.test_functions: List[Function] = []
         self.verbose = verbose
 
-    def run(
-        self, c_file: Optional[str], compile: bool, binary: Optional[str], run: bool
-    ) -> int:
+    def run(self, compile: bool, binary: Optional[str], run: bool) -> int:
         main_file_code = self._build_main_test_file()
 
         if self.exceptions:
@@ -36,7 +34,7 @@ class TestRunner:
             return 1
 
         runner = Runner.without_file(main_file_code, self.parsed_files, self.verbose)
-        return runner.run(c_file, compile, binary, run)
+        return runner.run(compile, binary, run)
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.tests_root, recursive=True)

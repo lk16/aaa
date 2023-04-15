@@ -44,7 +44,7 @@ def check_aaa_full_source_multi_file(
 
         with redirect_stdout(StringIO()) as stdout:
             with redirect_stderr(StringIO()) as stderr:
-                runner_exit_code = runner.run(None, True, binary, False)
+                runner_exit_code = runner.run(True, binary, False)
 
         if runner_exit_code == 0:
             process = subprocess.run([binary], capture_output=True)

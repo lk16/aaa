@@ -50,14 +50,7 @@ class Runner:
 
         return Path(stdlib_folder) / "builtins.aaa"
 
-    def run(
-        self, c_file: Optional[str], compile: bool, binary: Optional[str], run: bool
-    ) -> int:
-        if c_file is not None:
-            # TODO adapt using c_file for Rust transpiler
-            print("c_file is currently unused")
-            raise NotImplementedError
-
+    def run(self, compile: bool, binary: Optional[str], run: bool) -> int:
         if binary is not None and not compile:
             print(
                 "Specifying binary path without compiling does not make sense.",
