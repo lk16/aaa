@@ -78,6 +78,29 @@ impl Variable {
         *self = source.clone();
     }
 
+    pub fn kind(&self) -> String {
+        match self {
+            Self::None => String::from("none"),
+            Self::Integer(_) => String::from("int"),
+            Self::Boolean(_) => String::from("bool"),
+            Self::String(_) => String::from("str"),
+            Self::Vector(_) => String::from("vec"),
+            Self::Set(_) => String::from("set"),
+            Self::Map(_) => String::from("map"),
+            Self::Struct(s) => {
+                let type_name = &(**s).borrow().type_name;
+                String::from(format!("(struct {type_name})"))
+            }
+            Self::VectorIterator(_) => String::from("vec_iter"),
+            Self::MapIterator(_) => String::from("map_iter"),
+            Self::SetIterator(_) => String::from("set_iter"),
+            Self::Enum(e) => {
+                let type_name = &(**e).borrow().type_name;
+                String::from(format!("(enum {type_name})"))
+            }
+        }
+    }
+
     // Does not copy references, but copies recursively
     pub fn clone_recursive(&self) -> Self {
         // TODO prevent infinite recursion.

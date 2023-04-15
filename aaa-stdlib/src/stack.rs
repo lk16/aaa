@@ -70,6 +70,23 @@ impl Stack {
         self.items.len()
     }
 
+    fn type_error(&self, message: &str) -> ! {
+        eprintln!("Type error: {}", message);
+        process::exit(1);
+    }
+
+    fn pop_type_error(&self, expected_type: &str, found: &Variable) -> ! {
+        let found = found.kind();
+        let msg = format!("pop failed, expected {expected_type}, found {found}");
+        self.type_error(&msg);
+    }
+
+    fn type_error_vec_str(&self, v: &Variable) {
+        let found = v.kind();
+        let msg = format!("expected vec[str], but found {found} in vec");
+        self.type_error(&msg);
+    }
+
     pub fn push_int(&mut self, v: isize) {
         let item = Variable::Integer(v);
         self.push(item);
@@ -131,13 +148,13 @@ impl Stack {
     pub fn pop(&mut self) -> Variable {
         match self.items.pop() {
             Some(popped) => popped,
-            None => todo!(), // TODO handle popping from empty stack
+            None => self.type_error("cannot pop from empty stack"),
         }
     }
 
     fn top(&mut self) -> &Variable {
         match self.items.last() {
-            None => todo!(),
+            None => self.type_error("cannot get top of empty stack"),
             Some(v) => v,
         }
     }
@@ -145,77 +162,77 @@ impl Stack {
     pub fn pop_int(&mut self) -> isize {
         match self.pop() {
             Variable::Integer(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("int", &v),
         }
     }
 
     pub fn pop_bool(&mut self) -> bool {
         match self.pop() {
             Variable::Boolean(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("bool", &v),
         }
     }
 
     pub fn pop_str(&mut self) -> Rc<RefCell<String>> {
         match self.pop() {
             Variable::String(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("str", &v),
         }
     }
 
     pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<Variable>>> {
         match self.pop() {
             Variable::Vector(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("vec", &v),
         }
     }
 
     pub fn pop_set(&mut self) -> Rc<RefCell<Set<Variable>>> {
         match self.pop() {
             Variable::Set(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("set", &v),
         }
     }
 
     pub fn pop_map(&mut self) -> Rc<RefCell<Map<Variable, Variable>>> {
         match self.pop() {
             Variable::Map(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("map", &v),
         }
     }
 
     pub fn pop_struct(&mut self) -> Rc<RefCell<Struct>> {
         match self.pop() {
             Variable::Struct(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("struct", &v),
         }
     }
 
     pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<Variable>>> {
         match self.pop() {
             Variable::VectorIterator(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("vec_iter", &v),
         }
     }
 
     pub fn pop_map_iterator(&mut self) -> Rc<RefCell<MapIterator<Variable, Variable>>> {
         match self.pop() {
             Variable::MapIterator(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("map_iter", &v),
         }
     }
 
     pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<Variable>>> {
         match self.pop() {
             Variable::SetIterator(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("set_iter", &v),
         }
     }
 
     pub fn pop_enum(&mut self) -> Rc<RefCell<Enum>> {
         match self.pop() {
             Variable::Enum(v) => v,
-            _ => todo!(), // TODO handle type error
+            v => self.pop_type_error("enum", &v),
         }
     }
 
@@ -428,7 +445,7 @@ impl Stack {
 
         match popped {
             Some(popped) => self.push(popped),
-            None => todo!(),
+            None => self.type_error("cannot pop from empty vector"),
         }
     }
 
@@ -491,7 +508,10 @@ impl Stack {
         let map = map_rc.borrow_mut();
 
         match map.get(&key) {
-            None => todo!(), // In C we would push NULL here. Figure out what to do.
+            None => {
+                self.push(Variable::None);
+                self.push_bool(false);
+            }
             Some(value) => {
                 self.push(value.clone());
                 self.push_bool(true);
@@ -529,7 +549,7 @@ impl Stack {
         let mut map = map_rc.borrow_mut();
 
         match map.remove_entry(&key) {
-            None => todo!(), // In C we push NULL here, see also map_get_copy()
+            None => self.push(Variable::None),
             Some((k, v)) => self.push(v),
         }
     }
@@ -539,14 +559,10 @@ impl Stack {
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
 
-        match map.remove_entry(&key) {
-            None => todo!(), // In C we push NULL here, see also map_get_copy()
-            Some(_) => (),
-        }
+        map.remove_entry(&key);
     }
 
     pub fn str_append(&mut self) {
-        // TODO we crash if lhs and rhs are referring the same String
         let lhs_rc = self.pop_str();
         let lhs = (*lhs_rc).borrow();
 
@@ -589,7 +605,7 @@ impl Stack {
                     let part = (*part).borrow().clone();
                     parts.push(part)
                 }
-                _ => todo!(), // type error
+                v => self.type_error_vec_str(&v),
             }
         }
 
@@ -778,7 +794,7 @@ impl Stack {
                     let string = &*v.borrow();
                     argv.push(CString::new(string.as_str()).unwrap())
                 }
-                _ => todo!(), // type error
+                v => self.type_error_vec_str(&v),
             }
         }
 
