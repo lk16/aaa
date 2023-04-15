@@ -47,6 +47,17 @@ AAA_RUST_BUILTIN_FUNCS = {
     ">=": "greater_equal",
 }
 
+CARGO_TOML_TEMPLATE = """
+[package]
+name = "aaa-stdlib-user"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aaa-stdlib = {{ version = "0.1.0", path = "{stdlib_impl_path}" }}
+"""
+
 
 class Transpiler:
     def __init__(
@@ -72,31 +83,32 @@ class Transpiler:
             or Path(NamedTemporaryFile(delete=False).name).resolve()
         )
 
-    def run(self, compile: bool, run_binary: bool) -> int:
-        # TODO clean this up
-        src_folder = self.transpiled_rust_root / "src"
-        src_folder.mkdir(parents=True, exist_ok=True)
-        cargo_file = (self.transpiled_rust_root / "Cargo.toml").resolve()
-        aaa_stdlib_impl_path = (Path(__file__).parent / "../../aaa-stdlib").resolve()
+    def get_stdlib_impl_path(self) -> Path:
+        return (Path(__file__).parent / "../../aaa-stdlib").resolve()
 
-        cargo_file.write_text(
-            "[package]\n"
-            + 'name = "aaa-stdlib-user"\n'
-            + 'version = "0.1.0"\n'
-            + 'edition = "2021"\n'
-            + "\n"
-            + "# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html\n"
-            + "\n"
-            + "[dependencies]\n"
-            + f'aaa-stdlib = {{ version = "0.1.0", path = "{aaa_stdlib_impl_path}" }}\n'
+    def get_cargo_toml_path(self) -> Path:
+        return (self.transpiled_rust_root / "Cargo.toml").resolve()
+
+    def get_generated_source_path(self) -> Path:
+        return Path(self.transpiled_rust_root / "src/main.rs")
+
+    def run(self, compile: bool, run_binary: bool) -> int:
+        generated_rust_file = self.get_generated_source_path()
+        cargo_toml = self.get_cargo_toml_path()
+        stdlib_impl_path = self.get_stdlib_impl_path()
+
+        generated_rust_file.parent.mkdir(parents=True, exist_ok=True)
+
+        cargo_toml.write_text(
+            CARGO_TOML_TEMPLATE.format(stdlib_impl_path=stdlib_impl_path)
         )
 
         code = self._generate_rust_file()
 
-        Path(self.transpiled_rust_root / "src/main.rs").write_text(code)
+        generated_rust_file.write_text(code)
 
         if compile:  # pragma: nocover
-            command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_file)]
+            command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_toml)]
             exit_code = subprocess.run(command).returncode
 
             if exit_code != 0:
