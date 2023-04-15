@@ -31,6 +31,7 @@ jobs:
       with:
         path: ~/.cache/pre-commit
         key: pre-commit-${{ runner.os }}-${{ hashFiles('**/.pre-commit-config.yaml') }}
+    - name: Run linters
       run:
         poetry add pre-commit &&
         poetry run pre-commit run --all-files
