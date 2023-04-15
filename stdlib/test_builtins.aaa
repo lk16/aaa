@@ -267,7 +267,7 @@ fn test_vec_push_copy {
         vec[int]
         dup x vec:push
         x <- { 4 }
-        0 vec:get_copy
+        0 vec:get
         3 = assert
     }
 }
@@ -283,7 +283,7 @@ fn test_vec_push_twenty {
 
     0
     while dup 20 < {
-        over over vec:get_copy
+        over over vec:get
         over = assert
         1 +
     }
@@ -304,11 +304,11 @@ fn test_vec_get_copy {
     vec[int]
     use v {
         v 3 vec:push
-        v 0 vec:get_copy
+        v 0 vec:get
         use x {
             x <- { 4 }
         }
-        v 0 vec:get_copy
+        v 0 vec:get
         3 = assert
     }
 }
@@ -329,7 +329,7 @@ fn test_vec_set_copies {
     use v, x {
         v 0 x vec:set
         x <- { 5 }
-        v 0 vec:get_copy
+        v 0 vec:get
         4 = assert
     }
 }
@@ -442,7 +442,7 @@ fn test_map_twenty_items {
 
     0
     while dup 20 < {
-        over over map:get_copy
+        over over map:get
         assert
         over = assert
         1 +
@@ -455,7 +455,7 @@ fn test_map_twenty_items {
 fn test_map_get_set {
     map[str, int]
     dup "one" 1 map:set
-    "one" map:get_copy assert
+    "one" map:get assert
     1 = assert
 }
 
@@ -464,12 +464,12 @@ fn test_map_get_copy {
     "one"
     use m, k {
         m k 1 map:set
-        m k map:get_copy
+        m k map:get
         assert
         use v {
             v <- { 2 }
         }
-        m k map:get_copy
+        m k map:get
         assert
         1 = assert
     }
@@ -479,7 +479,7 @@ fn test_map_get_set_update {
     map[str, int]
     dup "one" 1 map:set
     dup "one" 2 map:set
-    "one" map:get_copy
+    "one" map:get
     assert
     2 = assert
 }
@@ -487,7 +487,7 @@ fn test_map_get_set_update {
 fn test_map_get_fail {
     map[str, int]
     dup "one" 1 map:set
-    "two" map:get_copy
+    "two" map:get
     not assert
     drop
 }

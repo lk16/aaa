@@ -577,8 +577,7 @@ impl Stack {
         }
     }
 
-    pub fn vec_get_copy(&mut self) {
-        // TODO rename to vec_get
+    pub fn vec_get(&mut self) {
         let offset = self.pop_int();
 
         let vector_rc = self.pop_vector();
@@ -623,8 +622,7 @@ impl Stack {
         (*map).insert(key, value);
     }
 
-    pub fn map_get_copy(&mut self) {
-        // TODO rename to map_get
+    pub fn map_get(&mut self) {
         let key = self.pop();
         let map_rc = self.pop_map();
         let map = map_rc.borrow_mut();
