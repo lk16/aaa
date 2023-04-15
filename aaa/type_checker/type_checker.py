@@ -86,7 +86,6 @@ class TypeChecker:
             checker = SingleFunctionTypeChecker(function, self)
 
             try:
-                # TODO extract position stacks instead and print them if verbose is enabled
                 position_stacks = checker.run()
             except TypeCheckerException as e:
                 self.exceptions.append(e)
