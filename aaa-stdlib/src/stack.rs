@@ -9,16 +9,24 @@ use std::{
     ffi::CString,
     fmt::{Debug, Formatter, Result},
     fs,
+    net::Ipv4Addr,
     path::Path,
     process,
     rc::Rc,
+    str::FromStr,
     time::{SystemTime, UNIX_EPOCH},
     vec,
 };
 
 use nix::{
-    sys::wait::{WaitPidFlag, WaitStatus},
-    unistd::{self, ForkResult, Pid},
+    sys::{
+        socket::{
+            accept, bind, connect, getpeername, listen, socket, AddressFamily, SockFlag, SockType,
+            SockaddrIn,
+        },
+        wait::{WaitPidFlag, WaitStatus},
+    },
+    unistd::{self, read, ForkResult, Pid},
 };
 
 use crate::{
@@ -397,8 +405,20 @@ impl Stack {
     }
 
     pub fn socket(&mut self) {
-        todo!(); // Split this into UDP and TCP sockets
-                 // See also https://doc.rust-lang.org/std/net/
+        // NOTE: protocol is not used
+        let protocol = self.pop_int();
+
+        let type_ = self.pop_int();
+        let family = self.pop_int();
+
+        // TODO This is very clunky.
+        let family = AddressFamily::from_i32(family as i32).unwrap();
+        let type_ = SockType::try_from(type_ as i32).unwrap();
+
+        let result = socket(family, type_, SockFlag::empty(), None);
+
+        self.push_int(result.unwrap_or(0) as isize);
+        self.push_bool(result.is_ok());
     }
 
     pub fn exit(&mut self) -> ! {
@@ -407,28 +427,117 @@ impl Stack {
     }
 
     pub fn write(&mut self) {
-        todo!(); // Split for actual files on a filesystem and sockets
-                 // or consider using the nix library
+        let data_rc = self.pop_str();
+        let data = &*data_rc.borrow();
+
+        let fd = self.pop_int();
+        let data = data.clone();
+
+        let result = unistd::write(fd as i32, data.as_bytes());
+
+        self.push_int(result.unwrap_or(0) as isize);
+        self.push_bool(result.is_ok());
     }
 
     pub fn connect(&mut self) {
-        todo!();
+        let port = self.pop_int();
+
+        let ip_addr_rc = self.pop_str();
+        let ip_addr = &*ip_addr_rc.borrow();
+
+        let fd = self.pop_int();
+
+        let addr = SockaddrIn::from_str(&format!("{ip_addr}:{port}")).unwrap();
+
+        let result = connect(fd as i32, &addr);
+
+        self.push_bool(result.is_ok());
     }
 
     pub fn read(&mut self) {
-        todo!();
+        let n = self.pop_int();
+        let fd = self.pop_int();
+
+        let mut buffer = vec![0u8; n as usize];
+
+        let result = read(fd as i32, &mut buffer[..]);
+
+        match result {
+            Ok(read_bytes) => {
+                let string = String::from_utf8(buffer);
+
+                match string {
+                    Ok(string) => {
+                        self.push_str(string);
+                        self.push_bool(true);
+                    }
+                    Err(_) => {
+                        self.push_str(String::from(""));
+                        self.push_bool(false);
+                    }
+                }
+            }
+            Err(_) => {
+                self.push_str(String::from(""));
+                self.push_bool(false);
+            }
+        }
     }
 
     pub fn bind(&mut self) {
-        todo!();
+        let port = self.pop_int();
+        let ip_addr_rc = self.pop_str();
+        let ip_addr = &*ip_addr_rc.borrow();
+        let fd = self.pop_int();
+
+        let addr = SockaddrIn::from_str(&format!("{ip_addr}:{port}")).unwrap();
+
+        let result = bind(fd as i32, &addr);
+        self.push_bool(result.is_ok());
     }
 
     pub fn listen(&mut self) {
-        todo!();
+        let backlog = self.pop_int();
+        let fd = self.pop_int();
+
+        let result = listen(fd as i32, backlog as usize);
+        self.push_bool(result.is_ok());
     }
 
     pub fn accept(&mut self) {
-        todo!();
+        let fd = self.pop_int();
+        let result = accept(fd as i32);
+
+        match result {
+            Ok(fd) => {
+                let addr: nix::Result<SockaddrIn> = getpeername(fd);
+                match addr {
+                    Err(_) => {
+                        self.push_str(String::from(""));
+                        self.push_int(0);
+                        self.push_int(0);
+                        self.push_bool(false);
+                    }
+                    Ok(addr) => {
+                        let ip = addr.ip();
+                        let ip = Ipv4Addr::from(ip).to_string();
+
+                        let port = addr.port();
+
+                        self.push_str(ip);
+                        self.push_int(port as isize);
+                        self.push_int(fd as isize);
+                        self.push_bool(true);
+                    }
+                }
+            }
+            Err(_) => {
+                self.push_str(String::from(""));
+                self.push_int(0);
+                self.push_int(0);
+                self.push_bool(false);
+            }
+        }
     }
 
     pub fn nop(&mut self) {}

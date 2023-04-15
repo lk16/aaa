@@ -43,7 +43,7 @@ fn main {
 
         // client fd (pushed by accept) is popped by write
 
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 27\r\n\r\n{\"message\": \"Hello world!\"}"
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 28\r\n\r\n{\"message\": \"Hello world!\"}\n"
         write
 
         if not dup {
