@@ -9,7 +9,7 @@ use std::{
     ffi::CString,
     fmt::{Debug, Formatter, Result},
     fs,
-    net::Ipv4Addr,
+    net::{Ipv4Addr, ToSocketAddrs},
     path::Path,
     process,
     rc::Rc,
@@ -442,10 +442,29 @@ impl Stack {
     pub fn connect(&mut self) {
         let port = self.pop_int();
 
-        let ip_addr_rc = self.pop_str();
-        let ip_addr = &*ip_addr_rc.borrow();
+        let domain_rc = self.pop_str();
+        let domain = &*domain_rc.borrow();
 
         let fd = self.pop_int();
+
+        // TODO move domain name resolving out of this function, consider creating a dedicated stdlib func for this
+        let authority = &format!("{domain}:{port}");
+
+        let socket_addr = match authority.to_socket_addrs() {
+            Err(_) => {
+                self.push_bool(false);
+                return;
+            }
+            Ok(mut socket_addr_iter) => match socket_addr_iter.next() {
+                Some(socket_addr) => socket_addr,
+                None => {
+                    self.push_bool(false);
+                    return;
+                }
+            },
+        };
+
+        let ip_addr = socket_addr.ip().to_string();
 
         let addr = SockaddrIn::from_str(&format!("{ip_addr}:{port}")).unwrap();
 
