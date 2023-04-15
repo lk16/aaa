@@ -105,9 +105,8 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_str(&mut self, v: String) {
-        // TODO: make v a &str and remove all redundant String::from() calls
-        let item = Variable::String(Rc::new(RefCell::new(v)));
+    pub fn push_str(&mut self, v: &str) {
+        let item = Variable::String(Rc::new(RefCell::new(String::from(v))));
         self.push(item);
     }
 
@@ -345,7 +344,7 @@ impl Stack {
     pub fn repr(&mut self) {
         let top = self.pop();
         let repr = format!("{top:?}");
-        self.push_str(repr);
+        self.push_str(&repr);
     }
 
     pub fn drop(&mut self) {
@@ -488,17 +487,17 @@ impl Stack {
 
                 match string {
                     Ok(string) => {
-                        self.push_str(string);
+                        self.push_str(&string);
                         self.push_bool(true);
                     }
                     Err(_) => {
-                        self.push_str(String::from(""));
+                        self.push_str("");
                         self.push_bool(false);
                     }
                 }
             }
             Err(_) => {
-                self.push_str(String::from(""));
+                self.push_str("");
                 self.push_bool(false);
             }
         }
@@ -533,7 +532,7 @@ impl Stack {
                 let addr: nix::Result<SockaddrIn> = getpeername(fd);
                 match addr {
                     Err(_) => {
-                        self.push_str(String::from(""));
+                        self.push_str("");
                         self.push_int(0);
                         self.push_int(0);
                         self.push_bool(false);
@@ -544,7 +543,7 @@ impl Stack {
 
                         let port = addr.port();
 
-                        self.push_str(ip);
+                        self.push_str(&ip);
                         self.push_int(port as isize);
                         self.push_int(fd as isize);
                         self.push_bool(true);
@@ -552,7 +551,7 @@ impl Stack {
                 }
             }
             Err(_) => {
-                self.push_str(String::from(""));
+                self.push_str("");
                 self.push_int(0);
                 self.push_int(0);
                 self.push_bool(false);
@@ -700,7 +699,7 @@ impl Stack {
         let lhs = (*lhs_rc).borrow();
 
         let combined = lhs.clone() + &rhs;
-        self.push_str(combined);
+        self.push_str(&combined);
     }
 
     pub fn str_contains(&mut self) {
@@ -743,7 +742,7 @@ impl Stack {
         let string = (*string_rc).borrow();
 
         let joined = parts.join(&string);
-        self.push_str(joined);
+        self.push_str(&joined);
     }
 
     pub fn str_len(&mut self) {
@@ -754,13 +753,13 @@ impl Stack {
     pub fn str_lower(&mut self) {
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
-        self.push_str(string.to_lowercase());
+        self.push_str(&string.to_lowercase());
     }
 
     pub fn str_upper(&mut self) {
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
-        self.push_str(string.to_uppercase());
+        self.push_str(&string.to_uppercase());
     }
 
     pub fn str_replace(&mut self) {
@@ -774,7 +773,7 @@ impl Stack {
         let string = (*string_rc).borrow();
 
         let replaced = string.replace(&*search, &replace);
-        self.push_str(replaced);
+        self.push_str(&replaced);
     }
 
     pub fn str_split(&mut self) {
@@ -797,7 +796,7 @@ impl Stack {
 
         let trimmed = string.trim();
 
-        self.push_str(String::from(trimmed));
+        self.push_str(trimmed);
     }
 
     pub fn str_find_after(&mut self) {
@@ -838,12 +837,12 @@ impl Stack {
         let string = (*string_rc).borrow();
 
         if !(0 <= start && start <= end && end as usize <= string.len()) {
-            self.push_str(String::from(""));
+            self.push_str("");
             self.push_bool(false);
             return;
         }
 
-        let substr = string[start as usize..end as usize].to_owned();
+        let substr = &string[start as usize..end as usize];
         self.push_str(substr);
         self.push_bool(true);
     }
@@ -1028,7 +1027,7 @@ impl Stack {
         match dir {
             Ok(dir) => {
                 let path: String = dir.to_str().unwrap().to_owned(); // TODO remove unwrap(), figure out what can fail
-                self.push_str(path);
+                self.push_str(&path);
             }
             Err(_) => todo!(), // getcwd() can fail, but the signature doesn't reflect that
         }
@@ -1065,11 +1064,11 @@ impl Stack {
 
         match value {
             Ok(value) => {
-                self.push_str(value);
+                self.push_str(&value);
                 self.push_bool(true);
             }
             Err(_) => {
-                self.push_str(String::from(""));
+                self.push_str("");
                 self.push_bool(false);
             }
         }

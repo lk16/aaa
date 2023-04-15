@@ -382,7 +382,7 @@ class Transpiler:
 
     def _generate_rust_string_literal(self, string_literal: StringLiteral) -> str:
         string_value = repr(string_literal.value)[1:-1].replace('"', '\\"')
-        return self._indent(f'stack.push_str(String::from("{string_value}"));\n')
+        return self._indent(f'stack.push_str("{string_value}");\n')
 
     def _generate_rust_while_loop(self, while_loop: WhileLoop) -> str:
 
@@ -500,7 +500,7 @@ class Transpiler:
             if var_type.name == "int":
                 return self._indent("stack.push_int(0);\n")
             elif var_type.name == "str":
-                return self._indent('stack.push_str(String::from(""));\n')
+                return self._indent('stack.push_str("");\n')
             elif var_type.name == "bool":
                 return self._indent("stack.push_bool(false);\n")
             elif var_type.name == "vec":
