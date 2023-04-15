@@ -922,7 +922,7 @@ impl Stack {
 
     pub fn unlink(&mut self) {
         let path_rc = self.pop_str();
-        let path = path_rc.borrow();
+        let path = path_rc.borrow().clone();
 
         self.push_bool(fs::remove_file(&*path).is_ok());
     }

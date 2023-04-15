@@ -208,11 +208,7 @@ def test_unlink(source: str, success: bool) -> None:
     if success:
         dummy_file.touch()
 
-    binary = compile(source)
-    stdout, stderr, exit_code = run(binary)
-
-    if success:
-        dummy_file.touch()
+    stdout, stderr, exit_code = compile_run(source)
 
     if success:
         assert not dummy_file.exists()
