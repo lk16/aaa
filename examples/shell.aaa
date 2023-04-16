@@ -2,9 +2,6 @@
 fn run_process args input as str {
     if input "" str:equals not {
 
-        1 fsync drop
-        2 fsync drop
-
         input " " str:split dup 0 vec:get swap
         environ
         execve

@@ -4,7 +4,7 @@
 - [ ] Reset `errno` in case C stdlib functions fail
 - [ ] Run `gcov` to find missing coverage
 - [ ] Add transpiling to `README.md`
-- [ ] Add remaining tests for syscalls `open`, `read`, `write`, `close`, `socket`, `bind`, `listen`, `accept`, `connect` and `fsync`
+- [ ] Add remaining tests for syscalls `open`, `read`, `write`, `close`, `socket`, `bind`, `listen`, `accept` and `connect`
 - [ ] Don't rebuild executables if it's newer than its dependencies
 
 ### Improving aaa_stdlib.a

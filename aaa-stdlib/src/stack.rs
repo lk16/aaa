@@ -798,7 +798,7 @@ impl Stack {
     }
 
     pub fn str_find_after(&mut self) {
-        let start = self.pop_int() as usize;
+        let start = self.pop_int();
 
         let search_rc = self.pop_str();
         let search = (*search_rc).borrow();
@@ -806,7 +806,13 @@ impl Stack {
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
-        // TODO what happens if start < 0 or start >= string.len() ?
+        if !(0 <= start && start as usize <= string.len()) {
+            self.push_str("");
+            self.push_bool(false);
+            return;
+        }
+
+        let start = start as usize;
 
         let found = string[start..].find(&*search).map(|i| i + start);
 
@@ -866,8 +872,6 @@ impl Stack {
     }
 
     pub fn str_to_int(&mut self) {
-        // TODO Decide if we want to keep this at all
-
         let string_rc = self.pop_str();
         let string = &*string_rc.borrow();
 
@@ -922,10 +926,6 @@ impl Stack {
         let mut struct_ = struct_rc.borrow_mut();
 
         struct_.values.insert(String::from(field_name), value);
-    }
-
-    pub fn fsync(&mut self) {
-        todo!(); // will be removed, there is no Rust equivalent
     }
 
     pub fn environ(&mut self) {

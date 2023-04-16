@@ -134,7 +134,6 @@ fn environ return map[str, str]
 fn execve args path as const str, argv as const vec[str], env as const map[str, str] return bool
 fn exit args code as const int return never
 fn fork return int
-fn fsync args fd as const int return bool
 fn getcwd return str
 fn getenv args name as const str return str, bool
 fn getpid return int
