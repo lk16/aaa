@@ -28,12 +28,6 @@ fn main {
     getppid .
     "\n" .
 
-    "gettimeofday = " .
-    gettimeofday .
-    " " .
-    .
-    "\n" .
-
     "FOO" getenv
     not assert
     "" str:equals assert
@@ -48,6 +42,8 @@ fn main {
 
     "time = " .
     time .
+    " " .
+    .
     "\n" .
 
     "/dev/null" 0 0 open assert // open /dev/null

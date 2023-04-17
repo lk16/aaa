@@ -61,12 +61,12 @@ def test_exit(source: str, expected_exitcode: int) -> None:
     assert expected_exitcode == exit_code
 
 
-def test_gettimeofday() -> None:
-    stdout, stderr, exit_code = compile_run("gettimeofday.aaa")
+def test_time() -> None:
+    stdout, stderr, exit_code = compile_run("time.aaa")
 
     printed = stdout.strip().split()
-    printed_usec = int(printed[0])
-    printed_sec = int(printed[1])
+    printed_usec = int(printed[1])
+    printed_sec = int(printed[0])
 
     current_time = int(time())
     assert current_time - printed_sec in [0, 1]

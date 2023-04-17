@@ -138,7 +138,7 @@ fn getcwd return str
 fn getenv args name as const str return str, bool
 fn getpid return int
 fn getppid return int
-fn gettimeofday return int, int
+fn time return int, int
 fn listen args fd as const int, backlog as const int return bool
 fn open args path as const str, flag as const int, mode as const int return int, bool
 fn read args fd as const int, n as const int return str, bool

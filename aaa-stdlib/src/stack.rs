@@ -974,7 +974,7 @@ impl Stack {
         let result = unistd::execve(&path, &argv, &env);
 
         match result {
-            Ok(_) => (), // Cannot happen
+            Ok(_) => unreachable!(),
             Err(_) => self.push_bool(false),
         }
     }
@@ -1077,8 +1077,7 @@ impl Stack {
         *var = popped;
     }
 
-    pub fn gettimeofday(&mut self) {
-        // TODO consider renaming gettimeofday to time
+    pub fn time(&mut self) {
         let now = SystemTime::now();
 
         match now.duration_since(UNIX_EPOCH) {
@@ -1087,7 +1086,7 @@ impl Stack {
                 self.push_int((duration_micro_sec / 1_000_000) as isize);
                 self.push_int((duration_micro_sec % 1_000_000) as isize);
             }
-            Err(_) => todo!(), // do we just crash here?
+            Err(_) => unreachable!(),
         }
     }
 
