@@ -19,14 +19,16 @@ use std::{
 };
 
 use nix::{
+    fcntl::{open, OFlag},
     sys::{
         socket::{
             accept, bind, connect, getpeername, listen, socket, AddressFamily, SockFlag, SockType,
             SockaddrIn,
         },
+        stat::Mode,
         wait::{WaitPidFlag, WaitStatus},
     },
-    unistd::{self, read, ForkResult, Pid},
+    unistd::{self, close, read, ForkResult, Pid},
 };
 
 use crate::{
@@ -1041,7 +1043,11 @@ impl Stack {
     }
 
     pub fn close(&mut self) {
-        todo!(); // remove this or use nix
+        let fd = self.pop_int();
+
+        let result = close(fd as i32);
+
+        self.push_bool(result.is_ok());
     }
 
     pub fn getpid(&mut self) {
@@ -1091,7 +1097,21 @@ impl Stack {
     }
 
     pub fn open(&mut self) {
-        todo!(); // remove or use nix
+        let mode = self.pop_int();
+        let flag = self.pop_int();
+
+        let path_rc = self.pop_str();
+        let path = &*path_rc.borrow();
+        let path = CString::new(path.as_str()).unwrap();
+
+        let result = open(
+            path.as_c_str(),
+            OFlag::from_bits_truncate(flag as i32),
+            Mode::from_bits_truncate(mode as u32),
+        );
+
+        self.push_int(result.unwrap_or(0) as isize);
+        self.push_bool(result.is_ok());
     }
 
     pub fn setenv(&mut self) {
