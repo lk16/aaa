@@ -1211,7 +1211,15 @@ impl Stack {
     }
 
     pub fn set_copy(&mut self) {
-        todo!();
+        let set = self.pop();
+
+        match set {
+            Variable::Set(_) => (),
+            _ => self.pop_type_error("set", &set),
+        }
+
+        let copy = set.clone_recursive();
+        self.push(copy);
     }
 
     pub fn set_empty(&mut self) {
