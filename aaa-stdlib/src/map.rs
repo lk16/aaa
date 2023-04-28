@@ -220,8 +220,8 @@ where
     K: Clone + PartialEq + Hash + Debug,
     V: Clone + PartialEq + Debug,
 {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        todo!()
+    fn hash<H: Hasher>(&self, _state: &mut H) {
+        todo!() // Won't be implemented
     }
 }
 

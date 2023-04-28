@@ -33,7 +33,10 @@ impl Debug for Struct {
 
 impl Hash for Struct {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        todo!()
+        for (key, value) in self.values.iter() {
+            Hash::hash(&key, state);
+            Hash::hash(&value, state);
+        }
     }
 }
 
@@ -68,21 +71,34 @@ pub enum ContainerValue {
     Enum(Enum),
 }
 
+impl ContainerValue {
+    pub fn kind(&self) -> String {
+        todo!()
+    }
+}
+
+impl Display for ContainerValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let var: Variable = self.clone().into(); // TODO implement without cloning
+        write!(f, "{}", var)
+    }
+}
+
 impl From<Variable> for ContainerValue {
     fn from(var: Variable) -> ContainerValue {
         match var {
-            Variable::None => todo!(), // Not supported
             Variable::Integer(v) => ContainerValue::Integer(v),
             Variable::Boolean(v) => ContainerValue::Boolean(v),
             Variable::String(v) => ContainerValue::String((*v).borrow().clone()),
-            Variable::Vector(v) => todo!(),         // TODO conversion
-            Variable::Set(v) => todo!(),            // TODO conversion
-            Variable::Map(v) => todo!(),            // TODO conversion
-            Variable::Struct(v) => todo!(),         // TODO conversion
-            Variable::VectorIterator(_) => todo!(), // Not supported
-            Variable::MapIterator(_) => todo!(),    // Not supported
-            Variable::SetIterator(_) => todo!(),    // Not supported
-            Variable::Enum(v) => ContainerValue::Enum(*v.borrow().clone()),
+            Variable::Vector(v) => ContainerValue::Vector((*v).borrow().clone()),
+            Variable::Set(v) => ContainerValue::Set((*v).borrow().clone()),
+            Variable::Map(v) => ContainerValue::Map((*v).borrow().clone()),
+            Variable::Struct(v) => ContainerValue::Struct((*v).borrow().clone()),
+            Variable::Enum(v) => ContainerValue::Enum((*v).borrow().clone()),
+            _ => {
+                let kind = var.kind();
+                panic!("Cannot convert {} to container value", kind);
+            }
         }
     }
 }
@@ -93,13 +109,13 @@ pub enum Variable {
     Integer(isize),
     Boolean(bool),
     String(Rc<RefCell<String>>),
-    Vector(Rc<RefCell<Vector<Variable>>>), // TODO instead of Variable, use a type that has no Rc<...> so the container owns its values
-    Set(Rc<RefCell<Set<Variable>>>), // TODO instead of Variable, use a type that has no Rc<...> so the container owns its values
-    Map(Rc<RefCell<Map<Variable, Variable>>>), // TODO instead of Variable, use a type that has no Rc<...> so the container owns its values
+    Vector(Rc<RefCell<Vector<ContainerValue>>>),
+    Set(Rc<RefCell<Set<ContainerValue>>>),
+    Map(Rc<RefCell<Map<ContainerValue, ContainerValue>>>),
     Struct(Rc<RefCell<Struct>>),
-    VectorIterator(Rc<RefCell<VectorIterator<Variable>>>),
-    MapIterator(Rc<RefCell<MapIterator<Variable, Variable>>>),
-    SetIterator(Rc<RefCell<SetIterator<Variable>>>),
+    VectorIterator(Rc<RefCell<VectorIterator<ContainerValue>>>),
+    MapIterator(Rc<RefCell<MapIterator<ContainerValue, ContainerValue>>>),
+    SetIterator(Rc<RefCell<SetIterator<ContainerValue>>>),
     Enum(Rc<RefCell<Enum>>),
 }
 
@@ -153,7 +169,7 @@ impl Variable {
                 let mut cloned = Vector::new();
                 let source = (**v).borrow();
                 for item in source.iter() {
-                    cloned.push(item.clone_recursive())
+                    cloned.push(item.clone())
                 }
                 Self::Vector(Rc::new(RefCell::new(cloned)))
             }
@@ -161,7 +177,7 @@ impl Variable {
                 let mut cloned = Map::new();
                 let source = (**v).borrow();
                 for (item, _) in source.iter() {
-                    cloned.insert(item.clone_recursive(), ());
+                    cloned.insert(item.clone(), ());
                 }
                 Self::Set(Rc::new(RefCell::new(cloned)))
             }
@@ -169,7 +185,7 @@ impl Variable {
                 let mut cloned = Map::new();
                 let source = (**v).borrow();
                 for (key, value) in source.iter() {
-                    cloned.insert(key.clone_recursive(), value.clone_recursive());
+                    cloned.insert(key.clone(), value.clone());
                 }
                 Self::Map(Rc::new(RefCell::new(cloned)))
             }
@@ -248,6 +264,21 @@ impl Hash for Variable {
             Self::MapIterator(_) => todo!(), // hashing is not implemented for this variant
             Self::SetIterator(_) => todo!(), // hashing is not implemented for this variant
             Self::Enum(_) => todo!(),   // hashing is not implemented for this variant
+        }
+    }
+}
+
+impl From<ContainerValue> for Variable {
+    fn from(val: ContainerValue) -> Variable {
+        match val {
+            ContainerValue::Integer(v) => Variable::Integer(v),
+            ContainerValue::Boolean(v) => Variable::Boolean(v),
+            ContainerValue::String(v) => Variable::String(Rc::new(RefCell::new(v.clone()))),
+            ContainerValue::Vector(v) => Variable::Vector(Rc::new(RefCell::new(v.clone()))),
+            ContainerValue::Set(v) => Variable::Set(Rc::new(RefCell::new(v.clone()))),
+            ContainerValue::Map(v) => Variable::Map(Rc::new(RefCell::new(v.clone()))),
+            ContainerValue::Struct(v) => Variable::Struct(Rc::new(RefCell::new(v.clone()))),
+            ContainerValue::Enum(v) => Variable::Enum(Rc::new(RefCell::new(v.clone()))),
         }
     }
 }

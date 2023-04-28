@@ -117,8 +117,8 @@ impl<T> Hash for Vector<T>
 where
     T: Clone + PartialEq + Debug,
 {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        todo!()
+    fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {
+        todo!() // Won't be implemented
     }
 }
 

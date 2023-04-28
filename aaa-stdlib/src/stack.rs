@@ -34,7 +34,7 @@ use nix::{
 use crate::{
     map::{Map, MapIterator},
     set::{Set, SetIterator},
-    var::Enum,
+    var::{ContainerValue, Enum},
     vector::VectorIterator,
 };
 use crate::{
@@ -66,7 +66,7 @@ impl Stack {
         let mut stack = Self::new();
         let mut arg_vector = Vector::new();
         for arg in env::args().into_iter() {
-            arg_vector.push(Variable::String(Rc::new(RefCell::new(arg))));
+            arg_vector.push(ContainerValue::String(arg));
         }
         stack.push_vector(arg_vector);
         stack
@@ -91,7 +91,7 @@ impl Stack {
         self.type_error(&msg);
     }
 
-    fn type_error_vec_str(&self, v: &Variable) {
+    fn type_error_vec_str(&self, v: &ContainerValue) {
         let found = v.kind();
         let msg = format!("expected vec[str], but found {found} in vec");
         self.type_error(&msg);
@@ -112,17 +112,17 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_vector(&mut self, v: Vector<Variable>) {
+    pub fn push_vector(&mut self, v: Vector<ContainerValue>) {
         let item = Variable::Vector(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_set(&mut self, v: Set<Variable>) {
+    pub fn push_set(&mut self, v: Set<ContainerValue>) {
         let item = Variable::Set(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_map(&mut self, v: Map<Variable, Variable>) {
+    pub fn push_map(&mut self, v: Map<ContainerValue, ContainerValue>) {
         let item = Variable::Map(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -132,17 +132,17 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_vector_iter(&mut self, v: VectorIterator<Variable>) {
+    pub fn push_vector_iter(&mut self, v: VectorIterator<ContainerValue>) {
         let item = Variable::VectorIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_map_iter(&mut self, v: MapIterator<Variable, Variable>) {
+    pub fn push_map_iter(&mut self, v: MapIterator<ContainerValue, ContainerValue>) {
         let item = Variable::MapIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_set_iter(&mut self, v: SetIterator<Variable>) {
+    pub fn push_set_iter(&mut self, v: SetIterator<ContainerValue>) {
         let item = Variable::SetIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -190,21 +190,21 @@ impl Stack {
         }
     }
 
-    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<Variable>>> {
+    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<ContainerValue>>> {
         match self.pop() {
             Variable::Vector(v) => v,
             v => self.pop_type_error("vec", &v),
         }
     }
 
-    pub fn pop_set(&mut self) -> Rc<RefCell<Set<Variable>>> {
+    pub fn pop_set(&mut self) -> Rc<RefCell<Set<ContainerValue>>> {
         match self.pop() {
             Variable::Set(v) => v,
             v => self.pop_type_error("set", &v),
         }
     }
 
-    pub fn pop_map(&mut self) -> Rc<RefCell<Map<Variable, Variable>>> {
+    pub fn pop_map(&mut self) -> Rc<RefCell<Map<ContainerValue, ContainerValue>>> {
         match self.pop() {
             Variable::Map(v) => v,
             v => self.pop_type_error("map", &v),
@@ -218,21 +218,21 @@ impl Stack {
         }
     }
 
-    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<Variable>>> {
+    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<ContainerValue>>> {
         match self.pop() {
             Variable::VectorIterator(v) => v,
             v => self.pop_type_error("vec_iter", &v),
         }
     }
 
-    pub fn pop_map_iterator(&mut self) -> Rc<RefCell<MapIterator<Variable, Variable>>> {
+    pub fn pop_map_iterator(&mut self) -> Rc<RefCell<MapIterator<ContainerValue, ContainerValue>>> {
         match self.pop() {
             Variable::MapIterator(v) => v,
             v => self.pop_type_error("map_iter", &v),
         }
     }
 
-    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<Variable>>> {
+    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<ContainerValue>>> {
         match self.pop() {
             Variable::SetIterator(v) => v,
             v => self.pop_type_error("set_iter", &v),
@@ -566,7 +566,7 @@ impl Stack {
     pub fn vec_push(&mut self) {
         let pushed = self.pop();
         let vector = self.pop_vector();
-        vector.borrow_mut().push(pushed);
+        vector.borrow_mut().push(pushed.into());
     }
 
     pub fn vec_pop(&mut self) {
@@ -574,7 +574,7 @@ impl Stack {
         let popped = vector.borrow_mut().pop();
 
         match popped {
-            Some(popped) => self.push(popped),
+            Some(popped) => self.push(popped.into()),
             None => self.type_error("cannot pop from empty vector"),
         }
     }
@@ -586,7 +586,7 @@ impl Stack {
         let vector = (*vector_rc).borrow();
 
         let gotten = vector.get(offset as usize);
-        self.push(gotten.clone_recursive());
+        self.push(gotten.into());
     }
 
     pub fn vec_set(&mut self) {
@@ -594,7 +594,7 @@ impl Stack {
         let offset = self.pop_int();
         let vector = self.pop_vector();
 
-        vector.borrow_mut().set(offset as usize, value);
+        vector.borrow_mut().set(offset as usize, value.into());
     }
 
     pub fn vec_size(&mut self) {
@@ -621,7 +621,7 @@ impl Stack {
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
 
-        (*map).insert(key, value);
+        (*map).insert(key.into(), value.into());
     }
 
     pub fn map_get(&mut self) {
@@ -629,13 +629,13 @@ impl Stack {
         let map_rc = self.pop_map();
         let map = map_rc.borrow_mut();
 
-        match map.get(&key) {
+        match map.get(&key.into()) {
             None => {
                 self.push(Variable::None);
                 self.push_bool(false);
             }
             Some(value) => {
-                self.push(value.clone_recursive());
+                self.push(value.into());
                 self.push_bool(true);
             }
         }
@@ -647,7 +647,7 @@ impl Stack {
         let map_rc = self.pop_map();
         let map = (*map_rc).borrow();
 
-        let has_key = map.contains_key(&key);
+        let has_key = map.contains_key(&key.into());
         self.push_bool(has_key);
     }
 
@@ -670,13 +670,13 @@ impl Stack {
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
 
-        match map.remove_entry(&key) {
+        match map.remove_entry(&key.into()) {
             None => {
                 self.push(Variable::None);
                 self.push_bool(false);
             }
             Some((k, v)) => {
-                self.push(v);
+                self.push(v.into());
                 self.push_bool(true);
             }
         }
@@ -687,7 +687,7 @@ impl Stack {
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
 
-        let result = map.remove_entry(&key);
+        let result = map.remove_entry(&key.into());
         self.push_bool(result.is_some());
     }
 
@@ -730,10 +730,7 @@ impl Stack {
         let mut parts = vec![];
         for part in vector.iter() {
             match part {
-                Variable::String(part) => {
-                    let part = (*part).borrow().clone();
-                    parts.push(part)
-                }
+                ContainerValue::String(part) => parts.push(part),
                 v => self.type_error_vec_str(&v),
             }
         }
@@ -783,9 +780,9 @@ impl Stack {
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
-        let split: Vec<Variable> = string
+        let split: Vec<ContainerValue> = string
             .split(&*sep)
-            .map(|s| Variable::String(Rc::new(RefCell::new(s.to_owned()))))
+            .map(|s| ContainerValue::String(s.to_owned()))
             .collect();
         self.push_vector(Vector::from(split));
     }
@@ -935,8 +932,8 @@ impl Stack {
         for (key, val) in env::vars_os() {
             // Use pattern bindings instead of testing .is_some() followed by .unwrap()
             if let (Ok(k), Ok(v)) = (key.into_string(), val.into_string()) {
-                let key_var = Variable::String(Rc::new(RefCell::new(k)));
-                let value_var = Variable::String(Rc::new(RefCell::new(v)));
+                let key_var = ContainerValue::String(k);
+                let value_var = ContainerValue::String(v);
 
                 env_vars.insert(key_var, value_var);
             }
@@ -961,10 +958,7 @@ impl Stack {
         let mut argv: Vec<CString> = vec![];
         for item in popped_argv.iter() {
             match item {
-                Variable::String(v) => {
-                    let string = &*v.borrow();
-                    argv.push(CString::new(string.as_str()).unwrap())
-                }
+                ContainerValue::String(v) => argv.push(CString::new(v).unwrap()),
                 v => self.type_error_vec_str(&v),
             }
         }
@@ -1151,7 +1145,7 @@ impl Stack {
 
         match vector_iter.next() {
             Some(var) => {
-                self.push(var);
+                self.push(var.into());
                 self.push_bool(true);
             }
             None => {
@@ -1174,8 +1168,8 @@ impl Stack {
 
         match map_iter.next() {
             Some((key, value)) => {
-                self.push(key);
-                self.push(value);
+                self.push(key.into());
+                self.push(value.into());
                 self.push_bool(true);
             }
             None => {
@@ -1191,7 +1185,7 @@ impl Stack {
         let set_rc = self.pop_set();
         let mut set = set_rc.borrow_mut();
 
-        set.insert(item, ());
+        set.insert(item.into(), ());
     }
 
     pub fn set_has(&mut self) {
@@ -1199,7 +1193,7 @@ impl Stack {
         let set_rc = self.pop_set();
         let set = set_rc.borrow();
 
-        let found = set.contains_key(&item);
+        let found = set.contains_key(&item.into());
         self.push_bool(found);
     }
 
@@ -1241,7 +1235,7 @@ impl Stack {
         let set_rc = self.pop_map();
         let mut set = set_rc.borrow_mut();
 
-        set.remove_entry(&item);
+        set.remove_entry(&item.into());
     }
 
     pub fn set_size(&mut self) {
@@ -1257,7 +1251,7 @@ impl Stack {
 
         match set_iter.next() {
             Some((item, _)) => {
-                self.push(item);
+                self.push(item.into());
                 self.push_bool(true);
             }
             None => {
