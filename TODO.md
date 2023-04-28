@@ -1,15 +1,9 @@
 # TODO
 
-### Transpiling to C
-- [ ] Reset `errno` in case C stdlib functions fail
-- [ ] Run `gcov` to find missing coverage
-- [ ] Add transpiling to `README.md`
-- [ ] Add remaining tests for syscalls `open`, `read`, `write`, `close`, `socket`, `bind`, `listen`, `accept` and `connect`
-- [ ] Don't rebuild executables if it's newer than its dependencies
-
-### Improving aaa_stdlib.a
-- [ ] container types should contain `aaa_variable` values, not pointers to `aaa_variable`
-- [ ] extend `aaa_variable` for different types to reduce `malloc` calls
+### Transpiling to Rust
+- [ ] remove `todo!()` occurrences
+- [ ] fix `TODO` comments or move them here
+- [ ] implement 'paranoid mode' where we check all stack types after every operations
 
 ### Const
 - [ ] Add tests for const-ness of all builtin functions
@@ -32,9 +26,6 @@
 - move syscalls and env-related functions out of `builtins.aaa`
 - `read` and `write` should work with a new buffer type, not a `str`
 
-### Verbose mode
-- type checker outputs unituitive positiions for FunctionBodyItem's
-
 ### Builtin types and typing-features
 - `float` type
 - union types
@@ -50,13 +41,12 @@
 - parse itself
 - cross reference itself
 - type check itself
-- transpile itself to C
+- transpile itself to Rust
 
 ### Language tools
-- add command to show instructions per file/function
 - add command to typecheck files
 - add command to reformat files
-- userfriendly syntax errors
+- more userfriendly syntax errors
 
 ### Brag in readme
 - minimal dependencies
