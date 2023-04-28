@@ -14,7 +14,7 @@ use crate::{
     vector::{Vector, VectorIterator},
 };
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub struct Struct {
     pub type_name: String,
     pub values: HashMap<String, Variable>,
@@ -31,7 +31,13 @@ impl Debug for Struct {
     }
 }
 
-#[derive(Clone, PartialEq)]
+impl Hash for Struct {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        todo!()
+    }
+}
+
+#[derive(Clone, PartialEq, Hash)]
 pub struct Enum {
     pub type_name: String,
     pub discriminant: usize,
@@ -47,6 +53,37 @@ impl Debug for Enum {
             self.discriminant,
             self.value.borrow()
         )
+    }
+}
+
+#[derive(Hash, Debug, PartialEq, Clone)]
+pub enum ContainerValue {
+    Integer(isize),
+    Boolean(bool),
+    String(String),
+    Vector(Vector<ContainerValue>),
+    Set(Set<ContainerValue>),
+    Map(Map<ContainerValue, ContainerValue>),
+    Struct(Struct),
+    Enum(Enum),
+}
+
+impl From<Variable> for ContainerValue {
+    fn from(var: Variable) -> ContainerValue {
+        match var {
+            Variable::None => todo!(), // Not supported
+            Variable::Integer(v) => ContainerValue::Integer(v),
+            Variable::Boolean(v) => ContainerValue::Boolean(v),
+            Variable::String(v) => ContainerValue::String((*v).borrow().clone()),
+            Variable::Vector(v) => todo!(),         // TODO conversion
+            Variable::Set(v) => todo!(),            // TODO conversion
+            Variable::Map(v) => todo!(),            // TODO conversion
+            Variable::Struct(v) => todo!(),         // TODO conversion
+            Variable::VectorIterator(_) => todo!(), // Not supported
+            Variable::MapIterator(_) => todo!(),    // Not supported
+            Variable::SetIterator(_) => todo!(),    // Not supported
+            Variable::Enum(v) => ContainerValue::Enum(*v.borrow().clone()),
+        }
     }
 }
 

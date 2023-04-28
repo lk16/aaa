@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt::Debug, rc::Rc};
+use std::{cell::RefCell, fmt::Debug, hash::Hash, rc::Rc};
 
 pub struct Vector<T>
 where
@@ -103,6 +103,24 @@ where
 }
 
 impl<T> Eq for Vector<T> where T: Clone + PartialEq + Debug {}
+
+impl<T> Clone for Vector<T>
+where
+    T: Clone + PartialEq + Debug,
+{
+    fn clone(&self) -> Self {
+        todo!()
+    }
+}
+
+impl<T> Hash for Vector<T>
+where
+    T: Clone + PartialEq + Debug,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        todo!()
+    }
+}
 
 #[derive(Clone)]
 pub struct VectorIterator<T>

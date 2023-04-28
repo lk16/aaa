@@ -205,6 +205,26 @@ where
     }
 }
 
+impl<K, V> Clone for Map<K, V>
+where
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
+{
+    fn clone(&self) -> Self {
+        todo!()
+    }
+}
+
+impl<K, V> Hash for Map<K, V>
+where
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        todo!()
+    }
+}
+
 pub struct HashTableIterator<K, V>
 where
     K: Clone + PartialEq + Hash + Debug,
