@@ -1,8 +1,3 @@
-// TODO remove
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unreachable_code)]
-
 use std::{
     cell::RefCell,
     env,
@@ -414,12 +409,11 @@ impl Stack {
 
     pub fn socket(&mut self) {
         // NOTE: protocol is not used
-        let protocol = self.pop_int();
+        let _protocol = self.pop_int();
 
         let type_ = self.pop_int();
         let family = self.pop_int();
 
-        // TODO This is very clunky.
         let family = AddressFamily::from_i32(family as i32).unwrap();
         let type_ = SockType::try_from(type_ as i32).unwrap();
 
@@ -455,7 +449,7 @@ impl Stack {
 
         let fd = self.pop_int();
 
-        // TODO move domain name resolving out of this function, consider creating a dedicated stdlib func for this
+        // TODO #28 Move domain name resolving out of this function and create a dedicated stdlib func for this
         let authority = &format!("{domain}:{port}");
 
         let socket_addr = match authority.to_socket_addrs() {
@@ -490,7 +484,7 @@ impl Stack {
         let result = read(fd as i32, &mut buffer[..]);
 
         match result {
-            Ok(read_bytes) => {
+            Ok(_) => {
                 let string = String::from_utf8(buffer);
 
                 match string {
@@ -681,7 +675,7 @@ impl Stack {
                 self.push(Variable::None);
                 self.push_bool(false);
             }
-            Some((k, v)) => {
+            Some((_, v)) => {
                 self.push(v.into());
                 self.push_bool(true);
             }
@@ -986,12 +980,12 @@ impl Stack {
         match result {
             Ok(ForkResult::Parent { child }) => self.push_int(child.as_raw() as isize),
             Ok(ForkResult::Child) => self.push_int(0),
-            Err(_) => todo!(), // Change signature to handle errors
+            Err(_) => todo!(), // TODO #29 Change `fork` signature to handle errors
         }
     }
 
     pub fn waitpid(&mut self) {
-        // TODO use Aaa enums for return value
+        // TODO #30 Use Aaa enums for return value
         let options = self.pop_int();
         let pid = self.pop_int();
 
@@ -1017,7 +1011,7 @@ impl Stack {
                 self.push_bool(true);
                 self.push_bool(true);
             }
-            Ok(_) => todo!(),
+            Ok(_) => todo!(), // TODO #30
         }
     }
 
@@ -1026,10 +1020,10 @@ impl Stack {
 
         match dir {
             Ok(dir) => {
-                let path: String = dir.to_str().unwrap().to_owned(); // TODO remove unwrap(), figure out what can fail
+                let path: String = dir.to_str().unwrap().to_owned(); // TODO #31 remove unwrap(), figure out what can fail
                 self.push_str(&path);
             }
-            Err(_) => todo!(), // getcwd() can fail, but the signature doesn't reflect that
+            Err(_) => todo!(), // TODO #31 Update signature of `getcwd`, because it can fail
         }
     }
 
@@ -1276,7 +1270,7 @@ impl Stack {
     pub fn make_const(&mut self) {
         // NOTE this doesn't do anything
 
-        // TODO don't generate calls to this function in transpiler
+        // TODO #32 don't call from transpiler and remove this function
     }
 
     pub fn get_enum_discriminant(&mut self) -> usize {

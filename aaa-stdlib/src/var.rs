@@ -119,7 +119,7 @@ impl From<Variable> for ContainerValue {
 
 #[derive(Clone)]
 pub enum Variable {
-    None, // TODO get rid of this when Aaa iterators return an enum
+    None, // TODO #33 Remove when iterators return an enum
     Integer(isize),
     Boolean(bool),
     String(Rc<RefCell<String>>),
@@ -170,7 +170,7 @@ impl Variable {
 
     // Does not copy references, but copies recursively
     pub fn clone_recursive(&self) -> Self {
-        // TODO prevent infinite recursion.
+        // TODO #35 prevent infinite recursion.
         match self {
             Self::None => Self::None,
             Self::Integer(v) => Self::Integer(*v),
@@ -203,8 +203,8 @@ impl Variable {
                 }
                 Self::Map(Rc::new(RefCell::new(cloned)))
             }
-            Self::Struct(_v) => todo!(),
-            Self::Enum(_v) => todo!(),
+            Self::Struct(_v) => todo!(), // TODO #36 implement clone_recursive
+            Self::Enum(_v) => todo!(),   // TODO #36 implement clone_recursive
             Self::VectorIterator(_) | Self::MapIterator(_) | Self::SetIterator(_) => {
                 unreachable!(); // Cannot recursively clone an iterator
             }

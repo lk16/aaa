@@ -885,4 +885,4 @@ fn test_struct_set_get_vec {
     repr "[5]" str:equals assert
 }
 
-// TODO add tests for set:* functions
+// TODO #40 Add tests `set` functions

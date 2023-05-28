@@ -1,6 +1,4 @@
-// TODO make these functions into testcases
-
-// TODO create similar files for set
+// TODO #39 Add testcases for vec, map and set modification during iteration
 
 fn main {
     ok
@@ -16,7 +14,7 @@ fn ok {
         v 1 vec:push
         v 2 vec:push
         v 3 vec:push
-        v foreach {  // TODO support `foreach v { ... }` syntax
+        v foreach {  // TODO #38 Add foreach `variable in variable` syntax
             .
             "\n" .
         }
