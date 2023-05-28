@@ -198,7 +198,7 @@ class Transpiler:
         if function.position.file == self.builtins_path:
             return "stack." + self._generate_rust_builtin_function_name(function)
 
-        # TODO consider using modules in generated code so we don't have to hash at all
+        # TODO #37 Use modules in generated code so we don't have to hash at all
 
         # hash file and name to prevent naming collisions
         hash_input = f"{function.position.file} {function.name}"
