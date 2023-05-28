@@ -597,9 +597,9 @@ impl Stack {
         vector.borrow_mut().set(offset as usize, value.into());
     }
 
-    pub fn vec_size(&mut self) {
-        let size = (*(self.pop_vector())).borrow().len();
-        self.push_int(size as isize);
+    pub fn vec_len(&mut self) {
+        let len = (*(self.pop_vector())).borrow().len();
+        self.push_int(len as isize);
     }
 
     pub fn vec_empty(&mut self) {
@@ -651,9 +651,9 @@ impl Stack {
         self.push_bool(has_key);
     }
 
-    pub fn map_size(&mut self) {
-        let size = (*(self.pop_map())).borrow().len();
-        self.push_int(size as isize);
+    pub fn map_len(&mut self) {
+        let len = (*(self.pop_map())).borrow().len();
+        self.push_int(len as isize);
     }
 
     pub fn map_empty(&mut self) {
@@ -1238,11 +1238,11 @@ impl Stack {
         set.remove_entry(&item.into());
     }
 
-    pub fn set_size(&mut self) {
+    pub fn set_len(&mut self) {
         let set_rc = self.pop_set();
-        let size = set_rc.borrow().len();
+        let len = set_rc.borrow().len();
 
-        self.push_int(size as isize);
+        self.push_int(len as isize);
     }
 
     pub fn set_iter_next(&mut self) {

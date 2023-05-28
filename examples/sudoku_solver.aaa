@@ -51,11 +51,11 @@ fn load_sudoku args s as str return vec[int] {
             }
         }
 
-        v vec:size
-        use size {
-            if size 81 != {
+        v vec:len
+        use len {
+            if len 81 != {
                 "Expected 81 chars to be either a period or a digit, found " .
-                size .
+                len .
                 "\n" .
                 1 exit
             }
