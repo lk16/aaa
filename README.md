@@ -36,7 +36,7 @@ curl http://localhost:8080
 - type checking
 - branching, loops (`if`, `else`, `while`, `foreach`)
 - multi-file support (`import`)
-- [upcoming](./TODO.md)
+- [upcoming](https://github.com/lk16/aaa/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 
 ### Name
 The name of this language is just the first letter of the Latin alphabet [repeated](#Examples) three times. When code in this language doesn't work, its meaning becomes an [abbreviation](https://en.uncyclopedia.co/wiki/AAAAAAAAA!).
