@@ -335,14 +335,14 @@ fn test_vec_set_copies {
 }
 
 fn test_vec_size_zero_items {
-    vec[int] vec:size
+    vec[int] vec:len
     0 = assert
 }
 
 fn test_vec_size_one_item {
     vec[int]
     dup 5 vec:push
-    vec:size
+    vec:len
     1 = assert
 }
 
@@ -369,8 +369,8 @@ fn test_vec_copy {
     vec[int]
     dup vec:copy
     dup 5 vec:push
-    vec:size 1 = assert
-    vec:size 0 = assert
+    vec:len 1 = assert
+    vec:len 0 = assert
 }
 
 fn test_vec_dup {
@@ -378,9 +378,9 @@ fn test_vec_dup {
     dup 5 vec:push
     dup
     dup vec:clear
-    vec:size
+    vec:len
     0 = assert
-    vec:size
+    vec:len
     0 = assert
 }
 
@@ -509,13 +509,13 @@ fn test_map_has_key_false {
 fn test_map_size_one_item {
     map[str, int]
     dup "one" 1 map:set
-    map:size
+    map:len
     1 = assert
 }
 
 fn test_map_size_zero_items {
     map[str, int]
-    map:size
+    map:len
     0 = assert
 }
 
@@ -536,7 +536,7 @@ fn test_map_clear {
     map[str, int]
     dup "one" 1 map:set
     dup map:clear
-    map:size
+    map:len
     0 = assert
 }
 
@@ -544,8 +544,8 @@ fn test_map_copy {
     map[str, int]
     dup map:copy
     dup "one" 1 map:set
-    map:size 1 = assert
-    map:size 0 = assert
+    map:len 1 = assert
+    map:len 0 = assert
 }
 
 fn test_map_dup {
@@ -554,9 +554,9 @@ fn test_map_dup {
     dup
     map:clear
     dup
-    map:size
+    map:len
     0 = assert
-    map:size
+    map:len
     0 = assert
 }
 

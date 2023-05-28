@@ -65,7 +65,7 @@ fn vec[T]:iter       args v as       vec[T]                                     
 fn vec[T]:pop        args v as       vec[T]                                       return T
 fn vec[T]:push       args v as const vec[T], item as const T
 fn vec[T]:set        args v as       vec[T], offset as const int, item as const T
-fn vec[T]:size       args v as const vec[T]                                       return int
+fn vec[T]:len        args v as const vec[T]                                       return int
 
 fn map[K, V]:clear      args m as       map[K, V]
 fn map[K, V]:const_iter args m as const map[K, V]                                   return map_const_iter[K, V]
@@ -77,7 +77,7 @@ fn map[K, V]:has_key    args m as const map[K, V], key as const K               
 fn map[K, V]:iter       args m as       map[K, V]                                   return map_iter[K, V]
 fn map[K, V]:pop        args m as       map[K, V], key as const K                   return V, bool
 fn map[K, V]:set        args m as       map[K, V], key as const K, value as const V
-fn map[K, V]:size       args m as const map[K, V]                                   return int
+fn map[K, V]:len        args m as const map[K, V]                                   return int
 
 fn set[T]:add        args s as       set[T], item as const T
 fn set[T]:clear      args s as       set[T]
@@ -87,7 +87,7 @@ fn set[T]:empty      args s as const set[T]                   return bool
 fn set[T]:has        args s as const set[T], item as const T  return bool
 fn set[T]:iter       args s as const set[T]                   return set_iter[T]
 fn set[T]:remove     args s as       set[T], item as const T
-fn set[T]:size       args s as const set[T]                   return int
+fn set[T]:len        args s as const set[T]                   return int
 
 // container iteration
 fn map_iter[K, V]:next       args iter as map_iter[K, V]       return const K, V, bool
