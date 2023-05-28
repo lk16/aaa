@@ -213,7 +213,12 @@ where
     V: Clone + PartialEq + Debug,
 {
     fn clone(&self) -> Self {
-        todo!()
+        let mut map = Map::new();
+        for (key, value) in self.iter() {
+            map.insert(key, value);
+        }
+
+        map
     }
 }
 
@@ -223,7 +228,7 @@ where
     V: Clone + PartialEq + Debug,
 {
     fn hash<H: Hasher>(&self, _state: &mut H) {
-        todo!() // Won't be implemented
+        unreachable!() // Won't be implemented
     }
 }
 

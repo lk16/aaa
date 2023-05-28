@@ -79,7 +79,8 @@ pub enum ContainerValue {
 
 impl ContainerValue {
     pub fn kind(&self) -> String {
-        todo!()
+        let var: Variable = self.clone().into();
+        var.kind()
     }
 }
 
@@ -205,7 +206,7 @@ impl Variable {
             Self::Struct(_v) => todo!(),
             Self::Enum(_v) => todo!(),
             Self::VectorIterator(_) | Self::MapIterator(_) | Self::SetIterator(_) => {
-                todo!(); // Cannot recursively clone an iterator
+                unreachable!(); // Cannot recursively clone an iterator
             }
         }
     }
