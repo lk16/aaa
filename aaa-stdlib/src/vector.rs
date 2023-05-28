@@ -109,7 +109,12 @@ where
     T: Clone + PartialEq + Debug,
 {
     fn clone(&self) -> Self {
-        todo!()
+        let mut cloned = Vector::<T>::new();
+        for item in self.iter() {
+            cloned.push(item);
+        }
+
+        cloned
     }
 }
 

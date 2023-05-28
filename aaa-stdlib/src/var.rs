@@ -59,7 +59,7 @@ impl Debug for Enum {
     }
 }
 
-#[derive(Hash, Debug, PartialEq, Clone)]
+#[derive(Hash, PartialEq, Clone)]
 pub enum ContainerValue {
     Integer(isize),
     Boolean(bool),
@@ -79,8 +79,15 @@ impl ContainerValue {
 
 impl Display for ContainerValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let var: Variable = self.clone().into(); // TODO implement without cloning
+        let var: Variable = self.clone().into();
         write!(f, "{}", var)
+    }
+}
+
+impl Debug for ContainerValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let var: Variable = self.clone().into();
+        write!(f, "{:?}", var)
     }
 }
 
