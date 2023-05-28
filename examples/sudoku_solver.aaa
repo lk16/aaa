@@ -158,7 +158,7 @@ fn check_sudoku args cells as vec[int] return bool {
 }
 
 fn check_sudoku_row args cells as vec[int], y as int return bool {
-    true dup set[int]
+    true set[int]
     use ok, values {
         0 9 make_range
         foreach {
@@ -172,11 +172,12 @@ fn check_sudoku_row args cells as vec[int], y as int return bool {
                 }
             }
         }
+        ok return
     }
 }
 
 fn check_sudoku_column args cells as vec[int], x as int return bool {
-    true dup set[int]
+    true set[int]
     use ok, values {
         0 9 make_range
         foreach {
@@ -190,11 +191,12 @@ fn check_sudoku_column args cells as vec[int], x as int return bool {
                 }
             }
         }
+        ok return
     }
 }
 
 fn check_sudoku_block args cells as vec[int], x_start as int, y_start as int, return bool {
-    true dup set[int]
+    true set[int]
     use ok, values {
         0 3 make_range
         foreach {
@@ -217,12 +219,12 @@ fn check_sudoku_block args cells as vec[int], x_start as int, y_start as int, re
                 }
             }
         }
+        ok return
     }
 }
 
 fn main {
     "9.458....2.8..9..........1...5743.8...........9.8623...5..........3..6.4....571.2"
-
     load_sudoku
     solve_sudoku
 
