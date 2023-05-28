@@ -6,12 +6,14 @@ use std::{
     rc::Rc,
 };
 
+type MapBuckets<K, V> = Vec<Vec<(K, V)>>;
+
 pub struct Map<K, V>
 where
     K: Clone + PartialEq + Hash + Debug,
     V: Clone + PartialEq + Debug,
 {
-    buckets: Rc<RefCell<Vec<Vec<(K, V)>>>>,
+    buckets: Rc<RefCell<MapBuckets<K, V>>>,
     bucket_count: usize,
     size: usize,
     iterator_count: Rc<RefCell<usize>>,
@@ -51,7 +53,7 @@ where
     }
 
     fn load_factor(&self) -> f64 {
-        return (self.len() as f64) / (self.bucket_count as f64);
+        self.len() as f64 / self.bucket_count as f64
     }
 
     pub fn get(&self, key: &K) -> Option<V> {
@@ -91,7 +93,7 @@ where
 
         for bucket in self.buckets.borrow().iter() {
             for (key, value) in bucket.iter() {
-                let index = self.get_bucket_id(&key, new_bucket_count);
+                let index = self.get_bucket_id(key, new_bucket_count);
                 new_buckets[index].push((key.clone(), value.clone()));
             }
         }
@@ -120,7 +122,7 @@ where
     pub fn remove_entry(&mut self, key: &K) -> Option<(K, V)> {
         self.detect_invalid_change();
 
-        let bucket_id = self.get_bucket_id(&key, self.bucket_count);
+        let bucket_id = self.get_bucket_id(key, self.bucket_count);
         let bucket = &mut self.buckets.borrow_mut()[bucket_id];
 
         let position = bucket.iter().position(|(k, _v)| k == key);
@@ -225,12 +227,22 @@ where
     }
 }
 
+impl<K, V> Default for Map<K, V>
+where
+    K: Clone + PartialEq + Hash + Debug,
+    V: Clone + PartialEq + Debug,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct HashTableIterator<K, V>
 where
     K: Clone + PartialEq + Hash + Debug,
     V: Clone + PartialEq + Debug,
 {
-    buckets: Rc<RefCell<Vec<Vec<(K, V)>>>>,
+    buckets: Rc<RefCell<MapBuckets<K, V>>>,
     iterator_count: Rc<RefCell<usize>>,
     bucket_id: usize,
     offset_in_bucket: usize,
@@ -243,7 +255,7 @@ where
     K: Clone + PartialEq + Hash + Debug,
     V: Clone + PartialEq + Debug,
 {
-    pub fn new(buckets: Rc<RefCell<Vec<Vec<(K, V)>>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
+    pub fn new(buckets: Rc<RefCell<MapBuckets<K, V>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
         *iterator_count.borrow_mut() += 1;
 
         Self {

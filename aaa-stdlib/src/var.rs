@@ -14,7 +14,7 @@ use crate::{
     vector::{Vector, VectorIterator},
 };
 
-#[derive(PartialEq, Clone)]
+#[derive(Clone)]
 pub struct Struct {
     pub type_name: String,
     pub values: HashMap<String, Variable>,
@@ -37,6 +37,12 @@ impl Hash for Struct {
             Hash::hash(&key, state);
             Hash::hash(&value, state);
         }
+    }
+}
+
+impl PartialEq for Struct {
+    fn eq(&self, other: &Self) -> bool {
+        self.type_name == other.type_name && self.values == other.values
     }
 }
 
@@ -149,14 +155,14 @@ impl Variable {
             Self::Map(_) => String::from("map"),
             Self::Struct(s) => {
                 let type_name = &(**s).borrow().type_name;
-                String::from(format!("(struct {type_name})"))
+                format!("(struct {type_name})")
             }
             Self::VectorIterator(_) => String::from("vec_iter"),
             Self::MapIterator(_) => String::from("map_iter"),
             Self::SetIterator(_) => String::from("set_iter"),
             Self::Enum(e) => {
                 let type_name = &(**e).borrow().type_name;
-                String::from(format!("(enum {type_name})"))
+                format!("(enum {type_name})")
             }
         }
     }
@@ -280,12 +286,12 @@ impl From<ContainerValue> for Variable {
         match val {
             ContainerValue::Integer(v) => Variable::Integer(v),
             ContainerValue::Boolean(v) => Variable::Boolean(v),
-            ContainerValue::String(v) => Variable::String(Rc::new(RefCell::new(v.clone()))),
-            ContainerValue::Vector(v) => Variable::Vector(Rc::new(RefCell::new(v.clone()))),
-            ContainerValue::Set(v) => Variable::Set(Rc::new(RefCell::new(v.clone()))),
-            ContainerValue::Map(v) => Variable::Map(Rc::new(RefCell::new(v.clone()))),
-            ContainerValue::Struct(v) => Variable::Struct(Rc::new(RefCell::new(v.clone()))),
-            ContainerValue::Enum(v) => Variable::Enum(Rc::new(RefCell::new(v.clone()))),
+            ContainerValue::String(v) => Variable::String(Rc::new(RefCell::new(v))),
+            ContainerValue::Vector(v) => Variable::Vector(Rc::new(RefCell::new(v))),
+            ContainerValue::Set(v) => Variable::Set(Rc::new(RefCell::new(v))),
+            ContainerValue::Map(v) => Variable::Map(Rc::new(RefCell::new(v))),
+            ContainerValue::Struct(v) => Variable::Struct(Rc::new(RefCell::new(v))),
+            ContainerValue::Enum(v) => Variable::Enum(Rc::new(RefCell::new(v))),
         }
     }
 }

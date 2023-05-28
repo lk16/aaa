@@ -127,6 +127,15 @@ where
     }
 }
 
+impl<T> Default for Vector<T>
+where
+    T: Clone + PartialEq + Debug,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Clone)]
 pub struct VectorIterator<T>
 where

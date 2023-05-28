@@ -57,6 +57,12 @@ impl Debug for Stack {
     }
 }
 
+impl Default for Stack {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Stack {
     pub fn new() -> Self {
         Self { items: Vec::new() }
@@ -65,7 +71,7 @@ impl Stack {
     pub fn from_argv() -> Self {
         let mut stack = Self::new();
         let mut arg_vector = Vector::new();
-        for arg in env::args().into_iter() {
+        for arg in env::args() {
             arg_vector.push(ContainerValue::String(arg));
         }
         stack.push_vector(arg_vector);
