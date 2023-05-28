@@ -252,7 +252,7 @@ impl PartialEq for Variable {
             (Self::Struct(lhs), Self::Struct(rhs)) => lhs == rhs,
             (Self::Enum(lhs), Self::Enum(rhs)) => lhs == rhs,
             _ => {
-                todo!() // Can't compare variables of different types
+                unreachable!() // Can't compare variables of different types
             }
         }
     }
@@ -269,15 +269,15 @@ impl Hash for Variable {
                 let string = (**v).borrow().clone();
                 Hash::hash(&string, state)
             }
-            Self::Vector(_) => todo!(), // hashing is not implemented for this variant
-            Self::Set(_) => todo!(),    // hashing is not implemented for this variant
-            Self::Map(_) => todo!(),    // hashing is not implemented for this variant
-            Self::Struct(_) => todo!(), // hashing is not implemented for this variant
-            Self::None => todo!(),      // hashing is not implemented for this variant
-            Self::VectorIterator(_) => todo!(), // hashing is not implemented for this variant
-            Self::MapIterator(_) => todo!(), // hashing is not implemented for this variant
-            Self::SetIterator(_) => todo!(), // hashing is not implemented for this variant
-            Self::Enum(_) => todo!(),   // hashing is not implemented for this variant
+            Self::Vector(_) => unreachable!(),
+            Self::Set(_) => unreachable!(),
+            Self::Map(_) => unreachable!(),
+            Self::Struct(_) => unreachable!(),
+            Self::None => unreachable!(),
+            Self::VectorIterator(_) => unreachable!(),
+            Self::MapIterator(_) => unreachable!(),
+            Self::SetIterator(_) => unreachable!(),
+            Self::Enum(_) => unreachable!(),
         }
     }
 }

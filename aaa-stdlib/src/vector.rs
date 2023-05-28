@@ -123,7 +123,7 @@ where
     T: Clone + PartialEq + Debug,
 {
     fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {
-        todo!() // Won't be implemented
+        unreachable!()
     }
 }
 
