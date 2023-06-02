@@ -53,5 +53,5 @@ class Parser:
 
     def _enqueue_dependencies(self, parsed_file: ParsedFile) -> None:
         for dependency in parsed_file.dependencies():
-            if dependency not in self.parsed:
+            if dependency not in self.parse_queue:
                 self.parse_queue.append(dependency)
