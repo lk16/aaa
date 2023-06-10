@@ -36,6 +36,7 @@ from aaa.cross_referencer.models import (
     FunctionBodyItem,
     Identifiable,
     IdentifiablesDict,
+    ImplicitFunctionImport,
     Import,
     IntegerLiteral,
     MatchBlock,
@@ -122,6 +123,25 @@ class CrossReferencer:
 
         return remaining_deps
 
+    def _get_implicit_function_imports(self, import_: Import) -> IdentifiablesDict:
+        if not import_.is_resolved():
+            return {}
+
+        source = import_.resolved().source
+
+        if isinstance(source, Type):
+            implicit_imports: Dict[Tuple[Path, str], Identifiable] = {}
+
+            for (file2, name), identifier2 in self.identifiers.items():
+                if source.position.file == file2 and name.startswith(source.name + ":"):
+                    assert isinstance(identifier2, Function)
+                    implicit_imports[
+                        (import_.position.file, name)
+                    ] = ImplicitFunctionImport(identifier2)
+
+            return implicit_imports
+        return {}
+
     def _cross_reference_file(self, file: Path) -> None:
         if file in self.dependency_stack:
             raise CircularDependencyError(self.dependency_stack + [file])
@@ -138,6 +158,8 @@ class CrossReferencer:
 
         for import_ in imports:
             self._resolve_import(import_)
+            implicit_imports = self._get_implicit_function_imports(import_)
+            self.identifiers.update(implicit_imports)
 
         for type in types:
             self._resolve_type(type)
@@ -709,6 +731,13 @@ class FunctionBodyResolver:
 
             return CallFunction(
                 identifiable,
+                [],
+                call.position,
+            )
+
+        if isinstance(identifiable, ImplicitFunctionImport):
+            return CallFunction(
+                identifiable.source,
                 [],
                 call.position,
             )

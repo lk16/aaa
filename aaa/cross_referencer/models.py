@@ -196,6 +196,15 @@ class Import(Identifiable):
     def is_resolved(self) -> bool:
         return isinstance(self.state, Import.Resolved)
 
+    def resolved(self) -> Import.Resolved:
+        assert isinstance(self.state, Import.Resolved)
+        return self.state
+
+
+class ImplicitFunctionImport(Identifiable):
+    def __init__(self, source: Function) -> None:
+        self.source = source
+
 
 class Type(Identifiable):
     class Unresolved:
