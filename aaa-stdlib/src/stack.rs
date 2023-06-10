@@ -272,9 +272,9 @@ impl Stack {
         self.items.swap(len - 1, len - 2);
     }
 
-    pub fn assert(&mut self) {
+    pub fn assert(&mut self, file: &str, line: isize, col: isize) {
         if !self.pop_bool() {
-            eprintln!("Assertion failure!");
+            eprintln!("Assertion failure at {}:{}:{}", file, line, col);
             process::exit(1);
         }
     }
