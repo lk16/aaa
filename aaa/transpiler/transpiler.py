@@ -489,6 +489,11 @@ class Transpiler:
         rust_func_name = self._generate_rust_function_name(called)
 
         if called.position.file == self.builtins_path:
+            if called.name == "assert":
+                position = call_func.position
+                return self._indent(
+                    f'{rust_func_name}("{position.file}", {position.line}, {position.column});\n'
+                )
             return self._indent(f"{rust_func_name}();\n")
 
         return self._indent(f"{rust_func_name}(stack);\n")

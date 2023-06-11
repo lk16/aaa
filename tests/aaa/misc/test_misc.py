@@ -36,18 +36,23 @@ def compile_run(source: str) -> Tuple[str, str, int]:
     return run(binary)
 
 
-@pytest.mark.parametrize(
-    ["source", "expected_stderr", "expected_exitcode"],
-    [
-        pytest.param("assert_true.aaa", "", 0, id="true"),
-        pytest.param("assert_false.aaa", "Assertion failure!\n", 1, id="false"),
-    ],
-)
-def test_assert(source: str, expected_stderr: str, expected_exitcode: int) -> None:
-    stdout, stderr, exit_code = compile_run(source)
+def test_assert_true() -> None:
+    stdout, stderr, exit_code = compile_run("assert_true.aaa")
     assert "" == stdout
-    assert expected_stderr == stderr
-    assert expected_exitcode == exit_code
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_assert_false() -> None:
+    stdout, stderr, exit_code = compile_run("assert_false.aaa")
+    assert "" == stdout
+
+    project_root = str(Path(__file__).parents[3])
+    assert (
+        f"Assertion failure at {project_root}/tests/aaa/misc/src/assert_false.aaa:2:11\n"
+        == stderr
+    )
+    assert 1 == exit_code
 
 
 @pytest.mark.parametrize(
