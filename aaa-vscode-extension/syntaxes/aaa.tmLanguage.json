@@ -15,6 +15,9 @@
 			"include": "#builtin_types"
 		},
 		{
+			"include": "#types"
+		},
+		{
 			"name": "comment.line.double-slash.aaa",
 			"match": "(//.*)"
 		},
@@ -68,6 +71,10 @@
 		"builtin_types": {
 			"name": "support.type.aaa",
 			"match": "\\b(bool|int|str|vec|map|set|never)\\b"
+		},
+		"types": {
+			"name": "support.type.aaa",
+			"match": "\\b([A-Z][a-zA-Z]*)\\b"
 		}
 	},
 	"scopeName": "source.aaa"
