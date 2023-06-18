@@ -1,20 +1,20 @@
-struct int_pair {
+struct IntPair {
     x as int,
     y as int,
 }
 
-fn int_pair:sum args p as int_pair return int {
+fn IntPair:sum args p as IntPair return int {
     p "x" ?
     p "y" ?
     +
 }
 
-fn int_pair:set_zero args p as int_pair {
+fn IntPair:set_zero args p as IntPair {
     p "x" { 0 } !
     p "y" { p "x" ? } !
 }
 
-fn int_pair:print args p as int_pair {
+fn IntPair:print args p as IntPair {
     "x,y = " .
     p "x" ? .
     "," .
@@ -23,7 +23,7 @@ fn int_pair:print args p as int_pair {
 }
 
 fn main {
-    int_pair
+    IntPair
     "x = " .
     dup "x" ? .
     "\n" .
@@ -48,19 +48,19 @@ fn main {
     // should print "y = 4\n"
 
     dup
-    int_pair:sum .
+    IntPair:sum .
     "\n" .
     // should print "7\n"
 
     dup
-    int_pair:print
+    IntPair:print
     // should print "x,y = 3,4\n"
 
     dup
-    int_pair:set_zero
+    IntPair:set_zero
 
     dup
-    int_pair:print
+    IntPair:print
     // should print "x,y = 0,0\n"
 
     drop

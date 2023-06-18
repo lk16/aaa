@@ -2,22 +2,22 @@
 // The algorithm used is extremely inefficient.
 // For a literal translation to python, see sudoku_solver.py.
 
-struct range {
+struct Range {
     next_value as int,
     end as int,
 }
 
-fn make_range args start as int, end as int return range {
-    range
+fn make_range args start as int, end as int return Range {
+    Range
     dup "next_value" { start } !
     dup "end" { end } !
 }
 
-fn range:iter args r as range return range {
+fn Range:iter args r as Range return Range {
     r
 }
 
-fn range:next args r as range return int, bool {
+fn Range:next args r as Range return int, bool {
     r "next_value" ?
     if dup r "end" ? < {
         true

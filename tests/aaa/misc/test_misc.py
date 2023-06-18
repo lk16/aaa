@@ -320,10 +320,10 @@ def test_recursion() -> None:
     stdout, stderr, exit_code = compile_run("recursion.aaa")
 
     expected_output = (
-        '(struct s)<{"a": [(struct s)<{"a": []}>]}>\n'
-        + "(enum json discriminant=0)<(struct empty)<{}>>\n"
-        + "(enum json discriminant=4)<[(enum json discriminant=2)<5>]>\n"
-        + '(enum json discriminant=5)<{"key": (enum json discriminant=1)<false>}>\n'
+        '(struct S)<{"a": [(struct S)<{"a": []}>]}>\n'
+        + "(enum Json discriminant=0)<(struct Empty)<{}>>\n"
+        + "(enum Json discriminant=4)<[(enum Json discriminant=2)<5>]>\n"
+        + '(enum Json discriminant=5)<{"key": (enum Json discriminant=1)<false>}>\n'
     )
 
     assert expected_output == stdout

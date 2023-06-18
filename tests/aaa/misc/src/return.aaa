@@ -1,5 +1,5 @@
 
-struct foo {
+struct Foo {
     bar as int
 }
 
@@ -75,7 +75,7 @@ fn j return never {
 }
 
 fn k return never {
-    foo
+    Foo
     "bar" { not_returning } !
 }
 

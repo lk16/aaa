@@ -1,19 +1,19 @@
-struct bar {
+struct Bar {
     i as int,
 }
 
-struct foo {
+struct Foo {
     i as int,
     b as bool,
     s as str,
     m as map[int, int],
     se as set[int],
     v as vec[int],
-    ba as bar,
+    ba as Bar,
 }
 
 fn main {
-    foo
+    Foo
     use f {
         f "i" ?
         drop

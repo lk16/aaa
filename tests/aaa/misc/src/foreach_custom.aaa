@@ -1,19 +1,19 @@
-fn range args start as int, end as int return range_iter {
-    range_iter
+fn range args start as int, end as int return RangeIter {
+    RangeIter
     dup "end" { end } !
     dup "next" { start } !
 }
 
-struct range_iter {
+struct RangeIter {
     end as int,
     next as int,
 }
 
-fn range_iter:iter args r as range_iter return range_iter {
+fn RangeIter:iter args r as RangeIter return RangeIter {
     r
 }
 
-fn range_iter:next args r as range_iter return int, bool {
+fn RangeIter:next args r as RangeIter return int, bool {
     if
         r "next" ?
         r "end" ?
