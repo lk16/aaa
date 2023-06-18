@@ -10,84 +10,84 @@
 //     ChangeColor(i32, i32, i32),
 // }
 
-struct coord {
+struct Coord {
     x as int,
     y as int,
 }
 
-struct empty {}
+struct Empty {}
 
-struct rgb {
+struct Rgb {
     r as int,
     g as int,
     b as int,
 }
 
-enum message {
-    quit as empty,
-    move as coord,
+enum Message {
+    quit as Empty,
+    move as Coord,
     write as str,
-    change_color as rgb,
+    change_color as Rgb,
 }
 
-fn is_quit_message args m as message return bool {
+fn is_quit_message args m as Message return bool {
     m
     match {
-        case message:quit { drop true }
+        case Message:quit { drop true }
         default { false }
     }
 }
 
-fn returns_sometimes args m as message return int {
+fn returns_sometimes args m as Message return int {
     m
     match {
-        case message:quit { 0 exit }
-        case message:move { drop 6 }
-        case message:write { 0 exit }
-        case message:change_color { drop 5 }
+        case Message:quit { 0 exit }
+        case Message:move { drop 6 }
+        case Message:write { 0 exit }
+        case Message:change_color { drop 5 }
     }
 }
 
 fn main {
     // construct enum with attached values
 
-    rgb
+    Rgb
     dup "r" { 1 } !
     dup "g" { 2 } !
     dup "b" { 3 } !
-    message:change_color
-    // stack: message:change_color{1, 2, 3}
+    Message:change_color
+    // stack: Message:change_color{1, 2, 3}
     drop
 
-    coord
+    Coord
     dup "x" { 4 } !
     dup "y" { 5 } !
-    message:move
-    // stack: message:move{4, 5}
+    Message:move
+    // stack: Message:move{4, 5}
     drop
 
     "something"
-    message:write
-    // stack: message:written{"something"}
+    Message:write
+    // stack: Message:written{"something"}
     drop
 
-    empty
-    message:quit
-    // stack: message
+    Empty
+    Message:quit
+    // stack: Message
     drop
 
-    empty
-    message:quit
+    Empty
+    Message:quit
 
-    match { // consumes message
-        case message:quit {
+    match { // consumes Message
+        case Message:quit {
             // stack: struct{}
             "quit\n" .
 
             drop
             // stack: <empty>
         }
-        case message:move {
+        case Message:move {
             // stack: coord
             "move " .
 
@@ -101,7 +101,7 @@ fn main {
             // stack: <empty>
 
         }
-        case message:write {
+        case Message:write {
             // stack: str
             "write " .
 
@@ -112,7 +112,7 @@ fn main {
 
             // stack: <empty>
         }
-        case message:change_color {
+        case Message:change_color {
             // stack: struct { r as int, g as int, y as int, }
             "color " .
 
@@ -130,12 +130,12 @@ fn main {
     }
     // stack: <empty>
 
-    empty
-    message:quit
+    Empty
+    Message:quit
     is_quit_message assert
 
     "something"
-    message:write
+    Message:write
     is_quit_message not assert
 
 }

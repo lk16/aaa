@@ -798,62 +798,62 @@ fn test_loop_true_false {
     4 = assert
 }
 
-struct int_holder {
+struct IntHolder {
     value as int
 }
 
 fn test_struct_zero_value_int {
-    int_holder "value" ?
+    IntHolder "value" ?
     0 = assert
 }
 
-struct bool_holder {
+struct BoolHolder {
     value as bool
 }
 
 fn test_struct_zero_value_bool {
-    bool_holder "value" ?
+    BoolHolder "value" ?
     not assert
 }
 
-struct string_holder {
+struct StringHolder {
     value as str
 }
 
 fn test_struct_zero_value_str {
-    string_holder "value" ?
+    StringHolder "value" ?
     "" str:equals assert
 }
 
-struct vector_holder {
+struct VectorHolder {
     value as vec[int]
 }
 
 fn test_struct_zero_value_vec {
-    vector_holder "value" ?
+    VectorHolder "value" ?
     repr "[]" str:equals assert
 }
 
-struct map_holder {
+struct MapHolder {
     value as map[int, str]
 }
 
 fn test_struct_zero_value_map {
-    map_holder "value" ?
+    MapHolder "value" ?
     repr "{}" str:equals assert
 }
 
-struct indirect_int_holder {
-    value as int_holder
+struct IndirectIntHolder {
+    value as IntHolder
 }
 
 fn test_struct_zero_value_struct {
-    indirect_int_holder "value" ? "value" ?
+    IndirectIntHolder "value" ? "value" ?
     0 = assert
 }
 
 fn test_struct_set_get_int {
-    int_holder
+    IntHolder
     dup "value" { 3 } !
     "value" ?
 
@@ -861,7 +861,7 @@ fn test_struct_set_get_int {
 }
 
 fn test_struct_set_get_bool {
-    bool_holder
+    BoolHolder
     dup "value" { true } !
     "value" ?
 
@@ -869,7 +869,7 @@ fn test_struct_set_get_bool {
 }
 
 fn test_struct_set_get_str {
-    string_holder
+    StringHolder
     dup "value" { "foo" } !
     "value" ?
 
@@ -877,7 +877,7 @@ fn test_struct_set_get_str {
 }
 
 fn test_struct_set_get_vec {
-    vector_holder
+    VectorHolder
     dup "value" ?
     5 vec:push
     "value" ?
