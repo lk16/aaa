@@ -687,7 +687,7 @@ class SingleFunctionTypeChecker:
                 struct_type=struct_type,
                 field_name=field_update.field_name.value,
                 found_type=update_expr_type,
-                expected_type=field_selector_type,
+                expected_type=field_type,
             )
 
         # pop struct, field name and new value

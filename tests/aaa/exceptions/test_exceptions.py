@@ -232,7 +232,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             StructUpdateTypeError,
             "/foo/main.aaa:3:32: Attempt to set field x of bar to wrong type\n"
-            + "Expected type: str"
+            + "Expected type: int"
             + "\n   Found type: bool\n"
             + "\n"
             + "Type stack: bar str bool\n",
