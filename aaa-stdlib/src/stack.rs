@@ -484,7 +484,9 @@ impl Stack {
         let result = read(fd as i32, &mut buffer[..]);
 
         match result {
-            Ok(_) => {
+            Ok(bytes_read) => {
+                buffer.truncate(bytes_read);
+
                 let string = String::from_utf8(buffer);
 
                 match string {
