@@ -1,7 +1,6 @@
 from "five" import five as get_five
 
-fn
-    main
-{
+fn main {
     get_five .
+    "\n" .
 }

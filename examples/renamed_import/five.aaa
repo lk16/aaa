@@ -1,7 +1,3 @@
-fn
-    five
-return
-    int
-{
+fn five return int {
     5
 }

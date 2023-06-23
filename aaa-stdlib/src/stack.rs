@@ -4,6 +4,7 @@ use std::{
     ffi::CString,
     fmt::{Debug, Formatter, Result},
     fs,
+    io::{stdout, Write},
     net::{Ipv4Addr, ToSocketAddrs},
     path::Path,
     process,
@@ -251,6 +252,7 @@ impl Stack {
     pub fn print(&mut self) {
         let top = self.pop();
         print!("{top}");
+        _ = stdout().flush(); // TODO remove when #67 `fflush` is added
     }
 
     pub fn dup(&mut self) {
