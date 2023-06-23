@@ -52,31 +52,25 @@ pyenv install 3.10.2
 
 # Use it in this project
 pyenv local 3.10.2
-
-# Tell poetry to use it when it creates a virtual environment
-poetry env use 3.10
 ```
 
-After setting up the right python for poetry, run the following commands.
+After setting up the right python for pdm, run the following commands.
 
 ```sh
 # Install dependencies
-poetry install
-
-# Enter poetry environment
-poetry shell
+pdm install
 
 # Tell Aaa where the standard library lives
 export AAA_STDLIB_PATH=$(pwd)/stdlib
 
 # Run hello world program
-./manage.py cmd -cr 'fn main { "Hello world\n" . }'
+pdm run ./manage.py cmd -cr 'fn main { "Hello world\n" . }'
 
 # Run tests
-./manage.py runtests
+pdm run ./manage.py runtests
 
 # Setup pre-commit hooks
-pre-commit install
+pdm run pre-commit install
 ```
 
 Now you can start running code in Aaa or develop the language!
