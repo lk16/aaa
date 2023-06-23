@@ -1,39 +1,52 @@
 
+fn stdin return int {
+    0
+}
+
 fn run_process args input as str {
-    if input "" str:equals not {
+    if input "" str:equals {
+        return
+    }
 
-        input " " str:split dup 0 vec:get swap
-        environ
-        execve
-
-        // This is unreachable if execve succeeds
-        drop
-        "Command failed\n" .
-
-        1 exit
+    input str:strip " " str:split
+    use argv {
+        argv 0 vec:get
+        // TODO #68: add `pipe` syscall, so we can run/usr/bin/which to figure out the full path to executables
+        // then we can run `ls` instead of `/bin/ls`
+        use path {
+            path argv environ execve
+            drop
+        }
     }
 }
 
-
-fn main {
+fn main return int {
     while true {
-        "> " .
-        0 1024 read drop str:strip
+        "$ " .
+        stdin 1024 read
+        use command, read_ok {
+            if command str:strip "exit" str:equals {
+                0 return
+            }
 
-        if dup "exit" str:equals {
-            0 exit
-        }
+            fork
+            use pid {
+                if pid 0 = {
+                    // child
+                    command run_process
 
-        fork
-        if dup 0 = {
-            // child
-            drop
-            run_process
-
-        } else {
-            // parent
-            swap drop
-            0 waitpid drop drop drop drop
+                    // unreachable if run_process succeeds
+                    "Command failed\n" .
+                    1 return
+                } else {
+                    // parent
+                    pid 0 waitpid
+                    drop drop drop drop
+                }
+            }
         }
     }
+
+    // unreachable
+    1
 }

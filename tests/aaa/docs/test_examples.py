@@ -1,7 +1,10 @@
+import subprocess
+from ipaddress import IPv4Address
 from pathlib import Path
 from typing import List
 
 import pytest
+import requests
 from pytest import CaptureFixture
 
 from aaa.run import Runner
@@ -45,29 +48,13 @@ EXPECTED_EXAMPLE_OUTPUT = {
             "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n",
             id="one_to_ten.aaa",
         ),
-        pytest.param("examples/print_number.aaa", "42\n", id="print_number.aaa"),
         pytest.param(
             "examples/fizzbuzz.aaa", expected_fizzbuzz_output(), id="fizzbuzz.aaa"
         ),
         pytest.param(
-            "examples/print_twice.aaa", "hello!\nhello!\n", id="print_twice.aaa"
+            "examples/renamed_import/main.aaa", "5\n", id="renamed_import/main.aaa"
         ),
-        pytest.param(
-            "examples/function_demo.aaa", "a=1\nb=2\nc=3\n", id="function_demo.aaa"
-        ),
-        pytest.param(
-            "examples/typing_playground.aaa",
-            "five = 5\n3 5 max = 5\n4 factorial = 24\n7 dup_twice = 777\n",
-            id="typing_playground.aaa",
-        ),
-        pytest.param(
-            "examples/renamed_import/main.aaa", "5", id="renamed_import/main.aaa"
-        ),
-        pytest.param(
-            "examples/struct.aaa",
-            "x = 0\ny = 0\nx = 3\ny = 4\n7\nx,y = 3,4\nx,y = 0,0\n",
-            id="struct.aaa",
-        ),
+        pytest.param("examples/import/main.aaa", "5\n", id="renamed_import/main.aaa"),
     ],
 )
 def test_examples(
@@ -78,3 +65,43 @@ def test_examples(
     stdout, stderr = capfd.readouterr()
     assert str(stderr) == ""
     assert str(stdout) == expected_output
+
+
+def test_http_server() -> None:
+    runner = Runner(Path("examples/http_server.aaa"), None, False)
+    runner.run(True, None, False)
+
+    binary = runner.generated_binary_file
+
+    subproc = subprocess.Popen(binary)
+
+    r = requests.get("http://localhost:8080")
+
+    subproc.terminate()
+    subproc.wait()
+
+    assert r.status_code == 200
+    assert r.json() == {"message": "Hello world!"}
+    assert r.headers["Content-Type"] == "application/json"
+
+
+def test_http_client(capfd: CaptureFixture[str]) -> None:
+    runner = Runner(Path("examples/http_client.aaa"), None, False)
+    runner.run(True, None, True)
+
+    stdout, stderr = capfd.readouterr()
+    stdout_lines = stdout.split("\r\n")
+
+    assert stderr == ""
+    assert stdout_lines[0] == "HTTP/1.1 200 OK"
+    IPv4Address(stdout_lines[-1].strip())  # should not fail
+
+
+@pytest.mark.skip()
+def test_shell() -> None:
+    raise NotImplementedError  # TODO #71 Implement test for examples/shell.aaa
+
+
+@pytest.mark.skip()
+def test_sudoku_solver() -> None:
+    raise NotImplementedError  # TODO #72 Implement test for examples/sudoku_solver.aaa

@@ -1,12 +1,36 @@
 
+struct Range {
+    next_value as int,
+    end as int,
+}
+
+fn make_range args start as int, end as int return Range {
+    Range
+    dup "next_value" { start } !
+    dup "end" { end } !
+}
+
+fn Range:iter args r as Range return Range {
+    r
+}
+
+fn Range:next args r as Range return int, bool {
+    r "next_value" ?
+    if dup r "end" ? < {
+        true
+        r "next_value" { r "next_value" ? 1 + } !
+    } else {
+        drop 0
+        false
+    }
+}
+
 fn main {
-    0
-    while
-        dup 10 <
-    {
-        1 +
-        dup .
+    1 11 make_range
+    foreach {
+        use n {
+            n .
+        }
         "\n" .
     }
-    drop
 }

@@ -23,6 +23,7 @@ class Runner:
         self.exceptions: Sequence[AaaException] = []
         self.parsed_files = parsed_files or {}
         self.verbose = verbose
+        self.generated_binary_file: Path
 
     @staticmethod
     def without_file(
@@ -85,6 +86,9 @@ class Runner:
                 generated_binary_file,
                 self.verbose,
             )
+
+            self.generated_binary_file = transpiler.generated_binary_file
+
             return transpiler.run(compile, run)
 
         except AaaRunnerException as e:
