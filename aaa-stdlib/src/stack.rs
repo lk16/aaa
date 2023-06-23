@@ -9,7 +9,8 @@ use std::{
     process,
     rc::Rc,
     str::FromStr,
-    time::{SystemTime, UNIX_EPOCH},
+    thread::sleep,
+    time::{Duration, SystemTime, UNIX_EPOCH},
     vec,
 };
 
@@ -1280,5 +1281,15 @@ impl Stack {
         let enum_ = &*enum_rc.borrow();
         self.push(enum_.value.clone());
         enum_.discriminant
+    }
+
+    pub fn sleep(&mut self) {
+        let secs = self.pop_int();
+        sleep(Duration::from_secs(secs as u64));
+    }
+
+    pub fn usleep(&mut self) {
+        let micros = self.pop_int();
+        sleep(Duration::from_micros(micros as u64));
     }
 }

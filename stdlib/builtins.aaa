@@ -138,13 +138,15 @@ fn getcwd return str
 fn getenv args name as const str return str, bool
 fn getpid return int
 fn getppid return int
-fn time return int, int
 fn listen args fd as const int, backlog as const int return bool
 fn open args path as const str, flag as const int, mode as const int return int, bool
 fn read args fd as const int, n as const int return str, bool
 fn setenv args name as const str, value as const str
+fn sleep args seconds as int
 fn socket args family as const int, type_ as const int, protocol as const int return int, bool
+fn time return int, int
 fn unlink args path as const str return bool
 fn unsetenv args name as const str
+fn usleep args microseconds as int
 fn waitpid args pid as const int, options as const int return int, int, bool, bool
 fn write args fd as const int, data as const str return int, bool
