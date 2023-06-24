@@ -27,6 +27,7 @@ use nix::{
     },
     unistd::{self, close, read, ForkResult, Pid},
 };
+use regex::Regex;
 
 use crate::{
     map::{Map, MapIterator},
@@ -158,6 +159,10 @@ impl Stack {
         self.push(Variable::Enum(Rc::new(RefCell::new(v))));
     }
 
+    pub fn push_regex(&mut self, v: Regex) {
+        self.push(Variable::Regex(Rc::new(RefCell::new(v))));
+    }
+
     pub fn pop(&mut self) -> Variable {
         match self.items.pop() {
             Some(popped) => popped,
@@ -246,6 +251,13 @@ impl Stack {
         match self.pop() {
             Variable::Enum(v) => v,
             v => self.pop_type_error("enum", &v),
+        }
+    }
+
+    pub fn pop_regex(&mut self) -> Rc<RefCell<Regex>> {
+        match self.pop() {
+            Variable::Regex(v) => v,
+            v => self.pop_type_error("regex", &v),
         }
     }
 
@@ -1293,5 +1305,48 @@ impl Stack {
     pub fn usleep(&mut self) {
         let micros = self.pop_int();
         sleep(Duration::from_micros(micros as u64));
+    }
+
+    pub fn make_regex(&mut self) {
+        let pattern_rc = self.pop_str();
+        let pattern = &*pattern_rc.borrow();
+        match Regex::new(pattern) {
+            Ok(regex) => {
+                self.push_regex(regex);
+                self.push_bool(true);
+            }
+            Err(_) => {
+                self.push_none();
+                self.push_bool(false);
+            }
+        }
+    }
+
+    pub fn regex_find(&mut self) {
+        let offset = self.pop_int();
+        let string_rc = self.pop_str();
+        let string = &*string_rc.borrow();
+        let regex_rc = self.pop_regex();
+        let regex = regex_rc.borrow();
+
+        let regex_match = regex
+            .find_iter(string)
+            .find(|m| m.start() >= offset as usize);
+
+        match regex_match {
+            Some(matched) => {
+                let matched_offset = matched.start();
+                let matched_string = matched.as_str().to_owned();
+
+                self.push_str(&matched_string);
+                self.push_int(matched_offset as isize);
+                self.push_bool(true);
+            }
+            None => {
+                self.push_str("");
+                self.push_int(0);
+                self.push_bool(false);
+            }
+        }
     }
 }
