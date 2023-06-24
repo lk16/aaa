@@ -1,61 +1,59 @@
 
+// used to create socket for IPv4 connections
+fn AF_INET return int {
+    2
+}
 
-fn main {
-    2  // AF_INET
-    1  // SOCK_STREAM
-    0  // protocol
-    socket
-    if not dup {
-        "socket failed\n" .
-        1 exit
+// used to create TCP connections
+fn SOCK_STREAM return int {
+    1
+}
+
+fn make_http_socket return int, bool {
+    AF_INET SOCK_STREAM 0 socket
+}
+
+fn raw_http_request return str {
+    "GET / HTTP/1.1\r\n"
+    "Host: icanhazip.com\r\n" str:append
+    "User-Agent: curl/7.68.0\r\n" str:append
+    "Accept: */*\r\n\r\n" str:append
+}
+
+fn main return int {
+    make_http_socket
+    use fd, socket_ok {
+        if socket_ok not {
+            "socket failed\n" .
+            1 return
+        }
+
+        fd "icanhazip.com" 80 connect
+        use connect_ok {
+            if connect_ok not {
+                "connect failed\n" .
+                1 return
+            }
+        }
+
+        fd raw_http_request write
+        use written, write_ok {
+            if write_ok not {
+                "write failed\n" .
+                1 return
+            }
+        }
+
+        fd 2048 read
+        use response, read_ok {
+            if read_ok not {
+                "read failed\n" .
+                1 return
+            }
+
+            response .
+        }
     }
-    drop
 
-    // stack: int
-    dup
-
-    // stack: int int
-    "icanhazip.com"
-    80
-    connect
-
-    // stack: int bool
-    if not dup {
-        "connect failed\n" .
-        1 exit
-    }
-    drop
-
-    // stack: int
-    dup
-    // stack: int int
-
-    "GET / HTTP/1.1\r\nHost: icanhazip.com\r\nUser-Agent: curl/7.68.0\r\nAccept: */*\r\n\r\n"
-    write
-
-    // stack: int int bool
-
-    if not dup {
-        "write failed\n" .
-        1 exit
-    }
-    drop
-    // stack: int int
-
-    drop
-    // stack: int
-
-    2048
-    read
-
-    // stack: str bool
-
-    if not dup {
-        "read failed\n" .
-        1 exit
-    }
-    drop
-
-    // stack: str
-    .
+    0
 }
