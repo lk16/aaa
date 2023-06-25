@@ -1329,17 +1329,16 @@ impl Stack {
         let regex_rc = self.pop_regex();
         let regex = regex_rc.borrow();
 
-        let regex_match = regex
-            .find_iter(string)
-            .find(|m| m.start() >= offset as usize);
+        let after_offset = &string[offset as usize..];
+        let regex_match = regex.find(after_offset);
 
         match regex_match {
             Some(matched) => {
-                let matched_offset = matched.start();
+                let matched_offset = offset + matched.start() as isize;
                 let matched_string = matched.as_str().to_owned();
 
                 self.push_str(&matched_string);
-                self.push_int(matched_offset as isize);
+                self.push_int(matched_offset);
                 self.push_bool(true);
             }
             None => {
