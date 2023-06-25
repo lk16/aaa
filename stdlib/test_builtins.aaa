@@ -886,3 +886,37 @@ fn test_struct_set_get_vec {
 }
 
 // TODO #40 Add tests `set` functions
+
+fn test_make_regex_ok {
+    "[a-z]+" make_regex
+    assert
+    drop
+}
+
+fn test_make_regex_fail {
+    "(a-z+" make_regex
+    not assert
+    drop
+}
+
+fn test_regex_find_ok {
+    "[a-z]+" make_regex assert
+    use re {
+        re " aaa aaaaa" 0 regex:find
+        use matched, match_offset, match_ok {
+            match_ok assert
+            matched "aaa" str:equals assert
+            match_offset 1 = assert
+        }
+    }
+}
+
+fn test_regex_find_fail {
+    "b+" make_regex assert
+    use re {
+        re " aaa aaaaa" 0 regex:find
+        use matched, match_offset, match_ok {
+            match_ok not assert
+        }
+    }
+}

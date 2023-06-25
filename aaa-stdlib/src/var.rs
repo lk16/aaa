@@ -8,6 +8,8 @@ use std::{
     vec,
 };
 
+use regex::Regex;
+
 use crate::{
     map::{Map, MapIterator},
     set::{Set, SetIterator},
@@ -131,6 +133,7 @@ pub enum Variable {
     MapIterator(Rc<RefCell<MapIterator<ContainerValue, ContainerValue>>>),
     SetIterator(Rc<RefCell<SetIterator<ContainerValue>>>),
     Enum(Rc<RefCell<Enum>>),
+    Regex(Rc<RefCell<Regex>>),
 }
 
 impl Variable {
@@ -165,6 +168,7 @@ impl Variable {
                 let type_name = &(**e).borrow().type_name;
                 format!("(enum {type_name})")
             }
+            Self::Regex(_) => String::from("regex"),
         }
     }
 
@@ -208,6 +212,7 @@ impl Variable {
             Self::VectorIterator(_) | Self::MapIterator(_) | Self::SetIterator(_) => {
                 unreachable!(); // Cannot recursively clone an iterator
             }
+            Self::Regex(regex) => Self::Regex(regex.clone()),
         }
     }
 }
@@ -227,6 +232,7 @@ impl Display for Variable {
             Self::SetIterator(_) => write!(f, "set_iter"),
             Self::None => write!(f, "None"),
             Self::Enum(v) => write!(f, "{:?}", (**v).borrow()),
+            Self::Regex(_) => write!(f, "regex"),
         }
     }
 }
@@ -269,15 +275,9 @@ impl Hash for Variable {
                 let string = (**v).borrow().clone();
                 Hash::hash(&string, state)
             }
-            Self::Vector(_) => unreachable!(),
-            Self::Set(_) => unreachable!(),
-            Self::Map(_) => unreachable!(),
-            Self::Struct(_) => unreachable!(),
-            Self::None => unreachable!(),
-            Self::VectorIterator(_) => unreachable!(),
-            Self::MapIterator(_) => unreachable!(),
-            Self::SetIterator(_) => unreachable!(),
-            Self::Enum(_) => unreachable!(),
+            _ => {
+                unreachable!() // Can't hash variables of different types
+            }
         }
     }
 }

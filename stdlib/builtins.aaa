@@ -21,6 +21,9 @@ type remove_const[T]
 
 fn make_const[A] args a as A return const A
 
+// compiled regular expression
+type regex
+
 // stack operations
 fn copy[A]      args a as A                 return A, remove_const[A]
 fn drop[A]      args a as A
@@ -121,7 +124,11 @@ fn str:substr     args s as const str, start as int, end as int      return str,
 fn str:to_bool    args s as const str                                return bool, bool
 fn str:to_int     args s as const str                                return int, bool
 
-// Function and type names should not be reserved / builtin
+// regex functions
+
+fn make_regex args pattern as str return regex, bool
+fn regex:find args r as const regex, s as const str, offset as const int return str, int, bool
+
 
 // Syscall list: http://faculty.nps.edu/cseagle/assembly/sys_call.html
 

@@ -70,7 +70,7 @@
 		},
 		"builtin_types": {
 			"name": "support.type.aaa",
-			"match": "\\b(bool|int|str|vec|map|set|never)\\b"
+			"match": "\\b(bool|int|str|vec|map|set|never|regex)\\b"
 		},
 		"types": {
 			"name": "support.type.aaa",
