@@ -264,6 +264,9 @@ class Type(Identifiable):
     def is_resolved(self) -> bool:
         return isinstance(self.state, Type.Resolved)
 
+    def is_enum(self) -> bool:
+        return bool(self.enum_fields)
+
 
 class VariableType(AaaCrossReferenceModel):
     def __init__(
