@@ -56,6 +56,7 @@ edition = "2021"
 
 [dependencies]
 aaa-stdlib = {{ version = "0.1.0", path = "{stdlib_impl_path}" }}
+regex = "1.8.4"
 """
 
 
@@ -138,6 +139,7 @@ class Transpiler:
         content += "use aaa_stdlib::set::Set;\n"
         content += "use aaa_stdlib::var::{Enum, Struct, Variable};\n"
         content += "use aaa_stdlib::vector::Vector;\n"
+        content += "use regex::Regex;\n"
         content += "use std::cell::RefCell;\n"
         content += "use std::collections::HashMap;\n"
         content += "use std::process;\n"
@@ -146,7 +148,10 @@ class Transpiler:
         content += "\n"
 
         for type in self.types.values():
-            content += self._generate_rust_struct_new_func(type)
+            if type.is_enum():
+                content += self._generate_rust_enum_new_func(type)
+            else:
+                content += self._generate_rust_struct_new_func(type)
 
         for function in self.functions.values():
             if function.position.file == self.builtins_path:
@@ -500,25 +505,8 @@ class Transpiler:
 
     def _generate_rust_call_type_code(self, call_type: CallType) -> str:
         var_type = call_type.var_type
-
-        if var_type.type.position.file == self.builtins_path:
-            if var_type.name == "int":
-                return self._indent("stack.push_int(0);\n")
-            elif var_type.name == "str":
-                return self._indent('stack.push_str("");\n')
-            elif var_type.name == "bool":
-                return self._indent("stack.push_bool(false);\n")
-            elif var_type.name == "vec":
-                return self._indent("stack.push_vector(Vector::new());\n")
-            elif var_type.name == "map":
-                return self._indent("stack.push_map(Map::new());\n")
-            elif var_type.name == "set":
-                return self._indent("stack.push_set(Set::new());\n")
-            else:  # pragma: nocover
-                assert False
-
-        rust_struct_name = self._generate_rust_struct_name(var_type.type)
-        return self._indent(f"stack.push_struct({rust_struct_name}_new());\n")
+        zero_expr = self._generate_rust_variable_zero_expression(var_type)
+        return self._indent(f"stack.push({zero_expr});\n")
 
     def _generate_rust_branch(self, branch: Branch) -> str:
         code = self._generate_rust_function_body(branch.condition)
@@ -540,19 +528,82 @@ class Transpiler:
 
         return code
 
+    def _generate_rust_enum_name(self, type: Type) -> str:
+        hash_input = f"{type.position.file} {type.name}"
+        hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
+        return f"user_enum_{hash}"
+
     def _generate_rust_struct_name(self, type: Type) -> str:
         hash_input = f"{type.position.file} {type.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"user_struct_{hash}"
 
+    def _generate_rust_enum_new_func(self, type: Type) -> str:
+        rust_enum_name = self._generate_rust_enum_name(type)
+
+        code = f"// Generated for: {type.position.file} {type.name}, zero-value\n"
+        code += f"fn {rust_enum_name}_new() -> Enum {{\n"
+
+        zero_variant_var_type: Optional[VariableType] = None
+
+        for variant_type, variant_id in type.enum_fields.values():
+            if variant_id == 0:
+                zero_variant_var_type = variant_type
+
+        # NOTE: This should not fail, every enum should have at least one variant
+        assert zero_variant_var_type  # nosec
+
+        zero_value_expr = self._generate_rust_variable_zero_expression(
+            zero_variant_var_type
+        )
+
+        self.indent_level += 1
+
+        code += self._indent("Enum {\n")
+        self.indent_level += 1
+
+        code += self._indent(f'type_name: String::from("{type.name}"),\n')
+        code += self._indent("discriminant: 0,\n")
+        code += self._indent(f"value: {zero_value_expr},\n")
+
+        self.indent_level -= 1
+        code += self._indent("}\n")
+
+        self.indent_level -= 1
+        code += "}\n\n"
+
+        return code
+
+    def _generate_rust_variable_zero_expression(self, var_type: VariableType) -> str:
+        if var_type.name == "int":
+            return "Variable::Integer(0)"
+        elif var_type.name == "bool":
+            return "Variable::Boolean(false)"
+        elif var_type.name == "str":
+            return 'Variable::String(Rc::new(RefCell::new(String::from(""))))'
+        elif var_type.name == "vec":
+            return "Variable::Vector(Rc::new(RefCell::new(Vector::new())))"
+        elif var_type.name == "map":
+            return "Variable::Map(Rc::new(RefCell::new(Map::new())))"
+        elif var_type.name == "set":
+            return "Variable::Set(Rc::new(RefCell::new(Set::new())))"
+        elif var_type.name == "regex":
+            return 'Variable::Regex(Rc::new(RefCell::new(Regex::new("$.^").unwrap())))'
+        elif var_type.type.is_enum():
+            rust_enum_name = self._generate_rust_enum_name(var_type.type)
+            return f"Variable::Enum(Rc::new(RefCell::new({rust_enum_name}_new())))"
+        else:
+            rust_struct_name = self._generate_rust_struct_name(var_type.type)
+            return f"Variable::Struct(Rc::new(RefCell::new({rust_struct_name}_new())))"
+
     def _generate_rust_struct_new_func(self, type: Type) -> str:
         if type.position.file == self.builtins_path and not type.fields:
             return ""
 
-        c_struct_name = self._generate_rust_struct_name(type)
+        rust_struct_name = self._generate_rust_struct_name(type)
 
         code = f"// Generated for: {type.position.file} {type.name}\n"
-        code += f"fn {c_struct_name}_new() -> Struct {{\n"
+        code += f"fn {rust_struct_name}_new() -> Struct {{\n"
 
         self.indent_level += 1
         code += self._indent(f'let type_name = String::from("{type.name}");\n')
@@ -561,25 +612,8 @@ class Transpiler:
         self.indent_level += 1
 
         for field_name, field_type in type.fields.items():
-            if field_type.name == "int":
-                value = "Variable::Integer(0)"
-            elif field_type.name == "bool":
-                value = "Variable::Boolean(false)"
-            elif field_type.name == "str":
-                value = 'Variable::String(Rc::new(RefCell::new(String::from(""))))'
-            elif field_type.name == "vec":
-                value = "Variable::Vector(Rc::new(RefCell::new(Vector::new())))"
-            elif field_type.name == "map":
-                value = "Variable::Map(Rc::new(RefCell::new(Map::new())))"
-            elif field_type.name == "set":
-                value = "Variable::Set(Rc::new(RefCell::new(Set::new())))"
-            else:
-                rust_struct_name = self._generate_rust_struct_name(field_type.type)
-                value = (
-                    f"Variable::Struct(Rc::new(RefCell::new({rust_struct_name}_new())))"
-                )
-
-            code += self._indent(f'(String::from("{field_name}"), {value}),\n')
+            zero_expr = self._generate_rust_variable_zero_expression(field_type)
+            code += self._indent(f'(String::from("{field_name}"), {zero_expr}),\n')
 
         self.indent_level -= 1
 
