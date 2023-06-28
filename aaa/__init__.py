@@ -26,6 +26,12 @@ class Position:
     def __hash__(self) -> int:
         return hash((self.file, self.line, self.column))
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Position):
+            return False
+
+        return str(self) == str(other)
+
     def context(self) -> str:  # pragma: nocover
         code = self.file.read_text()
         line = code.split("\n")[self.line - 1]
