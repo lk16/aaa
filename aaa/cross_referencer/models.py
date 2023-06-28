@@ -239,6 +239,12 @@ class Type(Identifiable):
         self.param_count = param_count
         super().__init__(parsed.position, parsed.identifier.name)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Type):
+            return False
+
+        return self.name == other.name and self.position == other.position
+
     @property
     def fields(self) -> Dict[str, VariableType]:
         assert isinstance(self.state, Type.Resolved)
@@ -302,8 +308,7 @@ class VariableType(AaaCrossReferenceModel):
             return False
 
         return (
-            # NOTE: Type instances are unique, we can use identity here
-            self.type is other.type
+            self.type == other.type
             and self.params == other.params
             and self.is_const == other.is_const
         )

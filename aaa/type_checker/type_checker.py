@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -221,7 +221,7 @@ class SingleFunctionTypeChecker:
             return False
 
         for expected_value, computed_value in zip(expected, computed):
-            if computed_value.type is not expected_value.type:
+            if computed_value.type != expected_value.type:
                 return False
 
             if computed_value.params != expected_value.params:
@@ -248,7 +248,7 @@ class SingleFunctionTypeChecker:
             return placeholder_types
 
         else:
-            if expected_var_type.type is not var_type.type:
+            if expected_var_type.type != var_type.type:
                 raise SignatureItemMismatch
 
             if len(var_type.params) != len(expected_var_type.params):
@@ -265,9 +265,11 @@ class SingleFunctionTypeChecker:
 
             return placeholder_types
 
-    def _update_return_type(
+    def _apply_placeholders_in_return_type(
         self, return_type: VariableType, placeholder_types: Dict[str, VariableType]
     ) -> VariableType:
+        return_type = deepcopy(return_type)
+
         if return_type.is_placeholder:
             updated_return_type = copy(placeholder_types[return_type.name])
 
@@ -277,7 +279,9 @@ class SingleFunctionTypeChecker:
             return updated_return_type
 
         for i, param in enumerate(return_type.params):
-            return_type.params[i] = self._update_return_type(param, placeholder_types)
+            return_type.params[i] = self._apply_placeholders_in_return_type(
+                param, placeholder_types
+            )
 
         return return_type
 
@@ -548,7 +552,7 @@ class SingleFunctionTypeChecker:
 
             try:
                 placeholder_types = self._match_signature_items(
-                    argument.var_type, type, placeholder_types
+                    argument.var_type, copy(type), placeholder_types
                 )
             except SignatureItemMismatch as e:
                 raise StackTypesError(
@@ -561,7 +565,9 @@ class SingleFunctionTypeChecker:
             return Never()
 
         for return_type in call_function.function.return_types:
-            stack_item = self._update_return_type(return_type, placeholder_types)
+            stack_item = self._apply_placeholders_in_return_type(
+                return_type, placeholder_types
+            )
             stack_item = self._simplify_stack_item(stack_item)
 
             stack.append(stack_item)
@@ -735,6 +741,7 @@ class SingleFunctionTypeChecker:
 
         dummy_path = Position(Path("/dev/null"), -1, -1)
         call_function = CallFunction(iter_func, [], dummy_path)
+
         type_stack_after_iter = self._check_call_function(call_function, type_stack)
 
         assert isinstance(type_stack_after_iter, list)  # This was checked earlier
