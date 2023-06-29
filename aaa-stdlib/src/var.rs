@@ -207,8 +207,34 @@ impl Variable {
                 }
                 Self::Map(Rc::new(RefCell::new(cloned)))
             }
-            Self::Struct(_v) => todo!(), // TODO #36 implement clone_recursive
-            Self::Enum(_v) => todo!(),   // TODO #36 implement clone_recursive
+            Self::Struct(v) => {
+                let source = (**v).borrow();
+
+                let recurive_cloned_values = source
+                    .values
+                    .iter()
+                    .map(|(key, value)| (key.clone(), value.clone_recursive()))
+                    .collect::<HashMap<_, _>>();
+
+                let cloned = Struct {
+                    type_name: source.type_name.clone(),
+                    values: recurive_cloned_values,
+                };
+
+                Self::Struct(Rc::new(RefCell::new(cloned)))
+            }
+
+            Self::Enum(v) => {
+                let source = (**v).borrow();
+
+                let enum_ = Enum {
+                    discriminant: source.discriminant,
+                    type_name: source.type_name.clone(),
+                    value: source.value.clone_recursive(),
+                };
+
+                Self::Enum(Rc::new(RefCell::new(enum_)))
+            }
             Self::VectorIterator(_) | Self::MapIterator(_) | Self::SetIterator(_) => {
                 unreachable!(); // Cannot recursively clone an iterator
             }
