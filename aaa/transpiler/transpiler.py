@@ -2,7 +2,7 @@ import subprocess
 from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Optional, Set
+from typing import List, Optional, Set
 
 from aaa.cross_referencer.models import (
     Assignment,
@@ -93,7 +93,7 @@ class Transpiler:
     def get_generated_source_path(self) -> Path:
         return Path(self.transpiled_rust_root / "src/main.rs")
 
-    def run(self, compile: bool, run_binary: bool) -> int:
+    def run(self, compile: bool, run_binary: bool, args: List[str]) -> int:
         generated_rust_file = self.get_generated_source_path()
         cargo_toml = self.get_cargo_toml_path()
         stdlib_impl_path = self.get_stdlib_impl_path()
@@ -119,7 +119,7 @@ class Transpiler:
             binary_file.rename(self.generated_binary_file)
 
         if run_binary:  # pragma: nocover
-            command = [str(self.generated_binary_file)]
+            command = [str(self.generated_binary_file)] + args
             return subprocess.run(command).returncode
 
         return 0

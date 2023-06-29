@@ -61,7 +61,7 @@ def test_examples(
     example_file_path: Path, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
     runner = Runner(Path(example_file_path), None, False)
-    runner.run(True, None, True)
+    runner.run(True, None, True, [])
     stdout, stderr = capfd.readouterr()
     assert str(stderr) == ""
     assert str(stdout) == expected_output
@@ -69,7 +69,7 @@ def test_examples(
 
 def test_http_server() -> None:
     runner = Runner(Path("examples/http_server.aaa"), None, False)
-    runner.run(True, None, False)
+    runner.run(True, None, False, [])
 
     binary = runner.generated_binary_file
 
@@ -87,7 +87,7 @@ def test_http_server() -> None:
 
 def test_http_client(capfd: CaptureFixture[str]) -> None:
     runner = Runner(Path("examples/http_client.aaa"), None, False)
-    runner.run(True, None, True)
+    runner.run(True, None, True, [])
 
     stdout, stderr = capfd.readouterr()
     stdout_lines = stdout.split("\r\n")

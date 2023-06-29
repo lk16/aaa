@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile, gettempdir
-from typing import Dict, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from aaa import AaaException, AaaRunnerException, AaaRuntimeException
 from aaa.cross_referencer.cross_referencer import CrossReferencer
@@ -51,7 +51,9 @@ class Runner:
 
         return Path(stdlib_folder) / "builtins.aaa"
 
-    def run(self, compile: bool, binary: Optional[str], run: bool) -> int:
+    def run(
+        self, compile: bool, binary: Optional[str], run: bool, args: List[str]
+    ) -> int:
         if binary is not None and not compile:
             print(
                 "Specifying binary path without compiling does not make sense.",
@@ -89,7 +91,7 @@ class Runner:
 
             self.generated_binary_file = transpiler.generated_binary_file
 
-            return transpiler.run(compile, run)
+            return transpiler.run(compile, run, args)
 
         except AaaRunnerException as e:
             self.exceptions = e.exceptions

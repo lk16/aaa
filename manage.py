@@ -3,7 +3,7 @@
 import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Optional
+from typing import Optional, Tuple
 
 import click
 from click import ClickException
@@ -23,11 +23,17 @@ def cli() -> None:
 @click.option("-r", "--run", is_flag=True)
 @click.option("-o", "--binary")
 @click.option("-v", "--verbose", is_flag=True)
+@click.argument("args", nargs=-1)
 def cmd(
-    code: str, compile: bool, run: bool, verbose: bool, binary: Optional[str]
+    code: str,
+    compile: bool,
+    run: bool,
+    verbose: bool,
+    binary: Optional[str],
+    args: Tuple[str],
 ) -> None:
     runner = Runner.without_file(code, None, verbose)
-    exit_code = runner.run(compile, binary, run)
+    exit_code = runner.run(compile, binary, run, list(args))
     exit(exit_code)
 
 
@@ -37,11 +43,17 @@ def cmd(
 @click.option("-r", "--run", is_flag=True)
 @click.option("-o", "--binary")
 @click.option("-v", "--verbose", is_flag=True)
+@click.argument("args", nargs=-1)
 def run(
-    path: str, compile: bool, run: bool, verbose: bool, binary: Optional[str]
+    path: str,
+    compile: bool,
+    run: bool,
+    verbose: bool,
+    binary: Optional[str],
+    args: Tuple[str],
 ) -> None:
     runner = Runner(Path(path), None, verbose)
-    exit_code = runner.run(compile, binary, run)
+    exit_code = runner.run(compile, binary, run, list(args))
     exit(exit_code)
 
 

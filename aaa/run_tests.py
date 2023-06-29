@@ -34,7 +34,7 @@ class TestRunner:
             return 1
 
         runner = Runner.without_file(main_file_code, self.parsed_files, self.verbose)
-        return runner.run(compile, binary, run)
+        return runner.run(compile, binary, run, [])
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.tests_root, recursive=True)
