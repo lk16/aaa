@@ -1,0 +1,447 @@
+from "tokenizer" import
+    Empty,
+    get_str_char,
+    make_tokenizer,
+    OptionalChar,
+    OptionalToken,
+    Token,
+    Tokenizer,
+    TokenType,
+
+fn test_get_str_char_ok {
+    "abc" 0 get_str_char
+    match {
+        case OptionalChar:some {
+            use char {
+                char "a" str:equals assert
+            }
+        }
+        default {
+            false assert
+        }
+    }
+
+    "abc" 1 get_str_char
+    match {
+        case OptionalChar:some {
+            use char {
+                char "b" str:equals assert
+            }
+        }
+        default {
+            false assert
+        }
+    }
+
+    "abc" 2 get_str_char
+    match {
+        case OptionalChar:some {
+            use char {
+                char "c" str:equals assert
+            }
+        }
+        default {
+            false assert
+        }
+    }
+}
+
+
+fn test_get_str_char_fail {
+    "abc" 4 get_str_char
+    match {
+        case OptionalChar:none {
+            drop
+        }
+        default {
+            false assert
+        }
+    }
+}
+
+fn check_tokenize_whitespace_fail args input as str, offset as int {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_whitespace
+    match {
+        case OptionalToken:some { drop false assert }
+        case OptionalToken:none { drop }
+    }
+}
+
+fn test_tokenize_whitespace_fail {
+    "" 0 check_tokenize_whitespace_fail
+    "." 0 check_tokenize_whitespace_fail
+    "a" 0 check_tokenize_whitespace_fail
+    "\\" 0 check_tokenize_whitespace_fail
+    "/" 0 check_tokenize_whitespace_fail
+}
+
+fn check_tokenize_whitespace args input as str, offset as int, expected_value as const str {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_whitespace
+    match {
+        case OptionalToken:some {
+            use token_ {
+                token_ "value" ?
+                use value {
+                    value expected_value str:equals assert
+                }
+            }
+        }
+        case OptionalToken:none { drop false assert }
+    }
+}
+
+fn test_tokenize_whitespace_ok {
+    "a a" 1 " " check_tokenize_whitespace
+    "a\na" 1 "\n" check_tokenize_whitespace
+    "a\ra" 1 "\r" check_tokenize_whitespace
+    "a \n  \r\r\n \n\na" 1 " \n  \r\r\n \n\n" check_tokenize_whitespace
+}
+
+fn check_tokenize_comment_fail args input as str, offset as int {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_comment
+    match {
+        case OptionalToken:some { drop false assert }
+        case OptionalToken:none { drop }
+    }
+}
+
+fn test_tokenize_comment_fail {
+    "" 0 check_tokenize_comment_fail
+    "." 0 check_tokenize_comment_fail
+    "a" 0 check_tokenize_comment_fail
+    "/" 0 check_tokenize_comment_fail
+    "a/" 0 check_tokenize_comment_fail
+    "/ab" 0 check_tokenize_comment_fail
+}
+
+fn check_tokenize_comment args input as str, offset as int, expected_value as const str {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_comment
+    match {
+        case OptionalToken:some {
+            use token_ {
+                token_ "value" ?
+                use value {
+                    value expected_value str:equals assert
+                }
+            }
+        }
+        case OptionalToken:none { drop false assert }
+    }
+}
+
+fn test_tokenize_comment_ok {
+    "//" 0 "//" check_tokenize_comment
+    "// something " 0 "// something " check_tokenize_comment
+    "a// something " 1 "// something " check_tokenize_comment
+    "// something \nb" 0 "// something " check_tokenize_comment
+    "a// something \nb" 1 "// something " check_tokenize_comment
+    "a// something \n" 1 "// something " check_tokenize_comment
+}
+
+fn check_tokenize_integer_fail args input as str, offset as int {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_integer
+    match {
+        case OptionalToken:some { drop false assert }
+        case OptionalToken:none { drop }
+    }
+}
+
+fn test_tokenize_integer_fail {
+    "" 0 check_tokenize_integer_fail
+    "." 0 check_tokenize_integer_fail
+    "a" 0 check_tokenize_integer_fail
+    "/" 0 check_tokenize_integer_fail
+    "\\" 0 check_tokenize_integer_fail
+    "-" 0 check_tokenize_integer_fail
+}
+
+fn check_tokenize_integer args input as str, offset as int, expected_value as const str {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_integer
+    match {
+        case OptionalToken:some {
+            use token_ {
+                token_ "value" ?
+                use value {
+                    value expected_value str:equals assert
+                }
+            }
+        }
+        case OptionalToken:none { drop false assert }
+    }
+}
+
+fn test_tokenize_integer_ok {
+    "123a" 0 "123" check_tokenize_integer
+    "a123a" 1 "123" check_tokenize_integer
+    "a123" 1 "123" check_tokenize_integer
+    "-123a" 0 "-123" check_tokenize_integer
+    "a-123a" 1 "-123" check_tokenize_integer
+    "a-123" 1 "-123" check_tokenize_integer
+}
+
+fn check_tokenize_fixed_size_fail args input as str, offset as int {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_fixed_size
+    match {
+        case OptionalToken:some { drop false assert }
+        case OptionalToken:none { drop }
+    }
+}
+
+fn test_tokenize_fixed_size_fail {
+    "argsabc" 0 check_tokenize_fixed_size_fail
+    "asabc" 0 check_tokenize_fixed_size_fail
+    "caseabc" 0 check_tokenize_fixed_size_fail
+    "constabc" 0 check_tokenize_fixed_size_fail
+    "defaultabc" 0 check_tokenize_fixed_size_fail
+    "elseabc" 0 check_tokenize_fixed_size_fail
+    "enumabc" 0 check_tokenize_fixed_size_fail
+    "falseabc" 0 check_tokenize_fixed_size_fail
+    "fnabc" 0 check_tokenize_fixed_size_fail
+    "foreachabc" 0 check_tokenize_fixed_size_fail
+    "fromabc" 0 check_tokenize_fixed_size_fail
+    "ifabc" 0 check_tokenize_fixed_size_fail
+    "importabc" 0 check_tokenize_fixed_size_fail
+    "matchabc" 0 check_tokenize_fixed_size_fail
+    "neverabc" 0 check_tokenize_fixed_size_fail
+    "returnabc" 0 check_tokenize_fixed_size_fail
+    "structabc" 0 check_tokenize_fixed_size_fail
+    "trueabc" 0 check_tokenize_fixed_size_fail
+    "typeabc" 0 check_tokenize_fixed_size_fail
+    "useabc" 0 check_tokenize_fixed_size_fail
+    "whileabc" 0 check_tokenize_fixed_size_fail
+}
+
+fn check_tokenize_fixed_size args input as str, offset as int, expected_type as TokenType, expected_value as str {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_fixed_size
+    match {
+        case OptionalToken:some {
+            use token_ {
+                token_
+
+                Token
+                dup "type_" { expected_type } !
+                dup "value" { expected_value } !
+
+                Token:equals assert
+            }
+        }
+        case OptionalToken:none { drop false assert }
+    }
+}
+
+fn test_tokenize_fixed_size_ok_bare {
+    "-" 0 Empty TokenType:identifier "-" check_tokenize_fixed_size
+    "," 0 Empty TokenType:comma "," check_tokenize_fixed_size
+    ":" 0 Empty TokenType:colon ":" check_tokenize_fixed_size
+    "!" 0 Empty TokenType:set_field "!" check_tokenize_fixed_size
+    "!=" 0 Empty TokenType:identifier "!=" check_tokenize_fixed_size
+    "?" 0 Empty TokenType:get_field "?" check_tokenize_fixed_size
+    "." 0 Empty TokenType:identifier "." check_tokenize_fixed_size
+    "[" 0 Empty TokenType:type_param_begin "[" check_tokenize_fixed_size
+    "]" 0 Empty TokenType:type_param_end "]" check_tokenize_fixed_size
+    "{" 0 Empty TokenType:begin "{" check_tokenize_fixed_size
+    "}" 0 Empty TokenType:end "}" check_tokenize_fixed_size
+    "*" 0 Empty TokenType:identifier "*" check_tokenize_fixed_size
+    "/" 0 Empty TokenType:identifier "/" check_tokenize_fixed_size
+    "%" 0 Empty TokenType:identifier "%" check_tokenize_fixed_size
+    "+" 0 Empty TokenType:identifier "+" check_tokenize_fixed_size
+    "<-" 0 Empty TokenType:assign "<-" check_tokenize_fixed_size
+    "<" 0 Empty TokenType:identifier "<" check_tokenize_fixed_size
+    "<=" 0 Empty TokenType:identifier "<=" check_tokenize_fixed_size
+    "=" 0 Empty TokenType:identifier "=" check_tokenize_fixed_size
+    ">" 0 Empty TokenType:identifier ">" check_tokenize_fixed_size
+    ">=" 0 Empty TokenType:identifier ">=" check_tokenize_fixed_size
+    "args" 0 Empty TokenType:args_ "args" check_tokenize_fixed_size
+    "as" 0 Empty TokenType:as_ "as" check_tokenize_fixed_size
+    "case" 0 Empty TokenType:case_ "case" check_tokenize_fixed_size
+    "const" 0 Empty TokenType:const_ "const" check_tokenize_fixed_size
+    "default" 0 Empty TokenType:default_ "default" check_tokenize_fixed_size
+    "else" 0 Empty TokenType:else_ "else" check_tokenize_fixed_size
+    "enum" 0 Empty TokenType:enum_ "enum" check_tokenize_fixed_size
+    "false" 0 Empty TokenType:false_ "false" check_tokenize_fixed_size
+    "fn" 0 Empty TokenType:function "fn" check_tokenize_fixed_size
+    "foreach" 0 Empty TokenType:foreach_ "foreach" check_tokenize_fixed_size
+    "from" 0 Empty TokenType:from_ "from" check_tokenize_fixed_size
+    "if" 0 Empty TokenType:if_ "if" check_tokenize_fixed_size
+    "import" 0 Empty TokenType:import_ "import" check_tokenize_fixed_size
+    "match" 0 Empty TokenType:match_ "match" check_tokenize_fixed_size
+    "never" 0 Empty TokenType:never_ "never" check_tokenize_fixed_size
+    "return" 0 Empty TokenType:return_ "return" check_tokenize_fixed_size
+    "struct" 0 Empty TokenType:struct_ "struct" check_tokenize_fixed_size
+    "true" 0 Empty TokenType:true_ "true" check_tokenize_fixed_size
+    "type" 0 Empty TokenType:type_ "type" check_tokenize_fixed_size
+    "use" 0 Empty TokenType:use_ "use" check_tokenize_fixed_size
+    "while" 0 Empty TokenType:while_ "while" check_tokenize_fixed_size
+}
+
+fn test_tokenize_fixed_size_ok_middle {
+    " - " 1 Empty TokenType:identifier "-" check_tokenize_fixed_size
+    " , " 1 Empty TokenType:comma "," check_tokenize_fixed_size
+    " : " 1 Empty TokenType:colon ":" check_tokenize_fixed_size
+    " ! " 1 Empty TokenType:set_field "!" check_tokenize_fixed_size
+    " != " 1 Empty TokenType:identifier "!=" check_tokenize_fixed_size
+    " ? " 1 Empty TokenType:get_field "?" check_tokenize_fixed_size
+    " . " 1 Empty TokenType:identifier "." check_tokenize_fixed_size
+    " [ " 1 Empty TokenType:type_param_begin "[" check_tokenize_fixed_size
+    " ] " 1 Empty TokenType:type_param_end "]" check_tokenize_fixed_size
+    " { " 1 Empty TokenType:begin "{" check_tokenize_fixed_size
+    " } " 1 Empty TokenType:end "}" check_tokenize_fixed_size
+    " * " 1 Empty TokenType:identifier "*" check_tokenize_fixed_size
+    " / " 1 Empty TokenType:identifier "/" check_tokenize_fixed_size
+    " % " 1 Empty TokenType:identifier "%" check_tokenize_fixed_size
+    " + " 1 Empty TokenType:identifier "+" check_tokenize_fixed_size
+    " <- " 1 Empty TokenType:assign "<-" check_tokenize_fixed_size
+    " < " 1 Empty TokenType:identifier "<" check_tokenize_fixed_size
+    " <= " 1 Empty TokenType:identifier "<=" check_tokenize_fixed_size
+    " = " 1 Empty TokenType:identifier "=" check_tokenize_fixed_size
+    " > " 1 Empty TokenType:identifier ">" check_tokenize_fixed_size
+    " >= " 1 Empty TokenType:identifier ">=" check_tokenize_fixed_size
+    " args " 1 Empty TokenType:args_ "args" check_tokenize_fixed_size
+    " as " 1 Empty TokenType:as_ "as" check_tokenize_fixed_size
+    " case " 1 Empty TokenType:case_ "case" check_tokenize_fixed_size
+    " const " 1 Empty TokenType:const_ "const" check_tokenize_fixed_size
+    " default " 1 Empty TokenType:default_ "default" check_tokenize_fixed_size
+    " else " 1 Empty TokenType:else_ "else" check_tokenize_fixed_size
+    " enum " 1 Empty TokenType:enum_ "enum" check_tokenize_fixed_size
+    " false " 1 Empty TokenType:false_ "false" check_tokenize_fixed_size
+    " fn " 1 Empty TokenType:function "fn" check_tokenize_fixed_size
+    " foreach " 1 Empty TokenType:foreach_ "foreach" check_tokenize_fixed_size
+    " from " 1 Empty TokenType:from_ "from" check_tokenize_fixed_size
+    " if " 1 Empty TokenType:if_ "if" check_tokenize_fixed_size
+    " import " 1 Empty TokenType:import_ "import" check_tokenize_fixed_size
+    " match " 1 Empty TokenType:match_ "match" check_tokenize_fixed_size
+    " never " 1 Empty TokenType:never_ "never" check_tokenize_fixed_size
+    " return " 1 Empty TokenType:return_ "return" check_tokenize_fixed_size
+    " struct " 1 Empty TokenType:struct_ "struct" check_tokenize_fixed_size
+    " true " 1 Empty TokenType:true_ "true" check_tokenize_fixed_size
+    " type " 1 Empty TokenType:type_ "type" check_tokenize_fixed_size
+    " use " 1 Empty TokenType:use_ "use" check_tokenize_fixed_size
+    " while " 1 Empty TokenType:while_ "while" check_tokenize_fixed_size
+}
+
+fn check_tokenize_string_fail args input as str, offset as int {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_string
+    match {
+        case OptionalToken:some { drop false assert }
+        case OptionalToken:none { drop }
+    }
+}
+
+fn test_tokenize_string_fail {
+    "" 0 check_tokenize_string_fail
+    "a" 0 check_tokenize_string_fail
+    "." 0 check_tokenize_string_fail
+    "." 0 check_tokenize_string_fail
+    "\"" 0 check_tokenize_string_fail
+    "a\"" 0 check_tokenize_string_fail
+    "\"a" 0 check_tokenize_string_fail
+    "\"\\" 0 check_tokenize_string_fail
+}
+
+fn check_tokenize_string args input as str, offset as int, expected_value as const str {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_string
+    match {
+        case OptionalToken:some {
+            use token_ {
+                token_ "value" ?
+                use value {
+                    value expected_value str:equals assert
+                }
+            }
+        }
+        case OptionalToken:none { drop false assert }
+    }
+}
+
+fn test_tokenize_string_ok {
+    "\"\"" 0 "\"\"" check_tokenize_string
+    "\"\" " 0 "\"\"" check_tokenize_string
+    " \"\"" 1 "\"\"" check_tokenize_string
+    " \"\" " 1 "\"\"" check_tokenize_string
+    "\"a\"" 0 "\"a\"" check_tokenize_string
+    " \"a\"" 1 "\"a\"" check_tokenize_string
+    " \"a\" " 1 "\"a\"" check_tokenize_string
+    "\"\n\"" 0 "\"\n\"" check_tokenize_string
+    " \"\n\"" 1 "\"\n\"" check_tokenize_string
+    " \"\n\" " 1 "\"\n\"" check_tokenize_string
+    "\"\\n\"" 0 "\"\\n\"" check_tokenize_string
+    " \"\\n\"" 1 "\"\\n\"" check_tokenize_string
+    " \"\\n\" " 1 "\"\\n\"" check_tokenize_string
+    "\"\\\\\"" 0 "\"\\\\\"" check_tokenize_string
+    " \"\\\\\"" 1 "\"\\\\\"" check_tokenize_string
+    " \"\\\\\" " 1 "\"\\\\\"" check_tokenize_string
+}
+
+fn check_tokenize_identifier_fail args input as str, offset as int {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_string
+    match {
+        case OptionalToken:some { drop false assert }
+        case OptionalToken:none { drop }
+    }
+}
+
+fn test_tokenize_identifier_fail {
+    "" 0 check_tokenize_identifier_fail
+    "3" 0 check_tokenize_identifier_fail
+    "." 0 check_tokenize_identifier_fail
+    "\n" 0 check_tokenize_identifier_fail
+}
+
+fn check_tokenize_identifier args input as str, offset as int, expected_value as const str {
+    "" input make_tokenizer
+    dup "offset" { offset } !
+    Tokenizer:tokenize_identifier
+    match {
+        case OptionalToken:some {
+            use token_ {
+                token_ "value" ?
+                use value {
+                    value expected_value str:equals assert
+                }
+            }
+        }
+        case OptionalToken:none { drop false assert }
+    }
+}
+
+fn test_tokenize_identifier_ok {
+    "a" 0 "a" check_tokenize_identifier
+    "z" 0 "z" check_tokenize_identifier
+    "A" 0 "A" check_tokenize_identifier
+    "Z" 0 "Z" check_tokenize_identifier
+    "_" 0 "_" check_tokenize_identifier
+
+    " a " 1 "a" check_tokenize_identifier
+    " z " 1 "z" check_tokenize_identifier
+    " A " 1 "A" check_tokenize_identifier
+    " Z " 1 "Z" check_tokenize_identifier
+    " _ " 1 "_" check_tokenize_identifier
+
+    "aaaa" 0 "aaaa" check_tokenize_identifier
+    "zzzz" 0 "zzzz" check_tokenize_identifier
+    "AAAA" 0 "AAAA" check_tokenize_identifier
+    "ZZZZ" 0 "ZZZZ" check_tokenize_identifier
+    "____" 0 "____" check_tokenize_identifier
+}
