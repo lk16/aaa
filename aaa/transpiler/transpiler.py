@@ -141,11 +141,20 @@ class Transpiler:
         code.add("use std::rc::Rc;")
         code.add("")
 
+        code.add(self._generate_rust_UserTypeEnum())
+        code.add(self._generate_rust_UserTypeEnum_UserType_impl())
+        code.add(self._generate_rust_UserTypeEnum_Display_impl())
+        code.add(self._generate_rust_UserTypeEnum_Debug_impl())
+
         for type in self.types.values():
             if type.is_enum():
                 code.add(self._generate_rust_enum_new_func(type))
             else:
+                code.add(self._generate_rust_struct(type))
                 code.add(self._generate_rust_struct_new_func(type))
+                code.add(self._generate_rust_struct_UserType_impl(type))
+                code.add(self._generate_rust_struct_Display_impl(type))
+                code.add(self._generate_rust_struct_Hash_impl(type))
 
         for function in self.functions.values():
             if function.position.file == self.builtins_path:
@@ -170,9 +179,9 @@ class Transpiler:
         code.add("fn main() {", r=1)
 
         if argv_used:
-            code.add("let mut stack = Stack::from_argv();")
+            code.add("let mut stack:Stack<UserTypeEnum> = Stack::from_argv();")
         else:
-            code.add("let mut stack = Stack::new();")
+            code.add("let mut stack: Stack<UserTypeEnum> = Stack::new();")
 
         code.add(f"{main_func_name}(&mut stack);")
 
@@ -250,8 +259,7 @@ class Transpiler:
 
         func_name = self._generate_rust_function_name(function)
 
-        code = Code()
-        code.add(f"// Generated from: {function.position.file} {function.name}")
+        code = Code(f"// Generated from: {function.position.file} {function.name}")
         code.add(f"fn {func_name}(stack: &mut Stack) {{", r=1)
 
         if function.arguments:
@@ -314,14 +322,15 @@ class Transpiler:
 
     def _generate_rust_field_query_code(self, field_query: StructFieldQuery) -> Code:
         field_name = field_query.field_name.value
-        return Code(f'stack.struct_field_query("{field_name}");')
+
+        _ = field_name
+        raise NotImplementedError  # TODO
 
     def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> Code:
         field_name = field_update.field_name.value
 
-        code = self._generate_rust_function_body(field_update.new_value_expr)
-        code.add(f'stack.struct_field_update("{field_name}");')
-        return code
+        _ = field_name
+        raise NotImplementedError  # TODO
 
     def _generate_rust_match_block_code(self, match_block: MatchBlock) -> Code:
         code = Code("match stack.get_enum_discriminant() {", r=1)
@@ -501,7 +510,7 @@ class Transpiler:
     def _generate_rust_struct_name(self, type: Type) -> str:
         hash_input = f"{type.position.file} {type.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
-        return f"user_struct_{hash}"
+        return f"UserStruct{hash}"
 
     def _generate_rust_enum_new_func(self, type: Type) -> Code:
         rust_enum_name = self._generate_rust_enum_name(type)
@@ -530,6 +539,30 @@ class Transpiler:
 
         return code
 
+    def _generate_rust_struct_field_zero_expression(
+        self, var_type: VariableType
+    ) -> str:
+        if var_type.name == "int":
+            return "0"
+        elif var_type.name == "bool":
+            return "false"
+        elif var_type.name == "str":
+            return 'Rc::new(RefCell::new(String::from("")))'
+        elif var_type.name == "vec":
+            return "Rc::new(RefCell::new(Vector::new()))"
+        elif var_type.name == "map":
+            return "Rc::new(RefCell::new(Map::new()))"
+        elif var_type.name == "set":
+            return "Rc::new(RefCell::new(Set::new()))"
+        elif var_type.name == "regex":
+            return 'Rc::new(RefCell::new(Regex::new("$.^").unwrap()))'
+        elif var_type.type.is_enum():
+            rust_enum_name = self._generate_rust_enum_name(var_type.type)
+            return f"Rc::new(RefCell::new({rust_enum_name}_new()))"
+        else:
+            rust_struct_name = self._generate_rust_struct_name(var_type.type)
+            return f"Rc::new(RefCell::new({rust_struct_name}::new()))"
+
     def _generate_rust_variable_zero_expression(self, var_type: VariableType) -> str:
         if var_type.name == "int":
             return "Variable::Integer(0)"
@@ -550,7 +583,126 @@ class Transpiler:
             return f"Variable::Enum(Rc::new(RefCell::new({rust_enum_name}_new())))"
         else:
             rust_struct_name = self._generate_rust_struct_name(var_type.type)
-            return f"Variable::Struct(Rc::new(RefCell::new({rust_struct_name}_new())))"
+            return (
+                "Variable::UserType(Rc::new(RefCell::new("
+                + f"UserTypeEnum::{rust_struct_name}({rust_struct_name}::new())"
+                + ")))"
+            )
+
+    def _generate_rust_UserTypeEnum(self) -> Code:
+        code = Code("#[derive(Clone, Hash, PartialEq)]")
+        code.add("enum UserTypeEnum {", r=1)
+
+        for type in self.types.values():
+            if type.is_enum() or type.position.file == self.builtins_path:
+                continue
+
+            rust_struct_name = self._generate_rust_struct_name(type)
+            code.add(f"{rust_struct_name}({rust_struct_name}),")
+
+        code.add("}", l=1)
+        code.add("")
+        return code
+
+    def _generate_rust_UserTypeEnum_UserType_impl(self) -> Code:
+        code = Code("impl UserType for UserTypeEnum {", r=1)
+        code.add("fn kind(&self) -> String {", r=1)
+        code.add("match self {", r=1)
+
+        for type in self.types.values():
+            if type.is_enum() or type.position.file == self.builtins_path:
+                continue
+
+            rust_struct_name = self._generate_rust_struct_name(type)
+            code.add(f"Self::{rust_struct_name}(v) => v.kind(),")
+
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("")
+
+        code.add("fn clone_recursive(&self) -> Self {", r=1)
+        code.add("todo!();")  # TODO
+        code.add("}", l=1)
+
+        code.add("}", l=1)
+        code.add("")
+        return code
+
+    def _generate_rust_UserTypeEnum_Debug_impl(self) -> Code:
+        code = Code("impl Display for UserTypeEnum {", r=1)
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
+        code.add("match self {", r=1)
+
+        for type in self.types.values():
+            if type.is_enum() or type.position.file == self.builtins_path:
+                continue
+
+            rust_struct_name = self._generate_rust_struct_name(type)
+            code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{}}", v),')
+
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("")
+        return code
+
+    def _generate_rust_UserTypeEnum_Display_impl(self) -> Code:
+        code = Code("impl Debug for UserTypeEnum {", r=1)
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
+        code.add("match self {", r=1)
+
+        for type in self.types.values():
+            if type.is_enum() or type.position.file == self.builtins_path:
+                continue
+
+            rust_struct_name = self._generate_rust_struct_name(type)
+            code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{:?}}", v),')
+
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("")
+        return code
+
+    def _generate_rust_struct(self, type: Type) -> Code:
+        if type.position.file == self.builtins_path:
+            return Code()
+
+        rust_struct_name = self._generate_rust_struct_name(type)
+
+        code = Code(f"// Generated for: {type.position.file} {type.name}")
+        code.add(f"#[derive(Debug, Clone, PartialEq)]")
+        code.add(f"struct {rust_struct_name} {{", r=1)
+
+        for field_name, field_type in type.fields.items():
+            rust_field_type = self._generate_rust_struct_field_type(field_type)
+            code.add(f"{field_name}: {rust_field_type},")
+
+        code.add("}", l=1)
+        code.add("")
+        return code
+
+    def _generate_rust_struct_field_type(self, var_type: VariableType) -> str:
+        if var_type.name == "int":
+            return "isize"
+        elif var_type.name == "bool":
+            return "bool"
+        elif var_type.name == "str":
+            return "Rc<RefCell<String>>"
+        elif var_type.name == "vec":
+            raise NotImplementedError  # TODO
+        elif var_type.name == "map":
+            raise NotImplementedError  # TODO
+        elif var_type.name == "set":
+            raise NotImplementedError  # TODO
+        elif var_type.name == "regex":
+            return "Rc<RefCell<Regex>>"
+
+        if var_type.type.is_enum():
+            raise NotImplementedError  # TODO
+
+        rust_struct_name = self._generate_rust_struct_name(var_type.type)
+        return f"Rc<RefCell<{rust_struct_name}>>"
 
     def _generate_rust_struct_new_func(self, type: Type) -> Code:
         if type.position.file == self.builtins_path and not type.fields:
@@ -560,19 +712,74 @@ class Transpiler:
 
         code = Code(f"// Generated for: {type.position.file} {type.name}")
         code.add(f"fn {rust_struct_name}_new() -> Struct {{", r=1)
+        code.add(f"fn new() -> Self {{", r=1)
+        code.add(f"Self {{", r=1)
+        code.add("todo!();")
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("")
+        return code
 
-        code.add(f'let type_name = String::from("{type.name}");')
-        code.add("let values = HashMap::from([", r=1)
+    def _generate_rust_struct_UserType_impl(self, type: Type) -> Code:
+        if type.position.file == self.builtins_path:
+            return Code()
 
-        for field_name, field_type in type.fields.items():
-            zero_expr = self._generate_rust_variable_zero_expression(field_type)
-            code.add(f'(String::from("{field_name}"), {zero_expr}),')
+        rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
 
-        code.add("]);", l=1)
-        code.add("Struct { type_name, values }")
+        code = Code(f"impl UserType for {rust_struct_name} {{", r=1)
+        code.add("fn kind(&self) -> String {", r=1)
+        code.add(f'String::from("{type.name}")', r=1)
+
         code.add("}", l=1)
         code.add("")
 
+        code.add("fn clone_recursive(&self) -> Self {", r=1)
+        code.add("Self {", r=1)
+
+        for field_name, field_type in type.fields.items():
+            if field_type.name in ["bool", "int"]:
+                code.add(f"{field_name}: self.{field_name},")
+            else:
+                # TODO
+                raise NotImplementedError
+
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("")
+        return code
+
+    def _generate_rust_struct_Display_impl(self, type: Type) -> Code:
+        if type.position.file == self.builtins_path:
+            return Code()
+
+        rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
+
+        code = Code(f"impl Display for {rust_struct_name} {{", r=1)
+
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
+        code.add("todo!();\n")  # TODO
+        code.add("}", l=1)
+
+        code.add("}", l=1)
+        code.add("")
+        return code
+
+    def _generate_rust_struct_Hash_impl(self, type: Type) -> Code:
+        if type.position.file == self.builtins_path:
+            return Code()
+
+        rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
+
+        code = Code(f"impl Hash for {rust_struct_name} {{")
+
+        code.add("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {", r=1)
+        code.add("todo!();")  # TODO
+        code.add("}", l=1)
+
+        code.add("}", l=1)
+        code.add("")
         return code
 
     def _generate_rust_use_block_code(self, use_block: UseBlock) -> Code:

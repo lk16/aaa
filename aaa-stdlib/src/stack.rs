@@ -36,15 +36,21 @@ use crate::{
     vector::VectorIterator,
 };
 use crate::{
-    var::{Struct, Variable},
+    var::{UserType, Variable},
     vector::Vector,
 };
 
-pub struct Stack {
-    items: Vec<Variable>,
+pub struct Stack<T>
+where
+    T: UserType,
+{
+    items: Vec<Variable<T>>,
 }
 
-impl Debug for Stack {
+impl<T> Debug for Stack<T>
+where
+    T: UserType,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Stack ({}):", self.len())?;
         for item in self.items.iter() {
@@ -55,13 +61,19 @@ impl Debug for Stack {
     }
 }
 
-impl Default for Stack {
+impl<T> Default for Stack<T>
+where
+    T: UserType,
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Stack {
+impl<T> Stack<T>
+where
+    T: UserType,
+{
     pub fn new() -> Self {
         Self { items: Vec::new() }
     }
@@ -76,7 +88,7 @@ impl Stack {
         stack
     }
 
-    pub fn push(&mut self, v: Variable) {
+    pub fn push(&mut self, v: Variable<T>) {
         self.items.push(v);
     }
 
@@ -89,13 +101,13 @@ impl Stack {
         process::exit(1);
     }
 
-    fn pop_type_error(&self, expected_type: &str, found: &Variable) -> ! {
+    fn pop_type_error(&self, expected_type: &str, found: &Variable<T>) -> ! {
         let found = found.kind();
         let msg = format!("pop failed, expected {expected_type}, found {found}");
         self.type_error(&msg);
     }
 
-    fn type_error_vec_str(&self, v: &ContainerValue) {
+    fn type_error_vec_str(&self, v: &ContainerValue<T>) {
         let found = v.kind();
         let msg = format!("expected vec[str], but found {found} in vec");
         self.type_error(&msg);
@@ -116,37 +128,32 @@ impl Stack {
         self.push(item);
     }
 
-    pub fn push_vector(&mut self, v: Vector<ContainerValue>) {
+    pub fn push_vector(&mut self, v: Vector<ContainerValue<T>>) {
         let item = Variable::Vector(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_set(&mut self, v: Set<ContainerValue>) {
+    pub fn push_set(&mut self, v: Set<ContainerValue<T>>) {
         let item = Variable::Set(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_map(&mut self, v: Map<ContainerValue, ContainerValue>) {
+    pub fn push_map(&mut self, v: Map<ContainerValue<T>, ContainerValue<T>>) {
         let item = Variable::Map(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_struct(&mut self, v: Struct) {
-        let item = Variable::Struct(Rc::new(RefCell::new(v)));
-        self.push(item);
-    }
-
-    pub fn push_vector_iter(&mut self, v: VectorIterator<ContainerValue>) {
+    pub fn push_vector_iter(&mut self, v: VectorIterator<ContainerValue<T>>) {
         let item = Variable::VectorIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_map_iter(&mut self, v: MapIterator<ContainerValue, ContainerValue>) {
+    pub fn push_map_iter(&mut self, v: MapIterator<ContainerValue<T>, ContainerValue<T>>) {
         let item = Variable::MapIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_set_iter(&mut self, v: SetIterator<ContainerValue>) {
+    pub fn push_set_iter(&mut self, v: SetIterator<ContainerValue<T>>) {
         let item = Variable::SetIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -155,7 +162,7 @@ impl Stack {
         self.push(Variable::None);
     }
 
-    pub fn push_enum(&mut self, v: Enum) {
+    pub fn push_enum(&mut self, v: Enum<T>) {
         self.push(Variable::Enum(Rc::new(RefCell::new(v))));
     }
 
@@ -163,14 +170,18 @@ impl Stack {
         self.push(Variable::Regex(Rc::new(RefCell::new(v))));
     }
 
-    pub fn pop(&mut self) -> Variable {
+    pub fn push_user_type(&mut self, v: T) {
+        self.push(Variable::UserType(Rc::new(RefCell::new(v))));
+    }
+
+    pub fn pop(&mut self) -> Variable<T> {
         match self.items.pop() {
             Some(popped) => popped,
             None => self.type_error("cannot pop from empty stack"),
         }
     }
 
-    fn top(&mut self) -> &Variable {
+    fn top(&mut self) -> &Variable<T> {
         match self.items.last() {
             None => self.type_error("cannot get top of empty stack"),
             Some(v) => v,
@@ -198,56 +209,51 @@ impl Stack {
         }
     }
 
-    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<ContainerValue>>> {
+    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<ContainerValue<T>>>> {
         match self.pop() {
             Variable::Vector(v) => v,
             v => self.pop_type_error("vec", &v),
         }
     }
 
-    pub fn pop_set(&mut self) -> Rc<RefCell<Set<ContainerValue>>> {
+    pub fn pop_set(&mut self) -> Rc<RefCell<Set<ContainerValue<T>>>> {
         match self.pop() {
             Variable::Set(v) => v,
             v => self.pop_type_error("set", &v),
         }
     }
 
-    pub fn pop_map(&mut self) -> Rc<RefCell<Map<ContainerValue, ContainerValue>>> {
+    pub fn pop_map(&mut self) -> Rc<RefCell<Map<ContainerValue<T>, ContainerValue<T>>>> {
         match self.pop() {
             Variable::Map(v) => v,
             v => self.pop_type_error("map", &v),
         }
     }
 
-    pub fn pop_struct(&mut self) -> Rc<RefCell<Struct>> {
-        match self.pop() {
-            Variable::Struct(v) => v,
-            v => self.pop_type_error("struct", &v),
-        }
-    }
-
-    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<ContainerValue>>> {
+    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<ContainerValue<T>>>> {
         match self.pop() {
             Variable::VectorIterator(v) => v,
             v => self.pop_type_error("vec_iter", &v),
         }
     }
 
-    pub fn pop_map_iterator(&mut self) -> Rc<RefCell<MapIterator<ContainerValue, ContainerValue>>> {
+    pub fn pop_map_iterator(
+        &mut self,
+    ) -> Rc<RefCell<MapIterator<ContainerValue<T>, ContainerValue<T>>>> {
         match self.pop() {
             Variable::MapIterator(v) => v,
             v => self.pop_type_error("map_iter", &v),
         }
     }
 
-    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<ContainerValue>>> {
+    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<ContainerValue<T>>>> {
         match self.pop() {
             Variable::SetIterator(v) => v,
             v => self.pop_type_error("set_iter", &v),
         }
     }
 
-    pub fn pop_enum(&mut self) -> Rc<RefCell<Enum>> {
+    pub fn pop_enum(&mut self) -> Rc<RefCell<Enum<T>>> {
         match self.pop() {
             Variable::Enum(v) => v,
             v => self.pop_type_error("enum", &v),
@@ -261,7 +267,7 @@ impl Stack {
         }
     }
 
-    pub fn top_enum(&mut self) -> Rc<RefCell<Enum>> {
+    pub fn top_enum(&mut self) -> Rc<RefCell<Enum<T>>> {
         match self.top().clone() {
             Variable::Enum(v) => v,
             v => self.pop_type_error("enum", &v),
@@ -814,7 +820,7 @@ impl Stack {
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
-        let split: Vec<ContainerValue> = string
+        let split: Vec<ContainerValue<T>> = string
             .split(&*sep)
             .map(|s| ContainerValue::String(s.to_owned()))
             .collect();
@@ -942,23 +948,6 @@ impl Stack {
 
         let copy = map.clone_recursive();
         self.push(copy);
-    }
-
-    pub fn struct_field_query(&mut self, field_name: &str) {
-        let struct_rc = self.pop_struct();
-        let struct_ = &*struct_rc.borrow();
-
-        let value = struct_.values[field_name].clone();
-        self.push(value);
-    }
-
-    pub fn struct_field_update(&mut self, field_name: &str) {
-        let value = self.pop();
-
-        let struct_rc = self.pop_struct();
-        let mut struct_ = struct_rc.borrow_mut();
-
-        struct_.values.insert(String::from(field_name), value);
     }
 
     pub fn environ(&mut self) {
@@ -1106,7 +1095,7 @@ impl Stack {
         }
     }
 
-    pub fn assign(&mut self, var: &mut Variable) {
+    pub fn assign(&mut self, var: &mut Variable<T>) {
         let popped = self.pop();
         *var = popped;
     }
