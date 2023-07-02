@@ -323,8 +323,32 @@ class Transpiler:
     def _generate_rust_field_query_code(self, field_query: StructFieldQuery) -> Code:
         field_name = field_query.field_name.value
 
-        _ = field_name
-        raise NotImplementedError  # TODO
+        position_stack = self.position_stacks[field_query.position]
+
+        assert not isinstance(position_stack, Never)
+
+        struct_type = position_stack[-1].type
+        rust_struct_name = self._generate_rust_struct_name(struct_type)
+
+        field_type = struct_type.fields[field_name].type
+
+        code = Code("{", r=1)
+        code.add("let popped = stack.pop_user_type();")
+        code.add("let borrowed = (*popped).borrow();")
+
+        if field_type.name == "int":
+            code.add(f"stack.push_int(borrowed.get_{rust_struct_name}().{field_name});")
+
+        elif field_type.name == "str":
+            code.add(
+                f"stack.push_str(&(*borrowed.get_{rust_struct_name}().{field_name}).borrow());"
+            )
+
+        else:
+            code.add("todo!();")  # TODO
+
+        code.add("}", l=1)
+        return code
 
     def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> Code:
         field_name = field_update.field_name.value
@@ -604,6 +628,33 @@ class Transpiler:
         code.add("")
         return code
 
+    def _generate_rust_UserTypeEnum_get_UserStruct_funcs(self) -> Code:
+        code = Code("impl UserTypeEnum {", r=1)
+
+        for type in self.types.values():
+            if type.is_enum() or type.position.file == self.builtins_path:
+                continue
+
+            rust_struct_name = self._generate_rust_struct_name(type)
+
+            # TODO remove this and don't have a default case when there's only one variant in UserTypeEnum
+            code.add("#[allow(unreachable_patterns)]")
+            code.add("#[allow(non_snake_case)]")
+            code.add(f"fn get_{rust_struct_name}(&self) -> &{rust_struct_name} {{", r=1)
+            code.add("match self {", r=1)
+
+            rust_struct_name = self._generate_rust_struct_name(type)
+            code.add(f"Self::{rust_struct_name}(v) => v,")
+            code.add(f"_ => todo!(),")  # TODO
+
+            code.add("}", l=1)
+            code.add("}", l=1)
+            code.add("")
+
+        code.add("}", l=1)
+        code.add("")
+        return code
+
     def _generate_rust_UserTypeEnum_UserType_impl(self) -> Code:
         code = Code("impl UserType for UserTypeEnum {", r=1)
         code.add("fn kind(&self) -> String {", r=1)
@@ -759,7 +810,25 @@ class Transpiler:
         code = Code(f"impl Display for {rust_struct_name} {{", r=1)
 
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
-        code.add("todo!();\n")  # TODO
+        code.add(f'write!(f, "(struct {type.name})<{{{{")?;')
+
+        for i, (field_name, field_type) in enumerate(type.fields.items()):
+            if field_type.name == "int":
+                code.add(f'write!(f, "{field_name}: {{}}", self.{field_name})?;')
+            elif field_type.name == "str":
+                code.add(
+                    f'write!(f, "{field_name}: {{:?}}", (*self.{field_name}).borrow())?;'
+                )
+            else:
+                code.add("todo!();")  # TODO
+
+            if i != len(type.fields) - 1:
+                code.add('write!(f, ", ")?;')
+
+        code.add('write!(f, "}}>")')
+
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
+        code.add("todo!();")  # TODO
         code.add("}", l=1)
 
         code.add("}", l=1)

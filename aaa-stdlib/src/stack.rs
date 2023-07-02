@@ -274,6 +274,15 @@ where
         }
     }
 
+    pub fn pop_user_type(&mut self) -> Rc<RefCell<T>> {
+        match self.pop() {
+            Variable::UserType(v) => v,
+
+            // TODO send more specific value than "user_type"
+            v => self.pop_type_error("user_type", &v),
+        }
+    }
+
     pub fn print(&mut self) {
         let top = self.pop();
         print!("{top}");
