@@ -819,11 +819,11 @@ class FunctionBodyResolver:
         return MatchBlock(parsed.position, blocks)
 
     def _resolve_case_block(self, parsed: parser.CaseBlock) -> CaseBlock:
-        enum_type_name = parsed.enum_name
-        variant_name = parsed.enum_variant_name.name
+        enum_type_name = parsed.label.enum_name.name
+        variant_name = parsed.label.variant_name.name
         assert enum_type_name  # parser ensures this doesn't fail
 
-        enum_type = self._get_identifiable_generic(enum_type_name.name, parsed.position)
+        enum_type = self._get_identifiable_generic(enum_type_name, parsed.position)
 
         if not isinstance(enum_type, Type):
             raise InvalidEnumType(parsed.position, enum_type)

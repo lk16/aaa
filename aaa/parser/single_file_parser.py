@@ -15,6 +15,7 @@ from aaa.parser.models import (
     Branch,
     Call,
     CaseBlock,
+    CaseLabel,
     DefaultBlock,
     Enum,
     EnumVariant,
@@ -515,6 +516,17 @@ class SingleFileParser:
         self._print_parse_tree_node("FunctionCall", start_offset, offset)
         return func_call, offset
 
+    def _parse_case_label(self, offset: int) -> Tuple[CaseLabel, int]:
+        start_offset = offset
+
+        enum_name, offset = self._parse_identifier(offset)
+        _, offset = self._token(offset, [TokenType.COLON])
+        variant_name, offset = self._parse_identifier(offset)
+
+        case_label = CaseLabel(enum_name.position, enum_name, variant_name)
+        self._print_parse_tree_node("CaseLabel", start_offset, offset)
+        return case_label, offset
+
     def _parse_branch(self, offset: int) -> Tuple[Branch, int]:
         start_offset = offset
 
@@ -798,12 +810,12 @@ class SingleFileParser:
         start_offset = offset
 
         case_token, offset = self._token(offset, [TokenType.CASE])
-        call, offset = self._parse_call(offset)
+        label, offset = self._parse_case_label(offset)
         _, offset = self._token(offset, [TokenType.BEGIN])
         body, offset = self._parse_function_body(offset)
         _, offset = self._token(offset, [TokenType.END])
 
-        case_block = CaseBlock(case_token.position, call, body)
+        case_block = CaseBlock(case_token.position, label, body)
         self._print_parse_tree_node("CaseBlock", start_offset, offset)
         return case_block, offset
 
@@ -839,8 +851,8 @@ class SingleFileParser:
                 block, offset = self._parse_case_block(offset)
             elif token.type == TokenType.DEFAULT:
                 block, offset = self._parse_default_block(offset)
-            else:  # pragma: nocover
-                assert False
+            else:
+                raise ParserException(token, [TokenType.CASE, TokenType.DEFAULT])
             blocks.append(block)
 
         _, offset = self._token(offset, [TokenType.END])
