@@ -373,17 +373,25 @@ class SingleFunctionTypeChecker:
 
         # The bool pushed by the condition is removed when evaluated,
         # so we can use type_stack as the stack for the loop body.
-        loop_stack = self._check_function_body(while_loop.body, copy(type_stack))
+        body_stack = self._check_function_body(while_loop.body, copy(type_stack))
 
-        if isinstance(loop_stack, Never):
-            # NOTE: If the loop returns and the loop_stack does not,
-            # that means the loop body never ran.
-            return type_stack
+        if isinstance(body_stack, Never):
+            return Never()
 
-        if loop_stack != type_stack:
-            raise WhileLoopTypeError(while_loop.position, type_stack, loop_stack)
+        if body_stack != type_stack:
+            raise WhileLoopTypeError(while_loop.position, type_stack, body_stack)
 
-        return loop_stack
+        condition_items = while_loop.condition.items
+
+        if (
+            len(condition_items) == 1
+            and isinstance(condition_items[0], BooleanLiteral)
+            and condition_items[0].value
+        ):
+            # We found a `while true` loop
+            return Never()
+
+        return body_stack
 
     def _check_function_body(
         self, function_body: FunctionBody, type_stack: List[VariableType]

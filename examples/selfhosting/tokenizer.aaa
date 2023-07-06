@@ -59,9 +59,6 @@ fn read_file args path as const str, return FileReadResult {
             }
         }
     }
-
-    // unreachable
-    Empty FileReadResult:read_error
 }
 
 enum TokenType {
