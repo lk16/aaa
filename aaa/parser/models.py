@@ -233,6 +233,15 @@ class Call(FunctionBodyItem):
         return self.func_name.name
 
 
+class CaseLabel(FunctionBodyItem):
+    def __init__(
+        self, position: Position, enum_name: Identifier, variant_name: Identifier
+    ) -> None:
+        self.enum_name = enum_name
+        self.variant_name = variant_name
+        super().__init__(position)
+
+
 class ForeachLoop(FunctionBodyItem):
     def __init__(self, position: Position, body: FunctionBody) -> None:
         self.body = body
@@ -258,9 +267,10 @@ class Assignment(FunctionBodyItem):
 
 
 class CaseBlock(FunctionBodyItem):
-    def __init__(self, position: Position, call: Call, body: FunctionBody) -> None:
-        self.enum_name = call.struct_name
-        self.enum_variant_name = call.func_name
+    def __init__(
+        self, position: Position, label: CaseLabel, body: FunctionBody
+    ) -> None:
+        self.label = label
         self.body = body
         super().__init__(position)
 
