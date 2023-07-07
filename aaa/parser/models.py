@@ -291,10 +291,10 @@ class MatchBlock(FunctionBodyItem):
 
 class EnumVariant(FunctionBodyItem):
     def __init__(
-        self, position: Position, name: Identifier, type: Optional[TypeLiteral]
+        self, position: Position, name: Identifier, associated_data: List[TypeLiteral]
     ) -> None:
         self.name = name
-        self.type = type
+        self.associated_data = associated_data
         super().__init__(position)
 
 

@@ -1,5 +1,4 @@
 use std::{
-    borrow::Borrow,
     cell::RefCell,
     collections::HashMap,
     fmt::{Debug, Display, Formatter, Result},
@@ -52,18 +51,22 @@ impl PartialEq for Struct {
 pub struct Enum {
     pub type_name: String,
     pub discriminant: usize,
-    pub value: Variable,
+    pub values: Vec<Variable>,
 }
 
 impl Debug for Enum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(
             f,
-            "(enum {} discriminant={})<{:?}>",
-            self.type_name,
-            self.discriminant,
-            self.value.borrow()
-        )
+            "(enum {} discriminant={})<",
+            self.type_name, self.discriminant,
+        )?;
+
+        let mut reprs: Vec<String> = vec![];
+        for item in self.values.iter() {
+            reprs.push(format!("{item:?}"))
+        }
+        write!(f, "[{}]>", reprs.join(", "))
     }
 }
 
@@ -227,10 +230,16 @@ impl Variable {
             Self::Enum(v) => {
                 let source = (**v).borrow();
 
+                let mut values = vec![];
+
+                for value in source.values.iter() {
+                    values.push(value.clone_recursive());
+                }
+
                 let enum_ = Enum {
                     discriminant: source.discriminant,
                     type_name: source.type_name.clone(),
-                    value: source.value.clone_recursive(),
+                    values: values,
                 };
 
                 Self::Enum(Rc::new(RefCell::new(enum_)))

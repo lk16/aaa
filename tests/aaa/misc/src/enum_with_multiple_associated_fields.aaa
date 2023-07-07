@@ -1,0 +1,55 @@
+enum Event {
+    click as { int, int },
+    message as str,
+    message_with_brackets as { str },
+    quit,
+}
+
+fn Event:print args event as Event {
+    event
+    match {
+        case Event:quit {
+            "quit\n" .
+        }
+        case Event:message {
+            "message " .
+            use text {
+                "text=" .
+                text .
+                "\n" .
+            }
+        }
+        case Event:click {
+            "click " .
+            use x, y {
+                "x=" .
+                x .
+                " y=" .
+                y .
+                "\n" .
+            }
+        }
+        case Event:message_with_brackets {
+            "message_with_brackets " .
+            use text {
+                "text=" .
+                text .
+                "\n" .
+            }
+        }
+    }
+}
+
+fn main {
+    Event:quit
+    Event:print
+
+    "hello" Event:message
+    Event:print
+
+    "world" Event:message_with_brackets
+    Event:print
+
+    6 9 Event:click
+    Event:print
+}

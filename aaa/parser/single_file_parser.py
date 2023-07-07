@@ -868,16 +868,56 @@ class SingleFileParser:
 
         token = self._peek_token(offset)
         if not token:
-            raise NotImplementedError  # TODO crash
+            raise EndOfFileException(self.file)
+
         if token.type == TokenType.AS:
             _, offset = self._token(offset, [TokenType.AS])
-            type_literal, offset = self._parse_type_literal(offset)
+            associated_data, offset = self._parse_enum_variant_associated_data(offset)
         else:
-            type_literal = None
+            associated_data = []
 
-        enum_variant = EnumVariant(name.position, name, type_literal)
+        enum_variant = EnumVariant(name.position, name, associated_data)
         self._print_parse_tree_node("EnumVariant", start_offset, offset)
         return enum_variant, offset
+
+    def _parse_enum_variant_associated_data(
+        self, offset: int
+    ) -> Tuple[List[TypeLiteral], int]:
+        start_offset = offset
+
+        token = self._peek_token(offset)
+
+        if not token:
+            raise EndOfFileException(self.file)
+
+        associated_data: List[TypeLiteral] = []
+
+        if token.type == TokenType.BEGIN:
+            _, offset = self._token(offset, [TokenType.BEGIN])
+
+            associated_item, offset = self._parse_type_literal(offset)
+            associated_data.append(associated_item)
+
+            while True:
+                try:
+                    _, offset = self._token(offset, [TokenType.COMMA])
+                except ParserBaseException:
+                    break
+
+                try:
+                    associated_item, offset = self._parse_type_literal(offset)
+                except ParserBaseException:
+                    break
+                else:
+                    associated_data.append(associated_item)
+
+            _, offset = self._token(offset, [TokenType.END])
+        else:
+            type_literal, offset = self._parse_type_literal(offset)
+            associated_data.append(type_literal)
+
+        self._print_parse_tree_node("EnumVariantAssociatedData", start_offset, offset)
+        return associated_data, offset
 
     def _parse_enum_variants(self, offset: int) -> Tuple[List[EnumVariant], int]:
         start_offset = offset

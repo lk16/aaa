@@ -321,9 +321,9 @@ def test_recursion() -> None:
 
     expected_output = (
         '(struct S)<{"a": [(struct S)<{"a": []}>]}>\n'
-        + "(enum Json discriminant=0)<(struct Empty)<{}>>\n"
-        + "(enum Json discriminant=4)<[(enum Json discriminant=2)<5>]>\n"
-        + '(enum Json discriminant=5)<{"key": (enum Json discriminant=1)<false>}>\n'
+        + "(enum Json discriminant=0)<[(struct Empty)<{}>]>\n"
+        + "(enum Json discriminant=4)<[[(enum Json discriminant=2)<[5]>]]>\n"
+        + '(enum Json discriminant=5)<[{"key": (enum Json discriminant=1)<[false]>}]>\n'
     )
 
     assert expected_output == stdout
@@ -353,5 +353,16 @@ def test_enum_without_associated_data() -> None:
     stdout, stderr, exit_code = compile_run("enum_without_associated_data.aaa")
 
     assert "some\nnone\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_enum_with_multiple_associated_fields() -> None:
+    stdout, stderr, exit_code = compile_run("enum_with_multiple_associated_fields.aaa")
+
+    assert (
+        "quit\nmessage text=hello\nmessage_with_brackets text=world\nclick x=6 y=9\n"
+        == stdout
+    )
     assert "" == stderr
     assert 0 == exit_code

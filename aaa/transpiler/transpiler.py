@@ -225,25 +225,25 @@ class Transpiler:
 
         enum_type_key = (function.position.file, function.struct_name)
         enum_type = self.types[enum_type_key]
-        variant_type, variant_id = enum_type.enum_fields[function.func_name]
+        associated_data, variant_id = enum_type.enum_fields[function.func_name]
 
         content = f"// Generated for: {function.position.file} enum {function.struct_name}, variant {function.func_name}\n"
         content += f"fn {func_name}(stack: &mut Stack) {{\n"
 
         self.indent_level += 1
 
-        if variant_type:
-            content += self._indent("let value = stack.pop();\n")
+        content += self._indent("let mut values = vec![];\n")
+
+        for _ in associated_data:
+            content += self._indent("values.push(stack.pop());\n")
+
+        content += self._indent("values.reverse();\n")
 
         content += self._indent("let enum_ = Enum {\n")
         self.indent_level += 1
         content += self._indent(f'type_name: String::from("{function.struct_name}"),\n')
         content += self._indent(f"discriminant: {variant_id},\n")
-
-        if variant_type:
-            content += self._indent("value,\n")
-        else:
-            content += self._indent("value: Variable::None,\n")
+        content += self._indent("values,\n")
 
         self.indent_level -= 1
         content += self._indent("};\n")
@@ -554,18 +554,16 @@ class Transpiler:
         code = f"// Generated for: {type.position.file} {type.name}, zero-value\n"
         code += f"fn {rust_enum_name}_new() -> Enum {{\n"
 
-        zero_variant_var_type: Optional[VariableType] = None
+        zero_variant_var_types: List[VariableType] = []
 
         for variant_type, variant_id in type.enum_fields.values():
             if variant_id == 0:
-                zero_variant_var_type = variant_type
+                zero_variant_var_types = variant_type
 
-        if zero_variant_var_type:
-            zero_value_expr = self._generate_rust_variable_zero_expression(
-                zero_variant_var_type
-            )
-        else:
-            zero_value_expr = "Variable::None"
+        zero_value_expressions = [
+            self._generate_rust_variable_zero_expression(zero_variant_var_type)
+            for zero_variant_var_type in zero_variant_var_types
+        ]
 
         self.indent_level += 1
 
@@ -574,7 +572,9 @@ class Transpiler:
 
         code += self._indent(f'type_name: String::from("{type.name}"),\n')
         code += self._indent("discriminant: 0,\n")
-        code += self._indent(f"value: {zero_value_expr},\n")
+        code += self._indent(
+            "values: vec![" + ", ".join(zero_value_expressions) + "],\n"
+        )
 
         self.indent_level -= 1
         code += self._indent("}\n")

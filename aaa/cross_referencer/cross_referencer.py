@@ -304,15 +304,13 @@ class CrossReferencer:
                 variants[variant.name.name] = variant
 
             for variant in parsed_enum.variants:
-                if variant.type:
-                    arguments = [
-                        parser.Argument(
-                            identifier=parser.Identifier(dummy_position, "_"),
-                            type=variant.type,
-                        )
-                    ]
-                else:
-                    arguments = []
+                arguments = [
+                    parser.Argument(
+                        identifier=parser.Identifier(dummy_position, f"arg{offset}"),
+                        type=associated_item,
+                    )
+                    for offset, associated_item in enumerate(variant.associated_data)
+                ]
 
                 parsed_function = parser.Function(
                     position=dummy_position,
@@ -443,18 +441,19 @@ class CrossReferencer:
             for field_name, parsed_field in parsed_field_types.items()
         }
 
-        enum_variants: Dict[str, Tuple[Optional[VariableType], int]] = {}
-        for variant_name, (variant_type, variariant_id) in parsed_variants.items():
-            if variant_type:
+        enum_variants: Dict[str, Tuple[List[VariableType], int]] = {}
+        for variant_name, (associated_data, variariant_id) in parsed_variants.items():
+            resolved_associated_data = []
+            for associated_item in associated_data:
                 try:
-                    resolved_variant_type = self._resolve_type_field(variant_type)
+                    resolved_associated_data.append(
+                        self._resolve_type_field(associated_item)
+                    )
                 except CrossReferenceBaseException as e:
                     self.exceptions.append(e)
                     continue
-            else:
-                resolved_variant_type = None
 
-            enum_variants[variant_name] = (resolved_variant_type, variariant_id)
+            enum_variants[variant_name] = (resolved_associated_data, variariant_id)
 
         type.resolve(fields, enum_variants)
 
