@@ -261,6 +261,13 @@ impl Stack {
         }
     }
 
+    pub fn top_enum(&mut self) -> Rc<RefCell<Enum>> {
+        match self.top().clone() {
+            Variable::Enum(v) => v,
+            v => self.pop_type_error("enum", &v),
+        }
+    }
+
     pub fn print(&mut self) {
         let top = self.pop();
         print!("{top}");
@@ -1301,12 +1308,17 @@ impl Stack {
     }
 
     pub fn get_enum_discriminant(&mut self) -> usize {
+        let enum_rc = self.top_enum();
+        let enum_ = &*enum_rc.borrow();
+        enum_.discriminant
+    }
+
+    pub fn push_enum_assiciated_data(&mut self) {
         let enum_rc = self.pop_enum();
         let enum_ = &*enum_rc.borrow();
         for value in enum_.values.iter() {
             self.push(value.clone());
         }
-        enum_.discriminant
     }
 
     pub fn sleep(&mut self) {
