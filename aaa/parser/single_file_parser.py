@@ -865,8 +865,15 @@ class SingleFileParser:
         start_offset = offset
 
         name, offset = self._parse_identifier(offset)
-        _, offset = self._token(offset, [TokenType.AS])
-        type_literal, offset = self._parse_type_literal(offset)
+
+        token = self._peek_token(offset)
+        if not token:
+            raise NotImplementedError  # TODO crash
+        if token.type == TokenType.AS:
+            _, offset = self._token(offset, [TokenType.AS])
+            type_literal, offset = self._parse_type_literal(offset)
+        else:
+            type_literal = None
 
         enum_variant = EnumVariant(name.position, name, type_literal)
         self._print_parse_tree_node("EnumVariant", start_offset, offset)

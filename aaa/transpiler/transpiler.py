@@ -225,19 +225,25 @@ class Transpiler:
 
         enum_type_key = (function.position.file, function.struct_name)
         enum_type = self.types[enum_type_key]
-        variant_id = enum_type.enum_fields[function.func_name][1]
+        variant_type, variant_id = enum_type.enum_fields[function.func_name]
 
         content = f"// Generated for: {function.position.file} enum {function.struct_name}, variant {function.func_name}\n"
         content += f"fn {func_name}(stack: &mut Stack) {{\n"
 
         self.indent_level += 1
 
-        content += self._indent("let value = stack.pop();\n")
+        if variant_type:
+            content += self._indent("let value = stack.pop();\n")
+
         content += self._indent("let enum_ = Enum {\n")
         self.indent_level += 1
         content += self._indent(f'type_name: String::from("{function.struct_name}"),\n')
         content += self._indent(f"discriminant: {variant_id},\n")
-        content += self._indent("value,\n")
+
+        if variant_type:
+            content += self._indent("value,\n")
+        else:
+            content += self._indent("value: Variable::None,\n")
 
         self.indent_level -= 1
         content += self._indent("};\n")

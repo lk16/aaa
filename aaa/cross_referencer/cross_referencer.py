@@ -304,17 +304,22 @@ class CrossReferencer:
                 variants[variant.name.name] = variant
 
             for variant in parsed_enum.variants:
+                if variant.type:
+                    arguments = [
+                        parser.Argument(
+                            identifier=parser.Identifier(dummy_position, "_"),
+                            type=variant.type,
+                        )
+                    ]
+                else:
+                    arguments = []
+
                 parsed_function = parser.Function(
                     position=dummy_position,
                     struct_name=parsed_enum.identifier,
                     func_name=variant.name,
                     type_params=[],
-                    arguments=[
-                        parser.Argument(
-                            identifier=parser.Identifier(dummy_position, "_"),
-                            type=variant.type,
-                        )
-                    ],
+                    arguments=arguments,
                     return_types=[
                         parser.TypeLiteral(
                             position=parsed_enum.position,
@@ -438,13 +443,16 @@ class CrossReferencer:
             for field_name, parsed_field in parsed_field_types.items()
         }
 
-        enum_variants: Dict[str, Tuple[VariableType, int]] = {}
+        enum_variants: Dict[str, Tuple[Optional[VariableType], int]] = {}
         for variant_name, (variant_type, variariant_id) in parsed_variants.items():
-            try:
-                resolved_variant_type = self._resolve_type_field(variant_type)
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-                continue
+            if variant_type:
+                try:
+                    resolved_variant_type = self._resolve_type_field(variant_type)
+                except CrossReferenceBaseException as e:
+                    self.exceptions.append(e)
+                    continue
+            else:
+                resolved_variant_type = None
 
             enum_variants[variant_name] = (resolved_variant_type, variariant_id)
 
