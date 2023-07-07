@@ -556,12 +556,12 @@ class Transpiler:
             if variant_id == 0:
                 zero_variant_var_type = variant_type
 
-        # NOTE: This should not fail, every enum should have at least one variant
-        assert zero_variant_var_type  # nosec
-
-        zero_value_expr = self._generate_rust_variable_zero_expression(
-            zero_variant_var_type
-        )
+        if zero_variant_var_type:
+            zero_value_expr = self._generate_rust_variable_zero_expression(
+                zero_variant_var_type
+            )
+        else:
+            zero_value_expr = "Variable::None,"
 
         self.indent_level += 1
 
