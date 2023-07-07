@@ -476,10 +476,9 @@ class SingleFunctionTypeChecker:
                 found_enum_variants[variant_name] = block
 
                 # The variant name is checked in the cross referencer so it cannot fail here.
-                variant_type = enum_type.enum_fields[variant_name][0]
+                associated_data = enum_type.enum_fields[variant_name][0]
 
-                if variant_type is not None:
-                    block_type_stack.append(variant_type)
+                block_type_stack += associated_data
 
             elif isinstance(block, DefaultBlock):
                 if found_default_block:

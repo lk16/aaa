@@ -1303,7 +1303,9 @@ impl Stack {
     pub fn get_enum_discriminant(&mut self) -> usize {
         let enum_rc = self.pop_enum();
         let enum_ = &*enum_rc.borrow();
-        self.push(enum_.value.clone());
+        for value in enum_.values.iter() {
+            self.push(value.clone());
+        }
         enum_.discriminant
     }
 
