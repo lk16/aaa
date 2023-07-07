@@ -478,7 +478,8 @@ class SingleFunctionTypeChecker:
                 # The variant name is checked in the cross referencer so it cannot fail here.
                 variant_type = enum_type.enum_fields[variant_name][0]
 
-                block_type_stack.append(variant_type)
+                if variant_type is not None:
+                    block_type_stack.append(variant_type)
 
             elif isinstance(block, DefaultBlock):
                 if found_default_block:

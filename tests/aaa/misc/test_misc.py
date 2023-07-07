@@ -347,3 +347,11 @@ def test_unreachable() -> None:
     assert stderr.startswith("Code at ")
     assert stderr.endswith(" should be unreachable\n")
     assert 1 == exit_code
+
+
+def test_enum_without_associated_data() -> None:
+    stdout, stderr, exit_code = compile_run("enum_without_associated_data.aaa")
+
+    assert "some\nnone\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code

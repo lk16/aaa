@@ -1,0 +1,23 @@
+enum OptionalInt {
+    some as int,
+    none,
+}
+
+fn OptionalInt:print args optional_int as OptionalInt {
+    optional_int
+    match {
+        case OptionalInt:some {
+            drop
+            "some\n" .
+        }
+        case OptionalInt:none {
+            "none\n" .
+        }
+    }
+}
+
+fn main {
+    5 OptionalInt:some OptionalInt:print
+
+    OptionalInt:none OptionalInt:print
+}

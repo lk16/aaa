@@ -212,7 +212,9 @@ class Type(Identifiable):
             self, parsed: parser.TypeLiteral | parser.Struct | parser.Enum
         ) -> None:
             self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
-            self.parsed_variants: Dict[str, Tuple[parser.TypeLiteral, int]] = {}
+            self.parsed_variants: Dict[
+                str, Tuple[Optional[parser.TypeLiteral], int]
+            ] = {}
 
             if isinstance(parsed, parser.Struct):
                 self.parsed_field_types = parsed.fields
@@ -225,7 +227,7 @@ class Type(Identifiable):
         def __init__(
             self,
             fields: Dict[str, VariableType],
-            enum_fields: Dict[str, Tuple[VariableType, int]],
+            enum_fields: Dict[str, Tuple[Optional[VariableType], int]],
         ) -> None:
             self.fields = fields
             self.enum_fields = enum_fields
@@ -251,7 +253,7 @@ class Type(Identifiable):
         return self.state.fields
 
     @property
-    def enum_fields(self) -> Dict[str, Tuple[VariableType, int]]:
+    def enum_fields(self) -> Dict[str, Tuple[Optional[VariableType], int]]:
         assert isinstance(self.state, Type.Resolved)
         return self.state.enum_fields
 
@@ -262,7 +264,7 @@ class Type(Identifiable):
     def resolve(
         self,
         fields: Dict[str, VariableType],
-        enum_fields: Dict[str, Tuple[VariableType, int]],
+        enum_fields: Dict[str, Tuple[Optional[VariableType], int]],
     ) -> None:
         assert isinstance(self.state, Type.Unresolved)
         self.state = Type.Resolved(fields, enum_fields)
