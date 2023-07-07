@@ -561,7 +561,7 @@ class Transpiler:
                 zero_variant_var_type
             )
         else:
-            zero_value_expr = "Variable::None,"
+            zero_value_expr = "Variable::None"
 
         self.indent_level += 1
 
