@@ -3,7 +3,7 @@ Stack-based language, like forth.
 
 ### Contents
 The following tools for the Aaa language can be found is this repo
-* A [tokenizer](./aaa/tokenizer/) and [parser](./aaa/parser/) for Aaa. [Grammar](./aaa.lark).
+* A [tokenizer](./aaa/tokenizer/) and [parser](./aaa/parser/) for Aaa.
 * A [type checker](./aaa/type_checker/)
 * A [transpiler to C](./aaa/transpiler/)
 * A [VS Code extension](./aaa-vscode-extension/README.md) for the Aaa language.
