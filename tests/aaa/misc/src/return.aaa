@@ -31,11 +31,9 @@ fn d return never {
 }
 
 fn e return int {
-    // NOTE: The type checker doesn't recognize infinite loops
     while true {
         not_returning
     }
-    5
 }
 
 fn f return int {
