@@ -129,6 +129,11 @@ fn str:to_int     args s as const str                                return int,
 fn make_regex args pattern as str return regex, bool
 fn regex:find args r as const regex, s as const str, offset as const int return str, int, bool
 
+// functions to assist type-checker
+fn todo return never
+fn unreachable return never
+
+
 
 // Syscall list: http://faculty.nps.edu/cseagle/assembly/sys_call.html
 

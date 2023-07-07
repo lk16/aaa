@@ -294,6 +294,16 @@ impl Stack {
         }
     }
 
+    pub fn todo(&mut self, file: &str, line: isize, col: isize) {
+        eprintln!("Code at {}:{}:{} is not implemented", file, line, col);
+        process::exit(1);
+    }
+
+    pub fn unreachable(&mut self, file: &str, line: isize, col: isize) {
+        eprintln!("Code at {}:{}:{} should be unreachable", file, line, col);
+        process::exit(1);
+    }
+
     pub fn over(&mut self) {
         let len = self.len();
 
