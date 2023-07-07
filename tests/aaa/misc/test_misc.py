@@ -329,3 +329,21 @@ def test_recursion() -> None:
     assert expected_output == stdout
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_todo() -> None:
+    stdout, stderr, exit_code = compile_run("todo.aaa")
+
+    assert "" == stdout
+    assert stderr.startswith("Code at ")
+    assert stderr.endswith(" is not implemented\n")
+    assert 1 == exit_code
+
+
+def test_unreachable() -> None:
+    stdout, stderr, exit_code = compile_run("unreachable.aaa")
+
+    assert "" == stdout
+    assert stderr.startswith("Code at ")
+    assert stderr.endswith(" should be unreachable\n")
+    assert 1 == exit_code
