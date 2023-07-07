@@ -366,15 +366,14 @@ class Transpiler:
 
     def _generate_rust_case_block_code(self, case_block: CaseBlock) -> str:
         enum_type = case_block.enum_type
-        variant_type, variant_id = enum_type.enum_fields[case_block.variant_name]
+        variant_id = enum_type.enum_fields[case_block.variant_name][1]
 
         code = self._indent(
             f"{variant_id} => {{ // {enum_type.name}:{case_block.variant_name}\n"
         )
         self.indent_level += 1
 
-        if variant_type is None:
-            code += self._indent("stack.drop();\n")
+        code += self._indent("stack.push_enum_assiciated_data();\n")
 
         code += self._generate_rust_function_body(case_block.body)
         self.indent_level -= 1
