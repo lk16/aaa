@@ -843,12 +843,17 @@ class FunctionBodyResolver:
 
         variables = self._check_and_load_variables(parsed.label.variables)
 
+        resolved_body = self._resolve_function_body(parsed.body)
+
+        for var in variables:
+            del self.vars[var.name]
+
         return CaseBlock(
             parsed.position,
             enum_type=enum_type,
             variant_name=variant_name,
             variables=variables,
-            body=self._resolve_function_body(parsed.body),
+            body=resolved_body,
         )
 
     def _resolve_default_block(self, parsed: parser.DefaultBlock) -> DefaultBlock:
