@@ -841,10 +841,13 @@ class FunctionBodyResolver:
         if variant_name not in enum_type.enum_fields:
             raise InvalidEnumVariant(parsed.position, enum_type, variant_name)
 
+        variables = self._check_and_load_variables(parsed.label.variables)
+
         return CaseBlock(
             parsed.position,
             enum_type=enum_type,
             variant_name=variant_name,
+            variables=variables,
             body=self._resolve_function_body(parsed.body),
         )
 
@@ -864,8 +867,10 @@ class FunctionBodyResolver:
         body = self._resolve_function_body(parsed.body)
         return Assignment(parsed, variables, body)
 
-    def _resolve_use_block(self, parsed: parser.UseBlock) -> UseBlock:
-        variables = [Variable(parsed_var, False) for parsed_var in parsed.variables]
+    def _check_and_load_variables(
+        self, identifiers: List[parser.Identifier]
+    ) -> List[Variable]:
+        variables = [Variable(parsed_var, False) for parsed_var in identifiers]
 
         for var in variables:
             if var.name in self.vars:
@@ -880,6 +885,11 @@ class FunctionBodyResolver:
                 raise CollidingIdentifier([var, identifiable])
 
             self.vars[var.name] = var
+
+        return variables
+
+    def _resolve_use_block(self, parsed: parser.UseBlock) -> UseBlock:
+        variables = self._check_and_load_variables(parsed.variables)
 
         body = self._resolve_function_body(parsed.body)
 

@@ -523,7 +523,19 @@ class SingleFileParser:
         _, offset = self._token(offset, [TokenType.COLON])
         variant_name, offset = self._parse_identifier(offset)
 
-        case_label = CaseLabel(enum_name.position, enum_name, variant_name)
+        token = self._peek_token(offset)
+
+        if not token:
+            raise EndOfFileException(self.file)
+
+        variables: List[Identifier] = []
+
+        if token.type == TokenType.AS:
+            _, offset = self._token(offset, [TokenType.AS])
+
+            variables, offset = self._parse_variables(offset)
+
+        case_label = CaseLabel(enum_name.position, enum_name, variant_name, variables)
         self._print_parse_tree_node("CaseLabel", start_offset, offset)
         return case_label, offset
 

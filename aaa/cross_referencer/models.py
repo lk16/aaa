@@ -446,10 +446,16 @@ class MatchBlock(FunctionBodyItem):
 
 class CaseBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyItem
     def __init__(
-        self, position: Position, enum_type: Type, variant_name: str, body: FunctionBody
+        self,
+        position: Position,
+        enum_type: Type,
+        variant_name: str,
+        variables: List[Variable],
+        body: FunctionBody,
     ) -> None:
         self.enum_type = enum_type
         self.variant_name = variant_name
+        self.variables = variables
         self.body = body
         super().__init__(position)
 

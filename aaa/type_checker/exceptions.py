@@ -519,6 +519,21 @@ class UnreachableDefaultBlock(TypeCheckerException):
         return f"{self.block.position}: Unreachable default block.\n"
 
 
+class CaseAsArgumentCountError(TypeCheckerException):
+    def __init__(self, case_block: CaseBlock, associated_items: int):
+        self.case_block = case_block
+        self.associated_items = associated_items
+
+    def __str__(self) -> str:
+        expected_args = len(self.case_block.variables)
+
+        return (
+            f"{self.case_block.position}: Unexpected number of case-arguments.\n"
+            + f"Expected arguments: {expected_args}\n"
+            + f"   Found arguments: {self.associated_items}\n"
+        )
+
+
 class SignatureItemMismatch(AaaException):
     """
     Raised when stack doesn't match the signature of a function.
