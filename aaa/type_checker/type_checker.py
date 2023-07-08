@@ -31,6 +31,7 @@ from aaa.type_checker.exceptions import (
     AssignConstValueError,
     AssignmentTypeError,
     BranchTypeError,
+    CaseAsArgumentCountError,
     CaseEnumTypeError,
     CaseStackTypeError,
     ConditionTypeError,
@@ -438,7 +439,7 @@ class SingleFunctionTypeChecker:
 
         return stack
 
-    def _check_match_block(
+    def _check_match_block(  # noqa: C901
         self, match_block: MatchBlock, type_stack: List[VariableType]
     ) -> List[VariableType] | Never:
 
@@ -478,7 +479,19 @@ class SingleFunctionTypeChecker:
                 # The variant name is checked in the cross referencer so it cannot fail here.
                 associated_data = enum_type.enum_fields[variant_name][0]
 
-                block_type_stack += associated_data
+                if block.variables:
+                    if len(block.variables) != len(associated_data):
+                        raise CaseAsArgumentCountError(block, len(associated_data))
+
+                    for var, type_stack_item in zip(
+                        block.variables, associated_data, strict=True
+                    ):
+                        self.vars[var.name] = type_stack_item
+
+                    # NOTE: all pushed associated data is immediately used so we don't modify block_type_stack
+
+                else:
+                    block_type_stack += associated_data
 
             elif isinstance(block, DefaultBlock):
                 if found_default_block:

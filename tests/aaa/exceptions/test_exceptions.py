@@ -24,6 +24,7 @@ from aaa.type_checker.exceptions import (
     AssignConstValueError,
     AssignmentTypeError,
     BranchTypeError,
+    CaseAsArgumentCountError,
     CaseEnumTypeError,
     CaseStackTypeError,
     ConditionTypeError,
@@ -934,6 +935,59 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "/foo/main.aaa:2:24: enum variant foo:x\n"
             + "/foo/main.aaa:2:34: enum variant foo:x\n",
             id="colliding-enum-variant",
+        ),
+        pytest.param(
+            """
+            enum foo { bar }
+            fn main { foo match { case foo:bar as a, b, c { nop } } }
+            """,
+            CaseAsArgumentCountError,
+            "/foo/main.aaa:3:35: Unexpected number of case-arguments.\n"
+            + "Expected arguments: 3\n"
+            + "   Found arguments: 0\n",
+            id="case-as-argument-count-error",
+        ),
+        pytest.param(
+            """
+            enum Foo { bar as int }
+            fn main {
+                Foo
+                match {
+                    case Foo:bar as value {
+                        3
+                        use value {
+                            nop
+                        }
+                    }
+                }
+            }
+            """,
+            CollidingIdentifier,
+            "Found name collision:\n"
+            + "/foo/main.aaa:6:37: local variable value\n"
+            + "/foo/main.aaa:8:29: local variable value\n",
+            id="case-as-use-collision",
+        ),
+        pytest.param(
+            """
+            enum Foo { bar as int }
+            fn main {
+                3
+                use value {
+                    Foo
+                    match {
+                        case Foo:bar as value {
+                            nop
+                        }
+                    }
+                }
+            }
+            """,
+            CollidingIdentifier,
+            "Found name collision:\n"
+            + "/foo/main.aaa:5:21: local variable value\n"
+            + "/foo/main.aaa:8:41: local variable value\n",
+            id="use-case-as-collision",
         ),
     ],
 )

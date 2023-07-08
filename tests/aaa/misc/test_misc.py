@@ -366,3 +366,11 @@ def test_enum_with_multiple_associated_fields() -> None:
     )
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_enum_case_as() -> None:
+    stdout, stderr, exit_code = compile_run("enum_case_as.aaa")
+
+    assert "quit\ntext = hello\nx = 6 y = 9\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code

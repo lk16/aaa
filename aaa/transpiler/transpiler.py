@@ -375,7 +375,15 @@ class Transpiler:
 
         code += self._indent("stack.push_enum_assiciated_data();\n")
 
+        for var in reversed(case_block.variables):
+            code += self._indent(f"let mut var_{var.name} = stack.pop();\n")
+            self.func_local_vars.add(var.name)
+
         code += self._generate_rust_function_body(case_block.body)
+
+        for var in case_block.variables:
+            self.func_local_vars.remove(var.name)
+
         self.indent_level -= 1
         code += self._indent("}\n")
 

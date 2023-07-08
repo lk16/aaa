@@ -235,10 +235,15 @@ class Call(FunctionBodyItem):
 
 class CaseLabel(FunctionBodyItem):
     def __init__(
-        self, position: Position, enum_name: Identifier, variant_name: Identifier
+        self,
+        position: Position,
+        enum_name: Identifier,
+        variant_name: Identifier,
+        variables: List[Identifier],
     ) -> None:
         self.enum_name = enum_name
         self.variant_name = variant_name
+        self.variables = variables
         super().__init__(position)
 
 

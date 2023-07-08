@@ -1,0 +1,42 @@
+enum Event {
+    quit,
+    message as str,
+    click as { int, int },
+}
+
+fn Event:print args event as Event {
+    event
+    match {
+        // no associated data, so `as` syntax cannot be used
+        case Event:quit {
+            "quit\n" .
+        }
+
+        case Event:message as text {
+            // stack is empty now, text can be used as variable
+            "text = " .
+            text .
+            "\n" .
+        }
+
+        case Event:click as x, y {
+            // stack is empty, x and y can be used as variables
+            "x = " .
+            x .
+            " y = " .
+            y .
+            "\n" .
+        }
+    }
+}
+
+fn main {
+    Event:quit
+    Event:print
+
+    "hello" Event:message
+    Event:print
+
+    6 9  Event:click
+    Event:print
+}
