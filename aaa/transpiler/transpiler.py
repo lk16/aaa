@@ -750,7 +750,8 @@ class Transpiler:
             return "Rc<RefCell<Regex>>"
 
         if var_type.type.is_enum():
-            raise NotImplementedError  # TODO
+            rust_enum_name = self._generate_rust_enum_name(var_type.type)
+            return f"Rc<RefCell<{rust_enum_name}>>"
 
         rust_struct_name = self._generate_rust_struct_name(var_type.type)
         return f"Rc<RefCell<{rust_struct_name}>>"
