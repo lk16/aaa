@@ -481,7 +481,12 @@ class SingleFunctionTypeChecker:
         else:
             type_stack += associated_data
 
-        return self._check_function_body(block.body, type_stack)
+        return_type_stack = self._check_function_body(block.body, type_stack)
+
+        for var in block.variables:
+            del self.vars[var.name]
+
+        return return_type_stack
 
     def _check_match_block(
         self, match_block: MatchBlock, type_stack: List[VariableType]
