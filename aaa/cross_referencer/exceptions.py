@@ -15,7 +15,7 @@ from aaa.cross_referencer.models import (
 from aaa.parser.models import TypeLiteral
 
 
-def describe(item: Identifiable | Argument | Variable) -> str:
+def describe(item: Identifiable | Argument | Variable) -> str:  # TODO move out
     if isinstance(item, Function):
         return f"function {item.name}"
     elif isinstance(item, Import):
@@ -157,31 +157,6 @@ class CircularDependencyError(CrossReferenceBaseException):
         for dep in self.dependencies:
             message += f"- {dep}\n"
         return message
-
-
-class UnknownVariable(CrossReferenceBaseException):
-    def __init__(self, var: Variable) -> None:
-        self.position = var.position
-        self.name = var.name
-
-    def __str__(self) -> str:
-        return f"{self.position}: Usage of unknown variable {self.name}\n"
-
-
-class InvalidCallWithTypeParameters(CrossReferenceBaseException):
-    def __init__(self, call: parser.Call, var: Variable | Argument) -> None:
-        self.call = call
-        self.var = var
-
-    def __str__(self) -> str:
-        if isinstance(self.var, Argument):
-            object = "argument"
-        elif isinstance(self.var, Variable):
-            object = "variable"
-        else:  # pragma: nocover
-            assert False
-
-        return f"{self.call.position}: Cannot use {object} {self.call.name()} with type parameters\n"
 
 
 class InvalidEnumType(CrossReferenceBaseException):

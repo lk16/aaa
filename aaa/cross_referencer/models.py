@@ -354,7 +354,8 @@ class WhileLoop(FunctionBodyItem):
 
 
 class CallVariable(FunctionBodyItem):
-    def __init__(self, name: str, position: Position) -> None:
+    def __init__(self, name: str, has_type_params: bool, position: Position) -> None:
+        self.has_type_params = has_type_params
         self.name = name
         super().__init__(position)
 

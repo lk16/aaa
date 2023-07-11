@@ -2,7 +2,7 @@ import subprocess
 from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import List, Optional, Set
+from typing import List, Optional
 
 from aaa.cross_referencer.models import (
     Assignment,
@@ -73,7 +73,6 @@ class Transpiler:
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
         self.position_stacks = type_checker_output.position_stacks
-        self.func_local_vars: Set[str] = set()
         self.verbose = verbose
         self.indent_level = 0
 
@@ -261,7 +260,6 @@ class Transpiler:
             return self._generate_rust_enum_ctor_function(function)
 
         assert function.body
-        self.func_local_vars = set()
 
         func_name = self._generate_rust_function_name(function)
 
@@ -274,7 +272,6 @@ class Transpiler:
             content += self._indent("// load arguments\n")
             for arg in reversed(function.arguments):
                 content += self._indent(f"let mut var_{arg.name} = stack.pop();\n")
-                self.func_local_vars.add(arg.name)
             content += "\n"
 
         content += self._generate_rust_function_body(function.body)
@@ -377,12 +374,8 @@ class Transpiler:
 
         for var in reversed(case_block.variables):
             code += self._indent(f"let mut var_{var.name} = stack.pop();\n")
-            self.func_local_vars.add(var.name)
 
         code += self._generate_rust_function_body(case_block.body)
-
-        for var in case_block.variables:
-            self.func_local_vars.remove(var.name)
 
         self.indent_level -= 1
         code += self._indent("}\n")
@@ -649,12 +642,8 @@ class Transpiler:
 
         for var in reversed(use_block.variables):
             code += self._indent(f"let mut var_{var.name} = stack.pop();\n")
-            self.func_local_vars.add(var.name)
 
         code += self._generate_rust_function_body(use_block.body)
-
-        for var in use_block.variables:
-            self.func_local_vars.remove(var.name)
 
         self.indent_level -= 1
         code += self._indent("}\n")

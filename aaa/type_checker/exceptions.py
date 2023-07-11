@@ -1,9 +1,12 @@
 from pathlib import Path
-from typing import List, Set, Union
+from typing import List, Set, Tuple, Union
 
 from aaa import AaaException, Position
+from aaa.cross_referencer.exceptions import describe
 from aaa.cross_referencer.models import (
+    Argument,
     Assignment,
+    CallVariable,
     CaseBlock,
     DefaultBlock,
     Function,
@@ -532,6 +535,50 @@ class CaseAsArgumentCountError(TypeCheckerException):
             + f"Expected arguments: {expected_args}\n"
             + f"   Found arguments: {self.associated_items}\n"
         )
+
+
+class UnknownVariableOrFunction(TypeCheckerException):
+    def __init__(self, var_name: str, position: Position) -> None:
+        self.name = var_name
+        super().__init__(position)
+
+    def __str__(self) -> str:
+        return f"{self.position}: Usage of unknown variable or function {self.name}\n"
+
+
+class CollidingVariable(TypeCheckerException):
+    def __init__(
+        self, lhs: Variable | Argument, rhs: Variable | Argument | Type | Function
+    ) -> None:
+        def sort_key(item: Variable | Argument | Type | Function) -> Tuple[int, int]:
+            return (item.position.line, item.position.column)
+
+        self.colliding = sorted([lhs, rhs], key=sort_key)
+
+    def __str__(self) -> str:
+        msg = "Found name collision:\n"
+
+        for item in self.colliding:
+            msg += f"{item.position}: {describe(item)}\n"
+
+        return msg
+
+
+class InvalidCallWithTypeParameters(TypeCheckerException):
+    def __init__(self, call_var: CallVariable, var: Variable | Argument) -> None:
+        self.call_var = call_var
+        self.var = var
+        super().__init__(call_var.position)
+
+    def __str__(self) -> str:
+        if isinstance(self.var, Argument):
+            object = "argument"
+        elif isinstance(self.var, Variable):
+            object = "variable"
+        else:  # pragma: nocover
+            assert False
+
+        return f"{self.position}: Cannot use {object} {self.call_var.name} with type parameters\n"
 
 
 class SignatureItemMismatch(AaaException):
