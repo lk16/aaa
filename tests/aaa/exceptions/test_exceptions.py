@@ -9,14 +9,12 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
-    InvalidCallWithTypeParameters,
     InvalidEnumType,
     InvalidEnumVariant,
     InvalidReturnType,
     InvalidType,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
-    UnknownVariable,
 )
 from aaa.parser.exceptions import EndOfFileException
 from aaa.tokenizer.exceptions import FileReadError
@@ -27,10 +25,12 @@ from aaa.type_checker.exceptions import (
     CaseAsArgumentCountError,
     CaseEnumTypeError,
     CaseStackTypeError,
+    CollidingVariable,
     ConditionTypeError,
     DuplicateCase,
     ForeachLoopTypeError,
     FunctionTypeError,
+    InvalidCallWithTypeParameters,
     InvalidIterable,
     InvalidIterator,
     InvalidMainSignuture,
@@ -46,6 +46,7 @@ from aaa.type_checker.exceptions import (
     StructUpdateStackError,
     StructUpdateTypeError,
     UnknownField,
+    UnknownVariableOrFunction,
     UnreachableCode,
     UnreachableDefaultBlock,
     UpdateConstStructError,
@@ -145,8 +146,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """
             fn main { bar }
             """,
-            UnknownIdentifier,
-            "/foo/main.aaa:2:23: Usage of unknown identifier bar\n",
+            UnknownVariableOrFunction,
+            "/foo/main.aaa:2:23: Usage of unknown variable or function bar\n",
             id="unknown-function",
         ),
         pytest.param(
@@ -631,18 +632,18 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """
             fn main { a <- { nop } }
             """,
-            UnknownVariable,
-            "/foo/main.aaa:2:23: Usage of unknown variable a\n",
+            UnknownVariableOrFunction,
+            "/foo/main.aaa:2:23: Usage of unknown variable or function a\n",
             id="unknown-var",
         ),
         pytest.param(
             """
-            fn main { 0 use a { use a { nop } } }
+            fn main { 0 0 use a { use a { nop } } }
             """,
-            CollidingIdentifier,
+            CollidingVariable,
             "Found name collision:\n"
-            + "/foo/main.aaa:2:29: local variable a\n"
-            + "/foo/main.aaa:2:37: local variable a\n",
+            + "/foo/main.aaa:2:31: local variable a\n"
+            + "/foo/main.aaa:2:39: local variable a\n",
             id="colliding-identifier-var-var",
         ),
         pytest.param(
@@ -650,7 +651,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             fn foo args a as int { 0 use a { nop } }
             """,
-            CollidingIdentifier,
+            CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:3:25: function argument a\n"
             + "/foo/main.aaa:3:42: local variable a\n",
@@ -661,7 +662,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             struct bar { x as int }
             fn main { 0 use bar { nop } }
             """,
-            CollidingIdentifier,
+            CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:2:13: type bar\n"
             + "/foo/main.aaa:3:29: local variable bar\n",
@@ -962,7 +963,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
                 }
             }
             """,
-            CollidingIdentifier,
+            CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:6:37: local variable value\n"
             + "/foo/main.aaa:8:29: local variable value\n",
@@ -983,7 +984,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
                 }
             }
             """,
-            CollidingIdentifier,
+            CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:5:21: local variable value\n"
             + "/foo/main.aaa:8:41: local variable value\n",

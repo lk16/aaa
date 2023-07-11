@@ -10,14 +10,12 @@ from aaa.cross_referencer.exceptions import (
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
-    InvalidCallWithTypeParameters,
     InvalidEnumType,
     InvalidEnumVariant,
     InvalidReturnType,
     InvalidType,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
-    UnknownVariable,
 )
 from aaa.cross_referencer.models import (
     Argument,
@@ -679,9 +677,6 @@ class FunctionBodyResolver:
         self.function = function
         self.parsed = parsed
         self.cross_referencer = cross_referencer
-        self.vars: Dict[str, Argument | Variable] = {
-            arg.name: arg for arg in self.function.arguments
-        }
 
     def run(self) -> FunctionBody:
         return self._resolve_function_body(self.parsed)
@@ -717,37 +712,18 @@ class FunctionBodyResolver:
     def _resolve_call(
         self, call: parser.Call
     ) -> CallVariable | CallFunction | CallType:
-
         try:
-            var = self.vars[call.name()]
-        except KeyError:
-            pass
-        else:
-            if call.type_params:
-                # Handles cases like:
-                # fn foo { 0 use c { c[b] } }
-                # fn foo args a as int { a[b] drop }
-                raise InvalidCallWithTypeParameters(call, var)
-
-            return CallVariable(var.name, call.position)
-
-        identifiable = self._get_identifiable_from_call(call)
+            identifiable = self._get_identifiable_from_call(call)
+        except UnknownIdentifier:
+            has_type_params = bool(call.type_params)
+            return CallVariable(call.name(), has_type_params, call.position)
 
         if isinstance(identifiable, Function):
             assert not call.type_params
-
-            return CallFunction(
-                identifiable,
-                [],
-                call.position,
-            )
+            return CallFunction(identifiable, [], call.position)
 
         if isinstance(identifiable, ImplicitFunctionImport):
-            return CallFunction(
-                identifiable.source,
-                [],
-                call.position,
-            )
+            return CallFunction(identifiable.source, [], call.position)
 
         if isinstance(identifiable, Type):
             var_type = VariableType(
@@ -841,12 +817,11 @@ class FunctionBodyResolver:
         if variant_name not in enum_type.enum_fields:
             raise InvalidEnumVariant(parsed.position, enum_type, variant_name)
 
-        variables = self._check_and_load_variables(parsed.label.variables)
+        variables = [
+            Variable(parsed_var, False) for parsed_var in parsed.label.variables
+        ]
 
         resolved_body = self._resolve_function_body(parsed.body)
-
-        for var in variables:
-            del self.vars[var.name]
 
         return CaseBlock(
             parsed.position,
@@ -864,43 +839,12 @@ class FunctionBodyResolver:
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
         variables = [Variable(var, False) for var in parsed.variables]
-
-        for var in variables:
-            if var.name not in self.vars:
-                raise UnknownVariable(var)
-
         body = self._resolve_function_body(parsed.body)
         return Assignment(parsed, variables, body)
 
-    def _check_and_load_variables(
-        self, identifiers: List[parser.Identifier]
-    ) -> List[Variable]:
-        variables = [Variable(parsed_var, False) for parsed_var in identifiers]
-
-        for var in variables:
-            if var.name in self.vars:
-                colliding_var = self.vars[var.name]
-                raise CollidingIdentifier([var, colliding_var])
-
-            try:
-                identifiable = self._get_identifiable_generic(var.name, var.position)
-            except UnknownIdentifier:
-                pass
-            else:
-                raise CollidingIdentifier([var, identifiable])
-
-            self.vars[var.name] = var
-
-        return variables
-
     def _resolve_use_block(self, parsed: parser.UseBlock) -> UseBlock:
-        variables = self._check_and_load_variables(parsed.variables)
-
+        variables = [Variable(parsed_var, False) for parsed_var in parsed.variables]
         body = self._resolve_function_body(parsed.body)
-
-        for var in variables:
-            del self.vars[var.name]
-
         return UseBlock(parsed, variables, body)
 
     def _resolve_foreach_loop(self, parsed: parser.ForeachLoop) -> ForeachLoop:

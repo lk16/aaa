@@ -1,9 +1,10 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.models import (
+    Argument,
     Assignment,
     BooleanLiteral,
     Branch,
@@ -23,7 +24,9 @@ from aaa.cross_referencer.models import (
     StringLiteral,
     StructFieldQuery,
     StructFieldUpdate,
+    Type,
     UseBlock,
+    Variable,
     VariableType,
     WhileLoop,
 )
@@ -34,10 +37,12 @@ from aaa.type_checker.exceptions import (
     CaseAsArgumentCountError,
     CaseEnumTypeError,
     CaseStackTypeError,
+    CollidingVariable,
     ConditionTypeError,
     DuplicateCase,
     ForeachLoopTypeError,
     FunctionTypeError,
+    InvalidCallWithTypeParameters,
     InvalidIterable,
     InvalidIterator,
     InvalidMainSignuture,
@@ -55,6 +60,7 @@ from aaa.type_checker.exceptions import (
     StructUpdateTypeError,
     TypeCheckerException,
     UnknownField,
+    UnknownVariableOrFunction,
     UnreachableCode,
     UnreachableDefaultBlock,
     UpdateConstStructError,
@@ -174,8 +180,8 @@ class SingleFunctionTypeChecker:
         self.types = type_checker.types
         self.functions = type_checker.functions
         self.builtins_path = type_checker.builtins_path
-        self.vars: Dict[str, VariableType] = {
-            arg.name: arg.var_type for arg in function.arguments
+        self.vars: Dict[str, Tuple[Variable | Argument, VariableType]] = {
+            arg.name: (arg, arg.var_type) for arg in function.arguments
         }
         self.verbose = type_checker.verbose
 
@@ -439,7 +445,45 @@ class SingleFunctionTypeChecker:
 
         return stack
 
-    def _check_match_block(  # noqa: C901
+    def _check_case_block(
+        self,
+        block: CaseBlock,
+        type_stack: List[VariableType],
+        enum_type: Type,
+    ) -> List[VariableType] | Never:
+        if block.enum_type != enum_type:
+            raise CaseEnumTypeError(block, enum_type, block.enum_type)
+
+        variant_name = block.variant_name
+
+        # The variant name is checked in the cross referencer so it cannot fail here.
+        associated_data = enum_type.enum_fields[variant_name][0]
+
+        if block.variables:
+            if len(block.variables) != len(associated_data):
+                raise CaseAsArgumentCountError(block, len(associated_data))
+
+            for var, type_stack_item in zip(
+                block.variables, associated_data, strict=True
+            ):
+                if var.name in self.vars:
+                    raise CollidingVariable(var, self.vars[var.name][0])
+
+                colliding = self._find_var_name_collision(var)
+
+                if colliding:
+                    raise CollidingVariable(var, colliding)
+
+                self.vars[var.name] = (var, type_stack_item)
+
+            # NOTE: all pushed associated data is immediately used so we don't modify block_type_stack
+
+        else:
+            type_stack += associated_data
+
+        return self._check_function_body(block.body, type_stack)
+
+    def _check_match_block(
         self, match_block: MatchBlock, type_stack: List[VariableType]
     ) -> List[VariableType] | Never:
 
@@ -454,55 +498,42 @@ class SingleFunctionTypeChecker:
         enum_type = matched_var_type.type
 
         found_enum_variants: Dict[str, CaseBlock] = {}
-        found_default_block: Optional[DefaultBlock] = None
 
+        for block in match_block.blocks:
+            if isinstance(block, CaseBlock):
+                if block.enum_type != enum_type:
+                    raise CaseEnumTypeError(block, enum_type, block.enum_type)
+
+                if block.variant_name in found_enum_variants:
+                    colliding_case_block = found_enum_variants[block.variant_name]
+                    raise DuplicateCase(colliding_case_block, block)
+
+                found_enum_variants[block.variant_name] = block
+
+        found_default_block: Optional[DefaultBlock] = None
         block_type_stacks: List[List[VariableType] | Never] = []
+
         for block in match_block.blocks:
             block_type_stack: List[VariableType] | Never = copy(type_stack[:-1])
             assert not isinstance(block_type_stack, Never)
 
             if isinstance(block, CaseBlock):
-                if block.enum_type != enum_type:
-                    raise CaseEnumTypeError(block, enum_type, block.enum_type)
-
-                variant_name = block.variant_name
-
-                try:
-                    colliding_case_block = found_enum_variants[variant_name]
-                except KeyError:
-                    pass
-                else:
-                    raise DuplicateCase(colliding_case_block, block)
-
-                found_enum_variants[variant_name] = block
-
-                # The variant name is checked in the cross referencer so it cannot fail here.
-                associated_data = enum_type.enum_fields[variant_name][0]
-
-                if block.variables:
-                    if len(block.variables) != len(associated_data):
-                        raise CaseAsArgumentCountError(block, len(associated_data))
-
-                    for var, type_stack_item in zip(
-                        block.variables, associated_data, strict=True
-                    ):
-                        self.vars[var.name] = type_stack_item
-
-                    # NOTE: all pushed associated data is immediately used so we don't modify block_type_stack
-
-                else:
-                    block_type_stack += associated_data
+                block_type_stack = self._check_case_block(
+                    block, block_type_stack, enum_type
+                )
 
             elif isinstance(block, DefaultBlock):
                 if found_default_block:
                     raise DuplicateCase(found_default_block, block)
 
                 found_default_block = block
+                block_type_stack = self._check_function_body(
+                    block.body, block_type_stack
+                )
 
             else:  # pragma: nocover
                 assert False
 
-            block_type_stack = self._check_function_body(block.body, block_type_stack)
             block_type_stacks.append(block_type_stack)
 
         missing_enum_variants = set(enum_type.enum_fields.keys()) - set(
@@ -539,9 +570,19 @@ class SingleFunctionTypeChecker:
     def _check_call_variable(
         self, call_var: CallVariable, type_stack: List[VariableType]
     ) -> List[VariableType]:
+        try:
+            var_or_arg, var_type = self.vars[call_var.name]
+        except KeyError:
+            raise UnknownVariableOrFunction(call_var.name, call_var.position)
+
+        if call_var.has_type_params:
+            # Handles cases like:
+            # fn foo { 0 use c { c[b] } }
+            # fn foo args a as int { a[b] drop }
+            raise InvalidCallWithTypeParameters(call_var, var_or_arg)
+
         # Push variable on stack
-        type = self.vars[call_var.name]
-        return type_stack + [type]
+        return type_stack + [var_type]
 
     def _simplify_stack_item(self, var_type: VariableType) -> VariableType:
         if (
@@ -819,6 +860,22 @@ class SingleFunctionTypeChecker:
 
         return type_stack
 
+    def _find_var_name_collision(self, var: Variable) -> Type | Function | None:
+        builtins_key = (self.builtins_path, var.name)
+        key = (self.function.position.file, var.name)
+
+        if builtins_key in self.types:
+            return self.types[builtins_key]
+        if key in self.types:
+            return self.types[key]
+
+        if builtins_key in self.functions:
+            return self.functions[builtins_key]
+        if key in self.functions:
+            return self.functions[key]
+
+        return None
+
     def _check_use_block(
         self, use_block: UseBlock, type_stack: List[VariableType]
     ) -> List[VariableType] | Never:
@@ -831,10 +888,23 @@ class SingleFunctionTypeChecker:
         for var, type_stack_item in zip(
             use_block.variables, type_stack[-use_var_count:], strict=True
         ):
-            self.vars[var.name] = type_stack_item
+            if var.name in self.vars:
+                raise CollidingVariable(var, self.vars[var.name][0])
+
+            colliding = self._find_var_name_collision(var)
+
+            if colliding:
+                raise CollidingVariable(var, colliding)
+
+            self.vars[var.name] = (var, type_stack_item)
 
         type_stack = type_stack[:-use_var_count]
-        return self._check_function_body(use_block.body, type_stack)
+        returned_type_stack = self._check_function_body(use_block.body, type_stack)
+
+        for var in use_block.variables:
+            del self.vars[var.name]
+
+        return returned_type_stack
 
     def _check_assignment(
         self, assignment: Assignment, type_stack: List[VariableType]
@@ -844,7 +914,10 @@ class SingleFunctionTypeChecker:
         expected_var_types: List[VariableType] = []
 
         for var in assignment.variables:
-            type = self.vars[var.name]
+            try:
+                _, type = self.vars[var.name]
+            except KeyError:
+                raise UnknownVariableOrFunction(var.name, var.position)
 
             if type.is_const:
                 raise AssignConstValueError(var, type)
