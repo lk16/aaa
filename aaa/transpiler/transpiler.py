@@ -30,6 +30,7 @@ from aaa.cross_referencer.models import (
     VariableType,
     WhileLoop,
 )
+from aaa.transpiler.code import Code
 from aaa.type_checker.models import TypeCheckerOutput
 
 AAA_RUST_BUILTIN_FUNCS = {
@@ -74,7 +75,6 @@ class Transpiler:
         self.entrypoint = cross_referencer_output.entrypoint
         self.position_stacks = type_checker_output.position_stacks
         self.verbose = verbose
-        self.indent_level = 0
 
         self.transpiled_rust_root = Path("/tmp/transpiled")
 
@@ -105,7 +105,7 @@ class Transpiler:
 
         code = self._generate_rust_file()
 
-        generated_rust_file.write_text(code)
+        generated_rust_file.write_text(code.get())
 
         if compile:  # pragma: nocover
             command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_toml)]
@@ -123,45 +123,40 @@ class Transpiler:
 
         return 0
 
-    def _indent(self, line: str) -> str:
-        indentation = "    " * self.indent_level
-        return indentation + line
-
-    def _generate_rust_file(self) -> str:
-        content = "#![allow(unused_imports)]\n"
-        content += "#![allow(unused_mut)]\n"
-        content += "#![allow(unused_variables)]\n"
-        content += "#![allow(dead_code)]\n"
-        content += "\n"
-        content += "use aaa_stdlib::map::Map;\n"
-        content += "use aaa_stdlib::stack::Stack;\n"
-        content += "use aaa_stdlib::set::Set;\n"
-        content += "use aaa_stdlib::var::{Enum, Struct, Variable};\n"
-        content += "use aaa_stdlib::vector::Vector;\n"
-        content += "use regex::Regex;\n"
-        content += "use std::cell::RefCell;\n"
-        content += "use std::collections::HashMap;\n"
-        content += "use std::process;\n"
-        content += "use std::rc::Rc;\n"
-
-        content += "\n"
+    def _generate_rust_file(self) -> Code:
+        code = Code("#![allow(unused_imports)]")
+        code.add("#![allow(unused_mut)]")
+        code.add("#![allow(unused_variables)]")
+        code.add("#![allow(dead_code)]")
+        code.add("")
+        code.add("use aaa_stdlib::map::Map;")
+        code.add("use aaa_stdlib::stack::Stack;")
+        code.add("use aaa_stdlib::set::Set;")
+        code.add("use aaa_stdlib::var::{Enum, Struct, Variable};")
+        code.add("use aaa_stdlib::vector::Vector;")
+        code.add("use regex::Regex;")
+        code.add("use std::cell::RefCell;")
+        code.add("use std::collections::HashMap;")
+        code.add("use std::process;")
+        code.add("use std::rc::Rc;")
+        code.add("")
 
         for type in self.types.values():
             if type.is_enum():
-                content += self._generate_rust_enum_new_func(type)
+                code.add(self._generate_rust_enum_new_func(type))
             else:
-                content += self._generate_rust_struct_new_func(type)
+                code.add(self._generate_rust_struct_new_func(type))
 
         for function in self.functions.values():
             if function.position.file == self.builtins_path:
                 continue
-            content += self._generate_rust_function(function)
+            code.add(self._generate_rust_function(function))
 
-        content += self._generate_rust_main_function()
+        code.add(self._generate_rust_main_function())
 
-        return content
+        return code
 
-    def _generate_rust_main_function(self) -> str:
+    def _generate_rust_main_function(self) -> Code:
         main_func = self.functions[(self.entrypoint, "main")]
         main_func_name = self._generate_rust_function_name(main_func)
 
@@ -171,21 +166,20 @@ class Transpiler:
             and len(main_func.return_types) != 0
         )
 
-        code = "fn main() {\n"
-        self.indent_level += 1
+        code = Code()
+        code.add("fn main() {", r=1)
 
         if argv_used:
-            code += self._indent("let mut stack = Stack::from_argv();\n")
+            code.add("let mut stack = Stack::from_argv();")
         else:
-            code += self._indent("let mut stack = Stack::new();\n")
+            code.add("let mut stack = Stack::new();")
 
-        code += self._indent(f"{main_func_name}(&mut stack);\n")
+        code.add(f"{main_func_name}(&mut stack);")
 
         if exit_code_returned:
-            code += self._indent("stack.exit();\n")
+            code.add("stack.exit();")
 
-        self.indent_level -= 1
-        code += "}\n"
+        code.add("}", l=1)
 
         return code
 
@@ -219,43 +213,36 @@ class Transpiler:
         name = f"{var_type.name}:{func_name}"
         return self.functions[(file, name)]
 
-    def _generate_rust_enum_ctor_function(self, function: Function) -> str:
+    def _generate_rust_enum_ctor_function(self, function: Function) -> Code:
         func_name = self._generate_rust_function_name(function)
 
         enum_type_key = (function.position.file, function.struct_name)
         enum_type = self.types[enum_type_key]
         associated_data, variant_id = enum_type.enum_fields[function.func_name]
 
-        content = f"// Generated for: {function.position.file} enum {function.struct_name}, variant {function.func_name}\n"
-        content += f"fn {func_name}(stack: &mut Stack) {{\n"
-
-        self.indent_level += 1
-
-        content += self._indent("let mut values = vec![];\n")
+        code = Code()
+        code.add(
+            f"// Generated for: {function.position.file} enum {function.struct_name}, variant {function.func_name}"
+        )
+        code.add(f"fn {func_name}(stack: &mut Stack) {{", r=1)
+        code.add("let mut values = vec![];")
 
         for _ in associated_data:
-            content += self._indent("values.push(stack.pop());\n")
+            code.add("values.push(stack.pop());")
 
-        content += self._indent("values.reverse();\n")
+        code.add("values.reverse();")
+        code.add("let enum_ = Enum {", r=1)
+        code.add(f'type_name: String::from("{function.struct_name}"),')
+        code.add(f"discriminant: {variant_id},")
+        code.add("values,")
+        code.add("};", l=1)
+        code.add("stack.push_enum(enum_);")
+        code.add("}", l=1)
+        code.add("")
 
-        content += self._indent("let enum_ = Enum {\n")
-        self.indent_level += 1
-        content += self._indent(f'type_name: String::from("{function.struct_name}"),\n')
-        content += self._indent(f"discriminant: {variant_id},\n")
-        content += self._indent("values,\n")
+        return code
 
-        self.indent_level -= 1
-        content += self._indent("};\n")
-
-        content += self._indent("stack.push_enum(enum_);\n")
-
-        self.indent_level -= 1
-
-        content += "}\n\n"
-
-        return content
-
-    def _generate_rust_function(self, function: Function) -> str:
+    def _generate_rust_function(self, function: Function) -> Code:
         if function.is_enum_ctor:
             return self._generate_rust_enum_ctor_function(function)
 
@@ -263,42 +250,41 @@ class Transpiler:
 
         func_name = self._generate_rust_function_name(function)
 
-        content = f"// Generated from: {function.position.file} {function.name}\n"
-        content += f"fn {func_name}(stack: &mut Stack) {{\n"
-
-        self.indent_level += 1
+        code = Code()
+        code.add(f"// Generated from: {function.position.file} {function.name}")
+        code.add(f"fn {func_name}(stack: &mut Stack) {{", r=1)
 
         if function.arguments:
-            content += self._indent("// load arguments\n")
+            code.add("// load arguments")
             for arg in reversed(function.arguments):
-                content += self._indent(f"let mut var_{arg.name} = stack.pop();\n")
-            content += "\n"
+                code.add(f"let mut var_{arg.name} = stack.pop();")
+            code.add("")
 
-        content += self._generate_rust_function_body(function.body)
+        code.add(self._generate_rust_function_body(function.body))
 
-        self.indent_level -= 1
-        content += "}\n\n"
-
-        return content
-
-    def _generate_rust_function_body(self, function_body: FunctionBody) -> str:
-        code = ""
-
-        for item in function_body.items:
-            code += self._generate_rust_function_body_item(item)
+        code.add("}", l=1)
+        code.add("")
 
         return code
 
-    def _generate_rust_function_body_item(self, item: FunctionBodyItem) -> str:
+    def _generate_rust_function_body(self, function_body: FunctionBody) -> Code:
+        code = Code()
+
+        for item in function_body.items:
+            code.add(self._generate_rust_function_body_item(item))
+
+        return code
+
+    def _generate_rust_function_body_item(self, item: FunctionBodyItem) -> Code:
         if isinstance(item, IntegerLiteral):
-            return self._indent(f"stack.push_int({item.value});\n")
+            return Code(f"stack.push_int({item.value});")
         elif isinstance(item, StringLiteral):
             return self._generate_rust_string_literal(item)
         elif isinstance(item, BooleanLiteral):
             bool_value = "true"
             if not item.value:
                 bool_value = "false"
-            return self._indent(f"stack.push_bool({bool_value});\n")
+            return Code(f"stack.push_bool({bool_value});")
         elif isinstance(item, WhileLoop):
             return self._generate_rust_while_loop(item)
         elif isinstance(item, ForeachLoop):
@@ -326,102 +312,83 @@ class Transpiler:
         else:  # pragma: nocover
             assert False
 
-    def _generate_rust_field_query_code(self, field_query: StructFieldQuery) -> str:
+    def _generate_rust_field_query_code(self, field_query: StructFieldQuery) -> Code:
         field_name = field_query.field_name.value
-        return self._indent(f'stack.struct_field_query("{field_name}");\n')
+        return Code(f'stack.struct_field_query("{field_name}");')
 
-    def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> str:
+    def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> Code:
         field_name = field_update.field_name.value
 
         code = self._generate_rust_function_body(field_update.new_value_expr)
-        code += self._indent(f'stack.struct_field_update("{field_name}");\n')
+        code.add(f'stack.struct_field_update("{field_name}");')
         return code
 
-    def _generate_rust_match_block_code(self, match_block: MatchBlock) -> str:
-        code = self._indent(f"match stack.get_enum_discriminant() {{\n")
-        self.indent_level += 1
+    def _generate_rust_match_block_code(self, match_block: MatchBlock) -> Code:
+        code = Code("match stack.get_enum_discriminant() {", r=1)
 
         has_default = False
 
         for block in match_block.blocks:
             if isinstance(block, CaseBlock):
-                code += self._generate_rust_case_block_code(block)
+                code.add(self._generate_rust_case_block_code(block))
             elif isinstance(block, DefaultBlock):
                 has_default = True
-                code += self._generate_rust_default_block_code(block)
+                code.add(self._generate_rust_default_block_code(block))
             else:  # pragma: nocover
                 assert False
 
         if not has_default:
-            code += self._indent("_ => {}\n")
+            code.add("_ => {}")
 
-        self.indent_level -= 1
-
-        code += self._indent("}\n")
+        code.add("}", l=1)
 
         return code
 
-    def _generate_rust_case_block_code(self, case_block: CaseBlock) -> str:
+    def _generate_rust_case_block_code(self, case_block: CaseBlock) -> Code:
         enum_type = case_block.enum_type
         variant_id = enum_type.enum_fields[case_block.variant_name][1]
 
-        code = self._indent(
-            f"{variant_id} => {{ // {enum_type.name}:{case_block.variant_name}\n"
+        code = Code(
+            f"{variant_id} => {{ // {enum_type.name}:{case_block.variant_name}", r=1
         )
-        self.indent_level += 1
-
-        code += self._indent("stack.push_enum_assiciated_data();\n")
+        code.add("stack.push_enum_assiciated_data();")
 
         for var in reversed(case_block.variables):
-            code += self._indent(f"let mut var_{var.name} = stack.pop();\n")
+            code.add(f"let mut var_{var.name} = stack.pop();")
 
-        code += self._generate_rust_function_body(case_block.body)
+        code.add(self._generate_rust_function_body(case_block.body))
 
-        self.indent_level -= 1
-        code += self._indent("}\n")
-
-        return code
-
-    def _generate_rust_default_block_code(self, default_block: DefaultBlock) -> str:
-        code = self._indent("_ => {\n")
-        self.indent_level += 1
-        code += self._indent("stack.drop();\n")
-        code += self._generate_rust_function_body(default_block.body)
-        self.indent_level -= 1
-        code += self._indent("}\n")
+        code.add("}", l=1)
 
         return code
 
-    def _generate_rust_return(self, return_: Return) -> str:
-        return self._indent("return;\n")
+    def _generate_rust_default_block_code(self, default_block: DefaultBlock) -> Code:
+        code = Code("_ => {", r=1)
+        code.add("stack.drop();")
+        code.add(self._generate_rust_function_body(default_block.body))
+        code.add("}", l=1)
 
-    def _generate_rust_string_literal(self, string_literal: StringLiteral) -> str:
+        return code
+
+    def _generate_rust_return(self, return_: Return) -> Code:
+        return Code("return;")
+
+    def _generate_rust_string_literal(self, string_literal: StringLiteral) -> Code:
         string_value = repr(string_literal.value)[1:-1].replace('"', '\\"')
-        return self._indent(f'stack.push_str("{string_value}");\n')
+        return Code(f'stack.push_str("{string_value}");')
 
-    def _generate_rust_while_loop(self, while_loop: WhileLoop) -> str:
+    def _generate_rust_while_loop(self, while_loop: WhileLoop) -> Code:
 
-        code = self._indent("loop {\n")
-        self.indent_level += 1
-
-        code += self._generate_rust_function_body(while_loop.condition)
-
-        code += self._indent("if !stack.pop_bool() {\n")
-        self.indent_level += 1
-
-        code += self._indent("break;\n")
-
-        self.indent_level -= 1
-        code += self._indent("}\n")
-
-        code += self._generate_rust_function_body(while_loop.body)
-
-        self.indent_level -= 1
-        code += self._indent("}\n")
-
+        code = Code("loop {", r=1)
+        code.add(self._generate_rust_function_body(while_loop.condition))
+        code.add("if !stack.pop_bool() {", r=1)
+        code.add("break;")
+        code.add("}", l=1)
+        code.add(self._generate_rust_function_body(while_loop.body))
+        code.add("}", l=1)
         return code
 
-    def _generate_rust_foreach_loop(self, foreach_loop: ForeachLoop) -> str:
+    def _generate_rust_foreach_loop(self, foreach_loop: ForeachLoop) -> Code:
         """
         dup iterable
         iter
@@ -462,79 +429,67 @@ class Transpiler:
         next = self._generate_rust_function_name(next_func)
         break_drop_count = len(next_func.return_types)
 
-        code = ""
-        code += self._indent(f"stack.dup();\n")
+        code = Code(f"stack.dup();")
 
         if iter_func.position.file == self.builtins_path:
-            code += self._indent(f"{iter}();\n")
+            code.add(f"{iter}();")
         else:
-            code += self._indent(f"{iter}(stack);\n")
+            code.add(f"{iter}(stack);")
 
-        code += self._indent("loop {\n")
-        self.indent_level += 1
+        code.add("loop {", r=1)
 
-        code += self._indent(f"stack.dup();\n")
+        code.add(f"stack.dup();")
         if iter_func.position.file == self.builtins_path:
-            code += self._indent(f"{next}();\n")
+            code.add(f"{next}();")
         else:
-            code += self._indent(f"{next}(stack);\n")
+            code.add(f"{next}(stack);")
 
-        code += self._indent("if !stack.pop_bool() {\n")
-        self.indent_level += 1
+        code.add("if !stack.pop_bool() {", r=1)
 
         for _ in range(break_drop_count):
-            code += self._indent(f"stack.drop();\n")
+            code.add("stack.drop();")
 
-        code += self._indent(f"break;\n")
+        code.add("break;")
 
-        self.indent_level -= 1
-        code += self._indent("}\n")
+        code.add("}", l=1)
 
-        code += self._generate_rust_function_body(foreach_loop.body)
+        code.add(self._generate_rust_function_body(foreach_loop.body))
 
-        self.indent_level -= 1
-        code += self._indent("}\n")
-
-        code += self._indent(f"stack.drop();\n")
+        code.add("}", l=1)
+        code.add("stack.drop();")
 
         return code
 
-    def _generate_rust_call_function_code(self, call_func: CallFunction) -> str:
+    def _generate_rust_call_function_code(self, call_func: CallFunction) -> Code:
         called = call_func.function
         rust_func_name = self._generate_rust_function_name(called)
 
         if called.position.file == self.builtins_path:
             if called.name in ["assert", "todo", "unreachable"]:
                 position = call_func.position
-                return self._indent(
-                    f'{rust_func_name}("{position.file}", {position.line}, {position.column});\n'
+                return Code(
+                    f'{rust_func_name}("{position.file}", {position.line}, {position.column});'
                 )
-            return self._indent(f"{rust_func_name}();\n")
+            return Code(f"{rust_func_name}();")
 
-        return self._indent(f"{rust_func_name}(stack);\n")
+        return Code(f"{rust_func_name}(stack);")
 
-    def _generate_rust_call_type_code(self, call_type: CallType) -> str:
+    def _generate_rust_call_type_code(self, call_type: CallType) -> Code:
         var_type = call_type.var_type
         zero_expr = self._generate_rust_variable_zero_expression(var_type)
-        return self._indent(f"stack.push({zero_expr});\n")
+        return Code(f"stack.push({zero_expr});")
 
-    def _generate_rust_branch(self, branch: Branch) -> str:
+    def _generate_rust_branch(self, branch: Branch) -> Code:
         code = self._generate_rust_function_body(branch.condition)
 
-        code += self._indent("if stack.pop_bool() {\n")
-        self.indent_level += 1
-
-        code += self._generate_rust_function_body(branch.if_body)
+        code.add("if stack.pop_bool() {", r=1)
+        code.add(self._generate_rust_function_body(branch.if_body))
 
         if branch.else_body:
-            self.indent_level -= 1
-            code += self._indent("} else {\n")
-            self.indent_level += 1
+            code.add("} else {", l=1, r=1)
+            code.add(self._generate_rust_function_body(branch.else_body))
 
-            code += self._generate_rust_function_body(branch.else_body)
-
-        self.indent_level -= 1
-        code += self._indent("}\n")
+        code.add("}", l=1)
 
         return code
 
@@ -548,11 +503,11 @@ class Transpiler:
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"user_struct_{hash}"
 
-    def _generate_rust_enum_new_func(self, type: Type) -> str:
+    def _generate_rust_enum_new_func(self, type: Type) -> Code:
         rust_enum_name = self._generate_rust_enum_name(type)
 
-        code = f"// Generated for: {type.position.file} {type.name}, zero-value\n"
-        code += f"fn {rust_enum_name}_new() -> Enum {{\n"
+        code = Code(f"// Generated for: {type.position.file} {type.name}, zero-value")
+        code.add(f"fn {rust_enum_name}_new() -> Enum {{", r=1)
 
         zero_variant_var_types: List[VariableType] = []
 
@@ -565,22 +520,13 @@ class Transpiler:
             for zero_variant_var_type in zero_variant_var_types
         ]
 
-        self.indent_level += 1
-
-        code += self._indent("Enum {\n")
-        self.indent_level += 1
-
-        code += self._indent(f'type_name: String::from("{type.name}"),\n')
-        code += self._indent("discriminant: 0,\n")
-        code += self._indent(
-            "values: vec![" + ", ".join(zero_value_expressions) + "],\n"
-        )
-
-        self.indent_level -= 1
-        code += self._indent("}\n")
-
-        self.indent_level -= 1
-        code += "}\n\n"
+        code.add("Enum {", r=1)
+        code.add(f'type_name: String::from("{type.name}"),')
+        code.add("discriminant: 0,")
+        code.add("values: vec![" + ", ".join(zero_value_expressions) + "],")
+        code.add("}", l=1)
+        code.add("}", l=1)
+        code.add("")
 
         return code
 
@@ -606,58 +552,48 @@ class Transpiler:
             rust_struct_name = self._generate_rust_struct_name(var_type.type)
             return f"Variable::Struct(Rc::new(RefCell::new({rust_struct_name}_new())))"
 
-    def _generate_rust_struct_new_func(self, type: Type) -> str:
+    def _generate_rust_struct_new_func(self, type: Type) -> Code:
         if type.position.file == self.builtins_path and not type.fields:
-            return ""
+            return Code()
 
         rust_struct_name = self._generate_rust_struct_name(type)
 
-        code = f"// Generated for: {type.position.file} {type.name}\n"
-        code += f"fn {rust_struct_name}_new() -> Struct {{\n"
+        code = Code(f"// Generated for: {type.position.file} {type.name}")
+        code.add(f"fn {rust_struct_name}_new() -> Struct {{", r=1)
 
-        self.indent_level += 1
-        code += self._indent(f'let type_name = String::from("{type.name}");\n')
-        code += self._indent("let values = HashMap::from([\n")
-
-        self.indent_level += 1
+        code.add(f'let type_name = String::from("{type.name}");')
+        code.add("let values = HashMap::from([", r=1)
 
         for field_name, field_type in type.fields.items():
             zero_expr = self._generate_rust_variable_zero_expression(field_type)
-            code += self._indent(f'(String::from("{field_name}"), {zero_expr}),\n')
+            code.add(f'(String::from("{field_name}"), {zero_expr}),')
 
-        self.indent_level -= 1
-
-        code += self._indent("]);\n")
-        code += self._indent("Struct { type_name, values }\n")
-
-        self.indent_level -= 1
-        code += "}\n\n"
+        code.add("]);", l=1)
+        code.add("Struct { type_name, values }")
+        code.add("}", l=1)
+        code.add("")
 
         return code
 
-    def _generate_rust_use_block_code(self, use_block: UseBlock) -> str:
-
-        code = self._indent("{\n")
-        self.indent_level += 1
+    def _generate_rust_use_block_code(self, use_block: UseBlock) -> Code:
+        code = Code("{", r=1)
 
         for var in reversed(use_block.variables):
-            code += self._indent(f"let mut var_{var.name} = stack.pop();\n")
+            code.add(f"let mut var_{var.name} = stack.pop();")
 
-        code += self._generate_rust_function_body(use_block.body)
-
-        self.indent_level -= 1
-        code += self._indent("}\n")
+        code.add(self._generate_rust_function_body(use_block.body))
+        code.add("}", l=1)
 
         return code
 
-    def _generate_rust_call_variable_code(self, call_var: CallVariable) -> str:
+    def _generate_rust_call_variable_code(self, call_var: CallVariable) -> Code:
         name = call_var.name
-        return self._indent(f"stack.push(var_{name}.clone());\n")
+        return Code(f"stack.push(var_{name}.clone());")
 
-    def _generate_rust_assignment_code(self, assignment: Assignment) -> str:
+    def _generate_rust_assignment_code(self, assignment: Assignment) -> Code:
         code = self._generate_rust_function_body(assignment.body)
 
         for var in reversed(assignment.variables):
-            code += self._indent(f"stack.assign(&mut var_{var.name});\n")
+            code.add(f"stack.assign(&mut var_{var.name});")
 
         return code
