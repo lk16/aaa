@@ -132,11 +132,12 @@ class Transpiler:
         code.add("use aaa_stdlib::map::Map;")
         code.add("use aaa_stdlib::stack::Stack;")
         code.add("use aaa_stdlib::set::Set;")
-        code.add("use aaa_stdlib::var::{Enum, Struct, Variable};")
+        code.add("use aaa_stdlib::var::{Enum, Struct, UserType, Variable};")
         code.add("use aaa_stdlib::vector::Vector;")
         code.add("use regex::Regex;")
         code.add("use std::cell::RefCell;")
         code.add("use std::collections::HashMap;")
+        code.add("use std::fmt::{Debug, Display, Formatter, Result};")
         code.add("use std::process;")
         code.add("use std::rc::Rc;")
         code.add("")
@@ -345,7 +346,7 @@ class Transpiler:
             )
 
         else:
-            code.add("todo!();")  # TODO
+            code.add("// TODO")  # TODO
 
         code.add("}", l=1)
         return code
@@ -354,7 +355,8 @@ class Transpiler:
         field_name = field_update.field_name.value
 
         _ = field_name
-        raise NotImplementedError  # TODO
+
+        return Code("// TODO")  # TODO
 
     def _generate_rust_match_block_code(self, match_block: MatchBlock) -> Code:
         code = Code("match stack.get_enum_discriminant() {", r=1)
@@ -741,11 +743,11 @@ class Transpiler:
         elif var_type.name == "str":
             return "Rc<RefCell<String>>"
         elif var_type.name == "vec":
-            raise NotImplementedError  # TODO
+            return "todo!()"  # TODO
         elif var_type.name == "map":
-            raise NotImplementedError  # TODO
+            return "todo!()"  # TODO
         elif var_type.name == "set":
-            raise NotImplementedError  # TODO
+            return "todo!()"  # TODO
         elif var_type.name == "regex":
             return "Rc<RefCell<Regex>>"
 
@@ -793,8 +795,7 @@ class Transpiler:
             if field_type.name in ["bool", "int"]:
                 code.add(f"{field_name}: self.{field_name},")
             else:
-                # TODO
-                raise NotImplementedError
+                code.add("todo!();")  # TODO
 
         code.add("}", l=1)
         code.add("}", l=1)
@@ -826,7 +827,7 @@ class Transpiler:
             if i != len(type.fields) - 1:
                 code.add('write!(f, ", ")?;')
 
-        code.add('write!(f, "}}>")')
+        code.add('write!(f, "}}>");')
 
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
         code.add("todo!();")  # TODO
@@ -842,7 +843,7 @@ class Transpiler:
 
         rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
 
-        code = Code(f"impl Hash for {rust_struct_name} {{")
+        code = Code(f"impl Hash for {rust_struct_name} {{", r=1)
 
         code.add("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {", r=1)
         code.add("todo!();")  # TODO
