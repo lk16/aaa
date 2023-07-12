@@ -138,6 +138,7 @@ class Transpiler:
         code.add("use std::cell::RefCell;")
         code.add("use std::collections::HashMap;")
         code.add("use std::fmt::{Debug, Display, Formatter, Result};")
+        code.add("use std::hash::Hash;")
         code.add("use std::process;")
         code.add("use std::rc::Rc;")
         code.add("")
@@ -234,7 +235,7 @@ class Transpiler:
         code.add(
             f"// Generated for: {function.position.file} enum {function.struct_name}, variant {function.func_name}"
         )
-        code.add(f"fn {func_name}(stack: &mut Stack) {{", r=1)
+        code.add(f"fn {func_name}(stack: &mut Stack<UserTypeEnum>) {{", r=1)
         code.add("let mut values = vec![];")
 
         for _ in associated_data:
@@ -261,7 +262,7 @@ class Transpiler:
         func_name = self._generate_rust_function_name(function)
 
         code = Code(f"// Generated from: {function.position.file} {function.name}")
-        code.add(f"fn {func_name}(stack: &mut Stack) {{", r=1)
+        code.add(f"fn {func_name}(stack: &mut Stack<UserTypeEnum>) {{", r=1)
 
         if function.arguments:
             code.add("// load arguments")
@@ -542,7 +543,7 @@ class Transpiler:
         rust_enum_name = self._generate_rust_enum_name(type)
 
         code = Code(f"// Generated for: {type.position.file} {type.name}, zero-value")
-        code.add(f"fn {rust_enum_name}_new() -> Enum {{", r=1)
+        code.add(f"fn {rust_enum_name}_new() -> Enum<UserTypeEnum> {{", r=1)
 
         zero_variant_var_types: List[VariableType] = []
 
@@ -829,10 +830,7 @@ class Transpiler:
 
         code.add('write!(f, "}}>");')
 
-        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
-        code.add("todo!();")  # TODO
         code.add("}", l=1)
-
         code.add("}", l=1)
         code.add("")
         return code
