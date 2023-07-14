@@ -128,11 +128,12 @@ class Transpiler:
         code.add("#![allow(unused_mut)]")
         code.add("#![allow(unused_variables)]")
         code.add("#![allow(dead_code)]")
+        code.add("#![allow(non_snake_case)]")
         code.add("")
         code.add("use aaa_stdlib::map::Map;")
         code.add("use aaa_stdlib::stack::Stack;")
         code.add("use aaa_stdlib::set::Set;")
-        code.add("use aaa_stdlib::var::{Enum, Struct, UserType, Variable};")
+        code.add("use aaa_stdlib::var::{Enum, UserType, Variable};")
         code.add("use aaa_stdlib::vector::Vector;")
         code.add("use regex::Regex;")
         code.add("use std::cell::RefCell;")
@@ -144,6 +145,7 @@ class Transpiler:
         code.add("")
 
         code.add(self._generate_rust_UserTypeEnum())
+        code.add(self._generate_rust_UserTypeEnum_impl())
         code.add(self._generate_rust_UserTypeEnum_UserType_impl())
         code.add(self._generate_rust_UserTypeEnum_Display_impl())
         code.add(self._generate_rust_UserTypeEnum_Debug_impl())
@@ -631,8 +633,10 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_UserTypeEnum_get_UserStruct_funcs(self) -> Code:
+    def _generate_rust_UserTypeEnum_impl(self) -> Code:
         code = Code("impl UserTypeEnum {", r=1)
+
+        func_code_list: List[Code] = []
 
         for type in self.types.values():
             if type.is_enum() or type.position.file == self.builtins_path:
@@ -640,20 +644,17 @@ class Transpiler:
 
             rust_struct_name = self._generate_rust_struct_name(type)
 
-            # TODO remove this and don't have a default case when there's only one variant in UserTypeEnum
-            code.add("#[allow(unreachable_patterns)]")
-            code.add("#[allow(non_snake_case)]")
-            code.add(f"fn get_{rust_struct_name}(&self) -> &{rust_struct_name} {{", r=1)
-            code.add("match self {", r=1)
+            func_code = Code(
+                f"fn get_{rust_struct_name}(&self) -> &{rust_struct_name} {{", r=1
+            )
+            func_code.add("match self {", r=1)
+            func_code.add(f"Self::{rust_struct_name}(v) => v,")
+            func_code.add("}", l=1)
+            func_code.add("}", l=1)
 
-            rust_struct_name = self._generate_rust_struct_name(type)
-            code.add(f"Self::{rust_struct_name}(v) => v,")
-            code.add(f"_ => todo!(),")  # TODO
+            func_code_list.append(func_code)
 
-            code.add("}", l=1)
-            code.add("}", l=1)
-            code.add("")
-
+        code.add_joined("", func_code_list)
         code.add("}", l=1)
         code.add("")
         return code
@@ -744,11 +745,15 @@ class Transpiler:
         elif var_type.name == "str":
             return "Rc<RefCell<String>>"
         elif var_type.name == "vec":
-            return "todo!()"  # TODO
+            item_type = var_type.params[0].name
+            return f"Rc<RefCell<Vector<{item_type}>>>"
         elif var_type.name == "map":
-            return "todo!()"  # TODO
+            key_type = var_type.params[0].name
+            value_type = var_type.params[0].name
+            return f"Rc<RefCell<Map<{key_type}, {value_type}>>>"
         elif var_type.name == "set":
-            return "todo!()"  # TODO
+            item_type = var_type.params[0].name
+            return f"Rc<RefCell<Set<{item_type}>>>"
         elif var_type.name == "regex":
             return "Rc<RefCell<Regex>>"
 
@@ -766,11 +771,9 @@ class Transpiler:
         rust_struct_name = self._generate_rust_struct_name(type)
 
         code = Code(f"// Generated for: {type.position.file} {type.name}")
-        code.add(f"fn {rust_struct_name}_new() -> Struct {{", r=1)
+        code.add(f"impl {rust_struct_name} {{", r=1)
         code.add(f"fn new() -> Self {{", r=1)
-        code.add(f"Self {{", r=1)
-        code.add("todo!();")
-        code.add("}", l=1)
+        code.add("todo!();")  # TODO
         code.add("}", l=1)
         code.add("}", l=1)
         code.add("")
@@ -783,23 +786,17 @@ class Transpiler:
         rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
 
         code = Code(f"impl UserType for {rust_struct_name} {{", r=1)
+
         code.add("fn kind(&self) -> String {", r=1)
         code.add(f'String::from("{type.name}")', r=1)
-
         code.add("}", l=1)
+
         code.add("")
 
         code.add("fn clone_recursive(&self) -> Self {", r=1)
-        code.add("Self {", r=1)
-
-        for field_name, field_type in type.fields.items():
-            if field_type.name in ["bool", "int"]:
-                code.add(f"{field_name}: self.{field_name},")
-            else:
-                code.add("todo!();")  # TODO
-
+        code.add("todo!();")  # TODO
         code.add("}", l=1)
-        code.add("}", l=1)
+
         code.add("}", l=1)
         code.add("")
         return code
@@ -813,24 +810,9 @@ class Transpiler:
         code = Code(f"impl Display for {rust_struct_name} {{", r=1)
 
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
-        code.add(f'write!(f, "(struct {type.name})<{{{{")?;')
-
-        for i, (field_name, field_type) in enumerate(type.fields.items()):
-            if field_type.name == "int":
-                code.add(f'write!(f, "{field_name}: {{}}", self.{field_name})?;')
-            elif field_type.name == "str":
-                code.add(
-                    f'write!(f, "{field_name}: {{:?}}", (*self.{field_name}).borrow())?;'
-                )
-            else:
-                code.add("todo!();")  # TODO
-
-            if i != len(type.fields) - 1:
-                code.add('write!(f, ", ")?;')
-
-        code.add('write!(f, "}}>");')
-
+        code.add("todo!();")  # TODO
         code.add("}", l=1)
+
         code.add("}", l=1)
         code.add("")
         return code
