@@ -159,6 +159,7 @@ class Transpiler:
                 code.add(self._generate_rust_struct_UserType_impl(type))
                 code.add(self._generate_rust_struct_Display_impl(type))
                 code.add(self._generate_rust_struct_Hash_impl(type))
+                code.add(self._generate_rust_struct_PartialEq_impl(type))
 
         for function in self.functions.values():
             if function.position.file == self.builtins_path:
@@ -726,7 +727,7 @@ class Transpiler:
         rust_struct_name = self._generate_rust_struct_name(type)
 
         code = Code(f"// Generated for: {type.position.file} {type.name}")
-        code.add(f"#[derive(Debug, Clone, PartialEq)]")
+        code.add(f"#[derive(Debug, Clone)]")
         code.add(f"struct {rust_struct_name} {{", r=1)
 
         for field_name, field_type in type.fields.items():
@@ -829,6 +830,27 @@ class Transpiler:
         code.add("todo!();")  # TODO
         code.add("}", l=1)
 
+        code.add("}", l=1)
+        code.add("")
+        return code
+
+    def _generate_rust_struct_PartialEq_impl(self, type: Type) -> Code:
+        if type.position.file == self.builtins_path:
+            return Code()
+
+        rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
+
+        code = Code(f"impl PartialEq for {rust_struct_name} {{", r=1)
+        code.add("fn eq(&self, other: &Self) -> bool {", r=1)
+        code.add("true")
+
+        for field_name, field_type in type.fields.items():
+            if field_type.name == "regex":
+                continue
+
+            code.add(f"&& self.{field_name} == other.{field_name}")
+
+        code.add("}", l=1)
         code.add("}", l=1)
         code.add("")
         return code
