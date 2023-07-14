@@ -114,6 +114,13 @@ class Transpiler:
 
         return 0
 
+    def get_user_struct_types(self) -> List[Type]:  # TODO use everywhere
+        return [
+            type
+            for type in self.types.values()
+            if not type.is_enum() and type.position.file != self.builtins_path
+        ]
+
     def _generate_file(self) -> Code:
         code = self._generate_warning_silencing_macros()
         code.add(self._generate_imports())
@@ -124,7 +131,7 @@ class Transpiler:
         code.add(self._generate_UserTypeEnum_Display_impl())
         code.add(self._generate_UserTypeEnum_Debug_impl())
 
-        for type in self.types.values():
+        for type in self.get_user_struct_types():
             if type.is_enum():
                 code.add(self._generate_enum_new_func(type))
             else:
@@ -661,16 +668,20 @@ class Transpiler:
     def _generate_UserTypeEnum_UserType_impl(self) -> Code:
         code = Code("impl UserType for UserTypeEnum {", r=1)
         code.add("fn kind(&self) -> String {", r=1)
-        code.add("match self {", r=1)
 
-        for type in self.types.values():
-            if type.is_enum() or type.position.file == self.builtins_path:
-                continue
+        user_struct_types = self.get_user_struct_types()
 
-            rust_struct_name = self._generate_struct_name(type)
-            code.add(f"Self::{rust_struct_name}(v) => v.kind(),")
+        if user_struct_types:
+            code.add("match self {", r=1)
 
-        code.add("}", l=1)
+            for type in user_struct_types:
+                rust_struct_name = self._generate_struct_name(type)
+                code.add(f"Self::{rust_struct_name}(v) => v.kind(),")
+
+            code.add("}", l=1)
+        else:
+            code.add("unreachable!();")
+
         code.add("}", l=1)
         code.add("")
 
@@ -685,16 +696,21 @@ class Transpiler:
     def _generate_UserTypeEnum_Debug_impl(self) -> Code:
         code = Code("impl Display for UserTypeEnum {", r=1)
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
-        code.add("match self {", r=1)
 
-        for type in self.types.values():
-            if type.is_enum() or type.position.file == self.builtins_path:
-                continue
+        user_struct_types = self.get_user_struct_types()
 
-            rust_struct_name = self._generate_struct_name(type)
-            code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{}}", v),')
+        if user_struct_types:
+            code.add("match self {", r=1)
 
-        code.add("}", l=1)
+            for type in user_struct_types:
+                rust_struct_name = self._generate_struct_name(type)
+                code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{}}", v),')
+
+            code.add("}", l=1)
+
+        else:
+            code.add("unreachable!();")
+
         code.add("}", l=1)
         code.add("}", l=1)
         code.add("")
@@ -703,16 +719,20 @@ class Transpiler:
     def _generate_UserTypeEnum_Display_impl(self) -> Code:
         code = Code("impl Debug for UserTypeEnum {", r=1)
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
-        code.add("match self {", r=1)
 
-        for type in self.types.values():
-            if type.is_enum() or type.position.file == self.builtins_path:
-                continue
+        user_struct_types = self.get_user_struct_types()
 
-            rust_struct_name = self._generate_struct_name(type)
-            code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{:?}}", v),')
+        if user_struct_types:
+            code.add("match self {", r=1)
 
-        code.add("}", l=1)
+            for type in user_struct_types:
+                rust_struct_name = self._generate_struct_name(type)
+                code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{:?}}", v),')
+
+            code.add("}", l=1)
+        else:
+            code.add("unreachable!();")
+
         code.add("}", l=1)
         code.add("}", l=1)
         code.add("")
