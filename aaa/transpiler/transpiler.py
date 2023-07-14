@@ -83,19 +83,10 @@ class Transpiler:
             or Path(NamedTemporaryFile(delete=False).name).resolve()
         )
 
-    def get_stdlib_impl_path(self) -> Path:
-        return (Path(__file__).parent / "../../aaa-stdlib").resolve()
-
-    def get_cargo_toml_path(self) -> Path:
-        return (self.transpiled_rust_root / "Cargo.toml").resolve()
-
-    def get_generated_source_path(self) -> Path:
-        return Path(self.transpiled_rust_root / "src/main.rs")
-
     def run(self, compile: bool, run_binary: bool, args: List[str]) -> int:
-        generated_rust_file = self.get_generated_source_path()
-        cargo_toml = self.get_cargo_toml_path()
-        stdlib_impl_path = self.get_stdlib_impl_path()
+        generated_rust_file = self.transpiled_rust_root / "src/main.rs"
+        cargo_toml = (self.transpiled_rust_root / "Cargo.toml").resolve()
+        stdlib_impl_path = (Path(__file__).parent / "../../aaa-stdlib").resolve()
 
         generated_rust_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -103,7 +94,7 @@ class Transpiler:
             CARGO_TOML_TEMPLATE.format(stdlib_impl_path=stdlib_impl_path)
         )
 
-        code = self._generate_rust_file()
+        code = self._generate_file()
 
         generated_rust_file.write_text(code.get())
 
@@ -123,14 +114,45 @@ class Transpiler:
 
         return 0
 
-    def _generate_rust_file(self) -> Code:
+    def _generate_file(self) -> Code:
+        code = self._generate_warning_silencing_macros()
+        code.add(self._generate_imports())
+
+        code.add(self._generate_UserTypeEnum())
+        code.add(self._generate_UserTypeEnum_impl())
+        code.add(self._generate_UserTypeEnum_UserType_impl())
+        code.add(self._generate_UserTypeEnum_Display_impl())
+        code.add(self._generate_UserTypeEnum_Debug_impl())
+
+        for type in self.types.values():
+            if type.is_enum():
+                code.add(self._generate_enum_new_func(type))
+            else:
+                code.add(self._generate_struct(type))
+                code.add(self._generate_struct_new_func(type))
+                code.add(self._generate_struct_UserType_impl(type))
+                code.add(self._generate_struct_Display_impl(type))
+                code.add(self._generate_struct_Hash_impl(type))
+                code.add(self._generate_struct_PartialEq_impl(type))
+
+        for function in self.functions.values():
+            code.add(self._generate_function(function))
+
+        code.add(self._generate_main_function())
+
+        return code
+
+    def _generate_warning_silencing_macros(self) -> Code:
         code = Code("#![allow(unused_imports)]")
         code.add("#![allow(unused_mut)]")
         code.add("#![allow(unused_variables)]")
         code.add("#![allow(dead_code)]")
         code.add("#![allow(non_snake_case)]")
         code.add("")
-        code.add("use aaa_stdlib::map::Map;")
+        return code
+
+    def _generate_imports(self) -> Code:
+        code = Code("use aaa_stdlib::map::Map;")
         code.add("use aaa_stdlib::stack::Stack;")
         code.add("use aaa_stdlib::set::Set;")
         code.add("use aaa_stdlib::var::{Enum, UserType, Variable};")
@@ -143,36 +165,11 @@ class Transpiler:
         code.add("use std::process;")
         code.add("use std::rc::Rc;")
         code.add("")
-
-        code.add(self._generate_rust_UserTypeEnum())
-        code.add(self._generate_rust_UserTypeEnum_impl())
-        code.add(self._generate_rust_UserTypeEnum_UserType_impl())
-        code.add(self._generate_rust_UserTypeEnum_Display_impl())
-        code.add(self._generate_rust_UserTypeEnum_Debug_impl())
-
-        for type in self.types.values():
-            if type.is_enum():
-                code.add(self._generate_rust_enum_new_func(type))
-            else:
-                code.add(self._generate_rust_struct(type))
-                code.add(self._generate_rust_struct_new_func(type))
-                code.add(self._generate_rust_struct_UserType_impl(type))
-                code.add(self._generate_rust_struct_Display_impl(type))
-                code.add(self._generate_rust_struct_Hash_impl(type))
-                code.add(self._generate_rust_struct_PartialEq_impl(type))
-
-        for function in self.functions.values():
-            if function.position.file == self.builtins_path:
-                continue
-            code.add(self._generate_rust_function(function))
-
-        code.add(self._generate_rust_main_function())
-
         return code
 
-    def _generate_rust_main_function(self) -> Code:
+    def _generate_main_function(self) -> Code:
         main_func = self.functions[(self.entrypoint, "main")]
-        main_func_name = self._generate_rust_function_name(main_func)
+        main_func_name = self._generate_function_name(main_func)
 
         argv_used = len(main_func.arguments) != 0
         exit_code_returned = (
@@ -197,18 +194,18 @@ class Transpiler:
 
         return code
 
-    def _generate_rust_builtin_function_name(self, function: Function) -> str:
-        return self._generate_rust_builtin_function_name_from_str(function.name)
+    def _generate_builtin_function_name(self, function: Function) -> str:
+        return self._generate_builtin_function_name_from_str(function.name)
 
-    def _generate_rust_builtin_function_name_from_str(self, name: str) -> str:
+    def _generate_builtin_function_name_from_str(self, name: str) -> str:
         if name in AAA_RUST_BUILTIN_FUNCS:
             return AAA_RUST_BUILTIN_FUNCS[name]
 
         return name.replace(":", "_")
 
-    def _generate_rust_function_name(self, function: Function) -> str:
+    def _generate_function_name(self, function: Function) -> str:
         if function.position.file == self.builtins_path:
-            return "stack." + self._generate_rust_builtin_function_name(function)
+            return "stack." + self._generate_builtin_function_name(function)
 
         # TODO #37 Use modules in generated code so we don't have to hash at all
 
@@ -227,8 +224,8 @@ class Transpiler:
         name = f"{var_type.name}:{func_name}"
         return self.functions[(file, name)]
 
-    def _generate_rust_enum_ctor_function(self, function: Function) -> Code:
-        func_name = self._generate_rust_function_name(function)
+    def _generate_enum_ctor_function(self, function: Function) -> Code:
+        func_name = self._generate_function_name(function)
 
         enum_type_key = (function.position.file, function.struct_name)
         enum_type = self.types[enum_type_key]
@@ -256,13 +253,16 @@ class Transpiler:
 
         return code
 
-    def _generate_rust_function(self, function: Function) -> Code:
+    def _generate_function(self, function: Function) -> Code:
+        if function.position.file == self.builtins_path:
+            return Code()
+
         if function.is_enum_ctor:
-            return self._generate_rust_enum_ctor_function(function)
+            return self._generate_enum_ctor_function(function)
 
         assert function.body
 
-        func_name = self._generate_rust_function_name(function)
+        func_name = self._generate_function_name(function)
 
         code = Code(f"// Generated from: {function.position.file} {function.name}")
         code.add(f"fn {func_name}(stack: &mut Stack<UserTypeEnum>) {{", r=1)
@@ -273,59 +273,59 @@ class Transpiler:
                 code.add(f"let mut var_{arg.name} = stack.pop();")
             code.add("")
 
-        code.add(self._generate_rust_function_body(function.body))
+        code.add(self._generate_function_body(function.body))
 
         code.add("}", l=1)
         code.add("")
 
         return code
 
-    def _generate_rust_function_body(self, function_body: FunctionBody) -> Code:
+    def _generate_function_body(self, function_body: FunctionBody) -> Code:
         code = Code()
 
         for item in function_body.items:
-            code.add(self._generate_rust_function_body_item(item))
+            code.add(self._generate_function_body_item(item))
 
         return code
 
-    def _generate_rust_function_body_item(self, item: FunctionBodyItem) -> Code:
+    def _generate_function_body_item(self, item: FunctionBodyItem) -> Code:
         if isinstance(item, IntegerLiteral):
             return Code(f"stack.push_int({item.value});")
         elif isinstance(item, StringLiteral):
-            return self._generate_rust_string_literal(item)
+            return self._generate_string_literal(item)
         elif isinstance(item, BooleanLiteral):
             bool_value = "true"
             if not item.value:
                 bool_value = "false"
             return Code(f"stack.push_bool({bool_value});")
         elif isinstance(item, WhileLoop):
-            return self._generate_rust_while_loop(item)
+            return self._generate_while_loop(item)
         elif isinstance(item, ForeachLoop):
-            return self._generate_rust_foreach_loop(item)
+            return self._generate_foreach_loop(item)
         elif isinstance(item, CallFunction):
-            return self._generate_rust_call_function_code(item)
+            return self._generate_call_function_code(item)
         elif isinstance(item, CallType):
-            return self._generate_rust_call_type_code(item)
+            return self._generate_call_type_code(item)
         elif isinstance(item, Branch):
-            return self._generate_rust_branch(item)
+            return self._generate_branch(item)
         elif isinstance(item, StructFieldQuery):
-            return self._generate_rust_field_query_code(item)
+            return self._generate_field_query_code(item)
         elif isinstance(item, StructFieldUpdate):
-            return self._generate_rust_field_update_code(item)
+            return self._generate_field_update_code(item)
         elif isinstance(item, UseBlock):
-            return self._generate_rust_use_block_code(item)
+            return self._generate_use_block_code(item)
         elif isinstance(item, CallVariable):
-            return self._generate_rust_call_variable_code(item)
+            return self._generate_call_variable_code(item)
         elif isinstance(item, Assignment):
-            return self._generate_rust_assignment_code(item)
+            return self._generate_assignment_code(item)
         elif isinstance(item, Return):
-            return self._generate_rust_return(item)
+            return self._generate_return(item)
         elif isinstance(item, MatchBlock):
-            return self._generate_rust_match_block_code(item)
+            return self._generate_match_block_code(item)
         else:  # pragma: nocover
             assert False
 
-    def _generate_rust_field_query_code(self, field_query: StructFieldQuery) -> Code:
+    def _generate_field_query_code(self, field_query: StructFieldQuery) -> Code:
         field_name = field_query.field_name.value
 
         position_stack = self.position_stacks[field_query.position]
@@ -333,7 +333,7 @@ class Transpiler:
         assert not isinstance(position_stack, Never)
 
         struct_type = position_stack[-1].type
-        rust_struct_name = self._generate_rust_struct_name(struct_type)
+        rust_struct_name = self._generate_struct_name(struct_type)
 
         field_type = struct_type.fields[field_name].type
 
@@ -350,29 +350,29 @@ class Transpiler:
             )
 
         else:
-            code.add("// TODO")  # TODO
+            code.add("todo!();")  # TODO
 
         code.add("}", l=1)
         return code
 
-    def _generate_rust_field_update_code(self, field_update: StructFieldUpdate) -> Code:
+    def _generate_field_update_code(self, field_update: StructFieldUpdate) -> Code:
         field_name = field_update.field_name.value
 
         _ = field_name
 
-        return Code("// TODO")  # TODO
+        return Code("todo!();")  # TODO
 
-    def _generate_rust_match_block_code(self, match_block: MatchBlock) -> Code:
+    def _generate_match_block_code(self, match_block: MatchBlock) -> Code:
         code = Code("match stack.get_enum_discriminant() {", r=1)
 
         has_default = False
 
         for block in match_block.blocks:
             if isinstance(block, CaseBlock):
-                code.add(self._generate_rust_case_block_code(block))
+                code.add(self._generate_case_block_code(block))
             elif isinstance(block, DefaultBlock):
                 has_default = True
-                code.add(self._generate_rust_default_block_code(block))
+                code.add(self._generate_default_block_code(block))
             else:  # pragma: nocover
                 assert False
 
@@ -383,7 +383,7 @@ class Transpiler:
 
         return code
 
-    def _generate_rust_case_block_code(self, case_block: CaseBlock) -> Code:
+    def _generate_case_block_code(self, case_block: CaseBlock) -> Code:
         enum_type = case_block.enum_type
         variant_id = enum_type.enum_fields[case_block.variant_name][1]
 
@@ -395,39 +395,39 @@ class Transpiler:
         for var in reversed(case_block.variables):
             code.add(f"let mut var_{var.name} = stack.pop();")
 
-        code.add(self._generate_rust_function_body(case_block.body))
+        code.add(self._generate_function_body(case_block.body))
 
         code.add("}", l=1)
 
         return code
 
-    def _generate_rust_default_block_code(self, default_block: DefaultBlock) -> Code:
+    def _generate_default_block_code(self, default_block: DefaultBlock) -> Code:
         code = Code("_ => {", r=1)
         code.add("stack.drop();")
-        code.add(self._generate_rust_function_body(default_block.body))
+        code.add(self._generate_function_body(default_block.body))
         code.add("}", l=1)
 
         return code
 
-    def _generate_rust_return(self, return_: Return) -> Code:
+    def _generate_return(self, return_: Return) -> Code:
         return Code("return;")
 
-    def _generate_rust_string_literal(self, string_literal: StringLiteral) -> Code:
+    def _generate_string_literal(self, string_literal: StringLiteral) -> Code:
         string_value = repr(string_literal.value)[1:-1].replace('"', '\\"')
         return Code(f'stack.push_str("{string_value}");')
 
-    def _generate_rust_while_loop(self, while_loop: WhileLoop) -> Code:
+    def _generate_while_loop(self, while_loop: WhileLoop) -> Code:
 
         code = Code("loop {", r=1)
-        code.add(self._generate_rust_function_body(while_loop.condition))
+        code.add(self._generate_function_body(while_loop.condition))
         code.add("if !stack.pop_bool() {", r=1)
         code.add("break;")
         code.add("}", l=1)
-        code.add(self._generate_rust_function_body(while_loop.body))
+        code.add(self._generate_function_body(while_loop.body))
         code.add("}", l=1)
         return code
 
-    def _generate_rust_foreach_loop(self, foreach_loop: ForeachLoop) -> Code:
+    def _generate_foreach_loop(self, foreach_loop: ForeachLoop) -> Code:
         """
         dup iterable
         iter
@@ -464,8 +464,8 @@ class Transpiler:
         next_func = self._get_member_function(iterator_type, "next")
         assert not isinstance(next_func.return_types, Never)
 
-        iter = self._generate_rust_function_name(iter_func)
-        next = self._generate_rust_function_name(next_func)
+        iter = self._generate_function_name(iter_func)
+        next = self._generate_function_name(next_func)
         break_drop_count = len(next_func.return_types)
 
         code = Code(f"stack.dup();")
@@ -492,16 +492,16 @@ class Transpiler:
 
         code.add("}", l=1)
 
-        code.add(self._generate_rust_function_body(foreach_loop.body))
+        code.add(self._generate_function_body(foreach_loop.body))
 
         code.add("}", l=1)
         code.add("stack.drop();")
 
         return code
 
-    def _generate_rust_call_function_code(self, call_func: CallFunction) -> Code:
+    def _generate_call_function_code(self, call_func: CallFunction) -> Code:
         called = call_func.function
-        rust_func_name = self._generate_rust_function_name(called)
+        rust_func_name = self._generate_function_name(called)
 
         if called.position.file == self.builtins_path:
             if called.name in ["assert", "todo", "unreachable"]:
@@ -513,37 +513,37 @@ class Transpiler:
 
         return Code(f"{rust_func_name}(stack);")
 
-    def _generate_rust_call_type_code(self, call_type: CallType) -> Code:
+    def _generate_call_type_code(self, call_type: CallType) -> Code:
         var_type = call_type.var_type
-        zero_expr = self._generate_rust_variable_zero_expression(var_type)
+        zero_expr = self._generate_variable_zero_expression(var_type)
         return Code(f"stack.push({zero_expr});")
 
-    def _generate_rust_branch(self, branch: Branch) -> Code:
-        code = self._generate_rust_function_body(branch.condition)
+    def _generate_branch(self, branch: Branch) -> Code:
+        code = self._generate_function_body(branch.condition)
 
         code.add("if stack.pop_bool() {", r=1)
-        code.add(self._generate_rust_function_body(branch.if_body))
+        code.add(self._generate_function_body(branch.if_body))
 
         if branch.else_body:
             code.add("} else {", l=1, r=1)
-            code.add(self._generate_rust_function_body(branch.else_body))
+            code.add(self._generate_function_body(branch.else_body))
 
         code.add("}", l=1)
 
         return code
 
-    def _generate_rust_enum_name(self, type: Type) -> str:
+    def _generate_enum_name(self, type: Type) -> str:
         hash_input = f"{type.position.file} {type.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"user_enum_{hash}"
 
-    def _generate_rust_struct_name(self, type: Type) -> str:
+    def _generate_struct_name(self, type: Type) -> str:
         hash_input = f"{type.position.file} {type.name}"
         hash = sha256(hash_input.encode("utf-8")).hexdigest()[:16]
         return f"UserStruct{hash}"
 
-    def _generate_rust_enum_new_func(self, type: Type) -> Code:
-        rust_enum_name = self._generate_rust_enum_name(type)
+    def _generate_enum_new_func(self, type: Type) -> Code:
+        rust_enum_name = self._generate_enum_name(type)
 
         code = Code(f"// Generated for: {type.position.file} {type.name}, zero-value")
         code.add(f"fn {rust_enum_name}_new() -> Enum<UserTypeEnum> {{", r=1)
@@ -555,7 +555,7 @@ class Transpiler:
                 zero_variant_var_types = variant_type
 
         zero_value_expressions = [
-            self._generate_rust_variable_zero_expression(zero_variant_var_type)
+            self._generate_variable_zero_expression(zero_variant_var_type)
             for zero_variant_var_type in zero_variant_var_types
         ]
 
@@ -569,9 +569,7 @@ class Transpiler:
 
         return code
 
-    def _generate_rust_struct_field_zero_expression(
-        self, var_type: VariableType
-    ) -> str:
+    def _generate_struct_field_zero_expression(self, var_type: VariableType) -> str:
         if var_type.name == "int":
             return "0"
         elif var_type.name == "bool":
@@ -587,13 +585,13 @@ class Transpiler:
         elif var_type.name == "regex":
             return 'Rc::new(RefCell::new(Regex::new("$.^").unwrap()))'
         elif var_type.type.is_enum():
-            rust_enum_name = self._generate_rust_enum_name(var_type.type)
+            rust_enum_name = self._generate_enum_name(var_type.type)
             return f"Rc::new(RefCell::new({rust_enum_name}_new()))"
         else:
-            rust_struct_name = self._generate_rust_struct_name(var_type.type)
+            rust_struct_name = self._generate_struct_name(var_type.type)
             return f"Rc::new(RefCell::new({rust_struct_name}::new()))"
 
-    def _generate_rust_variable_zero_expression(self, var_type: VariableType) -> str:
+    def _generate_variable_zero_expression(self, var_type: VariableType) -> str:
         if var_type.name == "int":
             return "Variable::Integer(0)"
         elif var_type.name == "bool":
@@ -609,17 +607,17 @@ class Transpiler:
         elif var_type.name == "regex":
             return 'Variable::Regex(Rc::new(RefCell::new(Regex::new("$.^").unwrap())))'
         elif var_type.type.is_enum():
-            rust_enum_name = self._generate_rust_enum_name(var_type.type)
+            rust_enum_name = self._generate_enum_name(var_type.type)
             return f"Variable::Enum(Rc::new(RefCell::new({rust_enum_name}_new())))"
         else:
-            rust_struct_name = self._generate_rust_struct_name(var_type.type)
+            rust_struct_name = self._generate_struct_name(var_type.type)
             return (
                 "Variable::UserType(Rc::new(RefCell::new("
                 + f"UserTypeEnum::{rust_struct_name}({rust_struct_name}::new())"
                 + ")))"
             )
 
-    def _generate_rust_UserTypeEnum(self) -> Code:
+    def _generate_UserTypeEnum(self) -> Code:
         code = Code("#[derive(Clone, Hash, PartialEq)]")
         code.add("enum UserTypeEnum {", r=1)
 
@@ -627,14 +625,14 @@ class Transpiler:
             if type.is_enum() or type.position.file == self.builtins_path:
                 continue
 
-            rust_struct_name = self._generate_rust_struct_name(type)
+            rust_struct_name = self._generate_struct_name(type)
             code.add(f"{rust_struct_name}({rust_struct_name}),")
 
         code.add("}", l=1)
         code.add("")
         return code
 
-    def _generate_rust_UserTypeEnum_impl(self) -> Code:
+    def _generate_UserTypeEnum_impl(self) -> Code:
         code = Code("impl UserTypeEnum {", r=1)
 
         func_code_list: List[Code] = []
@@ -643,7 +641,7 @@ class Transpiler:
             if type.is_enum() or type.position.file == self.builtins_path:
                 continue
 
-            rust_struct_name = self._generate_rust_struct_name(type)
+            rust_struct_name = self._generate_struct_name(type)
 
             func_code = Code(
                 f"fn get_{rust_struct_name}(&self) -> &{rust_struct_name} {{", r=1
@@ -660,7 +658,7 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_UserTypeEnum_UserType_impl(self) -> Code:
+    def _generate_UserTypeEnum_UserType_impl(self) -> Code:
         code = Code("impl UserType for UserTypeEnum {", r=1)
         code.add("fn kind(&self) -> String {", r=1)
         code.add("match self {", r=1)
@@ -669,7 +667,7 @@ class Transpiler:
             if type.is_enum() or type.position.file == self.builtins_path:
                 continue
 
-            rust_struct_name = self._generate_rust_struct_name(type)
+            rust_struct_name = self._generate_struct_name(type)
             code.add(f"Self::{rust_struct_name}(v) => v.kind(),")
 
         code.add("}", l=1)
@@ -684,7 +682,7 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_UserTypeEnum_Debug_impl(self) -> Code:
+    def _generate_UserTypeEnum_Debug_impl(self) -> Code:
         code = Code("impl Display for UserTypeEnum {", r=1)
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
         code.add("match self {", r=1)
@@ -693,7 +691,7 @@ class Transpiler:
             if type.is_enum() or type.position.file == self.builtins_path:
                 continue
 
-            rust_struct_name = self._generate_rust_struct_name(type)
+            rust_struct_name = self._generate_struct_name(type)
             code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{}}", v),')
 
         code.add("}", l=1)
@@ -702,7 +700,7 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_UserTypeEnum_Display_impl(self) -> Code:
+    def _generate_UserTypeEnum_Display_impl(self) -> Code:
         code = Code("impl Debug for UserTypeEnum {", r=1)
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
         code.add("match self {", r=1)
@@ -711,7 +709,7 @@ class Transpiler:
             if type.is_enum() or type.position.file == self.builtins_path:
                 continue
 
-            rust_struct_name = self._generate_rust_struct_name(type)
+            rust_struct_name = self._generate_struct_name(type)
             code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{:?}}", v),')
 
         code.add("}", l=1)
@@ -720,25 +718,25 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_struct(self, type: Type) -> Code:
+    def _generate_struct(self, type: Type) -> Code:
         if type.position.file == self.builtins_path:
             return Code()
 
-        rust_struct_name = self._generate_rust_struct_name(type)
+        rust_struct_name = self._generate_struct_name(type)
 
         code = Code(f"// Generated for: {type.position.file} {type.name}")
         code.add(f"#[derive(Debug, Clone)]")
         code.add(f"struct {rust_struct_name} {{", r=1)
 
         for field_name, field_type in type.fields.items():
-            rust_field_type = self._generate_rust_struct_field_type(field_type)
+            rust_field_type = self._generate_struct_field_type(field_type)
             code.add(f"{field_name}: {rust_field_type},")
 
         code.add("}", l=1)
         code.add("")
         return code
 
-    def _generate_rust_struct_field_type(self, var_type: VariableType) -> str:
+    def _generate_struct_field_type(self, var_type: VariableType) -> str:
         if var_type.name == "int":
             return "isize"
         elif var_type.name == "bool":
@@ -759,17 +757,17 @@ class Transpiler:
             return "Rc<RefCell<Regex>>"
 
         if var_type.type.is_enum():
-            rust_enum_name = self._generate_rust_enum_name(var_type.type)
+            rust_enum_name = self._generate_enum_name(var_type.type)
             return f"Rc<RefCell<{rust_enum_name}>>"
 
-        rust_struct_name = self._generate_rust_struct_name(var_type.type)
+        rust_struct_name = self._generate_struct_name(var_type.type)
         return f"Rc<RefCell<{rust_struct_name}>>"
 
-    def _generate_rust_struct_new_func(self, type: Type) -> Code:
+    def _generate_struct_new_func(self, type: Type) -> Code:
         if type.position.file == self.builtins_path and not type.fields:
             return Code()
 
-        rust_struct_name = self._generate_rust_struct_name(type)
+        rust_struct_name = self._generate_struct_name(type)
 
         code = Code(f"// Generated for: {type.position.file} {type.name}")
         code.add(f"impl {rust_struct_name} {{", r=1)
@@ -780,16 +778,16 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_struct_UserType_impl(self, type: Type) -> Code:
+    def _generate_struct_UserType_impl(self, type: Type) -> Code:
         if type.position.file == self.builtins_path:
             return Code()
 
-        rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
+        rust_struct_name = rust_struct_name = self._generate_struct_name(type)
 
         code = Code(f"impl UserType for {rust_struct_name} {{", r=1)
 
         code.add("fn kind(&self) -> String {", r=1)
-        code.add(f'String::from("{type.name}")', r=1)
+        code.add(f'String::from("{type.name}")')
         code.add("}", l=1)
 
         code.add("")
@@ -802,11 +800,11 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_struct_Display_impl(self, type: Type) -> Code:
+    def _generate_struct_Display_impl(self, type: Type) -> Code:
         if type.position.file == self.builtins_path:
             return Code()
 
-        rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
+        rust_struct_name = rust_struct_name = self._generate_struct_name(type)
 
         code = Code(f"impl Display for {rust_struct_name} {{", r=1)
 
@@ -818,11 +816,11 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_struct_Hash_impl(self, type: Type) -> Code:
+    def _generate_struct_Hash_impl(self, type: Type) -> Code:
         if type.position.file == self.builtins_path:
             return Code()
 
-        rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
+        rust_struct_name = rust_struct_name = self._generate_struct_name(type)
 
         code = Code(f"impl Hash for {rust_struct_name} {{", r=1)
 
@@ -834,11 +832,11 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_struct_PartialEq_impl(self, type: Type) -> Code:
+    def _generate_struct_PartialEq_impl(self, type: Type) -> Code:
         if type.position.file == self.builtins_path:
             return Code()
 
-        rust_struct_name = rust_struct_name = self._generate_rust_struct_name(type)
+        rust_struct_name = rust_struct_name = self._generate_struct_name(type)
 
         code = Code(f"impl PartialEq for {rust_struct_name} {{", r=1)
         code.add("fn eq(&self, other: &Self) -> bool {", r=1)
@@ -855,23 +853,23 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_rust_use_block_code(self, use_block: UseBlock) -> Code:
+    def _generate_use_block_code(self, use_block: UseBlock) -> Code:
         code = Code("{", r=1)
 
         for var in reversed(use_block.variables):
             code.add(f"let mut var_{var.name} = stack.pop();")
 
-        code.add(self._generate_rust_function_body(use_block.body))
+        code.add(self._generate_function_body(use_block.body))
         code.add("}", l=1)
 
         return code
 
-    def _generate_rust_call_variable_code(self, call_var: CallVariable) -> Code:
+    def _generate_call_variable_code(self, call_var: CallVariable) -> Code:
         name = call_var.name
         return Code(f"stack.push(var_{name}.clone());")
 
-    def _generate_rust_assignment_code(self, assignment: Assignment) -> Code:
-        code = self._generate_rust_function_body(assignment.body)
+    def _generate_assignment_code(self, assignment: Assignment) -> Code:
+        code = self._generate_function_body(assignment.body)
 
         for var in reversed(assignment.variables):
             code.add(f"stack.assign(&mut var_{var.name});")
