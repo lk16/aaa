@@ -798,7 +798,22 @@ class Transpiler:
         code = Code(f"// Generated for: {type.position.file} {type.name}")
         code.add(f"impl {rust_struct_name} {{", r=1)
         code.add(f"fn new() -> Self {{", r=1)
-        code.add("todo!();")  # TODO
+
+        code.add("Self {", r=1)
+
+        for field_name, field_var_type in type.fields.items():
+            field_type = field_var_type.type
+            field_file = field_type.position.file
+
+            match (field_file, field_type.name):
+                case (self.builtins_path, "int"):
+                    code.add(f"{field_name}: 0,")
+                case _:
+                    code.add(
+                        f"// TODO add zero-struct value for {field_file} {field_type.name}"
+                    )  # TODO
+
+        code.add("}", l=1)
         code.add("}", l=1)
         code.add("}", l=1)
         code.add("")
