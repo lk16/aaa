@@ -2,7 +2,7 @@ import subprocess
 from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from aaa.cross_referencer.models import (
     Assignment,
@@ -69,7 +69,6 @@ class Transpiler:
         generated_binary_file: Optional[Path],
         verbose: bool,
     ) -> None:
-        self.types = cross_referencer_output.types
         self.functions = cross_referencer_output.functions
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
@@ -82,6 +81,17 @@ class Transpiler:
             generated_binary_file
             or Path(NamedTemporaryFile(delete=False).name).resolve()
         )
+
+        self.user_structs: Dict[Tuple[Path, str], Type] = {}
+        self.user_enums: Dict[Tuple[Path, str], Type] = {}
+
+        for key, type in cross_referencer_output.types.items():
+            if type.position.file == self.builtins_path:
+                continue
+            if type.is_enum():
+                self.user_enums[key] = type
+            else:
+                self.user_structs[key] = type
 
     def run(self, compile: bool, run_binary: bool, args: List[str]) -> int:
         generated_rust_file = self.transpiled_rust_root / "src/main.rs"
@@ -114,13 +124,6 @@ class Transpiler:
 
         return 0
 
-    def get_user_struct_types(self) -> List[Type]:  # TODO use everywhere
-        return [
-            type
-            for type in self.types.values()
-            if not type.is_enum() and type.position.file != self.builtins_path
-        ]
-
     def _generate_file(self) -> Code:
         code = self._generate_warning_silencing_macros()
         code.add(self._generate_imports())
@@ -131,16 +134,16 @@ class Transpiler:
         code.add(self._generate_UserTypeEnum_Display_impl())
         code.add(self._generate_UserTypeEnum_Debug_impl())
 
-        for type in self.get_user_struct_types():
-            if type.is_enum():
-                code.add(self._generate_enum_new_func(type))
-            else:
-                code.add(self._generate_struct(type))
-                code.add(self._generate_struct_new_func(type))
-                code.add(self._generate_struct_UserType_impl(type))
-                code.add(self._generate_struct_Display_impl(type))
-                code.add(self._generate_struct_Hash_impl(type))
-                code.add(self._generate_struct_PartialEq_impl(type))
+        for type in self.user_enums.values():
+            code.add(self._generate_enum_new_func(type))
+
+        for type in self.user_structs.values():
+            code.add(self._generate_struct(type))
+            code.add(self._generate_struct_new_func(type))
+            code.add(self._generate_struct_UserType_impl(type))
+            code.add(self._generate_struct_Display_impl(type))
+            code.add(self._generate_struct_Hash_impl(type))
+            code.add(self._generate_struct_PartialEq_impl(type))
 
         for function in self.functions.values():
             code.add(self._generate_function(function))
@@ -235,7 +238,7 @@ class Transpiler:
         func_name = self._generate_function_name(function)
 
         enum_type_key = (function.position.file, function.struct_name)
-        enum_type = self.types[enum_type_key]
+        enum_type = self.user_enums[enum_type_key]
         associated_data, variant_id = enum_type.enum_fields[function.func_name]
 
         code = Code()
@@ -628,12 +631,11 @@ class Transpiler:
         code = Code("#[derive(Clone, Hash, PartialEq)]")
         code.add("enum UserTypeEnum {", r=1)
 
-        for type in self.types.values():
-            if type.is_enum() or type.position.file == self.builtins_path:
-                continue
-
+        for (file, name), type in self.user_structs.items():
             rust_struct_name = self._generate_struct_name(type)
-            code.add(f"{rust_struct_name}({rust_struct_name}),")
+            code.add(
+                f"{rust_struct_name}({rust_struct_name}), // Generated for {file} {name}"
+            )
 
         code.add("}", l=1)
         code.add("")
@@ -644,10 +646,7 @@ class Transpiler:
 
         func_code_list: List[Code] = []
 
-        for type in self.types.values():
-            if type.is_enum() or type.position.file == self.builtins_path:
-                continue
-
+        for type in self.user_structs.values():
             rust_struct_name = self._generate_struct_name(type)
 
             func_code = Code(
@@ -669,12 +668,10 @@ class Transpiler:
         code = Code("impl UserType for UserTypeEnum {", r=1)
         code.add("fn kind(&self) -> String {", r=1)
 
-        user_struct_types = self.get_user_struct_types()
-
-        if user_struct_types:
+        if self.user_structs:
             code.add("match self {", r=1)
 
-            for type in user_struct_types:
+            for type in self.user_structs.values():
                 rust_struct_name = self._generate_struct_name(type)
                 code.add(f"Self::{rust_struct_name}(v) => v.kind(),")
 
@@ -697,12 +694,10 @@ class Transpiler:
         code = Code("impl Display for UserTypeEnum {", r=1)
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
 
-        user_struct_types = self.get_user_struct_types()
-
-        if user_struct_types:
+        if self.user_structs:
             code.add("match self {", r=1)
 
-            for type in user_struct_types:
+            for type in self.user_structs.values():
                 rust_struct_name = self._generate_struct_name(type)
                 code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{}}", v),')
 
@@ -720,12 +715,10 @@ class Transpiler:
         code = Code("impl Debug for UserTypeEnum {", r=1)
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
 
-        user_struct_types = self.get_user_struct_types()
-
-        if user_struct_types:
+        if self.user_structs:
             code.add("match self {", r=1)
 
-            for type in user_struct_types:
+            for type in self.user_structs.values():
                 rust_struct_name = self._generate_struct_name(type)
                 code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{:?}}", v),')
 
