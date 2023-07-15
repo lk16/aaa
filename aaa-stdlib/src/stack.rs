@@ -32,7 +32,7 @@ use regex::Regex;
 use crate::{
     map::{Map, MapIterator},
     set::{Set, SetIterator},
-    var::{ContainerValue, Enum},
+    var::Enum,
     vector::VectorIterator,
 };
 use crate::{
@@ -82,7 +82,7 @@ where
         let mut stack = Self::new();
         let mut arg_vector = Vector::new();
         for arg in env::args() {
-            arg_vector.push(ContainerValue::String(arg));
+            arg_vector.push(Variable::String(Rc::new(RefCell::new(arg))));
         }
         stack.push_vector(arg_vector);
         stack
@@ -107,7 +107,7 @@ where
         self.type_error(&msg);
     }
 
-    fn type_error_vec_str(&self, v: &ContainerValue<T>) {
+    fn type_error_vec_str(&self, v: &Variable<T>) {
         let found = v.kind();
         let msg = format!("expected vec[str], but found {found} in vec");
         self.type_error(&msg);
@@ -128,32 +128,32 @@ where
         self.push(item);
     }
 
-    pub fn push_vector(&mut self, v: Vector<ContainerValue<T>>) {
+    pub fn push_vector(&mut self, v: Vector<Variable<T>>) {
         let item = Variable::Vector(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_set(&mut self, v: Set<ContainerValue<T>>) {
+    pub fn push_set(&mut self, v: Set<Variable<T>>) {
         let item = Variable::Set(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_map(&mut self, v: Map<ContainerValue<T>, ContainerValue<T>>) {
+    pub fn push_map(&mut self, v: Map<Variable<T>, Variable<T>>) {
         let item = Variable::Map(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_vector_iter(&mut self, v: VectorIterator<ContainerValue<T>>) {
+    pub fn push_vector_iter(&mut self, v: VectorIterator<Variable<T>>) {
         let item = Variable::VectorIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_map_iter(&mut self, v: MapIterator<ContainerValue<T>, ContainerValue<T>>) {
+    pub fn push_map_iter(&mut self, v: MapIterator<Variable<T>, Variable<T>>) {
         let item = Variable::MapIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
 
-    pub fn push_set_iter(&mut self, v: SetIterator<ContainerValue<T>>) {
+    pub fn push_set_iter(&mut self, v: SetIterator<Variable<T>>) {
         let item = Variable::SetIterator(Rc::new(RefCell::new(v)));
         self.push(item);
     }
@@ -209,44 +209,42 @@ where
         }
     }
 
-    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<ContainerValue<T>>>> {
+    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<Variable<T>>>> {
         match self.pop() {
             Variable::Vector(v) => v,
             v => self.pop_type_error("vec", &v),
         }
     }
 
-    pub fn pop_set(&mut self) -> Rc<RefCell<Set<ContainerValue<T>>>> {
+    pub fn pop_set(&mut self) -> Rc<RefCell<Set<Variable<T>>>> {
         match self.pop() {
             Variable::Set(v) => v,
             v => self.pop_type_error("set", &v),
         }
     }
 
-    pub fn pop_map(&mut self) -> Rc<RefCell<Map<ContainerValue<T>, ContainerValue<T>>>> {
+    pub fn pop_map(&mut self) -> Rc<RefCell<Map<Variable<T>, Variable<T>>>> {
         match self.pop() {
             Variable::Map(v) => v,
             v => self.pop_type_error("map", &v),
         }
     }
 
-    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<ContainerValue<T>>>> {
+    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<Variable<T>>>> {
         match self.pop() {
             Variable::VectorIterator(v) => v,
             v => self.pop_type_error("vec_iter", &v),
         }
     }
 
-    pub fn pop_map_iterator(
-        &mut self,
-    ) -> Rc<RefCell<MapIterator<ContainerValue<T>, ContainerValue<T>>>> {
+    pub fn pop_map_iterator(&mut self) -> Rc<RefCell<MapIterator<Variable<T>, Variable<T>>>> {
         match self.pop() {
             Variable::MapIterator(v) => v,
             v => self.pop_type_error("map_iter", &v),
         }
     }
 
-    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<ContainerValue<T>>>> {
+    pub fn pop_set_iterator(&mut self) -> Rc<RefCell<SetIterator<Variable<T>>>> {
         match self.pop() {
             Variable::SetIterator(v) => v,
             v => self.pop_type_error("set_iter", &v),
@@ -779,7 +777,7 @@ where
         let mut parts = vec![];
         for part in vector.iter() {
             match part {
-                ContainerValue::String(part) => parts.push(part),
+                Variable::String(part) => parts.push((*part.borrow()).clone()),
                 v => self.type_error_vec_str(&v),
             }
         }
@@ -829,9 +827,9 @@ where
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
-        let split: Vec<ContainerValue<T>> = string
+        let split: Vec<Variable<T>> = string
             .split(&*sep)
-            .map(|s| ContainerValue::String(s.to_owned()))
+            .map(|s| Variable::String(Rc::new(RefCell::new(s.to_owned()))))
             .collect();
         self.push_vector(Vector::from(split));
     }
@@ -964,8 +962,8 @@ where
         for (key, val) in env::vars_os() {
             // Use pattern bindings instead of testing .is_some() followed by .unwrap()
             if let (Ok(k), Ok(v)) = (key.into_string(), val.into_string()) {
-                let key_var = ContainerValue::String(k);
-                let value_var = ContainerValue::String(v);
+                let key_var = Variable::String(Rc::new(RefCell::new(k)));
+                let value_var = Variable::String(Rc::new(RefCell::new(v)));
 
                 env_vars.insert(key_var, value_var);
             }
@@ -990,7 +988,7 @@ where
         let mut argv: Vec<CString> = vec![];
         for item in popped_argv.iter() {
             match item {
-                ContainerValue::String(v) => argv.push(CString::new(v).unwrap()),
+                Variable::String(v) => argv.push(CString::new(v.borrow().as_str()).unwrap()),
                 v => self.type_error_vec_str(&v),
             }
         }

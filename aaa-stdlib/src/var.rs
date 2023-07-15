@@ -42,71 +42,6 @@ where
     }
 }
 
-#[derive(Hash, PartialEq, Clone)]
-pub enum ContainerValue<T>
-where
-    T: UserType,
-{
-    Integer(isize),
-    Boolean(bool),
-    String(String),
-    Vector(Vector<ContainerValue<T>>),
-    Set(Set<ContainerValue<T>>),
-    Map(Map<ContainerValue<T>, ContainerValue<T>>),
-    Enum(Enum<T>),
-}
-
-impl<T> ContainerValue<T>
-where
-    T: UserType,
-{
-    pub fn kind(&self) -> String {
-        let var: Variable<T> = self.clone().into();
-        var.kind()
-    }
-}
-
-impl<T> Display for ContainerValue<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let var: Variable<T> = self.clone().into();
-        write!(f, "{}", var)
-    }
-}
-
-impl<T> Debug for ContainerValue<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let var: Variable<T> = self.clone().into();
-        write!(f, "{:?}", var)
-    }
-}
-
-impl<T> From<Variable<T>> for ContainerValue<T>
-where
-    T: UserType,
-{
-    fn from(var: Variable<T>) -> ContainerValue<T> {
-        match var {
-            Variable::Integer(v) => ContainerValue::Integer(v),
-            Variable::Boolean(v) => ContainerValue::Boolean(v),
-            Variable::String(v) => ContainerValue::String((*v).borrow().clone()),
-            Variable::Vector(v) => ContainerValue::Vector((*v).borrow().clone()),
-            Variable::Set(v) => ContainerValue::Set((*v).borrow().clone()),
-            Variable::Map(v) => ContainerValue::Map((*v).borrow().clone()),
-            Variable::Enum(v) => ContainerValue::Enum((*v).borrow().clone()),
-            _ => {
-                let kind = var.kind();
-                panic!("Cannot convert {} to container value", kind);
-            }
-        }
-    }
-}
-
 pub trait UserType: Clone + Debug + Display + Hash + PartialEq {
     fn kind(&self) -> String;
     fn clone_recursive(&self) -> Self;
@@ -121,12 +56,12 @@ where
     Integer(isize),
     Boolean(bool),
     String(Rc<RefCell<String>>),
-    Vector(Rc<RefCell<Vector<ContainerValue<T>>>>),
-    Set(Rc<RefCell<Set<ContainerValue<T>>>>),
-    Map(Rc<RefCell<Map<ContainerValue<T>, ContainerValue<T>>>>),
-    VectorIterator(Rc<RefCell<VectorIterator<ContainerValue<T>>>>),
-    MapIterator(Rc<RefCell<MapIterator<ContainerValue<T>, ContainerValue<T>>>>),
-    SetIterator(Rc<RefCell<SetIterator<ContainerValue<T>>>>),
+    Vector(Rc<RefCell<Vector<Variable<T>>>>),
+    Set(Rc<RefCell<Set<Variable<T>>>>),
+    Map(Rc<RefCell<Map<Variable<T>, Variable<T>>>>),
+    VectorIterator(Rc<RefCell<VectorIterator<Variable<T>>>>),
+    MapIterator(Rc<RefCell<MapIterator<Variable<T>, Variable<T>>>>),
+    SetIterator(Rc<RefCell<SetIterator<Variable<T>>>>),
     Enum(Rc<RefCell<Enum<T>>>),
     Regex(Rc<RefCell<Regex>>),
     UserType(Rc<RefCell<T>>),
@@ -304,23 +239,6 @@ where
             _ => {
                 unreachable!() // Can't hash variables of different types
             }
-        }
-    }
-}
-
-impl<T> From<ContainerValue<T>> for Variable<T>
-where
-    T: UserType,
-{
-    fn from(val: ContainerValue<T>) -> Variable<T> {
-        match val {
-            ContainerValue::Integer(v) => Variable::Integer(v),
-            ContainerValue::Boolean(v) => Variable::Boolean(v),
-            ContainerValue::String(v) => Variable::String(Rc::new(RefCell::new(v))),
-            ContainerValue::Vector(v) => Variable::Vector(Rc::new(RefCell::new(v))),
-            ContainerValue::Set(v) => Variable::Set(Rc::new(RefCell::new(v))),
-            ContainerValue::Map(v) => Variable::Map(Rc::new(RefCell::new(v))),
-            ContainerValue::Enum(v) => Variable::Enum(Rc::new(RefCell::new(v))),
         }
     }
 }

@@ -366,11 +366,26 @@ class Transpiler:
 
         if field_type.name == "int":
             code.add(f"stack.push_int(borrowed.get_{rust_struct_name}().{field_name});")
-
-        elif field_type.name == "str":
+        if field_type.name == "bool":
             code.add(
-                f"stack.push_str(&(*borrowed.get_{rust_struct_name}().{field_name}).borrow());"
+                f"stack.push_bool(borrowed.get_{rust_struct_name}().{field_name});"
             )
+        elif field_type.name == "str":
+            code.add("{", r=1)
+            code.add(
+                f"let str_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
+            )
+            code.add(f"stack.push(Variable::String(str_rc));")
+
+            code.add("}", l=1)
+        elif field_type.name == "vec":
+            code.add("{", r=1)
+            code.add(
+                f"let vec_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
+            )
+            code.add(f"stack.push(Variable::Vector(vec_rc));")
+
+            code.add("}", l=1)
 
         else:
             code.add("todo!();")  # TODO
@@ -770,14 +785,14 @@ class Transpiler:
         elif var_type.name == "str":
             return "Rc<RefCell<String>>"
         elif var_type.name == "vec":
-            item_type = var_type.params[0].name
+            item_type = self._generate_struct_field_type(var_type.params[0])
             return f"Rc<RefCell<Vector<{item_type}>>>"
         elif var_type.name == "map":
-            key_type = var_type.params[0].name
-            value_type = var_type.params[0].name
+            key_type = self._generate_struct_field_type(var_type.params[0])
+            value_type = self._generate_struct_field_type(var_type.params[0])
             return f"Rc<RefCell<Map<{key_type}, {value_type}>>>"
         elif var_type.name == "set":
-            item_type = var_type.params[0].name
+            item_type = self._generate_struct_field_type(var_type.params[0])
             return f"Rc<RefCell<Set<{item_type}>>>"
         elif var_type.name == "regex":
             return "Rc<RefCell<Regex>>"
@@ -808,6 +823,12 @@ class Transpiler:
             match (field_file, field_type.name):
                 case (self.builtins_path, "int"):
                     code.add(f"{field_name}: 0,")
+                case (self.builtins_path, "bool"):
+                    code.add(f"{field_name}: false,")
+                case (self.builtins_path, "str"):
+                    code.add(f'{field_name}: Rc::new(RefCell::new(String::from(""))),')
+                case (self.builtins_path, "vec"):
+                    code.add(f"{field_name}: Rc::new(RefCell::new(Vector::new())),")
                 case _:
                     code.add(
                         f"// TODO add zero-struct value for {field_file} {field_type.name}"
