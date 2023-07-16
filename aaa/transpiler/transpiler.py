@@ -398,6 +398,13 @@ class Transpiler:
             )
             code.add(f"stack.push(Variable::Map(map_rc));")
             code.add("}", l=1)
+        elif field_type.name == "regex":
+            code.add("{", r=1)
+            code.add(
+                f"let regex_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
+            )
+            code.add(f"stack.push(Variable::Regex(regex_rc));")
+            code.add("}", l=1)
         elif field_type.is_enum():
             code.add("{", r=1)
             code.add(
@@ -848,6 +855,10 @@ class Transpiler:
                 code.add(f"{field_name}: Rc::new(RefCell::new(Set::new())),")
             elif field_type.name == "map":
                 code.add(f"{field_name}: Rc::new(RefCell::new(Map::new())),")
+            elif field_type.name == "regex":
+                code.add(
+                    f'{field_name}: Rc::new(RefCell::new(Regex::new("$.^").unwrap())),'
+                )
             elif field_type.is_enum():
                 rust_enum_name = self._generate_enum_name(field_type)
                 code.add(
