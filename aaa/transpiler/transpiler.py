@@ -749,7 +749,10 @@ class Transpiler:
             )
             func_code.add("match self {", r=1)
             func_code.add(f"Self::{rust_struct_name}(v) => v,")
-            func_code.add(f"_ => unreachable!(),")  # TODO handle type error
+
+            if len(self.user_structs) != 1:
+                func_code.add(f"_ => unreachable!(),")  # TODO handle type error
+
             func_code.add("}", l=1)
             func_code.add("}", l=1)
 
