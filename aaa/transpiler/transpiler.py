@@ -366,7 +366,7 @@ class Transpiler:
 
         if field_type.name == "int":
             code.add(f"stack.push_int(borrowed.get_{rust_struct_name}().{field_name});")
-        if field_type.name == "bool":
+        elif field_type.name == "bool":
             code.add(
                 f"stack.push_bool(borrowed.get_{rust_struct_name}().{field_name});"
             )
@@ -376,7 +376,6 @@ class Transpiler:
                 f"let str_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
             )
             code.add(f"stack.push(Variable::String(str_rc));")
-
             code.add("}", l=1)
         elif field_type.name == "vec":
             code.add("{", r=1)
@@ -384,11 +383,35 @@ class Transpiler:
                 f"let vec_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
             )
             code.add(f"stack.push(Variable::Vector(vec_rc));")
-
             code.add("}", l=1)
-
+        elif field_type.name == "set":
+            code.add("{", r=1)
+            code.add(
+                f"let set_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
+            )
+            code.add(f"stack.push(Variable::Set(set_rc));")
+            code.add("}", l=1)
+        elif field_type.name == "map":
+            code.add("{", r=1)
+            code.add(
+                f"let map_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
+            )
+            code.add(f"stack.push(Variable::Map(map_rc));")
+            code.add("}", l=1)
+        elif field_type.is_enum():
+            code.add("{", r=1)
+            code.add(
+                f"let enum_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
+            )
+            code.add(f"stack.push(Variable::Enum(enum_rc));")
+            code.add("}", l=1)
         else:
-            code.add("todo!();")  # TODO
+            code.add("{", r=1)
+            code.add(
+                f"let struct_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
+            )
+            code.add(f"stack.push(Variable::UserType(struct_rc));")
+            code.add("}", l=1)
 
         code.add("}", l=1)
         return code
@@ -682,6 +705,7 @@ class Transpiler:
             )
             func_code.add("match self {", r=1)
             func_code.add(f"Self::{rust_struct_name}(v) => v,")
+            func_code.add(f"_ => unreachable!(),")  # TODO handle type error
             func_code.add("}", l=1)
             func_code.add("}", l=1)
 
@@ -785,24 +809,16 @@ class Transpiler:
         elif var_type.name == "str":
             return "Rc<RefCell<String>>"
         elif var_type.name == "vec":
-            item_type = self._generate_struct_field_type(var_type.params[0])
-            return f"Rc<RefCell<Vector<{item_type}>>>"
+            return "Rc<RefCell<Vector<Variable<UserTypeEnum>>>>"
         elif var_type.name == "map":
-            key_type = self._generate_struct_field_type(var_type.params[0])
-            value_type = self._generate_struct_field_type(var_type.params[0])
-            return f"Rc<RefCell<Map<{key_type}, {value_type}>>>"
+            return "Rc<RefCell<Map<Variable<UserTypeEnum>, Variable<UserTypeEnum>>>>"
         elif var_type.name == "set":
-            item_type = self._generate_struct_field_type(var_type.params[0])
-            return f"Rc<RefCell<Set<{item_type}>>>"
+            return "Rc<RefCell<Set<Variable<UserTypeEnum>>>>"
         elif var_type.name == "regex":
             return "Rc<RefCell<Regex>>"
-
-        if var_type.type.is_enum():
-            rust_enum_name = self._generate_enum_name(var_type.type)
-            return f"Rc<RefCell<{rust_enum_name}>>"
-
-        rust_struct_name = self._generate_struct_name(var_type.type)
-        return f"Rc<RefCell<{rust_struct_name}>>"
+        elif var_type.type.is_enum():
+            return "Rc<RefCell<Enum<UserTypeEnum>>>"
+        return "Rc<RefCell<UserTypeEnum>>"
 
     def _generate_struct_new_func(self, type: Type) -> Code:
         if type.position.file == self.builtins_path and not type.fields:
@@ -816,23 +832,35 @@ class Transpiler:
 
         code.add("Self {", r=1)
 
+        # TODO simplify and combine with zero value function
         for field_name, field_var_type in type.fields.items():
             field_type = field_var_type.type
-            field_file = field_type.position.file
 
-            match (field_file, field_type.name):
-                case (self.builtins_path, "int"):
-                    code.add(f"{field_name}: 0,")
-                case (self.builtins_path, "bool"):
-                    code.add(f"{field_name}: false,")
-                case (self.builtins_path, "str"):
-                    code.add(f'{field_name}: Rc::new(RefCell::new(String::from(""))),')
-                case (self.builtins_path, "vec"):
-                    code.add(f"{field_name}: Rc::new(RefCell::new(Vector::new())),")
-                case _:
-                    code.add(
-                        f"// TODO add zero-struct value for {field_file} {field_type.name}"
-                    )  # TODO
+            if field_type.name == "int":
+                code.add(f"{field_name}: 0,")
+            elif field_type.name == "bool":
+                code.add(f"{field_name}: false,")
+            elif field_type.name == "str":
+                code.add(f'{field_name}: Rc::new(RefCell::new(String::from(""))),')
+            elif field_type.name == "vec":
+                code.add(f"{field_name}: Rc::new(RefCell::new(Vector::new())),")
+            elif field_type.name == "set":
+                code.add(f"{field_name}: Rc::new(RefCell::new(Set::new())),")
+            elif field_type.name == "map":
+                code.add(f"{field_name}: Rc::new(RefCell::new(Map::new())),")
+            elif field_type.is_enum():
+                rust_enum_name = self._generate_enum_name(field_type)
+                code.add(
+                    f"{field_name}: Rc::new(RefCell::new({rust_enum_name}_new())),"
+                )
+
+            else:
+                rust_struct_name = self._generate_struct_name(field_type)
+                code.add(
+                    f"{field_name}: Rc::new(RefCell::new("
+                    + f"UserTypeEnum::{rust_struct_name}({rust_struct_name}::new())"
+                    + ")),"
+                )
 
         code.add("}", l=1)
         code.add("}", l=1)
@@ -871,7 +899,26 @@ class Transpiler:
         code = Code(f"impl Display for {rust_struct_name} {{", r=1)
 
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
-        code.add("todo!();")  # TODO
+
+        code.add(f'write!(f, "(struct {type.name})<")?;')
+
+        is_first_field = True
+
+        for field_name, field_var_type in type.fields.items():
+            if is_first_field:
+                is_first_field = False
+            else:
+                code.add('write!(f, ", ")?;')
+
+            if field_var_type.type.name in ["int", "bool"]:
+                code.add(f'write!(f, "{field_name}: {{}}", self.{field_name})?;')
+            else:
+                code.add(
+                    f'write!(f, "{field_name}: {{:?}}", *self.{field_name}.borrow())?;'
+                )
+
+        code.add('write!(f, ">")')
+
         code.add("}", l=1)
 
         code.add("}", l=1)
