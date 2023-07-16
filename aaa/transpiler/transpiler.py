@@ -782,7 +782,20 @@ class Transpiler:
         code.add("")
 
         code.add("fn clone_recursive(&self) -> Self {", r=1)
-        code.add("todo!();")  # TODO
+
+        if self.user_structs:
+            code.add("match self {", r=1)
+
+            for type in self.user_structs.values():
+                rust_struct_name = self._generate_struct_name(type)
+                code.add(
+                    f"Self::{rust_struct_name}(v) => Self::{rust_struct_name}(v.clone_recursive()),"
+                )
+
+            code.add("}", l=1)
+        else:
+            code.add("unreachable!();")
+
         code.add("}", l=1)
 
         code.add("}", l=1)
@@ -935,6 +948,7 @@ class Transpiler:
 
         code.add("fn clone_recursive(&self) -> Self {", r=1)
         code.add("todo!();")  # TODO
+        # TODO rewrite and reuse code from Variable::clone_recusive
         code.add("}", l=1)
 
         code.add("}", l=1)
