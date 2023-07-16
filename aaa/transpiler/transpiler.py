@@ -362,7 +362,7 @@ class Transpiler:
 
         code = Code("{", r=1)
         code.add("let popped = stack.pop_user_type();")
-        code.add("let borrowed = (*popped).borrow();")
+        code.add("let mut borrowed = (*popped).borrow_mut();")
 
         if field_type.name == "int":
             code.add(f"stack.push_int(borrowed.get_{rust_struct_name}().{field_name});")
@@ -424,11 +424,47 @@ class Transpiler:
         return code
 
     def _generate_field_update_code(self, field_update: StructFieldUpdate) -> Code:
+        code = self._generate_function_body(field_update.new_value_expr)
+
         field_name = field_update.field_name.value
 
         _ = field_name
 
-        return Code("todo!();")  # TODO
+        stack = self.position_stacks[field_update.position]
+        assert not isinstance(stack, Never)
+        struct_type = stack[-1].type
+
+        rust_struct_name = self._generate_struct_name(struct_type)
+        field_name = field_update.field_name.value
+        field_type = struct_type.fields[field_name].type
+
+        code.add("{", r=1)
+
+        # TODO simplify
+        if field_type.name == "bool":
+            code.add("let value = stack.pop_bool();")
+        elif field_type.name == "int":
+            code.add("let value = stack.pop_int();")
+        elif field_type.name == "str":
+            code.add("let value = stack.pop_str();")
+        elif field_type.name == "vec":
+            code.add("let value = stack.pop_vector();")
+        elif field_type.name == "map":
+            code.add("let value = stack.pop_map();")
+        elif field_type.name == "set":
+            code.add("let value = stack.pop_set();")
+        elif field_type.name == "regex":
+            code.add("let value = stack.pop_regex();")
+        elif field_type.is_enum():
+            code.add("let value = stack.pop_enum();")
+        else:
+            code.add("let value = stack.pop_user_type();")
+
+        code.add("let popped = stack.pop_user_type();")
+        code.add("let mut borrowed = (*popped).borrow_mut();")
+        code.add(f"borrowed.get_{rust_struct_name}().{field_name} = value;")
+        code.add("}", l=1)
+        return code
 
     def _generate_match_block_code(self, match_block: MatchBlock) -> Code:
         code = Code("match stack.get_enum_discriminant() {", r=1)
@@ -708,7 +744,8 @@ class Transpiler:
             rust_struct_name = self._generate_struct_name(type)
 
             func_code = Code(
-                f"fn get_{rust_struct_name}(&self) -> &{rust_struct_name} {{", r=1
+                f"fn get_{rust_struct_name}(&mut self) -> &mut {rust_struct_name} {{",
+                r=1,
             )
             func_code.add("match self {", r=1)
             func_code.add(f"Self::{rust_struct_name}(v) => v,")
