@@ -1061,7 +1061,7 @@ class Transpiler:
         code = Code(f"impl Hash for {rust_struct_name} {{", r=1)
 
         code.add("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {", r=1)
-        code.add("todo!();")  # TODO
+        code.add("todo!();")  # TODO #125 Implement hash for structs and enums
         code.add("}", l=1)
 
         code.add("}", l=1)
