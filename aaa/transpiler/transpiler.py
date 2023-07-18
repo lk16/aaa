@@ -947,8 +947,70 @@ class Transpiler:
         code.add("")
 
         code.add("fn clone_recursive(&self) -> Self {", r=1)
-        code.add("todo!();")  # TODO
-        # TODO rewrite and reuse code from Variable::clone_recusive
+
+        code.add("Self {", r=1)
+
+        for field_name, field_var_type in type.fields.items():
+            field_type = field_var_type.type
+
+            if field_type.name in ["bool", "int"]:
+                code.add(f"{field_name}: self.{field_name},")
+            elif field_type.name == "regex":
+                code.add(f"{field_name}: self.{field_name}.clone(),")
+            elif field_type.name == "str":
+                code.add(f"{field_name}: {{", r=1)
+                code.add(f"let string = (*self.{field_name}).borrow().clone();")
+                code.add("Rc::new(RefCell::new(string))")
+                code.add("},", l=1)
+            elif field_type.name == "vec":
+                code.add(f"{field_name}: {{", r=1)
+                code.add("let mut vector = Vector::new();")
+                code.add(f"let source = (*self.{field_name}).borrow();")
+                code.add("for item in source.iter() {", r=1)
+                code.add("vector.push(item.clone_recursive())")
+                code.add("}", l=1)
+                code.add("Rc::new(RefCell::new(vector))")
+                code.add("},", l=1)
+            elif field_type.name == "set":
+                code.add(f"{field_name}: {{", r=1)
+                code.add("let mut set = Map::new();")
+                code.add(f"let source = (*self.{field_name}).borrow();")
+                code.add("for (item, _) in source.iter() {", r=1)
+                code.add("set.insert(item.clone_recursive(), ());")
+                code.add("}", l=1)
+                code.add("Rc::new(RefCell::new(set))")
+                code.add("},", l=1)
+            elif field_type.name == "map":
+                code.add(f"{field_name}: {{", r=1)
+                code.add("let mut map = Map::new();")
+                code.add(f"let source = (*self.{field_name}).borrow();")
+                code.add("for (key, value) in source.iter() {", r=1)
+                code.add("map.insert(key.clone_recursive(), value.clone_recursive());")
+                code.add("}", l=1)
+                code.add("Rc::new(RefCell::new(map))")
+                code.add("},", l=1)
+            elif field_type.is_enum():
+                code.add(f"{field_name}: {{", r=1)
+                code.add(f"let source = (*self.{field_name}).borrow();")
+                code.add("let mut values = vec![];")
+                code.add("for value in source.values.iter() {", r=1)
+                code.add("values.push(value.clone_recursive());")
+                code.add("}", l=1)
+                code.add("let enum_ = Enum {", r=1)
+                code.add("discriminant: source.discriminant,")
+                code.add("type_name: source.type_name.clone(),")
+                code.add("values: values,")
+                code.add("};", l=1)
+                code.add("Rc::new(RefCell::new(enum_))")
+                code.add("},", l=1)
+            else:
+                code.add(f"{field_name}: {{", r=1)
+                code.add(f"let source = (*self.{field_name}).borrow();")
+                code.add(f"Rc::new(RefCell::new(source.clone_recursive()))")
+                code.add("},", l=1)
+
+        code.add("}", l=1)
+
         code.add("}", l=1)
 
         code.add("}", l=1)
