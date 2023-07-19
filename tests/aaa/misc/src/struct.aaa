@@ -1,0 +1,52 @@
+
+enum OptionalInt {
+    none,
+    some as int,
+}
+
+struct Bar {
+    value as int,
+}
+
+struct Foo {
+    bool_ as bool,
+    int_ as int,
+    str_ as str,
+    vec_ as vec[str],
+    map_ as map[str,str],
+    set_ as set[str],
+    regex_ as regex,
+    enum_ as OptionalInt,
+    struct_ as Bar,
+}
+
+fn main {
+    Foo copy
+    use foo, foo_copy {
+        foo "bool_" { true } !
+        foo "int_" { 69 } !
+        foo "str_" { "hello world" } !
+        foo "vec_" { vec[str] dup "foo" vec:push } !
+        foo "map_" { map[str, str] dup "3" "three" map:set } !
+        foo "set_" { set[str] dup "hello" set:add } !
+        foo "regex_" { ".*" make_regex assert } !
+        foo "enum_" { 3 OptionalInt:some } !
+        foo "struct_" { Bar dup "value" { 123 } ! } !
+
+        "  bool_ = " . foo "bool_" ? . "\n" .
+        "   int_ = " . foo "int_" ? . "\n" .
+        "   str_ = " . foo "str_" ? . "\n" .
+        "   vec_ = " . foo "vec_" ? . "\n" .
+        "   map_ = " . foo "map_" ? . "\n" .
+        "   set_ = " . foo "set_" ? . "\n" .
+        " regex_ = " . foo "regex_" ? . "\n" .
+        "  enum_ = " . foo "enum_" ? . "\n" .
+        "struct_ = " . foo "struct_" ? . "\n" .
+
+        foo .
+        "\n" .
+
+        foo_copy .
+        "\n" .
+    }
+}
