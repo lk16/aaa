@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -372,5 +373,30 @@ def test_enum_case_as() -> None:
     stdout, stderr, exit_code = compile_run("enum_case_as.aaa")
 
     assert "quit\ntext = hello\nx = 6 y = 9\n" == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+def test_struct() -> None:
+    stdout, stderr, exit_code = compile_run("struct.aaa")
+
+    expected_output = (
+        "  bool_ = true\n"
+        + "   int_ = 69\n"
+        + "   str_ = hello world\n"
+        + '   vec_ = ["foo"]\n'
+        + '   map_ = {"3": "three"}\n'
+        + '   set_ = {"hello"}\n'
+        + " regex_ = regex\n"
+        + "  enum_ = (enum OptionalInt discriminant=1)<[3]>\n"
+        + 'struct_ = (struct Bar)<{"value": 123}>\n'
+        + '(struct Foo)<{"bool_": true, "int_": 69, "str_": "hello world", "vec_": ["foo"], "map_": {"3": "three"}, "set_": {"hello": ()}, "regex_": Regex(".*"), "enum_": (enum OptionalInt discriminant=1)<[3]>, "struct_": UserStruct89615fbdb7fa8d55 { value: 123 }}>\n'
+        + '(struct Foo)<{"bool_": false, "int_": 0, "str_": "", "vec_": [], "map_": {}, "set_": {}, "regex_": Regex("$.^"), "enum_": (enum OptionalInt discriminant=0)<[]>, "struct_": UserStruct89615fbdb7fa8d55 { value: 0 }}>\n'
+    )
+
+    expected_output = re.sub("UserStruct[0-9a-f]+", "UserStructXYZ", expected_output)
+    stdout = re.sub("UserStruct[0-9a-f]+", "UserStructXYZ", stdout)
+
+    assert expected_output == stdout
     assert "" == stderr
     assert 0 == exit_code
