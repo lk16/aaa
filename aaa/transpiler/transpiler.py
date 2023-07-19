@@ -425,10 +425,7 @@ class Transpiler:
 
     def _generate_field_update_code(self, field_update: StructFieldUpdate) -> Code:
         code = self._generate_function_body(field_update.new_value_expr)
-
         field_name = field_update.field_name.value
-
-        _ = field_name
 
         stack = self.position_stacks[field_update.position]
         assert not isinstance(stack, Never)
@@ -440,7 +437,6 @@ class Transpiler:
 
         code.add("{", r=1)
 
-        # TODO simplify
         if field_type.name == "bool":
             code.add("let value = stack.pop_bool();")
         elif field_type.name == "int":
@@ -751,7 +747,7 @@ class Transpiler:
             func_code.add(f"Self::{rust_struct_name}(v) => v,")
 
             if len(self.user_structs) != 1:
-                func_code.add(f"_ => unreachable!(),")  # TODO handle type error
+                func_code.add(f"_ => unreachable!(),")
 
             func_code.add("}", l=1)
             func_code.add("}", l=1)
@@ -892,7 +888,6 @@ class Transpiler:
 
         code.add("Self {", r=1)
 
-        # TODO simplify and combine with zero value function
         for field_name, field_var_type in type.fields.items():
             field_type = field_var_type.type
 
@@ -1027,7 +1022,7 @@ class Transpiler:
 
         code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
 
-        code.add(f'write!(f, "(struct {type.name})<")?;')
+        code.add(f'write!(f, "(struct {type.name})<{{{{")?;')
 
         is_first_field = True
 
@@ -1038,13 +1033,13 @@ class Transpiler:
                 code.add('write!(f, ", ")?;')
 
             if field_var_type.type.name in ["int", "bool"]:
-                code.add(f'write!(f, "{field_name}: {{}}", self.{field_name})?;')
+                code.add(f'write!(f, "\\"{field_name}\\": {{}}", self.{field_name})?;')
             else:
                 code.add(
-                    f'write!(f, "{field_name}: {{:?}}", *self.{field_name}.borrow())?;'
+                    f'write!(f, "\\"{field_name}\\": {{:?}}", *self.{field_name}.borrow())?;'
                 )
 
-        code.add('write!(f, ">")')
+        code.add('write!(f, "}}>")')
 
         code.add("}", l=1)
 
