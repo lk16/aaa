@@ -1,0 +1,93 @@
+from "util" import make_range
+
+struct Request {
+    method as str,
+    path as str,
+    headers as map[str, str],
+    body as str,
+}
+
+enum RequestParseResult {
+    ok as Request,
+    err as str,
+}
+
+fn parse_request args raw as str return RequestParseResult { // TODO refactor
+    Request
+
+    use request {
+        raw "\r\n" str:split
+        use lines {
+            lines 0 vec:get
+            use first_line {
+                first_line " " str:split
+                use split_first_line {
+                    if split_first_line vec:len 3 != {
+                        "could not parse first line" RequestParseResult:err return
+                    }
+
+                    request "method" { split_first_line 0 vec:get } !
+                    request "path" { split_first_line 1 vec:get } !
+                }
+            }
+
+
+            -1
+            use body_separator_line_offset {
+                1 lines vec:len 1 - make_range
+                foreach {
+                    use offset {
+                        lines offset vec:get
+                        use line {
+                            if line "" str:equals body_separator_line_offset -1 = and {
+                                body_separator_line_offset <- { offset }
+                            }
+                        }
+                    }
+                }
+
+                1 body_separator_line_offset make_range
+                foreach {
+                    use offset {
+                        lines offset vec:get ": " str:split
+
+                        use parts {
+                            if parts vec:len 2 != {
+                                drop
+                                "Found invalid line "
+                                lines offset vec:get repr str:append
+                                RequestParseResult:err return
+                            }
+
+
+                            if parts vec:len 2 >= {
+                                parts 0 vec:get
+                                parts 1 vec:get
+                                use header_name, header_value {
+                                    request "headers" ?
+                                    header_name str:lower
+                                    header_value
+                                    map:set
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ""
+                use body {
+                    body_separator_line_offset 1 + lines vec:len make_range
+                    foreach {
+                        use offset {
+                            body <- { body lines offset vec:get str:append }
+                        }
+                    }
+
+                    request "body" { body } !
+                }
+            }
+        }
+
+        request RequestParseResult:ok
+    }
+}

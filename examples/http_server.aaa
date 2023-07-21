@@ -1,70 +1,61 @@
-// used to create socket for IPv4 connections
-fn AF_INET return int {
-    2
+from "http.request" import Request
+from "http.response" import make_internal_server_error_response, make_response, Response
+from "http.router" import Router,
+from "http.server" import
+    make_web_server,
+    RequestHandler,
+    WebServer,
+    WebServerExitStatus
+
+fn hello_world_endpoint args request as Request return Response {
+    make_response
+    dup 200 Response:set_status_code
+    dup "{\"message\": \"Hello world!\"}\n" Response:set_json_body
 }
 
-// used to create TCP connections
-fn SOCK_STREAM return int {
-    1
+fn internal_server_error_endpoint args request as Request return Response {
+    make_internal_server_error_response
 }
 
-fn make_http_socket return int, bool {
-    AF_INET SOCK_STREAM 0 socket
-}
-
-fn raw_http_response return str {
-    "HTTP/1.1 200 OK\r\n"
-    "Content-Type: application/json\r\n" str:append
-    "Content-Length: 28\r\n" str:append
-    "\r\n" str:append
-    "{\"message\": \"Hello world!\"}\n" str:append
+fn bad_request_endpoint args request as Request return Response {
+    make_response
+    dup 400 Response:set_status_code
+    dup "Bad Request\n" Response:set_body
 }
 
 fn main return int {
-    make_http_socket
-    use fd, socket_ok {
-        if socket_ok not {
-            "socket failed\n" .
-            1 return
+    Router
+
+    use root_router {
+        root_router "GET" "/" "hello_world_endpoint" fn Router:add_endpoint
+        root_router "GET" "/hello" "hello_world_endpoint" fn Router:add_endpoint
+
+        Router
+        use statuses_router {
+            statuses_router "GET" "/error" "internal_server_error_endpoint" fn Router:add_endpoint
+            statuses_router "GET" "/bad-request" "bad_request_endpoint" fn Router:add_endpoint
+
+            root_router "/statuses" statuses_router Router:add_router
         }
 
-        fd "0.0.0.0" 8080 bind
-        use bind_ok {
-            if bind_ok not {
-                "bind failed\n" .
-                1 return
+        root_router RequestHandler:router
+    }
+
+    use request_handler {
+        "0.0.0.0" 8080 request_handler make_web_server
+    }
+
+    WebServer:run
+    use exit_status {
+        exit_status
+        match {
+            case WebServerExitStatus:ok {
+                0
             }
-        }
-
-        fd 5 listen
-        use listen_ok {
-            if listen_ok not {
-                "listen failed\n" .
-                1 return
-            }
-        }
-
-        while true {
-            fd accept
-            use client_ip, client_port, response_fd, accept_ok {
-                if accept_ok not {
-                    "accept ok\n" .
-                    1 return
-                }
-
-                response_fd raw_http_response write
-                use written_bytes, write_ok {
-                    if write_ok not {
-                        "write failed\n" .
-                        1 return
-                    }
-                }
-
-                "Sent response to: " .
-                client_ip .
-                ":" .
-                client_port .
+            default {
+                exit_status WebServerExitStatus:to_str .
                 "\n" .
+                1
             }
         }
     }

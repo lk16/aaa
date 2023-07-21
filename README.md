@@ -18,7 +18,7 @@ pdm run ./manage.py run 'fn main { "Hello world\n" . }'
 pdm run ./manage.py run examples/fizzbuzz.aaa
 
 # Run bare-bones HTTP server in Aaa
-pdm run ./manage.py run examples/http_server.aaa
+pdm run ./manage.py run examples/http/server.aaa
 
 # Send request from different shell
 curl http://localhost:8080

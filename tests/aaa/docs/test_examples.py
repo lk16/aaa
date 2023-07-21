@@ -84,20 +84,45 @@ def test_http_server() -> None:
     )
     assert exit_code == 0
 
-    subproc = subprocess.Popen(binary)
+    subproc = subprocess.Popen(binary, stdout=subprocess.PIPE)
+
+    stdout = subproc.stdout
+    assert stdout
+
+    # Wait until webserver prints first line, indicating server is running
+    first_line = stdout.readline().decode()
+    assert "Webserver running at" in first_line
 
     try:
         r = requests.get("http://localhost:8080")
         assert r.status_code == 200
         assert r.json() == {"message": "Hello world!"}
         assert r.headers["Content-Type"] == "application/json"
+
+        r = requests.get("http://localhost:8080/")
+        assert r.status_code == 200
+        assert r.json() == {"message": "Hello world!"}
+        assert r.headers["Content-Type"] == "application/json"
+
+        r = requests.get("http://localhost:8080/statuses/error")
+        assert r.status_code == 500
+        assert r.text == "Internal Server Error\n"
+
+        r = requests.get("http://localhost:8080/statuses/bad-request")
+        assert r.status_code == 400
+        assert r.text == "Bad Request\n"
+
+        r = requests.get("http://localhost:8080/foo")
+        assert r.status_code == 404
+        assert r.text == "Not Found\n"
+
     finally:
         subproc.terminate()
         subproc.wait()
 
 
 def test_http_client(capfd: CaptureFixture[str]) -> None:
-    entrypoint = Path("examples/http_client.aaa")
+    entrypoint = Path("examples/http/client.aaa")
     runner = Runner(entrypoint)
     runner.run(
         compile=True, binary_path=None, run=True, args=[], runtime_type_checks=True

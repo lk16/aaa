@@ -1,0 +1,197 @@
+from "request" import parse_request, Request, RequestParseResult
+from "router" import Router
+
+from "response" import
+    make_internal_server_error_response,
+    make_not_found_response,
+    make_response,
+    Response,
+
+// used to create socket for IPv4 connections
+fn AF_INET return int {
+    2
+}
+
+// used to create TCP connections
+fn SOCK_STREAM return int {
+    1
+}
+
+struct WebServer {
+    port as int,
+    host as str,
+    socket_fd as int,
+    request_handler as RequestHandler,
+}
+
+enum WebServerExitStatus {
+    ok,
+    socket_failed,
+    bind_failed,
+    listen_failed,
+    accept_failed,
+    write_failed,
+    read_failed,
+}
+
+fn WebServerExitStatus:to_str args status as WebServerExitStatus return str {
+    status
+    match {
+        case WebServerExitStatus:ok { "OK" }
+        case WebServerExitStatus:socket_failed { "socket failed" }
+        case WebServerExitStatus:bind_failed { "bind failed" }
+        case WebServerExitStatus:listen_failed { "listen failed" }
+        case WebServerExitStatus:accept_failed { "accept failed" }
+        case WebServerExitStatus:write_failed { "write failed" }
+        case WebServerExitStatus:read_failed { "read failed" }
+    }
+}
+
+fn make_web_server args host as str, port as int, request_handler as RequestHandler return WebServer {
+    WebServer
+    dup "host" { host } !
+    dup "port" { port } !
+    dup "request_handler" { request_handler } !
+}
+
+fn WebServer:run args web_server as WebServer return WebServerExitStatus {
+    AF_INET SOCK_STREAM 0 socket
+    use ok {
+        if ok not {
+            drop
+            WebServerExitStatus:socket_failed return
+        }
+    }
+
+    use socket_fd {
+        web_server "socket_fd" { socket_fd } !
+
+        web_server "host" ?
+        web_server "port" ?
+
+        use host, port {
+            socket_fd host port bind
+        }
+        use ok {
+            if ok not {
+                WebServerExitStatus:bind_failed return
+            }
+        }
+
+        socket_fd 5 listen
+        use ok {
+            if ok not {
+                WebServerExitStatus:listen_failed return
+            }
+        }
+
+        "Webserver running at " .
+        web_server "host" ? .
+        ":" .
+        web_server "port" ? .
+        "\n" .
+
+        while true {
+            socket_fd accept
+            use ok {
+                if ok not {
+                    drop drop drop
+                    WebServerExitStatus:accept_failed return
+                }
+            }
+
+            use client_ip, client_port, client_fd {
+                web_server client_ip client_port client_fd WebServer:handle_connection
+            }
+
+            dup
+            match {
+                case WebServerExitStatus:ok { drop }
+                default { return }
+            }
+        }
+    }
+}
+
+fn WebServer:handle_connection args web_server as WebServer, client_ip as str, client_port as int, client_fd as int return WebServerExitStatus {
+    // TODO account for larger requests
+    client_fd 2048 read
+
+    use ok {
+        if ok not {
+            drop
+            WebServerExitStatus:read_failed return
+        }
+    }
+
+    use raw_request {
+        web_server raw_request WebServer:handle_raw_request
+    }
+
+    use raw_response {
+        client_fd raw_response write
+    }
+
+    use ok {
+        if ok not {
+            drop
+            WebServerExitStatus:write_failed return
+        }
+    }
+
+    drop
+
+    WebServerExitStatus:ok
+}
+
+fn WebServer:handle_raw_request args web_server as WebServer, raw_request as str return str {
+    raw_request parse_request
+    match {
+        case RequestParseResult:ok as request {
+            web_server request WebServer:handle_request
+        }
+        case RequestParseResult:err as message {
+            "Error parsing request: " .
+            message .
+            "\n" .
+            make_internal_server_error_response
+        }
+    }
+
+    Response:to_str
+}
+
+
+
+enum RequestHandler {
+    router as Router,
+    endpoint as fn[Request][Response],
+}
+
+fn RequestHandler:route args request_handler as RequestHandler, request as Request return Response {
+    request_handler
+    match {
+        case RequestHandler:router as router { router request Router:route }
+        case RequestHandler:endpoint as endpoint_handler { request endpoint_handler call }
+    }
+}
+
+fn WebServer:handle_request args web_server as WebServer, request as Request return Response {
+    request "method" ? .
+    " " .
+    request "path" ? .
+    " " .
+
+    web_server "request_handler" ?
+    use request_handler {
+        request_handler request RequestHandler:route
+    }
+
+
+    use response {
+        response "status_code" ? .
+        "\n" .
+
+        response
+    }
+}
