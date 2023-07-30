@@ -174,16 +174,14 @@ fn check_tokenize_fixed_size args input as str, offset as int, expected_type as 
     dup "offset" { offset } !
     Tokenizer:tokenize_fixed_size
     match {
-        case OptionalToken:some {
-            use token_ {
-                token_
+        case OptionalToken:some as token {
+            token
 
-                Token
-                dup "type_" { expected_type } !
-                dup "value" { expected_value } !
+            Token
+            dup "type_" { expected_type } !
+            dup "value" { expected_value } !
 
-                = assert
-            }
+            = assert
         }
         case OptionalToken:none { unreachable }
     }

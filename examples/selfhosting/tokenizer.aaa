@@ -394,11 +394,9 @@ fn Tokenizer:tokenize_fixed_size args tokenizer as Tokenizer return OptionalToke
         use fixed_sized_token {
             tokenizer fixed_sized_token Tokenizer:match_fixed_size
             match {
-                case OptionalToken:some {
-                    use optional_token {
-                        drop
-                        optional_token OptionalToken:some return
-                    }
+                case OptionalToken:some as token {
+                    drop
+                    token OptionalToken:some return
                 }
                 default {
                     nop
@@ -536,18 +534,24 @@ fn Tokenizer:run args tokenizer as Tokenizer return TokenizeResult {
                 case OptionalToken:none {
                     TokenizeResult:error return
                 }
-                case OptionalToken:some {
-                    use token {
-                        token "position" { tokenizer "offset_position" ? copy swap drop } !
+                case OptionalToken:some as token {
+                    token "position" { tokenizer "offset_position" ? copy swap drop } !
 
-                        tokens token vec:push
-                        tokenizer "offset" {
-                            tokenizer "offset" ?
-                            token "value" ? str:len
-                            +
-                        } !
-                        tokenizer "offset_position" ? token Position:update
+                    token "type_" ?
+                    match {
+                        case TokenType:whitespace { nop }
+                        case TokenType:comment { nop }
+                        default {
+                            tokens token vec:push
+                        }
                     }
+
+                    tokenizer "offset" {
+                        tokenizer "offset" ?
+                        token "value" ? str:len
+                        +
+                    } !
+                    tokenizer "offset_position" ? token Position:update
                 }
             }
         }
