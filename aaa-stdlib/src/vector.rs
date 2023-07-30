@@ -1,8 +1,10 @@
-use std::{cell::RefCell, fmt::Debug, hash::Hash, rc::Rc};
+use std::{cell::RefCell, fmt::Display, hash::Hash, rc::Rc};
+
+use crate::var::UserType;
 
 pub struct Vector<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     vec: Rc<RefCell<Vec<T>>>,
     iterator_count: Rc<RefCell<usize>>, // vector can only be modified if no iterators exist
@@ -10,7 +12,7 @@ where
 
 impl<T> Vector<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     pub fn new() -> Self {
         Self {
@@ -64,7 +66,7 @@ where
 
 impl<T> From<Vec<T>> for Vector<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     fn from(value: Vec<T>) -> Self {
         let vec = Self::new();
@@ -80,9 +82,9 @@ where
     }
 }
 
-impl<T> Debug for Vector<T>
+impl<T> Display for Vector<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut reprs: Vec<String> = vec![];
@@ -95,18 +97,18 @@ where
 
 impl<T> PartialEq for Vector<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     fn eq(&self, other: &Self) -> bool {
         self.vec == other.vec
     }
 }
 
-impl<T> Eq for Vector<T> where T: Clone + PartialEq + Debug {}
+impl<T> Eq for Vector<T> where T: UserType {}
 
 impl<T> Clone for Vector<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     fn clone(&self) -> Self {
         let mut cloned = Vector::<T>::new();
@@ -120,7 +122,7 @@ where
 
 impl<T> Hash for Vector<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {
         unreachable!()
@@ -129,7 +131,7 @@ where
 
 impl<T> Default for Vector<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     fn default() -> Self {
         Self::new()
@@ -139,7 +141,7 @@ where
 #[derive(Clone)]
 pub struct VectorIterator<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     vector: Rc<RefCell<Vec<T>>>,
     iterator_count: Rc<RefCell<usize>>,
@@ -148,7 +150,7 @@ where
 
 impl<T> VectorIterator<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     fn new(vector: Rc<RefCell<Vec<T>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
         *iterator_count.borrow_mut() += 1;
@@ -163,7 +165,7 @@ where
 
 impl<T> Iterator for VectorIterator<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     type Item = T;
 
@@ -178,7 +180,7 @@ where
 
 impl<T> Drop for VectorIterator<T>
 where
-    T: Clone + PartialEq + Debug,
+    T: UserType,
 {
     fn drop(&mut self) {
         *self.iterator_count.borrow_mut() -= 1;

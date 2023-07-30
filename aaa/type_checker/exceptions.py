@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Set, Tuple, Union
+from typing import List, Set, Tuple
 
 from aaa import AaaException, Position
 from aaa.cross_referencer.exceptions import describe
@@ -9,12 +9,14 @@ from aaa.cross_referencer.models import (
     CallVariable,
     CaseBlock,
     DefaultBlock,
+    Enum,
+    EnumConstructor,
     Function,
     MatchBlock,
     Never,
+    Struct,
     StructFieldQuery,
     StructFieldUpdate,
-    Type,
     UseBlock,
     Variable,
     VariableType,
@@ -57,7 +59,7 @@ class StackTypesError(TypeCheckerException):
         self,
         position: Position,
         type_stack: List[VariableType],
-        func_like: Union[Function, StructFieldUpdate, StructFieldQuery],
+        func_like: Function | EnumConstructor | StructFieldUpdate | StructFieldQuery,
     ) -> None:
         self.type_stack = type_stack
         self.func_like = func_like
@@ -208,7 +210,7 @@ class StructUpdateTypeError(TypeCheckerException):
         self,
         position: Position,
         type_stack: List[VariableType],
-        struct_type: Type,
+        struct_type: Struct,
         field_name: str,
         expected_type: VariableType,
         found_type: VariableType,
@@ -233,8 +235,8 @@ class StructUpdateTypeError(TypeCheckerException):
 
 
 class InvalidMemberFunctionSignature(TypeCheckerException):
-    def __init__(self, function: Function, struct_type: Type) -> None:
-        self.struct_type = struct_type
+    def __init__(self, function: Function, type: Struct | Enum) -> None:
+        self.type = type
         self.function = function
         super().__init__(function.position)
 
@@ -244,9 +246,9 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
 
         arguments = [arg.var_type for arg in self.function.arguments]
 
-        if len(arguments) == 0 or arguments[0].type != self.struct_type:
+        if len(arguments) == 0 or arguments[0].type != self.type:
             formatted += (
-                f"Expected arg types: {self.struct_type.name} ...\n"
+                f"Expected arg types: {self.type.name} ...\n"
                 + f"   Found arg types: {' '.join(str(arg.type) for arg in arguments)}\n"
             )
 
@@ -254,7 +256,9 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
 
 
 class UnknownField(TypeCheckerException):
-    def __init__(self, position: Position, struct_type: Type, field_name: str) -> None:
+    def __init__(
+        self, position: Position, struct_type: Struct, field_name: str
+    ) -> None:
         self.struct_type = struct_type
         self.field_name = field_name
         super().__init__(position)
@@ -437,7 +441,7 @@ class MatchTypeError(TypeCheckerException):
 
 class CaseEnumTypeError(TypeCheckerException):
     def __init__(
-        self, case_block: CaseBlock, expected_enum: Type, found_enum: Type
+        self, case_block: CaseBlock, expected_enum: Enum, found_enum: Enum
     ) -> None:
         self.match_block = case_block
         self.expected_enum = expected_enum
@@ -495,7 +499,7 @@ class DuplicateCase(TypeCheckerException):
 
 class MissingEnumCases(TypeCheckerException):
     def __init__(
-        self, match_block: MatchBlock, enum_type: Type, missing_variants: Set[str]
+        self, match_block: MatchBlock, enum_type: Enum, missing_variants: Set[str]
     ) -> None:
         self.match_block = match_block
         self.missing_variants = missing_variants
@@ -548,9 +552,13 @@ class UnknownVariableOrFunction(TypeCheckerException):
 
 class CollidingVariable(TypeCheckerException):
     def __init__(
-        self, lhs: Variable | Argument, rhs: Variable | Argument | Type | Function
+        self,
+        lhs: Variable | Argument,
+        rhs: Variable | Argument | Struct | Enum | Function,
     ) -> None:
-        def sort_key(item: Variable | Argument | Type | Function) -> Tuple[int, int]:
+        def sort_key(
+            item: Variable | Argument | Struct | Function | Enum,
+        ) -> Tuple[int, int]:
             return (item.position.line, item.position.column)
 
         self.colliding = sorted([lhs, rhs], key=sort_key)
@@ -579,6 +587,20 @@ class InvalidCallWithTypeParameters(TypeCheckerException):
             assert False
 
         return f"{self.position}: Cannot use {object} {self.call_var.name} with type parameters\n"
+
+
+class UseFieldOfEnumException(TypeCheckerException):
+    def __init__(self, node: StructFieldQuery | StructFieldUpdate) -> None:
+        self.node = node
+        super().__init__(node.position)
+
+    def __str__(self) -> str:
+        if isinstance(self.node, StructFieldQuery):
+            get_set = "get"
+        else:
+            get_set = "set"
+
+        return f"{self.position}: Cannot {get_set} field on Enum\n"
 
 
 class SignatureItemMismatch(AaaException):

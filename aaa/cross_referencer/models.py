@@ -24,6 +24,15 @@ class Identifiable(AaaCrossReferenceModel):
 IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
+class EnumConstructor(Identifiable):
+    def __init__(self, enum: Enum, variant_name: str) -> None:
+        position = Position(enum.position.file, -1, -1)
+        self.enum = enum
+        self.variant_name = variant_name
+        name = f"{enum.name}:{variant_name}"
+        super().__init__(position, name)
+
+
 class Function(Identifiable):
     class Unresolved:
         def __init__(self, parsed: parser.Function) -> None:
@@ -33,31 +42,27 @@ class Function(Identifiable):
         def __init__(
             self,
             parsed_body: Optional[parser.FunctionBody],
-            type_params: Dict[str, Type],
+            type_params: Dict[str, Struct],
             arguments: List[Argument],
             return_types: List[VariableType] | Never,
-            is_enum_ctor: bool,
         ) -> None:
             self.parsed_body = parsed_body
             self.type_params = type_params
             self.arguments = arguments
             self.return_types = return_types
-            self.is_enum_ctor = is_enum_ctor
 
     class Resolved:
         def __init__(
             self,
-            type_params: Dict[str, Type],
+            type_params: Dict[str, Struct],
             arguments: List[Argument],
             return_types: List[VariableType] | Never,
-            is_enum_ctor: bool,
             body: Optional[FunctionBody],
         ) -> None:
             self.type_params = type_params
             self.arguments = arguments
             self.return_types = return_types
             self.body: Optional[FunctionBody] = None
-            self.is_enum_ctor = is_enum_ctor
             self.body = body
 
     def __init__(self, parsed: parser.Function) -> None:
@@ -109,7 +114,7 @@ class Function(Identifiable):
         return self.state.return_types
 
     @property
-    def type_params(self) -> Dict[str, Type]:
+    def type_params(self) -> Dict[str, Struct]:
         assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
         return self.state.type_params
 
@@ -119,22 +124,16 @@ class Function(Identifiable):
         assert self.state.body
         return self.state.body
 
-    @property
-    def is_enum_ctor(self) -> bool:
-        assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
-        return self.state.is_enum_ctor
-
     def add_signature(
         self,
         parsed_body: Optional[parser.FunctionBody],
-        type_params: Dict[str, Type],
+        type_params: Dict[str, Struct],
         arguments: List[Argument],
         return_types: List[VariableType] | Never,
-        is_enum_ctor: bool,
     ) -> None:
         assert isinstance(self.state, Function.Unresolved)
         self.state = Function.WithSignature(
-            parsed_body, type_params, arguments, return_types, is_enum_ctor
+            parsed_body, type_params, arguments, return_types
         )
 
     def is_resolved(self) -> bool:
@@ -146,7 +145,6 @@ class Function(Identifiable):
             self.state.type_params,
             self.state.arguments,
             self.state.return_types,
-            self.state.is_enum_ctor,
             body,
         )
 
@@ -206,78 +204,121 @@ class ImplicitFunctionImport(Identifiable):
         self.source = source
 
 
-class Type(Identifiable):
+class ImplicitEnumConstructorImport(Identifiable):
+    def __init__(self, source: EnumConstructor) -> None:
+        self.source = source
+
+
+class Struct(Identifiable):
     class Unresolved:
-        def __init__(
-            self, parsed: parser.TypeLiteral | parser.Struct | parser.Enum
-        ) -> None:
+        def __init__(self, parsed: parser.TypeLiteral | parser.Struct) -> None:
             self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
-            self.parsed_variants: Dict[str, Tuple[List[parser.TypeLiteral], int]] = {}
 
             if isinstance(parsed, parser.Struct):
                 self.parsed_field_types = parsed.fields
 
-            if isinstance(parsed, parser.Enum):
-                for i, item in enumerate(parsed.variants):
-                    self.parsed_variants[item.name.name] = (item.associated_data, i)
-
     class Resolved:
-        def __init__(
-            self,
-            fields: Dict[str, VariableType],
-            enum_fields: Dict[str, Tuple[List[VariableType], int]],
-        ) -> None:
+        def __init__(self, fields: Dict[str, VariableType]) -> None:
             self.fields = fields
-            self.enum_fields = enum_fields
 
     def __init__(
         self,
-        parsed: parser.TypeLiteral | parser.Struct | parser.Enum,
+        parsed: parser.TypeLiteral | parser.Struct,
         param_count: int,
     ) -> None:
-        self.state: Type.Resolved | Type.Unresolved = Type.Unresolved(parsed)
+        self.state: Struct.Resolved | Struct.Unresolved = Struct.Unresolved(parsed)
         self.param_count = param_count
         super().__init__(parsed.position, parsed.identifier.name)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Type):
+        if not isinstance(other, Struct):
             return False
 
         return self.name == other.name and self.position == other.position
 
     @property
     def fields(self) -> Dict[str, VariableType]:
-        assert isinstance(self.state, Type.Resolved)
+        assert isinstance(self.state, Struct.Resolved)
         return self.state.fields
 
-    @property
-    def enum_fields(self) -> Dict[str, Tuple[List[VariableType], int]]:
-        assert isinstance(self.state, Type.Resolved)
-        return self.state.enum_fields
-
-    def get_unresolved(self) -> Type.Unresolved:
-        assert isinstance(self.state, Type.Unresolved)
+    def get_unresolved(self) -> Struct.Unresolved:
+        assert isinstance(self.state, Struct.Unresolved)
         return self.state
 
     def resolve(
         self,
         fields: Dict[str, VariableType],
-        enum_fields: Dict[str, Tuple[List[VariableType], int]],
     ) -> None:
-        assert isinstance(self.state, Type.Unresolved)
-        self.state = Type.Resolved(fields, enum_fields)
+        assert isinstance(self.state, Struct.Unresolved)
+        self.state = Struct.Resolved(fields)
 
     def is_resolved(self) -> bool:
-        return isinstance(self.state, Type.Resolved)
+        return isinstance(self.state, Struct.Resolved)
 
-    def is_enum(self) -> bool:
-        return bool(self.enum_fields)
+
+class Enum(Identifiable):
+    class Unresolved:
+        def __init__(self, parsed: parser.Enum) -> None:
+            self.parsed_variants: Dict[str, List[parser.TypeLiteral]] = {}
+
+            for variant in parsed.variants:
+                self.parsed_variants[variant.name.name] = variant.associated_data
+
+            # This can't fail, an enum needs to have at least one variant
+            self.zero_variant = parsed.variants[0].name.name
+
+    class Resolved:
+        def __init__(
+            self,
+            variants: Dict[str, List[VariableType]],
+            zero_variant: str,
+        ) -> None:
+            if variants and zero_variant not in variants:
+                raise ValueError("zero value not in variants")
+
+            self.variants = variants
+            self.zero_variant = zero_variant
+
+    def __init__(self, parsed: parser.Enum, param_count: int) -> None:
+        self.state: Enum.Resolved | Enum.Unresolved = Enum.Unresolved(parsed)
+        self.param_count = param_count
+        super().__init__(parsed.position, parsed.identifier.name)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Enum):
+            return False
+
+        return self.name == other.name and self.position == other.position
+
+    @property
+    def variants(self) -> Dict[str, List[VariableType]]:
+        assert isinstance(self.state, Enum.Resolved)
+        return self.state.variants
+
+    @property
+    def zero_variant(self) -> str:
+        return self.state.zero_variant
+
+    def get_unresolved(self) -> Enum.Unresolved:
+        assert isinstance(self.state, Enum.Unresolved)
+        return self.state
+
+    def get_resolved(self) -> Enum.Resolved:
+        assert isinstance(self.state, Enum.Resolved)
+        return self.state
+
+    def resolve(self, variants: Dict[str, List[VariableType]]) -> None:
+        assert isinstance(self.state, Enum.Unresolved)
+        self.state = Enum.Resolved(variants, self.state.zero_variant)
+
+    def is_resolved(self) -> bool:
+        return isinstance(self.state, Enum.Resolved)
 
 
 class VariableType(AaaCrossReferenceModel):
     def __init__(
         self,
-        type: Type,
+        type: Struct | Enum,
         params: List[VariableType],
         is_placeholder: bool,
         position: Position,
@@ -369,6 +410,18 @@ class CallFunction(FunctionBodyItem):
         super().__init__(position)
 
 
+class CallEnumConstructor(FunctionBodyItem):
+    def __init__(
+        self,
+        enum_ctor: EnumConstructor,
+        enum_var_type: VariableType,
+        position: Position,
+    ) -> None:
+        self.enum_var_type = enum_var_type
+        self.enum_ctor = enum_ctor
+        super().__init__(position)
+
+
 class CallType(FunctionBodyItem):
     def __init__(self, var_type: VariableType) -> None:
         self.var_type = var_type
@@ -449,7 +502,7 @@ class CaseBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyItem
     def __init__(
         self,
         position: Position,
-        enum_type: Type,
+        enum_type: Enum,
         variant_name: str,
         variables: List[Variable],
         body: FunctionBody,
@@ -475,13 +528,27 @@ class Return(FunctionBodyItem):
 class CrossReferencerOutput(AaaModel):
     def __init__(
         self,
-        types: Dict[Tuple[Path, str], Type],
+        structs: Dict[Tuple[Path, str], Struct],
+        enums: Dict[Tuple[Path, str], Enum],
         functions: Dict[Tuple[Path, str], Function],
         imports: Dict[Tuple[Path, str], Import],
         builtins_path: Path,
         entrypoint: Path,
     ) -> None:
-        self.types = types
+        for struct in structs.values():
+            assert struct.is_resolved()
+
+        for enum in enums.values():
+            assert enum.is_resolved()
+
+        for function in functions.values():
+            assert function.is_resolved()
+
+        for import_ in imports.values():
+            assert import_.is_resolved()
+
+        self.structs = structs
+        self.enums = enums
         self.functions = functions
         self.imports = imports
         self.builtins_path = builtins_path

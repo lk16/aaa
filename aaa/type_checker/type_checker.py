@@ -8,12 +8,15 @@ from aaa.cross_referencer.models import (
     Assignment,
     BooleanLiteral,
     Branch,
+    CallEnumConstructor,
     CallFunction,
     CallType,
     CallVariable,
     CaseBlock,
     CrossReferencerOutput,
     DefaultBlock,
+    Enum,
+    EnumConstructor,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -22,9 +25,9 @@ from aaa.cross_referencer.models import (
     Never,
     Return,
     StringLiteral,
+    Struct,
     StructFieldQuery,
     StructFieldUpdate,
-    Type,
     UseBlock,
     Variable,
     VariableType,
@@ -65,6 +68,7 @@ from aaa.type_checker.exceptions import (
     UnreachableDefaultBlock,
     UpdateConstStructError,
     UseBlockStackUnderflow,
+    UseFieldOfEnumException,
     WhileLoopTypeError,
     format_typestack,
 )
@@ -76,7 +80,9 @@ class TypeChecker:
         self, cross_referencer_output: CrossReferencerOutput, verbose: bool
     ) -> None:
         self.functions = cross_referencer_output.functions
-        self.types = cross_referencer_output.types
+        self.types: Dict[Tuple[Path, str], Struct | Enum] = (
+            cross_referencer_output.structs | cross_referencer_output.enums
+        )
         self.imports = cross_referencer_output.imports
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
@@ -190,9 +196,6 @@ class SingleFunctionTypeChecker:
         self.position_stacks: Dict[Position, List[VariableType] | Never] = {}
 
     def run(self) -> Dict[Position, List[VariableType] | Never]:
-        if self.function.is_enum_ctor:
-            return self.position_stacks
-
         assert self.function.body
 
         if self.function.is_test():  # pragma: nocover
@@ -413,6 +416,7 @@ class SingleFunctionTypeChecker:
             CallFunction: self._check_call_function,
             CallType: self._check_call_type,
             CallVariable: self._check_call_variable,
+            CallEnumConstructor: self._check_call_enum_constructor,
             ForeachLoop: self._check_foreach_loop,
             IntegerLiteral: self._check_integer_literal,
             Return: self._check_return,
@@ -449,7 +453,7 @@ class SingleFunctionTypeChecker:
         self,
         block: CaseBlock,
         type_stack: List[VariableType],
-        enum_type: Type,
+        enum_type: Enum,
     ) -> List[VariableType] | Never:
         if block.enum_type != enum_type:
             raise CaseEnumTypeError(block, enum_type, block.enum_type)
@@ -457,7 +461,7 @@ class SingleFunctionTypeChecker:
         variant_name = block.variant_name
 
         # The variant name is checked in the cross referencer so it cannot fail here.
-        associated_data = enum_type.enum_fields[variant_name][0]
+        associated_data = enum_type.variants[variant_name]
 
         if block.variables:
             if len(block.variables) != len(associated_data):
@@ -497,7 +501,7 @@ class SingleFunctionTypeChecker:
         except IndexError:
             raise MatchTypeError(match_block, type_stack)
 
-        if not matched_var_type.type.enum_fields:
+        if not isinstance(matched_var_type.type, Enum):
             raise MatchTypeError(match_block, type_stack)
 
         enum_type = matched_var_type.type
@@ -541,7 +545,7 @@ class SingleFunctionTypeChecker:
 
             block_type_stacks.append(block_type_stack)
 
-        missing_enum_variants = set(enum_type.enum_fields.keys()) - set(
+        missing_enum_variants = set(enum_type.variants.keys()) - set(
             found_enum_variants.keys()
         )
 
@@ -601,37 +605,37 @@ class SingleFunctionTypeChecker:
 
         return var_type
 
-    def _check_call_function(
-        self, call_function: CallFunction, type_stack: List[VariableType]
+    def __check_call_function(
+        self,
+        arguments: List[VariableType],
+        return_types: List[VariableType] | Never,
+        call: Function | EnumConstructor,
+        position: Position,
+        type_stack: List[VariableType],
     ) -> List[VariableType] | Never:
         stack = copy(type_stack)
-        arg_count = len(call_function.function.arguments)
+        arg_count = len(arguments)
 
         if len(stack) < arg_count:
-            raise StackTypesError(
-                call_function.position, type_stack, call_function.function
-            )
+            raise StackTypesError(position, type_stack, call)
 
         placeholder_types: Dict[str, VariableType] = {}
         types = stack[len(stack) - arg_count :]
 
-        for argument, type in zip(call_function.function.arguments, types, strict=True):
-
+        for argument, type in zip(arguments, types, strict=True):
             try:
                 placeholder_types = self._match_signature_items(
-                    argument.var_type, copy(type), placeholder_types
+                    argument, copy(type), placeholder_types
                 )
             except SignatureItemMismatch as e:
-                raise StackTypesError(
-                    call_function.position, type_stack, call_function.function
-                ) from e
+                raise StackTypesError(position, type_stack, call) from e
 
         stack = stack[: len(stack) - arg_count]
 
-        if isinstance(call_function.function.return_types, Never):
+        if isinstance(return_types, Never):
             return Never()
 
-        for return_type in call_function.function.return_types:
+        for return_type in return_types:
             stack_item = self._apply_placeholders_in_return_type(
                 return_type, placeholder_types
             )
@@ -640,6 +644,34 @@ class SingleFunctionTypeChecker:
             stack.append(stack_item)
 
         return stack
+
+    def _check_call_function(
+        self, call_function: CallFunction, type_stack: List[VariableType]
+    ) -> List[VariableType] | Never:
+        arguments = [argument.var_type for argument in call_function.function.arguments]
+
+        return self.__check_call_function(
+            arguments,
+            call_function.function.return_types,
+            call_function.function,
+            call_function.position,
+            type_stack,
+        )
+
+    def _check_call_enum_constructor(
+        self, call_enum_ctor: CallEnumConstructor, type_stack: List[VariableType]
+    ) -> List[VariableType] | Never:
+        enum = call_enum_ctor.enum_ctor.enum
+        variant_name = call_enum_ctor.enum_ctor.variant_name
+        variant_associated_data = enum.get_resolved().variants[variant_name]
+
+        return self.__check_call_function(
+            variant_associated_data,
+            [call_enum_ctor.enum_var_type],
+            call_enum_ctor.enum_ctor,
+            call_enum_ctor.position,
+            type_stack,
+        )
 
     def _check_call_type(
         self, call_type: CallType, type_stack: List[VariableType]
@@ -663,21 +695,24 @@ class SingleFunctionTypeChecker:
         struct_type_key = (self.function.position.file, self.function.struct_name)
 
         try:
-            struct_type = self.types[struct_type_key]
+            type = self.types[struct_type_key]
         except KeyError:
             raise MemberFunctionTypeNotFound(self.function)
 
         # A member function on a type foo needs to take a foo object as the first argument
         if (
             len(self.function.arguments) == 0
-            or self.function.arguments[0].var_type.type != struct_type
+            or self.function.arguments[0].var_type.type != type
         ):
-            raise InvalidMemberFunctionSignature(self.function, struct_type)
+            raise InvalidMemberFunctionSignature(self.function, type)
 
     def _get_struct_field_type(
         self, node: StructFieldQuery | StructFieldUpdate, struct_var_type: VariableType
     ) -> VariableType:
         struct_type = struct_var_type.type
+
+        if isinstance(struct_type, Enum):
+            raise UseFieldOfEnumException(node)
 
         field_name = node.field_name.value
         try:
@@ -737,6 +772,9 @@ class SingleFunctionTypeChecker:
 
         struct_var_type, field_selector_type, update_expr_type = type_stack[-3:]
         struct_type = struct_var_type.type
+
+        if not isinstance(struct_type, Struct):
+            raise UseFieldOfEnumException(field_update)
 
         if not all(
             [
@@ -865,7 +903,9 @@ class SingleFunctionTypeChecker:
 
         return type_stack
 
-    def _find_var_name_collision(self, var: Variable) -> Type | Function | None:
+    def _find_var_name_collision(
+        self, var: Variable
+    ) -> Struct | Enum | Function | None:
         builtins_key = (self.builtins_path, var.name)
         key = (self.function.position.file, var.name)
 
