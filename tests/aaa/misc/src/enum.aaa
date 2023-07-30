@@ -1,141 +1,130 @@
-
-
-// Rust enum for comparison
-// source: https://doc.rust-lang.org/book/ch06-01-defining-an-enum.html
-
-// enum Message {
-//     Quit,
-//     Move { x: i32, y: i32 },
-//     Write(String),
-//     ChangeColor(i32, i32, i32),
-// }
-
-struct Coord {
-    x as int,
-    y as int,
+struct Bar {
+    value as int,
 }
 
-struct Empty {}
-
-struct Rgb {
-    r as int,
-    g as int,
-    b as int,
+enum Foo {
+    bool_ as bool,
+    int_ as int,
+    str_ as str,
+    vec_ as vec[str],
+    map_ as map[str, str],
+    set_ as set[str],
+    regex_ as regex,
+    enum_ as Foo,
+    struct_ as Bar,
+    no_data,
+    multiple_data as { int, vec[str] },
 }
 
-enum Message {
-    quit as Empty,
-    move as Coord,
-    write as str,
-    change_color as Rgb,
-}
+fn Foo:do_things args foo as Foo {
+    foo .
+    "\n" .
 
-fn is_quit_message args m as Message return bool {
-    m
+    foo
     match {
-        case Message:quit { drop true }
-        default { false }
+        case Foo:bool_ { "bool_ " . . "\n" . }
+        case Foo:int_ { "int_ " . . "\n" . }
+        case Foo:str_ { "str_ " . . "\n" . }
+        case Foo:vec_ { "vec_ " . . "\n" . }
+        case Foo:map_ { "map_ " . . "\n" . }
+        case Foo:set_ { "set_ " . . "\n" . }
+        case Foo:regex_ { "regex_ " . . "\n" . }
+        case Foo:enum_ { "enum_ " . . "\n" . }
+        case Foo:struct_ { "struct_ " . . "\n" . }
+        case Foo:no_data { "no_data " . "\n" . }
+        case Foo:multiple_data { "multiple_data " . . " " . . "\n" . }
     }
+
+    foo
+    match {
+        case Foo:bool_ as a { nop }
+        case Foo:int_ as a { nop }
+        case Foo:str_ as a { nop }
+        case Foo:vec_ as a { nop }
+        case Foo:map_ as a { nop }
+        case Foo:set_ as a { nop }
+        case Foo:regex_ as a { nop }
+        case Foo:enum_ as a { nop }
+        case Foo:struct_ as a { nop }
+        case Foo:no_data { nop }
+        case Foo:multiple_data as a, b { nop }
+    }
+
+
+
+    foo copy drop drop
 }
 
-fn returns_sometimes args m as Message return int {
-    m
-    match {
-        case Message:quit { 0 exit }
-        case Message:move { drop 6 }
-        case Message:write { 0 exit }
-        case Message:change_color { drop 5 }
-    }
+enum OneVariant {
+    value as int,
 }
 
 fn main {
-    // construct enum with attached values
+    Foo
+    Foo:do_things
+    "\n" .
 
-    Rgb
-    dup "r" { 1 } !
-    dup "g" { 2 } !
-    dup "b" { 3 } !
-    Message:change_color
-    // stack: Message:change_color{1, 2, 3}
-    drop
+    true Foo:bool_
+    Foo:do_things
+    "\n" .
 
-    Coord
-    dup "x" { 4 } !
-    dup "y" { 5 } !
-    Message:move
-    // stack: Message:move{4, 5}
-    drop
+    69 Foo:int_
+    Foo:do_things
+    "\n" .
 
-    "something"
-    Message:write
-    // stack: Message:written{"something"}
-    drop
+    "hello" Foo:str_
+    Foo:do_things
+    "\n" .
 
-    Empty
-    Message:quit
-    // stack: Message
-    drop
+    vec[str] Foo:vec_
+    Foo:do_things
+    "\n" .
 
-    Empty
-    Message:quit
+    map[str, str] Foo:map_
+    Foo:do_things
+    "\n" .
 
-    match { // consumes Message
-        case Message:quit {
-            // stack: struct{}
-            "quit\n" .
+    set[str] Foo:set_
+    Foo:do_things
+    "\n" .
 
-            drop
-            // stack: <empty>
+    regex Foo:regex_
+    Foo:do_things
+    "\n" .
+
+    Foo Foo:enum_
+    Foo:do_things
+    "\n" .
+
+    Bar Foo:struct_
+    Foo:do_things
+    "\n" .
+
+    Foo:no_data
+    Foo:do_things
+    "\n" .
+
+    3 vec[str] Foo:multiple_data
+    Foo:do_things
+    "\n" .
+
+    Foo copy
+    use foo, foo_copy {
+        foo <- { true Foo:bool_ }
+        foo . "\n" .
+        foo_copy . "\n" .
+    }
+
+    OneVariant
+    use one_variant {
+        one_variant
+        match {
+            case OneVariant:value { drop }
         }
-        case Message:move {
-            // stack: coord
-            "move " .
 
-            use c {
-                c "x" ? .
-                " " .
-                c "y" ? .
-            }
-            "\n" .
-
-            // stack: <empty>
-
-        }
-        case Message:write {
-            // stack: str
-            "write " .
-
-            use w {
-                w .
-            }
-            "\n" .
-
-            // stack: <empty>
-        }
-        case Message:change_color {
-            // stack: struct { r as int, g as int, y as int, }
-            "color " .
-
-            use c {
-                c "r" ? .
-                " " .
-                c "g" ? .
-                " " .
-                c "b" ? .
-            }
-            "\n" .
-
-            // stack: <empty>
+        one_variant
+        match {
+            default { nop }
         }
     }
-    // stack: <empty>
-
-    Empty
-    Message:quit
-    is_quit_message assert
-
-    "something"
-    Message:write
-    is_quit_message not assert
-
 }

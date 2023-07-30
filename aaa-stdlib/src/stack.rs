@@ -2,7 +2,7 @@ use std::{
     cell::RefCell,
     env,
     ffi::CString,
-    fmt::{Debug, Formatter, Result},
+    fmt::{Display, Formatter, Result},
     fs,
     io::{stdout, Write},
     net::{Ipv4Addr, ToSocketAddrs},
@@ -31,8 +31,7 @@ use regex::Regex;
 
 use crate::{
     map::{Map, MapIterator},
-    set::{Set, SetIterator},
-    var::Enum,
+    set::{Set, SetIterator, SetValue},
     vector::VectorIterator,
 };
 use crate::{
@@ -47,7 +46,7 @@ where
     items: Vec<Variable<T>>,
 }
 
-impl<T> Debug for Stack<T>
+impl<T> Display for Stack<T>
 where
     T: UserType,
 {
@@ -55,7 +54,7 @@ where
         write!(f, "Stack ({}):", self.len())?;
         for item in self.items.iter() {
             write!(f, " ")?;
-            write!(f, "{:?}", item)?;
+            write!(f, "{}", item)?;
         }
         Ok(())
     }
@@ -162,10 +161,6 @@ where
         self.push(Variable::None);
     }
 
-    pub fn push_enum(&mut self, v: Enum<T>) {
-        self.push(Variable::Enum(Rc::new(RefCell::new(v))));
-    }
-
     pub fn push_regex(&mut self, v: Regex) {
         self.push(Variable::Regex(Rc::new(RefCell::new(v))));
     }
@@ -209,7 +204,7 @@ where
         }
     }
 
-    pub fn pop_vector(&mut self) -> Rc<RefCell<Vector<Variable<T>>>> {
+    pub fn pop_vec(&mut self) -> Rc<RefCell<Vector<Variable<T>>>> {
         match self.pop() {
             Variable::Vector(v) => v,
             v => self.pop_type_error("vec", &v),
@@ -251,24 +246,10 @@ where
         }
     }
 
-    pub fn pop_enum(&mut self) -> Rc<RefCell<Enum<T>>> {
-        match self.pop() {
-            Variable::Enum(v) => v,
-            v => self.pop_type_error("enum", &v),
-        }
-    }
-
     pub fn pop_regex(&mut self) -> Rc<RefCell<Regex>> {
         match self.pop() {
             Variable::Regex(v) => v,
             v => self.pop_type_error("regex", &v),
-        }
-    }
-
-    pub fn top_enum(&mut self) -> Rc<RefCell<Enum<T>>> {
-        match self.top().clone() {
-            Variable::Enum(v) => v,
-            v => self.pop_type_error("enum", &v),
         }
     }
 
@@ -610,16 +591,16 @@ where
 
     pub fn vec_push(&mut self) {
         let pushed = self.pop();
-        let vector = self.pop_vector();
-        vector.borrow_mut().push(pushed.into());
+        let vector = self.pop_vec();
+        vector.borrow_mut().push(pushed);
     }
 
     pub fn vec_pop(&mut self) {
-        let vector = self.pop_vector();
+        let vector = self.pop_vec();
         let popped = vector.borrow_mut().pop();
 
         match popped {
-            Some(popped) => self.push(popped.into()),
+            Some(popped) => self.push(popped),
             None => self.type_error("cannot pop from empty vector"),
         }
     }
@@ -627,33 +608,33 @@ where
     pub fn vec_get(&mut self) {
         let offset = self.pop_int();
 
-        let vector_rc = self.pop_vector();
+        let vector_rc = self.pop_vec();
         let vector = (*vector_rc).borrow();
 
         let gotten = vector.get(offset as usize);
-        self.push(gotten.into());
+        self.push(gotten);
     }
 
     pub fn vec_set(&mut self) {
         let value = self.pop();
         let offset = self.pop_int();
-        let vector = self.pop_vector();
+        let vector = self.pop_vec();
 
-        vector.borrow_mut().set(offset as usize, value.into());
+        vector.borrow_mut().set(offset as usize, value);
     }
 
     pub fn vec_len(&mut self) {
-        let len = (*(self.pop_vector())).borrow().len();
+        let len = (*(self.pop_vec())).borrow().len();
         self.push_int(len as isize);
     }
 
     pub fn vec_empty(&mut self) {
-        let is_empty = (*(self.pop_vector())).borrow().is_empty();
+        let is_empty = (*(self.pop_vec())).borrow().is_empty();
         self.push_bool(is_empty);
     }
 
     pub fn vec_clear(&mut self) {
-        self.pop_vector().borrow_mut().clear();
+        self.pop_vec().borrow_mut().clear();
     }
 
     pub fn push_map_empty(&mut self) {
@@ -666,7 +647,7 @@ where
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
 
-        (*map).insert(key.into(), value.into());
+        (*map).insert(key, value);
     }
 
     pub fn map_get(&mut self) {
@@ -674,13 +655,13 @@ where
         let map_rc = self.pop_map();
         let map = map_rc.borrow_mut();
 
-        match map.get(&key.into()) {
+        match map.get(&key) {
             None => {
                 self.push(Variable::None);
                 self.push_bool(false);
             }
             Some(value) => {
-                self.push(value.into());
+                self.push(value);
                 self.push_bool(true);
             }
         }
@@ -692,7 +673,7 @@ where
         let map_rc = self.pop_map();
         let map = (*map_rc).borrow();
 
-        let has_key = map.contains_key(&key.into());
+        let has_key = map.contains_key(&key);
         self.push_bool(has_key);
     }
 
@@ -715,13 +696,13 @@ where
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
 
-        match map.remove_entry(&key.into()) {
+        match map.remove_entry(&key) {
             None => {
                 self.push(Variable::None);
                 self.push_bool(false);
             }
             Some((_, v)) => {
-                self.push(v.into());
+                self.push(v);
                 self.push_bool(true);
             }
         }
@@ -732,7 +713,7 @@ where
         let map_rc = self.pop_map();
         let mut map = map_rc.borrow_mut();
 
-        let result = map.remove_entry(&key.into());
+        let result = map.remove_entry(&key);
         self.push_bool(result.is_some());
     }
 
@@ -769,7 +750,7 @@ where
     }
 
     pub fn str_join(&mut self) {
-        let vector_rc = self.pop_vector();
+        let vector_rc = self.pop_vec();
         let vector = vector_rc.borrow();
 
         let mut parts = vec![];
@@ -980,7 +961,7 @@ where
             env.push(CString::new(format!("{key:}={value:}")).unwrap())
         }
 
-        let argv_rc = self.pop_vector();
+        let argv_rc = self.pop_vec();
         let popped_argv = &*argv_rc.borrow();
 
         let mut argv: Vec<CString> = vec![];
@@ -1161,7 +1142,7 @@ where
     }
 
     pub fn vec_iter(&mut self) {
-        let vector_rc = self.pop_vector();
+        let vector_rc = self.pop_vec();
         let iter = vector_rc.borrow_mut().iter();
 
         self.push_vector_iter(iter);
@@ -1173,7 +1154,7 @@ where
 
         match vector_iter.next() {
             Some(var) => {
-                self.push(var.into());
+                self.push(var);
                 self.push_bool(true);
             }
             None => {
@@ -1196,8 +1177,8 @@ where
 
         match map_iter.next() {
             Some((key, value)) => {
-                self.push(key.into());
-                self.push(value.into());
+                self.push(key);
+                self.push(value);
                 self.push_bool(true);
             }
             None => {
@@ -1213,7 +1194,7 @@ where
         let set_rc = self.pop_set();
         let mut set = set_rc.borrow_mut();
 
-        set.insert(item.into(), ());
+        set.insert(item, SetValue {});
     }
 
     pub fn set_has(&mut self) {
@@ -1221,7 +1202,7 @@ where
         let set_rc = self.pop_set();
         let set = set_rc.borrow();
 
-        let found = set.contains_key(&item.into());
+        let found = set.contains_key(&item);
         self.push_bool(found);
     }
 
@@ -1263,7 +1244,7 @@ where
         let set_rc = self.pop_map();
         let mut set = set_rc.borrow_mut();
 
-        set.remove_entry(&item.into());
+        set.remove_entry(&item);
     }
 
     pub fn set_len(&mut self) {
@@ -1279,7 +1260,7 @@ where
 
         match set_iter.next() {
             Some((item, _)) => {
-                self.push(item.into());
+                self.push(item);
                 self.push_bool(true);
             }
             None => {
@@ -1299,20 +1280,6 @@ where
         // NOTE this doesn't do anything
 
         // TODO #32 don't call from transpiler and remove this function
-    }
-
-    pub fn get_enum_discriminant(&mut self) -> usize {
-        let enum_rc = self.top_enum();
-        let enum_ = &*enum_rc.borrow();
-        enum_.discriminant
-    }
-
-    pub fn push_enum_assiciated_data(&mut self) {
-        let enum_rc = self.pop_enum();
-        let enum_ = &*enum_rc.borrow();
-        for value in enum_.values.iter() {
-            self.push(value.clone());
-        }
     }
 
     pub fn sleep(&mut self) {

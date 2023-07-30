@@ -51,6 +51,7 @@ from aaa.type_checker.exceptions import (
     UnreachableDefaultBlock,
     UpdateConstStructError,
     UseBlockStackUnderflow,
+    UseFieldOfEnumException,
     WhileLoopTypeError,
 )
 from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
@@ -95,17 +96,6 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "/foo/main.aaa:2:13: function foo\n"
             + "/foo/main.aaa:3:13: function foo\n",
             id="funcname-funcname-collision",
-        ),
-        pytest.param(
-            """
-            fn main { nop }
-            fn bar[main] { nop }
-            """,
-            CollidingIdentifier,
-            "Found name collision:\n"
-            + "/foo/main.aaa:2:13: function main\n"
-            + "/foo/main.aaa:3:20: type main\n",
-            id="funcname-param-collision",
         ),
         pytest.param(
             """
@@ -275,7 +265,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingIdentifier,
             "Found name collision:\n"
             + "/foo/main.aaa:3:13: function bar\n"
-            + "/foo/main.aaa:4:13: type bar\n",
+            + "/foo/main.aaa:4:13: struct bar\n",
             id="struct-name-collision",
         ),
         pytest.param(
@@ -321,7 +311,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingIdentifier,
             "Found name collision:\n"
             + "/foo/main.aaa:3:13: function bar\n"
-            + "/foo/main.aaa:3:20: type bar\n",
+            + "/foo/main.aaa:3:20: struct bar\n",
             id="funcname-param-collision",
         ),
         pytest.param(
@@ -331,7 +321,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             CollidingIdentifier,
             "Found name collision:\n"
-            + "/foo/main.aaa:3:20: type bar\n"
+            + "/foo/main.aaa:3:20: struct bar\n"
             + "/foo/main.aaa:3:30: function argument bar\n",
             id="argument-param-collision",
         ),
@@ -664,7 +654,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             CollidingVariable,
             "Found name collision:\n"
-            + "/foo/main.aaa:2:13: type bar\n"
+            + "/foo/main.aaa:2:13: struct bar\n"
             + "/foo/main.aaa:3:29: local variable bar\n",
             id="colliding-identifier-var-identifier",
         ),
@@ -825,7 +815,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { match { case int:bar { nop } } }
             """,
             InvalidEnumType,
-            "/foo/main.aaa:2:31: Cannot use type int as enum type\n",
+            "/foo/main.aaa:2:31: Cannot use struct int as enum type\n",
             id="use-non-type-as-enum-type",
         ),
         pytest.param(
@@ -989,6 +979,24 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "/foo/main.aaa:5:21: local variable value\n"
             + "/foo/main.aaa:8:41: local variable value\n",
             id="use-case-as-collision",
+        ),
+        pytest.param(
+            """
+            enum Foo { bar as int }
+            fn main { Foo "field" { 3 } ! }
+            """,
+            UseFieldOfEnumException,
+            "/foo/main.aaa:3:27: Cannot set field on Enum\n",
+            id="set-field-on-enum",
+        ),
+        pytest.param(
+            """
+            enum Foo { bar as int }
+            fn main { Foo "field" ? drop }
+            """,
+            UseFieldOfEnumException,
+            "/foo/main.aaa:3:27: Cannot get field on Enum\n",
+            id="set-field-on-enum",
         ),
     ],
 )
@@ -1179,7 +1187,7 @@ def test_multi_file_errors(
                 """
             },
             "Found name collision:\n"
-            + "/foo/main.aaa:2:17: type bar\n"
+            + "/foo/main.aaa:2:17: struct bar\n"
             + "/foo/main.aaa:3:29: function argument bar\n",
             id="argname-struct",
         ),
@@ -1221,7 +1229,7 @@ def test_multi_file_errors(
                 """
             },
             "Found name collision:\n"
-            + "/foo/main.aaa:2:17: type foo\n"
+            + "/foo/main.aaa:2:17: struct foo\n"
             + "/foo/main.aaa:3:17: function foo\n",
             id="funcname-struct",
         ),
@@ -1251,7 +1259,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:17: function foo\n"
-            + "/foo/main.aaa:3:17: type foo\n",
+            + "/foo/main.aaa:3:17: struct foo\n",
             id="struct-funcname",
         ),
         pytest.param(
@@ -1263,8 +1271,8 @@ def test_multi_file_errors(
                 """,
             },
             "Found name collision:\n"
-            + "/foo/main.aaa:2:17: type foo\n"
-            + "/foo/main.aaa:3:17: type foo\n",
+            + "/foo/main.aaa:2:17: struct foo\n"
+            + "/foo/main.aaa:3:17: struct foo\n",
             id="struct-struct",
         ),
         pytest.param(
@@ -1280,7 +1288,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:36: imported identifier five\n"
-            + "/foo/main.aaa:3:17: type five\n",
+            + "/foo/main.aaa:3:17: struct five\n",
             id="struct-import",
         ),
         pytest.param(

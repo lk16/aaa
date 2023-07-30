@@ -1,17 +1,19 @@
 use std::{
     cell::RefCell,
     collections::hash_map::DefaultHasher,
-    fmt::{Debug, Formatter, Result},
+    fmt::{Display, Formatter, Result},
     hash::{Hash, Hasher},
     rc::Rc,
 };
+
+use crate::var::UserType;
 
 type MapBuckets<K, V> = Vec<Vec<(K, V)>>;
 
 pub struct Map<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     buckets: Rc<RefCell<MapBuckets<K, V>>>,
     bucket_count: usize,
@@ -21,8 +23,8 @@ where
 
 impl<K, V> Map<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     pub fn new() -> Self {
         let bucket_count = 16;
@@ -161,8 +163,8 @@ where
 
 impl<K, V> PartialEq for Map<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     fn eq(&self, other: &Self) -> bool {
         if self.len() != other.len() {
@@ -186,15 +188,15 @@ where
 
 impl<K, V> Eq for Map<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
 }
 
-impl<K, V> Debug for Map<K, V>
+impl<K, V> Display for Map<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let mut parts = vec![];
@@ -209,8 +211,8 @@ where
 
 impl<K, V> Clone for Map<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     fn clone(&self) -> Self {
         let mut map = Map::new();
@@ -224,8 +226,8 @@ where
 
 impl<K, V> Hash for Map<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     fn hash<H: Hasher>(&self, _state: &mut H) {
         unreachable!() // Won't be implemented
@@ -234,8 +236,8 @@ where
 
 impl<K, V> Default for Map<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     fn default() -> Self {
         Self::new()
@@ -244,8 +246,8 @@ where
 
 pub struct HashTableIterator<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     buckets: Rc<RefCell<MapBuckets<K, V>>>,
     iterator_count: Rc<RefCell<usize>>,
@@ -257,8 +259,8 @@ pub type MapIterator<K, V> = HashTableIterator<K, V>;
 
 impl<K, V> HashTableIterator<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     pub fn new(buckets: Rc<RefCell<MapBuckets<K, V>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
         *iterator_count.borrow_mut() += 1;
@@ -274,8 +276,8 @@ where
 
 impl<K, V> Iterator for HashTableIterator<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     type Item = (K, V);
 
@@ -302,8 +304,8 @@ where
 
 impl<K, V> Drop for HashTableIterator<K, V>
 where
-    K: Clone + PartialEq + Hash + Debug,
-    V: Clone + PartialEq + Debug,
+    K: UserType,
+    V: UserType,
 {
     fn drop(&mut self) {
         *self.iterator_count.borrow_mut() -= 1;
