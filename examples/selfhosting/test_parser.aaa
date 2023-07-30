@@ -1,0 +1,638 @@
+from "tokenizer" import
+    make_tokenizer,
+    Tokenizer,
+    TokenizeResult,
+
+from "parser" import
+    BooleanParseResult,
+    BranchParseResult,
+    ForeachLoopParseResult,
+    FunctionBodyItem,
+    FunctionBodyItemParseResult,
+    FunctionBodyParseResult,
+    IdentifierParseResult,
+    IntegerParseResult,
+    make_parser,
+    Parser,
+    ReturnParseResult,
+    StringParseResult,
+    StructFieldQueryResult,
+    StructFieldUpdateResult,
+    WhileLoopParseResult,
+
+fn code_to_parser args code as str return Parser {
+    "" code make_tokenizer Tokenizer:run
+    match {
+        case TokenizeResult:ok { nop }
+        default { unreachable }
+    }
+
+    use tokens {
+        tokens make_parser
+    }
+}
+
+fn test_parse_boolean_ok_true {
+    "true" code_to_parser 0 Parser:parse_boolean
+    match {
+        case BooleanParseResult:ok {
+            use boolean, next_offset {
+                boolean "value" ? assert
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_boolean_ok_false {
+    "false" code_to_parser 0 Parser:parse_boolean
+    match {
+        case BooleanParseResult:ok {
+            use boolean, next_offset {
+                boolean "value" ? not assert
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_boolean_unreachable_wrong_token_type {
+    "123" code_to_parser 0 Parser:parse_boolean
+    match {
+        case BooleanParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_boolean_unreachable_no_tokens {
+    "" code_to_parser 0 Parser:parse_boolean
+    match {
+        case BooleanParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_integer_ok {
+    "123" code_to_parser 0 Parser:parse_integer
+    match {
+        case IntegerParseResult:ok {
+            use integer, next_offset {
+                integer "value" ? 123 = assert
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_integer_ok_negative {
+    "-123" code_to_parser 0 Parser:parse_integer
+    match {
+        case IntegerParseResult:ok {
+            use integer, next_offset {
+                integer "value" ? -123 = assert
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_integer_unreachable_too_big {
+    "123456789012345678901234567890" code_to_parser 0 Parser:parse_integer
+    match {
+        case IntegerParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_integer_unreachable_wrong_token_type {
+    "true" code_to_parser 0 Parser:parse_integer
+    match {
+        case IntegerParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_integer_unreachable_no_tokens {
+    "" code_to_parser 0 Parser:parse_integer
+    match {
+        case IntegerParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_string_ok_empty {
+    "\"\"" code_to_parser 0 Parser:parse_string
+    match {
+        case StringParseResult:ok {
+            use string, next_offset {
+                string "value" ? "" str:equals assert
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_string_ok_non_empty {
+    "\"hello world\"" code_to_parser 0 Parser:parse_string
+    match {
+        case StringParseResult:ok {
+            use string, next_offset {
+                string "value" ? "hello world" str:equals assert
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_string_ok_escaped_chars {
+    "\"backslash \\\\ newline \\n carriage return \\r double quote \\\"\""
+    code_to_parser 0 Parser:parse_string
+    match {
+        case StringParseResult:ok {
+            use string, next_offset {
+                string "value" ?
+                "backslash \\ newline \n carriage return \r double quote \""
+                str:equals assert
+
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_string_unreachable_wrong_token_type {
+    "true" code_to_parser 0 Parser:parse_string
+    match {
+        case StringParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_string_unreachable_no_tokens {
+    "" code_to_parser 0 Parser:parse_string
+    match {
+        case StringParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_identifier_ok {
+    "something" code_to_parser 0 Parser:parse_identifier
+    match {
+        case IdentifierParseResult:ok {
+            use identifier, next_offset {
+                identifier "value" ? "something" str:equals assert
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_identifier_unreachable_wrong_token_type {
+    "true" code_to_parser 0 Parser:parse_identifier
+    match {
+        case IdentifierParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_identifier_unreachable_no_tokens {
+    "" code_to_parser 0 Parser:parse_identifier
+    match {
+        case IdentifierParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_return_ok {
+    "return" code_to_parser 0 Parser:parse_return
+    match {
+        case ReturnParseResult:ok {
+            use return_, next_offset {
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_return_unreachable_wrong_token_type {
+    "true" code_to_parser 0 Parser:parse_return
+    match {
+        case ReturnParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_return_unreachable_no_tokens {
+    "" code_to_parser 0 Parser:parse_return
+    match {
+        case ReturnParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+// TODO
+// fn test_parse_function_body_item_ok_struct_field_query {
+//     "\"field\" ?" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:struct_field_query {
+//             "next_offset" ? 2 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+//fn test_parse_function_body_item_ok_struct_field_update {
+//    "\"field\" { 3 }" code_to_parser 0 Parser:parse_function_body_item
+//    match {
+//        case FunctionBodyItemParseResult:struct_field_update {
+//            "next_offset" ? 4 = assert
+//        }
+//        default { unreachable }
+//    }
+//}
+
+fn test_parse_function_body_item_ok_string {
+    "\"something\"" code_to_parser 0 Parser:parse_function_body_item
+    match {
+        case FunctionBodyItemParseResult:ok {
+            use item, next_offset {
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_function_body_item_ok_true {
+    "true" code_to_parser 0 Parser:parse_function_body_item
+    match {
+        case FunctionBodyItemParseResult:ok {
+            use item, next_offset {
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_function_body_item_ok_false {
+    "false" code_to_parser 0 Parser:parse_function_body_item
+    match {
+        case FunctionBodyItemParseResult:ok {
+            use item, next_offset {
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_function_body_item_ok_integer {
+    "69" code_to_parser 0 Parser:parse_function_body_item
+    match {
+        case FunctionBodyItemParseResult:ok {
+            use item, next_offset {
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+// TODO
+// fn test_parse_function_body_item_ok_assign {
+//     "foo <- { 3 }" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:assignment {
+//             "next_offset" ? 5 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+// fn test_parse_function_body_item_ok_assign_with_comma {
+//     "foo, bar <- { 3 6 }" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:assignment {
+//             "next_offset" ? 8 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+// fn test_parse_function_body_item_ok_call {
+//     "foo" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:call {
+//             "next_offset" ? 1 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+// fn test_parse_function_body_item_ok_branch {
+//     "if false { nop }" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:branch {
+//             "next_offset" ? 5 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+// fn test_parse_function_body_item_ok_while_loop {
+//     "while false { nop }" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:while_loop {
+//             "next_offset" ? 5 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+// fn test_parse_function_body_item_ok_foreach_loop {
+//     "foreach { drop }" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:foreach_loop {
+//             "next_offset" ? 4 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+// fn test_parse_function_body_item_ok_use_block {
+//     "use x { drop }" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:use_block {
+//             "next_offset" ? 5 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+// fn test_parse_function_body_item_ok_match_block {
+//     "match { default { nop } }" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:match_block {
+//             "next_offset" ? 7 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+// TODO
+// fn test_parse_function_body_item_ok_return {
+//     "return" code_to_parser 0 Parser:parse_function_body_item
+//     match {
+//         case FunctionBodyItemParseResult:return_ {
+//             "next_offset" ? 1 = assert
+//         }
+//         default { unreachable }
+//     }
+// }
+
+fn test_parse_function_body_item_unreachable {
+    "123456789012345678901234567890" // too big integer
+    code_to_parser 0 Parser:parse_function_body_item
+    match {
+        case FunctionBodyItemParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_function_body_ok_one_item {
+    "true" code_to_parser 0 Parser:parse_function_body
+    match {
+        case FunctionBodyParseResult:ok {
+            use items, next_offset {
+                items "items" ? vec:len 1 = assert
+                next_offset 1 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_function_body_ok_two_items {
+    "true 69 \"foo\"" code_to_parser 0 Parser:parse_function_body
+    match {
+        case FunctionBodyParseResult:ok {
+            use items, next_offset {
+                items "items" ? vec:len 3 = assert
+                next_offset 3 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_function_body_unreachable_no_item {
+    "fn" code_to_parser 0 Parser:parse_function_body
+    match {
+        case FunctionBodyParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_function_body_unreachable_no_tokens {
+    "" code_to_parser 0 Parser:parse_function_body
+    match {
+        case FunctionBodyParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_branch_ok_without_else {
+    "if true { 69 }" code_to_parser 0 Parser:parse_branch
+    match {
+        case BranchParseResult:ok {
+            use branch, next_offset {
+                next_offset 5 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_branch_ok_with_else {
+    "if true { 69 } else { 420 }" code_to_parser 0 Parser:parse_branch
+    match {
+        case BranchParseResult:ok {
+            use branch, next_offset {
+                next_offset 9 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn test_parse_branch_ok_with_else_and_more_items {
+    "if 1 2 3 { 4 5 6 true } else { 7 8 9 \"\" }" code_to_parser 0 Parser:parse_branch
+    match {
+        case BranchParseResult:ok {
+            use branch, next_offset {
+                next_offset 17 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn check_parse_branch_unreachables args code as str {
+    code code_to_parser 0 Parser:parse_branch
+    match {
+        case BranchParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_branch_unreachable_without_else {
+    "if true { 69 fn" check_parse_branch_unreachables
+    "if true { fn" check_parse_branch_unreachables
+    "if true fn" check_parse_branch_unreachables
+    "if fn" check_parse_branch_unreachables
+    "fn" check_parse_branch_unreachables
+}
+
+fn test_parse_branch_unreachable_with_else {
+    "if true { 69 } else { 420 fn" check_parse_branch_unreachables
+    "if true { 69 } else { fn" check_parse_branch_unreachables
+    "if true { 69 } else fn" check_parse_branch_unreachables
+}
+
+fn test_parse_while_loop_ok {
+    "while true { 69 }" code_to_parser 0 Parser:parse_while_loop
+    match {
+        case WhileLoopParseResult:ok {
+            use loop, next_offset {
+                next_offset 5 = assert }
+            }
+        default { unreachable }
+    }
+}
+
+fn test_parse_while_loop_ok_more_items {
+    "while true 1 2 3 \"\" 4 { 69 3 false }" code_to_parser 0 Parser:parse_while_loop
+    match {
+        case WhileLoopParseResult:ok {
+            use loop, next_offset {
+                next_offset 12 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn check_parse_while_loop_unreachable args code as str {
+    code code_to_parser 0 Parser:parse_while_loop
+    match {
+        case WhileLoopParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_while_loop_unreachable {
+    "while true { 69 fn" check_parse_while_loop_unreachable
+    "while true { fn" check_parse_while_loop_unreachable
+    "while true fn" check_parse_while_loop_unreachable
+    "while fn" check_parse_while_loop_unreachable
+    "fn" check_parse_while_loop_unreachable
+}
+
+fn test_parse_foreach_loop_ok {
+    "foreach { 69 }" code_to_parser 0 Parser:parse_foreach_loop
+    match {
+        case ForeachLoopParseResult:ok {
+            use loop, next_offset {
+                next_offset 4 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn check_parse_foreach_loop_unreachable args code as str {
+    code code_to_parser 0 Parser:parse_foreach_loop
+    match {
+        case ForeachLoopParseResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_foreach_loop_unreachable {
+    "foreach { 69 fn" check_parse_foreach_loop_unreachable
+    "foreach { fn" check_parse_foreach_loop_unreachable
+    "foreach fn" check_parse_foreach_loop_unreachable
+    "fn" check_parse_foreach_loop_unreachable
+}
+
+fn test_parse_struct_field_query_ok {
+    "\"foo\" ?" code_to_parser 0 Parser:parse_struct_field_query
+    match {
+        case StructFieldQueryResult:ok {
+            use loop, next_offset {
+                next_offset 2 = assert
+            }
+         }
+        default { unreachable }
+    }
+}
+
+fn check_parse_struct_field_query_unreachable args code as str {
+    code code_to_parser 0 Parser:parse_struct_field_query
+    match {
+        case StructFieldQueryResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_struct_field_query_unreachable {
+    "\"foo\" fn" check_parse_struct_field_query_unreachable
+    "fn" check_parse_struct_field_query_unreachable
+}
+
+fn test_parse_struct_field_update_ok {
+    "\"foo\" { 69 } !" code_to_parser 0 Parser:parse_struct_field_update
+    match {
+        case StructFieldUpdateResult:ok {
+            use loop, next_offset {
+                next_offset 5 = assert
+            }
+        }
+        default { unreachable }
+    }
+}
+
+fn check_parse_struct_field_update_unreachable args code as str {
+    code code_to_parser 0 Parser:parse_struct_field_update
+    match {
+        case StructFieldUpdateResult:err { nop }
+        default { unreachable }
+    }
+}
+
+fn test_parse_struct_field_update_unreachable {
+    "\"foo\" { 69 } fn" check_parse_struct_field_update_unreachable
+    "\"foo\" { 69 fn" check_parse_struct_field_update_unreachable
+    "\"foo\" { fn" check_parse_struct_field_update_unreachable
+    "\"foo\" fn" check_parse_struct_field_update_unreachable
+    "fn" check_parse_struct_field_update_unreachable
+}
