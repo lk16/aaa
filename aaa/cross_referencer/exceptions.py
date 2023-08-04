@@ -15,7 +15,7 @@ from aaa.cross_referencer.models import (
 from aaa.parser.models import TypeLiteral
 
 
-def describe(item: Identifiable | Argument | Variable) -> str:  # TODO move out
+def describe(item: Identifiable | Argument | Variable) -> str:
     if isinstance(item, Function):
         return f"function {item.name}"
     elif isinstance(item, Import):
