@@ -253,10 +253,10 @@ fn test_tokenize_fixed_size_ok_bare {
     "!=" 0 Empty TokenType:identifier "!=" check_tokenize_fixed_size
     "?" 0 Empty TokenType:get_field "?" check_tokenize_fixed_size
     "." 0 Empty TokenType:identifier "." check_tokenize_fixed_size
-    "[" 0 Empty TokenType:type_param_begin "[" check_tokenize_fixed_size
-    "]" 0 Empty TokenType:type_param_end "]" check_tokenize_fixed_size
-    "{" 0 Empty TokenType:begin "{" check_tokenize_fixed_size
-    "}" 0 Empty TokenType:end "}" check_tokenize_fixed_size
+    "[" 0 Empty TokenType:square_bracket_open "[" check_tokenize_fixed_size
+    "]" 0 Empty TokenType:square_bracket_close "]" check_tokenize_fixed_size
+    "{" 0 Empty TokenType:block_start "{" check_tokenize_fixed_size
+    "}" 0 Empty TokenType:block_end "}" check_tokenize_fixed_size
     "*" 0 Empty TokenType:identifier "*" check_tokenize_fixed_size
     "/" 0 Empty TokenType:identifier "/" check_tokenize_fixed_size
     "%" 0 Empty TokenType:identifier "%" check_tokenize_fixed_size
@@ -269,6 +269,7 @@ fn test_tokenize_fixed_size_ok_bare {
     ">=" 0 Empty TokenType:identifier ">=" check_tokenize_fixed_size
     "args" 0 Empty TokenType:args_ "args" check_tokenize_fixed_size
     "as" 0 Empty TokenType:as_ "as" check_tokenize_fixed_size
+    "call" 0 Empty TokenType:call_ "call" check_tokenize_fixed_size
     "case" 0 Empty TokenType:case_ "case" check_tokenize_fixed_size
     "const" 0 Empty TokenType:const_ "const" check_tokenize_fixed_size
     "default" 0 Empty TokenType:default_ "default" check_tokenize_fixed_size
@@ -298,10 +299,10 @@ fn test_tokenize_fixed_size_ok_middle {
     " != " 1 Empty TokenType:identifier "!=" check_tokenize_fixed_size
     " ? " 1 Empty TokenType:get_field "?" check_tokenize_fixed_size
     " . " 1 Empty TokenType:identifier "." check_tokenize_fixed_size
-    " [ " 1 Empty TokenType:type_param_begin "[" check_tokenize_fixed_size
-    " ] " 1 Empty TokenType:type_param_end "]" check_tokenize_fixed_size
-    " { " 1 Empty TokenType:begin "{" check_tokenize_fixed_size
-    " } " 1 Empty TokenType:end "}" check_tokenize_fixed_size
+    " [ " 1 Empty TokenType:square_bracket_open "[" check_tokenize_fixed_size
+    " ] " 1 Empty TokenType:square_bracket_close "]" check_tokenize_fixed_size
+    " { " 1 Empty TokenType:block_start "{" check_tokenize_fixed_size
+    " } " 1 Empty TokenType:block_end "}" check_tokenize_fixed_size
     " * " 1 Empty TokenType:identifier "*" check_tokenize_fixed_size
     " / " 1 Empty TokenType:identifier "/" check_tokenize_fixed_size
     " % " 1 Empty TokenType:identifier "%" check_tokenize_fixed_size
@@ -314,6 +315,7 @@ fn test_tokenize_fixed_size_ok_middle {
     " >= " 1 Empty TokenType:identifier ">=" check_tokenize_fixed_size
     " args " 1 Empty TokenType:args_ "args" check_tokenize_fixed_size
     " as " 1 Empty TokenType:as_ "as" check_tokenize_fixed_size
+    " call " 1 Empty TokenType:call_ "call" check_tokenize_fixed_size
     " case " 1 Empty TokenType:case_ "case" check_tokenize_fixed_size
     " const " 1 Empty TokenType:const_ "const" check_tokenize_fixed_size
     " default " 1 Empty TokenType:default_ "default" check_tokenize_fixed_size

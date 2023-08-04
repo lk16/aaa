@@ -19,8 +19,8 @@ FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
     ("while", TokenType.WHILE),
     # 4 chars
     ("args", TokenType.ARGS),
-    ("case", TokenType.CASE),
     ("call", TokenType.CALL),
+    ("case", TokenType.CASE),
     ("else", TokenType.ELSE),
     ("enum", TokenType.ENUM),
     ("from", TokenType.FROM),
@@ -50,8 +50,8 @@ FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
     ("=", TokenType.IDENTIFIER),
     (">", TokenType.IDENTIFIER),
     ("?", TokenType.GET_FIELD),
-    ("[", TokenType.TYPE_PARAM_BEGIN),
-    ("]", TokenType.TYPE_PARAM_END),
-    ("{", TokenType.BEGIN),
-    ("}", TokenType.END),
+    ("[", TokenType.SQUARE_BRACKET_OPEN),
+    ("]", TokenType.SQUARE_BRACKET_CLOSE),
+    ("{", TokenType.BLOCK_START),
+    ("}", TokenType.BLOCK_END),
 ]

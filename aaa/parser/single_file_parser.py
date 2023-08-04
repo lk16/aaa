@@ -95,7 +95,7 @@ class SingleFileParser:
 
     def _parse_flat_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
         start_offset = offset
-        _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
+        _, offset = self._token(offset, [TokenType.SQUARE_BRACKET_OPEN])
 
         identifiers: List[Identifier] = []
         token: Optional[Token]
@@ -105,16 +105,16 @@ class SingleFileParser:
             identifiers.append(identifier)
 
             token, offset = self._token(
-                offset, [TokenType.TYPE_PARAM_END, TokenType.COMMA]
+                offset, [TokenType.SQUARE_BRACKET_CLOSE, TokenType.COMMA]
             )
 
-            if token.type == TokenType.TYPE_PARAM_END:
+            if token.type == TokenType.SQUARE_BRACKET_CLOSE:
                 break
 
             # Handle comma at the end, for example `[A,]` or `[A,B,]`
             token = self._peek_token(offset)
-            if token and token.type == TokenType.TYPE_PARAM_END:
-                _, offset = self._token(offset, [TokenType.TYPE_PARAM_END])
+            if token and token.type == TokenType.SQUARE_BRACKET_CLOSE:
+                _, offset = self._token(offset, [TokenType.SQUARE_BRACKET_CLOSE])
                 break
 
         type_params = [
@@ -182,7 +182,7 @@ class SingleFileParser:
     def _parse_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
         start_offset = offset
 
-        _, offset = self._token(offset, [TokenType.TYPE_PARAM_BEGIN])
+        _, offset = self._token(offset, [TokenType.SQUARE_BRACKET_OPEN])
 
         type_params: List[TypeLiteral] = []
         token: Optional[Token]
@@ -192,16 +192,16 @@ class SingleFileParser:
             type_params.append(type_param)
 
             token, offset = self._token(
-                offset, [TokenType.TYPE_PARAM_END, TokenType.COMMA]
+                offset, [TokenType.SQUARE_BRACKET_CLOSE, TokenType.COMMA]
             )
 
-            if token.type == TokenType.TYPE_PARAM_END:
+            if token.type == TokenType.SQUARE_BRACKET_CLOSE:
                 break
 
             # Handle comma at the end, for example `[A,]` or `[A,B[C,],]`
             token = self._peek_token(offset)
-            if token and token.type == TokenType.TYPE_PARAM_END:
-                _, offset = self._token(offset, [TokenType.TYPE_PARAM_END])
+            if token and token.type == TokenType.SQUARE_BRACKET_CLOSE:
+                _, offset = self._token(offset, [TokenType.SQUARE_BRACKET_CLOSE])
                 break
 
         self._print_parse_tree_node("TypeParams", start_offset, offset)
@@ -377,16 +377,16 @@ class SingleFileParser:
 
         struct_token, offset = self._token(offset, [TokenType.STRUCT])
         identifier, offset = self._parse_identifier(offset)
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
 
         token = self._peek_token(offset)
 
-        if token and token.type == TokenType.END:
+        if token and token.type == TokenType.BLOCK_END:
             fields: List[Argument] = []
         else:
             fields, offset = self._parse_arguments(offset)
 
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         struct = Struct(
             position=struct_token.position,
@@ -502,7 +502,7 @@ class SingleFileParser:
 
         token = self._peek_token(offset)
 
-        if token and token.type == TokenType.TYPE_PARAM_BEGIN:
+        if token and token.type == TokenType.SQUARE_BRACKET_OPEN:
             func_name = identifier
             type_params, offset = self._parse_type_params(offset)
         elif token and token.type == TokenType.COLON:
@@ -544,18 +544,18 @@ class SingleFileParser:
 
         if_token, offset = self._token(offset, [TokenType.IF])
         condition, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         if_body, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         token = self._peek_token(offset)
         else_body: Optional[FunctionBody] = None
 
         if token and token.type == TokenType.ELSE:
             _, offset = self._token(offset, [TokenType.ELSE])
-            _, offset = self._token(offset, [TokenType.BEGIN])
+            _, offset = self._token(offset, [TokenType.BLOCK_START])
             else_body, offset = self._parse_function_body(offset)
-            _, offset = self._token(offset, [TokenType.END])
+            _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         branch = Branch(if_token.position, condition, if_body, else_body)
 
@@ -567,9 +567,9 @@ class SingleFileParser:
 
         while_token, offset = self._token(offset, [TokenType.WHILE])
         condition, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         body, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         while_loop = WhileLoop(while_token.position, condition, body)
         self._print_parse_tree_node("WhileLoop", start_offset, offset)
@@ -592,9 +592,9 @@ class SingleFileParser:
         start_offset = offset
 
         field_name, offset = self._parse_string(offset)
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         new_value_expr, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
         operator_token, offset = self._token(offset, [TokenType.SET_FIELD])
 
         field_update = StructFieldUpdate(
@@ -615,7 +615,7 @@ class SingleFileParser:
         if token.type == TokenType.STRING:
             if next_token and next_token.type == TokenType.GET_FIELD:
                 item, offset = self._parse_struct_field_query(offset)
-            elif next_token and next_token.type == TokenType.BEGIN:
+            elif next_token and next_token.type == TokenType.BLOCK_START:
                 item, offset = self._parse_struct_field_update(offset)
             else:
                 item, offset = self._parse_string(offset)
@@ -698,9 +698,9 @@ class SingleFileParser:
         start_offset = offset
 
         function, offset = self._parse_function_declaration(offset)
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         body, offset = self._parse_function_body(offset)
-        end_token, offset = self._token(offset, [TokenType.END])
+        end_token, offset = self._token(offset, [TokenType.BLOCK_END])
 
         function.body = body
         function.end_position = end_token.position
@@ -759,9 +759,9 @@ class SingleFileParser:
         start_offset = offset
 
         foreach_token, offset = self._token(offset, [TokenType.FOREACH])
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         body, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         foreach = ForeachLoop(foreach_token.position, body)
         self._print_parse_tree_node("ForeachLoop", start_offset, offset)
@@ -797,9 +797,9 @@ class SingleFileParser:
         start_offset = offset
         use_token, offset = self._token(offset, [TokenType.USE])
         variables, offset = self._parse_variables(offset)
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         body, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         use_block = UseBlock(use_token.position, variables, body)
         self._print_parse_tree_node("UseBlock", start_offset, offset)
@@ -810,9 +810,9 @@ class SingleFileParser:
 
         variables, offset = self._parse_variables(offset)
         _, offset = self._token(offset, [TokenType.ASSIGN])
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         body, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         assignment = Assignment(variables[0].position, variables, body)
         self._print_parse_tree_node("Assignment", start_offset, offset)
@@ -823,9 +823,9 @@ class SingleFileParser:
 
         case_token, offset = self._token(offset, [TokenType.CASE])
         label, offset = self._parse_case_label(offset)
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         body, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         case_block = CaseBlock(case_token.position, label, body)
         self._print_parse_tree_node("CaseBlock", start_offset, offset)
@@ -835,9 +835,9 @@ class SingleFileParser:
         start_offset = offset
 
         default_token, offset = self._token(offset, [TokenType.DEFAULT])
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
         body, offset = self._parse_function_body(offset)
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         default_block = DefaultBlock(default_token.position, body)
         self._print_parse_tree_node("DefaultBlock", start_offset, offset)
@@ -849,12 +849,12 @@ class SingleFileParser:
         blocks: List[CaseBlock | DefaultBlock] = []
 
         match_token, offset = self._token(offset, [TokenType.MATCH])
-        _, offset = self._token(offset, [TokenType.BEGIN])
+        _, offset = self._token(offset, [TokenType.BLOCK_START])
 
         while True:
             token = self._peek_token(offset)
 
-            if not token or token.type == TokenType.END:
+            if not token or token.type == TokenType.BLOCK_END:
                 break
 
             block: CaseBlock | DefaultBlock
@@ -867,7 +867,7 @@ class SingleFileParser:
                 raise ParserException(token, [TokenType.CASE, TokenType.DEFAULT])
             blocks.append(block)
 
-        _, offset = self._token(offset, [TokenType.END])
+        _, offset = self._token(offset, [TokenType.BLOCK_END])
 
         match_block = MatchBlock(match_token.position, blocks)
         self._print_parse_tree_node("MatchBlock", start_offset, offset)
@@ -904,8 +904,8 @@ class SingleFileParser:
 
         associated_data: List[TypeLiteral] = []
 
-        if token.type == TokenType.BEGIN:
-            _, offset = self._token(offset, [TokenType.BEGIN])
+        if token.type == TokenType.BLOCK_START:
+            _, offset = self._token(offset, [TokenType.BLOCK_START])
 
             associated_item, offset = self._parse_type_literal(offset)
             associated_data.append(associated_item)
@@ -923,7 +923,7 @@ class SingleFileParser:
                 else:
                     associated_data.append(associated_item)
 
-            _, offset = self._token(offset, [TokenType.END])
+            _, offset = self._token(offset, [TokenType.BLOCK_END])
         else:
             type_literal, offset = self._parse_type_literal(offset)
             associated_data.append(type_literal)
@@ -960,9 +960,9 @@ class SingleFileParser:
 
         enum_token, offset = self._token(offset, [TokenType.ENUM])
         name, offset = self._parse_identifier(offset)
-        enum_token, offset = self._token(offset, [TokenType.BEGIN])
+        enum_token, offset = self._token(offset, [TokenType.BLOCK_START])
         items, offset = self._parse_enum_variants(offset)
-        enum_token, offset = self._token(offset, [TokenType.END])
+        enum_token, offset = self._token(offset, [TokenType.BLOCK_END])
 
         enum = Enum(enum_token.position, name, items)
         self._print_parse_tree_node("Enum", start_offset, offset)
