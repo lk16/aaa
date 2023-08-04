@@ -29,13 +29,17 @@ class Code:
         for line in code.lines:
             self.__add_line(line, False, False)
 
-    def add(self, added: "str | Code", l: int = 0, r: int = 0) -> "Code":
+    def add(self, added: "str | Code", l: int = 0, r: int = 0) -> None:
         if isinstance(added, str):
             self.__add_line(added, bool(l), bool(r))
         elif isinstance(added, Code):
             self.__add_code(added)
 
-        return self
+    def add_joined(self, join_line: str, joined: List["Code"]) -> None:
+        for offset, line in enumerate(joined):
+            self.add(line)
+            if offset != len(joined) - 1:
+                self.add(join_line)
 
     def get(self) -> str:
         return "\n".join(self.lines) + "\n"
