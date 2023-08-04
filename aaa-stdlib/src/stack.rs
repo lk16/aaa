@@ -169,6 +169,10 @@ where
         self.push(Variable::UserType(Rc::new(RefCell::new(v))));
     }
 
+    pub fn push_function_pointer(&mut self, func: fn(&mut Stack<T>)) {
+        self.push(Variable::FunctionPointer(func));
+    }
+
     pub fn pop(&mut self) -> Variable<T> {
         match self.items.pop() {
             Some(popped) => popped,
@@ -257,6 +261,13 @@ where
         match self.pop() {
             Variable::UserType(v) => v,
             v => self.pop_type_error("user_type", &v),
+        }
+    }
+
+    pub fn pop_function_pointer_and_call(&mut self) {
+        match self.pop() {
+            Variable::FunctionPointer(func) => func(self),
+            v => self.pop_type_error("func_ptr", &v),
         }
     }
 

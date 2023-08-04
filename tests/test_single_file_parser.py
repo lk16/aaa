@@ -733,7 +733,7 @@ def test_parse_function_call(
 
     if isinstance(expected_result, tuple):
         expected_struct_name, expected_type_params, expected_func_name = expected_result
-        func_call, offset = parser._parse_call(0)
+        func_call, offset = parser._parse_function_call(0)
 
         if expected_struct_name is not None:
             assert func_call.struct_name
@@ -749,7 +749,7 @@ def test_parse_function_call(
         assert expected_offset == offset
     else:
         with pytest.raises(expected_result):
-            parser._parse_call(0)
+            parser._parse_function_call(0)
 
 
 @pytest.mark.parametrize(
@@ -1129,6 +1129,42 @@ def test_parse_assignment(
 
     if expected_exception is None:
         _, offset = parser._parse_assignment(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_assignment(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("fn[][]", None, 5),
+        ("fn [][]", None, 5),
+        ("fn[ ][]", None, 5),
+        ("fn[] []", None, 5),
+        ("fn[][ ]", None, 5),
+        ("fn[int][]", None, 6),
+        ("fn[int,][]", None, 7),
+        ("fn[][int]", None, 6),
+        ("fn[vec[int]][]", None, 9),
+        ("fn[int,int][]", None, 8),
+        ("fn[int,int,][]", None, 9),
+        ("fn[][int,int]", None, 8),
+        ("fn[][int,int,]", None, 9),
+        ("fn[fn[][]][]", None, 10),
+        ("fn[,][]", ParserException, 0),
+        ("fn[][,]", ParserException, 0),
+    ],
+)
+def test_parse_function_pointer_type_literal(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    parser = parse_code(code)
+
+    if expected_exception is None:
+        _, offset = parser._parse_function_pointer_type_literal(0)
         assert expected_offset == offset
     else:
         with pytest.raises(expected_exception):

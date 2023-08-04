@@ -1,20 +1,52 @@
-// TODO add test
 
 fn add args a as int, b as int, return int {
     a b +
 }
 
-fn calculate args callable as fn[int,int][int], a as int, b as int return int {
+fn calculate args a as int, b as int, callable as fn[int,int][int] return int {
    a b callable call
 }
 
-fn main {
-   "add" fn 34 35 calculate .
-   "\n"
+fn calculate_nested args a as int, b as int, callable as fn[int, int, fn[int, int][int]][int] return int {
+    a b "add" fn callable call
+}
 
+fn main {
+    // call by function pointer
+    34 35 "add" fn calculate .
+    "\n" .
+
+    // call by function pointer variable
     "add" fn
     use add_ {
-        add_ .
+        34 35 add_ call .
     }
     "\n" .
+
+    // call by nested function pointer
+    "add" fn
+    "calculate" fn
+    use add_, calculate_ {
+        34 35 add_ calculate_ call .
+    }
+    "\n" .
+
+    // call function with nested function pointer
+    34 35 "calculate" fn calculate_nested .
+    "\n" .
 }
+
+
+// return a function pointer from a function
+
+// TODO put function pointer in a struct
+
+// TODO put function pointer in an enum
+
+// TODO put a function pointer in a vec
+
+// TODO nest function pointers
+
+// TODO add syntax for pointer to function that never returns
+
+// TODO add python test case for this file

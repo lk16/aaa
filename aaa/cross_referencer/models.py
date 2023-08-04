@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from aaa import AaaModel, Position
 from aaa.parser import models as parser
@@ -44,7 +44,7 @@ class Function(Identifiable):
             parsed_body: Optional[parser.FunctionBody],
             type_params: Dict[str, Struct],
             arguments: List[Argument],
-            return_types: List[VariableType] | Never,
+            return_types: List[VariableType | FunctionPointer] | Never,
         ) -> None:
             self.parsed_body = parsed_body
             self.type_params = type_params
@@ -56,7 +56,7 @@ class Function(Identifiable):
             self,
             type_params: Dict[str, Struct],
             arguments: List[Argument],
-            return_types: List[VariableType] | Never,
+            return_types: List[VariableType | FunctionPointer] | Never,
             body: Optional[FunctionBody],
         ) -> None:
             self.type_params = type_params
@@ -109,7 +109,7 @@ class Function(Identifiable):
         return self.state.arguments
 
     @property
-    def return_types(self) -> List[VariableType] | Never:
+    def return_types(self) -> List[VariableType | FunctionPointer] | Never:
         assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
         return self.state.return_types
 
@@ -129,7 +129,7 @@ class Function(Identifiable):
         parsed_body: Optional[parser.FunctionBody],
         type_params: Dict[str, Struct],
         arguments: List[Argument],
-        return_types: List[VariableType] | Never,
+        return_types: List[VariableType | FunctionPointer] | Never,
     ) -> None:
         assert isinstance(self.state, Function.Unresolved)
         self.state = Function.WithSignature(
@@ -150,8 +150,10 @@ class Function(Identifiable):
 
 
 class Argument(AaaCrossReferenceModel):
-    def __init__(self, var_type: VariableType, identifier: parser.Identifier) -> None:
-        self.var_type = var_type
+    def __init__(
+        self, type: VariableType | FunctionPointer, identifier: parser.Identifier
+    ) -> None:
+        self.type = type
         self.name = identifier.name
         super().__init__(identifier.position)
 
@@ -270,7 +272,7 @@ class Enum(Identifiable):
     class Resolved:
         def __init__(
             self,
-            variants: Dict[str, List[VariableType]],
+            variants: Dict[str, List[VariableType | FunctionPointer]],
             zero_variant: str,
         ) -> None:
             if variants and zero_variant not in variants:
@@ -291,7 +293,7 @@ class Enum(Identifiable):
         return self.name == other.name and self.position == other.position
 
     @property
-    def variants(self) -> Dict[str, List[VariableType]]:
+    def variants(self) -> Dict[str, List[VariableType | FunctionPointer]]:
         assert isinstance(self.state, Enum.Resolved)
         return self.state.variants
 
@@ -307,7 +309,9 @@ class Enum(Identifiable):
         assert isinstance(self.state, Enum.Resolved)
         return self.state
 
-    def resolve(self, variants: Dict[str, List[VariableType]]) -> None:
+    def resolve(
+        self, variants: Dict[str, List[VariableType | FunctionPointer]]
+    ) -> None:
         assert isinstance(self.state, Enum.Unresolved)
         self.state = Enum.Resolved(variants, self.state.zero_variant)
 
@@ -352,6 +356,36 @@ class VariableType(AaaCrossReferenceModel):
             self.type == other.type
             and self.params == other.params
             and self.is_const == other.is_const
+        )
+
+
+class FunctionPointer(AaaCrossReferenceModel):
+    def __init__(
+        self,
+        position: Position,
+        argument_types: List[VariableType | FunctionPointer],
+        return_types: List[VariableType | FunctionPointer] | Never,
+    ) -> None:
+        self.argument_types = argument_types
+        self.return_types = return_types
+        super().__init__(position)
+
+    def __repr__(self) -> str:
+        # TODO test
+        args = ", ".join(repr(arg) for arg in self.argument_types)
+
+        if isinstance(self.return_types, Never):
+            returns = "never"
+        else:
+            returns = ", ".join(repr(return_) for return_ in self.return_types)
+
+        return f"fn[{args}][{returns}]"
+
+    def __eq__(self, other: Any) -> bool:
+        return (
+            type(other) == type(self)
+            and self.argument_types == other.argument_types
+            and self.return_types == other.return_types
         )
 
 
@@ -523,6 +557,16 @@ class DefaultBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyI
 class Return(FunctionBodyItem):
     def __init__(self, parsed: parser.Return) -> None:
         super().__init__(parsed.position)
+
+
+class GetFunctionPointer(FunctionBodyItem):
+    def __init__(self, position: Position, target: Function) -> None:
+        self.target = target
+        super().__init__(position)
+
+
+class CallFunctionByPointer(FunctionBodyItem):
+    ...
 
 
 class CrossReferencerOutput(AaaModel):

@@ -11,6 +11,7 @@ from aaa.cross_referencer.models import (
     Branch,
     CallEnumConstructor,
     CallFunction,
+    CallFunctionByPointer,
     CallType,
     CallVariable,
     CaseBlock,
@@ -21,6 +22,8 @@ from aaa.cross_referencer.models import (
     Function,
     FunctionBody,
     FunctionBodyItem,
+    FunctionPointer,
+    GetFunctionPointer,
     IntegerLiteral,
     MatchBlock,
     Never,
@@ -295,7 +298,9 @@ class Transpiler:
 
         return code
 
-    def _generate_function_body_item(self, item: FunctionBodyItem) -> Code:
+    def _generate_function_body_item(  # noqa C901  # TODO too complex, refactor
+        self, item: FunctionBodyItem
+    ) -> Code:
         if isinstance(item, IntegerLiteral):
             return Code(f"stack.push_int({item.value});")
         elif isinstance(item, StringLiteral):
@@ -331,17 +336,34 @@ class Transpiler:
             return self._generate_return(item)
         elif isinstance(item, MatchBlock):
             return self._generate_match_block_code(item)
+        elif isinstance(item, CallFunctionByPointer):
+            return self._generate_call_by_function_pointer(item)
+        elif isinstance(item, GetFunctionPointer):
+            return self._generate_get_function_pointer(item)
         else:  # pragma: nocover
             assert False
+
+    def _generate_call_by_function_pointer(
+        self, call_by_func_ptr: CallFunctionByPointer
+    ) -> Code:
+        return Code("stack.pop_function_pointer_and_call();")
+
+    def _generate_get_function_pointer(self, get_func_ptr: GetFunctionPointer) -> Code:
+        rust_func_name = self._generate_function_name(get_func_ptr.target)
+        return Code(f"stack.push_function_pointer({rust_func_name});")
 
     def _generate_field_query_code(self, field_query: StructFieldQuery) -> Code:
         field_name = field_query.field_name.value
 
-        position_stack = self.position_stacks[field_query.position]
+        type_stack = self.position_stacks[field_query.position]
 
-        assert not isinstance(position_stack, Never)
+        # This is enforced by the type checker
+        assert not isinstance(type_stack, Never)
+        stack_top = type_stack[-1]
 
-        struct_type = position_stack[-1].type
+        # This is enforced by the type checker
+        assert isinstance(stack_top, VariableType)
+        struct_type = stack_top.type
 
         # This is enforced by the type checker
         assert isinstance(struct_type, Struct)
@@ -415,9 +437,15 @@ class Transpiler:
         code = self._generate_function_body(field_update.new_value_expr)
         field_name = field_update.field_name.value
 
-        stack = self.position_stacks[field_update.position]
-        assert not isinstance(stack, Never)
-        struct_type = stack[-1].type
+        type_stack = self.position_stacks[field_update.position]
+
+        # This is verified by the type checker
+        assert not isinstance(type_stack, Never)
+        stack_top = type_stack[-1]
+
+        # This is verified by the type checker
+        assert isinstance(stack_top, VariableType)
+        struct_type = stack_top.type
 
         # This is verified by the type checker
         assert isinstance(struct_type, Struct)
@@ -439,12 +467,18 @@ class Transpiler:
 
     def _generate_match_block_code(self, match_block: MatchBlock) -> Code:
         type_stack = self.position_stacks[match_block.position]
+
+        # This is verified by the type checker
         assert not isinstance(type_stack, Never)
+        stack_top = type_stack[-1]
 
-        enum = type_stack[-1].type
-        assert isinstance(enum, Enum)
+        # This is verified by the type checker
+        assert isinstance(stack_top, VariableType)
+        enum_type = stack_top.type
 
-        rust_enum_name = self._generate_type_name(enum)
+        assert isinstance(enum_type, Enum)
+
+        rust_enum_name = self._generate_type_name(enum_type)
 
         match_var = (
             "match_var_" + sha256(str(match_block.position).encode()).hexdigest()[:16]
@@ -468,14 +502,16 @@ class Transpiler:
             else:  # pragma: nocover
                 assert False
 
-        if not has_default and case_blocks != len(enum.variants):
+        if not has_default and case_blocks != len(enum_type.variants):
             code.add("_ => {}")
 
         code.add("}", l=1)
 
         return code
 
-    def _generate_case_block_code(self, case_block: CaseBlock) -> Code:
+    def _generate_case_block_code(  # noqa C901  # TODO too complex, refactor
+        self, case_block: CaseBlock
+    ) -> Code:
         enum = case_block.enum_type
         variant_name = case_block.variant_name
         associated_data = enum.variants[variant_name]
@@ -501,7 +537,9 @@ class Transpiler:
                 arg = f"{case_var_prefix}_{i}"
                 line = f"let mut var_{var.name}: Variable<UserTypeEnum> = "
 
-                if item.type.name == "int":
+                if isinstance(item, FunctionPointer):
+                    raise NotImplementedError  # TODO
+                elif item.type.name == "int":
                     line += f"Variable::Integer({arg});"
                 elif item.type.name == "bool":
                     line += f"Variable::Boolean({arg});"
@@ -523,7 +561,9 @@ class Transpiler:
             for i, item in enumerate(associated_data):
                 arg = f"{case_var_prefix}_{i}"
 
-                if item.type.name == "int":
+                if isinstance(item, FunctionPointer):
+                    raise NotImplementedError  # TODO
+                elif item.type.name == "int":
                     code.add(f"stack.push_int({arg});")
                 elif item.type.name == "bool":
                     code.add(f"stack.push_bool({arg});")
@@ -591,10 +631,12 @@ class Transpiler:
         # If any of these next two lines fail, TypeChecker is broken.
         stack = self.position_stacks[foreach_loop.position]
 
-        # NOTE: The typechecker prevents this from being `never`
+        # This is enforced by the type checker
         assert not isinstance(stack, Never)
-
         iterable_type = stack[-1]
+
+        # This is enforced by the type checker
+        assert isinstance(iterable_type, VariableType)
 
         if iterable_type.is_const:
             iter_func = self._get_member_function(iterable_type, "const_iter")
@@ -604,6 +646,10 @@ class Transpiler:
         assert not isinstance(iter_func.return_types, Never)
 
         iterator_type = iter_func.return_types[0]
+
+        # This is enforced by the type checker
+        assert isinstance(iterator_type, VariableType)
+
         next_func = self._get_member_function(iterator_type, "next")
         assert not isinstance(next_func.return_types, Never)
 
@@ -725,7 +771,11 @@ class Transpiler:
                 f"fn {enum_ctor_func_name}(stack: &mut Stack<UserTypeEnum>) {{", r=1
             )
             for i, item in reversed(list(enumerate(associated_data))):
-                pop_func = self._generate_value_pop_function(item.type)
+                if isinstance(item, FunctionPointer):
+                    raise NotImplementedError  # TODO
+                else:
+                    pop_func = self._generate_value_pop_function(item.type)
+
                 code.add(f"let arg{i} = stack.{pop_func}();")
 
             line = f"let enum_ = {rust_enum_name}::variant_{variant_name}("
@@ -776,6 +826,9 @@ class Transpiler:
             code.add("true")
 
             for i, item in enumerate(associated_data):
+                if isinstance(item, FunctionPointer):
+                    raise NotImplementedError  # TODO
+
                 if item.type.name == "regex":
                     continue
 
@@ -836,7 +889,9 @@ class Transpiler:
             code.add(f"Self::variant_{variant_name}(", r=1)
             for i, item in enumerate(associated_data):
                 code.add("{", r=1)
-                if item.type.name in ["int", "bool"]:
+                if isinstance(item, FunctionPointer):
+                    raise NotImplementedError  # TODO
+                elif item.type.name in ["int", "bool"]:
                     arg = f"*arg{i}"
                 else:
                     arg = f"arg{i}"
@@ -878,7 +933,9 @@ class Transpiler:
                 if i != 0:
                     code.add('write!(f, ", ")?;')
 
-                if item.type.name in ["int", "bool"]:
+                if isinstance(item, FunctionPointer):
+                    raise NotImplementedError  # TODO
+                elif item.type.name in ["int", "bool"]:
                     code.add(f'write!(f, "{{}}", arg{i})?;')
                 else:
                     code.add(f'write!(f, "{{}}", *arg{i}.borrow())?;')
@@ -903,41 +960,45 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_field_zero_expression(self, var_type: VariableType) -> str:
-        if var_type.name == "int":
+    def _generate_field_zero_expression(
+        self, type: VariableType | FunctionPointer
+    ) -> str:
+        if isinstance(type, FunctionPointer):
+            raise NotImplementedError  # TODO
+        if type.name == "int":
             return "0"
-        elif var_type.name == "bool":
+        elif type.name == "bool":
             return "false"
-        elif var_type.name == "str":
+        elif type.name == "str":
             return 'Rc::new(RefCell::new(String::from("")))'
-        elif var_type.name == "vec":
+        elif type.name == "vec":
             return "Rc::new(RefCell::new(Vector::new()))"
-        elif var_type.name == "map":
+        elif type.name == "map":
             return "Rc::new(RefCell::new(Map::new()))"
-        elif var_type.name == "set":
+        elif type.name == "set":
             return "Rc::new(RefCell::new(Set::new()))"
-        elif var_type.name == "regex":
+        elif type.name == "regex":
             return 'Rc::new(RefCell::new(Regex::new("$.^").unwrap()))'
-        rust_type_name = self._generate_type_name(var_type.type)
+        rust_type_name = self._generate_type_name(type.type)
         return f"Rc::new(RefCell::new(UserTypeEnum::{rust_type_name}({rust_type_name}::new())))"
 
-    def _generate_variable_zero_expression(self, var_type: VariableType) -> str:
-        if var_type.name == "int":
+    def _generate_variable_zero_expression(self, type: VariableType) -> str:
+        if type.name == "int":
             return "Variable::Integer(0)"
-        elif var_type.name == "bool":
+        elif type.name == "bool":
             return "Variable::Boolean(false)"
-        elif var_type.name == "str":
+        elif type.name == "str":
             return 'Variable::String(Rc::new(RefCell::new(String::from(""))))'
-        elif var_type.name == "vec":
+        elif type.name == "vec":
             return "Variable::Vector(Rc::new(RefCell::new(Vector::new())))"
-        elif var_type.name == "map":
+        elif type.name == "map":
             return "Variable::Map(Rc::new(RefCell::new(Map::new())))"
-        elif var_type.name == "set":
+        elif type.name == "set":
             return "Variable::Set(Rc::new(RefCell::new(Set::new())))"
-        elif var_type.name == "regex":
+        elif type.name == "regex":
             return 'Variable::Regex(Rc::new(RefCell::new(Regex::new("$.^").unwrap())))'
         else:
-            rust_type_name = self._generate_type_name(var_type.type)
+            rust_type_name = self._generate_type_name(type.type)
 
             return (
                 "Variable::UserType(Rc::new(RefCell::new("
@@ -1099,20 +1160,22 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_struct_field_type(self, var_type: VariableType) -> str:
-        if var_type.name == "int":
+    def _generate_struct_field_type(self, type: VariableType | FunctionPointer) -> str:
+        if isinstance(type, FunctionPointer):
+            raise NotImplementedError  # TODO
+        if type.name == "int":
             return "isize"
-        elif var_type.name == "bool":
+        elif type.name == "bool":
             return "bool"
-        elif var_type.name == "str":
+        elif type.name == "str":
             return "Rc<RefCell<String>>"
-        elif var_type.name == "vec":
+        elif type.name == "vec":
             return "Rc<RefCell<Vector<Variable<UserTypeEnum>>>>"
-        elif var_type.name == "map":
+        elif type.name == "map":
             return "Rc<RefCell<Map<Variable<UserTypeEnum>, Variable<UserTypeEnum>>>>"
-        elif var_type.name == "set":
+        elif type.name == "set":
             return "Rc<RefCell<Set<Variable<UserTypeEnum>>>>"
-        elif var_type.name == "regex":
+        elif type.name == "regex":
             return "Rc<RefCell<Regex>>"
         return "Rc<RefCell<UserTypeEnum>>"
 

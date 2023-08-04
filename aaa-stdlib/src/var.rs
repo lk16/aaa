@@ -10,6 +10,7 @@ use regex::Regex;
 use crate::{
     map::{Map, MapIterator},
     set::{Set, SetIterator, SetValue},
+    stack::Stack,
     vector::{Vector, VectorIterator},
 };
 
@@ -34,6 +35,7 @@ where
     MapIterator(Rc<RefCell<MapIterator<Variable<T>, Variable<T>>>>),
     SetIterator(Rc<RefCell<SetIterator<Variable<T>>>>),
     Regex(Rc<RefCell<Regex>>),
+    FunctionPointer(fn(&mut Stack<T>)),
     UserType(Rc<RefCell<T>>),
 }
 
@@ -70,6 +72,7 @@ where
             Self::MapIterator(_) => String::from("map_iter"),
             Self::SetIterator(_) => String::from("set_iter"),
             Self::Regex(_) => String::from("regex"),
+            Self::FunctionPointer(_) => String::from("fn_ptr"),
             Self::UserType(v) => (**v).borrow().kind(),
         }
     }
@@ -113,6 +116,7 @@ where
                 unreachable!(); // Cannot recursively clone an iterator
             }
             Self::Regex(regex) => Self::Regex(regex.clone()),
+            Self::FunctionPointer(v) => Self::FunctionPointer(v.clone()),
             Self::UserType(v) => {
                 let cloned = (**v).borrow().clone_recursive();
                 Self::UserType(Rc::new(RefCell::new(cloned)))
@@ -138,6 +142,7 @@ where
             Self::SetIterator(_) => write!(f, "set_iter"),
             Self::None => write!(f, "None"),
             Self::Regex(_) => write!(f, "regex"),
+            Self::FunctionPointer(_) => write!(f, "func_ptr"),
             Self::UserType(v) => write!(f, "{}", (**v).borrow()),
         }
     }

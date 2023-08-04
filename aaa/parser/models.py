@@ -92,12 +92,24 @@ class StructFieldUpdate(FunctionBodyItem):
         super().__init__(position)
 
 
+class GetFunctionPointer(FunctionBodyItem):
+    def __init__(self, position: Position, function_name: StringLiteral):
+        self.function_name = function_name
+        super().__init__(position)
+
+
 class Return(FunctionBodyItem):
     ...
 
 
+class Call(FunctionBodyItem):
+    ...
+
+
 class Argument(AaaParseModel):
-    def __init__(self, identifier: Identifier, type: TypeLiteral) -> None:
+    def __init__(
+        self, identifier: Identifier, type: TypeLiteral | FunctionPointerTypeLiteral
+    ) -> None:
         self.identifier = identifier
         self.type = type
         super().__init__(identifier.position)
@@ -200,6 +212,18 @@ class TypeLiteral(AaaParseModel):
         super().__init__(position)
 
 
+class FunctionPointerTypeLiteral(AaaParseModel):
+    def __init__(
+        self,
+        position: Position,
+        argument_types: List[TypeLiteral | FunctionPointerTypeLiteral],
+        return_types: List[TypeLiteral | FunctionPointerTypeLiteral],
+    ) -> None:
+        self.argument_types = argument_types
+        self.return_types = return_types
+        super().__init__(position)
+
+
 class FunctionName(FunctionBodyItem):
     def __init__(
         self,
@@ -214,7 +238,7 @@ class FunctionName(FunctionBodyItem):
         super().__init__(position)
 
 
-class Call(FunctionBodyItem):
+class FunctionCall(FunctionBodyItem):
     def __init__(
         self,
         position: Position,

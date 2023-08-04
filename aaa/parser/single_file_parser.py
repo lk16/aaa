@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from aaa import Position
 from aaa.parser.exceptions import (
@@ -23,7 +23,10 @@ from aaa.parser.models import (
     Function,
     FunctionBody,
     FunctionBodyItem,
+    FunctionCall,
     FunctionName,
+    FunctionPointerTypeLiteral,
+    GetFunctionPointer,
     Identifier,
     Import,
     ImportItem,
@@ -230,12 +233,71 @@ class SingleFileParser:
         self._print_parse_tree_node("TypeLiteral", start_offset, offset)
         return type_literal, offset
 
+    def _parse_comma_separated_type_list(
+        self, offset: int
+    ) -> Tuple[List[TypeLiteral | FunctionPointerTypeLiteral], int]:
+        types: List[TypeLiteral | FunctionPointerTypeLiteral] = []
+
+        while True:
+            type: TypeLiteral | FunctionPointerTypeLiteral
+
+            try:
+                type, offset = self._parse_type_literal(offset)
+            except ParserBaseException:
+                try:
+                    type, offset = self._parse_function_pointer_type_literal(offset)
+                except ParserBaseException:
+                    break
+
+            types.append(type)
+
+            token = self._peek_token(offset)
+
+            if not token:
+                raise EndOfFileException(self.file)
+
+            if token.type == TokenType.COMMA:
+                _, offset = self._token(offset, [TokenType.COMMA])
+
+        return types, offset
+
+    def _parse_function_pointer_type_literal(
+        self, offset: int
+    ) -> Tuple[FunctionPointerTypeLiteral, int]:
+        start_offset = offset
+        fn_token, offset = self._token(offset, [TokenType.FUNCTION])
+
+        _, offset = self._token(offset, [TokenType.SQUARE_BRACKET_OPEN])
+        argument_types, offset = self._parse_comma_separated_type_list(offset)
+        _, offset = self._token(offset, [TokenType.SQUARE_BRACKET_CLOSE])
+
+        _, offset = self._token(offset, [TokenType.SQUARE_BRACKET_OPEN])
+        return_types, offset = self._parse_comma_separated_type_list(offset)
+        _, offset = self._token(offset, [TokenType.SQUARE_BRACKET_CLOSE])
+
+        function_pointer_type_literal = FunctionPointerTypeLiteral(
+            fn_token.position, argument_types, return_types
+        )
+        self._print_parse_tree_node("FunctionPointerTypeLiteral", start_offset, offset)
+        return function_pointer_type_literal, offset
+
     def _parse_argument(self, offset: int) -> Tuple[Argument, int]:
         start_offset = offset
 
         identifier, offset = self._parse_identifier(offset)
         _, offset = self._token(offset, [TokenType.AS])
-        type, offset = self._parse_type_literal(offset)
+
+        type: TypeLiteral | FunctionPointerTypeLiteral
+
+        token = self._peek_token(offset)
+
+        if not token:
+            raise EndOfFileException(self.file)
+
+        if token.type == TokenType.FUNCTION:
+            type, offset = self._parse_function_pointer_type_literal(offset)
+        else:
+            type, offset = self._parse_type_literal(offset)
 
         argument = Argument(identifier, type)
         self._print_parse_tree_node("Argument", start_offset, offset)
@@ -372,28 +434,40 @@ class SingleFileParser:
         self._print_parse_tree_node("ParsedFile", start_offset, offset)
         return parsed_file, offset
 
+    def _parse_struct_field(self, offset: int) -> Tuple[str, TypeLiteral, int]:
+        name, offset = self._parse_identifier(offset)
+        _, offset = self._token(offset, [TokenType.AS])
+        type, offset = self._parse_type_literal(offset)
+        return name.name, type, offset
+
+    def _parse_struct_fields(self, offset: int) -> Tuple[Dict[str, TypeLiteral], int]:
+        fields: Dict[str, TypeLiteral] = {}
+
+        while True:
+            try:
+                name, type, offset = self._parse_struct_field(offset)
+            except ParserBaseException:
+                break
+            else:
+                fields[name] = type
+
+            try:
+                _, offset = self._token(offset, [TokenType.COMMA])
+            except ParserBaseException:
+                break
+
+        return fields, offset
+
     def _parse_struct_definition(self, offset: int) -> Tuple[Struct, int]:
         start_offset = offset
 
         struct_token, offset = self._token(offset, [TokenType.STRUCT])
         identifier, offset = self._parse_identifier(offset)
         _, offset = self._token(offset, [TokenType.BLOCK_START])
-
-        token = self._peek_token(offset)
-
-        if token and token.type == TokenType.BLOCK_END:
-            fields: List[Argument] = []
-        else:
-            fields, offset = self._parse_arguments(offset)
-
+        fields, offset = self._parse_struct_fields(offset)
         _, offset = self._token(offset, [TokenType.BLOCK_END])
 
-        struct = Struct(
-            position=struct_token.position,
-            identifier=identifier,
-            fields={field.identifier.name: field.type for field in fields},
-        )
-
+        struct = Struct(struct_token.position, identifier, fields)
         self._print_parse_tree_node("StructDefinition", start_offset, offset)
         return struct, offset
 
@@ -490,7 +564,7 @@ class SingleFileParser:
         self._print_parse_tree_node("IntegerLiteral", start_offset, offset)
         return integer, offset
 
-    def _parse_call(self, offset: int) -> Tuple[Call, int]:
+    def _parse_function_call(self, offset: int) -> Tuple[FunctionCall, int]:
         start_offset = offset
 
         token: Optional[Token]
@@ -512,7 +586,9 @@ class SingleFileParser:
         else:
             func_name = identifier
 
-        func_call = Call(identifier.position, struct_name, type_params, func_name)
+        func_call = FunctionCall(
+            identifier.position, struct_name, type_params, func_name
+        )
         self._print_parse_tree_node("FunctionCall", start_offset, offset)
         return func_call, offset
 
@@ -603,6 +679,19 @@ class SingleFileParser:
         self._print_parse_tree_node("StructFieldUpdate", start_offset, offset)
         return field_update, offset
 
+    def _parse_get_function_pointer(
+        self, offset: int
+    ) -> Tuple[GetFunctionPointer, int]:
+        start_offset = offset
+
+        function_name, offset = self._parse_string(offset)
+        _, offset = self._token(offset, [TokenType.FUNCTION])
+
+        get_function_pointer = GetFunctionPointer(function_name.position, function_name)
+
+        self._print_parse_tree_node("GetFunctionPointer", start_offset, offset)
+        return get_function_pointer, offset
+
     def _parse_function_body_item(self, offset: int) -> Tuple[FunctionBodyItem, int]:
         start_offset = offset
         token = self._peek_token(offset)
@@ -617,6 +706,8 @@ class SingleFileParser:
                 item, offset = self._parse_struct_field_query(offset)
             elif next_token and next_token.type == TokenType.BLOCK_START:
                 item, offset = self._parse_struct_field_update(offset)
+            elif next_token and next_token.type == TokenType.FUNCTION:
+                item, offset = self._parse_get_function_pointer(offset)
             else:
                 item, offset = self._parse_string(offset)
 
@@ -630,7 +721,7 @@ class SingleFileParser:
             if next_token and next_token.type in [TokenType.COMMA, TokenType.ASSIGN]:
                 item, offset = self._parse_assignment(offset)
             else:
-                item, offset = self._parse_call(offset)
+                item, offset = self._parse_function_call(offset)
 
         elif token.type == TokenType.IF:
             item, offset = self._parse_branch(offset)
@@ -644,6 +735,8 @@ class SingleFileParser:
             item, offset = self._parse_match_block(offset)
         elif token.type == TokenType.RETURN:
             item, offset = self._parse_return(offset)
+        elif token.type == TokenType.CALL:
+            item, offset = self._parse_call(offset)
 
         else:
             raise ParserException(
@@ -673,6 +766,14 @@ class SingleFileParser:
 
         self._print_parse_tree_node("Return", start_offset, offset)
         return Return(return_token.position), offset
+
+    def _parse_call(self, offset: int) -> Tuple[Call, int]:
+        start_offset = offset
+
+        call_token, offset = self._token(offset, [TokenType.CALL])
+
+        self._print_parse_tree_node("Call", start_offset, offset)
+        return Call(call_token.position), offset
 
     def _parse_function_body(self, offset: int) -> Tuple[FunctionBody, int]:
         start_offset = offset
