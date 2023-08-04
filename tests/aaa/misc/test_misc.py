@@ -312,7 +312,49 @@ def test_return() -> None:
 
 def test_enum() -> None:
     stdout, stderr, exit_code = compile_run("enum.aaa")
-    assert "quit\n" == stdout
+
+    expected_stdout = (
+        "Foo:bool_{false}\n"
+        + "bool_ false\n"
+        + "\n"
+        + "Foo:bool_{true}\n"
+        + "bool_ true\n"
+        + "\n"
+        + "Foo:int_{69}\n"
+        + "int_ 69\n"
+        + "\n"
+        + "Foo:str_{hello}\n"
+        + "str_ hello\n"
+        + "\n"
+        + "Foo:vec_{[]}\n"
+        + "vec_ []\n"
+        + "\n"
+        + "Foo:map_{{}}\n"
+        + "map_ {}\n"
+        + "\n"
+        + "Foo:set_{{}}\n"
+        + "set_ {}\n"
+        + "\n"
+        + "Foo:regex_{$.^}\n"
+        + "regex_ regex\n"
+        + "\n"
+        + "Foo:enum_{Foo:bool_{false}}\n"
+        + "enum_ Foo:bool_{false}\n"
+        + "\n"
+        + "Foo:struct_{Bar{value: 0}}\n"
+        + "struct_ Bar{value: 0}\n"
+        + "\n"
+        + "Foo:no_data{}\n"
+        + "no_data \n"
+        + "\n"
+        + "Foo:multiple_data{3, []}\n"
+        + "multiple_data [] 3\n"
+        + "\n"
+        + "Foo:bool_{true}\n"
+        + "Foo:bool_{false}\n"
+    )
+
+    assert expected_stdout == stdout
     assert "" == stderr
     assert 0 == exit_code
 
@@ -321,10 +363,10 @@ def test_recursion() -> None:
     stdout, stderr, exit_code = compile_run("recursion.aaa")
 
     expected_output = (
-        '(struct S)<{"a": [(struct S)<{"a": []}>]}>\n'
-        + "(enum Json discriminant=0)<[(struct Empty)<{}>]>\n"
-        + "(enum Json discriminant=4)<[[(enum Json discriminant=2)<[5]>]]>\n"
-        + '(enum Json discriminant=5)<[{"key": (enum Json discriminant=1)<[false]>}]>\n'
+        "S{a: [S{a: []}]}\n"
+        + "Json:null{Empty{}}\n"
+        + "Json:array{[Json:integer{5}]}\n"
+        + 'Json:object{{"key": Json:boolean{false}}}\n'
     )
 
     assert expected_output == stdout
@@ -388,10 +430,10 @@ def test_struct() -> None:
         + '   map_ = {"3": "three"}\n'
         + '   set_ = {"hello"}\n'
         + " regex_ = regex\n"
-        + "  enum_ = (enum OptionalInt discriminant=1)<[3]>\n"
-        + 'struct_ = (struct Bar)<{"value": 123}>\n'
-        + '(struct Foo)<{"bool_": true, "int_": 69, "str_": "hello world", "vec_": ["foo"], "map_": {"3": "three"}, "set_": {"hello": ()}, "regex_": Regex(".*"), "enum_": (enum OptionalInt discriminant=1)<[3]>, "struct_": UserStruct89615fbdb7fa8d55 { value: 123 }}>\n'
-        + '(struct Foo)<{"bool_": false, "int_": 0, "str_": "", "vec_": [], "map_": {}, "set_": {}, "regex_": Regex("$.^"), "enum_": (enum OptionalInt discriminant=0)<[]>, "struct_": UserStruct89615fbdb7fa8d55 { value: 0 }}>\n'
+        + "  enum_ = OptionalInt:some{3}\n"
+        + "struct_ = Bar{value: 123}\n"
+        + 'Foo{bool_: true, int_: 69, str_: hello world, vec_: ["foo"], map_: {"3": "three"}, set_: {"hello": SetValue}, regex_: .*, enum_: OptionalInt:some{3}, struct_: Bar{value: 123}}\n'
+        + "Foo{bool_: false, int_: 0, str_: , vec_: [], map_: {}, set_: {}, regex_: $.^, enum_: OptionalInt:none{}, struct_: Bar{value: 0}}\n"
     )
 
     expected_output = re.sub("UserStruct[0-9a-f]+", "UserStructXYZ", expected_output)

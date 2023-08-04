@@ -6,10 +6,11 @@ from aaa import AaaException, Position
 from aaa.cross_referencer.models import (
     AaaCrossReferenceModel,
     Argument,
+    Enum,
     Function,
     Identifiable,
     Import,
-    Type,
+    Struct,
     Variable,
 )
 from aaa.parser.models import TypeLiteral
@@ -20,8 +21,10 @@ def describe(item: Identifiable | Argument | Variable) -> str:
         return f"function {item.name}"
     elif isinstance(item, Import):
         return f"imported identifier {item.name}"
-    elif isinstance(item, Type):
-        return f"type {item.name}"
+    elif isinstance(item, Struct):
+        return f"struct {item.name}"
+    elif isinstance(item, Enum):
+        return f"enum {item.name}"
     elif isinstance(item, Argument):
         return f"function argument {item.name}"
     elif isinstance(item, Variable):
@@ -171,7 +174,7 @@ class InvalidEnumType(CrossReferenceBaseException):
 
 
 class InvalidEnumVariant(CrossReferenceBaseException):
-    def __init__(self, position: Position, enum: Type, variant_name: str) -> None:
+    def __init__(self, position: Position, enum: Enum, variant_name: str) -> None:
         self.enum = enum
         self.variant_name = variant_name
         self.position = position

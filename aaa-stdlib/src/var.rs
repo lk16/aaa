@@ -9,38 +9,9 @@ use regex::Regex;
 
 use crate::{
     map::{Map, MapIterator},
-    set::{Set, SetIterator},
+    set::{Set, SetIterator, SetValue},
     vector::{Vector, VectorIterator},
 };
-
-#[derive(Clone, PartialEq, Hash)]
-pub struct Enum<T>
-where
-    T: UserType,
-{
-    pub type_name: String,
-    pub discriminant: usize,
-    pub values: Vec<Variable<T>>,
-}
-
-impl<T> Debug for Enum<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(
-            f,
-            "(enum {} discriminant={})<",
-            self.type_name, self.discriminant,
-        )?;
-
-        let mut reprs: Vec<String> = vec![];
-        for item in self.values.iter() {
-            reprs.push(format!("{item:?}"))
-        }
-        write!(f, "[{}]>", reprs.join(", "))
-    }
-}
 
 pub trait UserType: Clone + Debug + Display + Hash + PartialEq {
     fn kind(&self) -> String;
@@ -62,7 +33,6 @@ where
     VectorIterator(Rc<RefCell<VectorIterator<Variable<T>>>>),
     MapIterator(Rc<RefCell<MapIterator<Variable<T>, Variable<T>>>>),
     SetIterator(Rc<RefCell<SetIterator<Variable<T>>>>),
-    Enum(Rc<RefCell<Enum<T>>>),
     Regex(Rc<RefCell<Regex>>),
     UserType(Rc<RefCell<T>>),
 }
@@ -99,10 +69,6 @@ where
             Self::VectorIterator(_) => String::from("vec_iter"),
             Self::MapIterator(_) => String::from("map_iter"),
             Self::SetIterator(_) => String::from("set_iter"),
-            Self::Enum(e) => {
-                let type_name = &(**e).borrow().type_name;
-                format!("(enum {type_name})")
-            }
             Self::Regex(_) => String::from("regex"),
             Self::UserType(v) => (**v).borrow().kind(),
         }
@@ -131,7 +97,7 @@ where
                 let mut cloned = Map::new();
                 let source = (**v).borrow();
                 for (item, _) in source.iter() {
-                    cloned.insert(item.clone_recursive(), ());
+                    cloned.insert(item.clone_recursive(), SetValue);
                 }
                 Self::Set(Rc::new(RefCell::new(cloned)))
             }
@@ -142,23 +108,6 @@ where
                     cloned.insert(key.clone_recursive(), value.clone_recursive());
                 }
                 Self::Map(Rc::new(RefCell::new(cloned)))
-            }
-            Self::Enum(v) => {
-                let source = (**v).borrow();
-
-                let mut values = vec![];
-
-                for value in source.values.iter() {
-                    values.push(value.clone_recursive());
-                }
-
-                let enum_ = Enum {
-                    discriminant: source.discriminant,
-                    type_name: source.type_name.clone(),
-                    values: values,
-                };
-
-                Self::Enum(Rc::new(RefCell::new(enum_)))
             }
             Self::VectorIterator(_) | Self::MapIterator(_) | Self::SetIterator(_) => {
                 unreachable!(); // Cannot recursively clone an iterator
@@ -181,14 +130,13 @@ where
             Self::Boolean(v) => write!(f, "{}", v),
             Self::Integer(v) => write!(f, "{}", v),
             Self::String(v) => write!(f, "{}", (**v).borrow()),
-            Self::Vector(v) => write!(f, "{:?}", (**v).borrow()),
+            Self::Vector(v) => write!(f, "{}", (**v).borrow()),
             Self::Set(v) => write!(f, "{}", (**v).borrow().fmt_as_set()),
-            Self::Map(v) => write!(f, "{:?}", (**v).borrow()),
+            Self::Map(v) => write!(f, "{}", (**v).borrow()),
             Self::VectorIterator(_) => write!(f, "vec_iter"),
             Self::MapIterator(_) => write!(f, "map_iter"),
             Self::SetIterator(_) => write!(f, "set_iter"),
             Self::None => write!(f, "None"),
-            Self::Enum(v) => write!(f, "{:?}", (**v).borrow()),
             Self::Regex(_) => write!(f, "regex"),
             Self::UserType(v) => write!(f, "{}", (**v).borrow()),
         }
@@ -219,7 +167,6 @@ where
             (Self::Vector(lhs), Self::Vector(rhs)) => lhs == rhs,
             (Self::Set(lhs), Self::Set(rhs)) => lhs == rhs,
             (Self::Map(lhs), Self::Map(rhs)) => lhs == rhs,
-            (Self::Enum(lhs), Self::Enum(rhs)) => lhs == rhs,
             _ => {
                 unreachable!() // Can't compare variables of different types
             }
