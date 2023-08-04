@@ -1,7 +1,7 @@
 from glob import glob
 from pathlib import Path
 from tempfile import NamedTemporaryFile, gettempdir
-from typing import List, Optional, Tuple, Type
+from typing import List, Optional, Set, Tuple, Type
 
 import pytest
 
@@ -994,19 +994,6 @@ def test_parse_function_definition(
             parser._parse_function_definition(0)
 
 
-@pytest.mark.parametrize(
-    ["file"],
-    {(Path(file),) for file in glob("**/*.aaa", root_dir=".", recursive=True)}
-    - {(Path("./stdlib/builtins.aaa"),)},
-)
-def test_parse_regular_file_root_all_source_files(file: Path) -> None:
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
-
-    parsed_file, offset = parser._parse_regular_file_root(0)
-    assert len(tokens) == offset
-
-
 def test_parse_regular_file_root_empty_file() -> None:
     temp_file = NamedTemporaryFile(delete=False)
     file = Path(gettempdir()) / temp_file.name
@@ -1020,10 +1007,17 @@ def test_parse_regular_file_root_empty_file() -> None:
     assert 0 == offset
 
 
+def get_source_files() -> List[Path]:
+    aaa_files: Set[Path] = {
+        Path(file) for file in glob("**/*.aaa", root_dir=".", recursive=True)
+    }
+    builtins_file = Path("./stdlib/builtins.aaa")
+    return sorted(aaa_files - {builtins_file})
+
+
 @pytest.mark.parametrize(
     ["file"],
-    {(Path(file),) for file in glob("**/*.aaa", root_dir=".", recursive=True)}
-    - {(Path("./stdlib/builtins.aaa"),)},
+    [pytest.param(file, id=str(file)) for file in get_source_files()],
 )
 def test_parse_regular_file_all_source_files(file: Path) -> None:
     tokens = Tokenizer(file, False).run()
