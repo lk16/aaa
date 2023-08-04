@@ -20,6 +20,7 @@ FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
     # 4 chars
     ("args", TokenType.ARGS),
     ("case", TokenType.CASE),
+    ("call", TokenType.CALL),
     ("else", TokenType.ELSE),
     ("enum", TokenType.ENUM),
     ("from", TokenType.FROM),

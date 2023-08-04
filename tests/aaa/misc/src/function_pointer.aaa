@@ -1,17 +1,20 @@
 // TODO add test
 
-fn add_numbers args a as int, b as int, return int {
+fn add args a as int, b as int, return int {
     a b +
 }
 
-fn get_sixty_nine args callable as fn[int,int][int] return int {
-   34 35 callable execute
+fn calculate args callable as fn[int,int][int], a as int, b as int return int {
+   a b callable call
 }
 
 fn main {
-   "add_numbers" fn
-   use my_func {
-       my_func get_sixty_nine .
-   }
-   "\n" .
+   "add" fn 34 35 calculate .
+   "\n"
+
+    "add" fn
+    use add_ {
+        add_ .
+    }
+    "\n" .
 }

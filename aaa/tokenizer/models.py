@@ -9,6 +9,7 @@ class TokenType(Enum):
     ASSIGN = "ASSIGN"
     BEGIN = "BEGIN"
     CASE = "CASE"
+    CALL = "CALL"
     COLON = "COLON"
     COMMA = "COMMA"
     COMMENT = "COMMENT"
