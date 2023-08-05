@@ -602,7 +602,6 @@ FunctionBodyItem = (
     | CallType
     | CallVariable
     | ForeachLoop
-    | FunctionBody
     | GetFunctionPointer
     | IntegerLiteral
     | MatchBlock
@@ -611,7 +610,6 @@ FunctionBodyItem = (
     | StructFieldQuery
     | StructFieldUpdate
     | UseBlock
-    | Variable
     | WhileLoop
 )
 

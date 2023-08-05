@@ -338,10 +338,9 @@ class Transpiler:
             return self._generate_match_block_code(item)
         elif isinstance(item, CallFunctionByPointer):
             return self._generate_call_by_function_pointer(item)
-        elif isinstance(item, GetFunctionPointer):
+        else:
+            assert isinstance(item, GetFunctionPointer)
             return self._generate_get_function_pointer(item)
-        else:  # pragma: nocover
-            assert False
 
     def _generate_call_by_function_pointer(
         self, call_by_func_ptr: CallFunctionByPointer
@@ -496,11 +495,10 @@ class Transpiler:
             if isinstance(block, CaseBlock):
                 case_blocks += 1
                 code.add(self._generate_case_block_code(block))
-            elif isinstance(block, DefaultBlock):
+            else:
+                assert isinstance(block, DefaultBlock)
                 has_default = True
                 code.add(self._generate_default_block_code(block))
-            else:  # pragma: nocover
-                assert False
 
         if not has_default and case_blocks != len(enum_type.variants):
             code.add("_ => {}")
