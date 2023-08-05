@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple, Type
 
 from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.exceptions import (
@@ -776,36 +776,28 @@ class FunctionBodyResolver:
     def _resolve_function_body_item(
         self, parsed_item: parser.FunctionBodyItem
     ) -> FunctionBodyItem:
-        if isinstance(parsed_item, parser.IntegerLiteral):
-            return IntegerLiteral(parsed_item)
-        elif isinstance(parsed_item, parser.StringLiteral):
-            return StringLiteral(parsed_item)
-        elif isinstance(parsed_item, parser.BooleanLiteral):
-            return BooleanLiteral(parsed_item)
-        elif isinstance(parsed_item, parser.WhileLoop):
-            return self._resolve_while_loop(parsed_item)
-        elif isinstance(parsed_item, parser.Branch):
-            return self._resolve_branch(parsed_item)
-        elif isinstance(parsed_item, parser.FunctionCall):
-            return self._resolve_call(parsed_item)
-        elif isinstance(parsed_item, parser.StructFieldQuery):
-            return StructFieldQuery(parsed_item)
-        elif isinstance(parsed_item, parser.StructFieldUpdate):
-            return self._resolve_struct_field_update(parsed_item)
-        elif isinstance(parsed_item, parser.ForeachLoop):
-            return self._resolve_foreach_loop(parsed_item)
-        elif isinstance(parsed_item, parser.Assignment):
-            return self._resolve_assignment(parsed_item)
-        elif isinstance(parsed_item, parser.UseBlock):
-            return self._resolve_use_block(parsed_item)
-        elif isinstance(parsed_item, parser.MatchBlock):
-            return self._resolve_match_block(parsed_item)
-        elif isinstance(parsed_item, parser.Return):
-            return self._resolve_return(parsed_item)
-        elif isinstance(parsed_item, parser.GetFunctionPointer):
-            return self._resolve_get_function_pointer(parsed_item)
-        else:
-            return self._resolve_call_function_by_pointer(parsed_item)
+        resolve_functions: Dict[
+            Type[parser.FunctionBodyItem], Callable[..., FunctionBodyItem]
+        ] = {
+            parser.Assignment: self._resolve_assignment,
+            parser.BooleanLiteral: BooleanLiteral,
+            parser.Branch: self._resolve_branch,
+            parser.Call: self._resolve_call_function_by_pointer,
+            parser.ForeachLoop: self._resolve_foreach_loop,
+            parser.FunctionCall: self._resolve_call,
+            parser.GetFunctionPointer: self._resolve_get_function_pointer,
+            parser.IntegerLiteral: IntegerLiteral,
+            parser.MatchBlock: self._resolve_match_block,
+            parser.Return: self._resolve_return,
+            parser.StringLiteral: StringLiteral,
+            parser.StructFieldQuery: StructFieldQuery,
+            parser.StructFieldUpdate: self._resolve_struct_field_update,
+            parser.UseBlock: self._resolve_use_block,
+            parser.WhileLoop: self._resolve_while_loop,
+        }
+
+        assert set(resolve_functions.keys()) == set(parser.FunctionBodyItem.__args__)  # type: ignore
+        return resolve_functions[type(parsed_item)](parsed_item)
 
     def _resolve_match_block(self, parsed: parser.MatchBlock) -> MatchBlock:
         blocks: List[CaseBlock | DefaultBlock] = []
@@ -813,10 +805,8 @@ class FunctionBodyResolver:
         for block in parsed.blocks:
             if isinstance(block, parser.CaseBlock):
                 blocks.append(self._resolve_case_block(block))
-            elif isinstance(block, parser.DefaultBlock):
+            else:
                 blocks.append(self._resolve_default_block(block))
-            else:  # pragma: nocover
-                assert False
 
         return MatchBlock(parsed.position, blocks)
 
