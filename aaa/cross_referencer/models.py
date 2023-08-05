@@ -158,11 +158,7 @@ class Argument(AaaCrossReferenceModel):
         super().__init__(identifier.position)
 
 
-class FunctionBodyItem(AaaCrossReferenceModel):
-    ...
-
-
-class FunctionBody(FunctionBodyItem):
+class FunctionBody(AaaCrossReferenceModel):
     def __init__(
         self, parsed: parser.FunctionBody, items: List[FunctionBodyItem]
     ) -> None:
@@ -400,25 +396,25 @@ class Never:
     ...
 
 
-class IntegerLiteral(FunctionBodyItem):
+class IntegerLiteral(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.IntegerLiteral) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
-class StringLiteral(FunctionBodyItem, parser.StringLiteral):
+class StringLiteral(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.StringLiteral) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
-class BooleanLiteral(FunctionBodyItem, parser.BooleanLiteral):
+class BooleanLiteral(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.BooleanLiteral) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
-class WhileLoop(FunctionBodyItem):
+class WhileLoop(AaaCrossReferenceModel):
     def __init__(
         self,
         condition: FunctionBody,
@@ -430,14 +426,14 @@ class WhileLoop(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class CallVariable(FunctionBodyItem):
+class CallVariable(AaaCrossReferenceModel):
     def __init__(self, name: str, has_type_params: bool, position: Position) -> None:
         self.has_type_params = has_type_params
         self.name = name
         super().__init__(position)
 
 
-class CallFunction(FunctionBodyItem):
+class CallFunction(AaaCrossReferenceModel):
     def __init__(
         self, function: Function, type_params: List[VariableType], position: Position
     ) -> None:
@@ -446,7 +442,7 @@ class CallFunction(FunctionBodyItem):
         super().__init__(position)
 
 
-class CallEnumConstructor(FunctionBodyItem):
+class CallEnumConstructor(AaaCrossReferenceModel):
     def __init__(
         self,
         enum_ctor: EnumConstructor,
@@ -458,13 +454,13 @@ class CallEnumConstructor(FunctionBodyItem):
         super().__init__(position)
 
 
-class CallType(FunctionBodyItem):
+class CallType(AaaCrossReferenceModel):
     def __init__(self, var_type: VariableType) -> None:
         self.var_type = var_type
         super().__init__(var_type.position)
 
 
-class Branch(FunctionBodyItem):
+class Branch(AaaCrossReferenceModel):
     def __init__(
         self,
         condition: FunctionBody,
@@ -478,14 +474,14 @@ class Branch(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class StructFieldQuery(FunctionBodyItem):
+class StructFieldQuery(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.StructFieldQuery) -> None:
         self.field_name = parsed.field_name
         self.operator_position = parsed.operator_position
         super().__init__(parsed.position)
 
 
-class StructFieldUpdate(FunctionBodyItem):
+class StructFieldUpdate(AaaCrossReferenceModel):
     def __init__(
         self, parsed: parser.StructFieldUpdate, new_value_expr: FunctionBody
     ) -> None:
@@ -495,20 +491,20 @@ class StructFieldUpdate(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class ForeachLoop(FunctionBodyItem):
+class ForeachLoop(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.ForeachLoop, body: FunctionBody) -> None:
         self.body = body
         super().__init__(parsed.position)
 
 
-class Variable(FunctionBodyItem):
+class Variable(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.Identifier, is_func_arg: bool) -> None:
         self.name = parsed.name
         self.is_func_arg = is_func_arg
         super().__init__(parsed.position)
 
 
-class Assignment(FunctionBodyItem):
+class Assignment(AaaCrossReferenceModel):
     def __init__(
         self, parsed: parser.Assignment, variables: List[Variable], body: FunctionBody
     ) -> None:
@@ -517,7 +513,7 @@ class Assignment(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class UseBlock(FunctionBodyItem):
+class UseBlock(AaaCrossReferenceModel):
     def __init__(
         self, parsed: parser.UseBlock, variables: List[Variable], body: FunctionBody
     ) -> None:
@@ -526,7 +522,7 @@ class UseBlock(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class MatchBlock(FunctionBodyItem):
+class MatchBlock(AaaCrossReferenceModel):
     def __init__(
         self, position: Position, blocks: List[CaseBlock | DefaultBlock]
     ) -> None:
@@ -556,19 +552,43 @@ class DefaultBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyI
         super().__init__(position)
 
 
-class Return(FunctionBodyItem):
+class Return(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.Return) -> None:
         super().__init__(parsed.position)
 
 
-class GetFunctionPointer(FunctionBodyItem):
+class GetFunctionPointer(AaaCrossReferenceModel):
     def __init__(self, position: Position, target: Function) -> None:
         self.target = target
         super().__init__(position)
 
 
-class CallFunctionByPointer(FunctionBodyItem):
+class CallFunctionByPointer(AaaCrossReferenceModel):
     ...
+
+
+FunctionBodyItem = (
+    Assignment
+    | BooleanLiteral
+    | Branch
+    | CallEnumConstructor
+    | CallFunction
+    | CallFunctionByPointer
+    | CallType
+    | CallVariable
+    | ForeachLoop
+    | FunctionBody
+    | GetFunctionPointer
+    | IntegerLiteral
+    | MatchBlock
+    | Return
+    | StringLiteral
+    | StructFieldQuery
+    | StructFieldUpdate
+    | UseBlock
+    | Variable
+    | WhileLoop
+)
 
 
 class CrossReferencerOutput(AaaModel):
