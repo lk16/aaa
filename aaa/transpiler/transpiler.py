@@ -538,7 +538,7 @@ class Transpiler:
                 line = f"let mut var_{var.name}: Variable<UserTypeEnum> = "
 
                 if isinstance(item, FunctionPointer):
-                    raise NotImplementedError  # TODO
+                    line += f"Variable::FunctionPointer({arg});"
                 elif item.type.name == "int":
                     line += f"Variable::Integer({arg});"
                 elif item.type.name == "bool":
@@ -562,7 +562,7 @@ class Transpiler:
                 arg = f"{case_var_prefix}_{i}"
 
                 if isinstance(item, FunctionPointer):
-                    raise NotImplementedError  # TODO
+                    code.add(f"stack.push_function_pointer({arg});")
                 elif item.type.name == "int":
                     code.add(f"stack.push_int({arg});")
                 elif item.type.name == "bool":
@@ -772,7 +772,7 @@ class Transpiler:
             )
             for i, item in reversed(list(enumerate(associated_data))):
                 if isinstance(item, FunctionPointer):
-                    raise NotImplementedError  # TODO
+                    pop_func = "pop_function_pointer"
                 else:
                     pop_func = self._generate_value_pop_function(item.type)
 
@@ -827,9 +827,11 @@ class Transpiler:
 
             for i, item in enumerate(associated_data):
                 if isinstance(item, FunctionPointer):
-                    raise NotImplementedError  # TODO
+                    # Function pointers can't be reliably compared
+                    continue
 
-                if item.type.name == "regex":
+                elif item.type.name == "regex":
+                    # Compiled regexes can't be compared
                     continue
 
                 code.add(f"&& lhs_arg{i} == rhs_arg{i}")
@@ -890,13 +892,14 @@ class Transpiler:
             for i, item in enumerate(associated_data):
                 code.add("{", r=1)
                 if isinstance(item, FunctionPointer):
-                    raise NotImplementedError  # TODO
-                elif item.type.name in ["int", "bool"]:
-                    arg = f"*arg{i}"
+                    code.add(f"arg{i}.clone()")
                 else:
-                    arg = f"arg{i}"
+                    if item.type.name in ["int", "bool"]:
+                        arg = f"*arg{i}"
+                    else:
+                        arg = f"arg{i}"
 
-                code.add(self._generate_clone_recursive_expression(arg, item.type))
+                    code.add(self._generate_clone_recursive_expression(arg, item.type))
                 code.add("},", l=1)
 
             code.add(")", l=1)
@@ -934,7 +937,7 @@ class Transpiler:
                     code.add('write!(f, ", ")?;')
 
                 if isinstance(item, FunctionPointer):
-                    raise NotImplementedError  # TODO
+                    code.add('write!(f, "func_ptr")?;')
                 elif item.type.name in ["int", "bool"]:
                     code.add(f'write!(f, "{{}}", arg{i})?;')
                 else:
@@ -964,7 +967,8 @@ class Transpiler:
         self, type: VariableType | FunctionPointer
     ) -> str:
         if isinstance(type, FunctionPointer):
-            raise NotImplementedError  # TODO
+            # Calling the zero-value function pointer leads to a crash with human-readable error message.
+            return "Stack::zero_function_pointer_value"
         if type.name == "int":
             return "0"
         elif type.name == "bool":
@@ -1162,7 +1166,7 @@ class Transpiler:
 
     def _generate_struct_field_type(self, type: VariableType | FunctionPointer) -> str:
         if isinstance(type, FunctionPointer):
-            raise NotImplementedError  # TODO
+            return "fn (&mut Stack<UserTypeEnum>)"
         if type.name == "int":
             return "isize"
         elif type.name == "bool":

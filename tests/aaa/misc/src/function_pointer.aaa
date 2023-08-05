@@ -3,12 +3,17 @@ fn add args a as int, b as int, return int {
     a b +
 }
 
-fn calculate args a as int, b as int, callable as fn[int,int][int] return int {
+fn calculate args a as int, b as int, callable as fn[int, int][int] return int {
    a b callable call
 }
 
 fn calculate_nested args a as int, b as int, callable as fn[int, int, fn[int, int][int]][int] return int {
     a b "add" fn callable call
+}
+
+enum OptionalCalculation {
+    none,
+    some as fn[int, int][int],
 }
 
 fn main {
@@ -34,19 +39,60 @@ fn main {
     // call function with nested function pointer
     34 35 "calculate" fn calculate_nested .
     "\n" .
+
+    // use function pointer with enum
+    OptionalCalculation drop
+
+    OptionalCalculation:none
+    match {
+        case OptionalCalculation:none { 69 }
+        case OptionalCalculation:some { use func { 0 0 func call } }
+    }
+    .
+    "\n" .
+
+
+    "add" fn OptionalCalculation:some
+    match {
+        case OptionalCalculation:none { 0 }
+        case OptionalCalculation:some { use func { 34 35 func call } }
+    }
+    .
+    "\n" .
+
+    "add" fn OptionalCalculation:some
+    match {
+        case OptionalCalculation:none { 0 }
+        case OptionalCalculation:some as func { 34 35 func call }
+    }
+    .
+    "\n" .
 }
-
-
-// return a function pointer from a function
 
 // TODO put function pointer in a struct
 
-// TODO put function pointer in an enum
-
 // TODO put a function pointer in a vec
-
-// TODO nest function pointers
 
 // TODO add syntax for pointer to function that never returns
 
-// TODO add python test case for this file
+// TODO support creating function pointer on the stack
+
+// TODO add python tests:
+// - this file
+// - file that tests zero value for function pointer in enum (see below)
+
+// The zero-value variant has default value of function pointer in associated value.
+// This should default to some function that crashes loud.
+enum Calculation {
+    some as fn[int, int][int],
+}
+
+fn zero_value_in_enum {
+    Calculation
+    match {
+        case Calculation:some as func { 34 35 func call drop }
+    }
+}
+
+// - file that tests zero value for function pointer in struct
+// - file that tests zero value for function pointer on the stack

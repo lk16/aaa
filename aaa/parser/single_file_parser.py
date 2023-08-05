@@ -281,23 +281,26 @@ class SingleFileParser:
         self._print_parse_tree_node("FunctionPointerTypeLiteral", start_offset, offset)
         return function_pointer_type_literal, offset
 
-    def _parse_argument(self, offset: int) -> Tuple[Argument, int]:
-        start_offset = offset
-
-        identifier, offset = self._parse_identifier(offset)
-        _, offset = self._token(offset, [TokenType.AS])
-
-        type: TypeLiteral | FunctionPointerTypeLiteral
-
+    def _parse_type_or_function_pointer_literal(
+        self, offset: int
+    ) -> Tuple[TypeLiteral | FunctionPointerTypeLiteral, int]:
         token = self._peek_token(offset)
 
         if not token:
             raise EndOfFileException(self.file)
 
         if token.type == TokenType.FUNCTION:
-            type, offset = self._parse_function_pointer_type_literal(offset)
+            return self._parse_function_pointer_type_literal(offset)
         else:
-            type, offset = self._parse_type_literal(offset)
+            return self._parse_type_literal(offset)
+
+    def _parse_argument(self, offset: int) -> Tuple[Argument, int]:
+        start_offset = offset
+
+        identifier, offset = self._parse_identifier(offset)
+        _, offset = self._token(offset, [TokenType.AS])
+
+        type, offset = self._parse_type_or_function_pointer_literal(offset)
 
         argument = Argument(identifier, type)
         self._print_parse_tree_node("Argument", start_offset, offset)
@@ -995,7 +998,7 @@ class SingleFileParser:
 
     def _parse_enum_variant_associated_data(
         self, offset: int
-    ) -> Tuple[List[TypeLiteral], int]:
+    ) -> Tuple[List[TypeLiteral | FunctionPointerTypeLiteral], int]:
         start_offset = offset
 
         token = self._peek_token(offset)
@@ -1003,12 +1006,14 @@ class SingleFileParser:
         if not token:
             raise EndOfFileException(self.file)
 
-        associated_data: List[TypeLiteral] = []
+        associated_data: List[TypeLiteral | FunctionPointerTypeLiteral] = []
 
         if token.type == TokenType.BLOCK_START:
             _, offset = self._token(offset, [TokenType.BLOCK_START])
 
-            associated_item, offset = self._parse_type_literal(offset)
+            associated_item, offset = self._parse_type_or_function_pointer_literal(
+                offset
+            )
             associated_data.append(associated_item)
 
             while True:
@@ -1026,7 +1031,7 @@ class SingleFileParser:
 
             _, offset = self._token(offset, [TokenType.BLOCK_END])
         else:
-            type_literal, offset = self._parse_type_literal(offset)
+            type_literal, offset = self._parse_type_or_function_pointer_literal(offset)
             associated_data.append(type_literal)
 
         self._print_parse_tree_node("EnumVariantAssociatedData", start_offset, offset)

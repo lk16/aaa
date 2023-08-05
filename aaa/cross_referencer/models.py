@@ -261,7 +261,9 @@ class Struct(Identifiable):
 class Enum(Identifiable):
     class Unresolved:
         def __init__(self, parsed: parser.Enum) -> None:
-            self.parsed_variants: Dict[str, List[parser.TypeLiteral]] = {}
+            self.parsed_variants: Dict[
+                str, List[parser.TypeLiteral | parser.FunctionPointerTypeLiteral]
+            ] = {}
 
             for variant in parsed.variants:
                 self.parsed_variants[variant.name.name] = variant.associated_data

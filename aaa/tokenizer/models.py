@@ -47,3 +47,6 @@ class Token:
         self.position = position
         self.type = type
         self.value = value
+
+    def __repr__(self) -> str:
+        return repr(self.value)

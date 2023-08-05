@@ -423,9 +423,13 @@ class CrossReferencer:
         for variant_name, associated_data in parsed_variants.items():
             resolved_associated_data: List[VariableType | FunctionPointer] = []
             try:
-                resolved_associated_data = [
-                    self._resolve_type(item) for item in associated_data
-                ]
+                for item in associated_data:
+                    if isinstance(item, parser.FunctionPointerTypeLiteral):
+                        resolved_associated_data.append(
+                            self._resolve_function_pointer(item)
+                        )
+                    else:
+                        resolved_associated_data.append(self._resolve_type(item))
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 continue

@@ -264,11 +264,16 @@ where
         }
     }
 
-    pub fn pop_function_pointer_and_call(&mut self) {
+    pub fn pop_function_pointer(&mut self) -> fn(&mut Stack<T>) {
         match self.pop() {
-            Variable::FunctionPointer(func) => func(self),
+            Variable::FunctionPointer(v) => v,
             v => self.pop_type_error("func_ptr", &v),
         }
+    }
+
+    pub fn pop_function_pointer_and_call(&mut self) {
+        let func = self.pop_function_pointer();
+        func(self);
     }
 
     pub fn print(&mut self) {
@@ -1343,5 +1348,14 @@ where
                 self.push_bool(false);
             }
         }
+    }
+
+    pub fn zero_function_pointer_value(&mut self) {
+        // Function pointers must point to a function in Aaa.
+        // The zero-value for function pointers is this function.
+        // Since this should never happen in a correct program, we just crash with an error message.
+
+        eprintln!("Function pointer with zero-value was called.");
+        process::exit(1);
     }
 }

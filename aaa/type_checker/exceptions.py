@@ -74,7 +74,7 @@ class StackTypesError(TypeCheckerException):
         super().__init__(position)
 
     def func_like_name(self) -> str:  # pragma: nocover
-        if isinstance(self.func_like, Function):
+        if isinstance(self.func_like, (Function, EnumConstructor)):
             return self.func_like.name
         elif isinstance(self.func_like, StructFieldQuery):
             return "?"
@@ -96,6 +96,9 @@ class StackTypesError(TypeCheckerException):
         elif isinstance(self.func_like, CallFunctionByPointer):
             # TODO improve
             return "<function arguments>... <function pointer>"
+        elif isinstance(self.func_like, EnumConstructor):
+            types = self.func_like.enum.variants[self.func_like.variant_name]
+            return format_typestack(types)
         else:  # pragma:nocover
             assert False
 
