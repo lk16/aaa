@@ -344,16 +344,9 @@ FunctionBodyItem = (
     | BooleanLiteral
     | Branch
     | Call
-    | CaseBlock
-    | CaseLabel
-    | DefaultBlock
-    | Enum
-    | EnumVariant
     | ForeachLoop
     | FunctionCall
-    | FunctionName
     | GetFunctionPointer
-    | Identifier
     | IntegerLiteral
     | MatchBlock
     | Return

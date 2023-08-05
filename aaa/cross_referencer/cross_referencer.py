@@ -225,7 +225,7 @@ class CrossReferencer:
 
                 if isinstance(identifiable.return_types, Never):
                     print(f"{prefix} | Return type never")
-                elif isinstance(identifiable.return_types, list):
+                else:
                     for return_type in identifiable.return_types:
                         if isinstance(return_type, FunctionPointer):
                             # TODO put more details
@@ -235,8 +235,6 @@ class CrossReferencer:
                         else:
                             file = return_type.type.position.short_filename()
                             print(f"{prefix} | Return type {file}:{return_type}")
-                else:
-                    assert False
 
             elif isinstance(identifiable, Struct):
                 file = identifiable.position.short_filename()
@@ -743,7 +741,10 @@ class FunctionBodyResolver:
             )
             return CallEnumConstructor(identifiable.source, var_type, call.position)
 
-        if isinstance(identifiable, (Enum, Struct)):
+        if isinstance(identifiable, Import):
+            raise NotImplementedError  # This should never happen
+
+        else:
             var_type = VariableType(
                 identifiable,
                 [
@@ -763,8 +764,6 @@ class FunctionBodyResolver:
                 )
 
             return CallType(var_type)
-
-        assert False  # pragma: nocover
 
     def _resolve_struct_field_update(
         self, update: parser.StructFieldUpdate
@@ -805,10 +804,8 @@ class FunctionBodyResolver:
             return self._resolve_return(parsed_item)
         elif isinstance(parsed_item, parser.GetFunctionPointer):
             return self._resolve_get_function_pointer(parsed_item)
-        elif isinstance(parsed_item, parser.Call):
+        else:
             return self._resolve_call_function_by_pointer(parsed_item)
-        else:  # pragma: nocover
-            assert False
 
     def _resolve_match_block(self, parsed: parser.MatchBlock) -> MatchBlock:
         blocks: List[CaseBlock | DefaultBlock] = []

@@ -12,28 +12,19 @@ class AaaCrossReferenceModel(AaaModel):
         self.position = position
 
 
-class Identifiable(AaaCrossReferenceModel):
-    def __init__(self, position: Position, name: str) -> None:
-        self.name = name
+class EnumConstructor(AaaCrossReferenceModel):
+    def __init__(self, enum: Enum, variant_name: str) -> None:
+        position = Position(enum.position.file, -1, -1)
+        self.enum = enum
+        self.variant_name = variant_name
+        self.name = f"{enum.name}:{variant_name}"
         super().__init__(position)
 
     def identify(self) -> Tuple[Path, str]:
         return (self.position.file, self.name)
 
 
-IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
-
-
-class EnumConstructor(Identifiable):
-    def __init__(self, enum: Enum, variant_name: str) -> None:
-        position = Position(enum.position.file, -1, -1)
-        self.enum = enum
-        self.variant_name = variant_name
-        name = f"{enum.name}:{variant_name}"
-        super().__init__(position, name)
-
-
-class Function(Identifiable):
+class Function(AaaCrossReferenceModel):
     class Unresolved:
         def __init__(self, parsed: parser.Function) -> None:
             self.parsed = parsed
@@ -79,11 +70,11 @@ class Function(Identifiable):
             self.struct_name = ""
 
         if parsed.struct_name:
-            name = f"{self.struct_name}:{self.func_name}"
+            self.name = f"{self.struct_name}:{self.func_name}"
         else:
-            name = self.func_name
+            self.name = self.func_name
 
-        super().__init__(parsed.position, name)
+        super().__init__(parsed.position)
 
     def get_unresolved(self) -> Function.Unresolved:
         assert isinstance(self.state, Function.Unresolved)
@@ -148,6 +139,9 @@ class Function(Identifiable):
             body,
         )
 
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
+
 
 class Argument(AaaCrossReferenceModel):
     def __init__(
@@ -166,7 +160,7 @@ class FunctionBody(AaaCrossReferenceModel):
         super().__init__(parsed.position)
 
 
-class Import(Identifiable):
+class Import(AaaCrossReferenceModel):
     class Unresolved:
         ...
 
@@ -178,7 +172,8 @@ class Import(Identifiable):
         self.state: Import.Resolved | Import.Unresolved = Import.Unresolved()
         self.source_file = import_.source_file
         self.source_name = import_item.original.name
-        super().__init__(import_item.position, import_item.imported.name)
+        self.name = import_item.imported.name
+        super().__init__(import_item.position)
 
     @property
     def source(self) -> Identifiable:
@@ -196,18 +191,29 @@ class Import(Identifiable):
         assert isinstance(self.state, Import.Resolved)
         return self.state
 
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
-class ImplicitFunctionImport(Identifiable):
+
+class ImplicitFunctionImport(AaaCrossReferenceModel):
     def __init__(self, source: Function) -> None:
         self.source = source
+        self.name = self.source.name
+
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
 
-class ImplicitEnumConstructorImport(Identifiable):
+class ImplicitEnumConstructorImport(AaaCrossReferenceModel):
     def __init__(self, source: EnumConstructor) -> None:
         self.source = source
+        self.name = self.source.name
+
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
 
-class Struct(Identifiable):
+class Struct(AaaCrossReferenceModel):
     class Unresolved:
         def __init__(self, parsed: parser.TypeLiteral | parser.Struct) -> None:
             self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
@@ -226,7 +232,8 @@ class Struct(Identifiable):
     ) -> None:
         self.state: Struct.Resolved | Struct.Unresolved = Struct.Unresolved(parsed)
         self.param_count = param_count
-        super().__init__(parsed.position, parsed.identifier.name)
+        self.name = parsed.identifier.name
+        super().__init__(parsed.position)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Struct):
@@ -253,8 +260,11 @@ class Struct(Identifiable):
     def is_resolved(self) -> bool:
         return isinstance(self.state, Struct.Resolved)
 
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
-class Enum(Identifiable):
+
+class Enum(AaaCrossReferenceModel):
     class Unresolved:
         def __init__(self, parsed: parser.Enum) -> None:
             self.parsed_variants: Dict[
@@ -282,7 +292,8 @@ class Enum(Identifiable):
     def __init__(self, parsed: parser.Enum, param_count: int) -> None:
         self.state: Enum.Resolved | Enum.Unresolved = Enum.Unresolved(parsed)
         self.param_count = param_count
-        super().__init__(parsed.position, parsed.identifier.name)
+        self.name = parsed.identifier.name
+        super().__init__(parsed.position)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Enum):
@@ -315,6 +326,9 @@ class Enum(Identifiable):
 
     def is_resolved(self) -> bool:
         return isinstance(self.state, Enum.Resolved)
+
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
 
 class VariableType(AaaCrossReferenceModel):
@@ -567,6 +581,17 @@ class CallFunctionByPointer(AaaCrossReferenceModel):
     ...
 
 
+Identifiable = (
+    EnumConstructor
+    | Enum
+    | Function
+    | ImplicitEnumConstructorImport
+    | ImplicitFunctionImport
+    | Import
+    | Struct
+)
+
+
 FunctionBodyItem = (
     Assignment
     | BooleanLiteral
@@ -589,6 +614,8 @@ FunctionBodyItem = (
     | Variable
     | WhileLoop
 )
+
+IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
 class CrossReferencerOutput(AaaModel):
