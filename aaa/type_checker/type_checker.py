@@ -256,7 +256,8 @@ class SingleFunctionTypeChecker:
 
                 if expected_value.is_const and not computed_value.is_const:
                     return False
-            elif isinstance(expected_value, FunctionPointer):
+            else:
+                assert isinstance(expected_value, FunctionPointer)
                 if not isinstance(computed_value, FunctionPointer):
                     return False
 
@@ -265,9 +266,6 @@ class SingleFunctionTypeChecker:
 
                 if computed_value.return_types != expected_value.return_types:
                     return False
-            else:  # pragma: nocover
-                assert False
-
         return True
 
     def _match_signature_items(
@@ -613,7 +611,7 @@ class SingleFunctionTypeChecker:
                     block, block_type_stack, enum_type
                 )
 
-            elif isinstance(block, DefaultBlock):
+            else:
                 if found_default_block:
                     raise DuplicateCase(found_default_block, block)
 
@@ -621,9 +619,6 @@ class SingleFunctionTypeChecker:
                 block_type_stack = self._check_function_body(
                     block.body, block_type_stack
                 )
-
-            else:  # pragma: nocover
-                assert False
 
             block_type_stacks.append(block_type_stack)
 

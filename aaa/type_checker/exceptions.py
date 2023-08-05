@@ -80,10 +80,9 @@ class StackTypesError(TypeCheckerException):
             return "?"
         elif isinstance(self.func_like, StructFieldUpdate):
             return "!"
-        elif isinstance(self.func_like, CallFunctionByPointer):
-            return "<function pointer>"
         else:
-            assert False
+            assert isinstance(self.func_like, CallFunctionByPointer)
+            return "<function pointer>"
 
     def format_expected_typestack(self) -> str:  # pragma: nocover
         if isinstance(self.func_like, Function):
@@ -96,11 +95,10 @@ class StackTypesError(TypeCheckerException):
         elif isinstance(self.func_like, CallFunctionByPointer):
             # TODO improve
             return "<function arguments>... <function pointer>"
-        elif isinstance(self.func_like, EnumConstructor):
+        else:
+            assert isinstance(self.func_like, EnumConstructor)
             types = self.func_like.enum.variants[self.func_like.variant_name]
             return format_typestack(types)
-        else:  # pragma:nocover
-            assert False
 
     def __str__(self) -> str:
         return (
@@ -605,10 +603,9 @@ class InvalidCallWithTypeParameters(TypeCheckerException):
     def __str__(self) -> str:
         if isinstance(self.var, Argument):
             object = "argument"
-        elif isinstance(self.var, Variable):
+        else:
+            assert isinstance(self.var, Variable)
             object = "variable"
-        else:  # pragma: nocover
-            assert False
 
         return f"{self.position}: Cannot use {object} {self.call_var.name} with type parameters\n"
 
