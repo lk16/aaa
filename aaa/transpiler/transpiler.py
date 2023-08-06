@@ -3,7 +3,7 @@ from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Type
 
 from aaa.cross_referencer.models import (
     Assignment,
@@ -298,49 +298,38 @@ class Transpiler:
 
         return code
 
-    def _generate_function_body_item(  # noqa C901  # TODO too complex, refactor
-        self, item: FunctionBodyItem
-    ) -> Code:
-        if isinstance(item, IntegerLiteral):
-            return Code(f"stack.push_int({item.value});")
-        elif isinstance(item, StringLiteral):
-            return self._generate_string_literal(item)
-        elif isinstance(item, BooleanLiteral):
-            bool_value = "true"
-            if not item.value:
-                bool_value = "false"
-            return Code(f"stack.push_bool({bool_value});")
-        elif isinstance(item, WhileLoop):
-            return self._generate_while_loop(item)
-        elif isinstance(item, ForeachLoop):
-            return self._generate_foreach_loop(item)
-        elif isinstance(item, CallFunction):
-            return self._generate_call_function_code(item)
-        elif isinstance(item, CallType):
-            return self._generate_call_type_code(item)
-        elif isinstance(item, CallEnumConstructor):
-            return self._generate_call_enum_constructor_code(item)
-        elif isinstance(item, Branch):
-            return self._generate_branch(item)
-        elif isinstance(item, StructFieldQuery):
-            return self._generate_field_query_code(item)
-        elif isinstance(item, StructFieldUpdate):
-            return self._generate_field_update_code(item)
-        elif isinstance(item, UseBlock):
-            return self._generate_use_block_code(item)
-        elif isinstance(item, CallVariable):
-            return self._generate_call_variable_code(item)
-        elif isinstance(item, Assignment):
-            return self._generate_assignment_code(item)
-        elif isinstance(item, Return):
-            return self._generate_return(item)
-        elif isinstance(item, MatchBlock):
-            return self._generate_match_block_code(item)
-        elif isinstance(item, CallFunctionByPointer):
-            return self._generate_call_by_function_pointer(item)
-        else:
-            assert isinstance(item, GetFunctionPointer)
-            return self._generate_get_function_pointer(item)
+    def _generate_function_body_item(self, item: FunctionBodyItem) -> Code:
+        generate_funcs: Dict[Type[FunctionBodyItem], Callable[..., Code]] = {
+            Assignment: self._generate_assignment_code,
+            BooleanLiteral: self._generate_boolean_literal,
+            Branch: self._generate_branch,
+            CallEnumConstructor: self._generate_call_enum_constructor_code,
+            CallFunction: self._generate_call_function_code,
+            CallFunctionByPointer: self._generate_call_by_function_pointer,
+            CallType: self._generate_call_type_code,
+            CallVariable: self._generate_call_variable_code,
+            ForeachLoop: self._generate_foreach_loop,
+            GetFunctionPointer: self._generate_get_function_pointer,
+            IntegerLiteral: self._generate_integer_literal,
+            MatchBlock: self._generate_match_block_code,
+            Return: self._generate_return,
+            StringLiteral: self._generate_string_literal,
+            StructFieldQuery: self._generate_field_query_code,
+            StructFieldUpdate: self._generate_field_update_code,
+            UseBlock: self._generate_use_block_code,
+            WhileLoop: self._generate_while_loop,
+        }
+
+        return generate_funcs[type(item)](item)
+
+    def _generate_boolean_literal(self, bool_literal: BooleanLiteral) -> Code:
+        bool_value = "true"
+        if not bool_literal.value:
+            bool_value = "false"
+        return Code(f"stack.push_bool({bool_value});")
+
+    def _generate_integer_literal(self, int_literal: IntegerLiteral) -> Code:
+        return Code(f"stack.push_int({int_literal.value});")
 
     def _generate_call_by_function_pointer(
         self, call_by_func_ptr: CallFunctionByPointer
