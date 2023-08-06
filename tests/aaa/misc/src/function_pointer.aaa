@@ -125,8 +125,6 @@ fn main {
 
 // TODO create function pointer to enum-associated function
 
-// TODO create function pointer to struct-associated function
-
 // TODO add python test for this file
 
 // TODO create function pointer to imported function
@@ -205,6 +203,29 @@ fn use_enum_ctor {
 fn unusual_functions {
     // TODO split this into 3 tests
     "todo" fn call
-    false "assert" fn call
-    "unreachable" fn call
+    // false "assert" fn call
+    // "unreachable" fn call
+}
+
+// TODO create function pointer to struct-associated function
+// TODO extend this to use imported struct-associated functions as well
+struct Bar {
+    value as int,
+}
+
+fn Bar:increment args bar as Bar {
+    bar "value" { bar "value" ? 1 + } !
+}
+
+fn ptr_to_struct_func {
+    Bar
+    use bar {
+        bar "value" { 68 } !
+        "Bar:increment" fn
+        use increment {
+            bar increment call
+        }
+        bar "value" ? .
+    }
+    "\n" .
 }
