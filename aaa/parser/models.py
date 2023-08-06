@@ -117,9 +117,9 @@ class Function(AaaParseModel):
         position: Position,
         struct_name: Optional[Identifier],
         func_name: Identifier,
-        type_params: List[TypeLiteral],
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
         arguments: List[Argument],
-        return_types: List[TypeLiteral] | Never,
+        return_types: List[TypeLiteral | FunctionPointerTypeLiteral] | Never,
         body: Optional[FunctionBody],
         end_position: Optional[Position],
     ) -> None:
@@ -202,7 +202,7 @@ class TypeLiteral(AaaParseModel):
         self,
         position: Position,
         identifier: Identifier,
-        params: List[TypeLiteral],
+        params: List[TypeLiteral | FunctionPointerTypeLiteral],
         const: bool,
     ) -> None:
         self.identifier = identifier
@@ -228,7 +228,7 @@ class FunctionName(AaaParseModel):
         self,
         position: Position,
         struct_name: Optional[Identifier],
-        type_params: List[TypeLiteral],
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
         func_name: Identifier,
     ) -> None:
         self.struct_name = struct_name
@@ -242,7 +242,7 @@ class FunctionCall(AaaParseModel):
         self,
         position: Position,
         struct_name: Optional[Identifier],
-        type_params: List[TypeLiteral],
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
         func_name: Identifier,
     ) -> None:
         self.struct_name = struct_name

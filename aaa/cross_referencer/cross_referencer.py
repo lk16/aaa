@@ -203,7 +203,6 @@ class CrossReferencer:
             return
 
         for (_, identifier), identifiable in self.identifiers.items():
-
             if isinstance(identifiable, Function):
                 file = identifiable.position.short_filename()
                 prefix = f"cross_referencer | Function {file}:{identifier}"
@@ -353,7 +352,6 @@ class CrossReferencer:
         return type
 
     def _get_identifiable_generic(self, name: str, position: Position) -> Identifiable:
-
         builtins_key = (self.builtins_path, name)
         key = (position.file, name)
 
@@ -374,46 +372,59 @@ class CrossReferencer:
 
         return found
 
-    def _resolve_type(self, parsed_field: parser.TypeLiteral) -> VariableType:
+    def _resolve_type(
+        self, parsed: parser.TypeLiteral | parser.FunctionPointerTypeLiteral
+    ) -> VariableType | FunctionPointer:
         # TODO rename this function?
 
-        type_identifier = parsed_field.identifier
+        if isinstance(parsed, parser.FunctionPointerTypeLiteral):
+            return FunctionPointer(
+                parsed.position,
+                argument_types=[
+                    self._resolve_type(type) for type in parsed.argument_types
+                ],
+                return_types=[self._resolve_type(type) for type in parsed.return_types],
+            )
+
+        type_identifier = parsed.identifier
         field_type = self._get_type(type_identifier)
 
-        params: List[VariableType] = []
+        params: List[VariableType | FunctionPointer] = []
 
-        for parsed_param in parsed_field.params:
-            param_type = self._get_type(parsed_param.identifier)
-            assert len(parsed_param.params) == 0
+        # TODO simplify this further
+        for parsed_param in parsed.params:
+            if isinstance(parsed_param, parser.TypeLiteral):
+                param_type = self._get_type(parsed_param.identifier)
+                assert len(parsed_param.params) == 0
 
-            params.append(
-                VariableType(
-                    type=param_type,
-                    params=[],
-                    is_placeholder=False,
-                    position=parsed_param.position,
-                    is_const=False,
+                params.append(
+                    VariableType(
+                        type=param_type,
+                        params=[],
+                        is_placeholder=False,
+                        position=parsed_param.position,
+                        is_const=False,
+                    )
                 )
-            )
+            else:
+                assert isinstance(parsed_param, parser.FunctionPointerTypeLiteral)
+                params.append(self._resolve_type(parsed_param))
 
         return VariableType(
             type=field_type,
             params=params,
             is_placeholder=False,
-            position=parsed_field.position,
+            position=parsed.position,
             is_const=False,
         )
 
     def _resolve_struct(self, type: Struct) -> None:
         parsed_field_types = type.get_unresolved().parsed_field_types
-        fields: Dict[str, VariableType | FunctionPointer] = {}
 
-        for field_name, parsed_field in parsed_field_types.items():
-            if isinstance(parsed_field, parser.TypeLiteral):
-                fields[field_name] = self._resolve_type(parsed_field)
-            else:
-                assert isinstance(parsed_field, parser.FunctionPointerTypeLiteral)
-                fields[field_name] = self._resolve_function_pointer(parsed_field)
+        fields = {
+            field_name: self._resolve_type(parsed_field)
+            for field_name, parsed_field in parsed_field_types.items()
+        }
 
         type.resolve(fields)
 
@@ -422,15 +433,10 @@ class CrossReferencer:
 
         enum_variants: Dict[str, List[VariableType | FunctionPointer]] = {}
         for variant_name, associated_data in parsed_variants.items():
-            resolved_associated_data: List[VariableType | FunctionPointer] = []
             try:
-                for item in associated_data:
-                    if isinstance(item, parser.FunctionPointerTypeLiteral):
-                        resolved_associated_data.append(
-                            self._resolve_function_pointer(item)
-                        )
-                    else:
-                        resolved_associated_data.append(self._resolve_type(item))
+                resolved_associated_data = [
+                    self._resolve_type(item) for item in associated_data
+                ]
             except CrossReferenceBaseException as e:
                 self.exceptions.append(e)
                 continue
@@ -446,7 +452,10 @@ class CrossReferencer:
         type_literal: Optional[parser.TypeLiteral] = None
 
         for param in function.get_unresolved().parsed.type_params:
-            if param.identifier.name == param_name:
+            if (
+                isinstance(param, parser.TypeLiteral)
+                and param.identifier.name == param_name
+            ):
                 type_literal = param
 
         assert type_literal
@@ -463,32 +472,18 @@ class CrossReferencer:
         return type
 
     def _resolve_function_params(self, function: Function) -> Dict[str, Struct]:
-        return {
-            parsed_type_param.identifier.name: self._resolve_function_param(
-                function, parsed_type_param
-            )
-            for parsed_type_param in function.get_unresolved().parsed.type_params
-        }
+        resolved_params: Dict[str, Struct] = {}
 
-    def _resolve_function_pointer(
-        self, parsed_func_ptr: parser.FunctionPointerTypeLiteral
-    ) -> FunctionPointer:
-        argument_types: List[VariableType | FunctionPointer] = []
-        return_types: List[VariableType | FunctionPointer] = []
-
-        for type in parsed_func_ptr.argument_types:
-            if isinstance(type, parser.FunctionPointerTypeLiteral):
-                argument_types.append(self._resolve_function_pointer(type))
+        for parsed_type_param in function.get_unresolved().parsed.type_params:
+            if isinstance(parsed_type_param, parser.TypeLiteral):
+                resolved_params[
+                    parsed_type_param.identifier.name
+                ] = self._resolve_function_param(function, parsed_type_param)
             else:
-                argument_types.append(self._resolve_type(type))
+                assert isinstance(parsed_type_param, parser.FunctionPointerTypeLiteral)
+                raise NotImplementedError  # TODO
 
-        for type in parsed_func_ptr.return_types:
-            if isinstance(type, parser.FunctionPointerTypeLiteral):
-                return_types.append(self._resolve_function_pointer(type))
-            else:
-                return_types.append(self._resolve_type(type))
-
-        return FunctionPointer(parsed_func_ptr.position, argument_types, return_types)
+        return resolved_params
 
     def _resolve_function_argument(
         self,
@@ -506,12 +501,15 @@ class CrossReferencer:
 
             found_type_param: Optional[parser.TypeLiteral] = None
             for type_param in function.get_unresolved().parsed.type_params:
-                if type_param.identifier.name == arg_type_name:
+                if (
+                    isinstance(type_param, parser.TypeLiteral)
+                    and type_param.identifier.name == arg_type_name
+                ):
                     found_type_param = type_param
 
             if found_type_param:
                 type = type_params[arg_type_name]
-                params: List[VariableType] = []
+                params: List[VariableType | FunctionPointer] = []
             else:
                 type = self._get_identifiable(parsed_type.identifier)
 
@@ -535,7 +533,8 @@ class CrossReferencer:
                 is_const=parsed_type.const,
             )
         else:
-            arg_type = self._resolve_function_pointer(parsed_type)
+            assert isinstance(parsed_type, parser.FunctionPointerTypeLiteral)
+            arg_type = self._resolve_type(parsed_type)
 
         return Argument(identifier=parsed_arg.identifier, type=arg_type)
 
@@ -550,8 +549,11 @@ class CrossReferencer:
     def _lookup_function_param(
         self,
         type_params: Dict[str, Struct],
-        param: parser.TypeLiteral,
-    ) -> VariableType:
+        param: parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
+    ) -> VariableType | FunctionPointer:
+        if isinstance(param, parser.FunctionPointerTypeLiteral):
+            return self._resolve_type(param)
+
         param_name = param.identifier.name
         if param_name in type_params:
             param_type: Struct | Enum = type_params[param_name]
@@ -577,7 +579,7 @@ class CrossReferencer:
         self,
         type_params: Dict[str, Struct],
         parsed_type: parser.TypeLiteral,
-    ) -> List[VariableType]:
+    ) -> List[VariableType | FunctionPointer]:
         return [
             self._lookup_function_param(type_params, param)
             for param in parsed_type.params
@@ -617,7 +619,6 @@ class CrossReferencer:
     def _resolve_function_return_types(
         self, function: Function, type_params: Dict[str, Struct]
     ) -> List[VariableType | FunctionPointer] | Never:
-
         parsed_return_types = function.get_unresolved().parsed.return_types
 
         if isinstance(parsed_return_types, parser.Never):
@@ -626,17 +627,24 @@ class CrossReferencer:
         return_types: List[VariableType | FunctionPointer] = []
 
         for parsed_return_type in parsed_return_types:
+            # TODO can we just call self._resolve_type() on every item?
+
+            if isinstance(parsed_return_type, parser.FunctionPointerTypeLiteral):
+                return_types.append(self._resolve_type(parsed_return_type))
+                continue
+
             return_type_name = parsed_return_type.identifier.name
-            type: Identifiable
 
             if return_type_name in type_params:
-                type = type_params[return_type_name]
-                params: List[VariableType] = []
+                type: Struct | Enum = type_params[return_type_name]
+                params: List[VariableType | FunctionPointer] = []
             else:
-                type = self._get_identifiable(parsed_return_type.identifier)
+                loaded_type = self._get_identifiable(parsed_return_type.identifier)
 
-                if not isinstance(type, (Struct, Enum)):
-                    raise InvalidReturnType(type)
+                if not isinstance(loaded_type, (Struct, Enum)):
+                    raise InvalidReturnType(loaded_type)
+
+                type = loaded_type
 
                 params = self._lookup_function_params(type_params, parsed_return_type)
 
@@ -887,6 +895,8 @@ class FunctionBodyResolver:
         return self.cross_referencer._get_identifiable_generic(name, position)
 
     def _lookup_function_param(
-        self, type_params: Dict[str, Struct], param: parser.TypeLiteral
-    ) -> VariableType:
+        self,
+        type_params: Dict[str, Struct],
+        param: parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
+    ) -> VariableType | FunctionPointer:
         return self.cross_referencer._lookup_function_param(type_params, param)

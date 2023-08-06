@@ -99,7 +99,9 @@ class SingleFileParser:
         self._print_parse_tree_node("Identifier", start_offset, offset)
         return identifier, offset
 
-    def _parse_flat_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+    def _parse_flat_type_params(
+        self, offset: int
+    ) -> Tuple[List[TypeLiteral | FunctionPointerTypeLiteral], int]:
         start_offset = offset
         _, offset = self._parse_token(offset, [TokenType.SQUARE_BRACKET_OPEN])
 
@@ -123,7 +125,7 @@ class SingleFileParser:
                 _, offset = self._parse_token(offset, [TokenType.SQUARE_BRACKET_CLOSE])
                 break
 
-        type_params = [
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral] = [
             TypeLiteral(identifier.position, identifier, [], False)
             for identifier in identifiers
         ]
@@ -136,7 +138,7 @@ class SingleFileParser:
 
         identifier, offset = self._parse_identifier(offset)
 
-        type_params: List[TypeLiteral] = []
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral] = []
 
         try:
             type_params, offset = self._parse_flat_type_params(offset)
@@ -185,16 +187,18 @@ class SingleFileParser:
         self._print_parse_tree_node("FunctionName", start_offset, offset)
         return function_name, offset
 
-    def _parse_type_params(self, offset: int) -> Tuple[List[TypeLiteral], int]:
+    def _parse_type_params(
+        self, offset: int
+    ) -> Tuple[List[TypeLiteral | FunctionPointerTypeLiteral], int]:
         start_offset = offset
 
         _, offset = self._parse_token(offset, [TokenType.SQUARE_BRACKET_OPEN])
 
-        type_params: List[TypeLiteral] = []
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral] = []
         token: Optional[Token]
 
         while True:
-            type_param, offset = self._parse_type_literal(offset)
+            type_param, offset = self._parse_type_or_function_pointer_literal(offset)
             type_params.append(type_param)
 
             token, offset = self._parse_token(
@@ -213,7 +217,9 @@ class SingleFileParser:
         self._print_parse_tree_node("TypeParams", start_offset, offset)
         return type_params, offset
 
-    def _parse_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
+    def _parse_type_literal(
+        self, offset: int
+    ) -> Tuple[TypeLiteral | FunctionPointerTypeLiteral, int]:
         start_offset = offset
 
         token = self._peek_token_or_fail(offset)
@@ -225,7 +231,7 @@ class SingleFileParser:
 
         identifier, offset = self._parse_identifier(offset)
 
-        type_params: List[TypeLiteral] = []
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral] = []
 
         try:
             type_params, offset = self._parse_type_params(offset)
@@ -327,7 +333,9 @@ class SingleFileParser:
         self._print_parse_tree_node("Arguments", start_offset, offset)
         return arguments, offset
 
-    def _parse_return_types(self, offset: int) -> Tuple[List[TypeLiteral] | Never, int]:
+    def _parse_return_types(
+        self, offset: int
+    ) -> Tuple[List[TypeLiteral | FunctionPointerTypeLiteral] | Never, int]:
         start_offset = offset
 
         token = self._peek_token_or_fail(offset)
@@ -337,7 +345,7 @@ class SingleFileParser:
             never = Never(never_token.position)
             return never, offset
 
-        return_types: List[TypeLiteral] = []
+        return_types: List[TypeLiteral | FunctionPointerTypeLiteral] = []
 
         return_type, offset = self._parse_type_literal(offset)
         return_types.append(return_type)
@@ -364,7 +372,7 @@ class SingleFileParser:
         fn_token, offset = self._parse_token(offset, [TokenType.FUNCTION])
         function_name, offset = self._parse_function_name(offset)
         arguments: List[Argument] = []
-        return_types: List[TypeLiteral] | Never = []
+        return_types: List[TypeLiteral | FunctionPointerTypeLiteral] | Never = []
 
         token = self._peek_token(offset)
         if token and token.type == TokenType.ARGS:
@@ -574,7 +582,7 @@ class SingleFileParser:
         token: Optional[Token]
         identifier, offset = self._parse_identifier(offset)
 
-        type_params: List[TypeLiteral] = []
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral] = []
         struct_name: Optional[Identifier] = None
         func_name: Identifier
 

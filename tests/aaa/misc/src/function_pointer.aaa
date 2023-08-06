@@ -78,6 +78,19 @@ fn main {
         34 35 foo "func" ? call .
     }
     "\n" .
+
+    vec[fn[int, int][int]]
+    use v {
+        v "add" fn vec:push
+
+        v
+        foreach {
+            use func {
+                34 35 func call .
+            }
+        }
+    }
+    "\n" .
 }
 
 // TODO put a function pointer in a vec
@@ -86,7 +99,14 @@ fn main {
 
 // TODO support creating function pointer on the stack
 
-//
+// TODO return function pointer from function
+
+// TODO create function pointer to enum constructor
+
+// TODO create function pointer to enum-associated function
+
+// TODO create function pointer to struct-associated function
+
 // TODO add python test for this file
 
 // TODO add file that tests zero value for function pointer in enum

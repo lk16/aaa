@@ -337,7 +337,7 @@ class VariableType(AaaCrossReferenceModel):
     def __init__(
         self,
         type: Struct | Enum,
-        params: List[VariableType],
+        params: List[VariableType | FunctionPointer],
         is_placeholder: bool,
         position: Position,
         is_const: bool,

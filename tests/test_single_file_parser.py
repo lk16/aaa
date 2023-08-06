@@ -11,6 +11,7 @@ from aaa.parser.exceptions import (
     ParserException,
     UnhandledTopLevelToken,
 )
+from aaa.parser.models import FunctionPointerTypeLiteral, TypeLiteral
 from aaa.parser.single_file_parser import SingleFileParser
 from aaa.tokenizer.tokenizer import Tokenizer
 
@@ -50,6 +51,18 @@ def test_parse_identifier(
             parser._parse_identifier(0)
 
 
+def get_type_param_variable_type_names(
+    type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
+) -> List[str]:
+    names: List[str] = []
+
+    for type_param in type_params:
+        assert isinstance(type_param, TypeLiteral)
+        names.append(type_param.identifier.name)
+
+    return names
+
+
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
@@ -79,9 +92,7 @@ def test_parse_flat_type_params(
     if isinstance(expected_result, list):
         type_params, offset = parser._parse_flat_type_params(0)
         assert expected_offset == offset
-        assert expected_result == [
-            type_param.identifier.name for type_param in type_params
-        ]
+        assert expected_result == get_type_param_variable_type_names(type_params)
     else:
         with pytest.raises(expected_result):
             parser._parse_flat_type_params(0)
@@ -120,9 +131,9 @@ def test_parse_flat_type_literal(
 
         assert expected_offset == offset
         assert expected_type_name == type_literal.identifier.name
-        assert expected_type_params == [
-            type_param.identifier.name for type_param in type_literal.params
-        ]
+        assert expected_type_params == get_type_param_variable_type_names(
+            type_literal.params
+        )
     else:
         with pytest.raises(expected_result):
             parser._parse_flat_type_literal(0)
@@ -160,9 +171,9 @@ def test_parse_type_declaration(
 
         assert expected_offset == offset
         assert expected_type_name == type_literal.identifier.name
-        assert expected_type_params == [
-            type_param.identifier.name for type_param in type_literal.params
-        ]
+        assert expected_type_params == get_type_param_variable_type_names(
+            type_literal.params
+        )
     else:
         with pytest.raises(expected_result):
             parser._parse_type_declaration(0)
@@ -213,9 +224,9 @@ def test_parse_function_name(
             assert function_name.struct_name is None
 
         assert expected_func_name == function_name.func_name.name
-        assert expected_type_params == [
-            param.identifier.name for param in function_name.type_params
-        ]
+        assert expected_type_params == get_type_param_variable_type_names(
+            function_name.type_params
+        )
     else:
         with pytest.raises(expected_result):
             parser._parse_function_name(0)
@@ -741,9 +752,9 @@ def test_parse_function_call(
         else:
             assert expected_struct_name is None
 
-        assert expected_type_params == [
-            type_param.identifier.name for type_param in func_call.type_params
-        ]
+        assert expected_type_params == get_type_param_variable_type_names(
+            func_call.type_params
+        )
         assert expected_func_name == func_call.func_name.name
 
         assert expected_offset == offset

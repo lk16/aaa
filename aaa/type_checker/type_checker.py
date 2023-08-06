@@ -158,6 +158,7 @@ class TypeChecker:
             and isinstance(function.arguments[0].type, VariableType)
             and function.arguments[0].type.name == "vec"
             and len(function.arguments[0].type.params) == 1
+            and isinstance(function.arguments[0].type.params[0], VariableType)
             and function.arguments[0].type.params[0].name == "str"
         ):
             main_arguments_ok = True
@@ -275,7 +276,6 @@ class SingleFunctionTypeChecker:
         placeholder_types: Dict[str, VariableType],
     ) -> Dict[str, VariableType]:
         if isinstance(expected_var_type, FunctionPointer):
-
             if not isinstance(var_type, FunctionPointer):
                 raise SignatureItemMismatch
 
@@ -377,7 +377,6 @@ class SingleFunctionTypeChecker:
         get_func_ptr: GetFunctionPointer,
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer]:
-
         target = get_func_ptr.target
 
         argument_types = [arg.type for arg in target.arguments]
@@ -475,7 +474,6 @@ class SingleFunctionTypeChecker:
         function_body: FunctionBody,
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer] | Never:
-
         checkers: Dict[
             Any,
             Callable[
@@ -570,7 +568,6 @@ class SingleFunctionTypeChecker:
     def _check_match_block(  # noqa: C901  # TODO refactor, this is too complex
         self, match_block: MatchBlock, type_stack: List[VariableType | FunctionPointer]
     ) -> List[VariableType | FunctionPointer] | Never:
-
         try:
             matched_var_type = type_stack[-1]
         except IndexError:
@@ -672,7 +669,7 @@ class SingleFunctionTypeChecker:
         # Push variable on stack
         return type_stack + [var_type]
 
-    def _simplify_stack_item(
+    def _simplify_stack_item(  # TODO remove/refactor `remove_const`
         self, type: VariableType | FunctionPointer
     ) -> VariableType | FunctionPointer:
         if (
@@ -682,6 +679,7 @@ class SingleFunctionTypeChecker:
         ):
             assert len(type.params) == 1
 
+            assert isinstance(type.params[0], VariableType)
             type = copy(type.params[0])
             type.is_const = False
 
@@ -1055,7 +1053,6 @@ class SingleFunctionTypeChecker:
     def _check_use_block(
         self, use_block: UseBlock, type_stack: List[VariableType | FunctionPointer]
     ) -> List[VariableType | FunctionPointer] | Never:
-
         use_var_count = len(use_block.variables)
 
         if len(type_stack) < use_var_count:
