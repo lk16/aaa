@@ -278,7 +278,23 @@ class SingleFileParser:
         _, offset = self._parse_token(offset, [TokenType.SQUARE_BRACKET_CLOSE])
 
         _, offset = self._parse_token(offset, [TokenType.SQUARE_BRACKET_OPEN])
-        return_types, offset = self._parse_comma_separated_type_list(offset)
+
+        token = self._peek_token_or_fail(offset)
+
+        if token.type == TokenType.NEVER:
+            never_token, offset = self._parse_token(offset, [TokenType.NEVER])
+
+            token = self._peek_token_or_fail(offset)
+
+            if token.type == TokenType.COMMA:
+                _, offset = self._parse_token(offset, [TokenType.COMMA])
+
+            return_types: List[
+                TypeLiteral | FunctionPointerTypeLiteral
+            ] | Never = Never(never_token.position)
+        else:
+            return_types, offset = self._parse_comma_separated_type_list(offset)
+
         _, offset = self._parse_token(offset, [TokenType.SQUARE_BRACKET_CLOSE])
 
         function_pointer_type_literal = FunctionPointerTypeLiteral(

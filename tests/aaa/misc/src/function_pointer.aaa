@@ -103,8 +103,6 @@ fn main {
     "\n" .
 }
 
-// TODO add syntax for pointer to function that never returns
-
 // TODO return function pointer from function
 
 // TODO create function pointer to builtin function (special cases: `todo` and `unreachable`)
@@ -139,4 +137,22 @@ fn zero_value_in_struct {
 // TODO add file that tests zero value for function pointer on the stack
 fn zero_value_on_stack {
     34 35 fn[int, int][int] call drop
+}
+
+// TODO add file that uses pointer to function that never returns
+fn does_not_return return never {
+    "does_not_return was called!\n" .
+    1 exit
+}
+
+fn call_does_not_return args func as fn[][never] return never {
+    func call
+}
+
+fn use_does_not_return {
+    fn[][never]
+    use func {
+        func <- { "does_not_return" fn }
+        func call
+    }
 }

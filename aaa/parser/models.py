@@ -216,7 +216,7 @@ class FunctionPointerTypeLiteral(AaaParseModel):
         self,
         position: Position,
         argument_types: List[TypeLiteral | FunctionPointerTypeLiteral],
-        return_types: List[TypeLiteral | FunctionPointerTypeLiteral],
+        return_types: List[TypeLiteral | FunctionPointerTypeLiteral] | Never,
     ) -> None:
         self.argument_types = argument_types
         self.return_types = return_types

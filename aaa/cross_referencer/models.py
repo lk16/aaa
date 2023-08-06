@@ -409,7 +409,8 @@ class Never:
     Examples for which this is useful: return, continue, break, exit
     """
 
-    ...
+    def __eq__(self, other: Any) -> bool:
+        return type(self) == type(other)
 
 
 class IntegerLiteral(AaaCrossReferenceModel):

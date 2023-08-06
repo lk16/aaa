@@ -378,12 +378,19 @@ class CrossReferencer:
         # TODO rename this function?
 
         if isinstance(parsed, parser.FunctionPointerTypeLiteral):
+            if isinstance(parsed.return_types, parser.Never):
+                return_types: List[VariableType | FunctionPointer] | Never = Never()
+            else:
+                return_types = [
+                    self._resolve_type(type) for type in parsed.return_types
+                ]
+
             return FunctionPointer(
                 parsed.position,
                 argument_types=[
                     self._resolve_type(type) for type in parsed.argument_types
                 ],
-                return_types=[self._resolve_type(type) for type in parsed.return_types],
+                return_types=return_types,
             )
 
         type_identifier = parsed.identifier
@@ -814,16 +821,21 @@ class FunctionBodyResolver:
     def _resolve_function_pointer_literal(
         self, parsed: parser.FunctionPointerTypeLiteral
     ) -> FunctionPointer:
+        if isinstance(parsed.return_types, parser.Never):
+            return_types: List[VariableType | FunctionPointer] | Never = Never()
+        else:
+            return_types = [
+                self.cross_referencer._resolve_type(type)
+                for type in parsed.return_types
+            ]
+
         return FunctionPointer(
             parsed.position,
             argument_types=[
                 self.cross_referencer._resolve_type(type)
                 for type in parsed.argument_types
             ],
-            return_types=[
-                self.cross_referencer._resolve_type(type)
-                for type in parsed.return_types
-            ],
+            return_types=return_types,
         )
 
     def _resolve_match_block(self, parsed: parser.MatchBlock) -> MatchBlock:
