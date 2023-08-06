@@ -66,7 +66,7 @@ fn vec[T]:empty      args v as const vec[T]                                     
 fn vec[T]:get        args v as const vec[T], offset as const int                  return T
 fn vec[T]:iter       args v as       vec[T]                                       return vec_iter[T]
 fn vec[T]:pop        args v as       vec[T]                                       return T
-fn vec[T]:push       args v as const vec[T], item as const T
+fn vec[T]:push       args v as       vec[T], item as const T
 fn vec[T]:set        args v as       vec[T], offset as const int, item as const T
 fn vec[T]:len        args v as const vec[T]                                       return int
 
