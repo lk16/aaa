@@ -575,7 +575,7 @@ class Return(AaaCrossReferenceModel):
 
 
 class GetFunctionPointer(AaaCrossReferenceModel):
-    def __init__(self, position: Position, target: Function) -> None:
+    def __init__(self, position: Position, target: Function | EnumConstructor) -> None:
         self.target = target
         super().__init__(position)
 

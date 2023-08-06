@@ -18,6 +18,7 @@ from aaa.cross_referencer.models import (
     CrossReferencerOutput,
     DefaultBlock,
     Enum,
+    EnumConstructor,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -339,9 +340,22 @@ class Transpiler:
     ) -> Code:
         return Code("stack.pop_function_pointer_and_call();")
 
+    def _get_function_pointer_expression(
+        self, target: Function | EnumConstructor
+    ) -> str:
+        if isinstance(target, EnumConstructor):
+            return self._generate_enum_constructor_name(
+                target.enum, target.variant_name
+            )
+
+        if target.position.file == self.builtins_path:
+            return "Stack::" + self._generate_builtin_function_name(target)
+
+        return self._generate_function_name(target)
+
     def _generate_get_function_pointer(self, get_func_ptr: GetFunctionPointer) -> Code:
-        rust_func_name = self._generate_function_name(get_func_ptr.target)
-        return Code(f"stack.push_function_pointer({rust_func_name});")
+        ptr_expr = self._get_function_pointer_expression(get_func_ptr.target)
+        return Code(f"stack.push_function_pointer({ptr_expr});")
 
     def _generate_field_query_code(self, field_query: StructFieldQuery) -> Code:
         field_name = field_query.field_name.value

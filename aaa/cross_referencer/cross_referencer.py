@@ -890,14 +890,18 @@ class FunctionBodyResolver:
     def _resolve_get_function_pointer(
         self, parsed: parser.GetFunctionPointer
     ) -> GetFunctionPointer:
+        # TODO this is clunky, add helper function in self.cross_referencer to do fancy look up
+        builtins_key = (self.cross_referencer.builtins_path, parsed.function_name.value)
         key = (parsed.position.file, parsed.function_name.value)
 
-        try:
+        if builtins_key in self.cross_referencer.identifiers:
+            target = self.cross_referencer.identifiers[builtins_key]
+        elif key in self.cross_referencer.identifiers:
             target = self.cross_referencer.identifiers[key]
-        except KeyError:
+        else:
             raise NotImplementedError  # TODO
 
-        if not isinstance(target, Function):
+        if not isinstance(target, (Function, EnumConstructor)):
             raise NotImplementedError  # TODO
 
         return GetFunctionPointer(parsed.position, target)

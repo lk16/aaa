@@ -377,11 +377,19 @@ class SingleFunctionTypeChecker:
     ) -> List[VariableType | FunctionPointer]:
         target = get_func_ptr.target
 
-        argument_types = [arg.type for arg in target.arguments]
+        argument_types: List[VariableType | FunctionPointer] | Never
+        return_types: List[VariableType | FunctionPointer] | Never
 
-        func_ptr = FunctionPointer(
-            get_func_ptr.position, argument_types, target.return_types
-        )
+        if isinstance(target, Function):
+            argument_types = [arg.type for arg in target.arguments]
+            return_types = target.return_types
+        else:
+            assert isinstance(target, EnumConstructor)
+            argument_types = target.enum.variants[target.variant_name]
+            enum_var_type = VariableType(target.enum, [], False, target.position, False)
+            return_types = [enum_var_type]
+
+        func_ptr = FunctionPointer(get_func_ptr.position, argument_types, return_types)
 
         return type_stack + [func_ptr]
 

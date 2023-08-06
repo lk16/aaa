@@ -109,17 +109,20 @@ fn main {
     // return function pointer from function
     34 35 get_add call .
     "\n" .
+
+    34 35 "+" fn call .
+    "\n" .
 }
 
-// TODO create function pointer to builtin function (special cases: `todo` and `unreachable`)
-
-// TODO create function pointer to enum constructor
+// TODO create function pointer to builtin function (special cases: `+`, `todo` and `unreachable`)
 
 // TODO create function pointer to enum-associated function
 
 // TODO create function pointer to struct-associated function
 
 // TODO add python test for this file
+
+// TODO create function pointer to imported function
 
 // TODO add file that tests zero value for function pointer in enum
 // The zero-value variant has default value of function pointer in associated value.
@@ -161,4 +164,32 @@ fn use_does_not_return {
         func <- { "does_not_return" fn }
         func call
     }
+}
+
+// TODO add file to use function pointer to enum constructor
+// TODO extend this to use imported enum constructs as well
+enum OptionalInt {
+    none,
+    some as int,
+}
+
+fn use_enum_ctor {
+    "OptionalInt:none" fn
+    use optional_int_none {
+        optional_int_none call
+        match {
+            case OptionalInt:none { nop }
+            default { unreachable }
+        }
+    }
+
+    "OptionalInt:some" fn
+    use optional_int_some {
+        69 optional_int_some call
+        match {
+            case OptionalInt:some { . }
+            default { unreachable }
+        }
+    }
+    "\n" .
 }
