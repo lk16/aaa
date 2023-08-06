@@ -391,49 +391,25 @@ class Transpiler:
             code.add(
                 f"stack.push_bool(borrowed.get_{rust_struct_name}().{field_name});"
             )
-        elif (
-            field.type.name == "str"
-        ):  # TODO simplify the remainder of this if-else chain
-            code.add("{", r=1)
-            code.add(
-                f"let str_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
-            )
-            code.add(f"stack.push(Variable::String(str_rc));")
-            code.add("}", l=1)
-        elif field.type.name == "vec":
-            code.add("{", r=1)
-            code.add(
-                f"let vec_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
-            )
-            code.add(f"stack.push(Variable::Vector(vec_rc));")
-            code.add("}", l=1)
-        elif field.type.name == "set":
-            code.add("{", r=1)
-            code.add(
-                f"let set_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
-            )
-            code.add(f"stack.push(Variable::Set(set_rc));")
-            code.add("}", l=1)
-        elif field.type.name == "map":
-            code.add("{", r=1)
-            code.add(
-                f"let map_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
-            )
-            code.add(f"stack.push(Variable::Map(map_rc));")
-            code.add("}", l=1)
-        elif field.type.name == "regex":
-            code.add("{", r=1)
-            code.add(
-                f"let regex_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
-            )
-            code.add(f"stack.push(Variable::Regex(regex_rc));")
-            code.add("}", l=1)
         else:
             code.add("{", r=1)
             code.add(
-                f"let struct_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
+                f"let field_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
             )
-            code.add(f"stack.push(Variable::UserType(struct_rc));")
+
+            if field.type.name == "str":
+                code.add(f"stack.push(Variable::String(field_rc));")
+            elif field.type.name == "vec":
+                code.add(f"stack.push(Variable::Vector(field_rc));")
+            elif field.type.name == "set":
+                code.add(f"stack.push(Variable::Set(field_rc));")
+            elif field.type.name == "map":
+                code.add(f"stack.push(Variable::Map(field_rc));")
+            elif field.type.name == "regex":
+                code.add(f"stack.push(Variable::Regex(field_rc));")
+            else:
+                code.add(f"stack.push(Variable::UserType(field_rc));")
+
             code.add("}", l=1)
 
         code.add("}", l=1)
