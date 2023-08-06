@@ -11,6 +11,10 @@ fn calculate_nested args a as int, b as int, callable as fn[int, int, fn[int, in
     a b "add" fn callable call
 }
 
+fn get_add return fn[int, int][int] {
+    "add" fn
+}
+
 enum OptionalCalculation {
     none,
     some as fn[int, int][int],
@@ -101,9 +105,11 @@ fn main {
         34 35 func call .
     }
     "\n" .
-}
 
-// TODO return function pointer from function
+    // return function pointer from function
+    34 35 get_add call .
+    "\n" .
+}
 
 // TODO create function pointer to builtin function (special cases: `todo` and `unreachable`)
 

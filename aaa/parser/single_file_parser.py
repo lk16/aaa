@@ -363,7 +363,7 @@ class SingleFileParser:
 
         return_types: List[TypeLiteral | FunctionPointerTypeLiteral] = []
 
-        return_type, offset = self._parse_type_literal(offset)
+        return_type, offset = self._parse_type_or_function_pointer_literal(offset)
         return_types.append(return_type)
 
         while True:
@@ -373,7 +373,9 @@ class SingleFileParser:
                 break
 
             try:
-                return_type, offset = self._parse_type_literal(offset)
+                return_type, offset = self._parse_type_or_function_pointer_literal(
+                    offset
+                )
             except ParserBaseException:
                 break
             else:
