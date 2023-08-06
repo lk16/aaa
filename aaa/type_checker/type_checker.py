@@ -273,8 +273,8 @@ class SingleFunctionTypeChecker:
         self,
         expected_var_type: VariableType | FunctionPointer,
         var_type: VariableType | FunctionPointer,
-        placeholder_types: Dict[str, VariableType],
-    ) -> Dict[str, VariableType]:
+        placeholder_types: Dict[str, VariableType | FunctionPointer],
+    ) -> Dict[str, VariableType | FunctionPointer]:
         if isinstance(expected_var_type, FunctionPointer):
             if not isinstance(var_type, FunctionPointer):
                 raise SignatureItemMismatch
@@ -283,9 +283,6 @@ class SingleFunctionTypeChecker:
                 raise SignatureItemMismatch
 
             return placeholder_types
-
-        if isinstance(var_type, FunctionPointer):
-            raise SignatureItemMismatch
 
         if expected_var_type.is_placeholder:
             if expected_var_type.name in placeholder_types:
@@ -297,6 +294,9 @@ class SingleFunctionTypeChecker:
             return placeholder_types
 
         else:
+            if not isinstance(var_type, VariableType):
+                raise SignatureItemMismatch
+
             if expected_var_type.type != var_type.type:
                 raise SignatureItemMismatch
 
@@ -317,7 +317,7 @@ class SingleFunctionTypeChecker:
     def _apply_placeholders_in_return_type(
         self,
         return_type: VariableType | FunctionPointer,
-        placeholder_types: Dict[str, VariableType],
+        placeholder_types: Dict[str, VariableType | FunctionPointer],
     ) -> VariableType | FunctionPointer:
         if isinstance(return_type, FunctionPointer):
             return return_type
@@ -327,7 +327,7 @@ class SingleFunctionTypeChecker:
         if return_type.is_placeholder:
             updated_return_type = copy(placeholder_types[return_type.name])
 
-            if return_type.is_const:
+            if isinstance(updated_return_type, VariableType) and return_type.is_const:
                 updated_return_type.is_const = True
 
             return updated_return_type
@@ -336,9 +336,6 @@ class SingleFunctionTypeChecker:
             updated_param = self._apply_placeholders_in_return_type(
                 param, placeholder_types
             )
-
-            # TODO prevent this
-            assert isinstance(updated_param, VariableType)
 
             return_type.params[i] = updated_param
 
@@ -699,7 +696,7 @@ class SingleFunctionTypeChecker:
         if len(stack) < arg_count:
             raise StackTypesError(position, type_stack, call)
 
-        placeholder_types: Dict[str, VariableType] = {}
+        placeholder_types: Dict[str, VariableType | FunctionPointer] = {}
         types = stack[len(stack) - arg_count :]
 
         for argument, type in zip(arguments, types, strict=True):

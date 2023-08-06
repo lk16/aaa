@@ -72,6 +72,7 @@ fn main {
     .
     "\n" .
 
+    // struct
     Foo
     use foo {
         foo "func" { "add" fn } !
@@ -79,6 +80,7 @@ fn main {
     }
     "\n" .
 
+    // vector
     vec[fn[int, int][int]]
     use v {
         v "add" fn vec:push
@@ -93,13 +95,13 @@ fn main {
     "\n" .
 }
 
-// TODO put a function pointer in a vec
-
 // TODO add syntax for pointer to function that never returns
 
 // TODO support creating function pointer on the stack
 
 // TODO return function pointer from function
+
+// TODO create function pointer to builtin function (special cases: `todo` and `unreachable`)
 
 // TODO create function pointer to enum constructor
 
