@@ -110,11 +110,18 @@ fn main {
     34 35 get_add call .
     "\n" .
 
+    // get pointer to builtin function
+    69 "dup" fn call . drop
+    "\n" .
+
+    // get pointer to builtin member-function
+    "6" "9" "str:append" fn call .
+    "\n" .
+
+    // get pointer to builtin function with unusual chars
     34 35 "+" fn call .
     "\n" .
 }
-
-// TODO create function pointer to builtin function (special cases: `+`, `todo` and `unreachable`)
 
 // TODO create function pointer to enum-associated function
 
@@ -192,4 +199,12 @@ fn use_enum_ctor {
         }
     }
     "\n" .
+}
+
+// TODO add test files for calling unusual builtin functions
+fn unusual_functions {
+    // TODO split this into 3 tests
+    "todo" fn call
+    false "assert" fn call
+    "unreachable" fn call
 }

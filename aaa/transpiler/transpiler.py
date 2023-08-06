@@ -684,8 +684,9 @@ class Transpiler:
         if called.position.file == self.builtins_path:
             if called.name in ["assert", "todo", "unreachable"]:
                 position = call_func.position
+                rust_func_name = f"stack.{called.name}_with_position"
                 return Code(
-                    f'{rust_func_name}("{position.file}", {position.line}, {position.column});'
+                    f'{rust_func_name}(Some(("{position.file}", {position.line}, {position.column})));'
                 )
             return Code(f"{rust_func_name}();")
 

@@ -302,20 +302,56 @@ where
         self.items.swap(len - 1, len - 2);
     }
 
-    pub fn assert(&mut self, file: &str, line: isize, col: isize) {
+    pub fn assert(&mut self) {
+        // used when called via function pointer
+        self.assert_with_position(None)
+    }
+
+    pub fn assert_with_position(&mut self, position: Option<(&str, isize, isize)>) {
+        // used when called directly
+
         if !self.pop_bool() {
-            eprintln!("Assertion failure at {}:{}:{}", file, line, col);
+            match position {
+                Some((file, line, col)) => {
+                    eprintln!("Assertion failure at {}:{}:{}", file, line, col)
+                }
+                None => eprintln!("Assertion failure at ??:??:??"),
+            }
             process::exit(1);
         }
     }
 
-    pub fn todo(&mut self, file: &str, line: isize, col: isize) {
-        eprintln!("Code at {}:{}:{} is not implemented", file, line, col);
+    pub fn todo(&mut self) {
+        // used when called via function pointer
+        self.todo_with_position(None)
+    }
+
+    pub fn todo_with_position(&mut self, position: Option<(&str, isize, isize)>) {
+        // used when called directly
+
+        match position {
+            Some((file, line, col)) => {
+                eprintln!("Code at {}:{}:{} is not implemented", file, line, col)
+            }
+            None => eprintln!("Code at ??:??:?? is not implemented"),
+        }
         process::exit(1);
     }
 
-    pub fn unreachable(&mut self, file: &str, line: isize, col: isize) {
-        eprintln!("Code at {}:{}:{} should be unreachable", file, line, col);
+    pub fn unreachable(&mut self) {
+        // used when called via function pointer
+        self.unreachable_with_position(None)
+    }
+
+    pub fn unreachable_with_position(&mut self, position: Option<(&str, isize, isize)>) {
+        // used when called directly
+
+        match position {
+            Some((file, line, col)) => {
+                eprintln!("Code at {}:{}:{} should be unreachable", file, line, col)
+            }
+            None => eprintln!("Code at ??:??:?? should be unreachable"),
+        }
         process::exit(1);
     }
 
