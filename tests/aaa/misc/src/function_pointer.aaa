@@ -121,9 +121,35 @@ fn main {
     // get pointer to builtin function with unusual chars
     34 35 "+" fn call .
     "\n" .
+
+    // get function pointer to enum-associated function
+    68 OptionalInt:some
+    use optional_int {
+        "OptionalInt:increment" fn
+        use increment {
+            optional_int increment call
+        }
+
+        optional_int
+        match {
+            case OptionalInt:some { . }
+            default { unreachable }
+        }
+    }
+    "\n" .
 }
 
-// TODO create function pointer to enum-associated function
+
+fn OptionalInt:increment args optional_int as OptionalInt {
+    optional_int
+    match {
+        case OptionalInt:some as value {
+            optional_int <- { value 1 + OptionalInt:some }
+        }
+        default { nop }
+    }
+
+}
 
 // TODO add python test for this file
 
