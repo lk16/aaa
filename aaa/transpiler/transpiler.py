@@ -309,6 +309,7 @@ class Transpiler:
             CallType: self._generate_call_type_code,
             CallVariable: self._generate_call_variable_code,
             ForeachLoop: self._generate_foreach_loop,
+            FunctionPointer: self._generate_function_pointer_literal,
             GetFunctionPointer: self._generate_get_function_pointer,
             IntegerLiteral: self._generate_integer_literal,
             MatchBlock: self._generate_match_block_code,
@@ -319,6 +320,8 @@ class Transpiler:
             UseBlock: self._generate_use_block_code,
             WhileLoop: self._generate_while_loop,
         }
+
+        assert set(generate_funcs.keys()) == set(FunctionBodyItem.__args__)  # type: ignore
 
         return generate_funcs[type(item)](item)
 
@@ -597,7 +600,6 @@ class Transpiler:
         return Code(f'stack.push_str("{string_value}");')
 
     def _generate_while_loop(self, while_loop: WhileLoop) -> Code:
-
         code = Code("loop {", r=1)
         code.add(self._generate_function_body(while_loop.condition))
         code.add("if !stack.pop_bool() {", r=1)
@@ -1276,7 +1278,6 @@ class Transpiler:
         code.add("Self {", r=1)
 
         for field_name, field_var_type in struct.fields.items():
-
             code.add(f"{field_name}: {{", r=1)
             if isinstance(field_var_type, VariableType):
                 code.add(
@@ -1412,3 +1413,6 @@ class Transpiler:
             code.add(f"stack.assign(&mut var_{var.name});")
 
         return code
+
+    def _generate_function_pointer_literal(self, func_ptr: FunctionPointer) -> Code:
+        return Code("stack.push_function_pointer(Stack::zero_function_pointer_value);")

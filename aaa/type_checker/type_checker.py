@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.models import (
@@ -21,6 +21,7 @@ from aaa.cross_referencer.models import (
     ForeachLoop,
     Function,
     FunctionBody,
+    FunctionBodyItem,
     FunctionPointer,
     GetFunctionPointer,
     IntegerLiteral,
@@ -472,7 +473,7 @@ class SingleFunctionTypeChecker:
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer] | Never:
         checkers: Dict[
-            Any,
+            Type[FunctionBodyItem],
             Callable[
                 [Any, List[VariableType | FunctionPointer]],
                 List[VariableType | FunctionPointer] | Never,
@@ -486,6 +487,7 @@ class SingleFunctionTypeChecker:
             CallVariable: self._check_call_variable,
             CallEnumConstructor: self._check_call_enum_constructor,
             ForeachLoop: self._check_foreach_loop,
+            FunctionPointer: self._check_function_pointer,
             IntegerLiteral: self._check_integer_literal,
             Return: self._check_return,
             StringLiteral: self._check_string_literal,
@@ -497,6 +499,8 @@ class SingleFunctionTypeChecker:
             CallFunctionByPointer: self._check_call_by_function_pointer,
             GetFunctionPointer: self._check_get_function_pointer,
         }
+
+        assert set(checkers.keys()) == set(FunctionBodyItem.__args__)  # type: ignore
 
         stack = copy(type_stack)
         for item_offset, item in enumerate(function_body.items):
@@ -1089,11 +1093,11 @@ class SingleFunctionTypeChecker:
             except KeyError:
                 raise UnknownVariableOrFunction(var.name, var.position)
 
-            if not isinstance(type, VariableType):
-                raise NotImplementedError  # TODO
-
-            if type.is_const:
-                raise AssignConstValueError(var, type)
+            if isinstance(type, VariableType):
+                if type.is_const:
+                    raise AssignConstValueError(var, type)
+            else:
+                assert isinstance(type, FunctionPointer)
 
             expected_var_types.append(type)
 
@@ -1108,3 +1112,10 @@ class SingleFunctionTypeChecker:
                 raise AssignmentTypeError(expected_var_types, assign_stack, assignment)
 
         return type_stack
+
+    def _check_function_pointer(
+        self,
+        func_ptr: FunctionPointer,
+        type_stack: List[VariableType | FunctionPointer],
+    ) -> List[VariableType | FunctionPointer]:
+        return type_stack + [func_ptr]

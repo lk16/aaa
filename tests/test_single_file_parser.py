@@ -703,7 +703,7 @@ def test_parse_integer(
         ("true", None, 1),
         ("false", None, 1),
         ('"foo"', None, 1),
-        ("fn", ParserException, 0),
+        ("case", ParserException, 0),
         ("", EndOfFileException, 0),
     ],
 )
@@ -908,7 +908,7 @@ def test_parse_struct_field_update(
         ('"foo" ?', None, 2),
         ('"foo" { nop } !', None, 5),
         ("", EndOfFileException, 0),
-        ("fn", ParserException, 0),
+        ("case", ParserException, 0),
     ],
 )
 def test_parse_function_body_item(
@@ -958,7 +958,7 @@ def test_parse_function_body_item(
         ('if true { nop } "foo" ?', None, 7),
         ('if true { nop } "foo" { nop } !', None, 10),
         ("", EndOfFileException, 0),
-        ("fn", ParserException, 0),
+        ("case", ParserException, 0),
     ],
 )
 def test_parse_function_body(

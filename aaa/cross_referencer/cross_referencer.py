@@ -796,6 +796,7 @@ class FunctionBodyResolver:
             parser.Call: self._resolve_call_function_by_pointer,
             parser.ForeachLoop: self._resolve_foreach_loop,
             parser.FunctionCall: self._resolve_call,
+            parser.FunctionPointerTypeLiteral: self._resolve_function_pointer_literal,
             parser.GetFunctionPointer: self._resolve_get_function_pointer,
             parser.IntegerLiteral: IntegerLiteral,
             parser.MatchBlock: self._resolve_match_block,
@@ -809,6 +810,21 @@ class FunctionBodyResolver:
 
         assert set(resolve_functions.keys()) == set(parser.FunctionBodyItem.__args__)  # type: ignore
         return resolve_functions[type(parsed_item)](parsed_item)
+
+    def _resolve_function_pointer_literal(
+        self, parsed: parser.FunctionPointerTypeLiteral
+    ) -> FunctionPointer:
+        return FunctionPointer(
+            parsed.position,
+            argument_types=[
+                self.cross_referencer._resolve_type(type)
+                for type in parsed.argument_types
+            ],
+            return_types=[
+                self.cross_referencer._resolve_type(type)
+                for type in parsed.return_types
+            ],
+        )
 
     def _resolve_match_block(self, parsed: parser.MatchBlock) -> MatchBlock:
         blocks: List[CaseBlock | DefaultBlock] = []

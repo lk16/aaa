@@ -743,6 +743,8 @@ class SingleFileParser:
             item, offset = self._parse_return(offset)
         elif token.type == TokenType.CALL:
             item, offset = self._parse_call(offset)
+        elif token.type == TokenType.FUNCTION:
+            item, offset = self._parse_function_pointer_type_literal(offset)
 
         else:
             raise ParserException(

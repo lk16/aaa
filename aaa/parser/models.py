@@ -349,6 +349,7 @@ FunctionBodyItem = (
     | Call
     | ForeachLoop
     | FunctionCall
+    | FunctionPointerTypeLiteral
     | GetFunctionPointer
     | IntegerLiteral
     | MatchBlock

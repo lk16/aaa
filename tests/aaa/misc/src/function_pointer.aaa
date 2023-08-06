@@ -93,11 +93,17 @@ fn main {
         }
     }
     "\n" .
+
+    // use stack and assign
+    fn[int, int][int]
+    use func {
+        func <- { "add" fn }
+        34 35 func call .
+    }
+    "\n" .
 }
 
 // TODO add syntax for pointer to function that never returns
-
-// TODO support creating function pointer on the stack
 
 // TODO return function pointer from function
 
@@ -131,3 +137,6 @@ fn zero_value_in_struct {
 }
 
 // TODO add file that tests zero value for function pointer on the stack
+fn zero_value_on_stack {
+    34 35 fn[int, int][int] call drop
+}

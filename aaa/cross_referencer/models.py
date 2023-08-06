@@ -604,6 +604,7 @@ FunctionBodyItem = (
     | CallType
     | CallVariable
     | ForeachLoop
+    | FunctionPointer
     | GetFunctionPointer
     | IntegerLiteral
     | MatchBlock
