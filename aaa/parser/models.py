@@ -166,7 +166,10 @@ class Import(AaaParseModel):
 
 class Struct(AaaParseModel):
     def __init__(
-        self, position: Position, identifier: Identifier, fields: Dict[str, TypeLiteral]
+        self,
+        position: Position,
+        identifier: Identifier,
+        fields: Dict[str, TypeLiteral | FunctionPointerTypeLiteral],
     ) -> None:
         self.identifier = identifier
         self.fields = fields

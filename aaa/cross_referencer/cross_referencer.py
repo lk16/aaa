@@ -406,11 +406,14 @@ class CrossReferencer:
 
     def _resolve_struct(self, type: Struct) -> None:
         parsed_field_types = type.get_unresolved().parsed_field_types
+        fields: Dict[str, VariableType | FunctionPointer] = {}
 
-        fields = {
-            field_name: self._resolve_type(parsed_field)
-            for field_name, parsed_field in parsed_field_types.items()
-        }
+        for field_name, parsed_field in parsed_field_types.items():
+            if isinstance(parsed_field, parser.TypeLiteral):
+                fields[field_name] = self._resolve_type(parsed_field)
+            else:
+                assert isinstance(parsed_field, parser.FunctionPointerTypeLiteral)
+                fields[field_name] = self._resolve_function_pointer(parsed_field)
 
         type.resolve(fields)
 

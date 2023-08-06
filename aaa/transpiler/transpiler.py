@@ -358,47 +358,53 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct_type)
 
-        field_type = struct_type.fields[field_name].type
+        field = struct_type.fields[field_name]
 
         code = Code("{", r=1)
         code.add("let popped = stack.pop_user_type();")
         code.add("let mut borrowed = (*popped).borrow_mut();")
 
-        if field_type.name == "int":
+        if isinstance(field, FunctionPointer):
+            code.add(
+                f"stack.push_function_pointer(borrowed.get_{rust_struct_name}().{field_name});"
+            )
+        elif field.type.name == "int":
             code.add(f"stack.push_int(borrowed.get_{rust_struct_name}().{field_name});")
-        elif field_type.name == "bool":
+        elif field.type.name == "bool":
             code.add(
                 f"stack.push_bool(borrowed.get_{rust_struct_name}().{field_name});"
             )
-        elif field_type.name == "str":
+        elif (
+            field.type.name == "str"
+        ):  # TODO simplify the remainder of this if-else chain
             code.add("{", r=1)
             code.add(
                 f"let str_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
             )
             code.add(f"stack.push(Variable::String(str_rc));")
             code.add("}", l=1)
-        elif field_type.name == "vec":
+        elif field.type.name == "vec":
             code.add("{", r=1)
             code.add(
                 f"let vec_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
             )
             code.add(f"stack.push(Variable::Vector(vec_rc));")
             code.add("}", l=1)
-        elif field_type.name == "set":
+        elif field.type.name == "set":
             code.add("{", r=1)
             code.add(
                 f"let set_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
             )
             code.add(f"stack.push(Variable::Set(set_rc));")
             code.add("}", l=1)
-        elif field_type.name == "map":
+        elif field.type.name == "map":
             code.add("{", r=1)
             code.add(
                 f"let map_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
             )
             code.add(f"stack.push(Variable::Map(map_rc));")
             code.add("}", l=1)
-        elif field_type.name == "regex":
+        elif field.type.name == "regex":
             code.add("{", r=1)
             code.add(
                 f"let regex_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
@@ -416,9 +422,13 @@ class Transpiler:
         code.add("}", l=1)
         return code
 
-    def _generate_value_pop_function(self, type: Struct | Enum) -> str:
-        if type.name in ["bool", "int", "map", "regex", "set", "str", "vec"]:
-            return f"pop_{type.name}"
+    def _generate_value_pop_function(self, type: VariableType | FunctionPointer) -> str:
+        if isinstance(type, FunctionPointer):
+            return "pop_function_pointer"
+
+        if type.type.name in ["bool", "int", "map", "regex", "set", "str", "vec"]:
+            return f"pop_{type.type.name}"
+
         return "pop_user_type"
 
     def _generate_field_update_code(self, field_update: StructFieldUpdate) -> Code:
@@ -440,11 +450,11 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct_type)
         field_name = field_update.field_name.value
-        field_type = struct_type.fields[field_name].type
+        field = struct_type.fields[field_name]
 
         code.add("{", r=1)
 
-        pop_func = self._generate_value_pop_function(field_type)
+        pop_func = self._generate_value_pop_function(field)
         code.add(f"let value = stack.{pop_func}();")
 
         code.add("let popped = stack.pop_user_type();")
@@ -758,11 +768,7 @@ class Transpiler:
                 f"fn {enum_ctor_func_name}(stack: &mut Stack<UserTypeEnum>) {{", r=1
             )
             for i, item in reversed(list(enumerate(associated_data))):
-                if isinstance(item, FunctionPointer):
-                    pop_func = "pop_function_pointer"
-                else:
-                    pop_func = self._generate_value_pop_function(item.type)
-
+                pop_func = self._generate_value_pop_function(item)
                 code.add(f"let arg{i} = stack.{pop_func}();")
 
             line = f"let enum_ = {rust_enum_name}::variant_{variant_name}("
@@ -1183,26 +1189,26 @@ class Transpiler:
         code.add("Self {", r=1)
 
         for field_name, field_var_type in struct.fields.items():
-            field_type = field_var_type.type
-
-            if field_type.name == "int":
+            if isinstance(field_var_type, FunctionPointer):
+                code.add(f"{field_name}: Stack::zero_function_pointer_value,")
+            elif field_var_type.type.name == "int":
                 code.add(f"{field_name}: 0,")
-            elif field_type.name == "bool":
+            elif field_var_type.type.name == "bool":
                 code.add(f"{field_name}: false,")
-            elif field_type.name == "str":
+            elif field_var_type.type.name == "str":
                 code.add(f'{field_name}: Rc::new(RefCell::new(String::from(""))),')
-            elif field_type.name == "vec":
+            elif field_var_type.type.name == "vec":
                 code.add(f"{field_name}: Rc::new(RefCell::new(Vector::new())),")
-            elif field_type.name == "set":
+            elif field_var_type.type.name == "set":
                 code.add(f"{field_name}: Rc::new(RefCell::new(Set::new())),")
-            elif field_type.name == "map":
+            elif field_var_type.type.name == "map":
                 code.add(f"{field_name}: Rc::new(RefCell::new(Map::new())),")
-            elif field_type.name == "regex":
+            elif field_var_type.type.name == "regex":
                 code.add(
                     f'{field_name}: Rc::new(RefCell::new(Regex::new("$.^").unwrap())),'
                 )
             else:
-                rust_struct_name = self._generate_type_name(field_type)
+                rust_struct_name = self._generate_type_name(field_var_type.type)
                 code.add(
                     f"{field_name}: Rc::new(RefCell::new("
                     + f"UserTypeEnum::{rust_struct_name}({rust_struct_name}::new())"
@@ -1270,14 +1276,18 @@ class Transpiler:
         code.add("Self {", r=1)
 
         for field_name, field_var_type in struct.fields.items():
-            field_type = field_var_type.type
 
             code.add(f"{field_name}: {{", r=1)
-            code.add(
-                self._generate_clone_recursive_expression(
-                    f"self.{field_name}", field_type
+            if isinstance(field_var_type, VariableType):
+                code.add(
+                    self._generate_clone_recursive_expression(
+                        f"self.{field_name}", field_var_type.type
+                    )
                 )
-            )
+            else:
+                assert isinstance(field_var_type, FunctionPointer)
+                code.add(f"self.{field_name}.clone()")
+
             code.add("},", l=1)
 
         code.add("}", l=1)
@@ -1308,7 +1318,9 @@ class Transpiler:
             else:
                 code.add('write!(f, ", ")?;')
 
-            if field_var_type.type.name in ["int", "bool"]:
+            if isinstance(field_var_type, FunctionPointer):
+                code.add(f'write!(f, "{field_name}: func_ptr")?;')
+            elif field_var_type.type.name in ["int", "bool"]:
                 code.add(f'write!(f, "{field_name}: {{}}", self.{field_name})?;')
             else:
                 code.add(
@@ -1365,6 +1377,9 @@ class Transpiler:
         code.add("true")
 
         for field_name, field_type in struct.fields.items():
+            if isinstance(field_type, FunctionPointer):
+                continue
+
             if field_type.name == "regex":
                 continue
 

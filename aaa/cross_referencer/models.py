@@ -216,13 +216,15 @@ class ImplicitEnumConstructorImport(AaaCrossReferenceModel):
 class Struct(AaaCrossReferenceModel):
     class Unresolved:
         def __init__(self, parsed: parser.TypeLiteral | parser.Struct) -> None:
-            self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
+            self.parsed_field_types: Dict[
+                str, parser.TypeLiteral | parser.FunctionPointerTypeLiteral
+            ] = {}
 
             if isinstance(parsed, parser.Struct):
                 self.parsed_field_types = parsed.fields
 
     class Resolved:
-        def __init__(self, fields: Dict[str, VariableType]) -> None:
+        def __init__(self, fields: Dict[str, VariableType | FunctionPointer]) -> None:
             self.fields = fields
 
     def __init__(
@@ -242,7 +244,7 @@ class Struct(AaaCrossReferenceModel):
         return self.name == other.name and self.position == other.position
 
     @property
-    def fields(self) -> Dict[str, VariableType]:
+    def fields(self) -> Dict[str, VariableType | FunctionPointer]:
         assert isinstance(self.state, Struct.Resolved)
         return self.state.fields
 
@@ -252,7 +254,7 @@ class Struct(AaaCrossReferenceModel):
 
     def resolve(
         self,
-        fields: Dict[str, VariableType],
+        fields: Dict[str, VariableType | FunctionPointer],
     ) -> None:
         assert isinstance(self.state, Struct.Unresolved)
         self.state = Struct.Resolved(fields)

@@ -828,7 +828,7 @@ class SingleFunctionTypeChecker:
         except KeyError as e:
             raise UnknownField(node.position, struct_type, field_name) from e
 
-        if struct_var_type.is_const:
+        if struct_var_type.is_const and isinstance(field_type, VariableType):
             field_type = copy(field_type)
             field_type.is_const = True
 

@@ -16,6 +16,10 @@ enum OptionalCalculation {
     some as fn[int, int][int],
 }
 
+struct Foo {
+    func as fn[int, int][int],
+}
+
 fn main {
     // call by function pointer
     34 35 "add" fn calculate .
@@ -67,9 +71,14 @@ fn main {
     }
     .
     "\n" .
-}
 
-// TODO put function pointer in a struct
+    Foo
+    use foo {
+        foo "func" { "add" fn } !
+        34 35 foo "func" ? call .
+    }
+    "\n" .
+}
 
 // TODO put a function pointer in a vec
 
@@ -77,10 +86,10 @@ fn main {
 
 // TODO support creating function pointer on the stack
 
-// TODO add python tests:
-// - this file
-// - file that tests zero value for function pointer in enum (see below)
+//
+// TODO add python test for this file
 
+// TODO add file that tests zero value for function pointer in enum
 // The zero-value variant has default value of function pointer in associated value.
 // This should default to some function that crashes loud.
 enum Calculation {
@@ -94,5 +103,9 @@ fn zero_value_in_enum {
     }
 }
 
-// - file that tests zero value for function pointer in struct
-// - file that tests zero value for function pointer on the stack
+// TODO add file that tests zero value for function pointer in struct
+fn zero_value_in_struct {
+    34 35 Foo "func" ? call drop
+}
+
+// TODO add file that tests zero value for function pointer on the stack

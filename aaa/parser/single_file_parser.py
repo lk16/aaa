@@ -434,14 +434,18 @@ class SingleFileParser:
         self._print_parse_tree_node("ParsedFile", start_offset, offset)
         return parsed_file, offset
 
-    def _parse_struct_field(self, offset: int) -> Tuple[str, TypeLiteral, int]:
+    def _parse_struct_field(
+        self, offset: int
+    ) -> Tuple[str, TypeLiteral | FunctionPointerTypeLiteral, int]:
         name, offset = self._parse_identifier(offset)
         _, offset = self._parse_token(offset, [TokenType.AS])
-        type, offset = self._parse_type_literal(offset)
+        type, offset = self._parse_type_or_function_pointer_literal(offset)
         return name.name, type, offset
 
-    def _parse_struct_fields(self, offset: int) -> Tuple[Dict[str, TypeLiteral], int]:
-        fields: Dict[str, TypeLiteral] = {}
+    def _parse_struct_fields(
+        self, offset: int
+    ) -> Tuple[Dict[str, TypeLiteral | FunctionPointerTypeLiteral], int]:
+        fields: Dict[str, TypeLiteral | FunctionPointerTypeLiteral] = {}
 
         while True:
             try:
