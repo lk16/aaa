@@ -1,0 +1,60 @@
+from pathlib import Path
+
+import pytest
+
+from tests.aaa import compile_run
+
+SOURCE_PREFIX = Path(__file__).parent / "src"
+
+
+@pytest.mark.parametrize(
+    ["source_path", "expected_stdout"],
+    [
+        ("basic.aaa", "69\n69\n69\n69\n"),
+        ("in_enum.aaa", "69\n69\n69\n"),
+        ("in_struct.aaa", "69\n"),
+        ("in_vector.aaa", "69\n"),
+        ("assignment.aaa", "69\n"),
+        ("returned.aaa", "69\n"),
+        ("to_builtins.aaa", "69\n69\n69\n"),
+        ("never_returns.aaa", "does_not_return was called!\n"),
+        ("to_enum_constructor.aaa", "69\n"),
+        ("to_enum_associated.aaa", "69\n"),
+        ("to_struct_associated.aaa", "69\n"),
+    ],
+)
+def test_test_function_pointer(source_path: Path, expected_stdout: str) -> None:
+    stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source_path)
+
+    assert expected_stdout == stdout
+    assert "" == stderr
+    assert 0 == exit_code
+
+
+@pytest.mark.parametrize(
+    ["source_path"],
+    [
+        ("zero_value_in_enum.aaa",),
+        ("zero_value_in_struct.aaa",),
+        ("zero_value_on_stack.aaa",),
+    ],
+)
+def test_zero_value(source_path: Path) -> None:
+    stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source_path)
+
+    assert "" == stdout
+    assert "Function pointer with zero-value was called.\n" == stderr
+    assert 1 == exit_code
+
+
+# TODO
+# test for pointer to enum constructor
+# test for pointer to struct-associated function
+# test for pointer to enum-associated function
+# test for pointer to imported function
+# test for pointer to implicitly imported struct-associated function
+# test for pointer to implicitly imported enum-associated function
+# test for pointer to implicitly imported enum-constructor function
+# test pointer to builtin function todo
+# test pointer to builtin function assert
+# test pointer to builtin function unreachable

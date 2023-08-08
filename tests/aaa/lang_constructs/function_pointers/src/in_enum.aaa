@@ -1,0 +1,37 @@
+fn add args a as int, b as int, return int {
+    a b +
+}
+
+enum OptionalCalculation {
+    none,
+    some as fn[int, int][int],
+}
+
+fn main {
+    OptionalCalculation drop
+
+    OptionalCalculation:none
+    match {
+        case OptionalCalculation:none { 69 }
+        case OptionalCalculation:some { use func { 0 0 func call } }
+    }
+    .
+    "\n" .
+
+
+    "add" fn OptionalCalculation:some
+    match {
+        case OptionalCalculation:none { 0 }
+        case OptionalCalculation:some { use func { 34 35 func call } }
+    }
+    .
+    "\n" .
+
+    "add" fn OptionalCalculation:some
+    match {
+        case OptionalCalculation:none { 0 }
+        case OptionalCalculation:some as func { 34 35 func call }
+    }
+    .
+    "\n" .
+}

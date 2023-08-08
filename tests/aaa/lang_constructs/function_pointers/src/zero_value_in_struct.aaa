@@ -1,0 +1,8 @@
+struct Foo {
+    func as fn[int, int][int],
+}
+
+
+fn main {
+    34 35 Foo "func" ? call drop
+}

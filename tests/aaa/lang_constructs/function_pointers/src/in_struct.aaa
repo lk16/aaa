@@ -1,0 +1,17 @@
+
+fn add args a as int, b as int, return int {
+    a b +
+}
+
+struct Foo {
+    func as fn[int, int][int],
+}
+
+fn main {
+    Foo
+    use foo {
+        foo "func" { "add" fn } !
+        34 35 foo "func" ? call .
+    }
+    "\n" .
+}

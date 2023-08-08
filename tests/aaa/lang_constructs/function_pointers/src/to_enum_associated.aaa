@@ -1,0 +1,24 @@
+enum OptionalInt {
+    none,
+    some as int,
+}
+
+fn OptionalInt:print_value args optional_int as OptionalInt {
+    optional_int
+    match {
+        case OptionalInt:some { . }
+        default { "none" . }
+    }
+}
+
+
+fn main {
+    "OptionalInt:print_value" fn
+    use print_value {
+        69 OptionalInt:some
+        use optional_int {
+            optional_int print_value call
+        }
+    }
+    "\n" .
+}

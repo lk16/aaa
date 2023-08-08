@@ -1,0 +1,14 @@
+
+
+fn add args a as int, b as int, return int {
+    a b +
+}
+
+fn main {
+    fn[int, int][int]
+    use func {
+        func <- { "add" fn }
+        34 35 func call .
+    }
+    "\n" .
+}

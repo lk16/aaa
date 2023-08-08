@@ -1,0 +1,16 @@
+fn does_not_return return never {
+    "does_not_return was called!\n" .
+    0 exit
+}
+
+fn call_does_not_return args func as fn[][never] return never {
+    func call
+}
+
+fn main {
+    fn[][never]
+    use func {
+        func <- { "does_not_return" fn }
+        func call
+    }
+}
