@@ -21,6 +21,7 @@ SOURCE_PREFIX = Path(__file__).parent / "src"
         ("to_enum_constructor.aaa", "69\n"),
         ("to_enum_associated.aaa", "69\n"),
         ("to_struct_associated.aaa", "69\n"),
+        ("imported/main.aaa", "69\n69\n69\n"),
     ],
 )
 def test_test_function_pointer(source_path: Path, expected_stdout: str) -> None:
@@ -47,14 +48,17 @@ def test_zero_value(source_path: Path) -> None:
     assert 1 == exit_code
 
 
-# TODO
-# test for pointer to enum constructor
-# test for pointer to struct-associated function
-# test for pointer to enum-associated function
-# test for pointer to imported function
-# test for pointer to implicitly imported struct-associated function
-# test for pointer to implicitly imported enum-associated function
-# test for pointer to implicitly imported enum-constructor function
-# test pointer to builtin function todo
-# test pointer to builtin function assert
-# test pointer to builtin function unreachable
+@pytest.mark.parametrize(
+    ["source_path", "expected_stderr"],
+    [
+        ("to_todo.aaa", "Code at ??:??:?? is not implemented\n"),
+        ("to_unreachable.aaa", "Code at ??:??:?? should be unreachable\n"),
+        ("to_assert.aaa", "Assertion failure at ??:??:??\n"),
+    ],
+)
+def test_print_calling_location(source_path: Path, expected_stderr: str) -> None:
+    stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source_path)
+
+    assert "" == stdout
+    assert expected_stderr == stderr
+    assert 1 == exit_code

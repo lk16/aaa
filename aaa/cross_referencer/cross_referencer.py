@@ -215,7 +215,6 @@ class CrossReferencer:
                     var_type = arg.type
 
                     if isinstance(arg.type, FunctionPointer):
-                        # TODO put more details
                         print(f"{prefix} | Argument {name} of type ptr to function")
                     elif arg.type.is_placeholder:
                         print(f"{prefix} | Argument {name} of type {var_type}")
@@ -227,7 +226,6 @@ class CrossReferencer:
                 else:
                     for return_type in identifiable.return_types:
                         if isinstance(return_type, FunctionPointer):
-                            # TODO put more details
                             print(f"{prefix} | Return type ptr to function")
                         elif return_type.is_placeholder:
                             print(f"{prefix} | Return type {return_type}")
@@ -375,8 +373,6 @@ class CrossReferencer:
     def _resolve_type(
         self, parsed: parser.TypeLiteral | parser.FunctionPointerTypeLiteral
     ) -> VariableType | FunctionPointer:
-        # TODO rename this function?
-
         if isinstance(parsed, parser.FunctionPointerTypeLiteral):
             if isinstance(parsed.return_types, parser.Never):
                 return_types: List[VariableType | FunctionPointer] | Never = Never()
@@ -398,7 +394,6 @@ class CrossReferencer:
 
         params: List[VariableType | FunctionPointer] = []
 
-        # TODO simplify this further
         for parsed_param in parsed.params:
             if isinstance(parsed_param, parser.TypeLiteral):
                 param_type = self._get_type(parsed_param.identifier)
@@ -634,8 +629,6 @@ class CrossReferencer:
         return_types: List[VariableType | FunctionPointer] = []
 
         for parsed_return_type in parsed_return_types:
-            # TODO can we just call self._resolve_type() on every item?
-
             if isinstance(parsed_return_type, parser.FunctionPointerTypeLiteral):
                 return_types.append(self._resolve_type(parsed_return_type))
                 continue
@@ -901,10 +894,13 @@ class FunctionBodyResolver:
         else:
             raise NotImplementedError  # TODO
 
-        if not isinstance(target, (Function, EnumConstructor)):
-            raise NotImplementedError  # TODO
+        if isinstance(target, (Function, EnumConstructor)):
+            return GetFunctionPointer(parsed.position, target)
 
-        return GetFunctionPointer(parsed.position, target)
+        if isinstance(target, (ImplicitFunctionImport, ImplicitEnumConstructorImport)):
+            return GetFunctionPointer(parsed.position, target.source)
+
+        raise NotImplementedError  # TODO
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
         variables = [Variable(var, False) for var in parsed.variables]
