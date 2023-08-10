@@ -385,7 +385,6 @@ class FunctionPointer(AaaCrossReferenceModel):
         super().__init__(position)
 
     def __repr__(self) -> str:
-        # TODO test
         args = ", ".join(repr(arg) for arg in self.argument_types)
 
         if isinstance(self.return_types, Never):

@@ -117,7 +117,7 @@ class Function(AaaParseModel):
         position: Position,
         struct_name: Optional[Identifier],
         func_name: Identifier,
-        type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
+        type_params: List[TypeLiteral],
         arguments: List[Argument],
         return_types: List[TypeLiteral | FunctionPointerTypeLiteral] | Never,
         body: Optional[FunctionBody],

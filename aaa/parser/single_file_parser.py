@@ -402,11 +402,18 @@ class SingleFileParser:
             _, offset = self._parse_token(offset, [TokenType.RETURN])
             return_types, offset = self._parse_return_types(offset)
 
+        type_params: List[TypeLiteral] = []
+
+        for type_param in function_name.type_params:
+            if isinstance(type_param, FunctionPointerTypeLiteral):
+                raise NotImplementedError  # This is unreachable
+            type_params.append(type_param)
+
         function = Function(
             position=fn_token.position,
             struct_name=function_name.struct_name,
             func_name=function_name.func_name,
-            type_params=function_name.type_params,
+            type_params=type_params,
             arguments=arguments,
             return_types=return_types,
             body=None,

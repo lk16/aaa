@@ -479,13 +479,9 @@ class CrossReferencer:
         resolved_params: Dict[str, Struct] = {}
 
         for parsed_type_param in function.get_unresolved().parsed.type_params:
-            if isinstance(parsed_type_param, parser.TypeLiteral):
-                resolved_params[
-                    parsed_type_param.identifier.name
-                ] = self._resolve_function_param(function, parsed_type_param)
-            else:
-                assert isinstance(parsed_type_param, parser.FunctionPointerTypeLiteral)
-                raise NotImplementedError  # TODO
+            resolved_params[
+                parsed_type_param.identifier.name
+            ] = self._resolve_function_param(function, parsed_type_param)
 
         return resolved_params
 
@@ -498,17 +494,13 @@ class CrossReferencer:
         parsed_type = parsed_arg.type
         arg_type: VariableType | FunctionPointer
 
-        # TODO simplify
         if isinstance(parsed_type, parser.TypeLiteral):
             arg_type_name = parsed_type.identifier.name
             type: Identifiable
 
             found_type_param: Optional[parser.TypeLiteral] = None
             for type_param in function.get_unresolved().parsed.type_params:
-                if (
-                    isinstance(type_param, parser.TypeLiteral)
-                    and type_param.identifier.name == arg_type_name
-                ):
+                if type_param.identifier.name == arg_type_name:
                     found_type_param = type_param
 
             if found_type_param:
