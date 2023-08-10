@@ -6,11 +6,13 @@ from aaa.cross_referencer.exceptions import (
     CircularDependencyError,
     CollidingEnumVariant,
     CollidingIdentifier,
+    FunctionPointerTargetNotFound,
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
     InvalidEnumType,
     InvalidEnumVariant,
+    InvalidFunctionPointerTarget,
     InvalidReturnType,
     InvalidType,
     UnexpectedTypeParameterCount,
@@ -997,6 +999,23 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UseFieldOfEnumException,
             "/foo/main.aaa:3:27: Cannot get field on Enum\n",
             id="set-field-on-enum",
+        ),
+        pytest.param(
+            """
+            struct Foo {}
+            fn main { "Foo" fn drop }
+            """,
+            InvalidFunctionPointerTarget,
+            "/foo/main.aaa:3:23: Cannot create function pointer to struct Foo\n",
+            id="invalid-function-pointer-target",
+        ),
+        pytest.param(
+            """
+            fn main { "foo" fn drop }
+            """,
+            FunctionPointerTargetNotFound,
+            "/foo/main.aaa:2:23: Cannot create pointer to function foo which was not found\n",
+            id="function-pointer-target-not-found",
         ),
     ],
 )

@@ -7,11 +7,13 @@ from aaa.cross_referencer.exceptions import (
     CollidingEnumVariant,
     CollidingIdentifier,
     CrossReferenceBaseException,
+    FunctionPointerTargetNotFound,
     ImportedItemNotFound,
     IndirectImportException,
     InvalidArgument,
     InvalidEnumType,
     InvalidEnumVariant,
+    InvalidFunctionPointerTarget,
     InvalidReturnType,
     InvalidType,
     UnexpectedTypeParameterCount,
@@ -883,7 +885,6 @@ class FunctionBodyResolver:
     def _resolve_get_function_pointer(
         self, parsed: parser.GetFunctionPointer
     ) -> GetFunctionPointer:
-        # TODO this is clunky, add helper function in self.cross_referencer to do fancy look up
         builtins_key = (self.cross_referencer.builtins_path, parsed.function_name.value)
         key = (parsed.position.file, parsed.function_name.value)
 
@@ -892,7 +893,9 @@ class FunctionBodyResolver:
         elif key in self.cross_referencer.identifiers:
             target = self.cross_referencer.identifiers[key]
         else:
-            raise NotImplementedError  # TODO
+            raise FunctionPointerTargetNotFound(
+                parsed.position, parsed.function_name.value
+            )
 
         if isinstance(target, (Function, EnumConstructor)):
             return GetFunctionPointer(parsed.position, target)
@@ -900,7 +903,7 @@ class FunctionBodyResolver:
         if isinstance(target, (ImplicitFunctionImport, ImplicitEnumConstructorImport)):
             return GetFunctionPointer(parsed.position, target.source)
 
-        raise NotImplementedError  # TODO
+        raise InvalidFunctionPointerTarget(parsed.position, target)
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
         variables = [Variable(var, False) for var in parsed.variables]

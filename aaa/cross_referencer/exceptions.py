@@ -193,3 +193,28 @@ class InvalidEnumVariant(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return f"{self.position}: Variant {self.variant_name} of enum {self.enum.name} does not exist\n"
+
+
+class InvalidFunctionPointerTarget(CrossReferenceBaseException):
+    def __init__(self, position: Position, identifiable: Identifiable) -> None:
+        self.position = position
+        self.identifiable = identifiable
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Cannot create function pointer to "
+            + describe(self.identifiable)
+            + "\n"
+        )
+
+
+class FunctionPointerTargetNotFound(CrossReferenceBaseException):
+    def __init__(self, position: Position, target_name: str) -> None:
+        self.position = position
+        self.target_name = target_name
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Cannot create pointer to function "
+            + f"{self.target_name} which was not found\n"
+        )
