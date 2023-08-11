@@ -82,7 +82,10 @@ class StackTypesError(TypeCheckerException):
             return "!"
         else:
             assert isinstance(self.func_like, CallFunctionByPointer)
-            return "<function pointer>"
+            try:
+                return repr(self.type_stack[-1])
+            except IndexError:
+                return "<function pointer>"
 
     def format_expected_typestack(self) -> str:  # pragma: nocover
         if isinstance(self.func_like, Function):
@@ -93,8 +96,17 @@ class StackTypesError(TypeCheckerException):
         elif isinstance(self.func_like, StructFieldUpdate):
             return "<struct type> str <type of field to update>"
         elif isinstance(self.func_like, CallFunctionByPointer):
-            # TODO improve
-            return "<function arguments>... <function pointer>"
+            try:
+                func_ptr = self.type_stack[-1]
+            except IndexError:
+                return "<argument types>... <function pointer>"
+
+            if isinstance(func_ptr, FunctionPointer):
+                return " ".join(
+                    repr(item) for item in func_ptr.argument_types + [func_ptr]
+                )
+            return "<argument types>... <function pointer>"
+
         else:
             assert isinstance(self.func_like, EnumConstructor)
             types = self.func_like.enum.variants[self.func_like.variant_name]
@@ -298,7 +310,9 @@ class MissingIterable(TypeCheckerException):
 
 
 class InvalidIterable(TypeCheckerException):
-    def __init__(self, position: Position, iterable_type: VariableType) -> None:
+    def __init__(
+        self, position: Position, iterable_type: VariableType | FunctionPointer
+    ) -> None:
         self.iterable_type = iterable_type
         super().__init__(position)
 
@@ -316,7 +330,7 @@ class InvalidIterator(TypeCheckerException):
         self,
         position: Position,
         iterable_type: VariableType,
-        iterator_type: VariableType,
+        iterator_type: VariableType | FunctionPointer,
     ) -> None:
         self.iterable_type = iterable_type
         self.iterator_type = iterator_type
@@ -622,6 +636,20 @@ class UseFieldOfEnumException(TypeCheckerException):
             get_set = "set"
 
         return f"{self.position}: Cannot {get_set} field on Enum\n"
+
+
+class UseFieldOfFunctionPointerException(TypeCheckerException):
+    def __init__(self, node: StructFieldQuery | StructFieldUpdate) -> None:
+        self.node = node
+        super().__init__(node.position)
+
+    def __str__(self) -> str:
+        if isinstance(self.node, StructFieldQuery):
+            get_set = "get"
+        else:
+            get_set = "set"
+
+        return f"{self.position}: Cannot {get_set} field on FunctionPointer\n"
 
 
 class SignatureItemMismatch(AaaException):

@@ -73,6 +73,7 @@ from aaa.type_checker.exceptions import (
     UpdateConstStructError,
     UseBlockStackUnderflow,
     UseFieldOfEnumException,
+    UseFieldOfFunctionPointerException,
     WhileLoopTypeError,
     format_typestack,
 )
@@ -583,7 +584,7 @@ class SingleFunctionTypeChecker:
             raise MatchTypeError(match_block, type_stack)
 
         if not isinstance(matched_var_type, VariableType):
-            raise NotImplementedError  # TODO
+            raise MatchTypeError(match_block, type_stack)
 
         if not isinstance(matched_var_type.type, Enum):
             raise MatchTypeError(match_block, type_stack)
@@ -678,7 +679,7 @@ class SingleFunctionTypeChecker:
         # Push variable on stack
         return type_stack + [var_type]
 
-    def _simplify_stack_item(  # TODO remove/refactor `remove_const`
+    def _simplify_stack_item(  # TODO #136 remove/refactor `remove_const`
         self, type: VariableType | FunctionPointer
     ) -> VariableType | FunctionPointer:
         if (
@@ -702,11 +703,14 @@ class SingleFunctionTypeChecker:
         position: Position,
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer] | Never:
+        error_types_stack = self.position_stacks[position]
+        assert not isinstance(error_types_stack, Never)
+
         stack = copy(type_stack)
         arg_count = len(arguments)
 
         if len(stack) < arg_count:
-            raise StackTypesError(position, type_stack, call)
+            raise StackTypesError(position, error_types_stack, call)
 
         placeholder_types: Dict[str, VariableType | FunctionPointer] = {}
         types = stack[len(stack) - arg_count :]
@@ -717,7 +721,7 @@ class SingleFunctionTypeChecker:
                     argument, copy(type), placeholder_types
                 )
             except SignatureItemMismatch as e:
-                raise StackTypesError(position, type_stack, call) from e
+                raise StackTypesError(position, error_types_stack, call) from e
 
         stack = stack[: len(stack) - arg_count]
 
@@ -739,6 +743,8 @@ class SingleFunctionTypeChecker:
         call_function: CallFunction,
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer] | Never:
+        self.position_stacks[call_function.position] = copy(type_stack)
+
         arguments = [argument.type for argument in call_function.function.arguments]
 
         return self.__check_call_function(
@@ -754,13 +760,19 @@ class SingleFunctionTypeChecker:
         call_by_func_ptr: CallFunctionByPointer,
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer] | Never:
+        self.position_stacks[call_by_func_ptr.position] = copy(type_stack)
+
         try:
             func_ptr = type_stack.pop()
         except IndexError:
-            raise NotImplementedError  # TODO
+            raise StackTypesError(
+                call_by_func_ptr.position, copy(type_stack), call_by_func_ptr
+            )
 
         if not isinstance(func_ptr, FunctionPointer):
-            raise NotImplementedError  # TODO
+            raise StackTypesError(
+                call_by_func_ptr.position, type_stack + [func_ptr], call_by_func_ptr
+            )
 
         return self.__check_call_function(
             func_ptr.argument_types,
@@ -775,6 +787,8 @@ class SingleFunctionTypeChecker:
         call_enum_ctor: CallEnumConstructor,
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer] | Never:
+        self.position_stacks[call_enum_ctor.position] = copy(type_stack)
+
         enum = call_enum_ctor.enum_ctor.enum
         variant_name = call_enum_ctor.enum_ctor.variant_name
         variant_associated_data = enum.get_resolved().variants[variant_name]
@@ -822,8 +836,13 @@ class SingleFunctionTypeChecker:
             raise InvalidMemberFunctionSignature(self.function, type)
 
     def _get_struct_field_type(
-        self, node: StructFieldQuery | StructFieldUpdate, struct_var_type: VariableType
+        self,
+        node: StructFieldQuery | StructFieldUpdate,
+        struct_var_type: VariableType | FunctionPointer,
     ) -> VariableType | FunctionPointer:
+        if isinstance(struct_var_type, FunctionPointer):
+            raise UseFieldOfFunctionPointerException(node)
+
         struct_type = struct_var_type.type
 
         if isinstance(struct_type, Enum):
@@ -860,9 +879,6 @@ class SingleFunctionTypeChecker:
         # This is enforced by the parser
         assert field_selector_type == self._get_str_var_type()
 
-        if not isinstance(struct_var_type, VariableType):
-            raise NotImplementedError  # TODO
-
         field_type = self._get_struct_field_type(field_query, struct_var_type)
 
         # pop struct and field name, push field
@@ -894,12 +910,12 @@ class SingleFunctionTypeChecker:
 
         struct_var_type, field_selector_type, update_expr_type = type_stack[-3:]
 
-        if not isinstance(struct_var_type, VariableType):
-            raise NotImplementedError  # TODO
+        if isinstance(struct_var_type, FunctionPointer):
+            raise UseFieldOfFunctionPointerException(field_update)
 
         struct_type = struct_var_type.type
 
-        if not isinstance(struct_type, Struct):
+        if isinstance(struct_type, Enum):
             raise UseFieldOfEnumException(field_update)
 
         if not all(
@@ -952,7 +968,7 @@ class SingleFunctionTypeChecker:
         iterable_type = type_stack[-1]
 
         if not isinstance(iterable_type, VariableType):
-            raise NotImplementedError  # TODO
+            raise InvalidIterable(foreach_loop.position, iterable_type)
 
         type_stack.append(iterable_type)
 
@@ -986,7 +1002,7 @@ class SingleFunctionTypeChecker:
         iterator_type = iter_func.return_types[0]
 
         if not isinstance(iterator_type, VariableType):
-            raise NotImplementedError  # TODO
+            raise InvalidIterator(foreach_loop.position, iterable_type, iterator_type)
 
         next_func = self._lookup_function(iterator_type, "next")
 
@@ -1007,10 +1023,7 @@ class SingleFunctionTypeChecker:
 
         if iterable_type.is_const:
             for return_type in next_func.return_types[:-1]:
-                if not isinstance(return_type, VariableType):
-                    raise NotImplementedError  # TODO
-
-                if not return_type.is_const:
+                if isinstance(return_type, VariableType) and not return_type.is_const:
                     raise InvalidIterator(
                         foreach_loop.position, iterable_type, iterator_type
                     )
