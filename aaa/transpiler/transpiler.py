@@ -499,9 +499,78 @@ class Transpiler:
 
         return code
 
-    def _generate_case_block_code(  # noqa C901  # TODO too complex, refactor
-        self, case_block: CaseBlock
+    def _generate_case_block_body_with_variables(
+        self, case_block: CaseBlock, case_var_prefix: str
     ) -> Code:
+        code = Code()
+
+        enum = case_block.enum_type
+        variant_name = case_block.variant_name
+        associated_data = enum.variants[variant_name]
+
+        for i, (item, var) in enumerate(
+            zip(associated_data, case_block.variables, strict=True)
+        ):
+            arg = f"{case_var_prefix}_{i}"
+            line = f"let mut var_{var.name}: Variable<UserTypeEnum> = "
+
+            if isinstance(item, FunctionPointer):
+                line += f"Variable::FunctionPointer({arg});"
+            elif item.type.name == "int":
+                line += f"Variable::Integer({arg});"
+            elif item.type.name == "bool":
+                line += f"Variable::Boolean({arg});"
+            elif item.type.name == "str":
+                line += f"Variable::String({arg});"
+            elif item.type.name == "vec":
+                line += f"Variable::Vector({arg});"
+            elif item.type.name == "set":
+                line += f"Variable::Set({arg});"
+            elif item.type.name == "map":
+                line += f"Variable::Map({arg});"
+            elif item.type.name == "regex":
+                line += f"Variable::Regex({arg});"
+            else:
+                line += f"Variable::UserType({arg});"
+
+            code.add(line)
+
+        return code
+
+    def _generate_case_block_body_without_variables(
+        self, case_block: CaseBlock, case_var_prefix: str
+    ) -> Code:
+        code = Code()
+
+        enum = case_block.enum_type
+        variant_name = case_block.variant_name
+        associated_data = enum.variants[variant_name]
+
+        for i, item in enumerate(associated_data):
+            arg = f"{case_var_prefix}_{i}"
+
+            if isinstance(item, FunctionPointer):
+                code.add(f"stack.push_function_pointer({arg});")
+            elif item.type.name == "int":
+                code.add(f"stack.push_int({arg});")
+            elif item.type.name == "bool":
+                code.add(f"stack.push_bool({arg});")
+            elif item.type.name == "str":
+                code.add(f"stack.push(Variable::String({arg}.clone()));")
+            elif item.type.name == "vec":
+                code.add(f"stack.push(Variable::Vector({arg}.clone()));")
+            elif item.type.name == "set":
+                code.add(f"stack.push(Variable::Set({arg}.clone()));")
+            elif item.type.name == "map":
+                code.add(f"stack.push(Variable::Map({arg}.clone()));")
+            elif item.type.name == "regex":
+                code.add(f"stack.push(Variable::Regex({arg}.clone()));")
+            else:
+                code.add(f"stack.push(Variable::UserType({arg}.clone()));")
+
+        return code
+
+    def _generate_case_block_code(self, case_block: CaseBlock) -> Code:
         enum = case_block.enum_type
         variant_name = case_block.variant_name
         associated_data = enum.variants[variant_name]
@@ -521,54 +590,17 @@ class Transpiler:
 
         code = Code(line, r=1)
         if case_block.variables:
-            for i, (item, var) in enumerate(
-                zip(associated_data, case_block.variables, strict=True)
-            ):
-                arg = f"{case_var_prefix}_{i}"
-                line = f"let mut var_{var.name}: Variable<UserTypeEnum> = "
-
-                if isinstance(item, FunctionPointer):
-                    line += f"Variable::FunctionPointer({arg});"
-                elif item.type.name == "int":
-                    line += f"Variable::Integer({arg});"
-                elif item.type.name == "bool":
-                    line += f"Variable::Boolean({arg});"
-                elif item.type.name == "str":
-                    line += f"Variable::String({arg});"
-                elif item.type.name == "vec":
-                    line += f"Variable::Vector({arg});"
-                elif item.type.name == "set":
-                    line += f"Variable::Set({arg});"
-                elif item.type.name == "map":
-                    line += f"Variable::Map({arg});"
-                elif item.type.name == "regex":
-                    line += f"Variable::Regex({arg});"
-                else:
-                    line += f"Variable::UserType({arg});"
-
-                code.add(line)
+            code.add(
+                self._generate_case_block_body_with_variables(
+                    case_block, case_var_prefix
+                )
+            )
         else:
-            for i, item in enumerate(associated_data):
-                arg = f"{case_var_prefix}_{i}"
-
-                if isinstance(item, FunctionPointer):
-                    code.add(f"stack.push_function_pointer({arg});")
-                elif item.type.name == "int":
-                    code.add(f"stack.push_int({arg});")
-                elif item.type.name == "bool":
-                    code.add(f"stack.push_bool({arg});")
-                elif item.type.name == "str":
-                    code.add(f"stack.push(Variable::String({arg}.clone()));")
-                elif item.type.name == "vec":
-                    code.add(f"stack.push(Variable::Vector({arg}.clone()));")
-                elif item.type.name == "set":
-                    code.add(f"stack.push(Variable::Set({arg}.clone()));")
-                elif item.type.name == "map":
-                    code.add(f"stack.push(Variable::Map({arg}.clone()));")
-                elif item.type.name == "regex":
-                    code.add(f"stack.push(Variable::Regex({arg}.clone()));")
-                else:
-                    code.add(f"stack.push(Variable::UserType({arg}.clone()));")
+            code.add(
+                self._generate_case_block_body_without_variables(
+                    case_block, case_var_prefix
+                )
+            )
 
         code.add(self._generate_function_body(case_block.body))
         code.add("},", l=1)
