@@ -12,29 +12,25 @@ class AaaParseModel(AaaModel):
         self.position = position
 
 
-class FunctionBodyItem(AaaParseModel):
-    ...
-
-
-class IntegerLiteral(FunctionBodyItem):
+class IntegerLiteral(AaaParseModel):
     def __init__(self, position: Position, value: int) -> None:
         self.value = value
         super().__init__(position)
 
 
-class StringLiteral(FunctionBodyItem):
+class StringLiteral(AaaParseModel):
     def __init__(self, position: Position, value: str) -> None:
         self.value = value
         super().__init__(position)
 
 
-class BooleanLiteral(FunctionBodyItem):
+class BooleanLiteral(AaaParseModel):
     def __init__(self, position: Position, value: bool) -> None:
         self.value = value
         super().__init__(position)
 
 
-class WhileLoop(FunctionBodyItem):
+class WhileLoop(AaaParseModel):
     def __init__(
         self, position: Position, condition: FunctionBody, body: FunctionBody
     ) -> None:
@@ -43,13 +39,13 @@ class WhileLoop(FunctionBodyItem):
         super().__init__(position)
 
 
-class Identifier(FunctionBodyItem):
+class Identifier(AaaParseModel):
     def __init__(self, position: Position, name: str) -> None:
         self.name = name
         super().__init__(position)
 
 
-class Branch(FunctionBodyItem):
+class Branch(AaaParseModel):
     def __init__(
         self,
         position: Position,
@@ -69,7 +65,7 @@ class FunctionBody(AaaParseModel):
         super().__init__(position)
 
 
-class StructFieldQuery(FunctionBodyItem):
+class StructFieldQuery(AaaParseModel):
     def __init__(
         self, position: Position, field_name: StringLiteral, operator_position: Position
     ) -> None:
@@ -78,7 +74,7 @@ class StructFieldQuery(FunctionBodyItem):
         super().__init__(position)
 
 
-class StructFieldUpdate(FunctionBodyItem):
+class StructFieldUpdate(AaaParseModel):
     def __init__(
         self,
         position: Position,
@@ -92,12 +88,24 @@ class StructFieldUpdate(FunctionBodyItem):
         super().__init__(position)
 
 
-class Return(FunctionBodyItem):
+class GetFunctionPointer(AaaParseModel):
+    def __init__(self, position: Position, function_name: StringLiteral):
+        self.function_name = function_name
+        super().__init__(position)
+
+
+class Return(AaaParseModel):
+    ...
+
+
+class Call(AaaParseModel):
     ...
 
 
 class Argument(AaaParseModel):
-    def __init__(self, identifier: Identifier, type: TypeLiteral) -> None:
+    def __init__(
+        self, identifier: Identifier, type: TypeLiteral | FunctionPointerTypeLiteral
+    ) -> None:
         self.identifier = identifier
         self.type = type
         super().__init__(identifier.position)
@@ -111,7 +119,7 @@ class Function(AaaParseModel):
         func_name: Identifier,
         type_params: List[TypeLiteral],
         arguments: List[Argument],
-        return_types: List[TypeLiteral] | Never,
+        return_types: List[TypeLiteral | FunctionPointerTypeLiteral] | Never,
         body: Optional[FunctionBody],
         end_position: Optional[Position],
     ) -> None:
@@ -158,7 +166,10 @@ class Import(AaaParseModel):
 
 class Struct(AaaParseModel):
     def __init__(
-        self, position: Position, identifier: Identifier, fields: Dict[str, TypeLiteral]
+        self,
+        position: Position,
+        identifier: Identifier,
+        fields: Dict[str, TypeLiteral | FunctionPointerTypeLiteral],
     ) -> None:
         self.identifier = identifier
         self.fields = fields
@@ -191,7 +202,7 @@ class TypeLiteral(AaaParseModel):
         self,
         position: Position,
         identifier: Identifier,
-        params: List[TypeLiteral],
+        params: List[TypeLiteral | FunctionPointerTypeLiteral],
         const: bool,
     ) -> None:
         self.identifier = identifier
@@ -200,12 +211,24 @@ class TypeLiteral(AaaParseModel):
         super().__init__(position)
 
 
-class FunctionName(FunctionBodyItem):
+class FunctionPointerTypeLiteral(AaaParseModel):
+    def __init__(
+        self,
+        position: Position,
+        argument_types: List[TypeLiteral | FunctionPointerTypeLiteral],
+        return_types: List[TypeLiteral | FunctionPointerTypeLiteral] | Never,
+    ) -> None:
+        self.argument_types = argument_types
+        self.return_types = return_types
+        super().__init__(position)
+
+
+class FunctionName(AaaParseModel):
     def __init__(
         self,
         position: Position,
         struct_name: Optional[Identifier],
-        type_params: List[TypeLiteral],
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
         func_name: Identifier,
     ) -> None:
         self.struct_name = struct_name
@@ -214,12 +237,12 @@ class FunctionName(FunctionBodyItem):
         super().__init__(position)
 
 
-class Call(FunctionBodyItem):
+class FunctionCall(AaaParseModel):
     def __init__(
         self,
         position: Position,
         struct_name: Optional[Identifier],
-        type_params: List[TypeLiteral],
+        type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
         func_name: Identifier,
     ) -> None:
         self.struct_name = struct_name
@@ -233,7 +256,7 @@ class Call(FunctionBodyItem):
         return self.func_name.name
 
 
-class CaseLabel(FunctionBodyItem):
+class CaseLabel(AaaParseModel):
     def __init__(
         self,
         position: Position,
@@ -247,13 +270,13 @@ class CaseLabel(FunctionBodyItem):
         super().__init__(position)
 
 
-class ForeachLoop(FunctionBodyItem):
+class ForeachLoop(AaaParseModel):
     def __init__(self, position: Position, body: FunctionBody) -> None:
         self.body = body
         super().__init__(position)
 
 
-class UseBlock(FunctionBodyItem):
+class UseBlock(AaaParseModel):
     def __init__(
         self, position: Position, variables: List[Identifier], body: FunctionBody
     ) -> None:
@@ -262,7 +285,7 @@ class UseBlock(FunctionBodyItem):
         super().__init__(position)
 
 
-class Assignment(FunctionBodyItem):
+class Assignment(AaaParseModel):
     def __init__(
         self, position: Position, variables: List[Identifier], body: FunctionBody
     ) -> None:
@@ -271,7 +294,7 @@ class Assignment(FunctionBodyItem):
         super().__init__(position)
 
 
-class CaseBlock(FunctionBodyItem):
+class CaseBlock(AaaParseModel):
     def __init__(
         self, position: Position, label: CaseLabel, body: FunctionBody
     ) -> None:
@@ -280,13 +303,13 @@ class CaseBlock(FunctionBodyItem):
         super().__init__(position)
 
 
-class DefaultBlock(FunctionBodyItem):
+class DefaultBlock(AaaParseModel):
     def __init__(self, position: Position, body: FunctionBody) -> None:
         self.body = body
         super().__init__(position)
 
 
-class MatchBlock(FunctionBodyItem):
+class MatchBlock(AaaParseModel):
     def __init__(
         self, position: Position, blocks: List[CaseBlock | DefaultBlock]
     ) -> None:
@@ -294,16 +317,19 @@ class MatchBlock(FunctionBodyItem):
         super().__init__(position)
 
 
-class EnumVariant(FunctionBodyItem):
+class EnumVariant(AaaParseModel):
     def __init__(
-        self, position: Position, name: Identifier, associated_data: List[TypeLiteral]
+        self,
+        position: Position,
+        name: Identifier,
+        associated_data: List[TypeLiteral | FunctionPointerTypeLiteral],
     ) -> None:
         self.name = name
         self.associated_data = associated_data
         super().__init__(position)
 
 
-class Enum(FunctionBodyItem):
+class Enum(AaaParseModel):
     def __init__(
         self, position: Position, name: Identifier, variants: List[EnumVariant]
     ) -> None:
@@ -314,6 +340,26 @@ class Enum(FunctionBodyItem):
 
 class Never(AaaParseModel):
     ...
+
+
+FunctionBodyItem = (
+    Assignment
+    | BooleanLiteral
+    | Branch
+    | Call
+    | ForeachLoop
+    | FunctionCall
+    | FunctionPointerTypeLiteral
+    | GetFunctionPointer
+    | IntegerLiteral
+    | MatchBlock
+    | Return
+    | StringLiteral
+    | StructFieldQuery
+    | StructFieldUpdate
+    | UseBlock
+    | WhileLoop
+)
 
 
 class ParserOutput(AaaModel):

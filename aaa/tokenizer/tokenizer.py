@@ -24,6 +24,14 @@ class Tokenizer:
         column = offset - prefix.rfind("\n")
         return Position(self.file, line, column)
 
+    def _is_fixed_sized_token_boundary(self, offset: int) -> bool:
+        try:
+            char = self.code[offset]
+        except IndexError:
+            return True
+
+        return not char.isalpha() and char != "_"
+
     def _create_token(self, token_type: TokenType, start: int, end: int) -> Token:
         position = self._get_position(start)
         return Token(position, token_type, self.code[start:end])
@@ -63,16 +71,11 @@ class Tokenizer:
             if self.code[offset:].startswith(value):
                 end = offset + len(value)
 
-                if (
-                    end >= len(self.code)
-                    or self.code[end].isspace()
-                    or not value.isalpha()
+                if not value.isalpha() or self._is_fixed_sized_token_boundary(
+                    offset + len(value)
                 ):
-                    found = self._create_token(token_type, offset, end)
-
-                    # keep longest token
-                    if not token or (len(found.value) > len(token.value)):
-                        token = found
+                    token = self._create_token(token_type, offset, end)
+                    break
 
         return token
 

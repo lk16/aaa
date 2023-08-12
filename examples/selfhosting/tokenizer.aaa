@@ -65,7 +65,9 @@ enum TokenType {
     args_ as Empty,
     as_ as Empty,
     assign as Empty,
-    begin as Empty,
+    block_end as Empty,
+    block_start as Empty,
+    call_ as Empty,
     case_ as Empty,
     colon as Empty,
     comma as Empty,
@@ -73,7 +75,6 @@ enum TokenType {
     const_ as Empty,
     default_ as Empty,
     else_ as Empty,
-    end as Empty,
     enum_ as Empty,
     false_ as Empty,
     foreach_ as Empty,
@@ -88,12 +89,12 @@ enum TokenType {
     never_ as Empty,
     return_ as Empty,
     set_field as Empty,
+    square_bracket_close as Empty,
+    square_bracket_open as Empty,
     string as Empty,
     struct_ as Empty,
     true_ as Empty,
     type_ as Empty,
-    type_param_begin as Empty,
-    type_param_end as Empty,
     use_ as Empty,
     while_ as Empty,
     whitespace as Empty,
@@ -105,7 +106,9 @@ fn TokenType:to_str args token_type as const TokenType return str {
         case TokenType:args_ { drop "ARGS" }
         case TokenType:as_ { drop "AS" }
         case TokenType:assign { drop "ASSIGN" }
-        case TokenType:begin { drop "BEGIN" }
+        case TokenType:block_end { drop "BLOCK_END" }
+        case TokenType:block_start { drop "BLOCK_START" }
+        case TokenType:call_ { drop "CALL" }
         case TokenType:case_ { drop "CASE" }
         case TokenType:colon { drop "COLON" }
         case TokenType:comma { drop "COMMA" }
@@ -113,7 +116,6 @@ fn TokenType:to_str args token_type as const TokenType return str {
         case TokenType:const_ { drop "CONST" }
         case TokenType:default_ { drop "DEFAULT" }
         case TokenType:else_ { drop "ELSE" }
-        case TokenType:end { drop "END" }
         case TokenType:enum_ { drop "ENUM" }
         case TokenType:false_ { drop "FALSE" }
         case TokenType:foreach_ { drop "FOREACH" }
@@ -128,12 +130,12 @@ fn TokenType:to_str args token_type as const TokenType return str {
         case TokenType:never_ { drop "NEVER" }
         case TokenType:return_ { drop "RETURN" }
         case TokenType:set_field { drop "SET_FIELD" }
+        case TokenType:square_bracket_close { drop "SQUARE_BRACKET_CLOSE" }
+        case TokenType:square_bracket_open { drop "SQUARE_BRACKET_OPEN" }
         case TokenType:string { drop "STRING" }
         case TokenType:struct_ { drop "STRUCT" }
         case TokenType:true_ { drop "TRUE" }
         case TokenType:type_ { drop "TYPE" }
-        case TokenType:type_param_begin { drop "TYPE_PARAM_BEGIN" }
-        case TokenType:type_param_end { drop "TYPE_PARAM_END" }
         case TokenType:use_ { drop "USE" }
         case TokenType:while_ { drop "WHILE" }
         case TokenType:whitespace { drop "WHITESPACE" }
@@ -155,48 +157,49 @@ fn get_fixed_sized_tokens return vec[FixedSizedToken] {
     vec[FixedSizedToken]
     use v {
         // NOTE: keep this sorted by longest first, and for same length alphabetical
-        v "default" Empty TokenType:default_         make_fixed_sized_token vec:push
-        v "foreach" Empty TokenType:foreach_         make_fixed_sized_token vec:push
-        v "import"  Empty TokenType:import_          make_fixed_sized_token vec:push
-        v "return"  Empty TokenType:return_          make_fixed_sized_token vec:push
-        v "struct"  Empty TokenType:struct_          make_fixed_sized_token vec:push
-        v "const"   Empty TokenType:const_           make_fixed_sized_token vec:push
-        v "false"   Empty TokenType:false_           make_fixed_sized_token vec:push
-        v "match"   Empty TokenType:match_           make_fixed_sized_token vec:push
-        v "never"   Empty TokenType:never_           make_fixed_sized_token vec:push
-        v "while"   Empty TokenType:while_           make_fixed_sized_token vec:push
-        v "args"    Empty TokenType:args_            make_fixed_sized_token vec:push
-        v "case"    Empty TokenType:case_            make_fixed_sized_token vec:push
-        v "else"    Empty TokenType:else_            make_fixed_sized_token vec:push
-        v "enum"    Empty TokenType:enum_            make_fixed_sized_token vec:push
-        v "from"    Empty TokenType:from_            make_fixed_sized_token vec:push
-        v "true"    Empty TokenType:true_            make_fixed_sized_token vec:push
-        v "type"    Empty TokenType:type_            make_fixed_sized_token vec:push
-        v "use"     Empty TokenType:use_             make_fixed_sized_token vec:push
-        v "!="      Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v "<-"      Empty TokenType:assign           make_fixed_sized_token vec:push
-        v "<="      Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v ">="      Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v "as"      Empty TokenType:as_              make_fixed_sized_token vec:push
-        v "fn"      Empty TokenType:function         make_fixed_sized_token vec:push
-        v "if"      Empty TokenType:if_              make_fixed_sized_token vec:push
-        v "-"       Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v ","       Empty TokenType:comma            make_fixed_sized_token vec:push
-        v ":"       Empty TokenType:colon            make_fixed_sized_token vec:push
-        v "!"       Empty TokenType:set_field        make_fixed_sized_token vec:push
-        v "?"       Empty TokenType:get_field        make_fixed_sized_token vec:push
-        v "."       Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v "["       Empty TokenType:type_param_begin make_fixed_sized_token vec:push
-        v "]"       Empty TokenType:type_param_end   make_fixed_sized_token vec:push
-        v "{"       Empty TokenType:begin            make_fixed_sized_token vec:push
-        v "}"       Empty TokenType:end              make_fixed_sized_token vec:push
-        v "*"       Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v "/"       Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v "%"       Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v "+"       Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v "<"       Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v "="       Empty TokenType:identifier       make_fixed_sized_token vec:push
-        v ">"       Empty TokenType:identifier       make_fixed_sized_token vec:push
+        v "default" Empty TokenType:default_             make_fixed_sized_token vec:push
+        v "foreach" Empty TokenType:foreach_             make_fixed_sized_token vec:push
+        v "import"  Empty TokenType:import_              make_fixed_sized_token vec:push
+        v "return"  Empty TokenType:return_              make_fixed_sized_token vec:push
+        v "struct"  Empty TokenType:struct_              make_fixed_sized_token vec:push
+        v "const"   Empty TokenType:const_               make_fixed_sized_token vec:push
+        v "false"   Empty TokenType:false_               make_fixed_sized_token vec:push
+        v "match"   Empty TokenType:match_               make_fixed_sized_token vec:push
+        v "never"   Empty TokenType:never_               make_fixed_sized_token vec:push
+        v "while"   Empty TokenType:while_               make_fixed_sized_token vec:push
+        v "args"    Empty TokenType:args_                make_fixed_sized_token vec:push
+        v "call"    Empty TokenType:call_                make_fixed_sized_token vec:push
+        v "case"    Empty TokenType:case_                make_fixed_sized_token vec:push
+        v "else"    Empty TokenType:else_                make_fixed_sized_token vec:push
+        v "enum"    Empty TokenType:enum_                make_fixed_sized_token vec:push
+        v "from"    Empty TokenType:from_                make_fixed_sized_token vec:push
+        v "true"    Empty TokenType:true_                make_fixed_sized_token vec:push
+        v "type"    Empty TokenType:type_                make_fixed_sized_token vec:push
+        v "use"     Empty TokenType:use_                 make_fixed_sized_token vec:push
+        v "!="      Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "<-"      Empty TokenType:assign               make_fixed_sized_token vec:push
+        v "<="      Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v ">="      Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "as"      Empty TokenType:as_                  make_fixed_sized_token vec:push
+        v "fn"      Empty TokenType:function             make_fixed_sized_token vec:push
+        v "if"      Empty TokenType:if_                  make_fixed_sized_token vec:push
+        v "-"       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v ","       Empty TokenType:comma                make_fixed_sized_token vec:push
+        v ":"       Empty TokenType:colon                make_fixed_sized_token vec:push
+        v "!"       Empty TokenType:set_field            make_fixed_sized_token vec:push
+        v "?"       Empty TokenType:get_field            make_fixed_sized_token vec:push
+        v "."       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "["       Empty TokenType:square_bracket_open  make_fixed_sized_token vec:push
+        v "]"       Empty TokenType:square_bracket_close make_fixed_sized_token vec:push
+        v "{"       Empty TokenType:block_start          make_fixed_sized_token vec:push
+        v "}"       Empty TokenType:block_end            make_fixed_sized_token vec:push
+        v "*"       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "/"       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "%"       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "+"       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "<"       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "="       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v ">"       Empty TokenType:identifier           make_fixed_sized_token vec:push
 
         v
     }

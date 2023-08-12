@@ -1,0 +1,13 @@
+fn main {
+    // get pointer to builtin function
+    69 "dup" fn call . drop
+    "\n" .
+
+    // get pointer to builtin member-function
+    "6" "9" "str:append" fn call .
+    "\n" .
+
+    // get pointer to builtin function with unusual chars
+    34 35 "+" fn call .
+    "\n" .
+}

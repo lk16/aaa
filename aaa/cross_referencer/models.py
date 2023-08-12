@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from aaa import AaaModel, Position
 from aaa.parser import models as parser
@@ -12,28 +12,19 @@ class AaaCrossReferenceModel(AaaModel):
         self.position = position
 
 
-class Identifiable(AaaCrossReferenceModel):
-    def __init__(self, position: Position, name: str) -> None:
-        self.name = name
+class EnumConstructor(AaaCrossReferenceModel):
+    def __init__(self, enum: Enum, variant_name: str) -> None:
+        position = Position(enum.position.file, -1, -1)
+        self.enum = enum
+        self.variant_name = variant_name
+        self.name = f"{enum.name}:{variant_name}"
         super().__init__(position)
 
     def identify(self) -> Tuple[Path, str]:
         return (self.position.file, self.name)
 
 
-IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
-
-
-class EnumConstructor(Identifiable):
-    def __init__(self, enum: Enum, variant_name: str) -> None:
-        position = Position(enum.position.file, -1, -1)
-        self.enum = enum
-        self.variant_name = variant_name
-        name = f"{enum.name}:{variant_name}"
-        super().__init__(position, name)
-
-
-class Function(Identifiable):
+class Function(AaaCrossReferenceModel):
     class Unresolved:
         def __init__(self, parsed: parser.Function) -> None:
             self.parsed = parsed
@@ -44,7 +35,7 @@ class Function(Identifiable):
             parsed_body: Optional[parser.FunctionBody],
             type_params: Dict[str, Struct],
             arguments: List[Argument],
-            return_types: List[VariableType] | Never,
+            return_types: List[VariableType | FunctionPointer] | Never,
         ) -> None:
             self.parsed_body = parsed_body
             self.type_params = type_params
@@ -56,7 +47,7 @@ class Function(Identifiable):
             self,
             type_params: Dict[str, Struct],
             arguments: List[Argument],
-            return_types: List[VariableType] | Never,
+            return_types: List[VariableType | FunctionPointer] | Never,
             body: Optional[FunctionBody],
         ) -> None:
             self.type_params = type_params
@@ -79,11 +70,11 @@ class Function(Identifiable):
             self.struct_name = ""
 
         if parsed.struct_name:
-            name = f"{self.struct_name}:{self.func_name}"
+            self.name = f"{self.struct_name}:{self.func_name}"
         else:
-            name = self.func_name
+            self.name = self.func_name
 
-        super().__init__(parsed.position, name)
+        super().__init__(parsed.position)
 
     def get_unresolved(self) -> Function.Unresolved:
         assert isinstance(self.state, Function.Unresolved)
@@ -109,7 +100,7 @@ class Function(Identifiable):
         return self.state.arguments
 
     @property
-    def return_types(self) -> List[VariableType] | Never:
+    def return_types(self) -> List[VariableType | FunctionPointer] | Never:
         assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
         return self.state.return_types
 
@@ -129,7 +120,7 @@ class Function(Identifiable):
         parsed_body: Optional[parser.FunctionBody],
         type_params: Dict[str, Struct],
         arguments: List[Argument],
-        return_types: List[VariableType] | Never,
+        return_types: List[VariableType | FunctionPointer] | Never,
     ) -> None:
         assert isinstance(self.state, Function.Unresolved)
         self.state = Function.WithSignature(
@@ -148,19 +139,20 @@ class Function(Identifiable):
             body,
         )
 
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
+
 
 class Argument(AaaCrossReferenceModel):
-    def __init__(self, var_type: VariableType, identifier: parser.Identifier) -> None:
-        self.var_type = var_type
+    def __init__(
+        self, type: VariableType | FunctionPointer, identifier: parser.Identifier
+    ) -> None:
+        self.type = type
         self.name = identifier.name
         super().__init__(identifier.position)
 
 
-class FunctionBodyItem(AaaCrossReferenceModel):
-    ...
-
-
-class FunctionBody(FunctionBodyItem):
+class FunctionBody(AaaCrossReferenceModel):
     def __init__(
         self, parsed: parser.FunctionBody, items: List[FunctionBodyItem]
     ) -> None:
@@ -168,7 +160,7 @@ class FunctionBody(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class Import(Identifiable):
+class Import(AaaCrossReferenceModel):
     class Unresolved:
         ...
 
@@ -180,7 +172,8 @@ class Import(Identifiable):
         self.state: Import.Resolved | Import.Unresolved = Import.Unresolved()
         self.source_file = import_.source_file
         self.source_name = import_item.original.name
-        super().__init__(import_item.position, import_item.imported.name)
+        self.name = import_item.imported.name
+        super().__init__(import_item.position)
 
     @property
     def source(self) -> Identifiable:
@@ -198,27 +191,40 @@ class Import(Identifiable):
         assert isinstance(self.state, Import.Resolved)
         return self.state
 
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
-class ImplicitFunctionImport(Identifiable):
+
+class ImplicitFunctionImport(AaaCrossReferenceModel):
     def __init__(self, source: Function) -> None:
         self.source = source
+        self.name = self.source.name
+
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
 
-class ImplicitEnumConstructorImport(Identifiable):
+class ImplicitEnumConstructorImport(AaaCrossReferenceModel):
     def __init__(self, source: EnumConstructor) -> None:
         self.source = source
+        self.name = self.source.name
+
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
 
-class Struct(Identifiable):
+class Struct(AaaCrossReferenceModel):
     class Unresolved:
         def __init__(self, parsed: parser.TypeLiteral | parser.Struct) -> None:
-            self.parsed_field_types: Dict[str, parser.TypeLiteral] = {}
+            self.parsed_field_types: Dict[
+                str, parser.TypeLiteral | parser.FunctionPointerTypeLiteral
+            ] = {}
 
             if isinstance(parsed, parser.Struct):
                 self.parsed_field_types = parsed.fields
 
     class Resolved:
-        def __init__(self, fields: Dict[str, VariableType]) -> None:
+        def __init__(self, fields: Dict[str, VariableType | FunctionPointer]) -> None:
             self.fields = fields
 
     def __init__(
@@ -228,7 +234,8 @@ class Struct(Identifiable):
     ) -> None:
         self.state: Struct.Resolved | Struct.Unresolved = Struct.Unresolved(parsed)
         self.param_count = param_count
-        super().__init__(parsed.position, parsed.identifier.name)
+        self.name = parsed.identifier.name
+        super().__init__(parsed.position)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Struct):
@@ -237,7 +244,7 @@ class Struct(Identifiable):
         return self.name == other.name and self.position == other.position
 
     @property
-    def fields(self) -> Dict[str, VariableType]:
+    def fields(self) -> Dict[str, VariableType | FunctionPointer]:
         assert isinstance(self.state, Struct.Resolved)
         return self.state.fields
 
@@ -247,7 +254,7 @@ class Struct(Identifiable):
 
     def resolve(
         self,
-        fields: Dict[str, VariableType],
+        fields: Dict[str, VariableType | FunctionPointer],
     ) -> None:
         assert isinstance(self.state, Struct.Unresolved)
         self.state = Struct.Resolved(fields)
@@ -255,11 +262,16 @@ class Struct(Identifiable):
     def is_resolved(self) -> bool:
         return isinstance(self.state, Struct.Resolved)
 
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
 
-class Enum(Identifiable):
+
+class Enum(AaaCrossReferenceModel):
     class Unresolved:
         def __init__(self, parsed: parser.Enum) -> None:
-            self.parsed_variants: Dict[str, List[parser.TypeLiteral]] = {}
+            self.parsed_variants: Dict[
+                str, List[parser.TypeLiteral | parser.FunctionPointerTypeLiteral]
+            ] = {}
 
             for variant in parsed.variants:
                 self.parsed_variants[variant.name.name] = variant.associated_data
@@ -270,7 +282,7 @@ class Enum(Identifiable):
     class Resolved:
         def __init__(
             self,
-            variants: Dict[str, List[VariableType]],
+            variants: Dict[str, List[VariableType | FunctionPointer]],
             zero_variant: str,
         ) -> None:
             if variants and zero_variant not in variants:
@@ -282,7 +294,8 @@ class Enum(Identifiable):
     def __init__(self, parsed: parser.Enum, param_count: int) -> None:
         self.state: Enum.Resolved | Enum.Unresolved = Enum.Unresolved(parsed)
         self.param_count = param_count
-        super().__init__(parsed.position, parsed.identifier.name)
+        self.name = parsed.identifier.name
+        super().__init__(parsed.position)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Enum):
@@ -291,7 +304,7 @@ class Enum(Identifiable):
         return self.name == other.name and self.position == other.position
 
     @property
-    def variants(self) -> Dict[str, List[VariableType]]:
+    def variants(self) -> Dict[str, List[VariableType | FunctionPointer]]:
         assert isinstance(self.state, Enum.Resolved)
         return self.state.variants
 
@@ -307,19 +320,24 @@ class Enum(Identifiable):
         assert isinstance(self.state, Enum.Resolved)
         return self.state
 
-    def resolve(self, variants: Dict[str, List[VariableType]]) -> None:
+    def resolve(
+        self, variants: Dict[str, List[VariableType | FunctionPointer]]
+    ) -> None:
         assert isinstance(self.state, Enum.Unresolved)
         self.state = Enum.Resolved(variants, self.state.zero_variant)
 
     def is_resolved(self) -> bool:
         return isinstance(self.state, Enum.Resolved)
 
+    def identify(self) -> Tuple[Path, str]:
+        return (self.position.file, self.name)
+
 
 class VariableType(AaaCrossReferenceModel):
     def __init__(
         self,
         type: Struct | Enum,
-        params: List[VariableType],
+        params: List[VariableType | FunctionPointer],
         is_placeholder: bool,
         position: Position,
         is_const: bool,
@@ -355,34 +373,64 @@ class VariableType(AaaCrossReferenceModel):
         )
 
 
+class FunctionPointer(AaaCrossReferenceModel):
+    def __init__(
+        self,
+        position: Position,
+        argument_types: List[VariableType | FunctionPointer],
+        return_types: List[VariableType | FunctionPointer] | Never,
+    ) -> None:
+        self.argument_types = argument_types
+        self.return_types = return_types
+        super().__init__(position)
+
+    def __repr__(self) -> str:
+        args = ", ".join(repr(arg) for arg in self.argument_types)
+
+        if isinstance(self.return_types, Never):
+            returns = "never"
+        else:
+            returns = ", ".join(repr(return_) for return_ in self.return_types)
+
+        return f"fn[{args}][{returns}]"
+
+    def __eq__(self, other: Any) -> bool:
+        return (
+            type(other) == type(self)
+            and self.argument_types == other.argument_types
+            and self.return_types == other.return_types
+        )
+
+
 class Never:
     """
     Indicator that a FunctionBodyItem never returns.
     Examples for which this is useful: return, continue, break, exit
     """
 
-    ...
+    def __eq__(self, other: Any) -> bool:
+        return type(self) == type(other)
 
 
-class IntegerLiteral(FunctionBodyItem):
+class IntegerLiteral(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.IntegerLiteral) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
-class StringLiteral(FunctionBodyItem, parser.StringLiteral):
+class StringLiteral(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.StringLiteral) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
-class BooleanLiteral(FunctionBodyItem, parser.BooleanLiteral):
+class BooleanLiteral(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.BooleanLiteral) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
-class WhileLoop(FunctionBodyItem):
+class WhileLoop(AaaCrossReferenceModel):
     def __init__(
         self,
         condition: FunctionBody,
@@ -394,14 +442,14 @@ class WhileLoop(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class CallVariable(FunctionBodyItem):
+class CallVariable(AaaCrossReferenceModel):
     def __init__(self, name: str, has_type_params: bool, position: Position) -> None:
         self.has_type_params = has_type_params
         self.name = name
         super().__init__(position)
 
 
-class CallFunction(FunctionBodyItem):
+class CallFunction(AaaCrossReferenceModel):
     def __init__(
         self, function: Function, type_params: List[VariableType], position: Position
     ) -> None:
@@ -410,7 +458,7 @@ class CallFunction(FunctionBodyItem):
         super().__init__(position)
 
 
-class CallEnumConstructor(FunctionBodyItem):
+class CallEnumConstructor(AaaCrossReferenceModel):
     def __init__(
         self,
         enum_ctor: EnumConstructor,
@@ -422,13 +470,13 @@ class CallEnumConstructor(FunctionBodyItem):
         super().__init__(position)
 
 
-class CallType(FunctionBodyItem):
+class CallType(AaaCrossReferenceModel):
     def __init__(self, var_type: VariableType) -> None:
         self.var_type = var_type
         super().__init__(var_type.position)
 
 
-class Branch(FunctionBodyItem):
+class Branch(AaaCrossReferenceModel):
     def __init__(
         self,
         condition: FunctionBody,
@@ -442,14 +490,14 @@ class Branch(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class StructFieldQuery(FunctionBodyItem):
+class StructFieldQuery(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.StructFieldQuery) -> None:
         self.field_name = parsed.field_name
         self.operator_position = parsed.operator_position
         super().__init__(parsed.position)
 
 
-class StructFieldUpdate(FunctionBodyItem):
+class StructFieldUpdate(AaaCrossReferenceModel):
     def __init__(
         self, parsed: parser.StructFieldUpdate, new_value_expr: FunctionBody
     ) -> None:
@@ -459,20 +507,20 @@ class StructFieldUpdate(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class ForeachLoop(FunctionBodyItem):
+class ForeachLoop(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.ForeachLoop, body: FunctionBody) -> None:
         self.body = body
         super().__init__(parsed.position)
 
 
-class Variable(FunctionBodyItem):
+class Variable(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.Identifier, is_func_arg: bool) -> None:
         self.name = parsed.name
         self.is_func_arg = is_func_arg
         super().__init__(parsed.position)
 
 
-class Assignment(FunctionBodyItem):
+class Assignment(AaaCrossReferenceModel):
     def __init__(
         self, parsed: parser.Assignment, variables: List[Variable], body: FunctionBody
     ) -> None:
@@ -481,7 +529,7 @@ class Assignment(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class UseBlock(FunctionBodyItem):
+class UseBlock(AaaCrossReferenceModel):
     def __init__(
         self, parsed: parser.UseBlock, variables: List[Variable], body: FunctionBody
     ) -> None:
@@ -490,7 +538,7 @@ class UseBlock(FunctionBodyItem):
         super().__init__(parsed.position)
 
 
-class MatchBlock(FunctionBodyItem):
+class MatchBlock(AaaCrossReferenceModel):
     def __init__(
         self, position: Position, blocks: List[CaseBlock | DefaultBlock]
     ) -> None:
@@ -520,9 +568,55 @@ class DefaultBlock(AaaCrossReferenceModel):  # NOTE: This is NOT a FunctionBodyI
         super().__init__(position)
 
 
-class Return(FunctionBodyItem):
+class Return(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.Return) -> None:
         super().__init__(parsed.position)
+
+
+class GetFunctionPointer(AaaCrossReferenceModel):
+    def __init__(self, position: Position, target: Function | EnumConstructor) -> None:
+        self.target = target
+        super().__init__(position)
+
+
+class CallFunctionByPointer(AaaCrossReferenceModel):
+    ...
+
+
+Identifiable = (
+    EnumConstructor
+    | Enum
+    | Function
+    | ImplicitEnumConstructorImport
+    | ImplicitFunctionImport
+    | Import
+    | Struct
+)
+
+
+FunctionBodyItem = (
+    Assignment
+    | BooleanLiteral
+    | Branch
+    | CallEnumConstructor
+    | CallFunction
+    | CallFunctionByPointer
+    | CallType
+    | CallVariable
+    | ForeachLoop
+    | FunctionPointer
+    | GetFunctionPointer
+    | IntegerLiteral
+    | MatchBlock
+    | Return
+    | StringLiteral
+    | StructFieldQuery
+    | StructFieldUpdate
+    | UseBlock
+    | WhileLoop
+)
+
+IdentifiablesDict = Dict[Tuple[Path, str], Identifiable]
 
 
 class CrossReferencerOutput(AaaModel):

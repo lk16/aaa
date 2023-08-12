@@ -1,9 +1,11 @@
 from glob import glob
 from pathlib import Path
 from tempfile import NamedTemporaryFile, gettempdir
+from typing import Tuple
 
 import pytest
 
+from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
 from aaa.tokenizer.exceptions import TokenizerException
 from aaa.tokenizer.models import TokenType
 from aaa.tokenizer.tokenizer import Tokenizer
@@ -90,3 +92,11 @@ def test_tokenizer_error(code: str, expected_line: int, expected_column: int) ->
 
     assert expected_line == tokenizer_exception.position.line
     assert expected_column == tokenizer_exception.position.column
+
+
+def test_fixed_sized_tokens_is_sorted() -> None:
+    def sort_key(item: Tuple[str, TokenType]) -> Tuple[int, str]:
+        value = item[0]
+        return (-len(value), value)
+
+    assert FIXED_SIZED_TOKENS == sorted(FIXED_SIZED_TOKENS, key=sort_key)

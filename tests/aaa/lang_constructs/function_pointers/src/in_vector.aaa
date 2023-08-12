@@ -1,0 +1,24 @@
+
+
+fn add args a as int, b as int, return int {
+    a b +
+}
+
+struct Foo {
+    func as fn[int, int][int],
+}
+
+fn main {
+    vec[fn[int, int][int]]
+    use v {
+        v "add" fn vec:push
+
+        v
+        foreach {
+            use func {
+                34 35 func call .
+            }
+        }
+    }
+    "\n" .
+}

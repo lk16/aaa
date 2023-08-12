@@ -7,15 +7,16 @@ class TokenType(Enum):
     ARGS = "ARGS"
     AS = "AS"
     ASSIGN = "ASSIGN"
-    BEGIN = "BEGIN"
+    BLOCK_START = "BLOCK_START"
     CASE = "CASE"
+    CALL = "CALL"
     COLON = "COLON"
     COMMA = "COMMA"
     COMMENT = "COMMENT"
     CONST = "CONST"
     DEFAULT = "DEFAULT"
     ELSE = "ELSE"
-    END = "END"
+    BLOCK_END = "BLOCK_END"
     ENUM = "ENUM"
     FALSE = "FALSE"
     FOREACH = "FOREACH"
@@ -34,8 +35,8 @@ class TokenType(Enum):
     STRUCT = "STRUCT"
     TRUE = "TRUE"  # replace TRUE and FALSE with BOOLEAN
     TYPE = "TYPE"
-    TYPE_PARAM_BEGIN = "TYPE_PARAM_BEGIN"
-    TYPE_PARAM_END = "TYPE_PARAM_END"
+    SQUARE_BRACKET_OPEN = "SQUARE_BRACKET_OPEN"
+    SQUARE_BRACKET_CLOSE = "SQUARE_BRACKET_CLOSE"
     USE = "USE"
     WHILE = "WHILE"
     WHITESPACE = "WHITESPACE"
@@ -46,3 +47,6 @@ class Token:
         self.position = position
         self.type = type
         self.value = value
+
+    def __repr__(self) -> str:
+        return repr(self.value)

@@ -1,7 +1,7 @@
 from glob import glob
 from pathlib import Path
 from tempfile import NamedTemporaryFile, gettempdir
-from typing import List, Optional, Tuple, Type
+from typing import List, Optional, Set, Tuple, Type
 
 import pytest
 
@@ -11,6 +11,7 @@ from aaa.parser.exceptions import (
     ParserException,
     UnhandledTopLevelToken,
 )
+from aaa.parser.models import FunctionPointerTypeLiteral, TypeLiteral
 from aaa.parser.single_file_parser import SingleFileParser
 from aaa.tokenizer.tokenizer import Tokenizer
 
@@ -50,6 +51,18 @@ def test_parse_identifier(
             parser._parse_identifier(0)
 
 
+def get_type_param_variable_type_names(
+    type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
+) -> List[str]:
+    names: List[str] = []
+
+    for type_param in type_params:
+        assert isinstance(type_param, TypeLiteral)
+        names.append(type_param.identifier.name)
+
+    return names
+
+
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
@@ -79,9 +92,7 @@ def test_parse_flat_type_params(
     if isinstance(expected_result, list):
         type_params, offset = parser._parse_flat_type_params(0)
         assert expected_offset == offset
-        assert expected_result == [
-            type_param.identifier.name for type_param in type_params
-        ]
+        assert expected_result == get_type_param_variable_type_names(type_params)
     else:
         with pytest.raises(expected_result):
             parser._parse_flat_type_params(0)
@@ -120,9 +131,9 @@ def test_parse_flat_type_literal(
 
         assert expected_offset == offset
         assert expected_type_name == type_literal.identifier.name
-        assert expected_type_params == [
-            type_param.identifier.name for type_param in type_literal.params
-        ]
+        assert expected_type_params == get_type_param_variable_type_names(
+            type_literal.params
+        )
     else:
         with pytest.raises(expected_result):
             parser._parse_flat_type_literal(0)
@@ -160,9 +171,9 @@ def test_parse_type_declaration(
 
         assert expected_offset == offset
         assert expected_type_name == type_literal.identifier.name
-        assert expected_type_params == [
-            type_param.identifier.name for type_param in type_literal.params
-        ]
+        assert expected_type_params == get_type_param_variable_type_names(
+            type_literal.params
+        )
     else:
         with pytest.raises(expected_result):
             parser._parse_type_declaration(0)
@@ -213,9 +224,9 @@ def test_parse_function_name(
             assert function_name.struct_name is None
 
         assert expected_func_name == function_name.func_name.name
-        assert expected_type_params == [
-            param.identifier.name for param in function_name.type_params
-        ]
+        assert expected_type_params == get_type_param_variable_type_names(
+            function_name.type_params
+        )
     else:
         with pytest.raises(expected_result):
             parser._parse_function_name(0)
@@ -692,7 +703,7 @@ def test_parse_integer(
         ("true", None, 1),
         ("false", None, 1),
         ('"foo"', None, 1),
-        ("fn", ParserException, 0),
+        ("case", ParserException, 0),
         ("", EndOfFileException, 0),
     ],
 )
@@ -733,7 +744,7 @@ def test_parse_function_call(
 
     if isinstance(expected_result, tuple):
         expected_struct_name, expected_type_params, expected_func_name = expected_result
-        func_call, offset = parser._parse_call(0)
+        func_call, offset = parser._parse_function_call(0)
 
         if expected_struct_name is not None:
             assert func_call.struct_name
@@ -741,15 +752,15 @@ def test_parse_function_call(
         else:
             assert expected_struct_name is None
 
-        assert expected_type_params == [
-            type_param.identifier.name for type_param in func_call.type_params
-        ]
+        assert expected_type_params == get_type_param_variable_type_names(
+            func_call.type_params
+        )
         assert expected_func_name == func_call.func_name.name
 
         assert expected_offset == offset
     else:
         with pytest.raises(expected_result):
-            parser._parse_call(0)
+            parser._parse_function_call(0)
 
 
 @pytest.mark.parametrize(
@@ -897,7 +908,7 @@ def test_parse_struct_field_update(
         ('"foo" ?', None, 2),
         ('"foo" { nop } !', None, 5),
         ("", EndOfFileException, 0),
-        ("fn", ParserException, 0),
+        ("case", ParserException, 0),
     ],
 )
 def test_parse_function_body_item(
@@ -947,7 +958,7 @@ def test_parse_function_body_item(
         ('if true { nop } "foo" ?', None, 7),
         ('if true { nop } "foo" { nop } !', None, 10),
         ("", EndOfFileException, 0),
-        ("fn", ParserException, 0),
+        ("case", ParserException, 0),
     ],
 )
 def test_parse_function_body(
@@ -994,19 +1005,6 @@ def test_parse_function_definition(
             parser._parse_function_definition(0)
 
 
-@pytest.mark.parametrize(
-    ["file"],
-    {(Path(file),) for file in glob("**/*.aaa", root_dir=".", recursive=True)}
-    - {(Path("./stdlib/builtins.aaa"),)},
-)
-def test_parse_regular_file_root_all_source_files(file: Path) -> None:
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
-
-    parsed_file, offset = parser._parse_regular_file_root(0)
-    assert len(tokens) == offset
-
-
 def test_parse_regular_file_root_empty_file() -> None:
     temp_file = NamedTemporaryFile(delete=False)
     file = Path(gettempdir()) / temp_file.name
@@ -1020,10 +1018,17 @@ def test_parse_regular_file_root_empty_file() -> None:
     assert 0 == offset
 
 
+def get_source_files() -> List[Path]:
+    aaa_files: Set[Path] = {
+        Path(file) for file in glob("**/*.aaa", root_dir=".", recursive=True)
+    }
+    builtins_file = Path("./stdlib/builtins.aaa")
+    return sorted(aaa_files - {builtins_file})
+
+
 @pytest.mark.parametrize(
     ["file"],
-    {(Path(file),) for file in glob("**/*.aaa", root_dir=".", recursive=True)}
-    - {(Path("./stdlib/builtins.aaa"),)},
+    [pytest.param(file, id=str(file)) for file in get_source_files()],
 )
 def test_parse_regular_file_all_source_files(file: Path) -> None:
     tokens = Tokenizer(file, False).run()
@@ -1135,6 +1140,42 @@ def test_parse_assignment(
 
     if expected_exception is None:
         _, offset = parser._parse_assignment(0)
+        assert expected_offset == offset
+    else:
+        with pytest.raises(expected_exception):
+            parser._parse_assignment(0)
+
+
+@pytest.mark.parametrize(
+    ["code", "expected_exception", "expected_offset"],
+    [
+        ("fn[][]", None, 5),
+        ("fn [][]", None, 5),
+        ("fn[ ][]", None, 5),
+        ("fn[] []", None, 5),
+        ("fn[][ ]", None, 5),
+        ("fn[int][]", None, 6),
+        ("fn[int,][]", None, 7),
+        ("fn[][int]", None, 6),
+        ("fn[vec[int]][]", None, 9),
+        ("fn[int,int][]", None, 8),
+        ("fn[int,int,][]", None, 9),
+        ("fn[][int,int]", None, 8),
+        ("fn[][int,int,]", None, 9),
+        ("fn[fn[][]][]", None, 10),
+        ("fn[,][]", ParserException, 0),
+        ("fn[][,]", ParserException, 0),
+    ],
+)
+def test_parse_function_pointer_type_literal(
+    code: str,
+    expected_exception: Optional[Type[ParserBaseException]],
+    expected_offset: int,
+) -> None:
+    parser = parse_code(code)
+
+    if expected_exception is None:
+        _, offset = parser._parse_function_pointer_type_literal(0)
         assert expected_offset == offset
     else:
         with pytest.raises(expected_exception):

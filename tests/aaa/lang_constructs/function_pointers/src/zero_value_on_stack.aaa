@@ -1,0 +1,4 @@
+
+fn main {
+    34 35 fn[int, int][int] call drop
+}

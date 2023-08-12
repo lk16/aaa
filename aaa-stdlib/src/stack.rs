@@ -169,6 +169,10 @@ where
         self.push(Variable::UserType(Rc::new(RefCell::new(v))));
     }
 
+    pub fn push_function_pointer(&mut self, func: fn(&mut Stack<T>)) {
+        self.push(Variable::FunctionPointer(func));
+    }
+
     pub fn pop(&mut self) -> Variable<T> {
         match self.items.pop() {
             Some(popped) => popped,
@@ -260,6 +264,18 @@ where
         }
     }
 
+    pub fn pop_function_pointer(&mut self) -> fn(&mut Stack<T>) {
+        match self.pop() {
+            Variable::FunctionPointer(v) => v,
+            v => self.pop_type_error("func_ptr", &v),
+        }
+    }
+
+    pub fn pop_function_pointer_and_call(&mut self) {
+        let func = self.pop_function_pointer();
+        func(self);
+    }
+
     pub fn print(&mut self) {
         let top = self.pop();
         print!("{top}");
@@ -286,20 +302,56 @@ where
         self.items.swap(len - 1, len - 2);
     }
 
-    pub fn assert(&mut self, file: &str, line: isize, col: isize) {
+    pub fn assert(&mut self) {
+        // used when called via function pointer
+        self.assert_with_position(None)
+    }
+
+    pub fn assert_with_position(&mut self, position: Option<(&str, isize, isize)>) {
+        // used when called directly
+
         if !self.pop_bool() {
-            eprintln!("Assertion failure at {}:{}:{}", file, line, col);
+            match position {
+                Some((file, line, col)) => {
+                    eprintln!("Assertion failure at {}:{}:{}", file, line, col)
+                }
+                None => eprintln!("Assertion failure at ??:??:??"),
+            }
             process::exit(1);
         }
     }
 
-    pub fn todo(&mut self, file: &str, line: isize, col: isize) {
-        eprintln!("Code at {}:{}:{} is not implemented", file, line, col);
+    pub fn todo(&mut self) {
+        // used when called via function pointer
+        self.todo_with_position(None)
+    }
+
+    pub fn todo_with_position(&mut self, position: Option<(&str, isize, isize)>) {
+        // used when called directly
+
+        match position {
+            Some((file, line, col)) => {
+                eprintln!("Code at {}:{}:{} is not implemented", file, line, col)
+            }
+            None => eprintln!("Code at ??:??:?? is not implemented"),
+        }
         process::exit(1);
     }
 
-    pub fn unreachable(&mut self, file: &str, line: isize, col: isize) {
-        eprintln!("Code at {}:{}:{} should be unreachable", file, line, col);
+    pub fn unreachable(&mut self) {
+        // used when called via function pointer
+        self.unreachable_with_position(None)
+    }
+
+    pub fn unreachable_with_position(&mut self, position: Option<(&str, isize, isize)>) {
+        // used when called directly
+
+        match position {
+            Some((file, line, col)) => {
+                eprintln!("Code at {}:{}:{} should be unreachable", file, line, col)
+            }
+            None => eprintln!("Code at ??:??:?? should be unreachable"),
+        }
         process::exit(1);
     }
 
@@ -1332,5 +1384,14 @@ where
                 self.push_bool(false);
             }
         }
+    }
+
+    pub fn zero_function_pointer_value(&mut self) {
+        // Function pointers must point to a function in Aaa.
+        // The zero-value for function pointers is this function.
+        // Since this should never happen in a correct program, we just crash with an error message.
+
+        eprintln!("Function pointer with zero-value was called.");
+        process::exit(1);
     }
 }

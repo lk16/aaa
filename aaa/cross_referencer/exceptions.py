@@ -7,8 +7,11 @@ from aaa.cross_referencer.models import (
     AaaCrossReferenceModel,
     Argument,
     Enum,
+    EnumConstructor,
     Function,
     Identifiable,
+    ImplicitEnumConstructorImport,
+    ImplicitFunctionImport,
     Import,
     Struct,
     Variable,
@@ -17,7 +20,15 @@ from aaa.parser.models import TypeLiteral
 
 
 def describe(item: Identifiable | Argument | Variable) -> str:
-    if isinstance(item, Function):
+    if isinstance(
+        item,
+        (
+            Function,
+            ImplicitFunctionImport,
+            EnumConstructor,
+            ImplicitEnumConstructorImport,
+        ),
+    ):
         return f"function {item.name}"
     elif isinstance(item, Import):
         return f"imported identifier {item.name}"
@@ -29,8 +40,9 @@ def describe(item: Identifiable | Argument | Variable) -> str:
         return f"function argument {item.name}"
     elif isinstance(item, Variable):
         return f"local variable {item.name}"
-    else:  # pragma: nocover
-        assert False
+    else:
+        assert isinstance(item, Enum)
+        return f"enum {item.name}"
 
 
 class CrossReferenceBaseException(AaaException):
@@ -181,3 +193,28 @@ class InvalidEnumVariant(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return f"{self.position}: Variant {self.variant_name} of enum {self.enum.name} does not exist\n"
+
+
+class InvalidFunctionPointerTarget(CrossReferenceBaseException):
+    def __init__(self, position: Position, identifiable: Identifiable) -> None:
+        self.position = position
+        self.identifiable = identifiable
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Cannot create function pointer to "
+            + describe(self.identifiable)
+            + "\n"
+        )
+
+
+class FunctionPointerTargetNotFound(CrossReferenceBaseException):
+    def __init__(self, position: Position, target_name: str) -> None:
+        self.position = position
+        self.target_name = target_name
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Cannot create pointer to function "
+            + f"{self.target_name} which was not found\n"
+        )
