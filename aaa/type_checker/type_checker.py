@@ -575,7 +575,41 @@ class SingleFunctionTypeChecker:
 
         return return_type_stack
 
-    def _check_match_block(  # noqa: C901  # TODO refactor, this is too complex
+    def _get_block_type_stacks(
+        self,
+        match_block: MatchBlock,
+        type_stack: List[VariableType | FunctionPointer],
+        enum_type: Enum,
+    ) -> Tuple[
+        List[List[VariableType | FunctionPointer] | Never], Optional[DefaultBlock]
+    ]:
+        block_type_stacks: List[List[VariableType | FunctionPointer] | Never] = []
+        found_default_block: Optional[DefaultBlock] = None
+
+        for block in match_block.blocks:
+            block_type_stack: List[VariableType | FunctionPointer] | Never = copy(
+                type_stack[:-1]
+            )
+            assert not isinstance(block_type_stack, Never)
+
+            if isinstance(block, CaseBlock):
+                block_type_stack = self._check_case_block(
+                    block, block_type_stack, enum_type
+                )
+
+            else:
+                if found_default_block:
+                    raise DuplicateCase(found_default_block, block)
+
+                found_default_block = block
+                block_type_stack = self._check_function_body(
+                    block.body, block_type_stack
+                )
+
+            block_type_stacks.append(block_type_stack)
+        return block_type_stacks, found_default_block
+
+    def _check_match_block(
         self, match_block: MatchBlock, type_stack: List[VariableType | FunctionPointer]
     ) -> List[VariableType | FunctionPointer] | Never:
         try:
@@ -604,30 +638,9 @@ class SingleFunctionTypeChecker:
 
                 found_enum_variants[block.variant_name] = block
 
-        found_default_block: Optional[DefaultBlock] = None
-        block_type_stacks: List[List[VariableType | FunctionPointer] | Never] = []
-
-        for block in match_block.blocks:
-            block_type_stack: List[VariableType | FunctionPointer] | Never = copy(
-                type_stack[:-1]
-            )
-            assert not isinstance(block_type_stack, Never)
-
-            if isinstance(block, CaseBlock):
-                block_type_stack = self._check_case_block(
-                    block, block_type_stack, enum_type
-                )
-
-            else:
-                if found_default_block:
-                    raise DuplicateCase(found_default_block, block)
-
-                found_default_block = block
-                block_type_stack = self._check_function_body(
-                    block.body, block_type_stack
-                )
-
-            block_type_stacks.append(block_type_stack)
+        block_type_stacks, found_default_block = self._get_block_type_stacks(
+            match_block, type_stack, enum_type
+        )
 
         missing_enum_variants = set(enum_type.variants.keys()) - set(
             found_enum_variants.keys()
