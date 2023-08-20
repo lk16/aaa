@@ -692,22 +692,6 @@ class SingleFunctionTypeChecker:
         # Push variable on stack
         return type_stack + [var_type]
 
-    def _simplify_stack_item(  # TODO #136 remove/refactor `remove_const`
-        self, type: VariableType | FunctionPointer
-    ) -> VariableType | FunctionPointer:
-        if (
-            isinstance(type, VariableType)
-            and type.type.name == "remove_const"
-            and type.type.position.file == self.builtins_path
-        ):
-            assert len(type.params) == 1
-
-            assert isinstance(type.params[0], VariableType)
-            type = copy(type.params[0])
-            type.is_const = False
-
-        return type
-
     def __check_call_function(
         self,
         arguments: List[VariableType | FunctionPointer],
@@ -745,8 +729,6 @@ class SingleFunctionTypeChecker:
             stack_item = self._apply_placeholders_in_return_type(
                 return_type, placeholder_types
             )
-            stack_item = self._simplify_stack_item(stack_item)
-
             stack.append(stack_item)
 
         return stack
@@ -760,13 +742,22 @@ class SingleFunctionTypeChecker:
 
         arguments = [argument.type for argument in call_function.function.arguments]
 
-        return self.__check_call_function(
+        type_stack_afterwards = self.__check_call_function(
             arguments,
             call_function.function.return_types,
             call_function.function,
             call_function.position,
             type_stack,
         )
+
+        called = call_function.function
+
+        if called.position.file == self.builtins_path and called.name == "copy":
+            assert isinstance(type_stack_afterwards, list)
+            assert isinstance(type_stack_afterwards[-1], VariableType)
+            type_stack_afterwards[-1].is_const = False
+
+        return type_stack_afterwards
 
     def _check_call_by_function_pointer(
         self,

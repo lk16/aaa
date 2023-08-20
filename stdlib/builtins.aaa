@@ -16,16 +16,13 @@ type set_iter[T]
 type vec_const_iter[T]
 type vec_iter[T]
 
-// const helpers
-type remove_const[T]
-
 fn make_const[A] args a as A return const A
 
 // compiled regular expression
 type regex
 
 // stack operations
-fn copy[A]      args a as A                 return A, remove_const[A]
+fn copy[A]      args a as A                 return A, A  // The top object will be non-const
 fn drop[A]      args a as A
 fn dup[A]       args a as A                 return A, A
 fn over[A, B]   args a as A, b as B         return A, B, A
