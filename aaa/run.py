@@ -1,5 +1,7 @@
 import os
+import subprocess
 import sys
+from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile, gettempdir
 from typing import Dict, List, Optional, Sequence
@@ -23,7 +25,6 @@ class Runner:
         self.exceptions: Sequence[AaaException] = []
         self.parsed_files = parsed_files or {}
         self.verbose = verbose
-        self.generated_binary_file: Path
 
     @staticmethod
     def without_file(
@@ -52,9 +53,13 @@ class Runner:
         return Path(stdlib_folder) / "builtins.aaa"
 
     def run(
-        self, compile: bool, binary: Optional[str], run: bool, args: List[str]
+        self,
+        compile: bool,
+        custom_binary_path: Optional[Path],
+        run: bool,
+        args: List[str],
     ) -> int:
-        if binary is not None and not compile:
+        if custom_binary_path is not None and not compile:
             print(
                 "Specifying binary path without compiling does not make sense.",
                 file=sys.stderr,
@@ -65,9 +70,8 @@ class Runner:
             print("Can't run binary without (re-)compiling!", file=sys.stderr)
             exit(1)
 
-        generated_binary_file: Optional[Path] = None
-        if binary:
-            generated_binary_file = Path(binary).resolve()
+        entrypoint_hash = sha256(bytes(self.entrypoint)).hexdigest()[:16]
+        transpiler_root = Path("/tmp/aaa/transpiled") / entrypoint_hash
 
         try:
             stdlib_path = self._get_stdlib_path()
@@ -85,13 +89,11 @@ class Runner:
             transpiler = Transpiler(
                 cross_referencer_output,
                 type_checker_output,
-                generated_binary_file,
+                transpiler_root,
                 self.verbose,
             )
 
-            self.generated_binary_file = transpiler.generated_binary_file
-
-            return transpiler.run(compile, run, args)
+            transpiler.run()
 
         except AaaRunnerException as e:
             self.exceptions = e.exceptions
@@ -101,3 +103,21 @@ class Runner:
             self.exceptions = [e]
             self._print_exceptions(AaaRunnerException([e]))
             return 1
+
+        if compile:  # pragma: nocover
+            cargo_toml = (transpiler_root / "Cargo.toml").resolve()
+            command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_toml)]
+            exit_code = subprocess.run(command).returncode
+
+            if exit_code != 0:
+                return exit_code
+
+            binary_file = transpiler_root / "target/debug/aaa-stdlib-user"
+            if custom_binary_path:
+                binary_file = binary_file.rename(custom_binary_path)
+
+            if run:  # pragma: nocover
+                command = [str(binary_file)] + args
+                return subprocess.run(command).returncode
+
+        return 0
