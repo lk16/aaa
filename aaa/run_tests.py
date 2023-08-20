@@ -23,7 +23,7 @@ class TestRunner:
         self.test_functions: List[Function] = []
         self.verbose = verbose
 
-    def run(self, compile: bool, binary: Optional[str], run: bool) -> int:
+    def run(self, compile: bool, binary: Optional[Path], run: bool) -> int:
         main_file_code = self._build_main_test_file()
 
         if self.exceptions:

@@ -33,7 +33,13 @@ def cmd(
     args: Tuple[str],
 ) -> None:
     runner = Runner.without_file(code, None, verbose)
-    exit_code = runner.run(compile, binary, run, list(args))
+
+    if binary:
+        binary_path = Path(binary).resolve()
+    else:
+        binary_path = None
+
+    exit_code = runner.run(compile, binary_path, run, list(args))
     exit(exit_code)
 
 
@@ -52,8 +58,14 @@ def run(
     binary: Optional[str],
     args: Tuple[str],
 ) -> None:
+
+    if binary:
+        binary_path = Path(binary).resolve()
+    else:
+        binary_path = None
+
     runner = Runner(Path(path), None, verbose)
-    exit_code = runner.run(compile, binary, run, list(args))
+    exit_code = runner.run(compile, binary_path, run, list(args))
     exit(exit_code)
 
 
@@ -85,7 +97,13 @@ def test(
     path: str, compile: bool, run: bool, verbose: bool, binary: Optional[str]
 ) -> None:
     test_runner = TestRunner(Path(path), verbose)
-    exit_code = test_runner.run(compile, binary, run)
+
+    if binary:
+        binary_path = Path(binary)
+    else:
+        binary_path = None
+
+    exit_code = test_runner.run(compile, binary_path, run)
     exit(exit_code)
 
 

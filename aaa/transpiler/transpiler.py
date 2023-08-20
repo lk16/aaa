@@ -1,9 +1,7 @@
-import subprocess
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
-from tempfile import NamedTemporaryFile
-from typing import Callable, Dict, List, Optional, Tuple, Type
+from typing import Callable, Dict, List, Tuple, Type
 
 from aaa.cross_referencer.models import (
     Assignment,
@@ -73,7 +71,7 @@ class Transpiler:
         self,
         cross_referencer_output: CrossReferencerOutput,
         type_checker_output: TypeCheckerOutput,
-        generated_binary_file: Optional[Path],
+        output_root: Path,
         verbose: bool,
     ) -> None:
         self.functions = cross_referencer_output.functions
@@ -82,12 +80,7 @@ class Transpiler:
         self.position_stacks = type_checker_output.position_stacks
         self.verbose = verbose
 
-        self.transpiled_rust_root = Path("/tmp/transpiled")
-
-        self.generated_binary_file = (
-            generated_binary_file
-            or Path(NamedTemporaryFile(delete=False).name).resolve()
-        )
+        self.output_root = output_root
 
         self.structs: Dict[Tuple[Path, str], Struct] = {}
         self.enums: Dict[Tuple[Path, str], Enum] = {}
@@ -100,9 +93,9 @@ class Transpiler:
             if type.position.file != self.builtins_path:
                 self.enums[key] = type
 
-    def run(self, compile: bool, run_binary: bool, args: List[str]) -> int:
-        generated_rust_file = self.transpiled_rust_root / "src/main.rs"
-        cargo_toml = (self.transpiled_rust_root / "Cargo.toml").resolve()
+    def run(self) -> None:
+        generated_rust_file = self.output_root / "src/main.rs"
+        cargo_toml = (self.output_root / "Cargo.toml").resolve()
         stdlib_impl_path = (Path(__file__).parent / "../../aaa-stdlib").resolve()
 
         generated_rust_file.parent.mkdir(parents=True, exist_ok=True)
@@ -114,22 +107,6 @@ class Transpiler:
         code = self._generate_file()
 
         generated_rust_file.write_text(code.get())
-
-        if compile:  # pragma: nocover
-            command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_toml)]
-            exit_code = subprocess.run(command).returncode
-
-            if exit_code != 0:
-                return exit_code
-
-            binary_file = self.transpiled_rust_root / "target/debug/aaa-stdlib-user"
-            binary_file.rename(self.generated_binary_file)
-
-        if run_binary:  # pragma: nocover
-            command = [str(self.generated_binary_file)] + args
-            return subprocess.run(command).returncode
-
-        return 0
 
     def _generate_file(self) -> Code:
         code = self._generate_header_comment()
