@@ -5,7 +5,7 @@ Stack-based language, like forth.
 The following tools for the Aaa language can be found is this repo
 * A [tokenizer](./aaa/tokenizer/) and [parser](./aaa/parser/) for Aaa.
 * A [type checker](./aaa/type_checker/)
-* A [transpiler to C](./aaa/transpiler/)
+* A [transpiler to Rust](./aaa/transpiler/)
 * A [VS Code extension](./aaa-vscode-extension/README.md) for the Aaa language.
 * A lot of tests, written both in python and Aaa
 
@@ -13,9 +13,6 @@ The following tools for the Aaa language can be found is this repo
 ```sh
 # Run the obligatory hello world example
 ./manage.py cmd -cr 'fn main { "Hello world\n" . }'
-
-# Print "aaa\n" using a loop to count to 3
-./manage.py cmd -cr 'fn main { "a" 0 while dup 3 < { over . 1 + } drop drop "\n" . }'
 
 # Run code from a file. Implements the famous fizzbuzz interview question.
 ./manage.py run -cr examples/fizzbuzz.aaa
@@ -54,7 +51,9 @@ pyenv install 3.10.2
 pyenv local 3.10.2
 ```
 
-After setting up the right python for pdm, run the following commands.
+This project also requires rust, see instructions [here](https://www.rust-lang.org/tools/install) on how to install.
+
+After you setup rust and python, run the following commands.
 
 ```sh
 # Install dependencies
