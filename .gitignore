@@ -5,7 +5,14 @@ __pycache__
 .envrc
 *.idea
 *.prof
-.dmypy.json
+
+dump.c
+dump
+
+c/cmake_install.cmake
+c/CMakeCache.txt
+c/aaa_stdlib.a
+c/Makefile
 
 aaa-stdlib/target/*
 aaa-stdlib-user/target/*

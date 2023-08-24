@@ -39,7 +39,7 @@ def check_aaa_full_source_multi_file(
         main_path = dir_path / "main.aaa"
         runner = Runner(main_path, None, False)
 
-        binary = Path(NamedTemporaryFile(delete=False).name)
+        binary = NamedTemporaryFile(delete=False).name
 
         with redirect_stdout(StringIO()) as stdout:
             with redirect_stderr(StringIO()) as stderr:
@@ -83,21 +83,19 @@ def check_aaa_full_source_multi_file(
     return full_temp_dir, runner.exceptions
 
 
-# TODO #143 Refactor and remove redundant code for testing
+# TODO #124 Refactor and remove redundant code for testing
 
 
-def compile(source_path: Path) -> Path:
-    binary = Path(NamedTemporaryFile(delete=False).name)
+def compile(source_path: Path) -> str:
+    binary = NamedTemporaryFile(delete=False).name
     runner = Runner(source_path, None, False)
     exit_code = runner.run(True, binary, False, [])
     assert 0 == exit_code
     return binary
 
 
-def run(
-    binary_path: Path, env: Optional[Dict[str, str]] = None
-) -> Tuple[str, str, int]:
-    process = subprocess.run([binary_path], capture_output=True, timeout=2, env=env)
+def run(binary: str, env: Optional[Dict[str, str]] = None) -> Tuple[str, str, int]:
+    process = subprocess.run([binary], capture_output=True, timeout=2, env=env)
 
     stdout = process.stdout.decode("utf-8")
     stderr = process.stderr.decode("utf-8")
