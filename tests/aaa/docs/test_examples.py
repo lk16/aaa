@@ -69,11 +69,11 @@ def test_examples(
 
 def test_http_server() -> None:
     runner = Runner(Path("examples/http_server.aaa"), None, False)
+    runner.run(True, None, False, [])
 
-    binary_path = Path("/tmp/http_server")
-    runner.run(True, binary_path, False, [])
+    binary = runner.generated_binary_file
 
-    subproc = subprocess.Popen(str(binary_path))
+    subproc = subprocess.Popen(binary)
 
     r = requests.get("http://localhost:8080")
 
