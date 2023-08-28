@@ -23,6 +23,15 @@ class StringLiteral(AaaParseModel):
         self.value = value
         super().__init__(position)
 
+    def as_aaa_literal(self) -> str:
+        # TODO add test for this
+        literal = repr(self.value)
+
+        if literal[0] == "'":
+            literal = '"' + literal[1:-1].replace('"', '\\"') + '"'
+
+        return literal
+
 
 class BooleanLiteral(AaaParseModel):
     def __init__(self, position: Position, value: bool) -> None:

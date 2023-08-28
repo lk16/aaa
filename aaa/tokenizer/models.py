@@ -50,3 +50,6 @@ class Token:
 
     def __repr__(self) -> str:
         return repr(self.value)
+
+    def __lt__(self, other: "Token") -> bool:
+        return self.position < other.position

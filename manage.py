@@ -4,6 +4,7 @@ from typing import Any
 
 import click
 
+from aaa.formatter import format_source_files
 from aaa.runner.runner import Runner
 from aaa.runner.test_runner import TestRunner
 
@@ -38,6 +39,15 @@ def run(**kwargs: Any) -> None:
 @click.option("-v", "--verbose", is_flag=True)
 def test(**kwargs: Any) -> None:
     exit(TestRunner.test_command(**kwargs))
+
+
+@cli.command()
+@click.argument("files", type=click.Path(exists=True), nargs=-1)
+@click.option("--fix", is_flag=True, default=False)
+@click.option("--show-diff", is_flag=True, default=False)
+def format(files: Tuple[str], fix: bool, show_diff: bool) -> None:
+    exit_code = format_source_files(files, fix, show_diff)
+    exit(exit_code)
 
 
 if __name__ == "__main__":
