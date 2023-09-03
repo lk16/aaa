@@ -1,6 +1,8 @@
 #!/usr/bin/env -S python3 -u
 
-from typing import Any
+import os
+from pathlib import Path
+from typing import Any, Optional, Tuple
 
 import click
 
@@ -45,7 +47,13 @@ def test(**kwargs: Any) -> None:
 @click.argument("files", type=click.Path(exists=True), nargs=-1)
 @click.option("--fix", is_flag=True, default=False)
 @click.option("--show-diff", is_flag=True, default=False)
-def format(files: Tuple[str], fix: bool, show_diff: bool) -> None:
+@click.option("--stdlib-path", type=click.Path(exists=True))
+def format(
+    files: Tuple[str], fix: bool, show_diff: bool, stdlib_path: Optional[str]
+) -> None:
+    if stdlib_path:
+        os.environ["AAA_STDLIB_PATH"] = str(Path(stdlib_path).resolve())
+
     exit_code = format_source_files(files, fix, show_diff)
     exit(exit_code)
 

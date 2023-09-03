@@ -135,10 +135,7 @@ class Tokenizer:
         filtered: List[Token] = []
 
         for token in tokens:
-            if token.type not in [
-                TokenType.WHITESPACE,
-                TokenType.COMMENT,
-            ]:
+            if token.type != TokenType.WHITESPACE:
                 filtered.append(token)
 
         self._print_tokens(filtered)

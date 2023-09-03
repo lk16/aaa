@@ -16,6 +16,7 @@ from aaa.parser.models import (
     Call,
     CaseBlock,
     CaseLabel,
+    Comment,
     DefaultBlock,
     Enum,
     EnumVariant,
@@ -422,6 +423,15 @@ class SingleFileParser:
         self._print_parse_tree_node("FunctionDeclaration", start_offset, offset)
         return function, offset
 
+    def _parse_comment(self, offset: int) -> Tuple[Comment, int]:
+        start_offset = offset
+        token, offset = self._parse_token(offset, [TokenType.COMMENT])
+
+        comment = Comment(token.position, token.value)
+        self._print_parse_tree_node("Comment", start_offset, offset)
+
+        return comment, offset
+
     def _parse_builtins_file_root(self, offset: int) -> Tuple[ParsedFile, int]:
         start_offset = offset
 
@@ -434,13 +444,16 @@ class SingleFileParser:
 
         functions: List[Function] = []
         structs: List[Struct] = []
+        comments: List[Comment] = []
 
         while True:
-            try:
+            token = self._peek_token(offset)
+
+            if not token:
+                break
+
+            if token.type == TokenType.FUNCTION:
                 function, offset = self._parse_function_declaration(offset)
-            except ParserBaseException:
-                pass
-            else:
                 functions.append(function)
                 continue
 
@@ -460,6 +473,7 @@ class SingleFileParser:
             imports=[],
             structs=structs,
             enums=[],
+            comments=comments,
         )
 
         self._print_parse_tree_node("ParsedFile", start_offset, offset)
@@ -781,11 +795,14 @@ class SingleFileParser:
             item, offset = self._parse_call(offset)
         elif token.type == TokenType.FUNCTION:
             item, offset = self._parse_function_pointer_type_literal(offset)
+        elif token.type == TokenType.COMMENT:
+            item, offset = self._parse_comment(offset)
 
         else:
             raise ParserException(
                 token,
                 [
+                    TokenType.COMMENT,
                     TokenType.FALSE,
                     TokenType.FOREACH,
                     TokenType.IDENTIFIER,
@@ -866,6 +883,7 @@ class SingleFileParser:
         structs: List[Struct] = []
         imports: List[Import] = []
         enums: List[Enum] = []
+        comments: List[Comment] = []
 
         while True:
             token = self._peek_token(offset)
@@ -885,6 +903,9 @@ class SingleFileParser:
             elif token.type == TokenType.ENUM:
                 enum, offset = self._parse_enum_definition(offset)
                 enums.append(enum)
+            elif token.type == TokenType.COMMENT:
+                comment, offset = self._parse_comment(offset)
+                comments.append(comment)
             else:
                 break
 
@@ -894,6 +915,7 @@ class SingleFileParser:
             imports=imports,
             structs=structs,
             enums=enums,
+            comments=comments,
         )
 
         self._print_parse_tree_node("ParsedFileRoot", start_offset, offset)

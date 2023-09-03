@@ -21,6 +21,7 @@ def format_aaa_builtins(code: str) -> str:
 
 
 def test_format_empty_file() -> None:
+    # Empty files don't get a trailing whitespace
     assert "" == format_aaa_source("")
 
 

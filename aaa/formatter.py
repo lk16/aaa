@@ -494,9 +494,8 @@ class AaaFormatter:
                 index += 1
             else:
                 next_block_index = self._get_non_block_items_slice_end(body, index)
-
-                # TODO move computation of `non_block_items` to separate function
                 non_block_items = body.items[index:next_block_index]
+
                 formatted_items = self._format_function_body_non_block_items(
                     non_block_items, indent_level
                 )

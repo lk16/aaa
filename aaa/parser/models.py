@@ -195,11 +195,13 @@ class ParsedFile(AaaParseModel):
         imports: List[Import],
         structs: List[Struct],
         enums: List[Enum],
+        comments: List[Comment],
     ) -> None:
         self.functions = functions
         self.imports = imports
         self.structs = structs
         self.enums = enums
+        self.comments = comments
         super().__init__(position)
 
     def dependencies(self) -> List[Path]:
@@ -361,6 +363,12 @@ class Enum(AaaParseModel):
         super().__init__(position)
 
 
+class Comment(AaaParseModel):
+    def __init__(self, position: Position, value: str) -> None:
+        self.value = value
+        super().__init__(position)
+
+
 class Never(AaaParseModel):
     ...
 
@@ -370,6 +378,7 @@ FunctionBodyItem = (
     | BooleanLiteral
     | Branch
     | Call
+    | Comment
     | ForeachLoop
     | FunctionCall
     | FunctionPointerTypeLiteral
