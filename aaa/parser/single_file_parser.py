@@ -495,7 +495,6 @@ class SingleFileParser:
 
     def _parse_struct_declaration(self, offset: int) -> Tuple[Struct, int]:
         start_offset = offset
-
         struct_token, offset = self._parse_token(offset, [TokenType.STRUCT])
 
         type_literal, offset = self._parse_flat_type_literal(offset)

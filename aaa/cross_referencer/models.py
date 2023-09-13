@@ -28,6 +28,10 @@ class Function(AaaCrossReferenceModel):
     class Unresolved:
         def __init__(self, parsed: parser.Function) -> None:
             self.parsed = parsed
+            self.type_params = {
+                type_param.identifier.name: type_param
+                for type_param in parsed.type_params
+            }
 
             self.type_params = {
                 param.identifier.name: param for param in parsed.type_params

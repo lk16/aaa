@@ -1,0 +1,67 @@
+struct Tuple[A, B] {
+    a as A,
+    b as B,
+}
+
+struct Zip[A, B] {
+    a as vec_iter[A],
+    b as vec_iter[B],
+}
+
+fn zip[A, B] args a as vec[A], b as vec[B] return Zip[A, B] {
+    if a vec:len b vec:len != {
+        "zipping for vectors of inequal length is not allowed!\n" .
+        1 exit
+    }
+
+    Zip[A, B]
+    dup "a" { a vec:iter } !
+    dup "b" { b vec:iter } !
+}
+
+fn Zip[A, B]:iter args z as Zip[A, B] return Zip[A, B] {
+    z
+}
+
+fn Zip[A, B]:next args z as Zip[A, B] return Tuple[A, B], bool {
+    z "a" ? vec_iter:next
+    z "b" ? vec_iter:next
+
+    use a, a_ok, b, b_ok {
+        Tuple[A, B]
+
+        if a_ok {
+            dup "a" { a } !
+            dup "b" { b } !
+        }
+        a_ok
+    }
+}
+
+fn main {
+    vec[int]
+    dup 1 vec:push
+    dup 2 vec:push
+    dup 3 vec:push
+
+    vec[str]
+    dup "a" vec:push
+    dup "b" vec:push
+    dup "c" vec:push
+
+    use numbers, chars {
+        numbers chars zip
+        foreach {
+            use tuple {
+                tuple "a" ?
+                tuple "b" ?
+                use number, char {
+                    number .
+                    " " .
+                    char .
+                    "\n" .
+                }
+            }
+        }
+    }
+}

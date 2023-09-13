@@ -489,18 +489,20 @@ class CrossReferencer:
             is_const=parsed_field_type.const,
         )
 
-    def _resolve_struct(self, struct: Struct) -> None:
+    def _resolve_struct_fields(
+        self, struct: Struct, params: Dict[str, Struct]
+    ) -> Dict[str, VariableType | FunctionPointer]:
         parsed_field_types = struct.get_unresolved().parsed_field_types
-        resolved_params = self._resolve_struct_params(struct)
 
-        fields = {
-            field_name: self._resolve_struct_field(
-                struct, resolved_params, parsed_field
-            )
+        return {
+            field_name: self._resolve_struct_field(struct, params, parsed_field)
             for field_name, parsed_field in parsed_field_types.items()
         }
 
-        struct.resolve(resolved_params, fields)
+    def _resolve_struct(self, struct: Struct) -> None:
+        params = self._resolve_struct_params(struct)
+        fields = self._resolve_struct_fields(struct, params)
+        struct.resolve(params, fields)
 
     def _resolve_enum(self, enum: Enum) -> None:
         parsed_variants = enum.get_unresolved().parsed_variants
