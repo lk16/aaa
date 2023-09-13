@@ -152,7 +152,7 @@ impl<T> VectorIterator<T>
 where
     T: UserType,
 {
-    fn new(vector: Rc<RefCell<Vec<T>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
+    pub fn new(vector: Rc<RefCell<Vec<T>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
         *iterator_count.borrow_mut() += 1;
 
         Self {
@@ -160,6 +160,10 @@ where
             iterator_count,
             offset: 0,
         }
+    }
+
+    pub fn clone_recursive(&self) -> Self {
+        unreachable!() // TODO
     }
 }
 
@@ -186,3 +190,23 @@ where
         *self.iterator_count.borrow_mut() -= 1;
     }
 }
+
+impl<T> Display for VectorIterator<T>
+where
+    T: UserType,
+{
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unreachable!() // TODO
+    }
+}
+
+impl<T> PartialEq for VectorIterator<T>
+where
+    T: UserType,
+{
+    fn eq(&self, _other: &Self) -> bool {
+        unreachable!() // TODO
+    }
+}
+
+impl<T> Eq for VectorIterator<T> where T: UserType {}
