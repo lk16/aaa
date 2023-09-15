@@ -2,7 +2,7 @@
 authors = [
     {name = "Luuk Verweij", email = "luuk_verweij@msn.com"},
 ]
-requires-python = ">=3.10.2,<4.0"
+requires-python = ">=3.11.3,<4.0"
 dependencies = [
     "click>=8.1.3",
 ]

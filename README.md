@@ -41,14 +41,14 @@ The name of this language is just the first letter of the Latin alphabet [repeat
 ### Setup
 All these commands should be run from the root of this repository.
 
-This project requires python 3.10, consider using [pyenv](https://github.com/pyenv/pyenv).
+This project requires python 3.11.3, consider using [pyenv](https://github.com/pyenv/pyenv).
 
 ```sh
-# Download python 3.10.2
-pyenv install 3.10.2
+# Download python 3.11.3
+pyenv install 3.11.3
 
 # Use it in this project
-pyenv local 3.10.2
+pyenv local 3.11.3
 ```
 
 This project also requires rust, see instructions [here](https://www.rust-lang.org/tools/install) on how to install.
