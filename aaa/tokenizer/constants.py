@@ -25,7 +25,6 @@ FIXED_SIZED_TOKENS: List[Tuple[str, TokenType]] = [
     ("enum", TokenType.ENUM),
     ("from", TokenType.FROM),
     ("true", TokenType.TRUE),
-    ("type", TokenType.TYPE),
     # 3 chars
     ("use", TokenType.USE),
     # 2 chars

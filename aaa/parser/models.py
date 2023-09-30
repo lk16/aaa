@@ -169,11 +169,18 @@ class Struct(AaaParseModel):
         self,
         position: Position,
         identifier: Identifier,
+        params: List[TypeLiteral | FunctionPointerTypeLiteral],
         fields: Dict[str, TypeLiteral | FunctionPointerTypeLiteral],
     ) -> None:
         self.identifier = identifier
+        self.params = params
         self.fields = fields
         super().__init__(position)
+
+    def params_without_function_pointers(self) -> List[TypeLiteral]:
+        # TODO this is hacky and does not handle errors, make a separate type
+        assert all(isinstance(param, TypeLiteral) for param in self.params)
+        return self.params  # type: ignore
 
 
 class ParsedFile(AaaParseModel):
@@ -183,13 +190,11 @@ class ParsedFile(AaaParseModel):
         functions: List[Function],
         imports: List[Import],
         structs: List[Struct],
-        types: List[TypeLiteral],
         enums: List[Enum],
     ) -> None:
         self.functions = functions
         self.imports = imports
         self.structs = structs
-        self.types = types
         self.enums = enums
         super().__init__(position)
 
@@ -209,6 +214,11 @@ class TypeLiteral(AaaParseModel):
         self.params = params
         self.const = const
         super().__init__(position)
+
+    def params_without_function_pointers(self) -> List[TypeLiteral]:
+        # TODO this is hacky and does not handle errors, make a separate type
+        assert all(isinstance(param, TypeLiteral) for param in self.params)
+        return self.params  # type: ignore
 
 
 class FunctionPointerTypeLiteral(AaaParseModel):

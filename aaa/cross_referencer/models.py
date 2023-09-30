@@ -215,27 +215,55 @@ class ImplicitEnumConstructorImport(AaaCrossReferenceModel):
 
 class Struct(AaaCrossReferenceModel):
     class Unresolved:
-        def __init__(self, parsed: parser.TypeLiteral | parser.Struct) -> None:
-            self.parsed_field_types: Dict[
-                str, parser.TypeLiteral | parser.FunctionPointerTypeLiteral
-            ] = {}
-
-            if isinstance(parsed, parser.Struct):
-                self.parsed_field_types = parsed.fields
+        def __init__(
+            self,
+            parsed_field_types: Dict[
+                str,
+                parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
+            ],
+            parsed_params: List[parser.TypeLiteral],
+        ) -> None:
+            self.parsed_field_types = parsed_field_types
+            self.parsed_params = parsed_params
 
     class Resolved:
         def __init__(self, fields: Dict[str, VariableType | FunctionPointer]) -> None:
             self.fields = fields
 
+    @classmethod
+    def from_parsed_struct(cls, struct: parser.Struct) -> Struct:
+        return Struct(
+            struct.position,
+            struct.identifier.name,
+            struct.params_without_function_pointers(),
+            struct.fields,
+        )
+
+    @classmethod
+    def from_parsed_type_literal(cls, type_literal: parser.TypeLiteral) -> Struct:
+        return Struct(
+            type_literal.position,
+            type_literal.identifier.name,
+            type_literal.params_without_function_pointers(),
+            {},
+        )
+
     def __init__(
         self,
-        parsed: parser.TypeLiteral | parser.Struct,
-        param_count: int,
+        position: Position,
+        name: str,
+        params: List[parser.TypeLiteral],
+        fields: Dict[
+            str,
+            parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
+        ],
     ) -> None:
-        self.state: Struct.Resolved | Struct.Unresolved = Struct.Unresolved(parsed)
-        self.param_count = param_count
-        self.name = parsed.identifier.name
-        super().__init__(parsed.position)
+        self.state: Struct.Resolved | Struct.Unresolved = Struct.Unresolved(
+            fields, params
+        )
+        self.param_count = len(params)
+        self.name = name
+        super().__init__(position)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Struct):

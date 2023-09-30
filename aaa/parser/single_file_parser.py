@@ -217,9 +217,7 @@ class SingleFileParser:
         self._print_parse_tree_node("TypeParams", start_offset, offset)
         return type_params, offset
 
-    def _parse_type_literal(
-        self, offset: int
-    ) -> Tuple[TypeLiteral | FunctionPointerTypeLiteral, int]:
+    def _parse_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
         start_offset = offset
 
         token = self._peek_token_or_fail(offset)
@@ -434,7 +432,7 @@ class SingleFileParser:
             position = Position(self.file, 1, 1)
 
         functions: List[Function] = []
-        types: List[TypeLiteral] = []
+        structs: List[Struct] = []
 
         while True:
             try:
@@ -446,11 +444,11 @@ class SingleFileParser:
                 continue
 
             try:
-                type, offset = self._parse_type_declaration(offset)
+                struct, offset = self._parse_struct_declaration(offset)
             except ParserBaseException:
                 pass
             else:
-                types.append(type)
+                structs.append(struct)
                 continue
 
             break
@@ -459,8 +457,7 @@ class SingleFileParser:
             position=position,
             functions=functions,
             imports=[],
-            structs=[],
-            types=types,
+            structs=structs,
             enums=[],
         )
 
@@ -495,16 +492,29 @@ class SingleFileParser:
 
         return fields, offset
 
-    def _parse_struct_definition(self, offset: int) -> Tuple[Struct, int]:
+    def _parse_struct_declaration(self, offset: int) -> Tuple[Struct, int]:
         start_offset = offset
 
         struct_token, offset = self._parse_token(offset, [TokenType.STRUCT])
-        identifier, offset = self._parse_identifier(offset)
+
+        type_literal, offset = self._parse_type_literal(offset)
+
+        struct = Struct(
+            struct_token.position, type_literal.identifier, type_literal.params, {}
+        )
+        self._print_parse_tree_node("StructDeclaration", start_offset, offset)
+        return struct, offset
+
+    def _parse_struct_definition(self, offset: int) -> Tuple[Struct, int]:
+        start_offset = offset
+        struct, offset = self._parse_struct_declaration(offset)
+
         _, offset = self._parse_token(offset, [TokenType.BLOCK_START])
         fields, offset = self._parse_struct_fields(offset)
         _, offset = self._parse_token(offset, [TokenType.BLOCK_END])
 
-        struct = Struct(struct_token.position, identifier, fields)
+        struct.fields = fields
+
         self._print_parse_tree_node("StructDefinition", start_offset, offset)
         return struct, offset
 
@@ -883,7 +893,6 @@ class SingleFileParser:
             imports=imports,
             structs=structs,
             enums=enums,
-            types=[],
         )
 
         self._print_parse_tree_node("ParsedFileRoot", start_offset, offset)

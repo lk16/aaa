@@ -94,7 +94,6 @@ enum TokenType {
     string as Empty,
     struct_ as Empty,
     true_ as Empty,
-    type_ as Empty,
     use_ as Empty,
     while_ as Empty,
     whitespace as Empty,
@@ -135,7 +134,6 @@ fn TokenType:to_str args token_type as const TokenType return str {
         case TokenType:string { drop "STRING" }
         case TokenType:struct_ { drop "STRUCT" }
         case TokenType:true_ { drop "TRUE" }
-        case TokenType:type_ { drop "TYPE" }
         case TokenType:use_ { drop "USE" }
         case TokenType:while_ { drop "WHILE" }
         case TokenType:whitespace { drop "WHITESPACE" }
@@ -174,7 +172,6 @@ fn get_fixed_sized_tokens return vec[FixedSizedToken] {
         v "enum"    Empty TokenType:enum_                make_fixed_sized_token vec:push
         v "from"    Empty TokenType:from_                make_fixed_sized_token vec:push
         v "true"    Empty TokenType:true_                make_fixed_sized_token vec:push
-        v "type"    Empty TokenType:type_                make_fixed_sized_token vec:push
         v "use"     Empty TokenType:use_                 make_fixed_sized_token vec:push
         v "!="      Empty TokenType:identifier           make_fixed_sized_token vec:push
         v "<-"      Empty TokenType:assign               make_fixed_sized_token vec:push

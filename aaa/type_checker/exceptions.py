@@ -245,6 +245,7 @@ class StructUpdateTypeError(TypeCheckerException):
         expected_type: VariableType | FunctionPointer,
         found_type: VariableType | FunctionPointer,
     ) -> None:
+        breakpoint()
         self.type_stack = type_stack
         self.struct_type = struct_type
         self.field_name = field_name

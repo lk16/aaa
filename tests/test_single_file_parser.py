@@ -142,23 +142,23 @@ def test_parse_flat_type_literal(
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
-        ("type foo[", ("foo", []), 2),
-        ("type foo[A", ("foo", []), 2),
-        ("type foo[]", ("foo", []), 2),
-        ("type foo", ("foo", []), 2),
-        ("type foo[A]", ("foo", ["A"]), 5),
-        ("type foo[A,", ("foo", []), 2),
-        ("type foo[A,]", ("foo", ["A"]), 6),
-        ("type foo[A,B", ("foo", []), 2),
-        ("type foo[A,B]", ("foo", ["A", "B"]), 7),
-        ("type foo[A,B,]", ("foo", ["A", "B"]), 8),
-        ("type foo[A,B,C]", ("foo", ["A", "B", "C"]), 9),
-        ("type foo[A,B,C,]", ("foo", ["A", "B", "C"]), 10),
+        ("struct foo[", ("foo", []), 2),
+        ("struct foo[A", ("foo", []), 2),
+        ("struct foo[]", ("foo", []), 2),
+        ("struct foo", ("foo", []), 2),
+        ("struct foo[A]", ("foo", ["A"]), 5),
+        ("struct foo[A,", ("foo", []), 2),
+        ("struct foo[A,]", ("foo", ["A"]), 6),
+        ("struct foo[A,B", ("foo", []), 2),
+        ("struct foo[A,B]", ("foo", ["A", "B"]), 7),
+        ("struct foo[A,B,]", ("foo", ["A", "B"]), 8),
+        ("struct foo[A,B,C]", ("foo", ["A", "B", "C"]), 9),
+        ("struct foo[A,B,C,]", ("foo", ["A", "B", "C"]), 10),
         ("", EndOfFileException, 0),
         ("3", ParserException, 0),
     ],
 )
-def test_parse_type_declaration(
+def test_parse_struct_declaration(
     code: str,
     expected_result: Tuple[str, List[str]] | Type[ParserBaseException],
     expected_offset: int,
@@ -166,7 +166,7 @@ def test_parse_type_declaration(
     parser = parse_code(code)
 
     if isinstance(expected_result, tuple):
-        type_literal, offset = parser._parse_type_declaration(0)
+        type_literal, offset = parser._parse_struct_declaration(0)
         expected_type_name, expected_type_params = expected_result
 
         assert expected_offset == offset
@@ -458,9 +458,9 @@ def test_parse_builtins_file_root() -> None:
         ("", None, 0),
         ("fn a", None, 2),
         ("fn a fn b", None, 4),
-        ("type a", None, 2),
-        ("type a type b", None, 4),
-        ("type a[A,B] fn a args b as vec[int,map[int,int]] return c", None, 25),
+        ("struct a", None, 2),
+        ("struct a struct b", None, 4),
+        ("struct a[A,B] fn a args b as vec[int,map[int,int]] return c", None, 25),
         ("3", None, 0),
     ],
 )
