@@ -2,6 +2,7 @@ use std::{
     cell::RefCell,
     fmt::{Debug, Display, Formatter, Result},
     hash::Hash,
+    mem,
     rc::Rc,
 };
 
@@ -43,7 +44,11 @@ impl<T> Variable<T>
 where
     T: UserType,
 {
-    pub fn assign(&mut self, source: &Variable<T>) {
+    pub fn assign(&mut self, source: &mut Variable<T>) {
+        if mem::discriminant(&self) != mem::discriminant(&source) {
+            panic!("Attempt to change variable type in assignment")
+        }
+
         match *source {
             Self::MapIterator(_) | Self::SetIterator(_) | Self::VectorIterator(_) => {
                 panic!("Cannot assign to an iterator!")
@@ -52,6 +57,122 @@ where
             _ => (),
         }
         *self = source.clone();
+    }
+
+    pub fn integer_zero_value() -> Variable<T> {
+        Variable::Integer(0)
+    }
+
+    pub fn boolean_zero_value() -> Variable<T> {
+        Variable::Boolean(false)
+    }
+
+    pub fn string_zero_value() -> Variable<T> {
+        Variable::String(Rc::new(RefCell::new(String::from(""))))
+    }
+
+    pub fn vector_zero_value() -> Variable<T> {
+        Variable::Vector(Rc::new(RefCell::new(Vector::new())))
+    }
+
+    pub fn set_zero_value() -> Variable<T> {
+        Variable::Set(Rc::new(RefCell::new(Set::new())))
+    }
+
+    pub fn map_zero_value() -> Variable<T> {
+        Variable::Map(Rc::new(RefCell::new(Map::new())))
+    }
+
+    pub fn regex_zero_value() -> Variable<T> {
+        Variable::Regex(Rc::new(RefCell::new(Regex::new("$.^").unwrap())))
+    }
+
+    pub fn function_pointer_zero_value() -> Variable<T> {
+        Variable::FunctionPointer(Stack::zero_function_pointer_value)
+    }
+
+    pub fn get_integer(&self) -> isize {
+        match self {
+            Self::Integer(v) => *v,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_boolean(&self) -> bool {
+        match self {
+            Self::Boolean(v) => *v,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_string(&self) -> Rc<RefCell<String>> {
+        match self {
+            Self::String(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_vector(&self) -> Rc<RefCell<Vector<Variable<T>>>> {
+        match self {
+            Self::Vector(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_set(&self) -> Rc<RefCell<Set<Variable<T>>>> {
+        match self {
+            Self::Set(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_map(&self) -> Rc<RefCell<Map<Variable<T>, Variable<T>>>> {
+        match self {
+            Self::Map(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_vector_iterator(&self) -> Rc<RefCell<VectorIterator<Variable<T>>>> {
+        match self {
+            Self::VectorIterator(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_map_iterator(&self) -> Rc<RefCell<MapIterator<Variable<T>, Variable<T>>>> {
+        match self {
+            Self::MapIterator(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_set_iterator(&self) -> Rc<RefCell<SetIterator<Variable<T>>>> {
+        match self {
+            Self::SetIterator(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_regex(&self) -> Rc<RefCell<Regex>> {
+        match self {
+            Self::Regex(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_function_pointer(&self) -> fn(&mut Stack<T>) {
+        match self {
+            Self::FunctionPointer(v) => v.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_usertype(&self) -> Rc<RefCell<T>> {
+        match self {
+            Self::UserType(v) => v.clone(),
+            _ => unreachable!(),
+        }
     }
 }
 

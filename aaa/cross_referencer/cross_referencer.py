@@ -507,7 +507,7 @@ class CrossReferencer:
             for field_name, parsed_field in parsed_field_types.items()
         }
 
-        struct.resolve(fields)
+        struct.resolve(resolved_params, fields)
 
     def _resolve_enum(self, enum: Enum) -> None:
         parsed_variants = enum.get_unresolved().parsed_variants

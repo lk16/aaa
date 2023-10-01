@@ -24,7 +24,7 @@ SOURCE_PREFIX = Path(__file__).parent / "src"
         ("imported/main.aaa", "69\n69\n69\n"),
     ],
 )
-def test_test_function_pointer(source_path: Path, expected_stdout: str) -> None:
+def test_function_pointer(source_path: Path, expected_stdout: str) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source_path)
 
     assert expected_stdout == stdout

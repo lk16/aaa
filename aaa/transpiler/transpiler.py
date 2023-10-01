@@ -67,6 +67,19 @@ aaa-stdlib = {{ version = "0.1.0", path = "{stdlib_impl_path}" }}
 regex = "1.8.4"
 """
 
+VARIABLE_GET_FUNCTIONS = {
+    "int": "get_integer",
+    "bool": "get_boolean",
+    "str": "get_string",
+    "vec": "get_vector",
+    "set": "get_set",
+    "map": "get_map",
+    "vec_iter": "get_vector_iterator",
+    "map_iter": "get_map_iterator",
+    "set_iter": "get_set_iterator",
+    "regex": "get_regex",
+}
+
 
 class Transpiler:
     def __init__(
@@ -375,54 +388,14 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct_type)
 
-        field = struct_type.fields[field_name]
-
         code = Code("{", r=1)
         code.add("let popped = stack.pop_user_type();")
         code.add("let mut borrowed = (*popped).borrow_mut();")
 
-        if isinstance(field, FunctionPointer):
-            code.add(
-                f"stack.push_function_pointer(borrowed.get_{rust_struct_name}().{field_name});"
-            )
-        elif field.type.name == "int":
-            code.add(f"stack.push_int(borrowed.get_{rust_struct_name}().{field_name});")
-        elif field.type.name == "bool":
-            code.add(
-                f"stack.push_bool(borrowed.get_{rust_struct_name}().{field_name});"
-            )
-        else:
-            code.add("{", r=1)
-            code.add(
-                f"let field_rc = borrowed.get_{rust_struct_name}().{field_name}.clone();"
-            )
-
-            if field.type.name == "str":
-                code.add(f"stack.push(Variable::String(field_rc));")
-            elif field.type.name == "vec":
-                code.add(f"stack.push(Variable::Vector(field_rc));")
-            elif field.type.name == "set":
-                code.add(f"stack.push(Variable::Set(field_rc));")
-            elif field.type.name == "map":
-                code.add(f"stack.push(Variable::Map(field_rc));")
-            elif field.type.name == "regex":
-                code.add(f"stack.push(Variable::Regex(field_rc));")
-            else:
-                code.add(f"stack.push(Variable::UserType(field_rc));")
-
-            code.add("}", l=1)
+        code.add(f"stack.push(borrowed.get_{rust_struct_name}().{field_name}.clone());")
 
         code.add("}", l=1)
         return code
-
-    def _generate_value_pop_function(self, type: VariableType | FunctionPointer) -> str:
-        if isinstance(type, FunctionPointer):
-            return "pop_function_pointer"
-
-        if type.type.name in ["bool", "int", "map", "regex", "set", "str", "vec"]:
-            return f"pop_{type.type.name}"
-
-        return "pop_user_type"
 
     def _generate_field_update_code(self, field_update: StructFieldUpdate) -> Code:
         code = self._generate_function_body(field_update.new_value_expr)
@@ -443,12 +416,10 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct_type)
         field_name = field_update.field_name.value
-        field = struct_type.fields[field_name]
 
         code.add("{", r=1)
 
-        pop_func = self._generate_value_pop_function(field)
-        code.add(f"let value = stack.{pop_func}();")
+        code.add(f"let value = stack.pop();")
 
         code.add("let popped = stack.pop_user_type();")
         code.add("let mut borrowed = (*popped).borrow_mut();")
@@ -508,32 +479,11 @@ class Transpiler:
         variant_name = case_block.variant_name
         associated_data = enum.variants[variant_name]
 
-        for i, (item, var) in enumerate(
+        for i, (_, var) in enumerate(
             zip(associated_data, case_block.variables, strict=True)
         ):
             arg = f"{case_var_prefix}_{i}"
-            line = f"let mut var_{var.name}: Variable<UserTypeEnum> = "
-
-            if isinstance(item, FunctionPointer):
-                line += f"Variable::FunctionPointer({arg});"
-            elif item.type.name == "int":
-                line += f"Variable::Integer({arg});"
-            elif item.type.name == "bool":
-                line += f"Variable::Boolean({arg});"
-            elif item.type.name == "str":
-                line += f"Variable::String({arg});"
-            elif item.type.name == "vec":
-                line += f"Variable::Vector({arg});"
-            elif item.type.name == "set":
-                line += f"Variable::Set({arg});"
-            elif item.type.name == "map":
-                line += f"Variable::Map({arg});"
-            elif item.type.name == "regex":
-                line += f"Variable::Regex({arg});"
-            else:
-                line += f"Variable::UserType({arg});"
-
-            code.add(line)
+            code.add(f"let mut var_{var.name}: Variable<UserTypeEnum> = {arg};")
 
         return code
 
@@ -548,25 +498,7 @@ class Transpiler:
 
         for i, item in enumerate(associated_data):
             arg = f"{case_var_prefix}_{i}"
-
-            if isinstance(item, FunctionPointer):
-                code.add(f"stack.push_function_pointer({arg});")
-            elif item.type.name == "int":
-                code.add(f"stack.push_int({arg});")
-            elif item.type.name == "bool":
-                code.add(f"stack.push_bool({arg});")
-            elif item.type.name == "str":
-                code.add(f"stack.push(Variable::String({arg}.clone()));")
-            elif item.type.name == "vec":
-                code.add(f"stack.push(Variable::Vector({arg}.clone()));")
-            elif item.type.name == "set":
-                code.add(f"stack.push(Variable::Set({arg}.clone()));")
-            elif item.type.name == "map":
-                code.add(f"stack.push(Variable::Map({arg}.clone()));")
-            elif item.type.name == "regex":
-                code.add(f"stack.push(Variable::Regex({arg}.clone()));")
-            else:
-                code.add(f"stack.push(Variable::UserType({arg}.clone()));")
+            code.add(f"stack.push({arg});")
 
         return code
 
@@ -726,7 +658,7 @@ class Transpiler:
 
     def _generate_call_type_code(self, call_type: CallType) -> Code:
         var_type = call_type.var_type
-        zero_expr = self._generate_variable_zero_expression(var_type)
+        zero_expr = self._generate_zero_expression(var_type)
         return Code(f"stack.push({zero_expr});")
 
     def _generate_call_enum_constructor_code(
@@ -770,9 +702,7 @@ class Transpiler:
         for variant_name, variant_data in enum.variants.items():
             line = f"variant_{variant_name}("
 
-            line += ", ".join(
-                self._generate_struct_field_type(item) for item in variant_data
-            )
+            line += ", ".join(["Variable<UserTypeEnum>"] * len(variant_data))
 
             line += "),"
             code.add(line)
@@ -792,9 +722,8 @@ class Transpiler:
             code.add(
                 f"fn {enum_ctor_func_name}(stack: &mut Stack<UserTypeEnum>) {{", r=1
             )
-            for i, item in reversed(list(enumerate(associated_data))):
-                pop_func = self._generate_value_pop_function(item)
-                code.add(f"let arg{i} = stack.{pop_func}();")
+            for i, _ in reversed(list(enumerate(associated_data))):
+                code.add(f"let arg{i} = stack.pop();")
 
             line = f"let enum_ = {rust_enum_name}::variant_{variant_name}("
             line += ", ".join(f"arg{i}" for i in range(len(associated_data)))
@@ -814,7 +743,7 @@ class Transpiler:
         code.add(f"Self::variant_{enum.zero_variant}(", r=1)
 
         for variant_data_item in enum.variants[enum.zero_variant]:
-            zero_value = self._generate_field_zero_expression(variant_data_item)
+            zero_value = self._generate_zero_expression(variant_data_item)
             code.add(f"{zero_value},")
         code.add(")", l=1)
         code.add("}", l=1)
@@ -907,19 +836,8 @@ class Transpiler:
             code.add(line, r=1)
 
             code.add(f"Self::variant_{variant_name}(", r=1)
-            for i, item in enumerate(associated_data):
-                code.add("{", r=1)
-                if isinstance(item, FunctionPointer):
-                    code.add(f"arg{i}.clone()")
-                else:
-                    if item.type.name in ["int", "bool"]:
-                        arg = f"*arg{i}"
-                    else:
-                        arg = f"arg{i}"
-
-                    code.add(self._generate_clone_recursive_expression(arg, item.type))
-                code.add("},", l=1)
-
+            for i, _ in enumerate(associated_data):
+                code.add(f"arg{i}.clone_recursive(),")
             code.add(")", l=1)
 
             code.add("},", l=1)
@@ -956,10 +874,26 @@ class Transpiler:
 
                 if isinstance(item, FunctionPointer):
                     code.add('write!(f, "func_ptr")?;')
-                elif item.type.name in ["int", "bool"]:
-                    code.add(f'write!(f, "{{}}", arg{i})?;')
+                    continue
+
+                field_type_name = item.type.name
+                field_name = f"arg{i}"
+
+                try:
+                    get_function = VARIABLE_GET_FUNCTIONS[field_type_name]
+                except KeyError:
+                    rust_field_struct_name = self._generate_type_name(item.type)
+                    code.add(
+                        f'write!(f, "{{}}", {field_name}.get_usertype().borrow_mut().get_{rust_field_struct_name}())?;'
+                    )
+                    continue
+
+                if field_type_name in ["int", "bool"]:
+                    code.add(f'write!(f, "{{}}", {field_name}.{get_function}())?;')
                 else:
-                    code.add(f'write!(f, "{{}}", *arg{i}.borrow())?;')
+                    code.add(
+                        f'write!(f, "{{}}", {field_name}.{get_function}().borrow())?;'
+                    )
 
             code.add('write!(f, "}}")')
             code.add("}", l=1)
@@ -981,52 +915,26 @@ class Transpiler:
         code.add("")
         return code
 
-    def _generate_field_zero_expression(
-        self, type: VariableType | FunctionPointer
-    ) -> str:
+    def _generate_zero_expression(self, type: VariableType | FunctionPointer) -> str:
         if isinstance(type, FunctionPointer):
-            # Calling the zero-value function pointer leads to a crash with human-readable error message.
-            return "Stack::zero_function_pointer_value"
+            return "Variable::function_pointer_zero_value()"
+
         if type.name == "int":
-            return "0"
+            return "Variable::integer_zero_value()"
         elif type.name == "bool":
-            return "false"
+            return "Variable::boolean_zero_value()"
         elif type.name == "str":
-            return 'Rc::new(RefCell::new(String::from("")))'
+            return "Variable::string_zero_value()"
         elif type.name == "vec":
-            return "Rc::new(RefCell::new(Vector::new()))"
+            return "Variable::vector_zero_value()"
         elif type.name == "map":
-            return "Rc::new(RefCell::new(Map::new()))"
+            return "Variable::map_zero_value()"
         elif type.name == "set":
-            return "Rc::new(RefCell::new(Set::new()))"
+            return "Variable::set_zero_value()"
         elif type.name == "regex":
-            return 'Rc::new(RefCell::new(Regex::new("$.^").unwrap()))'
+            return "Variable::regex_zero_value()"
         rust_type_name = self._generate_type_name(type.type)
-        return f"Rc::new(RefCell::new(UserTypeEnum::{rust_type_name}({rust_type_name}::new())))"
-
-    def _generate_variable_zero_expression(self, type: VariableType) -> str:
-        if type.name == "int":
-            return "Variable::Integer(0)"
-        elif type.name == "bool":
-            return "Variable::Boolean(false)"
-        elif type.name == "str":
-            return 'Variable::String(Rc::new(RefCell::new(String::from(""))))'
-        elif type.name == "vec":
-            return "Variable::Vector(Rc::new(RefCell::new(Vector::new())))"
-        elif type.name == "map":
-            return "Variable::Map(Rc::new(RefCell::new(Map::new())))"
-        elif type.name == "set":
-            return "Variable::Set(Rc::new(RefCell::new(Set::new())))"
-        elif type.name == "regex":
-            return 'Variable::Regex(Rc::new(RefCell::new(Regex::new("$.^").unwrap())))'
-        else:
-            rust_type_name = self._generate_type_name(type.type)
-
-            return (
-                "Variable::UserType(Rc::new(RefCell::new("
-                + f"UserTypeEnum::{rust_type_name}({rust_type_name}::new())"
-                + ")))"
-            )
+        return f"Variable::UserType(Rc::new(RefCell::new(UserTypeEnum::{rust_type_name}({rust_type_name}::new()))))"
 
     def _generate_UserTypeEnum(self) -> Code:
         code = Code("#[derive(Clone, Hash, PartialEq)]")
@@ -1174,9 +1082,8 @@ class Transpiler:
         code.add(f"#[derive(Clone)]")
         code.add(f"struct {rust_struct_name} {{", r=1)
 
-        for field_name, field_type in struct.fields.items():
-            rust_field_type = self._generate_struct_field_type(field_type)
-            code.add(f"{field_name}: {rust_field_type},")
+        for field_name in struct.fields:
+            code.add(f"{field_name}: Variable<UserTypeEnum>,")
 
         code.add("}", l=1)
         code.add("")
@@ -1215,29 +1122,27 @@ class Transpiler:
 
         for field_name, field_var_type in struct.fields.items():
             if isinstance(field_var_type, FunctionPointer):
-                code.add(f"{field_name}: Stack::zero_function_pointer_value,")
+                code.add(f"{field_name}: Variable::function_pointer_zero_value(),")
             elif field_var_type.type.name == "int":
-                code.add(f"{field_name}: 0,")
+                code.add(f"{field_name}: Variable::integer_zero_value(),")
             elif field_var_type.type.name == "bool":
-                code.add(f"{field_name}: false,")
+                code.add(f"{field_name}: Variable::boolean_zero_value(),")
             elif field_var_type.type.name == "str":
-                code.add(f'{field_name}: Rc::new(RefCell::new(String::from(""))),')
+                code.add(f"{field_name}: Variable::string_zero_value(),")
             elif field_var_type.type.name == "vec":
-                code.add(f"{field_name}: Rc::new(RefCell::new(Vector::new())),")
+                code.add(f"{field_name}: Variable::vector_zero_value(),")
             elif field_var_type.type.name == "set":
-                code.add(f"{field_name}: Rc::new(RefCell::new(Set::new())),")
+                code.add(f"{field_name}: Variable::set_zero_value(),")
             elif field_var_type.type.name == "map":
-                code.add(f"{field_name}: Rc::new(RefCell::new(Map::new())),")
+                code.add(f"{field_name}: Variable::map_zero_value(),")
             elif field_var_type.type.name == "regex":
-                code.add(
-                    f'{field_name}: Rc::new(RefCell::new(Regex::new("$.^").unwrap())),'
-                )
+                code.add(f"{field_name}: Variable::regex_zero_value(),")
             else:
                 rust_struct_name = self._generate_type_name(field_var_type.type)
                 code.add(
-                    f"{field_name}: Rc::new(RefCell::new("
+                    f"{field_name}:Variable::UserType(Rc::new(RefCell::new("
                     + f"UserTypeEnum::{rust_struct_name}({rust_struct_name}::new())"
-                    + ")),"
+                    + "))),"
                 )
 
         code.add("}", l=1)
@@ -1300,19 +1205,8 @@ class Transpiler:
 
         code.add("Self {", r=1)
 
-        for field_name, field_var_type in struct.fields.items():
-            code.add(f"{field_name}: {{", r=1)
-            if isinstance(field_var_type, VariableType):
-                code.add(
-                    self._generate_clone_recursive_expression(
-                        f"self.{field_name}", field_var_type.type
-                    )
-                )
-            else:
-                assert isinstance(field_var_type, FunctionPointer)
-                code.add(f"self.{field_name}.clone()")
-
-            code.add("},", l=1)
+        for field_name in struct.fields:
+            code.add(f"{field_name}: self.{field_name}.clone_recursive(),")
 
         code.add("}", l=1)
 
@@ -1344,11 +1238,26 @@ class Transpiler:
 
             if isinstance(field_var_type, FunctionPointer):
                 code.add(f'write!(f, "{field_name}: func_ptr")?;')
-            elif field_var_type.type.name in ["int", "bool"]:
-                code.add(f'write!(f, "{field_name}: {{}}", self.{field_name})?;')
+                continue
+
+            field_type_name = field_var_type.type.name
+
+            try:
+                get_function = VARIABLE_GET_FUNCTIONS[field_type_name]
+            except KeyError:
+                rust_field_struct_name = self._generate_type_name(field_var_type.type)
+                code.add(
+                    f'write!(f, "{field_name}: {{}}", self.{field_name}.get_usertype().borrow_mut().get_{rust_field_struct_name}())?;'
+                )
+                continue
+
+            if field_type_name in ["int", "bool"]:
+                code.add(
+                    f'write!(f, "{field_name}: {{}}", self.{field_name}.{get_function}())?;'
+                )
             else:
                 code.add(
-                    f'write!(f, "{field_name}: {{}}", *self.{field_name}.borrow())?;'
+                    f'write!(f, "{field_name}: {{}}", *self.{field_name}.{get_function}().borrow())?;'
                 )
 
         code.add('write!(f, "}}")')

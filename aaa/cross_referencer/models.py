@@ -227,7 +227,12 @@ class Struct(AaaCrossReferenceModel):
             self.parsed_params = parsed_params
 
     class Resolved:
-        def __init__(self, fields: Dict[str, VariableType | FunctionPointer]) -> None:
+        def __init__(
+            self,
+            type_params: Dict[str, Struct],
+            fields: Dict[str, VariableType | FunctionPointer],
+        ) -> None:
+            self.type_params = type_params
             self.fields = fields
 
     @classmethod
@@ -269,12 +274,17 @@ class Struct(AaaCrossReferenceModel):
         if not isinstance(other, Struct):
             return False
 
-        return self.name == other.name and self.position == other.position
+        return self.name == other.name and self.position.file == other.position.file
 
     @property
     def fields(self) -> Dict[str, VariableType | FunctionPointer]:
         assert isinstance(self.state, Struct.Resolved)
         return self.state.fields
+
+    @property
+    def type_params(self) -> Dict[str, Struct]:
+        assert isinstance(self.state, Struct.Resolved)
+        return self.state.type_params
 
     def get_unresolved(self) -> Struct.Unresolved:
         assert isinstance(self.state, Struct.Unresolved)
@@ -282,10 +292,11 @@ class Struct(AaaCrossReferenceModel):
 
     def resolve(
         self,
+        type_params: Dict[str, Struct],
         fields: Dict[str, VariableType | FunctionPointer],
     ) -> None:
         assert isinstance(self.state, Struct.Unresolved)
-        self.state = Struct.Resolved(fields)
+        self.state = Struct.Resolved(type_params, fields)
 
     def is_resolved(self) -> bool:
         return isinstance(self.state, Struct.Resolved)
