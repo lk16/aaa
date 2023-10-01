@@ -26,7 +26,19 @@ fn Pair[A, B]:print args pair as Pair[A, B] {
 
 fn main {
     69 "hello" make_pair
-    Pair:print
+
+    use pair {
+        pair Pair:print
+        pair "a" ? 69 = assert
+        pair "b" ? "hello" str:equals assert
+
+        "\n" .
+
+        pair "a" { 420 } !
+        pair "b" { "world" } !
+
+        pair Pair:print
+    }
 }
 
 // TODO add updating fields

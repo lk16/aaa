@@ -286,6 +286,16 @@ class Struct(AaaCrossReferenceModel):
         assert isinstance(self.state, Struct.Resolved)
         return self.state.type_params
 
+    def param_dict(
+        self, var_type: VariableType
+    ) -> Dict[str, VariableType | FunctionPointer]:
+        struct_type_placeholders = [
+            struct.name
+            for struct in sorted(self.type_params.values(), key=lambda s: s.position)
+        ]
+
+        return dict(zip(struct_type_placeholders, var_type.params, strict=True))
+
     def get_unresolved(self) -> Struct.Unresolved:
         assert isinstance(self.state, Struct.Unresolved)
         return self.state
