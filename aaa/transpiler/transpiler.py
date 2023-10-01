@@ -868,32 +868,11 @@ class Transpiler:
 
             code.add(f'write!(f, "{enum.name}:{variant_name}{{{{")?;')
 
-            for i, item in enumerate(associated_data):
-                if i != 0:
+            for offset, item in enumerate(associated_data):
+                if offset != 0:
                     code.add('write!(f, ", ")?;')
 
-                if isinstance(item, FunctionPointer):
-                    code.add('write!(f, "func_ptr")?;')
-                    continue
-
-                field_type_name = item.type.name
-                field_name = f"arg{i}"
-
-                try:
-                    get_function = VARIABLE_GET_FUNCTIONS[field_type_name]
-                except KeyError:
-                    rust_field_struct_name = self._generate_type_name(item.type)
-                    code.add(
-                        f'write!(f, "{{}}", {field_name}.get_usertype().borrow_mut().get_{rust_field_struct_name}())?;'
-                    )
-                    continue
-
-                if field_type_name in ["int", "bool"]:
-                    code.add(f'write!(f, "{{}}", {field_name}.{get_function}())?;')
-                else:
-                    code.add(
-                        f'write!(f, "{{}}", {field_name}.{get_function}().borrow())?;'
-                    )
+                code.add(f'write!(f, "{{:?}}", arg{offset})?;')
 
             code.add('write!(f, "}}")')
             code.add("}", l=1)
@@ -1123,7 +1102,13 @@ class Transpiler:
         for field_name, field_var_type in struct.fields.items():
             if isinstance(field_var_type, FunctionPointer):
                 code.add(f"{field_name}: Variable::function_pointer_zero_value(),")
-            elif field_var_type.type.name == "int":
+                continue
+
+            if field_var_type.name in struct.type_params:
+                code.add(f"{field_name}: Variable::None,")
+                continue
+
+            if field_var_type.type.name == "int":
                 code.add(f"{field_name}: Variable::integer_zero_value(),")
             elif field_var_type.type.name == "bool":
                 code.add(f"{field_name}: Variable::boolean_zero_value(),")
@@ -1140,7 +1125,7 @@ class Transpiler:
             else:
                 rust_struct_name = self._generate_type_name(field_var_type.type)
                 code.add(
-                    f"{field_name}:Variable::UserType(Rc::new(RefCell::new("
+                    f"{field_name}: Variable::UserType(Rc::new(RefCell::new("
                     + f"UserTypeEnum::{rust_struct_name}({rust_struct_name}::new())"
                     + "))),"
                 )
@@ -1228,37 +1213,11 @@ class Transpiler:
 
         code.add(f'write!(f, "{struct.name}{{{{")?;')
 
-        is_first_field = True
-
-        for field_name, field_var_type in struct.fields.items():
-            if is_first_field:
-                is_first_field = False
-            else:
+        for offset, field_name in enumerate(struct.fields):
+            if offset != 0:
                 code.add('write!(f, ", ")?;')
 
-            if isinstance(field_var_type, FunctionPointer):
-                code.add(f'write!(f, "{field_name}: func_ptr")?;')
-                continue
-
-            field_type_name = field_var_type.type.name
-
-            try:
-                get_function = VARIABLE_GET_FUNCTIONS[field_type_name]
-            except KeyError:
-                rust_field_struct_name = self._generate_type_name(field_var_type.type)
-                code.add(
-                    f'write!(f, "{field_name}: {{}}", self.{field_name}.get_usertype().borrow_mut().get_{rust_field_struct_name}())?;'
-                )
-                continue
-
-            if field_type_name in ["int", "bool"]:
-                code.add(
-                    f'write!(f, "{field_name}: {{}}", self.{field_name}.{get_function}())?;'
-                )
-            else:
-                code.add(
-                    f'write!(f, "{field_name}: {{}}", *self.{field_name}.{get_function}().borrow())?;'
-                )
+            code.add(f'write!(f, "{field_name}: {{:?}}", self.{field_name})?;')
 
         code.add('write!(f, "}}")')
 

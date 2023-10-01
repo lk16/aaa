@@ -296,7 +296,7 @@ def test_enum() -> None:
         + "Foo:int_{69}\n"
         + "int_ 69\n"
         + "\n"
-        + "Foo:str_{hello}\n"
+        + 'Foo:str_{"hello"}\n'
         + "str_ hello\n"
         + "\n"
         + "Foo:vec_{[]}\n"
@@ -308,7 +308,7 @@ def test_enum() -> None:
         + "Foo:set_{{}}\n"
         + "set_ {}\n"
         + "\n"
-        + "Foo:regex_{$.^}\n"
+        + "Foo:regex_{regex}\n"
         + "regex_ regex\n"
         + "\n"
         + "Foo:enum_{Foo:bool_{false}}\n"
@@ -409,8 +409,8 @@ def test_struct() -> None:
         + " regex_ = regex\n"
         + "  enum_ = OptionalInt:some{3}\n"
         + "struct_ = Bar{value: 123}\n"
-        + 'Foo{bool_: true, int_: 69, str_: hello world, vec_: ["foo"], map_: {"3": "three"}, set_: {"hello": SetValue}, regex_: .*, enum_: OptionalInt:some{3}, struct_: Bar{value: 123}}\n'
-        + "Foo{bool_: false, int_: 0, str_: , vec_: [], map_: {}, set_: {}, regex_: $.^, enum_: OptionalInt:none{}, struct_: Bar{value: 0}}\n"
+        + 'Foo{bool_: true, int_: 69, str_: "hello world", vec_: ["foo"], map_: {"3": "three"}, set_: {"hello"}, regex_: regex, enum_: OptionalInt:some{3}, struct_: Bar{value: 123}}\n'
+        + 'Foo{bool_: false, int_: 0, str_: "", vec_: [], map_: {}, set_: {}, regex_: regex, enum_: OptionalInt:none{}, struct_: Bar{value: 0}}\n'
     )
 
     expected_output = re.sub("UserStruct[0-9a-f]+", "UserStructXYZ", expected_output)
