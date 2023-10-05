@@ -32,15 +32,13 @@ fn main {
         pair "a" ? 69 = assert
         pair "b" ? "hello" str:equals assert
 
-        "\n" .
 
         pair "a" { 420 } !
         pair "b" { "world" } !
 
+        pair "a" ? 420 = assert
+        pair "b" ? "world" str:equals assert
+
         pair Pair:print
     }
 }
-
-// TODO add updating fields
-
-// TODO add recursive example

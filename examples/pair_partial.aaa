@@ -1,0 +1,28 @@
+// TODO move to tests
+
+struct Pair[A, B] {
+    a as A,
+    b as B,
+}
+
+fn make_pair_partial[A] args a as A return Pair[A, str] {
+    Pair[A, str]
+    dup "a" { a } !
+    dup "b" { "hello" } !
+}
+
+fn main {
+    69 make_pair_partial
+
+    use pair {
+        pair "a" ? 69 = assert
+        pair "b" ? "hello" str:equals assert
+    }
+
+    "foo" make_pair_partial
+
+    use pair {
+        pair "a" ? "foo" str:equals assert
+        pair "b" ? "hello" str:equals assert
+    }
+}

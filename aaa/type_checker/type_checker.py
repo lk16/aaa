@@ -316,14 +316,13 @@ class SingleFunctionTypeChecker:
 
             return placeholder_types
 
-    # TODO rename function and get rid of term "placeholders" in entire repo
     def _apply_placeholders_in_type(
         self,
         type: VariableType | FunctionPointer,
         placeholder_types: Mapping[str, VariableType | FunctionPointer],
     ) -> VariableType | FunctionPointer:
         if isinstance(type, FunctionPointer):
-            # TODO support placeholders in functionpointers
+            # TODO #154 Support using function parameters in function pointer values
             return type
 
         type = deepcopy(type)
