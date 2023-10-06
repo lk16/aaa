@@ -426,22 +426,19 @@ class CrossReferencer:
         return resolved_params
 
     def _resolve_struct_param(
-        self, struct: Struct, parsed_type_param: parser.TypeLiteral
+        self, struct: Struct, parsed_type_param: parser.FlatTypeLiteral
     ) -> Struct:
         param_name = parsed_type_param.identifier.name
-        type_literal: Optional[parser.TypeLiteral] = None
+        flat_type_literal: Optional[parser.FlatTypeLiteral] = None
 
         # TODO use dict in Struct.Unresolved
         for param in struct.get_unresolved().parsed_params:
-            if (
-                isinstance(param, parser.TypeLiteral)
-                and param.identifier.name == param_name
-            ):
-                type_literal = param
+            if param.identifier.name == param_name:
+                flat_type_literal = param
 
-        assert type_literal
+        assert flat_type_literal
 
-        type = Struct.from_parsed_type_literal(type_literal)
+        type = Struct.from_parsed_type_literal(flat_type_literal)
 
         if (struct.position.file, param_name) in self.identifiers:
             # Another identifier in the same file has this name.
@@ -463,7 +460,7 @@ class CrossReferencer:
         arg_type_name = parsed_field_type.identifier.name
         type: Identifiable
 
-        found_type_param: Optional[parser.TypeLiteral] = None
+        found_type_param: Optional[parser.FlatTypeLiteral] = None
 
         # TODO use a dictionary in Function.Unresolved
         for type_param in struct.get_unresolved().parsed_params:
@@ -527,22 +524,19 @@ class CrossReferencer:
         enum.resolve(enum_variants)
 
     def _resolve_function_param(
-        self, function: Function, parsed_type_param: parser.TypeLiteral
+        self, function: Function, parsed_type_param: parser.FlatTypeLiteral
     ) -> Struct:
         param_name = parsed_type_param.identifier.name
-        type_literal: Optional[parser.TypeLiteral] = None
+        flat_type_literal: Optional[parser.FlatTypeLiteral] = None
 
         # TODO use dict in Function.Unresolved
         for param in function.get_unresolved().parsed.type_params:
-            if (
-                isinstance(param, parser.TypeLiteral)
-                and param.identifier.name == param_name
-            ):
-                type_literal = param
+            if param.identifier.name == param_name:
+                flat_type_literal = param
 
-        assert type_literal
+        assert flat_type_literal
 
-        type = Struct.from_parsed_type_literal(type_literal)
+        type = Struct.from_parsed_type_literal(flat_type_literal)
 
         if (function.position.file, param_name) in self.identifiers:
             # Another identifier in the same file has this name.
@@ -580,7 +574,7 @@ class CrossReferencer:
         arg_type_name = parsed_type.identifier.name
         type: Identifiable
 
-        found_type_param: Optional[parser.TypeLiteral] = None
+        found_type_param: Optional[parser.FlatTypeLiteral] = None
         # TODO use a dictionary in Function.Unresolved
         for type_param in function.get_unresolved().parsed.type_params:
             if type_param.identifier.name == arg_type_name:

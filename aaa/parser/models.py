@@ -117,7 +117,7 @@ class Function(AaaParseModel):
         position: Position,
         struct_name: Optional[Identifier],
         func_name: Identifier,
-        type_params: List[TypeLiteral],
+        type_params: List[FlatTypeLiteral],
         arguments: List[Argument],
         return_types: List[TypeLiteral | FunctionPointerTypeLiteral] | Never,
         body: Optional[FunctionBody],
@@ -169,18 +169,13 @@ class Struct(AaaParseModel):
         self,
         position: Position,
         identifier: Identifier,
-        params: List[TypeLiteral | FunctionPointerTypeLiteral],
+        params: List[FlatTypeLiteral],
         fields: Dict[str, TypeLiteral | FunctionPointerTypeLiteral],
     ) -> None:
         self.identifier = identifier
         self.params = params
         self.fields = fields
         super().__init__(position)
-
-    def params_without_function_pointers(self) -> List[TypeLiteral]:
-        # TODO this is hacky and does not handle errors, make a separate type
-        assert all(isinstance(param, TypeLiteral) for param in self.params)
-        return self.params  # type: ignore
 
 
 class ParsedFile(AaaParseModel):
@@ -215,10 +210,19 @@ class TypeLiteral(AaaParseModel):
         self.const = const
         super().__init__(position)
 
-    def params_without_function_pointers(self) -> List[TypeLiteral]:
-        # TODO this is hacky and does not handle errors, make a separate type
-        assert all(isinstance(param, TypeLiteral) for param in self.params)
-        return self.params  # type: ignore
+
+class FlatTypeLiteral(AaaParseModel):
+    def __init__(
+        self,
+        position: Position,
+        identifier: Identifier,
+        params: List[FlatTypeLiteral],
+        const: bool,
+    ) -> None:
+        self.identifier = identifier
+        self.params = params
+        self.const = const
+        super().__init__(position)
 
 
 class FunctionPointerTypeLiteral(AaaParseModel):
@@ -238,7 +242,7 @@ class FunctionName(AaaParseModel):
         self,
         position: Position,
         struct_name: Optional[Identifier],
-        type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
+        type_params: List[FlatTypeLiteral],
         func_name: Identifier,
     ) -> None:
         self.struct_name = struct_name

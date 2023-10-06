@@ -11,7 +11,7 @@ from aaa.parser.exceptions import (
     ParserException,
     UnhandledTopLevelToken,
 )
-from aaa.parser.models import FunctionPointerTypeLiteral, TypeLiteral
+from aaa.parser.models import FlatTypeLiteral, FunctionPointerTypeLiteral, TypeLiteral
 from aaa.parser.single_file_parser import SingleFileParser
 from aaa.tokenizer.tokenizer import Tokenizer
 
@@ -52,12 +52,14 @@ def test_parse_identifier(
 
 
 def get_type_param_variable_type_names(
-    type_params: List[TypeLiteral | FunctionPointerTypeLiteral],
+    type_params: List[FlatTypeLiteral | FunctionPointerTypeLiteral]
+    | List[FlatTypeLiteral]
+    | List[TypeLiteral | FunctionPointerTypeLiteral],
 ) -> List[str]:
     names: List[str] = []
 
     for type_param in type_params:
-        assert isinstance(type_param, TypeLiteral)
+        assert isinstance(type_param, (TypeLiteral, FlatTypeLiteral))
         names.append(type_param.identifier.name)
 
     return names

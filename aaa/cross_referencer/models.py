@@ -221,7 +221,7 @@ class Struct(AaaCrossReferenceModel):
                 str,
                 parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
             ],
-            parsed_params: List[parser.TypeLiteral],
+            parsed_params: List[parser.FlatTypeLiteral],
         ) -> None:
             self.parsed_field_types = parsed_field_types
             self.parsed_params = parsed_params
@@ -240,16 +240,16 @@ class Struct(AaaCrossReferenceModel):
         return Struct(
             struct.position,
             struct.identifier.name,
-            struct.params_without_function_pointers(),
+            struct.params,
             struct.fields,
         )
 
     @classmethod
-    def from_parsed_type_literal(cls, type_literal: parser.TypeLiteral) -> Struct:
+    def from_parsed_type_literal(cls, type_literal: parser.FlatTypeLiteral) -> Struct:
         return Struct(
             type_literal.position,
             type_literal.identifier.name,
-            type_literal.params_without_function_pointers(),
+            type_literal.params,
             {},
         )
 
@@ -257,7 +257,7 @@ class Struct(AaaCrossReferenceModel):
         self,
         position: Position,
         name: str,
-        params: List[parser.TypeLiteral],
+        params: List[parser.FlatTypeLiteral],
         fields: Dict[
             str,
             parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
