@@ -1,5 +1,3 @@
-// TODO move to tests
-
 struct Tree[T] {
     children as vec[Tree[T]],
     data as T,
@@ -15,11 +13,16 @@ fn Tree[T]:push args tree as Tree[T], child as Tree[T] {
 }
 
 fn main {
-    // TODO using `5 make_tree[int] drop` crashes CrossReferencer
     5 make_tree
     use t {
         t 4 make_tree Tree:push
         t .
     }
     "\n" .
+
+    5 make_tree[int] drop
+
+    // TODO make test with `5 make_tree[str] drop`
+
+    // TODO make test with `5 make_tree[int,int] drop`
 }
