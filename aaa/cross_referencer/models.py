@@ -29,6 +29,10 @@ class Function(AaaCrossReferenceModel):
         def __init__(self, parsed: parser.Function) -> None:
             self.parsed = parsed
 
+            self.type_params = {
+                param.identifier.name: param for param in parsed.type_params
+            }
+
     class WithSignature:
         def __init__(
             self,
@@ -66,12 +70,9 @@ class Function(AaaCrossReferenceModel):
 
         if parsed.struct_name:
             self.struct_name = parsed.struct_name.name
-        else:
-            self.struct_name = ""
-
-        if parsed.struct_name:
             self.name = f"{self.struct_name}:{self.func_name}"
         else:
+            self.struct_name = ""
             self.name = self.func_name
 
         super().__init__(parsed.position)

@@ -419,33 +419,19 @@ class CrossReferencer:
         resolved_params: Dict[str, Struct] = {}
 
         for parsed_type_param in struct.get_unresolved().parsed_params:
-            resolved_params[
-                parsed_type_param.identifier.name
-            ] = self._resolve_struct_param(struct, parsed_type_param)
+            struct = Struct.from_parsed_type_literal(parsed_type_param)
+            param_name = parsed_type_param.identifier.name
+
+            try:
+                colliding = self.identifiers[(struct.position.file, param_name)]
+            except KeyError:
+                pass
+            else:
+                raise CollidingIdentifier([struct, colliding])
+
+            resolved_params[param_name] = struct
 
         return resolved_params
-
-    def _resolve_struct_param(
-        self, struct: Struct, parsed_type_param: parser.FlatTypeLiteral
-    ) -> Struct:
-        param_name = parsed_type_param.identifier.name
-        flat_type_literal: Optional[parser.FlatTypeLiteral] = None
-
-        # TODO use dict in Struct.Unresolved
-        for param in struct.get_unresolved().parsed_params:
-            if param.identifier.name == param_name:
-                flat_type_literal = param
-
-        assert flat_type_literal
-
-        type = Struct.from_parsed_type_literal(flat_type_literal)
-
-        if (struct.position.file, param_name) in self.identifiers:
-            # Another identifier in the same file has this name.
-            colliding_identifier = self.identifiers[(struct.position.file, param_name)]
-            raise CollidingIdentifier([type, colliding_identifier])
-
-        return type
 
     def _resolve_struct_field(
         self,
@@ -458,35 +444,30 @@ class CrossReferencer:
 
         assert isinstance(parsed_field_type, parser.TypeLiteral)
         arg_type_name = parsed_field_type.identifier.name
-        type: Identifiable
 
-        found_type_param: Optional[parser.FlatTypeLiteral] = None
+        params: List[VariableType | FunctionPointer] = []
 
-        # TODO use a dictionary in Function.Unresolved
-        for type_param in struct.get_unresolved().parsed_params:
-            if type_param.identifier.name == arg_type_name:
-                found_type_param = type_param
+        try:
+            field_type: Struct | Enum = type_params[arg_type_name]
+        except KeyError:
+            identifiable = self._get_identifiable(parsed_field_type.identifier)
 
-        if found_type_param:
-            type = type_params[arg_type_name]
-            params: List[VariableType | FunctionPointer] = []
-        else:
-            type = self._get_identifiable(parsed_field_type.identifier)
+            if not isinstance(identifiable, (Enum, Struct)):
+                raise InvalidArgument(used=parsed_field_type, found=identifiable)
 
-            if not isinstance(type, (Enum, Struct)):
-                raise InvalidArgument(used=parsed_field_type, found=type)
+            field_type = identifiable
 
-            if len(parsed_field_type.params) != type.param_count:
+            if len(parsed_field_type.params) != field_type.param_count:
                 raise UnexpectedTypeParameterCount(
                     position=parsed_field_type.identifier.position,
-                    expected_param_count=type.param_count,
+                    expected_param_count=field_type.param_count,
                     found_param_count=len(parsed_field_type.params),
                 )
 
             params = self._lookup_function_params(type_params, parsed_field_type)
 
         return VariableType(
-            type=type,
+            type=field_type,
             params=params,
             is_placeholder=arg_type_name in type_params,
             position=parsed_field_type.position,
@@ -523,37 +504,21 @@ class CrossReferencer:
 
         enum.resolve(enum_variants)
 
-    def _resolve_function_param(
-        self, function: Function, parsed_type_param: parser.FlatTypeLiteral
-    ) -> Struct:
-        param_name = parsed_type_param.identifier.name
-        flat_type_literal: Optional[parser.FlatTypeLiteral] = None
-
-        # TODO use dict in Function.Unresolved
-        for param in function.get_unresolved().parsed.type_params:
-            if param.identifier.name == param_name:
-                flat_type_literal = param
-
-        assert flat_type_literal
-
-        type = Struct.from_parsed_type_literal(flat_type_literal)
-
-        if (function.position.file, param_name) in self.identifiers:
-            # Another identifier in the same file has this name.
-            colliding_identifier = self.identifiers[
-                (function.position.file, param_name)
-            ]
-            raise CollidingIdentifier([type, colliding_identifier])
-
-        return type
-
     def _resolve_function_params(self, function: Function) -> Dict[str, Struct]:
         resolved_params: Dict[str, Struct] = {}
 
         for parsed_type_param in function.get_unresolved().parsed.type_params:
-            resolved_params[
-                parsed_type_param.identifier.name
-            ] = self._resolve_function_param(function, parsed_type_param)
+            struct = Struct.from_parsed_type_literal(parsed_type_param)
+            param_name = parsed_type_param.identifier.name
+
+            try:
+                colliding = self.identifiers[(function.position.file, param_name)]
+            except KeyError:
+                pass
+            else:
+                raise CollidingIdentifier([struct, colliding])
+
+            resolved_params[param_name] = struct
 
         return resolved_params
 
@@ -574,16 +539,11 @@ class CrossReferencer:
         arg_type_name = parsed_type.identifier.name
         type: Identifiable
 
-        found_type_param: Optional[parser.FlatTypeLiteral] = None
-        # TODO use a dictionary in Function.Unresolved
-        for type_param in function.get_unresolved().parsed.type_params:
-            if type_param.identifier.name == arg_type_name:
-                found_type_param = type_param
+        params: List[VariableType | FunctionPointer] = []
 
-        if found_type_param:
+        try:
             type = type_params[arg_type_name]
-            params: List[VariableType | FunctionPointer] = []
-        else:
+        except KeyError:
             type = self._get_identifiable(parsed_type.identifier)
 
             if not isinstance(type, (Enum, Struct)):
