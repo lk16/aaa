@@ -4,7 +4,7 @@ import pytest
 
 from tests.aaa import compile_run
 
-SOURCE_PREFIX = Path(__file__).parent / "src"
+SOURCE_PREFIX = Path(__file__).parent / "src/function_pointers"
 
 
 @pytest.mark.parametrize(
