@@ -57,7 +57,6 @@ class Function(AaaCrossReferenceModel):
             self.type_params = type_params
             self.arguments = arguments
             self.return_types = return_types
-            self.body: Optional[FunctionBody] = None
             self.body = body
 
     def __init__(self, parsed: parser.Function) -> None:
@@ -109,6 +108,11 @@ class Function(AaaCrossReferenceModel):
     def type_params(self) -> Dict[str, Struct]:
         assert isinstance(self.state, (Function.WithSignature, Function.Resolved))
         return self.state.type_params
+
+    @property
+    def type_param_names(self) -> List[str]:
+        type_params = sorted(self.type_params.values(), key=lambda t: t.position)
+        return [struct.name for struct in type_params]
 
     @property
     def body(self) -> FunctionBody:
@@ -501,7 +505,10 @@ class CallVariable(AaaCrossReferenceModel):
 
 class CallFunction(AaaCrossReferenceModel):
     def __init__(
-        self, function: Function, type_params: List[VariableType], position: Position
+        self,
+        function: Function,
+        type_params: List[VariableType | FunctionPointer],
+        position: Position,
     ) -> None:
         self.function = function
         self.type_params = type_params

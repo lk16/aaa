@@ -21,6 +21,7 @@ SOURCE_PREFIX = Path(__file__).parent / "src/struct_type_parameters"
         ),
         ("pair_partial.aaa", 'Pair{a: "foo", b: "hello"}\n'),
         ("tree.aaa", "Tree{children: [Tree{children: [], data: 4}], data: 5}\n"),
+        ("make_tree_with_type_param.aaa", ""),
     ],
 )
 def test_struct_type_parameters(source_path: Path, expected_stdout: str) -> None:

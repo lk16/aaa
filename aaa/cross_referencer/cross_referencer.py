@@ -760,23 +760,28 @@ class FunctionBodyResolver:
         try:
             identifiable = self._get_identifiable_from_call(call)
         except UnknownIdentifier:
-            has_type_params = bool(call.type_params)
-            return CallVariable(call.name(), has_type_params, call.position)
+            return CallVariable(call.name(), bool(call.type_params), call.position)
+
+        type_params = [
+            self._lookup_function_param(self.function.type_params, param)
+            for param in call.type_params
+        ]
 
         if isinstance(identifiable, Function):
-            assert not call.type_params
-            return CallFunction(identifiable, [], call.position)
+            return CallFunction(identifiable, type_params, call.position)
 
         if isinstance(identifiable, ImplicitFunctionImport):
-            return CallFunction(identifiable.source, [], call.position)
+            return CallFunction(identifiable.source, type_params, call.position)
 
         if isinstance(identifiable, EnumConstructor):
-            var_type = VariableType(identifiable.enum, [], False, call.position, False)
+            var_type = VariableType(
+                identifiable.enum, type_params, False, call.position, False
+            )
             return CallEnumConstructor(identifiable, var_type, call.position)
 
         if isinstance(identifiable, ImplicitEnumConstructorImport):
             var_type = VariableType(
-                identifiable.source.enum, [], False, call.position, False
+                identifiable.source.enum, type_params, False, call.position, False
             )
             return CallEnumConstructor(identifiable.source, var_type, call.position)
 

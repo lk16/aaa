@@ -19,10 +19,4 @@ fn main {
         t .
     }
     "\n" .
-
-    5 make_tree[int] drop
-
-    // TODO make test with `5 make_tree[str] drop`
-
-    // TODO make test with `5 make_tree[int,int] drop`
 }

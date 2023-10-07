@@ -691,6 +691,7 @@ class SingleFunctionTypeChecker:
 
     def __check_call_function(
         self,
+        type_params: List[VariableType | FunctionPointer],
         arguments: List[VariableType | FunctionPointer],
         return_types: List[VariableType | FunctionPointer] | Never,
         call: Function | EnumConstructor | CallFunctionByPointer,
@@ -707,6 +708,16 @@ class SingleFunctionTypeChecker:
             raise StackTypesError(position, error_types_stack, call)
 
         placeholder_types: Dict[str, VariableType | FunctionPointer] = {}
+
+        if isinstance(call, Function):
+            if len(type_params) == len(call.type_params):
+                for type_param_name, type_param in zip(
+                    call.type_param_names, type_params
+                ):
+                    placeholder_types[type_param_name] = type_param
+            elif len(type_params) != 0:
+                raise NotImplementedError  # Unreachable, should be caught by CrossReferencer
+
         types = stack[len(stack) - arg_count :]
 
         for argument, type in zip(arguments, types, strict=True):
@@ -715,7 +726,23 @@ class SingleFunctionTypeChecker:
                     argument, copy(type), placeholder_types
                 )
             except SignatureItemMismatch as e:
-                raise StackTypesError(position, error_types_stack, call) from e
+                expected_stack_top_override: Optional[
+                    List[VariableType | FunctionPointer]
+                ] = None
+
+                if isinstance(call, Function):
+                    expected_stack_top_override = [
+                        self._apply_placeholders_in_type(item.type, placeholder_types)
+                        for item in call.arguments
+                    ]
+
+                raise StackTypesError(
+                    position,
+                    error_types_stack,
+                    call,
+                    type_params=type_params,
+                    expected_stack_top_override=expected_stack_top_override,
+                ) from e
 
         stack = stack[: len(stack) - arg_count]
 
@@ -740,6 +767,7 @@ class SingleFunctionTypeChecker:
         arguments = [argument.type for argument in call_function.function.arguments]
 
         type_stack_afterwards = self.__check_call_function(
+            call_function.type_params,
             arguments,
             call_function.function.return_types,
             call_function.function,
@@ -776,6 +804,7 @@ class SingleFunctionTypeChecker:
             )
 
         return self.__check_call_function(
+            [],
             func_ptr.argument_types,
             func_ptr.return_types,
             call_by_func_ptr,
@@ -795,6 +824,7 @@ class SingleFunctionTypeChecker:
         variant_associated_data = enum.get_resolved().variants[variant_name]
 
         return self.__check_call_function(
+            [],
             variant_associated_data,
             [call_enum_ctor.enum_var_type],
             call_enum_ctor.enum_ctor,
