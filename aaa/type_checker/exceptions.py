@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 from aaa import AaaException, Position
 from aaa.cross_referencer.exceptions import describe
@@ -68,14 +68,26 @@ class StackTypesError(TypeCheckerException):
         | CallFunctionByPointer
         | StructFieldUpdate
         | StructFieldQuery,
+        type_params: List[VariableType | FunctionPointer] = [],
+        expected_stack_top_override: Optional[
+            List[VariableType | FunctionPointer]
+        ] = None,
     ) -> None:
         self.type_stack = type_stack
         self.func_like = func_like
+        self.type_params = type_params
+        self.expected_stack_top_override = expected_stack_top_override
         super().__init__(position)
 
     def func_like_name(self) -> str:  # pragma: nocover
         if isinstance(self.func_like, (Function, EnumConstructor)):
-            return self.func_like.name
+            name = self.func_like.name
+
+            if self.type_params:
+                name += "[" + ",".join(repr(param) for param in self.type_params) + "]"
+
+            return name
+
         elif isinstance(self.func_like, StructFieldQuery):
             return "?"
         elif isinstance(self.func_like, StructFieldUpdate):
@@ -88,6 +100,9 @@ class StackTypesError(TypeCheckerException):
                 return "<function pointer>"
 
     def format_expected_typestack(self) -> str:  # pragma: nocover
+        if self.expected_stack_top_override is not None:
+            return format_typestack(self.expected_stack_top_override)
+
         if isinstance(self.func_like, Function):
             types = [arg.type for arg in self.func_like.arguments]
             return format_typestack(types)

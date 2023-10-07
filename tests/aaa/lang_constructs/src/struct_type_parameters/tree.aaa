@@ -1,0 +1,22 @@
+struct Tree[T] {
+    children as vec[Tree[T]],
+    data as T,
+}
+
+fn make_tree[T] args data as T return Tree[T] {
+    Tree[T]
+    dup "data" { data } !
+}
+
+fn Tree[T]:push args tree as Tree[T], child as Tree[T] {
+    tree "children" ? child vec:push
+}
+
+fn main {
+    5 make_tree
+    use t {
+        t 4 make_tree Tree:push
+        t .
+    }
+    "\n" .
+}

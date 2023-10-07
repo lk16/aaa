@@ -1017,6 +1017,16 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:2:23: Cannot create pointer to function foo which was not found\n",
             id="function-pointer-target-not-found",
         ),
+        pytest.param(
+            """
+            fn main { 5 drop[str] }
+            """,
+            StackTypesError,
+            "/foo/main.aaa:2:25: Invalid stack types when calling drop[str]\n"
+            "Expected stack top: str\n"
+            "       Found stack: int\n",
+            id="function-call-with-wrong-type-parameter",
+        ),
     ],
 )
 def test_one_error(

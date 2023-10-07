@@ -262,19 +262,13 @@ class CrossReferencer:
     ) -> Tuple[
         List[Import], List[Struct], List[Enum], List[EnumConstructor], List[Function]
     ]:
-        imports: List[Import] = []
-        functions: List[Function] = []
-        structs: List[Struct] = []
-
         parsed_file = self.parsed_files[file]
 
-        structs += self._load_types(parsed_file.types)
-        structs += self._load_struct_types(parsed_file.structs)
-
+        structs = self._load_struct_types(parsed_file.structs)
         enum_ctors, enums = self._load_enums(parsed_file.enums)
 
-        functions += self._load_functions(parsed_file.functions)
-        imports += self._load_imports(parsed_file.imports)
+        functions = self._load_functions(parsed_file.functions)
+        imports = self._load_imports(parsed_file.imports)
         return imports, structs, enums, enum_ctors, functions
 
     def _load_enums(
@@ -306,7 +300,9 @@ class CrossReferencer:
         return enum_ctors, enums
 
     def _load_struct_types(self, parsed_structs: List[parser.Struct]) -> List[Struct]:
-        return [Struct(parsed_struct, 0) for parsed_struct in parsed_structs]
+        return [
+            Struct.from_parsed_struct(parsed_struct) for parsed_struct in parsed_structs
+        ]
 
     def _load_functions(
         self, parsed_functions: List[parser.Function]
@@ -322,9 +318,6 @@ class CrossReferencer:
                 imports.append(import_)
 
         return imports
-
-    def _load_types(self, types: List[parser.TypeLiteral]) -> List[Struct]:
-        return [Struct(type, len(type.params)) for type in types]
 
     def _resolve_import(self, import_: Import) -> None:
         key = (import_.source_file, import_.source_name)
@@ -422,15 +415,77 @@ class CrossReferencer:
             is_const=False,
         )
 
-    def _resolve_struct(self, type: Struct) -> None:
-        parsed_field_types = type.get_unresolved().parsed_field_types
+    def _resolve_struct_params(self, struct: Struct) -> Dict[str, Struct]:
+        resolved_params: Dict[str, Struct] = {}
+
+        for parsed_type_param in struct.get_unresolved().parsed_params:
+            struct = Struct.from_parsed_type_literal(parsed_type_param)
+            param_name = parsed_type_param.identifier.name
+
+            try:
+                colliding = self.identifiers[(struct.position.file, param_name)]
+            except KeyError:
+                pass
+            else:
+                raise CollidingIdentifier([struct, colliding])
+
+            resolved_params[param_name] = struct
+
+        return resolved_params
+
+    def _resolve_struct_field(
+        self,
+        struct: Struct,
+        type_params: Dict[str, Struct],
+        parsed_field_type: parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
+    ) -> VariableType | FunctionPointer:
+        if isinstance(parsed_field_type, parser.FunctionPointerTypeLiteral):
+            return self._resolve_type(parsed_field_type)
+
+        assert isinstance(parsed_field_type, parser.TypeLiteral)
+        arg_type_name = parsed_field_type.identifier.name
+
+        params: List[VariableType | FunctionPointer] = []
+
+        try:
+            field_type: Struct | Enum = type_params[arg_type_name]
+        except KeyError:
+            identifiable = self._get_identifiable(parsed_field_type.identifier)
+
+            if not isinstance(identifiable, (Enum, Struct)):
+                raise InvalidArgument(used=parsed_field_type, found=identifiable)
+
+            field_type = identifiable
+
+            if len(parsed_field_type.params) != field_type.param_count:
+                raise UnexpectedTypeParameterCount(
+                    position=parsed_field_type.identifier.position,
+                    expected_param_count=field_type.param_count,
+                    found_param_count=len(parsed_field_type.params),
+                )
+
+            params = self._lookup_function_params(type_params, parsed_field_type)
+
+        return VariableType(
+            type=field_type,
+            params=params,
+            is_placeholder=arg_type_name in type_params,
+            position=parsed_field_type.position,
+            is_const=parsed_field_type.const,
+        )
+
+    def _resolve_struct(self, struct: Struct) -> None:
+        parsed_field_types = struct.get_unresolved().parsed_field_types
+        resolved_params = self._resolve_struct_params(struct)
 
         fields = {
-            field_name: self._resolve_type(parsed_field)
+            field_name: self._resolve_struct_field(
+                struct, resolved_params, parsed_field
+            )
             for field_name, parsed_field in parsed_field_types.items()
         }
 
-        type.resolve(fields)
+        struct.resolve(resolved_params, fields)
 
     def _resolve_enum(self, enum: Enum) -> None:
         parsed_variants = enum.get_unresolved().parsed_variants
@@ -449,39 +504,21 @@ class CrossReferencer:
 
         enum.resolve(enum_variants)
 
-    def _resolve_function_param(
-        self, function: Function, parsed_type_param: parser.TypeLiteral
-    ) -> Struct:
-        param_name = parsed_type_param.identifier.name
-        type_literal: Optional[parser.TypeLiteral] = None
-
-        for param in function.get_unresolved().parsed.type_params:
-            if (
-                isinstance(param, parser.TypeLiteral)
-                and param.identifier.name == param_name
-            ):
-                type_literal = param
-
-        assert type_literal
-
-        type = Struct(type_literal, 0)
-
-        if (function.position.file, param_name) in self.identifiers:
-            # Another identifier in the same file has this name.
-            colliding_identifier = self.identifiers[
-                (function.position.file, param_name)
-            ]
-            raise CollidingIdentifier([type, colliding_identifier])
-
-        return type
-
     def _resolve_function_params(self, function: Function) -> Dict[str, Struct]:
         resolved_params: Dict[str, Struct] = {}
 
         for parsed_type_param in function.get_unresolved().parsed.type_params:
-            resolved_params[
-                parsed_type_param.identifier.name
-            ] = self._resolve_function_param(function, parsed_type_param)
+            struct = Struct.from_parsed_type_literal(parsed_type_param)
+            param_name = parsed_type_param.identifier.name
+
+            try:
+                colliding = self.identifiers[(function.position.file, param_name)]
+            except KeyError:
+                pass
+            else:
+                raise CollidingIdentifier([struct, colliding])
+
+            resolved_params[param_name] = struct
 
         return resolved_params
 
@@ -494,43 +531,40 @@ class CrossReferencer:
         parsed_type = parsed_arg.type
         arg_type: VariableType | FunctionPointer
 
-        if isinstance(parsed_type, parser.TypeLiteral):
-            arg_type_name = parsed_type.identifier.name
-            type: Identifiable
-
-            found_type_param: Optional[parser.TypeLiteral] = None
-            for type_param in function.get_unresolved().parsed.type_params:
-                if type_param.identifier.name == arg_type_name:
-                    found_type_param = type_param
-
-            if found_type_param:
-                type = type_params[arg_type_name]
-                params: List[VariableType | FunctionPointer] = []
-            else:
-                type = self._get_identifiable(parsed_type.identifier)
-
-                if not isinstance(type, (Enum, Struct)):
-                    raise InvalidArgument(used=parsed_type, found=type)
-
-                if len(parsed_type.params) != type.param_count:
-                    raise UnexpectedTypeParameterCount(
-                        position=parsed_arg.identifier.position,
-                        expected_param_count=type.param_count,
-                        found_param_count=len(parsed_type.params),
-                    )
-
-                params = self._lookup_function_params(type_params, parsed_type)
-
-            arg_type = VariableType(
-                type=type,
-                params=params,
-                is_placeholder=arg_type_name in type_params,
-                position=parsed_type.position,
-                is_const=parsed_type.const,
-            )
-        else:
-            assert isinstance(parsed_type, parser.FunctionPointerTypeLiteral)
+        if isinstance(parsed_type, parser.FunctionPointerTypeLiteral):
             arg_type = self._resolve_type(parsed_type)
+            return Argument(identifier=parsed_arg.identifier, type=arg_type)
+
+        assert isinstance(parsed_type, parser.TypeLiteral)
+        arg_type_name = parsed_type.identifier.name
+        type: Identifiable
+
+        params: List[VariableType | FunctionPointer] = []
+
+        try:
+            type = type_params[arg_type_name]
+        except KeyError:
+            type = self._get_identifiable(parsed_type.identifier)
+
+            if not isinstance(type, (Enum, Struct)):
+                raise InvalidArgument(used=parsed_type, found=type)
+
+            if len(parsed_type.params) != type.param_count:
+                raise UnexpectedTypeParameterCount(
+                    position=parsed_arg.identifier.position,
+                    expected_param_count=type.param_count,
+                    found_param_count=len(parsed_type.params),
+                )
+
+            params = self._lookup_function_params(type_params, parsed_type)
+
+        arg_type = VariableType(
+            type=type,
+            params=params,
+            is_placeholder=arg_type_name in type_params,
+            position=parsed_type.position,
+            is_const=parsed_type.const,
+        )
 
         return Argument(identifier=parsed_arg.identifier, type=arg_type)
 
@@ -726,23 +760,28 @@ class FunctionBodyResolver:
         try:
             identifiable = self._get_identifiable_from_call(call)
         except UnknownIdentifier:
-            has_type_params = bool(call.type_params)
-            return CallVariable(call.name(), has_type_params, call.position)
+            return CallVariable(call.name(), bool(call.type_params), call.position)
+
+        type_params = [
+            self._lookup_function_param(self.function.type_params, param)
+            for param in call.type_params
+        ]
 
         if isinstance(identifiable, Function):
-            assert not call.type_params
-            return CallFunction(identifiable, [], call.position)
+            return CallFunction(identifiable, type_params, call.position)
 
         if isinstance(identifiable, ImplicitFunctionImport):
-            return CallFunction(identifiable.source, [], call.position)
+            return CallFunction(identifiable.source, type_params, call.position)
 
         if isinstance(identifiable, EnumConstructor):
-            var_type = VariableType(identifiable.enum, [], False, call.position, False)
+            var_type = VariableType(
+                identifiable.enum, type_params, False, call.position, False
+            )
             return CallEnumConstructor(identifiable, var_type, call.position)
 
         if isinstance(identifiable, ImplicitEnumConstructorImport):
             var_type = VariableType(
-                identifiable.source.enum, [], False, call.position, False
+                identifiable.source.enum, type_params, False, call.position, False
             )
             return CallEnumConstructor(identifiable.source, var_type, call.position)
 

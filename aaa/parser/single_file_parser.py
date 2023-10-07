@@ -19,6 +19,7 @@ from aaa.parser.models import (
     DefaultBlock,
     Enum,
     EnumVariant,
+    FlatTypeLiteral,
     ForeachLoop,
     Function,
     FunctionBody,
@@ -99,9 +100,7 @@ class SingleFileParser:
         self._print_parse_tree_node("Identifier", start_offset, offset)
         return identifier, offset
 
-    def _parse_flat_type_params(
-        self, offset: int
-    ) -> Tuple[List[TypeLiteral | FunctionPointerTypeLiteral], int]:
+    def _parse_flat_type_params(self, offset: int) -> Tuple[List[FlatTypeLiteral], int]:
         start_offset = offset
         _, offset = self._parse_token(offset, [TokenType.SQUARE_BRACKET_OPEN])
 
@@ -125,20 +124,20 @@ class SingleFileParser:
                 _, offset = self._parse_token(offset, [TokenType.SQUARE_BRACKET_CLOSE])
                 break
 
-        type_params: List[TypeLiteral | FunctionPointerTypeLiteral] = [
-            TypeLiteral(identifier.position, identifier, [], False)
+        flat_type_params = [
+            FlatTypeLiteral(identifier.position, identifier, [], False)
             for identifier in identifiers
         ]
 
         self._print_parse_tree_node("TypeParams", start_offset, offset)
-        return type_params, offset
+        return flat_type_params, offset
 
-    def _parse_flat_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
+    def _parse_flat_type_literal(self, offset: int) -> Tuple[FlatTypeLiteral, int]:
         start_offset = offset
 
         identifier, offset = self._parse_identifier(offset)
 
-        type_params: List[TypeLiteral | FunctionPointerTypeLiteral] = []
+        type_params: List[FlatTypeLiteral] = []
 
         try:
             type_params, offset = self._parse_flat_type_params(offset)
@@ -146,16 +145,18 @@ class SingleFileParser:
             pass
 
         self._print_parse_tree_node("FlatTypeLiteral", start_offset, offset)
-        type_literal = TypeLiteral(identifier.position, identifier, type_params, False)
+        type_literal = FlatTypeLiteral(
+            identifier.position, identifier, type_params, False
+        )
         return type_literal, offset
 
-    def _parse_type_declaration(self, offset: int) -> Tuple[TypeLiteral, int]:
+    def _parse_type_declaration(self, offset: int) -> Tuple[FlatTypeLiteral, int]:
         start_offset = offset
 
         _, offset = self._parse_token(offset, [TokenType.TYPE])
-        self._print_parse_tree_node("TypeLiteral", start_offset, offset)
-        type_literal, offset = self._parse_flat_type_literal(offset)
-        return type_literal, offset
+        self._print_parse_tree_node("FlatTypeLiteral", start_offset, offset)
+        flat_type_literal, offset = self._parse_flat_type_literal(offset)
+        return flat_type_literal, offset
 
     def _parse_function_name(self, offset: int) -> Tuple[FunctionName, int]:
         start_offset = offset
@@ -217,9 +218,7 @@ class SingleFileParser:
         self._print_parse_tree_node("TypeParams", start_offset, offset)
         return type_params, offset
 
-    def _parse_type_literal(
-        self, offset: int
-    ) -> Tuple[TypeLiteral | FunctionPointerTypeLiteral, int]:
+    def _parse_type_literal(self, offset: int) -> Tuple[TypeLiteral, int]:
         start_offset = offset
 
         token = self._peek_token_or_fail(offset)
@@ -402,18 +401,18 @@ class SingleFileParser:
             _, offset = self._parse_token(offset, [TokenType.RETURN])
             return_types, offset = self._parse_return_types(offset)
 
-        type_params: List[TypeLiteral] = []
+        flat_type_params: List[FlatTypeLiteral] = []
 
-        for type_param in function_name.type_params:
-            if isinstance(type_param, FunctionPointerTypeLiteral):
+        for flat_type_param in function_name.type_params:
+            if isinstance(flat_type_param, FunctionPointerTypeLiteral):
                 raise NotImplementedError  # This is unreachable
-            type_params.append(type_param)
+            flat_type_params.append(flat_type_param)
 
         function = Function(
             position=fn_token.position,
             struct_name=function_name.struct_name,
             func_name=function_name.func_name,
-            type_params=type_params,
+            type_params=flat_type_params,
             arguments=arguments,
             return_types=return_types,
             body=None,
@@ -434,7 +433,7 @@ class SingleFileParser:
             position = Position(self.file, 1, 1)
 
         functions: List[Function] = []
-        types: List[TypeLiteral] = []
+        structs: List[Struct] = []
 
         while True:
             try:
@@ -446,11 +445,11 @@ class SingleFileParser:
                 continue
 
             try:
-                type, offset = self._parse_type_declaration(offset)
+                struct, offset = self._parse_struct_declaration(offset)
             except ParserBaseException:
                 pass
             else:
-                types.append(type)
+                structs.append(struct)
                 continue
 
             break
@@ -459,8 +458,7 @@ class SingleFileParser:
             position=position,
             functions=functions,
             imports=[],
-            structs=[],
-            types=types,
+            structs=structs,
             enums=[],
         )
 
@@ -495,16 +493,29 @@ class SingleFileParser:
 
         return fields, offset
 
-    def _parse_struct_definition(self, offset: int) -> Tuple[Struct, int]:
+    def _parse_struct_declaration(self, offset: int) -> Tuple[Struct, int]:
         start_offset = offset
 
         struct_token, offset = self._parse_token(offset, [TokenType.STRUCT])
-        identifier, offset = self._parse_identifier(offset)
+
+        type_literal, offset = self._parse_flat_type_literal(offset)
+
+        struct = Struct(
+            struct_token.position, type_literal.identifier, type_literal.params, {}
+        )
+        self._print_parse_tree_node("StructDeclaration", start_offset, offset)
+        return struct, offset
+
+    def _parse_struct_definition(self, offset: int) -> Tuple[Struct, int]:
+        start_offset = offset
+        struct, offset = self._parse_struct_declaration(offset)
+
         _, offset = self._parse_token(offset, [TokenType.BLOCK_START])
         fields, offset = self._parse_struct_fields(offset)
         _, offset = self._parse_token(offset, [TokenType.BLOCK_END])
 
-        struct = Struct(struct_token.position, identifier, fields)
+        struct.fields = fields
+
         self._print_parse_tree_node("StructDefinition", start_offset, offset)
         return struct, offset
 
@@ -883,7 +894,6 @@ class SingleFileParser:
             imports=imports,
             structs=structs,
             enums=enums,
-            types=[],
         )
 
         self._print_parse_tree_node("ParsedFileRoot", start_offset, offset)

@@ -286,7 +286,6 @@ fn test_tokenize_fixed_size_ok_bare {
     "return" 0 Empty TokenType:return_ "return" check_tokenize_fixed_size
     "struct" 0 Empty TokenType:struct_ "struct" check_tokenize_fixed_size
     "true" 0 Empty TokenType:true_ "true" check_tokenize_fixed_size
-    "type" 0 Empty TokenType:type_ "type" check_tokenize_fixed_size
     "use" 0 Empty TokenType:use_ "use" check_tokenize_fixed_size
     "while" 0 Empty TokenType:while_ "while" check_tokenize_fixed_size
 }
@@ -332,7 +331,6 @@ fn test_tokenize_fixed_size_ok_middle {
     " return " 1 Empty TokenType:return_ "return" check_tokenize_fixed_size
     " struct " 1 Empty TokenType:struct_ "struct" check_tokenize_fixed_size
     " true " 1 Empty TokenType:true_ "true" check_tokenize_fixed_size
-    " type " 1 Empty TokenType:type_ "type" check_tokenize_fixed_size
     " use " 1 Empty TokenType:use_ "use" check_tokenize_fixed_size
     " while " 1 Empty TokenType:while_ "while" check_tokenize_fixed_size
 }

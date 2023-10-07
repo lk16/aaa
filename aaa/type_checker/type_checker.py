@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Type
 
 from aaa import AaaRunnerException, Position
 from aaa.cross_referencer.models import (
@@ -316,32 +316,29 @@ class SingleFunctionTypeChecker:
 
             return placeholder_types
 
-    def _apply_placeholders_in_return_type(
+    def _apply_placeholders_in_type(
         self,
-        return_type: VariableType | FunctionPointer,
-        placeholder_types: Dict[str, VariableType | FunctionPointer],
+        type: VariableType | FunctionPointer,
+        placeholder_types: Mapping[str, VariableType | FunctionPointer],
     ) -> VariableType | FunctionPointer:
-        if isinstance(return_type, FunctionPointer):
-            return return_type
+        if isinstance(type, FunctionPointer):
+            # TODO #154 Support using function parameters in function pointer values
+            return type
 
-        return_type = deepcopy(return_type)
+        type = deepcopy(type)
 
-        if return_type.is_placeholder:
-            updated_return_type = copy(placeholder_types[return_type.name])
+        if type.is_placeholder:
+            updated_return_type = copy(placeholder_types[type.name])
 
-            if isinstance(updated_return_type, VariableType) and return_type.is_const:
+            if isinstance(updated_return_type, VariableType) and type.is_const:
                 updated_return_type.is_const = True
 
             return updated_return_type
 
-        for i, param in enumerate(return_type.params):
-            updated_param = self._apply_placeholders_in_return_type(
-                param, placeholder_types
-            )
+        for i, param in enumerate(type.params):
+            type.params[i] = self._apply_placeholders_in_type(param, placeholder_types)
 
-            return_type.params[i] = updated_param
-
-        return return_type
+        return type
 
     def _get_builtin_var_type(self, type_name: str) -> VariableType:
         type = self.types[(self.builtins_path, type_name)]
@@ -694,6 +691,7 @@ class SingleFunctionTypeChecker:
 
     def __check_call_function(
         self,
+        type_params: List[VariableType | FunctionPointer],
         arguments: List[VariableType | FunctionPointer],
         return_types: List[VariableType | FunctionPointer] | Never,
         call: Function | EnumConstructor | CallFunctionByPointer,
@@ -710,6 +708,16 @@ class SingleFunctionTypeChecker:
             raise StackTypesError(position, error_types_stack, call)
 
         placeholder_types: Dict[str, VariableType | FunctionPointer] = {}
+
+        if isinstance(call, Function):
+            if len(type_params) == len(call.type_params):
+                for type_param_name, type_param in zip(
+                    call.type_param_names, type_params
+                ):
+                    placeholder_types[type_param_name] = type_param
+            elif len(type_params) != 0:
+                raise NotImplementedError  # Unreachable, should be caught by CrossReferencer
+
         types = stack[len(stack) - arg_count :]
 
         for argument, type in zip(arguments, types, strict=True):
@@ -718,7 +726,23 @@ class SingleFunctionTypeChecker:
                     argument, copy(type), placeholder_types
                 )
             except SignatureItemMismatch as e:
-                raise StackTypesError(position, error_types_stack, call) from e
+                expected_stack_top_override: Optional[
+                    List[VariableType | FunctionPointer]
+                ] = None
+
+                if isinstance(call, Function):
+                    expected_stack_top_override = [
+                        self._apply_placeholders_in_type(item.type, placeholder_types)
+                        for item in call.arguments
+                    ]
+
+                raise StackTypesError(
+                    position,
+                    error_types_stack,
+                    call,
+                    type_params=type_params,
+                    expected_stack_top_override=expected_stack_top_override,
+                ) from e
 
         stack = stack[: len(stack) - arg_count]
 
@@ -726,7 +750,7 @@ class SingleFunctionTypeChecker:
             return Never()
 
         for return_type in return_types:
-            stack_item = self._apply_placeholders_in_return_type(
+            stack_item = self._apply_placeholders_in_type(
                 return_type, placeholder_types
             )
             stack.append(stack_item)
@@ -743,6 +767,7 @@ class SingleFunctionTypeChecker:
         arguments = [argument.type for argument in call_function.function.arguments]
 
         type_stack_afterwards = self.__check_call_function(
+            call_function.type_params,
             arguments,
             call_function.function.return_types,
             call_function.function,
@@ -779,6 +804,7 @@ class SingleFunctionTypeChecker:
             )
 
         return self.__check_call_function(
+            [],
             func_ptr.argument_types,
             func_ptr.return_types,
             call_by_func_ptr,
@@ -798,6 +824,7 @@ class SingleFunctionTypeChecker:
         variant_associated_data = enum.get_resolved().variants[variant_name]
 
         return self.__check_call_function(
+            [],
             variant_associated_data,
             [call_enum_ctor.enum_var_type],
             call_enum_ctor.enum_ctor,
@@ -847,22 +874,27 @@ class SingleFunctionTypeChecker:
         if isinstance(struct_var_type, FunctionPointer):
             raise UseFieldOfFunctionPointerException(node)
 
-        struct_type = struct_var_type.type
+        struct = struct_var_type.type
 
-        if isinstance(struct_type, Enum):
+        if isinstance(struct, Enum):
             raise UseFieldOfEnumException(node)
 
         field_name = node.field_name.value
         try:
-            field_type = struct_type.fields[field_name]
+            field_type = struct.fields[field_name]
         except KeyError as e:
-            raise UnknownField(node.position, struct_type, field_name) from e
+            raise UnknownField(node.position, struct, field_name) from e
 
-        if struct_var_type.is_const and isinstance(field_type, VariableType):
+        if isinstance(field_type, FunctionPointer):
+            return field_type
+
+        if struct_var_type.is_const:
             field_type = copy(field_type)
             field_type.is_const = True
 
-        return field_type
+        struct_param_dict = struct.param_dict(struct_var_type)
+
+        return self._apply_placeholders_in_type(field_type, struct_param_dict)
 
     def _check_struct_field_query(
         self,

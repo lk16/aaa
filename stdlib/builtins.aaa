@@ -1,25 +1,25 @@
 
 // elementary types
-type bool
-type int
-type str
+struct bool
+struct int
+struct str
 
 // container types
-type map[K, V]
-type set[T]
-type vec[T]
+struct map[K, V]
+struct set[T]
+struct vec[T]
 
 // container iterator types
-type map_const_iter[K, V]
-type map_iter[K, V]
-type set_iter[T]
-type vec_const_iter[T]
-type vec_iter[T]
+struct map_const_iter[K, V]
+struct map_iter[K, V]
+struct set_iter[T]
+struct vec_const_iter[T]
+struct vec_iter[T]
 
 fn make_const[A] args a as A return const A
 
 // compiled regular expression
-type regex
+struct regex
 
 // stack operations
 fn copy[A]      args a as A                 return A, A  // The top object will be non-const
