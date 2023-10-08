@@ -60,7 +60,7 @@ def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> Non
 
     tokens = tokenizer.run()
 
-    if expected_token_type in [TokenType.WHITESPACE, TokenType.COMMENT]:
+    if expected_token_type == TokenType.WHITESPACE:
         assert 0 == len(tokens)
 
     else:
