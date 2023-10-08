@@ -1,10 +1,10 @@
 from glob import glob
 from pathlib import Path
-from tempfile import NamedTemporaryFile, gettempdir
 from typing import List, Optional, Set, Tuple, Type
 
 import pytest
 
+from aaa import create_test_output_folder
 from aaa.parser.exceptions import (
     EndOfFileException,
     ParserBaseException,
@@ -17,8 +17,7 @@ from aaa.tokenizer.tokenizer import Tokenizer
 
 
 def parse_code(code: str) -> SingleFileParser:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
+    file = create_test_output_folder() / "sample.aaa"
 
     file.write_text(code)
 
@@ -1008,9 +1007,7 @@ def test_parse_function_definition(
 
 
 def test_parse_regular_file_root_empty_file() -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
-
+    file = create_test_output_folder() / "sample.aaa"
     file.write_text("")
 
     tokens = Tokenizer(file, False).run()

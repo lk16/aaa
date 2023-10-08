@@ -1,10 +1,9 @@
-import subprocess
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Callable, Dict, List, Optional, Tuple, Type
 
+from aaa import create_output_folder
 from aaa.cross_referencer.models import (
     Assignment,
     BooleanLiteral,
@@ -86,21 +85,16 @@ class Transpiler:
         self,
         cross_referencer_output: CrossReferencerOutput,
         type_checker_output: TypeCheckerOutput,
-        generated_binary_file: Optional[Path],
+        transpiler_root: Optional[Path],
         verbose: bool,
     ) -> None:
         self.functions = cross_referencer_output.functions
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
         self.position_stacks = type_checker_output.position_stacks
+        self.transpiler_root = transpiler_root or create_output_folder()
+
         self.verbose = verbose
-
-        self.transpiled_rust_root = Path("/tmp/transpiled")
-
-        self.generated_binary_file = (
-            generated_binary_file
-            or Path(NamedTemporaryFile(delete=False).name).resolve()
-        )
 
         self.structs: Dict[Tuple[Path, str], Struct] = {}
         self.enums: Dict[Tuple[Path, str], Enum] = {}
@@ -113,9 +107,9 @@ class Transpiler:
             if type.position.file != self.builtins_path:
                 self.enums[key] = type
 
-    def run(self, compile: bool, run_binary: bool, args: List[str]) -> int:
-        generated_rust_file = self.transpiled_rust_root / "src/main.rs"
-        cargo_toml = (self.transpiled_rust_root / "Cargo.toml").resolve()
+    def run(self) -> None:
+        generated_rust_file = self.transpiler_root / "src/main.rs"
+        cargo_toml = (self.transpiler_root / "Cargo.toml").resolve()
         stdlib_impl_path = (Path(__file__).parent / "../../aaa-stdlib").resolve()
 
         generated_rust_file.parent.mkdir(parents=True, exist_ok=True)
@@ -127,22 +121,6 @@ class Transpiler:
         code = self._generate_file()
 
         generated_rust_file.write_text(code.get())
-
-        if compile:  # pragma: nocover
-            command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_toml)]
-            exit_code = subprocess.run(command).returncode
-
-            if exit_code != 0:
-                return exit_code
-
-            binary_file = self.transpiled_rust_root / "target/debug/aaa-stdlib-user"
-            binary_file.rename(self.generated_binary_file)
-
-        if run_binary:  # pragma: nocover
-            command = [str(self.generated_binary_file)] + args
-            return subprocess.run(command).returncode
-
-        return 0
 
     def _generate_file(self) -> Code:
         code = self._generate_header_comment()
@@ -565,7 +543,6 @@ class Transpiler:
 
     def _generate_foreach_loop(self, foreach_loop: ForeachLoop) -> Code:
         """
-        dup iterable
         iter
 
         while (true) {
@@ -578,7 +555,6 @@ class Transpiler:
             }
             loop body
         }
-        drop iterable
         """
 
         # If any of these next two lines fail, TypeChecker is broken.
@@ -610,7 +586,7 @@ class Transpiler:
         next = self._generate_function_name(next_func)
         break_drop_count = len(next_func.return_types)
 
-        code = Code(f"stack.dup();")
+        code = Code()
 
         if iter_func.position.file == self.builtins_path:
             code.add(f"{iter}();")
@@ -637,7 +613,6 @@ class Transpiler:
         code.add(self._generate_function_body(foreach_loop.body))
 
         code.add("}", l=1)
-        code.add("stack.drop();")
 
         return code
 

@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from aaa import AaaRunnerException
 from aaa.parser.exceptions import ParserBaseException
 from aaa.parser.models import ParsedFile, ParserOutput
 from aaa.parser.single_file_parser import SingleFileParser
+from aaa.runner.exceptions import AaaTranslationException
 from aaa.tokenizer.exceptions import TokenizerBaseException
 from aaa.tokenizer.tokenizer import Tokenizer
 
@@ -28,13 +28,13 @@ class Parser:
         for file in self.parse_queue:
             try:
                 self.parsed[file] = self.parse(file)
-            except ParserBaseException as e:
+            except (ParserBaseException, TokenizerBaseException) as e:
                 self.exceptions.append(e)
             else:
                 self._enqueue_dependencies(self.parsed[file])
 
         if self.exceptions:
-            raise AaaRunnerException(self.exceptions)
+            raise AaaTranslationException(self.exceptions)
 
         return ParserOutput(
             parsed=self.parsed,

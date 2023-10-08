@@ -1037,7 +1037,7 @@ def test_one_error(
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
 
-    exception_message = exception_message.replace(tmp_dir, "/foo")
+    exception_message = exception_message.replace(str(tmp_dir), "/foo")
     assert exception_message == expected_exception_message
 
 
@@ -1163,7 +1163,7 @@ def test_multi_file_errors(
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
 
-    exception_message = exception_message.replace(tmp_dir, "/foo")
+    exception_message = exception_message.replace(str(tmp_dir), "/foo")
     assert exception_message == expected_exception_message
 
 
@@ -1363,7 +1363,7 @@ def test_colliding_identifier(
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
-    exception_message = exception_message.replace(tmp_dir, "/foo")
+    exception_message = exception_message.replace(str(tmp_dir), "/foo")
 
     print(repr(exception_message))
     print()

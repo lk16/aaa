@@ -6,7 +6,8 @@ from time import time
 
 import pytest
 
-from tests.aaa import compile, compile_run, run
+from aaa import create_test_output_folder
+from aaa.runner.runner import compile_run
 
 SOURCE_PREFIX = Path(__file__).parent / "src"
 
@@ -134,8 +135,9 @@ DUMMY_ENV_VARS = {
 
 
 def test_environ() -> None:
-    binary = compile(SOURCE_PREFIX / "environ.aaa")
-    stdout, stderr, exit_code = run(binary, env=DUMMY_ENV_VARS)
+    stdout, stderr, exit_code = compile_run(
+        SOURCE_PREFIX / "environ.aaa", env=DUMMY_ENV_VARS
+    )
 
     # NOTE: loading this output as json is a hack and may break in the future
     assert DUMMY_ENV_VARS == json.loads(stdout)
@@ -151,24 +153,23 @@ def test_environ() -> None:
     ],
 )
 def test_getenv(source: str) -> None:
-    binary = compile(SOURCE_PREFIX / source)
-    stdout, stderr, exit_code = run(binary, env=DUMMY_ENV_VARS)
+    stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source, env=DUMMY_ENV_VARS)
     assert "" == stdout
     assert "" == stderr
     assert 0 == exit_code
 
 
 def test_setenv() -> None:
-    binary = compile(SOURCE_PREFIX / "setenv.aaa")
-    stdout, stderr, exit_code = run(binary, env={})
+    stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "setenv.aaa", env={})
     assert "" == stdout
     assert "" == stderr
     assert 0 == exit_code
 
 
 def test_unsetenv() -> None:
-    binary = compile(SOURCE_PREFIX / "unsetenv.aaa")
-    stdout, stderr, exit_code = run(binary, env=DUMMY_ENV_VARS)
+    stdout, stderr, exit_code = compile_run(
+        SOURCE_PREFIX / "unsetenv.aaa", env=DUMMY_ENV_VARS
+    )
     assert "" == stdout
     assert "" == stderr
     assert 0 == exit_code
@@ -269,8 +270,10 @@ def test_main_with_exit_code() -> None:
 
 
 def test_main_with_argv() -> None:
-    binary_path = compile(SOURCE_PREFIX / "main_with_argv.aaa")
-    stdout, stderr, exit_code = run(binary_path)
+    binary_path = create_test_output_folder() / "executable"
+    stdout, stderr, exit_code = compile_run(
+        SOURCE_PREFIX / "main_with_argv.aaa", binary_path=binary_path
+    )
     assert f'["{binary_path}"]\n' == stdout
     assert "" == stderr
     assert 0 == exit_code

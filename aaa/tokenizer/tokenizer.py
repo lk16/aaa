@@ -106,7 +106,6 @@ class Tokenizer:
                 return self._create_token(TokenType.STRING, start, offset + 1)
 
             if self.code[offset] == "\\":
-
                 try:
                     escaped = self.code[offset + 1]
                 except IndexError:

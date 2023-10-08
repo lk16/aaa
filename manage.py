@@ -2,14 +2,14 @@
 
 import subprocess
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Optional, Tuple
 
 import click
 from click import ClickException
 
-from aaa.run import Runner
-from aaa.run_tests import TestRunner
+from aaa.runner.exceptions import ExcecutableDidNotRun, RustCompilerError
+from aaa.runner.runner import Runner
+from aaa.runner.test_runner import TestRunner
 
 
 @click.group()
@@ -32,8 +32,23 @@ def cmd(
     binary: Optional[str],
     args: Tuple[str],
 ) -> None:
-    runner = Runner.without_file(code, None, verbose)
-    exit_code = runner.run(compile, binary, run, list(args))
+    runner = Runner.without_file(code)
+    runner.set_verbose(verbose)
+
+    if binary:
+        binary_path = Path(binary).resolve()
+    else:
+        binary_path = None
+
+    try:
+        exit_code = runner.run(
+            compile=compile, binary_path=binary_path, run=run, args=list(args)
+        ).returncode
+    except ExcecutableDidNotRun:
+        exit(0)
+    except RustCompilerError:
+        exit(1)
+
     exit(exit_code)
 
 
@@ -52,20 +67,32 @@ def run(
     binary: Optional[str],
     args: Tuple[str],
 ) -> None:
-    runner = Runner(Path(path), None, verbose)
-    exit_code = runner.run(compile, binary, run, list(args))
+    runner = Runner(Path(path))
+    runner.set_verbose(verbose)
+
+    if binary:
+        binary_path = Path(binary).resolve()
+    else:
+        binary_path = None
+
+    try:
+        exit_code = runner.run(
+            compile=compile, binary_path=binary_path, run=run, args=list(args)
+        ).returncode
+    except ExcecutableDidNotRun:
+        exit(0)
+    except RustCompilerError:
+        exit(1)
+
     exit(exit_code)
 
 
 @cli.command()
 def runtests() -> None:
-    binary_path = Path(NamedTemporaryFile(delete=False).name)
-
     commands = [
         "pre-commit run --all-files mypy",
         "pytest --cov=aaa --cov-report=term-missing --pdb -x --lf --nf",
-        f"./manage.py test stdlib/ --compile --binary {binary_path}",
-        f"{binary_path}",
+        f"./manage.py test stdlib/ --compile --run",
     ]
 
     for command in commands:
@@ -84,8 +111,21 @@ def runtests() -> None:
 def test(
     path: str, compile: bool, run: bool, verbose: bool, binary: Optional[str]
 ) -> None:
-    test_runner = TestRunner(Path(path), verbose)
-    exit_code = test_runner.run(compile, binary, run)
+    test_runner = TestRunner(path)
+    test_runner.set_verbose(verbose)
+
+    if binary:
+        binary_path = Path(binary)
+    else:
+        binary_path = None
+
+    try:
+        exit_code = test_runner.run(compile=compile, binary=binary_path, run=run)
+    except ExcecutableDidNotRun:
+        exit(0)
+    except RustCompilerError:
+        exit(1)
+
     exit(exit_code)
 
 

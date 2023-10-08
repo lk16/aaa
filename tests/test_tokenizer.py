@@ -1,10 +1,10 @@
 from glob import glob
 from pathlib import Path
-from tempfile import NamedTemporaryFile, gettempdir
 from typing import Tuple
 
 import pytest
 
+from aaa import create_test_output_folder
 from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
 from aaa.tokenizer.exceptions import TokenizerException
 from aaa.tokenizer.models import TokenType
@@ -48,8 +48,7 @@ def test_tokenizer_parts_add_up(file: Path) -> None:
     ],
 )
 def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
+    file = create_test_output_folder() / "sample.aaa"
 
     file.write_text(code)
     tokenizer = Tokenizer(file, False)
@@ -81,8 +80,7 @@ def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> Non
     ],
 )
 def test_tokenizer_error(code: str, expected_line: int, expected_column: int) -> None:
-    temp_file = NamedTemporaryFile(delete=False)
-    file = Path(gettempdir()) / temp_file.name
+    file = create_test_output_folder() / "sample.aaa"
 
     file.write_text(code)
     with pytest.raises(TokenizerException) as e:
