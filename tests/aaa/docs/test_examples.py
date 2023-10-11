@@ -7,7 +7,8 @@ import pytest
 import requests
 from pytest import CaptureFixture
 
-from aaa.run import Runner
+from aaa.runner.exceptions import ExcecutableDidNotRun
+from aaa.runner.runner import Runner
 
 
 def expected_fizzbuzz_output() -> str:
@@ -41,7 +42,7 @@ EXPECTED_EXAMPLE_OUTPUT = {
 
 
 @pytest.mark.parametrize(
-    ["example_file_path", "expected_output"],
+    ["entrypoint", "expected_output"],
     [
         pytest.param(
             "examples/one_to_ten.aaa",
@@ -58,20 +59,25 @@ EXPECTED_EXAMPLE_OUTPUT = {
     ],
 )
 def test_examples(
-    example_file_path: Path, expected_output: str, capfd: CaptureFixture[str]
+    entrypoint: Path, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
-    runner = Runner(Path(example_file_path), None, False)
-    runner.run(True, None, True, [])
+    runner = Runner(entrypoint)
+    runner.run(compile=True, binary_path=None, run=True, args=[])
     stdout, stderr = capfd.readouterr()
     assert str(stderr) == ""
     assert str(stdout) == expected_output
 
 
 def test_http_server() -> None:
-    runner = Runner(Path("examples/http_server.aaa"), None, False)
-    runner.run(True, None, False, [])
+    entrypoint = Path("examples/http_server.aaa")
+    runner = Runner(entrypoint)
 
-    binary = runner.generated_binary_file
+    binary = "/tmp/aaa/test_http_server"
+
+    try:
+        runner.run(compile=True, binary_path=Path(binary), run=False, args=[])
+    except ExcecutableDidNotRun:
+        pass
 
     subproc = subprocess.Popen(binary)
 
@@ -86,8 +92,9 @@ def test_http_server() -> None:
 
 
 def test_http_client(capfd: CaptureFixture[str]) -> None:
-    runner = Runner(Path("examples/http_client.aaa"), None, False)
-    runner.run(True, None, True, [])
+    entrypoint = Path("examples/http_client.aaa")
+    runner = Runner(entrypoint)
+    runner.run(compile=True, binary_path=None, run=True, args=[])
 
     stdout, stderr = capfd.readouterr()
     stdout_lines = stdout.split("\r\n")

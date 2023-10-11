@@ -1,5 +1,7 @@
+import secrets
 from pathlib import Path
-from typing import Sequence
+from tempfile import gettempdir
+from typing import Optional
 
 
 class AaaModel:
@@ -62,10 +64,22 @@ class AaaException(Exception):
     ...
 
 
-class AaaRunnerException(AaaException):
-    def __init__(self, exceptions: Sequence[AaaException]) -> None:
-        self.exceptions = exceptions
+AAA_DEFAULT_OUTPUT_FOLDER_ROOT = Path(gettempdir()) / "aaa/transpiled"
+AAA_TEST_OUTPUT_FOLDER_ROOT = Path(gettempdir()) / "aaa/transpiled/tests"
 
 
-class AaaRuntimeException(AaaException):
-    ...
+def __create_output_folder(root: Path, name: Optional[str]) -> Path:
+    if name is None:
+        name = "".join(secrets.choice("0123456789abcdef") for _ in range(16))
+
+    path = root / name
+    path.resolve().mkdir(exist_ok=True, parents=True)
+    return path
+
+
+def create_test_output_folder(name: Optional[str] = None) -> Path:
+    return __create_output_folder(AAA_TEST_OUTPUT_FOLDER_ROOT, name)
+
+
+def create_output_folder(name: Optional[str] = None) -> Path:
+    return __create_output_folder(AAA_DEFAULT_OUTPUT_FOLDER_ROOT, name)

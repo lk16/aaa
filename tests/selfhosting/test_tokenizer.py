@@ -2,14 +2,14 @@ from pathlib import Path
 
 from pytest import CaptureFixture
 
-from aaa.run import Runner
-from aaa.run_tests import TestRunner
+from aaa.runner.runner import Runner
+from aaa.runner.test_runner import TestRunner
 from aaa.tokenizer.tokenizer import Tokenizer
 
 
 def test_tokenizer_unittests() -> None:
-    test_runner = TestRunner(Path("examples/selfhosting"), False)
-    exit_code = test_runner.run(True, None, True)
+    test_runner = TestRunner("examples/selfhosting")
+    exit_code = test_runner.run(compile=True, binary=None, run=True)
 
     assert exit_code == 0
 
@@ -28,13 +28,15 @@ def tokenize_with_python(aaa_file: Path) -> str:
 
 
 def test_tokenizer_output(capfd: CaptureFixture[str]) -> None:
-    tokenizer_source_file = Path("examples/selfhosting/tokenizer.aaa")
+    entrypoint = Path("examples/selfhosting/tokenizer.aaa")
 
-    runner = Runner(tokenizer_source_file, {}, False)
-    exit_code = runner.run(True, None, True, [str(tokenizer_source_file)])
+    runner = Runner(entrypoint)
+    exit_code = runner.run(
+        compile=True, binary_path=None, run=True, args=[str(entrypoint)]
+    ).returncode
 
     assert exit_code == 0
 
     captured = capfd.readouterr()
-    assert captured.out == tokenize_with_python(tokenizer_source_file)
+    assert captured.out == tokenize_with_python(entrypoint)
     assert captured.err == ""

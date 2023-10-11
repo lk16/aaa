@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Tuple, Type
 
-from aaa import AaaRunnerException, Position
+from aaa import Position
 from aaa.cross_referencer.exceptions import (
     CircularDependencyError,
     CollidingEnumVariant,
@@ -59,6 +59,7 @@ from aaa.cross_referencer.models import (
     WhileLoop,
 )
 from aaa.parser import models as parser
+from aaa.runner.exceptions import AaaTranslationException
 
 
 class CrossReferencer:
@@ -83,10 +84,13 @@ class CrossReferencer:
             self.exceptions += [CollidingIdentifier([identifiable, found])]
 
     def run(self) -> CrossReferencerOutput:
-        self._cross_reference_file(self.entrypoint)
+        try:
+            self._cross_reference_file(self.entrypoint)
+        except CrossReferenceBaseException as e:
+            self.exceptions.append(e)
 
         if self.exceptions:
-            raise AaaRunnerException(self.exceptions)
+            raise AaaTranslationException(self.exceptions)
 
         self._print_values()
 
@@ -927,6 +931,9 @@ class FunctionBodyResolver:
             raise FunctionPointerTargetNotFound(
                 parsed.position, parsed.function_name.value
             )
+
+        if isinstance(target, Import):
+            target = target.resolved().source
 
         if isinstance(target, (Function, EnumConstructor)):
             return GetFunctionPointer(parsed.position, target)

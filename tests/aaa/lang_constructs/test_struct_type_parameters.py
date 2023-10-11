@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.aaa import compile_run
+from aaa.runner.runner import compile_run
 
 SOURCE_PREFIX = Path(__file__).parent / "src/struct_type_parameters"
 
