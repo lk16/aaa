@@ -1328,12 +1328,6 @@ where
         self.push(copy);
     }
 
-    pub fn make_const(&mut self) {
-        // NOTE this doesn't do anything
-
-        // TODO #32 don't call from transpiler and remove this function
-    }
-
     pub fn sleep(&mut self) {
         let secs = self.pop_int();
         sleep(Duration::from_secs(secs as u64));

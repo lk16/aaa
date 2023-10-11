@@ -618,6 +618,12 @@ class Transpiler:
 
     def _generate_call_function_code(self, call_func: CallFunction) -> Code:
         called = call_func.function
+
+        if called.name == "make_const":
+            # This function doesn't do anything at runtime, so don't generate any code.
+            # In fact it doesn't even exist since #32.
+            return Code()
+
         rust_func_name = self._generate_function_name(called)
 
         if called.position.file == self.builtins_path:
