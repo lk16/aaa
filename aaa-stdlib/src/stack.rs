@@ -399,12 +399,10 @@ where
         let lhs = self.pop_int();
 
         if rhs == 0 {
-            self.push_int(0);
-            self.push_bool(false);
-        } else {
-            self.push_int(lhs / rhs);
-            self.push_bool(true);
+            panic!("Cannot divide by zero!");
         }
+
+        self.push_int(lhs / rhs);
     }
 
     pub fn modulo(&mut self) {
@@ -412,12 +410,10 @@ where
         let lhs = self.pop_int();
 
         if rhs == 0 {
-            self.push_int(0);
-            self.push_bool(false);
-        } else {
-            self.push_int(lhs % rhs);
-            self.push_bool(true);
+            panic!("Cannot use modulo zero!");
         }
+
+        self.push_int(lhs % rhs);
     }
 
     pub fn repr(&mut self) {

@@ -50,26 +50,12 @@ fn test_add {
 
 fn test_divide_nonzero {
     7 3 /
-    assert
     2 = assert
-}
-
-fn test_divide_zero {
-    7 0 /
-    not assert
-    0 = assert
 }
 
 fn test_modulo_nonzero {
     7 3 %
-    assert
     1 = assert
-}
-
-fn test_modulo_zero {
-    7 0 %
-    not assert
-    0 = assert
 }
 
 fn test_int_equal_false {
