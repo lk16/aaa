@@ -64,6 +64,28 @@ class Runner:
         run: bool,
         args: List[str],
         **run_kwargs: Any,
+    ) -> int:
+        try:
+            return self._run_process(
+                compile=compile,
+                binary_path=binary_path,
+                run=run,
+                args=args,
+                **run_kwargs,
+            ).returncode
+        except ExcecutableDidNotRun:
+            return 0
+        except (AaaTranslationException, RustCompilerError):
+            return 1
+
+    def _run_process(
+        self,
+        *,
+        compile: bool,
+        binary_path: Optional[Path],
+        run: bool,
+        args: List[str],
+        **run_kwargs: Any,
     ) -> CompletedProcess[bytes]:
         transpiled = self.transpile()
 
@@ -121,7 +143,7 @@ class Runner:
 def compile_run(
     entrypoint: Path, binary_path: Optional[Path] = None, **run_kwargs: Any
 ) -> Tuple[str, str, int]:
-    completed_process = Runner(entrypoint).run(
+    completed_process = Runner(entrypoint)._run_process(
         compile=True,
         binary_path=binary_path,
         run=True,

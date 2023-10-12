@@ -46,7 +46,7 @@ def check_aaa_full_source_multi_file(
     stderr = ""
 
     try:
-        completed_process = runner.run(
+        completed_process = runner._run_process(
             compile=True,
             binary_path=None,
             run=True,

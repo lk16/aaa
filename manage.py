@@ -7,7 +7,6 @@ from typing import Optional, Tuple
 import click
 from click import ClickException
 
-from aaa.runner.exceptions import ExcecutableDidNotRun, RustCompilerError
 from aaa.runner.runner import Runner
 from aaa.runner.test_runner import TestRunner
 
@@ -40,14 +39,9 @@ def cmd(
     else:
         binary_path = None
 
-    try:
-        exit_code = runner.run(
-            compile=compile, binary_path=binary_path, run=run, args=list(args)
-        ).returncode
-    except ExcecutableDidNotRun:
-        exit(0)
-    except RustCompilerError:
-        exit(1)
+    exit_code = runner.run(
+        compile=compile, binary_path=binary_path, run=run, args=list(args)
+    )
 
     exit(exit_code)
 
@@ -75,14 +69,9 @@ def run(
     else:
         binary_path = None
 
-    try:
-        exit_code = runner.run(
-            compile=compile, binary_path=binary_path, run=run, args=list(args)
-        ).returncode
-    except ExcecutableDidNotRun:
-        exit(0)
-    except RustCompilerError:
-        exit(1)
+    exit_code = runner.run(
+        compile=compile, binary_path=binary_path, run=run, args=list(args)
+    )
 
     exit(exit_code)
 
@@ -119,13 +108,7 @@ def test(
     else:
         binary_path = None
 
-    try:
-        exit_code = test_runner.run(compile=compile, binary=binary_path, run=run)
-    except ExcecutableDidNotRun:
-        exit(0)
-    except RustCompilerError:
-        exit(1)
-
+    exit_code = test_runner.run(compile=compile, binary=binary_path, run=run)
     exit(exit_code)
 
 
