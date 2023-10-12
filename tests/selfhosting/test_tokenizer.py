@@ -33,7 +33,7 @@ def test_tokenizer_output(capfd: CaptureFixture[str]) -> None:
     runner = Runner(entrypoint)
     exit_code = runner.run(
         compile=True, binary_path=None, run=True, args=[str(entrypoint)]
-    ).returncode
+    )
 
     assert exit_code == 0
 
