@@ -39,8 +39,8 @@ fn nop
 fn - args a as const int, b as const int return int
 fn * args a as const int, b as const int return int
 fn + args a as const int, b as const int return int
-fn / args a as const int, b as const int return int, bool
-fn % args a as const int, b as const int return int, bool
+fn / args a as const int, b as const int return int
+fn % args a as const int, b as const int return int
 
 // integer comparison
 fn != args a as const int, b as const int return bool

@@ -28,7 +28,6 @@ fn Range:next args r as Range return int, bool {
 
 fn fizzbuzz args n as int {
     n 15 %
-    drop
 
     use remainder {
         if remainder 0 = {

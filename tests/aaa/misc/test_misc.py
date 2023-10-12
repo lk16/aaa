@@ -422,3 +422,19 @@ def test_struct() -> None:
     assert expected_output == stdout
     assert "" == stderr
     assert 0 == exit_code
+
+
+def test_divide_by_zero() -> None:
+    stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "divide_by_zero.aaa")
+
+    assert "" == stdout
+    assert "Cannot divide by zero!" in stderr
+    assert 101 == exit_code
+
+
+def test_modulo_zero() -> None:
+    stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "modulo_zero.aaa")
+
+    assert "" == stdout
+    assert "Cannot use modulo zero!" in stderr
+    assert 101 == exit_code
