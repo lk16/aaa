@@ -258,6 +258,17 @@ class CrossReferencer:
                     f"{prefix} | Import {source_type} from {identifiable.source_file}:{identifiable.source_name}"
                 )
 
+            elif isinstance(
+                identifiable,
+                (
+                    Enum,
+                    EnumConstructor,
+                    ImplicitFunctionImport,
+                    ImplicitEnumConstructorImport,
+                ),
+            ):
+                pass  # TODO
+
             else:  # pragma: nocover
                 raise NotImplementedError
 

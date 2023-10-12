@@ -214,8 +214,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             StructUpdateStackError,
             "/foo/main.aaa:3:26: Incorrect stack modification when updating struct field\n"
-            + "  Expected: bar str <new field value> \n"
-            + "     Found: bar str int int\n",
+            + "  Expected: bar <new field value> \n"
+            + "     Found: bar int int\n",
             id="struct-update-stack-error",
         ),
         pytest.param(
@@ -229,7 +229,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Expected type: int"
             + "\n   Found type: bool\n"
             + "\n"
-            + "Type stack: bar str bool\n",
+            + "Type stack: bar bool\n",
             id="struct-update-type-error",
         ),
         pytest.param(
@@ -566,8 +566,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             ForeachLoopTypeError,
             "/foo/main.aaa:2:32: Invalid stack modification inside foreach loop body\n"
-            + f"before foreach loop: vec[int]\n"
-            + f" after foreach loop: vec[int] int\n",
+            + f"stack at end of foreach loop: vec_iter[int] int\n"
+            + f"              expected stack: vec_iter[int]\n",
             id="foreach-loop-type-error",
         ),
         pytest.param(

@@ -3,7 +3,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Type
 
-from aaa import create_output_folder
+from aaa import Position, create_output_folder
 from aaa.cross_referencer.models import (
     Assignment,
     BooleanLiteral,
@@ -83,9 +83,11 @@ VARIABLE_GET_FUNCTIONS = {
 class Transpiler:
     def __init__(
         self,
+        *,
         cross_referencer_output: CrossReferencerOutput,
         type_checker_output: TypeCheckerOutput,
         transpiler_root: Optional[Path],
+        runtime_type_checks: bool,
         verbose: bool,
     ) -> None:
         self.functions = cross_referencer_output.functions
@@ -95,9 +97,13 @@ class Transpiler:
         self.transpiler_root = transpiler_root or create_output_folder()
 
         self.verbose = verbose
+        self.runtime_type_checks = runtime_type_checks
 
         self.structs: Dict[Tuple[Path, str], Struct] = {}
         self.enums: Dict[Tuple[Path, str], Enum] = {}
+
+        # Function currently being transpiled
+        self.current_function: Optional[Function] = None
 
         for key, struct in cross_referencer_output.structs.items():
             if struct.position.file != self.builtins_path:
@@ -121,6 +127,9 @@ class Transpiler:
         code = self._generate_file()
 
         generated_rust_file.write_text(code.get())
+
+        if self.verbose:
+            print(f"  transpiler | Saving transpiled file as {generated_rust_file}")
 
     def _generate_file(self) -> Code:
         code = self._generate_header_comment()
@@ -264,6 +273,8 @@ class Transpiler:
 
         assert function.body
 
+        self.current_function = function
+
         func_name = self._generate_function_name(function)
 
         code = Code(f"// Generated from: {function.position.file} {function.name}")
@@ -280,12 +291,14 @@ class Transpiler:
         code.add("}", l=1)
         code.add("")
 
+        self.current_function = None
         return code
 
     def _generate_function_body(self, function_body: FunctionBody) -> Code:
         code = Code()
 
         for item in function_body.items:
+            code.add(self._generate_runtime_type_checks(item.position))
             code.add(self._generate_function_body_item(item))
 
         return code
@@ -294,33 +307,76 @@ class Transpiler:
         generate_funcs: Dict[Type[FunctionBodyItem], Callable[..., Code]] = {
             Assignment: self._generate_assignment_code,
             BooleanLiteral: self._generate_boolean_literal,
-            Branch: self._generate_branch,
-            CallEnumConstructor: self._generate_call_enum_constructor_code,
-            CallFunction: self._generate_call_function_code,
-            CallFunctionByPointer: self._generate_call_by_function_pointer,
-            CallType: self._generate_call_type_code,
-            CallVariable: self._generate_call_variable_code,
-            ForeachLoop: self._generate_foreach_loop,
-            FunctionPointer: self._generate_function_pointer_literal,
-            GetFunctionPointer: self._generate_get_function_pointer,
+            Branch: self._generate_branch,  # TODO add runtime type verification
+            CallEnumConstructor: self._generate_call_enum_constructor_code,  # TODO add runtime type verification
+            CallFunction: self._generate_call_function_code,  # TODO add runtime type verification
+            CallFunctionByPointer: self._generate_call_by_function_pointer,  # TODO add runtime type verification
+            CallType: self._generate_call_type_code,  # TODO add runtime type verification
+            CallVariable: self._generate_call_variable_code,  # TODO add runtime type verification
+            ForeachLoop: self._generate_foreach_loop,  # TODO add runtime type verification
+            FunctionPointer: self._generate_function_pointer_literal,  # TODO add runtime type verification
+            GetFunctionPointer: self._generate_get_function_pointer,  # TODO add runtime type verification
             IntegerLiteral: self._generate_integer_literal,
-            MatchBlock: self._generate_match_block_code,
-            Return: self._generate_return,
-            StringLiteral: self._generate_string_literal,
-            StructFieldQuery: self._generate_field_query_code,
-            StructFieldUpdate: self._generate_field_update_code,
-            UseBlock: self._generate_use_block_code,
-            WhileLoop: self._generate_while_loop,
+            MatchBlock: self._generate_match_block_code,  # TODO add runtime type verification
+            Return: self._generate_return,  # TODO add runtime type verification
+            StringLiteral: self._generate_string_literal,  # TODO add runtime type verification
+            StructFieldQuery: self._generate_field_query_code,  # TODO add runtime type verification
+            StructFieldUpdate: self._generate_field_update_code,  # TODO add runtime type verification
+            UseBlock: self._generate_use_block_code,  # TODO add runtime type verification
+            WhileLoop: self._generate_while_loop,  # TODO add runtime type verification
         }
 
         assert set(generate_funcs.keys()) == set(FunctionBodyItem.__args__)  # type: ignore
 
         return generate_funcs[type(item)](item)
 
+    def _generate_runtime_type_checks(self, position: Position) -> Code:
+        if not self.runtime_type_checks:
+            return Code()
+
+        function = self.current_function
+        assert function
+
+        # Runtime type checking doesn't work for functions with type parameters,
+        # because we don't know the types at transpile-time.
+        if function.type_params:
+            return Code()
+
+        try:
+            type_stack = self.position_stacks[position]
+        except KeyError:
+            # If there is no type stack for this position, one of these is true:
+            # - the code is unreachable
+            # - there are bugs in generating the `position_stacks` (in TypeChecker)
+            # Since we reached a state that should never happen either way, we want to crash.
+            return Code(
+                "stack.unreachable_with_position(Some(("
+                + f'"{position.file}", {position.line}, {position.column}'
+                + ")));"
+            )
+
+        # We should not get here with unreachable code
+        assert not isinstance(type_stack, Never)
+
+        variable_kinds: List[str] = []
+        for item in type_stack:
+            if isinstance(item, FunctionPointer):
+                variable_kinds.append("fn_ptr")
+            else:
+                variable_kinds.append(item.name)
+
+        return Code(
+            "stack.assert_stack_top_types("
+            + f'"{position.file}", {position.line}, {position.column}, vec!['
+            + ", ".join(f'"{kind}"' for kind in variable_kinds)
+            + "]);"
+        )
+
     def _generate_boolean_literal(self, bool_literal: BooleanLiteral) -> Code:
         bool_value = "true"
         if not bool_literal.value:
             bool_value = "false"
+
         return Code(f"stack.push_bool({bool_value});")
 
     def _generate_integer_literal(self, int_literal: IntegerLiteral) -> Code:
@@ -603,7 +659,7 @@ class Transpiler:
 
         code.add("if !stack.pop_bool() {", r=1)
 
-        # drop number of next items - 1 (bolean was popped earlier) + 1 (iterator)
+        # drop number of next items - 1 (boolean returned by `next` was popped earlier) + 1 (iterator)
         for _ in range(break_drop_count):
             code.add("stack.drop();")
 

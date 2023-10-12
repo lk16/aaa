@@ -22,6 +22,7 @@ def cli() -> None:
 @click.option("-r", "--run", is_flag=True)
 @click.option("-o", "--binary")
 @click.option("-v", "--verbose", is_flag=True)
+@click.option("-t", "--runtime-type-checks", is_flag=True)
 @click.argument("args", nargs=-1)
 def cmd(
     code: str,
@@ -29,6 +30,7 @@ def cmd(
     run: bool,
     verbose: bool,
     binary: Optional[str],
+    runtime_type_checks: bool,
     args: Tuple[str],
 ) -> None:
     runner = Runner.without_file(code)
@@ -40,7 +42,11 @@ def cmd(
         binary_path = None
 
     exit_code = runner.run(
-        compile=compile, binary_path=binary_path, run=run, args=list(args)
+        compile=compile,
+        binary_path=binary_path,
+        run=run,
+        runtime_type_checks=runtime_type_checks,
+        args=list(args),
     )
 
     exit(exit_code)
@@ -51,6 +57,7 @@ def cmd(
 @click.option("-c", "--compile", is_flag=True)
 @click.option("-r", "--run", is_flag=True)
 @click.option("-o", "--binary")
+@click.option("-t", "--runtime-type-checks", is_flag=True)
 @click.option("-v", "--verbose", is_flag=True)
 @click.argument("args", nargs=-1)
 def run(
@@ -59,6 +66,7 @@ def run(
     run: bool,
     verbose: bool,
     binary: Optional[str],
+    runtime_type_checks: bool,
     args: Tuple[str],
 ) -> None:
     runner = Runner(Path(path))
@@ -70,7 +78,11 @@ def run(
         binary_path = None
 
     exit_code = runner.run(
-        compile=compile, binary_path=binary_path, run=run, args=list(args)
+        compile=compile,
+        binary_path=binary_path,
+        run=run,
+        runtime_type_checks=runtime_type_checks,
+        args=list(args),
     )
 
     exit(exit_code)
@@ -96,9 +108,15 @@ def runtests() -> None:
 @click.option("-c", "--compile", is_flag=True)
 @click.option("-r", "--run", is_flag=True)
 @click.option("-o", "--binary")
+@click.option("-t", "--runtime-type-checks", is_flag=True)
 @click.option("-v", "--verbose", is_flag=True)
 def test(
-    path: str, compile: bool, run: bool, verbose: bool, binary: Optional[str]
+    path: str,
+    compile: bool,
+    run: bool,
+    verbose: bool,
+    binary: Optional[str],
+    runtime_type_checks: bool,
 ) -> None:
     test_runner = TestRunner(path)
     test_runner.set_verbose(verbose)
@@ -108,7 +126,12 @@ def test(
     else:
         binary_path = None
 
-    exit_code = test_runner.run(compile=compile, binary=binary_path, run=run)
+    exit_code = test_runner.run(
+        compile=compile,
+        binary=binary_path,
+        run=run,
+        runtime_type_checks=runtime_type_checks,
+    )
     exit(exit_code)
 
 

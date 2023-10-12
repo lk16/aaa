@@ -7,7 +7,6 @@ import pytest
 import requests
 from pytest import CaptureFixture
 
-from aaa.runner.exceptions import ExcecutableDidNotRun
 from aaa.runner.runner import Runner
 
 
@@ -62,7 +61,9 @@ def test_examples(
     entrypoint: Path, expected_output: str, capfd: CaptureFixture[str]
 ) -> None:
     runner = Runner(entrypoint)
-    runner.run(compile=True, binary_path=None, run=True, args=[])
+    runner.run(
+        compile=True, binary_path=None, run=True, args=[], runtime_type_checks=True
+    )
     stdout, stderr = capfd.readouterr()
     assert str(stderr) == ""
     assert str(stdout) == expected_output
@@ -74,10 +75,14 @@ def test_http_server() -> None:
 
     binary = "/tmp/aaa/test_http_server"
 
-    try:
-        runner.run(compile=True, binary_path=Path(binary), run=False, args=[])
-    except ExcecutableDidNotRun:
-        pass
+    exit_code = runner.run(
+        compile=True,
+        binary_path=Path(binary),
+        run=False,
+        args=[],
+        runtime_type_checks=True,
+    )
+    assert exit_code == 0
 
     subproc = subprocess.Popen(binary)
 
@@ -94,7 +99,9 @@ def test_http_server() -> None:
 def test_http_client(capfd: CaptureFixture[str]) -> None:
     entrypoint = Path("examples/http_client.aaa")
     runner = Runner(entrypoint)
-    runner.run(compile=True, binary_path=None, run=True, args=[])
+    runner.run(
+        compile=True, binary_path=None, run=True, args=[], runtime_type_checks=True
+    )
 
     stdout, stderr = capfd.readouterr()
     stdout_lines = stdout.split("\r\n")

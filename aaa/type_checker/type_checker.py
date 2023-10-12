@@ -206,6 +206,7 @@ class SingleFunctionTypeChecker:
 
         # NOTE: we keep track of stacks per position.
         # This is useful for the Transpiler and for debugging.
+        # TODO currently values are the stack before the operation at position (in key), it should be after
         self.position_stacks: Dict[
             Position, List[VariableType | FunctionPointer] | Never
         ] = {}
@@ -903,21 +904,17 @@ class SingleFunctionTypeChecker:
         literal = StringLiteral(field_query.field_name)
         self.position_stacks[literal.position] = copy(type_stack)
 
-        type_stack = self._check_string_literal(literal, copy(type_stack))
         self.position_stacks[field_query.operator_position] = copy(type_stack)
 
-        if len(type_stack) < 2:
+        if len(type_stack) < 1:
             raise StackTypesError(field_query.position, type_stack, field_query)
 
-        struct_var_type, field_selector_type = type_stack[-2:]
-
-        # This is enforced by the parser
-        assert field_selector_type == self._get_str_var_type()
+        struct_var_type = type_stack[-1]
 
         field_type = self._get_struct_field_type(field_query, struct_var_type)
 
         # pop struct and field name, push field
-        return type_stack[:-2] + [field_type]
+        return type_stack[:-1] + [field_type]
 
     def _check_struct_field_update(
         self,
@@ -926,8 +923,6 @@ class SingleFunctionTypeChecker:
     ) -> List[VariableType | FunctionPointer] | Never:
         literal = StringLiteral(field_update.field_name)
         self.position_stacks[literal.position] = copy(type_stack)
-
-        type_stack = self._check_string_literal(literal, copy(type_stack))
 
         type_stack_before = type_stack
         type_stack_after = self._check_function_body(
@@ -940,10 +935,10 @@ class SingleFunctionTypeChecker:
 
         type_stack = type_stack_after
 
-        if len(type_stack) < 3:
+        if len(type_stack) < 2:
             raise StackTypesError(field_update.position, type_stack, field_update)
 
-        struct_var_type, field_selector_type, update_expr_type = type_stack[-3:]
+        struct_var_type, update_expr_type = type_stack[-2:]
 
         if isinstance(struct_var_type, FunctionPointer):
             raise UseFieldOfFunctionPointerException(field_update)
@@ -979,7 +974,7 @@ class SingleFunctionTypeChecker:
             )
 
         # pop struct, field name and new value
-        return type_stack[:-3]
+        return type_stack[:-2]
 
     def _lookup_function(
         self, var_type: VariableType, func_name: str
@@ -995,7 +990,7 @@ class SingleFunctionTypeChecker:
         foreach_loop: ForeachLoop,
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer] | Never:
-        type_stack_before = copy(type_stack)
+        type_stack_before_foreach = copy(type_stack)
 
         if not type_stack:
             raise MissingIterable(foreach_loop.position)
@@ -1004,8 +999,6 @@ class SingleFunctionTypeChecker:
 
         if not isinstance(iterable_type, VariableType):
             raise InvalidIterable(foreach_loop.position, iterable_type)
-
-        type_stack.append(iterable_type)
 
         if iterable_type.is_const:
             iter_func = self._lookup_function(iterable_type, "const_iter")
@@ -1033,6 +1026,11 @@ class SingleFunctionTypeChecker:
 
         assert isinstance(type_stack_after_iter, list)  # This was checked earlier
         type_stack = type_stack_after_iter
+
+        # duplicate iterator
+        iterator_var_type = type_stack[-1]
+
+        type_stack.append(iterator_var_type)
 
         iterator_type = iter_func.return_types[0]
 
@@ -1071,23 +1069,27 @@ class SingleFunctionTypeChecker:
         assert isinstance(type_stack_after_next, list)  # This was checked earlier
         type_stack = type_stack_after_next
 
+        # boolean return value from next gets consumed by foreach construct
         type_stack.pop()
+
         type_stack_after = self._check_function_body(foreach_loop.body, type_stack)
 
         if isinstance(type_stack_after, Never):
             return Never()
 
-        type_stack = type_stack_after
+        # foreach consumes iterable
+        expected_type_stack_after_foreach = type_stack_before_foreach[:-1] + [
+            iterator_var_type
+        ]
 
-        if type_stack != type_stack_before:
+        if type_stack_after != expected_type_stack_after_foreach:
             raise ForeachLoopTypeError(
-                foreach_loop.position, type_stack_before, type_stack
+                foreach_loop.position,
+                expected_type_stack_after_foreach,
+                type_stack_after,
             )
 
-        # pop iterable
-        type_stack.pop()
-
-        return type_stack
+        return type_stack_after[:-1]
 
     def _find_var_name_collision(
         self, var: Variable

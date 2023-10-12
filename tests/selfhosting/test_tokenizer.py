@@ -9,7 +9,9 @@ from aaa.tokenizer.tokenizer import Tokenizer
 
 def test_tokenizer_unittests() -> None:
     test_runner = TestRunner("examples/selfhosting")
-    exit_code = test_runner.run(compile=True, binary=None, run=True)
+    exit_code = test_runner.run(
+        compile=True, binary=None, run=True, runtime_type_checks=True
+    )
 
     assert exit_code == 0
 
@@ -32,7 +34,11 @@ def test_tokenizer_output(capfd: CaptureFixture[str]) -> None:
 
     runner = Runner(entrypoint)
     exit_code = runner.run(
-        compile=True, binary_path=None, run=True, args=[str(entrypoint)]
+        compile=True,
+        binary_path=None,
+        run=True,
+        args=[str(entrypoint)],
+        runtime_type_checks=True,
     )
 
     assert exit_code == 0

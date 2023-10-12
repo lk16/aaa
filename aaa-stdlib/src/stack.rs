@@ -1384,4 +1384,51 @@ where
         eprintln!("Function pointer with zero-value was called.");
         process::exit(1);
     }
+
+    pub fn assert_stack_top_types(
+        &mut self,
+        file: &str,
+        line: isize,
+        column: isize,
+        expected_top: Vec<&str>,
+    ) {
+        let mut ok = true;
+
+        if self.items.len() < expected_top.len() {
+            let found_stack_top = self
+                .items
+                .iter()
+                .map(|i| i.kind())
+                .collect::<Vec<_>>()
+                .join(" ");
+
+            eprintln!("Runtime type-checker failed:");
+            eprintln!("Expected stack top: {}", expected_top.join(" "));
+            eprintln!("   Found stack top: {}", found_stack_top);
+            process::exit(1);
+        }
+
+        let start_index = self.items.len() - expected_top.len();
+
+        for (actual, expected) in self.items.iter().skip(start_index).zip(expected_top.iter()) {
+            if actual.kind() != *expected {
+                ok = false;
+            }
+        }
+
+        if !ok {
+            let found_stack_top = self
+                .items
+                .iter()
+                .skip(start_index)
+                .map(|i| i.kind())
+                .collect::<Vec<_>>()
+                .join(" ");
+
+            eprintln!("Runtime type-checker failed at {file}:{line}:{column}");
+            eprintln!("Expected stack top: {}", expected_top.join(" "));
+            eprintln!("   Found stack top: {}", found_stack_top);
+            process::exit(1);
+        }
+    }
 }
