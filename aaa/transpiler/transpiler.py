@@ -307,23 +307,23 @@ class Transpiler:
         generate_funcs: Dict[Type[FunctionBodyItem], Callable[..., Code]] = {
             Assignment: self._generate_assignment_code,
             BooleanLiteral: self._generate_boolean_literal,
-            Branch: self._generate_branch,  # TODO add runtime type verification
-            CallEnumConstructor: self._generate_call_enum_constructor_code,  # TODO add runtime type verification
-            CallFunction: self._generate_call_function_code,  # TODO add runtime type verification
-            CallFunctionByPointer: self._generate_call_by_function_pointer,  # TODO add runtime type verification
-            CallType: self._generate_call_type_code,  # TODO add runtime type verification
-            CallVariable: self._generate_call_variable_code,  # TODO add runtime type verification
-            ForeachLoop: self._generate_foreach_loop,  # TODO add runtime type verification
-            FunctionPointer: self._generate_function_pointer_literal,  # TODO add runtime type verification
-            GetFunctionPointer: self._generate_get_function_pointer,  # TODO add runtime type verification
+            Branch: self._generate_branch,
+            CallEnumConstructor: self._generate_call_enum_constructor_code,
+            CallFunction: self._generate_call_function_code,
+            CallFunctionByPointer: self._generate_call_by_function_pointer,
+            CallType: self._generate_call_type_code,
+            CallVariable: self._generate_call_variable_code,
+            ForeachLoop: self._generate_foreach_loop,
+            FunctionPointer: self._generate_function_pointer_literal,
+            GetFunctionPointer: self._generate_get_function_pointer,
             IntegerLiteral: self._generate_integer_literal,
-            MatchBlock: self._generate_match_block_code,  # TODO add runtime type verification
-            Return: self._generate_return,  # TODO add runtime type verification
-            StringLiteral: self._generate_string_literal,  # TODO add runtime type verification
-            StructFieldQuery: self._generate_field_query_code,  # TODO add runtime type verification
-            StructFieldUpdate: self._generate_field_update_code,  # TODO add runtime type verification
-            UseBlock: self._generate_use_block_code,  # TODO add runtime type verification
-            WhileLoop: self._generate_while_loop,  # TODO add runtime type verification
+            MatchBlock: self._generate_match_block_code,
+            Return: self._generate_return,
+            StringLiteral: self._generate_string_literal,
+            StructFieldQuery: self._generate_field_query_code,
+            StructFieldUpdate: self._generate_field_update_code,
+            UseBlock: self._generate_use_block_code,
+            WhileLoop: self._generate_while_loop,
         }
 
         assert set(generate_funcs.keys()) == set(FunctionBodyItem.__args__)  # type: ignore
