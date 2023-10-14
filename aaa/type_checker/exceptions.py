@@ -366,21 +366,21 @@ class ForeachLoopTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
-        foreach_stack: List[VariableType | FunctionPointer],
+        expected_type_stack_after: List[VariableType | FunctionPointer],
+        type_stack_after: List[VariableType | FunctionPointer],
     ) -> None:
-        self.type_stack = type_stack
-        self.foreach_stack = foreach_stack
+        self.type_stack_after = type_stack_after
+        self.expected_type_stack_after = expected_type_stack_after
         super().__init__(position)
 
     def __str__(self) -> str:
-        before_stack = format_typestack(self.type_stack)
-        after_stack = format_typestack(self.foreach_stack)
+        stack_after = format_typestack(self.type_stack_after)
+        expected_stack_after = format_typestack(self.expected_type_stack_after)
 
         return (
             f"{self.position}: Invalid stack modification inside foreach loop body\n"
-            + f"before foreach loop: {before_stack}\n"
-            + f" after foreach loop: {after_stack}\n"
+            + f"stack at end of foreach loop: {stack_after}\n"
+            + f"              expected stack: {expected_stack_after}\n"
         )
 
 

@@ -52,6 +52,7 @@ def check_aaa_full_source_multi_file(
             run=True,
             args=[],
             capture_output=True,
+            runtime_type_checks=True,
             **run_kwargs,
         )
     except AaaTranslationException as e:

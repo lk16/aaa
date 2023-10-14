@@ -27,7 +27,13 @@ class TestRunner:
     def set_verbose(self, verbose: bool) -> None:
         self.verbose = verbose
 
-    def run(self, compile: bool, binary: Optional[Path], run: bool) -> int:
+    def run(
+        self,
+        compile: bool,
+        binary: Optional[Path],
+        run: bool,
+        runtime_type_checks: bool,
+    ) -> int:
         main_file_code = self._build_main_test_file()
 
         if self.exceptions:
@@ -40,7 +46,13 @@ class TestRunner:
         runner = Runner.without_file(main_file_code)
         runner.add_parsed_files(self.parsed_files)
         runner.set_verbose(self.verbose)
-        return runner.run(compile=compile, binary_path=binary, run=run, args=[])
+        return runner.run(
+            compile=compile,
+            binary_path=binary,
+            run=run,
+            runtime_type_checks=runtime_type_checks,
+            args=[],
+        )
 
     def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.tests_root, recursive=True)

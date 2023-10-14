@@ -62,6 +62,7 @@ class Runner:
         compile: bool,
         binary_path: Optional[Path],
         run: bool,
+        runtime_type_checks: bool,
         args: List[str],
         **run_kwargs: Any,
     ) -> int:
@@ -71,6 +72,7 @@ class Runner:
                 binary_path=binary_path,
                 run=run,
                 args=args,
+                runtime_type_checks=runtime_type_checks,
                 **run_kwargs,
             ).returncode
         except ExcecutableDidNotRun:
@@ -84,10 +86,11 @@ class Runner:
         compile: bool,
         binary_path: Optional[Path],
         run: bool,
+        runtime_type_checks: bool,
         args: List[str],
         **run_kwargs: Any,
     ) -> CompletedProcess[bytes]:
-        transpiled = self.transpile()
+        transpiled = self.transpile(runtime_type_checks)
 
         if not compile:
             raise ExcecutableDidNotRun
@@ -99,7 +102,7 @@ class Runner:
 
         return compiled.execute(args, **run_kwargs)
 
-    def transpile(self) -> "Transpiled":
+    def transpile(self, runtime_type_checks: bool) -> "Transpiled":
         transpiler_root = create_output_folder()
 
         try:
@@ -116,10 +119,11 @@ class Runner:
             type_checker_output = type_checker.run()
 
             transpiler = Transpiler(
-                cross_referencer_output,
-                type_checker_output,
-                transpiler_root,
-                self.verbose,
+                cross_referencer_output=cross_referencer_output,
+                type_checker_output=type_checker_output,
+                transpiler_root=transpiler_root,
+                runtime_type_checks=runtime_type_checks,
+                verbose=self.verbose,
             )
 
             transpiler.run()
@@ -149,6 +153,7 @@ def compile_run(
         run=True,
         args=[],
         capture_output=True,
+        runtime_type_checks=True,
         **run_kwargs,
     )
 
