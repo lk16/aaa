@@ -603,6 +603,7 @@ class Transpiler:
 
         code.add("if !stack.pop_bool() {", r=1)
 
+        # drop number of next items - 1 (bolean was popped earlier) + 1 (iterator)
         for _ in range(break_drop_count):
             code.add("stack.drop();")
 

@@ -107,11 +107,11 @@ class TypeChecker:
             checker = SingleFunctionTypeChecker(function, self)
 
             try:
-                position_stacks = checker.run()
+                checker.run()
             except TypeCheckerException as e:
                 self.exceptions.append(e)
-            else:
-                self.position_stacks.update(position_stacks)
+            finally:
+                self.position_stacks.update(checker.position_stacks)
 
         self._print_position_stacks()
 
@@ -210,7 +210,7 @@ class SingleFunctionTypeChecker:
             Position, List[VariableType | FunctionPointer] | Never
         ] = {}
 
-    def run(self) -> Dict[Position, List[VariableType | FunctionPointer] | Never]:
+    def run(self) -> None:
         assert self.function.body
 
         if self.function.is_test():  # pragma: nocover
@@ -229,8 +229,6 @@ class SingleFunctionTypeChecker:
 
         if not self._confirm_return_types(computed_return_types):
             raise FunctionTypeError(self.function, computed_return_types)
-
-        return self.position_stacks
 
     def _confirm_return_types(
         self, computed: List[VariableType | FunctionPointer] | Never
