@@ -10,6 +10,7 @@ class TokenType(Enum):
     BLOCK_START = "BLOCK_START"
     CASE = "CASE"
     CALL = "CALL"
+    CHARACTER = "CHARACTER"
     COLON = "COLON"
     COMMA = "COMMA"
     COMMENT = "COMMENT"

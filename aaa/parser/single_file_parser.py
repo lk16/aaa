@@ -16,6 +16,7 @@ from aaa.parser.models import (
     Call,
     CaseBlock,
     CaseLabel,
+    CharacterLiteral,
     DefaultBlock,
     Enum,
     EnumVariant,
@@ -534,6 +535,22 @@ class SingleFileParser:
         self._print_parse_tree_node("String", start_offset, offset)
         return string, offset
 
+    def _parse_character(self, offset: int) -> Tuple[CharacterLiteral, int]:
+        start_offset = offset
+
+        token, offset = self._parse_token(offset, [TokenType.CHARACTER])
+
+        value = token.value[1:-1]  # TODO unify with string escaping and un-escaping
+        value = value.replace("\\\\", "\\")
+        value = value.replace("\\n", "\n")
+        value = value.replace("\\r", "\r")
+        value = value.replace('\\"', '"')
+        value = value.replace("\\0", "\0")
+
+        string = CharacterLiteral(token.position, value)
+        self._print_parse_tree_node("Character", start_offset, offset)
+        return string, offset
+
     def _parse_import_item(self, offset: int) -> Tuple[ImportItem, int]:
         start_offset = offset
 
@@ -752,6 +769,9 @@ class SingleFileParser:
                 item, offset = self._parse_get_function_pointer(offset)
             else:
                 item, offset = self._parse_string(offset)
+
+        elif token.type == TokenType.CHARACTER:
+            item, offset = self._parse_character(offset)
 
         elif token.type in [TokenType.TRUE, TokenType.FALSE]:
             item, offset = self._parse_boolean(offset)

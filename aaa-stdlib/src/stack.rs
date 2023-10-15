@@ -122,6 +122,11 @@ where
         self.push(item);
     }
 
+    pub fn push_char(&mut self, v: char) {
+        let item = Variable::Character(v);
+        self.push(item);
+    }
+
     pub fn push_str(&mut self, v: &str) {
         let item = Variable::String(Rc::new(RefCell::new(String::from(v))));
         self.push(item);
@@ -198,6 +203,13 @@ where
         match self.pop() {
             Variable::Boolean(v) => v,
             v => self.pop_type_error("bool", &v),
+        }
+    }
+
+    pub fn pop_char(&mut self) -> char {
+        match self.pop() {
+            Variable::Character(v) => v,
+            v => self.pop_type_error("char", &v),
         }
     }
 
@@ -996,6 +1008,35 @@ where
         }
     }
 
+    pub fn str_at(&mut self) {
+        let offset = self.pop_int();
+
+        let string_rc = self.pop_str();
+        let string = &*string_rc.borrow();
+
+        match string.char_indices().skip(offset as usize).next() {
+            None => {
+                self.push_char('\0');
+                self.push_bool(false);
+            }
+            Some((_, char)) => {
+                self.push_char(char);
+                self.push_bool(true);
+            }
+        }
+    }
+
+    pub fn str_append_char(&mut self) {
+        let char = self.pop_char();
+
+        let string_rc = self.pop_str();
+        let string = &mut *string_rc.borrow_mut();
+
+        string.push(char);
+
+        self.push_str(&string);
+    }
+
     pub fn vec_copy(&mut self) {
         let vector = self.pop();
 
@@ -1487,5 +1528,31 @@ where
             eprintln!("   Found stack top: {}", found_stack_top);
             process::exit(1);
         }
+    }
+
+    pub fn char_is_whitespace(&mut self) {
+        let char = self.pop_char();
+        self.push_bool(char.is_whitespace());
+    }
+
+    pub fn char_is_alpha(&mut self) {
+        let char = self.pop_char();
+        self.push_bool(char.is_alphabetic());
+    }
+
+    pub fn char_is_digit(&mut self) {
+        let char = self.pop_char();
+        self.push_bool(char.is_digit(10));
+    }
+
+    pub fn char_equals(&mut self) {
+        let lhs = self.pop_char();
+        let rhs = self.pop_char();
+        self.push_bool(lhs == rhs);
+    }
+
+    pub fn char_to_str(&mut self) {
+        let char = self.pop_char();
+        self.push_str(&char.to_string());
     }
 }

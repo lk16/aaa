@@ -111,12 +111,22 @@ class Tokenizer:
                 except IndexError:
                     self._fail(start)
 
-                if escaped not in ["n", "r", "\\", '"']:
+                if escaped not in [
+                    "n",
+                    "r",
+                    "\\",
+                    '"',
+                ]:  # TODO escape same sequences as char
                     self._fail(start)
 
                 offset += 2
             else:
                 offset += 1
+
+    def _tokenize_character(self, offset: int) -> Optional[Token]:
+        regex = "'(^[\\]|\\(n|r|t|\\|\"|'|x[0-7][0-9a-fA-F])'"
+        # TODO support unicode escape sequences
+        return self._regex(offset, regex, TokenType.CHARACTER)
 
     def _print_tokens(self, tokens: List[Token]) -> None:  # pragma: nocover
         if not self.verbose:
@@ -162,6 +172,7 @@ class Tokenizer:
                 or self._tokenize_fixed_size(offset)
                 or self._tokenize_string(offset)
                 or self._tokenize_identifier(offset)
+                or self._tokenize_character(offset)
             )
 
             if not token:

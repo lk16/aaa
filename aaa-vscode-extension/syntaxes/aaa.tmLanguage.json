@@ -9,6 +9,9 @@
 			"include": "#strings"
 		},
 		{
+			"include": "#chars"
+		},
+		{
 			"include": "#builtin_functions"
 		},
 		{
@@ -64,13 +67,24 @@
 				}
 			]
 		},
+		"chars": {
+			"name": "string.quoted.single.aaa",
+			"begin": "'",
+			"end": "'",
+			"patterns": [
+				{
+					"name": "constant.character.escape.aaa",
+					"match": "\\\\(n|r|0|\\\\|\")"
+				}
+			]
+		},
 		"builtin_functions": {
 			"match": "(?x)\\b(assert|drop|dup|swap|over|nop|repr|rot|copy)\\b|\\.",
 			"name": "support.function.builtin.aaa"
 		},
 		"builtin_types": {
 			"name": "support.type.aaa",
-			"match": "\\b(bool|int|str|vec|map|set|never|regex)\\b"
+			"match": "\\b(bool|int|str|char|vec|map|set|never|regex)\\b"
 		},
 		"types": {
 			"name": "support.type.aaa",

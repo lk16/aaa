@@ -36,13 +36,13 @@ fn load_sudoku args s as str return vec[int] {
             use i {
                 s i i 1 + str:substr
                 drop
-                use char {
-                    char str:to_int
+                use char_ {
+                    char_ str:to_int
                     use n, ok {
                         if ok {
                             v n vec:push
                         } else {
-                            if char "." str:equals {
+                            if char_ "." str:equals {
                                 v 0 vec:push
                             }
                         }

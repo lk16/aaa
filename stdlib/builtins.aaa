@@ -3,6 +3,7 @@
 struct bool
 struct int
 struct str
+struct char
 
 // container types
 struct map[K, V]
@@ -104,22 +105,32 @@ fn vec_const_iter[T]:iter    args iter as vec_const_iter[T]    return vec_const_
 
 // string functions
 
-fn str:append     args s as       str, other as str                  return str
-fn str:contains   args s as const str, other as const str            return bool
-fn str:equals     args s as const str, other as const str            return bool
-fn str:join       args s as       str, parts as vec[str]             return str
-fn str:len        args s as const str                                return int
-fn str:lower      args s as       str                                return str
-fn str:replace    args s as       str, search as str, replace as str return str
-fn str:split      args s as       str, sep as str                    return vec[str]
-fn str:strip      args s as       str                                return str
-fn str:upper      args s as       str                                return str
+fn str:append      args s as       str, other as str                  return str
+fn str:append_char args s as       str, other as char                 return str
+fn str:contains    args s as const str, other as const str            return bool
+fn str:equals      args s as const str, other as const str            return bool
+fn str:join        args s as       str, parts as vec[str]             return str
+fn str:len         args s as const str                                return int
+fn str:lower       args s as       str                                return str
+fn str:replace     args s as       str, search as str, replace as str return str
+fn str:split       args s as       str, sep as str                    return vec[str]
+fn str:strip       args s as       str                                return str
+fn str:upper       args s as       str                                return str
+fn str:at          args s as const str, offset as int                 return char, bool
 
-fn str:find_after args s as const str, other as str, offset as int   return int, bool
-fn str:find       args s as const str, other as str                  return int, bool
-fn str:substr     args s as const str, start as int, end as int      return str, bool
-fn str:to_bool    args s as const str                                return bool, bool
-fn str:to_int     args s as const str                                return int, bool
+fn str:find_after  args s as const str, other as str, offset as int   return int, bool
+fn str:find        args s as const str, other as str                  return int, bool
+fn str:substr      args s as const str, start as int, end as int      return str, bool
+fn str:to_bool     args s as const str                                return bool, bool
+fn str:to_int      args s as const str                                return int, bool
+
+// char functions
+
+fn char:is_digit      args c as const char                      return bool
+fn char:is_alpha      args c as const char                      return bool
+fn char:is_whitespace args c as const char                      return bool
+fn char:to_str        args c as const char                      return str
+fn char:equals        args c as const char, other as const char return bool
 
 // regex functions
 

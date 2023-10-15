@@ -3,10 +3,8 @@ struct S {
     a as vec[S]
 }
 
-struct Empty {}
-
 enum Json {
-    null as Empty,
+    null,
     boolean as bool,
     integer as int,
     string as str,
@@ -24,7 +22,6 @@ fn main {
     .
     "\n" .
 
-    Empty
     Json:null
     .
     "\n" .

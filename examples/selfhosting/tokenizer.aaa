@@ -15,12 +15,14 @@ fn Range:iter args r as Range return Range {
 
 fn Range:next args r as Range return int, bool {
     r "next_value" ?
-    if dup r "end" ? < {
-        true
-        r "next_value" { r "next_value" ? 1 + } !
-    } else {
-        drop 0
-        false
+    r "end" ?
+    use next_value, end {
+        if next_value end >= {
+            0 false return
+        }
+
+        r "next_value" { next_value 1 + } !
+        next_value true
     }
 }
 
@@ -67,6 +69,7 @@ enum TokenType {
     block_start,
     call_,
     case_,
+    character,
     colon,
     comma,
     comment,
@@ -107,6 +110,7 @@ fn TokenType:to_str args token_type as const TokenType return str {
         case TokenType:block_start { "BLOCK_START" }
         case TokenType:call_ { "CALL" }
         case TokenType:case_ { "CASE" }
+        case TokenType:character { "CHARACTER" }
         case TokenType:colon { "COLON" }
         case TokenType:comma { "COMMA" }
         case TokenType:comment { "COMMENT" }
@@ -219,26 +223,23 @@ fn Position:update args position as Position, token as Token {
         0 value str:len make_range
         foreach {
             use i {
-                value i get_str_char
-                match {
-                    case OptionalChar:some {
-                        use char {
-                            if char "\n" str:equals {
-                                position "line" { position "line" ? 1 + } !
-                                position "column" { 1 } !
-                            }
-                            else {
-                                position "column" { position "column" ? 1 + } !
-                            }
-                        }
-                    }
-                    default {
+
+                value i str:at
+                use char_, ok {
+                    if ok not {
                         unreachable
+                    }
+
+                    if char_ '\n' char:equals {
+                        position "line" { position "line" ? 1 + } !
+                        position "column" { 1 } !
+                    }
+                    else {
+                        position "column" { position "column" ? 1 + } !
                     }
                 }
             }
         }
-
     }
 }
 
@@ -262,25 +263,9 @@ fn Token:equals args lhs as const Token, rhs as const Token return bool {
     str:equals
 }
 
-enum OptionalChar {
-    some as str,
-    none,
-}
-
 enum OptionalToken {
     some as Token,
     none,
-}
-
-fn get_str_char args string as const str, offset as int, return OptionalChar {
-    string offset offset 1 + str:substr
-
-    use char, ok {
-        if ok not {
-            OptionalChar:none return
-        }
-        char OptionalChar:some
-    }
 }
 
 struct Tokenizer {
@@ -293,8 +278,8 @@ struct Tokenizer {
     comment_regex as regex,
     integer_regex as regex,
     identifier_regex as regex,
-    identifier_char_regex as regex,
     string_regex as regex,
+    character_regex as regex,
 }
 
 fn make_tokenizer args filename as str, input as str return Tokenizer {
@@ -307,8 +292,8 @@ fn make_tokenizer args filename as str, input as str return Tokenizer {
     dup "comment_regex" { "//[^\n]*" make_regex assert } !
     dup "integer_regex" { "(-)?[0-9]+" make_regex assert } !
     dup "identifier_regex" { "[a-zA-Z_]+" make_regex assert } !
-    dup "identifier_char_regex" { "[a-zA-Z_]" make_regex assert } !
     dup "string_regex" { "\"(\\\\.|.|\n)*?\"" make_regex assert } !
+    dup "character_regex" { "'(\\\\.|.|\n)'" make_regex assert } !
 }
 
 fn Tokenizer:tokenize_whitespace args tokenizer as Tokenizer return OptionalToken {
@@ -338,13 +323,13 @@ fn Tokenizer:tokenize_comment args tokenizer as Tokenizer return OptionalToken {
         comment_regex input offset regex:find
         use matched_str, matched_offset, matched {
             if matched not matched_offset offset != or {
-                OptionalToken:none
-            } else {
-                Token
-                dup "type_" { TokenType:comment } !
-                dup "value" { matched_str } !
-                OptionalToken:some
+                OptionalToken:none return
             }
+
+            Token
+            dup "type_" { TokenType:comment } !
+            dup "value" { matched_str } !
+            OptionalToken:some
         }
     }
 }
@@ -357,13 +342,13 @@ fn Tokenizer:tokenize_integer args tokenizer as Tokenizer return OptionalToken {
         integer_regex input offset regex:find
         use matched_str, matched_offset, matched {
             if matched not matched_offset offset != or {
-                OptionalToken:none
-            } else {
-                Token
-                dup "type_" { TokenType:integer } !
-                dup "value" { matched_str } !
-                OptionalToken:some
+                OptionalToken:none return
             }
+
+            Token
+            dup "type_" { TokenType:integer } !
+            dup "value" { matched_str } !
+            OptionalToken:some
         }
     }
 }
@@ -378,28 +363,26 @@ fn matches_at args input as const str, search as str, offset as int return bool 
 fn Tokenizer:match_fixed_size args tokenizer as Tokenizer, fixed_sized_token as FixedSizedToken return OptionalToken {
     tokenizer "input" ?
     tokenizer "offset" ?
-    tokenizer "identifier_char_regex" ?
     fixed_sized_token "value" ?
     fixed_sized_token "type_" ?
-    use input, offset, identifier_char_regex, token_value, token_type {
-        if input token_value offset matches_at {
-
-            // prevent matching identifier `asdf` as keyword `as`
-            if
-                identifier_char_regex input offset token_value str:len + is_identifier_char
-                identifier_char_regex token_value 0 is_identifier_char
-                and
-            {
-                OptionalToken:none return
-            }
-
-            Token
-            dup "type_" { token_type } !
-            dup "value" { token_value } !
-            OptionalToken:some
-        } else {
-            OptionalToken:none
+    use input, offset, token_value, token_type {
+        if input token_value offset matches_at not {
+            OptionalToken:none return
         }
+
+        // prevent matching identifier `asdf` as keyword `as`
+        if
+            input offset token_value str:len + is_identifier_char
+            token_value 0 is_identifier_char
+            and
+        {
+            OptionalToken:none return
+        }
+
+        Token
+        dup "type_" { token_type } !
+        dup "value" { token_value } !
+        OptionalToken:some
     }
 }
 
@@ -432,31 +415,48 @@ fn Tokenizer:tokenize_string args tokenizer as Tokenizer return OptionalToken {
     use input, offset, string_regex {
         string_regex input offset regex:find
         use matched_str, matched_offset, matched {
-            if matched matched_offset offset = and {
-                Token
-                dup "type_" { TokenType:string } !
-                dup "value" { matched_str } !
-                OptionalToken:some
-            } else {
-                OptionalToken:none
+            if matched matched_offset offset = and not {
+                OptionalToken:none return
             }
+
+            Token
+            dup "type_" { TokenType:string } !
+            dup "value" { matched_str } !
+            OptionalToken:some
         }
     }
 }
 
-fn is_identifier_char args identifier_char_regex as regex, input as const str, offset as int return bool {
-    input offset get_str_char
-    match {
-        case OptionalChar:none {
+fn Tokenizer:tokenize_character args tokenizer as Tokenizer return OptionalToken {
+    tokenizer "input" ?
+    tokenizer "offset" ?
+    tokenizer "character_regex" ?
+    use input, offset, character_regex {
+        character_regex input offset regex:find
+        use matched_str, matched_offset, matched {
+            if matched matched_offset offset = and not {
+                OptionalToken:none return
+            }
+
+            Token
+            dup "type_" { TokenType:character } !
+            dup "value" { matched_str } !
+            OptionalToken:some
+
+        }
+    }
+}
+
+fn is_identifier_char args input as const str, offset as int return bool {
+    input offset str:at
+    use char_, ok {
+        if ok not {
             false return
         }
-        case OptionalChar:some {
-            use char {
-                identifier_char_regex char 0 regex:find
-                swap drop
-                swap drop
-            }
-        }
+
+        char_ char:is_alpha
+        char_ '_' char:equals
+        or
     }
 }
 
@@ -468,13 +468,13 @@ fn Tokenizer:tokenize_identifier args tokenizer as Tokenizer return OptionalToke
         identifier_regex input offset regex:find
         use matched_str, matched_offset, matched {
             if matched not matched_offset offset != or {
-                OptionalToken:none
-            } else {
-                Token
-                dup "type_" { TokenType:identifier } !
-                dup "value" { matched_str } !
-                OptionalToken:some
+                OptionalToken:none return
             }
+
+            Token
+            dup "type_" { TokenType:identifier } !
+            dup "value" { matched_str } !
+            OptionalToken:some
         }
     }
 }
@@ -511,6 +511,12 @@ fn Tokenizer:tokenize_at_offset args tokenizer as Tokenizer return OptionalToken
     }
 
     tokenizer Tokenizer:tokenize_identifier
+    match {
+        case OptionalToken:some { OptionalToken:some return }
+        default { nop }
+    }
+
+    tokenizer Tokenizer:tokenize_character
 }
 
 enum TokenizeResult {

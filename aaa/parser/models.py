@@ -30,6 +30,12 @@ class BooleanLiteral(AaaParseModel):
         super().__init__(position)
 
 
+class CharacterLiteral(AaaParseModel):
+    def __init__(self, position: Position, value: str) -> None:
+        self.value = value
+        super().__init__(position)
+
+
 class WhileLoop(AaaParseModel):
     def __init__(
         self, position: Position, condition: FunctionBody, body: FunctionBody
@@ -361,6 +367,7 @@ FunctionBodyItem = (
     | BooleanLiteral
     | Branch
     | Call
+    | CharacterLiteral
     | ForeachLoop
     | FunctionCall
     | FunctionPointerTypeLiteral

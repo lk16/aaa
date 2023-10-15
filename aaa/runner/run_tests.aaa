@@ -17,17 +17,17 @@ fn push_test_function args tests as vec[TestFunction], function as fn[][], name 
     tests
 }
 
-fn left_pad args string as str, char as str, length as int return str {
+fn left_pad args string as str, length as int return str {
     if string str:len length >= {
         string return
     }
 
-    char string str:append char length left_pad
+    " " string str:append length left_pad
 }
 
 fn TestFunction:format_name args test_function as TestFunction, offset as int, max as int return str {
     "["
-    offset repr " " max repr str:len left_pad str:append
+    offset repr max repr str:len left_pad str:append
     "/" str:append
     max repr str:append
     "] " str:append

@@ -1,62 +1,10 @@
 from "tokenizer" import
-    get_str_char,
     make_tokenizer,
-    OptionalChar,
     OptionalToken,
     Token,
     Tokenizer,
     TokenType,
 
-fn test_get_str_char_ok {
-    "abc" 0 get_str_char
-    match {
-        case OptionalChar:some {
-            use char {
-                char "a" str:equals assert
-            }
-        }
-        default {
-            unreachable
-        }
-    }
-
-    "abc" 1 get_str_char
-    match {
-        case OptionalChar:some {
-            use char {
-                char "b" str:equals assert
-            }
-        }
-        default {
-            unreachable
-        }
-    }
-
-    "abc" 2 get_str_char
-    match {
-        case OptionalChar:some {
-            use char {
-                char "c" str:equals assert
-            }
-        }
-        default {
-            unreachable
-        }
-    }
-}
-
-
-fn test_get_str_char_fail {
-    "abc" 4 get_str_char
-    match {
-        case OptionalChar:none {
-            nop
-        }
-        default {
-            unreachable
-        }
-    }
-}
 
 fn check_tokenize_whitespace_fail args input as str, offset as int {
     "" input make_tokenizer
@@ -179,9 +127,6 @@ fn check_tokenize_integer args input as str, offset as int, expected_value as co
         }
         case OptionalToken:none { unreachable }
     }
-}
-
-fn test_tokenize_integer_ok {
     "123a" 0 "123" check_tokenize_integer
     "a123a" 1 "123" check_tokenize_integer
     "a123" 1 "123" check_tokenize_integer

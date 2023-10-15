@@ -478,6 +478,12 @@ class StringLiteral(AaaCrossReferenceModel):
         super().__init__(parsed.position)
 
 
+class CharacterLiteral(AaaCrossReferenceModel):
+    def __init__(self, parsed: parser.CharacterLiteral) -> None:
+        self.value = parsed.value
+        super().__init__(parsed.position)
+
+
 class BooleanLiteral(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.BooleanLiteral) -> None:
         self.value = parsed.value
@@ -660,6 +666,7 @@ FunctionBodyItem = (
     | CallFunctionByPointer
     | CallType
     | CallVariable
+    | CharacterLiteral
     | ForeachLoop
     | FunctionPointer
     | GetFunctionPointer

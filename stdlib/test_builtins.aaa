@@ -474,7 +474,7 @@ fn test_map_get_fail {
     map[str, int]
     dup "one" 1 map:set
     "two" map:get
-    not assert
+    not assert  // TODO #170 runtime type checking fails here
     drop
 }
 
@@ -743,6 +743,28 @@ fn test_str_append {
     "abcdef" str:equals assert
 }
 
+fn test_str_at_ok {
+    "hello" 4 str:at assert
+    'o' char:equals assert
+}
+
+fn test_str_at_fail_offset_too_high {
+    "hello" 5 str:at
+    not assert
+    drop
+}
+
+fn test_str_at_fail_offset_too_low {
+    "hello" -1 str:at
+    not assert
+    drop
+}
+
+fn test_str_append_char {
+    "hell" 'o' str:append_char
+    "hello" str:equals assert
+}
+
 fn test_if_true {
     0
     if true {
@@ -855,6 +877,15 @@ fn test_struct_zero_value_struct {
     0 = assert
 }
 
+struct CharHolder {
+    value as char,
+}
+
+fn test_struct_zero_value_char {
+    CharHolder "value" ?
+    '\0' char:equals assert
+}
+
 fn test_struct_set_get_int {
     IntHolder
     dup "value" { 3 } !
@@ -877,6 +908,14 @@ fn test_struct_set_get_str {
     "value" ?
 
     "foo" str:equals assert
+}
+
+fn test_struct_set_get_char {
+    CharHolder
+    dup "value" { 'x' } !
+    "value" ?
+
+    'x' char:equals assert
 }
 
 fn test_struct_set_get_vec {
@@ -934,4 +973,54 @@ fn test_regex_find_fail {
             match_ok not assert
         }
     }
+}
+
+
+fn test_char_equals_true {
+    'a' 'a' char:equals assert
+}
+
+fn test_char_equals_false {
+    'a' 'b' char:equals not assert
+}
+
+fn test_char_is_digit_true {
+    '0' char:is_digit assert
+    '9' char:is_digit assert
+}
+
+fn test_char_is_digit_false {
+    'a' char:is_digit not assert
+}
+
+fn test_char_is_alpha_true {
+    'a' char:is_alpha assert
+    'z' char:is_alpha assert
+    'A' char:is_alpha assert
+    'Z' char:is_alpha assert
+}
+
+fn test_char_is_alpha_false {
+    '0' char:is_alpha not assert
+    '9' char:is_alpha not assert
+    '-' char:is_alpha not assert
+    ' ' char:is_alpha not assert
+}
+
+fn test_char_is_whitespace_true {
+    ' ' char:is_whitespace assert
+    '\r' char:is_whitespace assert
+    '\n' char:is_whitespace assert
+}
+
+fn test_char_is_whitespace_false {
+    '0' char:is_whitespace not assert
+}
+
+fn test_char_to_str {
+    'a' char:to_str "a" str:equals assert
+    ' ' char:to_str " " str:equals assert
+    '\\' char:to_str "\\" str:equals assert
+    '\r' char:to_str "\r" str:equals assert
+    '\n' char:to_str "\n" str:equals assert
 }
