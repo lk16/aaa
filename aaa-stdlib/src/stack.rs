@@ -1458,7 +1458,7 @@ where
                 .collect::<Vec<_>>()
                 .join(" ");
 
-            eprintln!("Runtime type-checker failed:");
+            eprintln!("Runtime type-checker failed at {file}:{line}:{column}");
             eprintln!("Expected stack top: {}", expected_top.join(" "));
             eprintln!("   Found stack top: {}", found_stack_top);
             process::exit(1);
