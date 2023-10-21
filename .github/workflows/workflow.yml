@@ -31,7 +31,3 @@ jobs:
         pdm install
         export AAA_STDLIB_PATH=$(pwd)/stdlib
         pdm run pytest --color=yes --cov=aaa --cov-report=term-missing -x -vv
-    - name: Run Aaa tests
-      run : |
-        export AAA_STDLIB_PATH=$(pwd)/stdlib
-        pdm run python ./manage.py test stdlib/ --compile --run

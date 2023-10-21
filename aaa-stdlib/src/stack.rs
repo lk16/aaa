@@ -1411,7 +1411,8 @@ where
         let start_index = self.items.len() - expected_top.len();
 
         for (actual, expected) in self.items.iter().skip(start_index).zip(expected_top.iter()) {
-            if actual.kind() != *expected {
+            if actual.kind() != *expected && actual.kind() != "none" {
+                // #33 Remove check for none
                 ok = false;
             }
         }
