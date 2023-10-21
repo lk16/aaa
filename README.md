@@ -12,20 +12,28 @@ The following tools for the Aaa language can be found is this repo
 ### Examples
 ```sh
 # Run the obligatory hello world example
-./manage.py cmd -cr 'fn main { "Hello world\n" . }'
+pdm run ./manage.py run 'fn main { "Hello world\n" . }'
 
 # Run code from a file. Implements the famous fizzbuzz interview question.
-./manage.py run -cr examples/fizzbuzz.aaa
-
-# Run unit tests
-./manage.py runtests
+pdm run ./manage.py run examples/fizzbuzz.aaa
 
 # Run bare-bones HTTP server in Aaa
-./manage.py run -cr examples/http_server.aaa
+pdm run ./manage.py run examples/http_server.aaa
 
 # Send request from different shell
 curl http://localhost:8080
 ```
+
+### Running tests
+
+```sh
+# Run tests written in Aaa
+pdm run ./manage.py test .
+
+# Run tests written in Python
+pdm run pytest
+```
+
 
 ### Aaa features
 - elementary types (`int`, `bool`, `str`)
@@ -36,7 +44,7 @@ curl http://localhost:8080
 - [upcoming](https://github.com/lk16/aaa/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 
 ### Name
-The name of this language is just the first letter of the Latin alphabet [repeated](#Examples) three times. When code in this language doesn't work, its meaning becomes an [abbreviation](https://en.uncyclopedia.co/wiki/AAAAAAAAA!).
+The name of this language is just the first letter of the Latin alphabet repeated three times. When code in this language doesn't work, its meaning becomes an [abbreviation](https://en.uncyclopedia.co/wiki/AAAAAAAAA!).
 
 ### Setup
 All these commands should be run from the root of this repository.
@@ -63,10 +71,11 @@ pdm install
 export AAA_STDLIB_PATH=$(pwd)/stdlib
 
 # Run hello world program
-pdm run ./manage.py cmd -cr 'fn main { "Hello world\n" . }'
+pdm run ./manage.py run 'fn main { "Hello world\n" . }'
 
 # Run tests
-pdm run ./manage.py runtests
+pdm run pytest
+pdm run ./manage.py test .
 
 # Setup pre-commit hooks
 pdm run pre-commit install
