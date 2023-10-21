@@ -1,0 +1,243 @@
+
+struct RandomNumberGenerator {
+    state as int,
+}
+
+fn make_random_number_generator return RandomNumberGenerator {
+    RandomNumberGenerator
+    dup "state" { time + } ! // add unix time + usec to give semi-random initial state
+}
+
+fn RandomNumberGenerator:get args rng as RandomNumberGenerator return int {
+    rng "state" {
+        rng "state" ? 123457 * 65537 +
+        if dup 0 < {
+            -1 *
+        }
+    } !
+
+    rng "state" ?
+}
+
+struct range {
+    next_value as int,
+    end as int,
+}
+
+fn range:iter args r as range return range {
+    r
+}
+
+fn range:next args r as range return int, bool {
+    r "next_value" ?
+    dup r "end" ? <
+
+    r "next_value" { r "next_value" ? 1 + } !
+}
+
+fn make_range args start as int, end as int return range {
+    range
+    dup "next_value" { start } !
+    dup "end" { end } !
+}
+
+struct board {
+    size as int,
+    cells as vec[bool],
+}
+
+
+fn make_board args size as int return board {
+    board
+    dup use b {
+        make_random_number_generator
+        use rng {
+            vec[bool]
+            use cells {
+                0 size size * make_range
+                foreach {
+                    drop
+                    rng RandomNumberGenerator:get
+                    use random_value {
+                        random_value 7 % 2 <
+                        use is_alive {
+                            cells is_alive vec:push
+                        }
+                    }
+                }
+                b "cells" { cells } !
+            }
+        }
+        b "size" {size} !
+    }
+}
+
+fn board:print args b as board {
+    0 b "size" ? make_range
+    foreach {
+        use y {
+            0 b "size" ? make_range
+            foreach {
+                use x {
+                    if b x y board:get {
+                        " ●" .
+                    } else {
+                        " ○" .
+                    }
+                }
+            }
+            "\n" .
+        }
+    }
+}
+
+fn board:get args b as board, x as int, y as int return bool {
+    b "cells" ? y b "size" ? * x + vec:get
+}
+
+fn board:set_alive args b as board, x as int, y as int {
+    b "cells" ? y b "size" ? * x + true vec:set
+}
+
+fn board:is_valid_coord args b as board, x as int, y as int return bool {
+    x 0 >=
+    y 0 >= and
+    x b "size" ? < and
+    y b "size" ? < and
+}
+
+fn board:alive_neighbours args b as board, x as int, y as int return int {
+    0
+    use alive {
+        if b x 1 - y 1 - board:is_valid_coord {
+            if b x 1 - y 1 - board:get {
+                alive <- { alive 1 + }
+            }
+        }
+
+        if b x y 1 - board:is_valid_coord {
+            if b x y 1 - board:get {
+                alive <- { alive 1 + }
+            }
+        }
+
+        if b x 1 + y 1 - board:is_valid_coord {
+            if b x 1 + y 1 - board:get {
+                alive <- { alive 1 + }
+            }
+        }
+
+        if b x 1 - y board:is_valid_coord {
+            if b x 1 - y board:get {
+                alive <- { alive 1 + }
+            }
+        }
+
+        if b x 1 + y board:is_valid_coord {
+            if b x 1 + y board:get {
+                alive <- { alive 1 + }
+            }
+        }
+
+        if b x 1 - y 1 + board:is_valid_coord {
+            if b x 1 - y 1 + board:get {
+                alive <- { alive 1 + }
+            }
+        }
+
+        if b x y 1 + board:is_valid_coord {
+            if b x y 1 + board:get {
+                alive <- { alive 1 + }
+            }
+        }
+
+        if b x 1 + y 1 + board:is_valid_coord {
+            if b x 1 + y 1 + board:get {
+                alive <- { alive 1 + }
+            }
+        }
+
+        alive
+    }
+}
+
+fn board:step args b as board return board {
+    board
+    dup use s {
+        s "size" { b "size" ? } !
+        s "cells" {
+            vec[bool]
+            dup use cells {
+                0 s "size" ? dup * make_range
+                foreach {
+                    drop
+                    cells false vec:push
+                }
+            }
+        } !
+
+        0 s "size" ? make_range
+        foreach {
+            use y {
+                0 s "size" ? make_range
+                foreach {
+                    use x {
+                        b x y board:alive_neighbours
+                        b x y board:get
+                        use neighbours, is_alive {
+                            if neighbours 2 = neighbours 3 = or is_alive and {
+                                s x y board:set_alive
+                            }
+                            if neighbours 3 = is_alive not and {
+                                s x y board:set_alive
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn board:count_alive args b as board return int {
+    0
+    use count {
+        0 b "size" ? dup * make_range
+        foreach {
+            use i {
+                if b "cells" ? i vec:get {
+                    count <- { count 1 + }
+                }
+            }
+        }
+
+        count
+    }
+}
+
+fn main {
+    30 make_board
+
+    use b {
+        1 9999999 make_range
+        foreach {
+            use generation {
+                b board:print
+                "\n" .
+
+                "Cells alive: " .
+                b board:count_alive .
+                "\n" .
+
+                " Generation: " .
+                generation .
+                "\n" .
+
+                "\n\n\n" .
+
+                b <- { b board:step }
+                100000 usleep
+            }
+        }
+    }
+}

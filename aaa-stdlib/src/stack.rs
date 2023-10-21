@@ -390,8 +390,8 @@ where
 
     pub fn multiply(&mut self) {
         let rhs = self.pop_int();
-        let lhs = self.pop_int();
-        self.push_int(lhs * rhs);
+        let lhs: isize = self.pop_int();
+        self.push_int(lhs.wrapping_mul(rhs));
     }
 
     pub fn divide(&mut self) {
