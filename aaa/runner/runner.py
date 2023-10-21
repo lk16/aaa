@@ -55,6 +55,28 @@ class Runner:
             args=[],
         )
 
+    @staticmethod
+    def run_command(
+        file_or_code: str,
+        verbose: bool,
+        runtime_type_checks: bool,
+        args: Tuple[str],
+    ) -> int:
+        if file_or_code.endswith(".aaa"):
+            runner = Runner(file_or_code)
+        else:
+            runner = Runner.without_file(file_or_code)
+
+        runner.set_verbose(verbose)
+
+        return runner.run(
+            compile=True,
+            binary_path=None,
+            run=True,
+            runtime_type_checks=runtime_type_checks,
+            args=list(args),
+        )
+
     def add_parsed_files(self, parsed_files: Dict[Path, ParsedFile]) -> None:
         self.parsed_files.update(parsed_files)
 
