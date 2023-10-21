@@ -2,7 +2,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import click
 from click import ClickException
@@ -14,6 +14,15 @@ from aaa.runner.test_runner import TestRunner
 @click.group()
 def cli() -> None:
     ...
+
+
+@cli.command()
+@click.argument("file_or_code", type=str)
+@click.argument("binary_path", type=str)
+@click.option("-v", "--verbose", is_flag=True)
+@click.option("-t", "--runtime-type-checks", is_flag=True)
+def compile(**kwargs: Any) -> None:
+    exit(Runner.compile_command(**kwargs))
 
 
 @cli.command()

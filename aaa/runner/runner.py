@@ -33,6 +33,28 @@ class Runner:
         entrypoint.write_text(code)
         return Runner(entrypoint)
 
+    @staticmethod
+    def compile_command(
+        file_or_code: str,
+        verbose: bool,
+        binary_path: str,
+        runtime_type_checks: bool,
+    ) -> int:
+        if file_or_code.endswith(".aaa"):
+            runner = Runner(file_or_code)
+        else:
+            runner = Runner.without_file(file_or_code)
+
+        runner.set_verbose(verbose)
+
+        return runner.run(
+            compile=True,
+            binary_path=Path(binary_path).resolve(),
+            run=False,
+            runtime_type_checks=runtime_type_checks,
+            args=[],
+        )
+
     def add_parsed_files(self, parsed_files: Dict[Path, ParsedFile]) -> None:
         self.parsed_files.update(parsed_files)
 
