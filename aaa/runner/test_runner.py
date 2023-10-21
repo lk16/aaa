@@ -24,6 +24,29 @@ class TestRunner:
         self.test_functions: List[Function] = []
         self.verbose = False
 
+    @classmethod
+    def test_command(
+        cls,
+        path: str,
+        verbose: bool,
+        binary: Optional[str],
+        runtime_type_checks: bool,
+    ) -> int:
+        test_runner = TestRunner(path)
+        test_runner.set_verbose(verbose)
+
+        if binary:
+            binary_path = Path(binary)
+        else:
+            binary_path = None
+
+        return test_runner.run(
+            compile=True,
+            binary=binary_path,
+            run=True,
+            runtime_type_checks=runtime_type_checks,
+        )
+
     def set_verbose(self, verbose: bool) -> None:
         self.verbose = verbose
 
