@@ -1,0 +1,166 @@
+from "tokenizer" import
+    get_line_column_count,
+    make_position,
+    make_token,
+    make_tokenizer,
+    Tokenizer,
+    TokenizeResult,
+    TokenType,
+
+fn check_one_token
+args
+    input as str,
+    expected_token_type as TokenType,
+{
+    input make_tokenizer Tokenizer:run
+    match {
+        case TokenizeResult:ok as tokens { tokens }
+        case TokenizeResult:error as tokens, error { unreachable }
+    }
+
+    use tokens {
+        tokens vec:len 1 = assert
+        tokens 0 vec:get
+        use token {
+            input expected_token_type 1 1 make_position make_token
+            use expected_token {
+                token repr
+                expected_token repr
+                str:equals assert
+            }
+        }
+    }
+}
+
+fn test_tokenize_single_null {
+    "null" TokenType:null check_one_token
+}
+
+fn test_tokenize_single_true {
+    "true" TokenType:boolean check_one_token
+}
+
+fn test_tokenize_single_false {
+    "false" TokenType:boolean check_one_token
+}
+
+fn test_tokenize_single_square_bracket_open {
+    "[" TokenType:square_bracket_open check_one_token
+}
+
+fn test_tokenize_single_square_bracket_close {
+    "]" TokenType:square_bracket_close check_one_token
+}
+
+fn test_tokenize_single_curly_bracket_open {
+    "{" TokenType:curly_bracket_open check_one_token
+}
+
+fn test_tokenize_single_curly_bracket_close {
+    "}" TokenType:curly_bracket_close check_one_token
+}
+
+fn test_tokenize_single_colon {
+    ":" TokenType:colon check_one_token
+}
+
+fn test_tokenize_single_comma {
+    "," TokenType:comma check_one_token
+}
+
+fn test_tokenize_single_string {
+    "\"hello\"" TokenType:string check_one_token
+    "\"\"" TokenType:string check_one_token
+
+    "\"  \\b      \"" TokenType:string check_one_token
+    "\"  \\f      \"" TokenType:string check_one_token
+    "\"  \\n      \"" TokenType:string check_one_token
+    "\"  \\r      \"" TokenType:string check_one_token
+    "\"  \\t      \"" TokenType:string check_one_token
+    "\"  \\t      \"" TokenType:string check_one_token
+    "\"  \\/      \"" TokenType:string check_one_token
+    "\"  \\\\     \"" TokenType:string check_one_token
+    "\"  \\u0000  \"" TokenType:string check_one_token
+    "\"  \\u9999  \"" TokenType:string check_one_token
+    "\"  \\uaaaa  \"" TokenType:string check_one_token
+    "\"  \\uffff  \"" TokenType:string check_one_token
+    "\"  \\uAAAA  \"" TokenType:string check_one_token
+    "\"  \\uFFFF  \"" TokenType:string check_one_token
+    "\"  \\\"   \"" TokenType:string check_one_token
+}
+
+fn test_tokenize_single_integer {
+    "123" TokenType:integer check_one_token
+    "-123" TokenType:integer check_one_token
+}
+
+fn test_tokenizer_run_ok {
+    "[123]" make_tokenizer Tokenizer:run
+    match {
+        case TokenizeResult:ok as tokens { tokens }
+        default { unreachable }
+    }
+
+    use tokens {
+        tokens vec:len 3 = assert
+        tokens 0 vec:get
+        tokens 1 vec:get
+        tokens 2 vec:get
+        use bracket_open, integer, bracket_close {
+            bracket_open "value" ? "[" str:equals assert
+            integer "value" ? "123" str:equals assert
+            bracket_close "value" ? "]" str:equals assert
+
+            bracket_open "type_" ?
+            match {
+                case TokenType:square_bracket_open { nop }
+                default { unreachable }
+            }
+
+            integer "type_" ?
+            match {
+                case TokenType:integer { nop }
+                default { unreachable }
+            }
+
+            bracket_close "type_" ?
+            match {
+                case TokenType:square_bracket_close { nop }
+                default { unreachable }
+            }
+        }
+    }
+}
+
+fn test_tokenizer_run_fail {
+    "fake" make_tokenizer Tokenizer:run
+    match {
+        case TokenizeResult:error as tokens, error { nop }
+        default { unreachable }
+    }
+}
+
+fn check_get_line_column_count args string as str, expected_lines as int, expected_columns as int {
+    string get_line_column_count
+    use lines, columns {
+        lines expected_lines = assert
+        columns expected_columns = assert
+    }
+}
+
+fn test_find_last_newline_offset {
+    "" 0 0 check_get_line_column_count
+    "aaa" 0 3 check_get_line_column_count
+    "\naaa" 1 3 check_get_line_column_count
+    "\raaa" 1 3 check_get_line_column_count
+    "\r\naaa" 1 3 check_get_line_column_count
+    "aaa\r" 1 0 check_get_line_column_count
+    "aaa\n" 1 0 check_get_line_column_count
+    "aaa\r\n" 1 0 check_get_line_column_count
+    "aaa\raaa\r" 2 0 check_get_line_column_count
+    "aaa\naaa\n" 2 0 check_get_line_column_count
+    "aaa\r\naaa\r\n" 2 0 check_get_line_column_count
+    "aaa\raaa\raaa" 2 3 check_get_line_column_count
+    "aaa\naaa\naaa" 2 3 check_get_line_column_count
+    "aaa\r\naaa\r\naaa" 2 3 check_get_line_column_count
+}
