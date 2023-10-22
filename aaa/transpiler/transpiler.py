@@ -54,17 +54,6 @@ AAA_RUST_BUILTIN_FUNCS = {
     ">=": "greater_equal",
 }
 
-CARGO_TOML_TEMPLATE = """
-[package]
-name = "aaa-stdlib-user"
-version = "0.1.0"
-edition = "2021"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-aaa-stdlib = {{ version = "0.1.0", path = "{stdlib_impl_path}" }}
-regex = "1.8.4"
-"""
 
 VARIABLE_GET_FUNCTIONS = {
     "int": "get_integer",
@@ -114,22 +103,14 @@ class Transpiler:
                 self.enums[key] = type
 
     def run(self) -> None:
-        generated_rust_file = self.transpiler_root / "src/main.rs"
-        cargo_toml = (self.transpiler_root / "Cargo.toml").resolve()
-        stdlib_impl_path = (Path(__file__).parent / "../../aaa-stdlib").resolve()
-
-        generated_rust_file.parent.mkdir(parents=True, exist_ok=True)
-
-        cargo_toml.write_text(
-            CARGO_TOML_TEMPLATE.format(stdlib_impl_path=stdlib_impl_path)
-        )
+        transpiled_file = self.transpiler_root / "src/main.rs"
+        transpiled_file.parent.mkdir(parents=True, exist_ok=True)
 
         code = self._generate_file()
-
-        generated_rust_file.write_text(code.get())
+        transpiled_file.write_text(code.get())
 
         if self.verbose:
-            print(f"  transpiler | Saving transpiled file as {generated_rust_file}")
+            print(f"  transpiler | Saving transpiled file as {transpiled_file}")
 
     def _generate_file(self) -> Code:
         code = self._generate_header_comment()

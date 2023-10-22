@@ -18,6 +18,18 @@ from aaa.runner.exceptions import (
 from aaa.transpiler.transpiler import Transpiler
 from aaa.type_checker.type_checker import TypeChecker
 
+CARGO_TOML_TEMPLATE = """
+[package]
+name = "aaa-stdlib-user"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aaa-stdlib = {{ version = "0.1.0", path = "{stdlib_impl_path}" }}
+regex = "1.8.4"
+"""
+
 
 class Runner:
     def __init__(self, entrypoint: str | Path) -> None:
@@ -224,6 +236,13 @@ class Transpiled:
         compiler_env["CARGO_TARGET_DIR"] = str(cargo_shared_target_dir)
 
         cargo_toml = (self.transpiler_root / "Cargo.toml").resolve()
+
+        stdlib_impl_path = (Path(__file__).parent / "../../aaa-stdlib").resolve()
+
+        cargo_toml.write_text(
+            CARGO_TOML_TEMPLATE.format(stdlib_impl_path=stdlib_impl_path)
+        )
+
         command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_toml)]
 
         completed_process = subprocess.run(
