@@ -64,7 +64,7 @@ We don't have exceptions in this language. Functions can return an enum, with on
 See the [syntax documentation](./syntax.md)
 
 ##### How do I work with classes and objects in Aaa?
-It mostly revolves around [the stack](./the_stack.md).
+It mostly revolves around [the stack](./stack.md).
 
 ##### What are the available data structures and collections in Aaa?
 At time of writing:

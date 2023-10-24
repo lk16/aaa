@@ -2,8 +2,8 @@
 ### Intro to "the stack"
 
 Aaa is a stack-based language. ALL functions operate on the stack:
-* Arguments are read from the top of the stack
-* Returned values are put on top of the stack
+* Arguments are consumed ("popped") from the top of the stack
+* Returned values are put ("pushed") on top of the stack
 
 Here are some common expressions used when talking about stacks:
 * "to push a value": adding a value on top of the stack
@@ -31,11 +31,41 @@ Note that we won't use `nop` below. We only use it here because the syntax requi
 
 ### Pushing values and checking values
 
-TODO
+Every time we write an integer literal (such as `3`) in the code, it's means: push an integer with this value on the stack. Likewise with booleans (example: `false`), strings (example: `"hello"`). Other types don't have literals.
+
+Here is a program that asserts that 1 + 2 = 3, including some type annotations.
+
+Note that normally we would not write every literal and function call on its own line, but this way we can put comments in between.
+
+```rs
+fn main {
+    // stack: empty
+    1 // stack: 1
+    2 // stack: 1 2
+    + // stack: 3
+    3 // stack: 3 3
+    = // stack: true
+    assert // stack: empty
+}
+```
+
+You can see that:
+* Every integer literal pushes an integer
+* the `+` function takes 2 integer arguments and returns 1 integer
+* the `=` function takes 2 integer arguments and returns 1 boolean
+* the `assert` function takes 1 boolean and returns nothing
+
+These 3 functions (and all other built-in functions) can be found in the [builtins](../stdlib/builtins.aaa) file.
 
 ### Type checking rules
 
-TODO
+This language comes with a type-checker. Code that breaks the typing rules will not compile (or run for that matter).
+
+The type checker enforces the following rules:
+* When calling a function, the correct argument types must be on the top of on the stack
+* When defining a function, the correct types must be returned on top of the stack
+
+How this works in detail with `if-else` and other constructs is described in detail in the [typing](./typing.md) article.
 
 ### Function argument order
 
