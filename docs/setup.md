@@ -1,6 +1,8 @@
 
 ### How to setup this project
 
+Start by cloning this repository.
+
 All these commands should be run from the root of this repository.
 
 This project requires Python 3.12.1 or later, consider using [pyenv](https://github.com/pyenv/pyenv) to select a python version.
