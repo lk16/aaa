@@ -47,43 +47,7 @@ pdm run pytest
 The name of this language is just the first letter of the Latin alphabet repeated three times. When code in this language doesn't work, its meaning becomes an [abbreviation](https://en.uncyclopedia.co/wiki/AAAAAAAAA!).
 
 ### Setup
-All these commands should be run from the root of this repository.
-
-This project requires python 3.12.1 or newer. Consider using [pyenv](https://github.com/pyenv/pyenv).
-
-```sh
-# Download python 3.12.1
-pyenv install 3.12.1
-
-# Use it in this project
-pyenv local 3.12.1
-```
-
-This project also requires rust, see instructions [here](https://www.rust-lang.org/tools/install) on how to install.
-
-After you setup rust and python, run the following commands.
-
-```sh
-# Install dependencies
-pdm install
-
-# Tell Aaa where the standard library lives
-export AAA_STDLIB_PATH=$(pwd)/stdlib
-
-# Run hello world program
-pdm run ./manage.py run 'fn main { "Hello world\n" . }'
-
-# Run tests
-pdm run pytest
-pdm run ./manage.py test .
-
-# Setup pre-commit hooks
-pdm run pre-commit install
-```
-
-Now you can start running code in Aaa or develop the language!
-
-To enable syntax highlighting for VS Code, enable the [Aaa language extension](./aaa-vscode-extension/README.md)
+See the [setup page](./docs/setup.md).
 
 
 ### Aaa and porth
