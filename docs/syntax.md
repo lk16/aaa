@@ -32,6 +32,6 @@ TODO
 | return                          | `return`                                                 |
 | string literal                  | `"hello"` `"\r\n"`                                       |
 | get struct field                | `"struct_field_name" ?`                                  |
-| set struct field                | `"struct_field_name" { ... }`                            |
+| set struct field                | `"struct_field_name" { ... } !`                          |
 | use block                       | `use { ... }`                                            |
 | while loop                      | `while { ... }`                                          |
