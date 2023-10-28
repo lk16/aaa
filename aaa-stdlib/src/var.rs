@@ -309,9 +309,7 @@ where
             }
             (Self::FunctionPointer(lhs), Self::FunctionPointer(rhs)) => lhs == rhs,
             (Self::UserType(lhs), Self::UserType(rhs)) => lhs == rhs,
-            _ => {
-                unreachable!() // Can't compare variables of different types
-            }
+            _ => unreachable!(), // Can't compare variables of different types
         }
     }
 }

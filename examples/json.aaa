@@ -1,0 +1,39 @@
+from "json.parser" import
+    json_from_str,
+    Json,
+    JsonError,
+    JsonResult,
+
+fn main args argv as vec[str] return int {
+    if argv vec:len 2 = not {
+        "Expected 1 argument.\n" .
+        "Usage: " .
+        argv 0 vec:get .
+        " <json string>\n" .
+        1 return
+    }
+
+    argv 1 vec:get
+    use input {
+        input json_from_str
+    }
+
+    match {
+        case JsonResult:error as error {
+            error JsonError:to_str .
+            "\n" .
+            1 return
+        }
+        case JsonResult:ok as json {
+            "parsed: " .
+            json .
+            "\n" .
+
+            "raw: " .
+            json Json:to_str .
+            "\n" .
+        }
+    }
+
+    0
+}

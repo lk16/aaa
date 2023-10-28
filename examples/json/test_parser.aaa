@@ -1,0 +1,386 @@
+from "parser" import
+    json_from_str,
+    Json,
+    JsonError,
+    JsonResult,
+
+fn test_json_equals_different_variants {
+    Json:null
+    false Json:boolean
+    = not assert
+
+    Json:null
+    0 Json:integer
+    = not assert
+
+    Json:null
+    "" Json:string
+    = not assert
+
+    Json:null
+    vec[Json] Json:array
+    = not assert
+
+    Json:null
+    map[str, Json] Json:object
+    = not assert
+
+    false Json:boolean
+    Json:null
+    = not assert
+
+    false Json:boolean
+    0 Json:integer
+    = not assert
+
+    false Json:boolean
+    "" Json:string
+    = not assert
+
+    false Json:boolean
+    vec[Json] Json:array
+    = not assert
+
+    false Json:boolean
+    map[str, Json] Json:object
+    = not assert
+
+    0 Json:integer
+    Json:null
+    = not assert
+
+    0 Json:integer
+    false Json:boolean
+    = not assert
+
+    0 Json:integer
+    "" Json:string
+    = not assert
+
+    0 Json:integer
+    vec[Json] Json:array
+    = not assert
+
+    0 Json:integer
+    map[str, Json] Json:object
+    = not assert
+
+    "" Json:string
+    Json:null
+    = not assert
+
+    "" Json:string
+    false Json:boolean
+    = not assert
+
+    "" Json:string
+    0 Json:integer
+    = not assert
+
+    "" Json:string
+    vec[Json] Json:array
+    = not assert
+
+    "" Json:string
+    map[str, Json] Json:object
+    = not assert
+
+    vec[Json] Json:array
+    Json:null
+    = not assert
+
+    vec[Json] Json:array
+    false Json:boolean
+    = not assert
+
+    vec[Json] Json:array
+    0 Json:integer
+    = not assert
+
+    vec[Json] Json:array
+    "" Json:string
+    = not assert
+
+    vec[Json] Json:array
+    map[str, Json] Json:object
+    = not assert
+
+    map[str, Json] Json:object
+    Json:null
+    = not assert
+
+    map[str, Json] Json:object
+    false Json:boolean
+    = not assert
+
+    map[str, Json] Json:object
+    0 Json:integer
+    = not assert
+
+    map[str, Json] Json:object
+    "" Json:string
+    = not assert
+
+    map[str, Json] Json:object
+    vec[Json] Json:array
+    = not assert
+}
+
+fn test_json_equals_same_variants_different_values {
+    false Json:boolean
+    true Json:boolean
+    = not assert
+
+    0 Json:integer
+    1 Json:integer
+    = not assert
+
+    "" Json:string
+    "a" Json:string
+    = not assert
+
+    vec[Json] Json:array
+    vec[Json] dup Json:null vec:push Json:array
+    = not assert
+
+    map[str, Json] Json:object
+    map[str, Json] dup "5" Json:null map:set Json:object
+    = not assert
+}
+
+fn test_json_equals_same_variants_and_values {
+    Json:null
+    Json:null
+    = assert
+
+    false Json:boolean
+    false Json:boolean
+    = assert
+
+    0 Json:integer
+    0 Json:integer
+    = assert
+
+    "" Json:string
+    "" Json:string
+    = assert
+
+    vec[Json] Json:array
+    vec[Json] Json:array
+    = assert
+
+    map[str, Json] Json:object
+    map[str, Json] Json:object
+    = assert
+}
+
+fn test_json_to_str_null {
+    Json:null Json:to_str "null" = assert
+}
+
+fn test_json_to_str_boolean_true {
+    true Json:boolean Json:to_str "true" = assert
+}
+
+fn test_json_to_str_boolean_false {
+    false Json:boolean Json:to_str "false" = assert
+}
+
+fn test_json_to_str_integer_positive {
+    123 Json:integer Json:to_str "123" = assert
+}
+
+fn test_json_to_str_integer_negative {
+    -123 Json:integer Json:to_str "-123" = assert
+}
+
+fn test_json_to_str_string {
+    "hello" Json:string Json:to_str "\"hello\"" = assert
+}
+
+fn test_json_to_str_string_escaped {
+    "a\"b" Json:string Json:to_str
+    "\"a\\\"b\""
+    = assert
+
+    "a\\b" Json:string Json:to_str
+    "\"a\\\\b\""
+    = assert
+
+    "a\/b" Json:string Json:to_str
+    "\"a/b\""
+    = assert
+
+    "a\bb" Json:string Json:to_str
+    "\"a\\bb\""
+    = assert
+
+    "a\fb" Json:string Json:to_str
+    "\"a\\fb\""
+    = assert
+
+    "a\nb" Json:string Json:to_str
+    "\"a\\nb\""
+    = assert
+
+    "a\rb" Json:string Json:to_str
+    "\"a\\rb\""
+    = assert
+
+    "a\tb" Json:string Json:to_str
+    "\"a\\tb\""
+    = assert
+}
+
+fn test_json_to_str_array_empty {
+    vec[Json]
+    Json:array
+    Json:to_str "[]" = assert
+}
+
+fn test_json_to_str_array_one_item {
+    vec[Json]
+    dup 5 Json:integer vec:push
+    Json:array
+    Json:to_str "[5]" = assert
+}
+
+fn test_json_to_str_array_two_items {
+    vec[Json]
+    dup Json:null vec:push
+    dup true Json:boolean vec:push
+    Json:array
+    Json:to_str "[null,true]" = assert
+}
+
+fn test_json_to_str_object_empty {
+    map[str, Json]
+    Json:object
+    Json:to_str "{}" = assert
+}
+
+fn test_json_to_str_object_one_item {
+    map[str, Json]
+    dup "foo" 5 Json:integer map:set
+    Json:object
+    Json:to_str "{\"foo\":5}" = assert
+}
+
+fn test_json_to_str_object_two_items {
+    map[str, Json]
+    dup "foo" 5 Json:integer map:set
+    dup "bar" Json:null map:set
+    Json:object
+    Json:to_str "{\"foo\":5,\"bar\":null}" = assert
+}
+
+fn check_valid_json args input as str, expected_json as Json {
+    input json_from_str
+    match {
+        case JsonResult:ok as json { json expected_json = assert }
+        default { unreachable }
+    }
+}
+
+fn test_json_parse_null {
+    "null" Json:null check_valid_json
+}
+
+fn test_json_parse_boolean {
+    "true" true Json:boolean check_valid_json
+    "false" false Json:boolean check_valid_json
+}
+
+fn test_json_parse_integer {
+    "0" 0 Json:integer check_valid_json
+    "123" 123 Json:integer check_valid_json
+    "-123" -123 Json:integer check_valid_json
+}
+
+fn test_json_parse_string {
+    "\"\"" "" Json:string check_valid_json
+    "\"hello\"" "hello" Json:string check_valid_json
+}
+
+fn test_json_parse_string_with_escape_sequences {
+    "\"a\\bb\"" "a\bb" Json:string check_valid_json
+    "\"a\\fb\"" "a\fb" Json:string check_valid_json
+    "\"a\\nb\"" "a\nb" Json:string check_valid_json
+    "\"a\\rb\"" "a\rb" Json:string check_valid_json
+    "\"a\\tb\"" "a\tb" Json:string check_valid_json
+    "\"a\\\"b\"" "a\"b" Json:string check_valid_json
+    "\"a\\/b\"" "a/b" Json:string check_valid_json
+    "\"a\\\\b\"" "a\\b" Json:string check_valid_json
+    "\"a\\bb\\fc\\nd\\re\\tf\\\"g\\/h\\\\i\"" "a\bb\fc\nd\re\tf\"g/h\\i" Json:string check_valid_json
+}
+
+fn test_json_parse_array_empty {
+    "[]" vec[Json] Json:array check_valid_json
+}
+
+fn test_json_parse_array_with_items {
+    "[null, null]"
+    vec[Json]
+    dup Json:null vec:push
+    dup Json:null vec:push
+    Json:array check_valid_json
+}
+
+fn test_json_parse_object_empty {
+    "{}" map[str, Json] Json:object check_valid_json
+}
+
+fn test_json_parse_object_with_items {
+    "{\"foo\": 69, \"bar\": true}"
+    map[str, Json]
+    dup "foo" 69 Json:integer map:set
+    dup "bar" true Json:boolean map:set
+    Json:object check_valid_json
+}
+
+fn test_json_parse_mix {
+    "{\"foo\": [1, false, null, \"hello world\\n\"]}"
+    map[str, Json]
+    dup "foo"
+    vec[Json]
+    dup 1 Json:integer vec:push
+    dup false Json:boolean vec:push
+    dup Json:null vec:push
+    dup "hello world\n" Json:string vec:push
+    Json:array map:set
+    Json:object check_valid_json
+}
+
+fn check_invalid_json args input as str {
+    input json_from_str
+    match {
+        case JsonResult:error as error { nop }
+        default { unreachable }
+    }
+}
+
+fn test_json_parse_fail_empty {
+    "" check_invalid_json
+}
+
+fn test_json_parse_fail_junk_data {
+    "-" check_invalid_json
+    "," check_invalid_json
+    ":" check_invalid_json
+    "[" check_invalid_json
+    "]" check_invalid_json
+    "{" check_invalid_json
+    "}" check_invalid_json
+    "~" check_invalid_json
+    "a" check_invalid_json
+    "t" check_invalid_json
+    "f" check_invalid_json
+    "n" check_invalid_json
+}
+
+fn test_json_parse_fail_trailing_commas {
+    "[, ]" check_invalid_json
+    "[1, ]" check_invalid_json
+    "{, }" check_invalid_json
+    "{\"foo\": 1, }" check_invalid_json
+}

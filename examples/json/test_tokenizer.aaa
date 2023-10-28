@@ -26,7 +26,7 @@ args
             use expected_token {
                 token repr
                 expected_token repr
-                str:equals assert
+                = assert
             }
         }
     }
@@ -107,9 +107,9 @@ fn test_tokenizer_run_ok {
         tokens 1 vec:get
         tokens 2 vec:get
         use bracket_open, integer, bracket_close {
-            bracket_open "value" ? "[" str:equals assert
-            integer "value" ? "123" str:equals assert
-            bracket_close "value" ? "]" str:equals assert
+            bracket_open "value" ? "[" = assert
+            integer "value" ? "123" = assert
+            bracket_close "value" ? "]" = assert
 
             bracket_open "type_" ?
             match {
