@@ -817,7 +817,7 @@ where
     }
 
     pub fn str_len(&mut self) {
-        let len = (*(self.pop_str())).borrow().len();
+        let len = (*(self.pop_str())).borrow().chars().count();
         self.push_int(len as isize);
     }
 
@@ -871,57 +871,93 @@ where
     }
 
     pub fn str_find_after(&mut self) {
-        let start = self.pop_int();
-
+        let char_start = self.pop_int();
         let search_rc = self.pop_str();
-        let search = (*search_rc).borrow();
-
         let string_rc = self.pop_str();
-        let string = (*string_rc).borrow();
 
-        if !(0 <= start && start as usize <= string.len()) {
-            self.push_str("");
-            self.push_bool(false);
-            return;
-        }
-
-        let start = start as usize;
-
-        let found = string[start..].find(&*search).map(|i| i + start);
-
-        self.push_int(found.unwrap_or(0) as isize);
-        self.push_bool(found.is_some());
+        self._str_find(string_rc, search_rc, char_start);
     }
 
     pub fn str_find(&mut self) {
         let search_rc = self.pop_str();
+        let string_rc = self.pop_str();
+        self._str_find(string_rc, search_rc, 0);
+    }
+
+    fn _str_find(
+        &mut self,
+        string_rc: Rc<RefCell<String>>,
+        search_rc: Rc<RefCell<String>>,
+        char_start: isize,
+    ) {
+        let string = (*string_rc).borrow();
         let search = (*search_rc).borrow();
 
-        let string_rc = self.pop_str();
-        let string = (*string_rc).borrow();
+        let byte_start = string
+            .char_indices()
+            .nth(char_start as usize)
+            .map(|(byte_index, _)| byte_index);
 
-        let found = string.find(&*search);
+        let found = if let Some(byte_start) = byte_start {
+            string[byte_start..].find(&*search).map(|i| i + byte_start)
+        } else {
+            // start out of range
+            self.push_int(0);
+            self.push_bool(false);
+            return;
+        };
 
-        self.push_int(found.unwrap_or(0) as isize);
-        self.push_bool(found.is_some());
+        match found {
+            Some(byte_offset) => {
+                let char_offset = string
+                    .char_indices()
+                    .take_while(|(byte_idx, _)| *byte_idx < byte_offset)
+                    .count();
+                self.push_int(char_offset as isize);
+                self.push_bool(true);
+            }
+            None => {
+                // not found
+                self.push_int(0);
+                self.push_bool(false);
+            }
+        }
     }
 
     pub fn str_substr(&mut self) {
-        let end = self.pop_int();
-        let start = self.pop_int();
+        let end = self.pop_int() as usize;
+        let start = self.pop_int() as usize;
 
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
-        if !(0 <= start && start <= end && end as usize <= string.len()) {
+        let start_byte_index = string
+            .char_indices()
+            .nth(start)
+            .map(|(byte_index, _)| byte_index);
+
+        let end_byte_index = if end == string.chars().count() {
+            Some(string.len())
+        } else {
+            string
+                .char_indices()
+                .nth(end)
+                .map(|(byte_index, _)| byte_index)
+        };
+
+        if let (Some(start), Some(end)) = (start_byte_index, end_byte_index) {
+            if start > end {
+                self.push_str("");
+                self.push_bool(false);
+                return;
+            }
+
+            self.push_str(&string[start..end]);
+            self.push_bool(true);
+        } else {
             self.push_str("");
             self.push_bool(false);
-            return;
         }
-
-        let substr = &string[start as usize..end as usize];
-        self.push_str(substr);
-        self.push_bool(true);
     }
 
     pub fn str_to_bool(&mut self) {
@@ -1356,19 +1392,39 @@ where
         let regex_rc = self.pop_regex();
         let regex = regex_rc.borrow();
 
-        let after_offset = &string[offset as usize..];
+        let offset_byte_index = string
+            .char_indices()
+            .nth(offset as usize)
+            .map(|(byte_index, _)| byte_index);
+
+        let after_offset = if let Some(offset_byte_index) = offset_byte_index {
+            &string[offset_byte_index..]
+        } else {
+            // offset is outside of range
+            self.push_str("");
+            self.push_int(0);
+            self.push_bool(false);
+            return;
+        };
+
         let regex_match = regex.find(after_offset);
 
         match regex_match {
             Some(matched) => {
-                let matched_offset = offset + matched.start() as isize;
+                let matched_byte_offset = matched.start();
                 let matched_string = matched.as_str().to_owned();
 
+                let matched_char_offset = string
+                    .char_indices()
+                    .take_while(|(byte_idx, _)| *byte_idx < matched_byte_offset)
+                    .count();
+
                 self.push_str(&matched_string);
-                self.push_int(matched_offset);
+                self.push_int(offset + matched_char_offset as isize);
                 self.push_bool(true);
             }
             None => {
+                // no match found
                 self.push_str("");
                 self.push_int(0);
                 self.push_bool(false);

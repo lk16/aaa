@@ -623,6 +623,11 @@ fn test_str_len {
     4 = assert
 }
 
+fn test_str_len_multibyte_chars {
+    "Привет" str:len
+    6 = assert
+}
+
 fn test_str_upper {
     "abcd" str:upper
     "ABCD" str:equals assert
@@ -639,6 +644,12 @@ fn test_str_find_ok {
     1 = assert
 }
 
+fn test_str_find_ok_multibyte_chars {
+    "Привет" "иве" str:find
+    assert
+    2 = assert
+}
+
 fn test_str_find_fail {
     "abcd" "x" str:find
     not assert
@@ -649,6 +660,12 @@ fn test_str_find_after_ok {
     "abcd" "bc" 1 str:find_after
     assert
     1 = assert
+}
+
+fn test_str_find_after_ok_multibyte_chars {
+    "Привет, мир" "и" 4 str:find_after
+    assert
+    9 = assert
 }
 
 fn test_str_find_after_fail {
@@ -893,6 +910,18 @@ fn test_regex_find_ok {
             match_ok assert
             matched "aaa" str:equals assert
             match_offset 1 = assert
+        }
+    }
+}
+
+fn test_regex_find_ok_multibyte_chars {
+    "м.р" make_regex assert
+    use re {
+        re "Привет, мир" 0 regex:find
+        use matched, match_offset, match_ok {
+            match_ok assert
+            matched "мир" str:equals assert
+            match_offset 8 = assert
         }
     }
 }
