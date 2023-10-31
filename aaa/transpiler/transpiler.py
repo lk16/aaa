@@ -1,7 +1,7 @@
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Type
+from typing import Callable, Dict, List, Optional, Set, Tuple, Type
 
 from aaa import Position, create_output_folder
 from aaa.cross_referencer.models import (
@@ -90,17 +90,22 @@ class Transpiler:
 
         self.structs: Dict[Tuple[Path, str], Struct] = {}
         self.enums: Dict[Tuple[Path, str], Enum] = {}
+        self.builtin_type_names: Set[str] = set()
 
         # Function currently being transpiled
         self.current_function: Optional[Function] = None
 
         for key, struct in cross_referencer_output.structs.items():
-            if struct.position.file != self.builtins_path:
+            if struct.position.file == self.builtins_path:
+                self.builtin_type_names.add(struct.name)
+            else:
                 self.structs[key] = struct
 
-        for key, type in cross_referencer_output.enums.items():
-            if type.position.file != self.builtins_path:
-                self.enums[key] = type
+        for key, enum in cross_referencer_output.enums.items():
+            if enum.position.file == self.builtins_path:
+                self.builtin_type_names.add(enum.name)
+            else:
+                self.enums[key] = enum
 
     def run(self) -> None:
         transpiled_file = self.transpiler_root / "src/main.rs"
@@ -175,7 +180,7 @@ class Transpiler:
         code.add("use aaa_stdlib::stack::Stack;")
         code.add("use aaa_stdlib::set::{Set, SetValue};")
         code.add("use aaa_stdlib::var::{UserType, Variable};")
-        code.add("use aaa_stdlib::vector::Vector;")
+        code.add("use aaa_stdlib::vector::{Vector, VectorIterator};")
         code.add("use regex::Regex;")
         code.add("use std::cell::RefCell;")
         code.add("use std::collections::HashMap;")
@@ -1104,6 +1109,12 @@ class Transpiler:
             return "Rc<RefCell<Set<Variable<UserTypeEnum>>>>"
         elif type.name == "regex":
             return "Rc<RefCell<Regex>>"
+        elif type.name == "vec_iter":
+            return "Rc<RefCell<VectorIterator<Variable<UserTypeEnum>>>>"
+
+        if type.name in self.builtin_type_names:
+            raise NotImplementedError  # TODO
+
         return "Rc<RefCell<UserTypeEnum>>"
 
     def _generate_struct_impl(self, struct: Struct) -> Code:
@@ -1141,7 +1152,12 @@ class Transpiler:
                 code.add(f"{field_name}: Variable::map_zero_value(),")
             elif field_var_type.type.name == "regex":
                 code.add(f"{field_name}: Variable::regex_zero_value(),")
+            elif field_var_type.type.name == "vec_iter":
+                code.add(f"{field_name}: Variable::None,")  # TODO this is hacky
             else:
+                if field_var_type.type.name in self.builtin_type_names:
+                    raise NotImplementedError  # TODO
+
                 rust_struct_name = self._generate_type_name(field_var_type.type)
                 code.add(
                     f"{field_name}: Variable::UserType(Rc::new(RefCell::new("

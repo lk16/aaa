@@ -229,13 +229,14 @@ where
         }
     }
 
-    pub fn pop_vector_iterator(&mut self) -> Rc<RefCell<VectorIterator<Variable<T>>>> {
+    pub fn pop_vec_iter(&mut self) -> Rc<RefCell<VectorIterator<Variable<T>>>> {
         match self.pop() {
             Variable::VectorIterator(v) => v,
             v => self.pop_type_error("vec_iter", &v),
         }
     }
 
+    // TODO rename this and other similar functions like pop_vec_iter()
     pub fn pop_map_iterator(&mut self) -> Rc<RefCell<MapIterator<Variable<T>, Variable<T>>>> {
         match self.pop() {
             Variable::MapIterator(v) => v,
@@ -1233,7 +1234,7 @@ where
     }
 
     pub fn vec_iter_next(&mut self) {
-        let vector_iter_rc = self.pop_vector_iterator();
+        let vector_iter_rc = self.pop_vec_iter();
         let mut vector_iter = vector_iter_rc.borrow_mut();
 
         match vector_iter.next() {
