@@ -1,0 +1,16 @@
+name: Enforce semi-linear commit history
+
+on: [push, pull_request]
+
+
+# Taken from: https://github.com/maxwell-k/semi-linear/blob/master/.github/workflows/semi-linear.yaml
+jobs:
+  force_semi_linear_history:
+    runs-on: ubuntu-latest
+    name: Semi linear
+    steps:
+      - uses: actions/checkout@v2
+      - name: Fetch all history so that later commands succeed
+        run: git fetch --prune --unshallow
+      - name: Fail if the branch requires a rebase
+        run: test "$(git rev-parse origin/main)" = "$(git merge-base origin/main HEAD)"
