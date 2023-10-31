@@ -4,7 +4,7 @@ from typing import List, Optional, Set, Tuple, Type
 
 import pytest
 
-from aaa import create_test_output_folder
+from aaa import aaa_project_root, create_test_output_folder
 from aaa.parser.exceptions import (
     EndOfFileException,
     ParserBaseException,
@@ -1019,7 +1019,8 @@ def test_parse_regular_file_root_empty_file() -> None:
 
 def get_source_files() -> List[Path]:
     aaa_files: Set[Path] = {
-        Path(file) for file in glob("**/*.aaa", root_dir=".", recursive=True)
+        Path(file)
+        for file in glob("**/*.aaa", root_dir=aaa_project_root(), recursive=True)
     }
     builtins_file = Path("./stdlib/builtins.aaa")
     return sorted(aaa_files - {builtins_file})

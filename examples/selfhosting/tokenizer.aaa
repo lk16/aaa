@@ -24,12 +24,10 @@ fn Range:next args r as Range return int, bool {
     }
 }
 
-struct Empty {}
-
 enum FileReadResult {
     ok as str,
-    open_error as Empty,
-    read_error as Empty,
+    open_error,
+    read_error,
 }
 
 fn read_file args path as const str, return FileReadResult {
@@ -37,7 +35,7 @@ fn read_file args path as const str, return FileReadResult {
 
     use fd, open_ok {
         if open_ok not {
-            Empty FileReadResult:open_error return
+            FileReadResult:open_error return
         }
 
         ""
@@ -47,7 +45,7 @@ fn read_file args path as const str, return FileReadResult {
 
                 use buff, read_ok {
                     if read_ok not {
-                        Empty FileReadResult:read_error return
+                        FileReadResult:read_error return
                     }
 
                     if buff "" str:equals {
@@ -62,81 +60,81 @@ fn read_file args path as const str, return FileReadResult {
 }
 
 enum TokenType {
-    args_ as Empty,
-    as_ as Empty,
-    assign as Empty,
-    block_end as Empty,
-    block_start as Empty,
-    call_ as Empty,
-    case_ as Empty,
-    colon as Empty,
-    comma as Empty,
-    comment as Empty,
-    const_ as Empty,
-    default_ as Empty,
-    else_ as Empty,
-    enum_ as Empty,
-    false_ as Empty,
-    foreach_ as Empty,
-    from_ as Empty,
-    function as Empty,
-    get_field as Empty,
-    identifier as Empty,
-    if_ as Empty,
-    import_ as Empty,
-    integer as Empty,
-    match_ as Empty,
-    never_ as Empty,
-    return_ as Empty,
-    set_field as Empty,
-    square_bracket_close as Empty,
-    square_bracket_open as Empty,
-    string as Empty,
-    struct_ as Empty,
-    true_ as Empty,
-    use_ as Empty,
-    while_ as Empty,
-    whitespace as Empty,
+    args_,
+    as_,
+    assign,
+    block_end,
+    block_start,
+    call_,
+    case_,
+    colon,
+    comma,
+    comment,
+    const_,
+    default_,
+    else_,
+    enum_,
+    false_,
+    foreach_,
+    from_,
+    function,
+    get_field,
+    identifier,
+    if_,
+    import_,
+    integer,
+    match_,
+    never_,
+    return_,
+    set_field,
+    square_bracket_close,
+    square_bracket_open,
+    string,
+    struct_,
+    true_,
+    use_,
+    while_,
+    whitespace,
 }
 
 fn TokenType:to_str args token_type as const TokenType return str {
     token_type
     match {
-        case TokenType:args_ { drop "ARGS" }
-        case TokenType:as_ { drop "AS" }
-        case TokenType:assign { drop "ASSIGN" }
-        case TokenType:block_end { drop "BLOCK_END" }
-        case TokenType:block_start { drop "BLOCK_START" }
-        case TokenType:call_ { drop "CALL" }
-        case TokenType:case_ { drop "CASE" }
-        case TokenType:colon { drop "COLON" }
-        case TokenType:comma { drop "COMMA" }
-        case TokenType:comment { drop "COMMENT" }
-        case TokenType:const_ { drop "CONST" }
-        case TokenType:default_ { drop "DEFAULT" }
-        case TokenType:else_ { drop "ELSE" }
-        case TokenType:enum_ { drop "ENUM" }
-        case TokenType:false_ { drop "FALSE" }
-        case TokenType:foreach_ { drop "FOREACH" }
-        case TokenType:from_ { drop "FROM" }
-        case TokenType:function { drop "FUNCTION" }
-        case TokenType:get_field { drop "GET_FIELD" }
-        case TokenType:identifier { drop "IDENTIFIER" }
-        case TokenType:if_ { drop "IF" }
-        case TokenType:import_ { drop "IMPORT" }
-        case TokenType:integer { drop "INTEGER" }
-        case TokenType:match_ { drop "MATCH" }
-        case TokenType:never_ { drop "NEVER" }
-        case TokenType:return_ { drop "RETURN" }
-        case TokenType:set_field { drop "SET_FIELD" }
-        case TokenType:square_bracket_close { drop "SQUARE_BRACKET_CLOSE" }
-        case TokenType:square_bracket_open { drop "SQUARE_BRACKET_OPEN" }
-        case TokenType:string { drop "STRING" }
-        case TokenType:struct_ { drop "STRUCT" }
-        case TokenType:true_ { drop "TRUE" }
-        case TokenType:use_ { drop "USE" }
-        case TokenType:while_ { drop "WHILE" }
-        case TokenType:whitespace { drop "WHITESPACE" }
+        case TokenType:args_ { "ARGS" }
+        case TokenType:as_ { "AS" }
+        case TokenType:assign { "ASSIGN" }
+        case TokenType:block_end { "BLOCK_END" }
+        case TokenType:block_start { "BLOCK_START" }
+        case TokenType:call_ { "CALL" }
+        case TokenType:case_ { "CASE" }
+        case TokenType:colon { "COLON" }
+        case TokenType:comma { "COMMA" }
+        case TokenType:comment { "COMMENT" }
+        case TokenType:const_ { "CONST" }
+        case TokenType:default_ { "DEFAULT" }
+        case TokenType:else_ { "ELSE" }
+        case TokenType:enum_ { "ENUM" }
+        case TokenType:false_ { "FALSE" }
+        case TokenType:foreach_ { "FOREACH" }
+        case TokenType:from_ { "FROM" }
+        case TokenType:function { "FUNCTION" }
+        case TokenType:get_field { "GET_FIELD" }
+        case TokenType:identifier { "IDENTIFIER" }
+        case TokenType:if_ { "IF" }
+        case TokenType:import_ { "IMPORT" }
+        case TokenType:integer { "INTEGER" }
+        case TokenType:match_ { "MATCH" }
+        case TokenType:never_ { "NEVER" }
+        case TokenType:return_ { "RETURN" }
+        case TokenType:set_field { "SET_FIELD" }
+        case TokenType:square_bracket_close { "SQUARE_BRACKET_CLOSE" }
+        case TokenType:square_bracket_open { "SQUARE_BRACKET_OPEN" }
+        case TokenType:string { "STRING" }
+        case TokenType:struct_ { "STRUCT" }
+        case TokenType:true_ { "TRUE" }
+        case TokenType:use_ { "USE" }
+        case TokenType:while_ { "WHILE" }
+        case TokenType:whitespace { "WHITESPACE" }
     }
 }
 
@@ -155,48 +153,48 @@ fn get_fixed_sized_tokens return vec[FixedSizedToken] {
     vec[FixedSizedToken]
     use v {
         // NOTE: keep this sorted by longest first, and for same length alphabetical
-        v "default" Empty TokenType:default_             make_fixed_sized_token vec:push
-        v "foreach" Empty TokenType:foreach_             make_fixed_sized_token vec:push
-        v "import"  Empty TokenType:import_              make_fixed_sized_token vec:push
-        v "return"  Empty TokenType:return_              make_fixed_sized_token vec:push
-        v "struct"  Empty TokenType:struct_              make_fixed_sized_token vec:push
-        v "const"   Empty TokenType:const_               make_fixed_sized_token vec:push
-        v "false"   Empty TokenType:false_               make_fixed_sized_token vec:push
-        v "match"   Empty TokenType:match_               make_fixed_sized_token vec:push
-        v "never"   Empty TokenType:never_               make_fixed_sized_token vec:push
-        v "while"   Empty TokenType:while_               make_fixed_sized_token vec:push
-        v "args"    Empty TokenType:args_                make_fixed_sized_token vec:push
-        v "call"    Empty TokenType:call_                make_fixed_sized_token vec:push
-        v "case"    Empty TokenType:case_                make_fixed_sized_token vec:push
-        v "else"    Empty TokenType:else_                make_fixed_sized_token vec:push
-        v "enum"    Empty TokenType:enum_                make_fixed_sized_token vec:push
-        v "from"    Empty TokenType:from_                make_fixed_sized_token vec:push
-        v "true"    Empty TokenType:true_                make_fixed_sized_token vec:push
-        v "use"     Empty TokenType:use_                 make_fixed_sized_token vec:push
-        v "!="      Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v "<-"      Empty TokenType:assign               make_fixed_sized_token vec:push
-        v "<="      Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v ">="      Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v "as"      Empty TokenType:as_                  make_fixed_sized_token vec:push
-        v "fn"      Empty TokenType:function             make_fixed_sized_token vec:push
-        v "if"      Empty TokenType:if_                  make_fixed_sized_token vec:push
-        v "-"       Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v ","       Empty TokenType:comma                make_fixed_sized_token vec:push
-        v ":"       Empty TokenType:colon                make_fixed_sized_token vec:push
-        v "!"       Empty TokenType:set_field            make_fixed_sized_token vec:push
-        v "?"       Empty TokenType:get_field            make_fixed_sized_token vec:push
-        v "."       Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v "["       Empty TokenType:square_bracket_open  make_fixed_sized_token vec:push
-        v "]"       Empty TokenType:square_bracket_close make_fixed_sized_token vec:push
-        v "{"       Empty TokenType:block_start          make_fixed_sized_token vec:push
-        v "}"       Empty TokenType:block_end            make_fixed_sized_token vec:push
-        v "*"       Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v "/"       Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v "%"       Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v "+"       Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v "<"       Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v "="       Empty TokenType:identifier           make_fixed_sized_token vec:push
-        v ">"       Empty TokenType:identifier           make_fixed_sized_token vec:push
+        v "default" TokenType:default_             make_fixed_sized_token vec:push
+        v "foreach" TokenType:foreach_             make_fixed_sized_token vec:push
+        v "import"  TokenType:import_              make_fixed_sized_token vec:push
+        v "return"  TokenType:return_              make_fixed_sized_token vec:push
+        v "struct"  TokenType:struct_              make_fixed_sized_token vec:push
+        v "const"   TokenType:const_               make_fixed_sized_token vec:push
+        v "false"   TokenType:false_               make_fixed_sized_token vec:push
+        v "match"   TokenType:match_               make_fixed_sized_token vec:push
+        v "never"   TokenType:never_               make_fixed_sized_token vec:push
+        v "while"   TokenType:while_               make_fixed_sized_token vec:push
+        v "args"    TokenType:args_                make_fixed_sized_token vec:push
+        v "call"    TokenType:call_                make_fixed_sized_token vec:push
+        v "case"    TokenType:case_                make_fixed_sized_token vec:push
+        v "else"    TokenType:else_                make_fixed_sized_token vec:push
+        v "enum"    TokenType:enum_                make_fixed_sized_token vec:push
+        v "from"    TokenType:from_                make_fixed_sized_token vec:push
+        v "true"    TokenType:true_                make_fixed_sized_token vec:push
+        v "use"     TokenType:use_                 make_fixed_sized_token vec:push
+        v "!="      TokenType:identifier           make_fixed_sized_token vec:push
+        v "<-"      TokenType:assign               make_fixed_sized_token vec:push
+        v "<="      TokenType:identifier           make_fixed_sized_token vec:push
+        v ">="      TokenType:identifier           make_fixed_sized_token vec:push
+        v "as"      TokenType:as_                  make_fixed_sized_token vec:push
+        v "fn"      TokenType:function             make_fixed_sized_token vec:push
+        v "if"      TokenType:if_                  make_fixed_sized_token vec:push
+        v "-"       TokenType:identifier           make_fixed_sized_token vec:push
+        v ","       TokenType:comma                make_fixed_sized_token vec:push
+        v ":"       TokenType:colon                make_fixed_sized_token vec:push
+        v "!"       TokenType:set_field            make_fixed_sized_token vec:push
+        v "?"       TokenType:get_field            make_fixed_sized_token vec:push
+        v "."       TokenType:identifier           make_fixed_sized_token vec:push
+        v "["       TokenType:square_bracket_open  make_fixed_sized_token vec:push
+        v "]"       TokenType:square_bracket_close make_fixed_sized_token vec:push
+        v "{"       TokenType:block_start          make_fixed_sized_token vec:push
+        v "}"       TokenType:block_end            make_fixed_sized_token vec:push
+        v "*"       TokenType:identifier           make_fixed_sized_token vec:push
+        v "/"       TokenType:identifier           make_fixed_sized_token vec:push
+        v "%"       TokenType:identifier           make_fixed_sized_token vec:push
+        v "+"       TokenType:identifier           make_fixed_sized_token vec:push
+        v "<"       TokenType:identifier           make_fixed_sized_token vec:push
+        v "="       TokenType:identifier           make_fixed_sized_token vec:push
+        v ">"       TokenType:identifier           make_fixed_sized_token vec:push
 
         v
     }
@@ -235,8 +233,7 @@ fn Position:update args position as Position, token as Token {
                         }
                     }
                     default {
-                        // should not happen
-                        false assert
+                        unreachable
                     }
                 }
             }
@@ -267,12 +264,12 @@ fn Token:equals args lhs as const Token, rhs as const Token return bool {
 
 enum OptionalChar {
     some as str,
-    none as Empty,
+    none,
 }
 
 enum OptionalToken {
     some as Token,
-    none as Empty,
+    none,
 }
 
 fn get_str_char args string as const str, offset as int, return OptionalChar {
@@ -280,7 +277,7 @@ fn get_str_char args string as const str, offset as int, return OptionalChar {
 
     use char, ok {
         if ok not {
-            Empty OptionalChar:none return
+            OptionalChar:none return
         }
         char OptionalChar:some
     }
@@ -322,10 +319,10 @@ fn Tokenizer:tokenize_whitespace args tokenizer as Tokenizer return OptionalToke
         whitespace_regex input offset regex:find
         use matched_str, matched_offset, matched {
             if matched not matched_offset offset != or {
-                Empty OptionalToken:none
+                OptionalToken:none
             } else {
                 Token
-                dup "type_" { Empty TokenType:whitespace } !
+                dup "type_" { TokenType:whitespace } !
                 dup "value" { matched_str } !
                 OptionalToken:some
             }
@@ -341,10 +338,10 @@ fn Tokenizer:tokenize_comment args tokenizer as Tokenizer return OptionalToken {
         comment_regex input offset regex:find
         use matched_str, matched_offset, matched {
             if matched not matched_offset offset != or {
-                Empty OptionalToken:none
+                OptionalToken:none
             } else {
                 Token
-                dup "type_" { Empty TokenType:comment } !
+                dup "type_" { TokenType:comment } !
                 dup "value" { matched_str } !
                 OptionalToken:some
             }
@@ -360,10 +357,10 @@ fn Tokenizer:tokenize_integer args tokenizer as Tokenizer return OptionalToken {
         integer_regex input offset regex:find
         use matched_str, matched_offset, matched {
             if matched not matched_offset offset != or {
-                Empty OptionalToken:none
+                OptionalToken:none
             } else {
                 Token
-                dup "type_" { Empty TokenType:integer } !
+                dup "type_" { TokenType:integer } !
                 dup "value" { matched_str } !
                 OptionalToken:some
             }
@@ -393,7 +390,7 @@ fn Tokenizer:match_fixed_size args tokenizer as Tokenizer, fixed_sized_token as 
                 identifier_char_regex token_value 0 is_identifier_char
                 and
             {
-                Empty OptionalToken:none return
+                OptionalToken:none return
             }
 
             Token
@@ -401,7 +398,7 @@ fn Tokenizer:match_fixed_size args tokenizer as Tokenizer, fixed_sized_token as 
             dup "value" { token_value } !
             OptionalToken:some
         } else {
-            Empty OptionalToken:none
+            OptionalToken:none
         }
     }
 }
@@ -425,7 +422,7 @@ fn Tokenizer:tokenize_fixed_size args tokenizer as Tokenizer return OptionalToke
         }
     }
 
-    Empty OptionalToken:none
+    OptionalToken:none
 }
 
 fn Tokenizer:tokenize_string args tokenizer as Tokenizer return OptionalToken {
@@ -437,11 +434,11 @@ fn Tokenizer:tokenize_string args tokenizer as Tokenizer return OptionalToken {
         use matched_str, matched_offset, matched {
             if matched matched_offset offset = and {
                 Token
-                dup "type_" { Empty TokenType:string } !
+                dup "type_" { TokenType:string } !
                 dup "value" { matched_str } !
                 OptionalToken:some
             } else {
-                Empty OptionalToken:none
+                OptionalToken:none
             }
         }
     }
@@ -451,7 +448,6 @@ fn is_identifier_char args identifier_char_regex as regex, input as const str, o
     input offset get_str_char
     match {
         case OptionalChar:none {
-            drop
             false return
         }
         case OptionalChar:some {
@@ -472,10 +468,10 @@ fn Tokenizer:tokenize_identifier args tokenizer as Tokenizer return OptionalToke
         identifier_regex input offset regex:find
         use matched_str, matched_offset, matched {
             if matched not matched_offset offset != or {
-                Empty OptionalToken:none
+                OptionalToken:none
             } else {
                 Token
-                dup "type_" { Empty TokenType:identifier } !
+                dup "type_" { TokenType:identifier } !
                 dup "value" { matched_str } !
                 OptionalToken:some
             }
@@ -519,7 +515,7 @@ fn Tokenizer:tokenize_at_offset args tokenizer as Tokenizer return OptionalToken
 
 enum TokenizeResult {
     ok as vec[Token],
-    error as Empty,
+    error,
 }
 
 fn Tokenizer:run args tokenizer as Tokenizer return TokenizeResult {
@@ -530,8 +526,7 @@ fn Tokenizer:run args tokenizer as Tokenizer return TokenizeResult {
             tokenizer Tokenizer:tokenize_at_offset
             match {
                 case OptionalToken:none {
-                    drop
-                    Empty TokenizeResult:error return
+                    TokenizeResult:error return
                 }
                 case OptionalToken:some {
                     use token {
@@ -559,8 +554,8 @@ fn print_tokens args tokens as vec[Token] {
         use token {
             token "type_" ?
             match {
-                case TokenType:whitespace { drop }
-                case TokenType:comment { drop }
+                case TokenType:whitespace { nop }
+                case TokenType:comment { nop }
                 default {
                     token "position" ?
                     use position {
@@ -595,12 +590,10 @@ fn main args argv as vec[str] return int {
         source_path read_file
         match {
             case FileReadResult:open_error {
-                drop
                 "Could not open " . source_path . "\n" .
                 1 return
             }
             case FileReadResult:read_error {
-                drop
                 "Could not read " . source_path . "\n" .
                 1 return
             }
@@ -614,7 +607,6 @@ fn main args argv as vec[str] return int {
                             }
                         }
                         case TokenizeResult:error {
-                            drop
                             "Tokenization failed.\n" .
                             1 return
                         }

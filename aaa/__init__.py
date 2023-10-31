@@ -83,3 +83,7 @@ def create_test_output_folder(name: Optional[str] = None) -> Path:
 
 def create_output_folder(name: Optional[str] = None) -> Path:
     return __create_output_folder(AAA_DEFAULT_OUTPUT_FOLDER_ROOT, name)
+
+
+def aaa_project_root() -> Path:
+    return (Path(__file__).parent / "..").resolve()

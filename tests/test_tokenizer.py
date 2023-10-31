@@ -4,7 +4,7 @@ from typing import Tuple
 
 import pytest
 
-from aaa import create_test_output_folder
+from aaa import aaa_project_root, create_test_output_folder
 from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
 from aaa.tokenizer.exceptions import TokenizerException
 from aaa.tokenizer.models import TokenType
@@ -15,7 +15,7 @@ from aaa.tokenizer.tokenizer import Tokenizer
     ["file"],
     [
         pytest.param(Path(file_name), id=file_name)
-        for file_name in glob("**/*.aaa", root_dir=".", recursive=True)
+        for file_name in glob("**/*.aaa", root_dir=aaa_project_root(), recursive=True)
     ],
 )
 def test_tokenizer_parts_add_up(file: Path) -> None:

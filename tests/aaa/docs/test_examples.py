@@ -86,14 +86,14 @@ def test_http_server() -> None:
 
     subproc = subprocess.Popen(binary)
 
-    r = requests.get("http://localhost:8080")
-
-    subproc.terminate()
-    subproc.wait()
-
-    assert r.status_code == 200
-    assert r.json() == {"message": "Hello world!"}
-    assert r.headers["Content-Type"] == "application/json"
+    try:
+        r = requests.get("http://localhost:8080")
+        assert r.status_code == 200
+        assert r.json() == {"message": "Hello world!"}
+        assert r.headers["Content-Type"] == "application/json"
+    finally:
+        subproc.terminate()
+        subproc.wait()
 
 
 def test_http_client(capfd: CaptureFixture[str]) -> None:
