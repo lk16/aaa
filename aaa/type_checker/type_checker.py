@@ -206,7 +206,6 @@ class SingleFunctionTypeChecker:
 
         # NOTE: we keep track of stacks per position.
         # This is useful for the Transpiler and for debugging.
-        # TODO currently values are the stack before the operation at position (in key), it should be after
         self.position_stacks: Dict[
             Position, List[VariableType | FunctionPointer] | Never
         ] = {}

@@ -267,7 +267,7 @@ class CrossReferencer:
                     ImplicitEnumConstructorImport,
                 ),
             ):
-                pass  # TODO
+                pass  # TODO #171 Redo verbose mode for cross referencer
 
             else:  # pragma: nocover
                 raise NotImplementedError
