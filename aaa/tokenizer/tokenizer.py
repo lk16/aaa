@@ -6,6 +6,7 @@ from aaa import Position
 from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
 from aaa.tokenizer.exceptions import FileReadError, TokenizerException
 from aaa.tokenizer.models import Token, TokenType
+from aaa.tokenizer.regex import CHARACTER_LITERAL_REGEX, STRING_LITERAL_REGEX
 
 
 class Tokenizer:
@@ -37,6 +38,7 @@ class Tokenizer:
         return Token(position, token_type, self.code[start:end])
 
     def _regex(self, offset: int, regex: str, token_type: TokenType) -> Optional[Token]:
+        # TODO compile each regexes once before calling this function
         match = re.match(regex, self.code[offset:])
 
         if not match:
@@ -89,44 +91,10 @@ class Tokenizer:
         return self._regex(offset, "[a-zA-Z_]+", TokenType.IDENTIFIER)
 
     def _tokenize_string(self, offset: int) -> Optional[Token]:
-        if self.code[offset] != '"':
-            return None
-
-        start = offset
-        offset = start + 1
-
-        while True:
-            if offset >= len(self.code):
-                self._fail(start)
-
-            if not self.code[offset].isprintable():
-                self._fail(start)
-
-            if self.code[offset] == '"':
-                return self._create_token(TokenType.STRING, start, offset + 1)
-
-            if self.code[offset] == "\\":
-                try:
-                    escaped = self.code[offset + 1]
-                except IndexError:
-                    self._fail(start)
-
-                if escaped not in [
-                    "n",
-                    "r",
-                    "\\",
-                    '"',
-                ]:  # TODO escape same sequences as char
-                    self._fail(start)
-
-                offset += 2
-            else:
-                offset += 1
+        return self._regex(offset, STRING_LITERAL_REGEX, TokenType.STRING)
 
     def _tokenize_character(self, offset: int) -> Optional[Token]:
-        regex = "'(^[\\]|\\(n|r|t|\\|\"|'|x[0-7][0-9a-fA-F])'"
-        # TODO support unicode escape sequences
-        return self._regex(offset, regex, TokenType.CHARACTER)
+        return self._regex(offset, CHARACTER_LITERAL_REGEX, TokenType.CHARACTER)
 
     def _print_tokens(self, tokens: List[Token]) -> None:  # pragma: nocover
         if not self.verbose:

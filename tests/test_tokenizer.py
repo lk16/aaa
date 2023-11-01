@@ -1,3 +1,4 @@
+from aaa.tokenizer.regex import character_literal_regex, string_literal_regex
 from glob import glob
 from pathlib import Path
 from typing import Tuple
@@ -98,3 +99,105 @@ def test_fixed_sized_tokens_is_sorted() -> None:
         return (-len(value), value)
 
     assert FIXED_SIZED_TOKENS == sorted(FIXED_SIZED_TOKENS, key=sort_key)
+
+
+@pytest.mark.parametrize(
+    ["input", "expected_match"],
+    [
+        ("'a'", True),
+        ("'A'", True),
+        ("'z'", True),
+        ("'Z'", True),
+        ("'aa'", False),
+        ("'\"'", True),
+        ("'\\''", True),
+        ("'\\'", False),
+        ("'\\'", False),
+        ("'\\/'", True),
+        ("'\\\"'", True),
+        ("'\\\\'", True),
+        ("'\\0'", True),
+        ("'\\b'", True),
+        ("'\\e'", True),
+        ("'\\f'", True),
+        ("'\\n'", True),
+        ("'\\r'", True),
+        ("'\\t'", True),
+        ("'\f'", False),
+        ("'\n'", False),
+        ("'\r'", False),
+        ("'\t'", False),
+        ("'\v'", False),
+        ("'∑'", True),
+        ("'😀'", True),
+        ("'\\u000'", False),
+        ("'\\u00000'", False),
+        ("'\\u0000'", True),
+        ("'\\u9999'", True),
+        ("'\\uaaaa'", True),
+        ("'\\uffff'", True),
+        ("'\\uAAAA'", True),
+        ("'\\uFFFF'", True),
+        ("'\\U0000000'", False),
+        ("'\\U000000000'", False),
+        ("'\\U00000000'", True),
+        ("'\\U99999999'", True),
+        ("'\\Uaaaaaaaa'", True),
+        ("'\\Uffffffff'", True),
+        ("'\\UAAAAAAAA'", True),
+        ("'\\UFFFFFFFF'", True),
+    ],
+)
+def test_character_literal_regex(input: str, expected_match: bool) -> None:
+    assert expected_match == bool(character_literal_regex.match(input))
+
+
+@pytest.mark.parametrize(
+    ["input", "expected_match"],
+    [
+        ('""', True),
+        ('"a"', True),
+        ('"aa"', True),
+        ('"AA"', True),
+        ('"zz"', True),
+        ('"ZZ"', True),
+        ('"\'"', True),
+        ('"\\"', False),
+        ('"\\\'"', True),
+        ('"\\/"', True),
+        ('"\\""', True),
+        ('"\\\\"', True),
+        ('"\\0"', True),
+        ('"\\b"', True),
+        ('"\\e"', True),
+        ('"\\f"', True),
+        ('"\\n"', True),
+        ('"\\r"', True),
+        ('"\\t"', True),
+        ('"\f"', False),
+        ('"\n"', False),
+        ('"\r"', False),
+        ('"\t"', False),
+        ('"\v"', False),
+        ('"∑"', True),
+        ('"😀"', True),
+        ('"\\u000"', False),
+        ('"\\u00000"', True),
+        ('"\\u0000"', True),
+        ('"\\u9999"', True),
+        ('"\\uaaaa"', True),
+        ('"\\uffff"', True),
+        ('"\\uAAAA"', True),
+        ('"\\uFFFF"', True),
+        ('"\\U0000000"', False),
+        ('"\\U000000000"', True),
+        ('"\\U00000000"', True),
+        ('"\\U99999999"', True),
+        ('"\\Uaaaaaaaa"', True),
+        ('"\\Uffffffff"', True),
+        ('"\\UAAAAAAAA"', True),
+        ('"\\UFFFFFFFF"', True),
+    ],
+)
+def test_string_literal_regex(input: str, expected_match: bool) -> None:
+    assert expected_match == bool(string_literal_regex.match(input))
