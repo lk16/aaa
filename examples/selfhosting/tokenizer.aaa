@@ -555,7 +555,6 @@ fn print_tokens args tokens as vec[Token] {
             token "type_" ?
             match {
                 case TokenType:whitespace { nop }
-                case TokenType:comment { nop }
                 default {
                     token "position" ?
                     use position {

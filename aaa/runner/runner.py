@@ -5,12 +5,16 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from aaa import AaaException, create_output_folder, create_test_output_folder
+from aaa import (
+    AaaException,
+    create_output_folder,
+    create_test_output_folder,
+    get_stdlib_path,
+)
 from aaa.cross_referencer.cross_referencer import CrossReferencer
 from aaa.parser.models import ParsedFile
 from aaa.parser.parser import Parser
 from aaa.runner.exceptions import (
-    AaaEnvironmentError,
     AaaTranslationException,
     ExcecutableDidNotRun,
     RustCompilerError,
@@ -101,17 +105,6 @@ class Runner:
 
         print(f"Found {len(runner_exception.exceptions)} error(s).", file=sys.stderr)
 
-    def _get_stdlib_path(self) -> Path:
-        try:
-            stdlib_folder = os.environ["AAA_STDLIB_PATH"]
-        except KeyError as e:
-            raise AaaEnvironmentError(
-                "Environment variable AAA_STDLIB_PATH is not set.\n"
-                + "Cannot find standard library!"
-            ) from e
-
-        return Path(stdlib_folder) / "builtins.aaa"
-
     def run(
         self,
         *,
@@ -162,7 +155,7 @@ class Runner:
         transpiler_root = create_output_folder()
 
         try:
-            stdlib_path = self._get_stdlib_path()
+            stdlib_path = get_stdlib_path()
 
             parser = Parser(
                 self.entrypoint, stdlib_path, self.parsed_files, self.verbose

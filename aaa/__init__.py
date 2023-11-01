@@ -1,3 +1,4 @@
+import os
 import secrets
 from pathlib import Path
 from tempfile import gettempdir
@@ -62,6 +63,22 @@ class Position:
 
 class AaaException(Exception):
     ...
+
+
+class AaaEnvironmentError(AaaException):
+    ...
+
+
+def get_stdlib_path() -> Path:
+    try:
+        stdlib_folder = os.environ["AAA_STDLIB_PATH"]
+    except KeyError as e:
+        raise AaaEnvironmentError(
+            "Environment variable AAA_STDLIB_PATH is not set.\n"
+            + "Cannot find standard library!"
+        ) from e
+
+    return Path(stdlib_folder) / "builtins.aaa"
 
 
 AAA_DEFAULT_OUTPUT_FOLDER_ROOT = Path(gettempdir()) / "aaa/transpiled"

@@ -744,7 +744,9 @@ class FunctionBodyResolver:
     def _resolve_function_body(self, parsed_body: parser.FunctionBody) -> FunctionBody:
         return FunctionBody(
             items=[
-                self._resolve_function_body_item(item) for item in parsed_body.items
+                self._resolve_function_body_item(item)
+                for item in parsed_body.items
+                if type(item) != parser.Comment
             ],
             parsed=parsed_body,
         )
@@ -856,7 +858,7 @@ class FunctionBodyResolver:
             parser.WhileLoop: self._resolve_while_loop,
         }
 
-        assert set(resolve_functions.keys()) == set(parser.FunctionBodyItem.__args__)  # type: ignore
+        assert set(resolve_functions.keys()) == set(parser.FunctionBodyItem.__args__) - {parser.Comment}  # type: ignore
         return resolve_functions[type(parsed_item)](parsed_item)
 
     def _resolve_function_pointer_literal(

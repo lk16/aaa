@@ -2,11 +2,12 @@
 Stack-based language, like forth.
 
 ### Contents
-The following tools for the Aaa language can be found is this repo
+The following tools for the Aaa language can be found is this repository:
 * A [tokenizer](./aaa/tokenizer/) and [parser](./aaa/parser/) for Aaa.
 * A [type checker](./aaa/type_checker/)
 * A [transpiler to Rust](./aaa/transpiler/)
 * A [VS Code extension](./aaa-vscode-extension/README.md) for the Aaa language.
+* A [formatter](./aaa/formatter.py) for Aaa source files.
 * A lot of tests, written both in python and Aaa
 
 ### Examples
@@ -85,6 +86,26 @@ Now you can start running code in Aaa or develop the language!
 
 To enable syntax highlighting for VS Code, enable the [Aaa language extension](./aaa-vscode-extension/README.md)
 
+### Setup format on save
+For VS Code follow these steps:
+* Install the [Run on Save](https://marketplace.visualstudio.com/items?itemName=pucelle.run-on-save) extension.
+* Merge the JSON configuration below into your `*.code-workspace` JSON file.
+
+```json
+{
+    "settings": {
+        "runOnSave.commands": [
+			{
+				"match": ".*\\.aaa$",
+				"command": "cd ${workspaceFolder} && pdm run ./manage.py format --stdlib-path ./stdlib ${file} --fix",
+				"runIn": "backend",
+				"runningStatusMessage": "Formatting ${fileBasename}",
+				"finishStatusMessage": "${fileBasename} was formatted"
+			},
+		]
+    }
+}
+```
 
 ### Aaa and porth
 After watching part of the [Youtube series](https://www.youtube.com/playlist?list=PLpM-Dvs8t0VbMZA7wW9aR3EtBqe2kinu4) on [porth](https://gitlab.com/tsoding/porth), I wanted to make my own stack-based language. Aaa and porth have some similarities, but obviously are not compatible with each other. No code was copied over from the porth repo.

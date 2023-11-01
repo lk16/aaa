@@ -1180,3 +1180,395 @@ def test_parse_function_pointer_type_literal(
     else:
         with pytest.raises(expected_exception):
             parser._parse_assignment(0)
+
+
+@pytest.mark.parametrize(
+    ["code"],
+    [
+        (
+            "// foo\n",  # fmt: skip
+        ),
+        (
+            "// foo\n"  # fmt: skip
+            "fn main { nop }\n",
+        ),
+        (
+            "fn main { nop }\n"  # fmt: skip
+            "// foo\n",
+        ),
+    ],
+)
+def test_parse_comment_in_regular_file(code: str) -> None:
+    parser = parse_code(code)
+    parser.parse_regular_file()
+
+
+@pytest.mark.parametrize(
+    ["code"],
+    [
+        (
+            "fn main {\n"  # fmt: skip
+            "    // foo\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    // foo\n"
+            "    nop\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    nop\n"
+            "    // foo\n"
+            "}\n",
+        ),
+    ],
+)
+def test_parse_comment_in_function_body(code: str) -> None:
+    parser = parse_code(code)
+    parser.parse_regular_file()
+
+
+@pytest.mark.parametrize(
+    ["code"],
+    [
+        (
+            "fn main {\n"  # fmt: skip
+            "    // foo\n"
+            "    while 1 2 { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    while\n"
+            "    // foo\n"
+            "    1 2 { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    while 1 2\n"
+            "    // foo\n"
+            "    { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    while 1 2 {\n"
+            "    // foo\n"
+            "    nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    while 1 2 { nop\n"
+            "    // foo\n"
+            "    }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    while 1 2 { nop }\n"
+            "    // foo\n"
+            "}\n",
+        ),
+    ],
+)
+def test_parse_comment_in_while_loop(code: str) -> None:
+    parser = parse_code(code)
+    parser.parse_regular_file()
+
+
+@pytest.mark.parametrize(
+    ["code"],
+    [
+        (
+            "fn main {\n"  # fmt: skip
+            "    // foo\n"
+            "    if true { nop } else { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if \n"
+            "    // foo\n"
+            "    true { nop } else { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if true \n"
+            "    // foo\n"
+            "    { nop } else { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if true {\n"
+            "    // foo\n"
+            "    nop } else { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if true { nop\n"
+            "    // foo\n"
+            "    } else { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if true { nop }\n"
+            "    // foo\n"
+            "    else { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if true { nop } else\n"
+            "    // foo\n"
+            "    { nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if true { nop } else {\n"
+            "    // foo\n"
+            "    nop }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if true { nop } else { nop\n"
+            "    // foo\n"
+            "    }\n"
+            "}\n",
+        ),
+        (
+            "fn main {\n"  # fmt: skip
+            "    if true { nop } else { nop }\n"
+            "    // foo\n"
+            "}\n",
+        ),
+    ],
+)
+def test_parse_comment_in_branch(code: str) -> None:
+    parser = parse_code(code)
+    parser.parse_regular_file()
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_struct_field_query(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_struct_field_update(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_get_function_pointer(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_return(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_call(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_argument(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_function(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_import_item(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_import(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_struct(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_parsed_file(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_type_literal(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_function_pointer_type_literal(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_function_name(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_function_call(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_case_label(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_foreach_loop(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_use_block(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_assignment(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_case_block(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_default_block(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_match_block(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_enum_variant(code: str) -> None:
+    ...
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    ["code"],
+    [],
+)
+def test_parse_comment_in_enum(code: str) -> None:
+    ...

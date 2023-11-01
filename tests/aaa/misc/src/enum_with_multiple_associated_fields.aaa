@@ -1,6 +1,7 @@
 enum Event {
     click as { int, int },
     message as str,
+    // TODO prevent formatting of next line
     message_with_brackets as { str },
     quit,
 }
