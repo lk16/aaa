@@ -63,7 +63,7 @@
 			"patterns": [
 				{
 					"name": "constant.character.escape.aaa",
-					"match": "\\\\(n|r|\\\\|\")"
+					"match": "\\\\([0beftnr'/\"\\\\]|(u[0-9a-fA-F]{4})|(U[0-9a-fA-F]{8}))"
 				}
 			]
 		},
@@ -74,7 +74,7 @@
 			"patterns": [
 				{
 					"name": "constant.character.escape.aaa",
-					"match": "\\\\(n|r|0|\\\\|\")"
+					"match": "\\\\([0beftnr'/\"\\\\]|(u[0-9a-fA-F]{4})|(U[0-9a-fA-F]{8}))"
 				}
 			]
 		},
