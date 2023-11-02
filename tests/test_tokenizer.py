@@ -1,4 +1,3 @@
-from aaa.tokenizer.regex import character_literal_regex, string_literal_regex
 from glob import glob
 from pathlib import Path
 from typing import Tuple
@@ -9,6 +8,7 @@ from aaa import aaa_project_root, create_test_output_folder
 from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
 from aaa.tokenizer.exceptions import TokenizerException
 from aaa.tokenizer.models import TokenType
+from aaa.tokenizer.regex import character_literal_regex, string_literal_regex
 from aaa.tokenizer.tokenizer import Tokenizer
 
 

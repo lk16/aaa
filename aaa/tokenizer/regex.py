@@ -23,3 +23,7 @@ STRING_LITERAL_REGEX = '"(' + CHARACTER_REGEX + "|')*\""
 
 character_literal_regex = re.compile(CHARACTER_LITERAL_REGEX)
 string_literal_regex = re.compile(STRING_LITERAL_REGEX)
+whitespace_regex = re.compile("\\s+")
+comment_regex = re.compile("//[^\n]*")
+integer_regex = re.compile("(-)?[0-9]+")
+identifier_regex = re.compile("[a-zA-Z_]+")

@@ -1,12 +1,19 @@
-import re
 from pathlib import Path
+from re import Pattern
 from typing import List, NoReturn, Optional
 
 from aaa import Position
 from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
 from aaa.tokenizer.exceptions import FileReadError, TokenizerException
 from aaa.tokenizer.models import Token, TokenType
-from aaa.tokenizer.regex import CHARACTER_LITERAL_REGEX, STRING_LITERAL_REGEX
+from aaa.tokenizer.regex import (
+    character_literal_regex,
+    comment_regex,
+    identifier_regex,
+    integer_regex,
+    string_literal_regex,
+    whitespace_regex,
+)
 
 
 class Tokenizer:
@@ -37,9 +44,10 @@ class Tokenizer:
         position = self._get_position(start)
         return Token(position, token_type, self.code[start:end])
 
-    def _regex(self, offset: int, regex: str, token_type: TokenType) -> Optional[Token]:
-        # TODO compile each regexes once before calling this function
-        match = re.match(regex, self.code[offset:])
+    def _regex(
+        self, offset: int, regex: Pattern[str], token_type: TokenType
+    ) -> Optional[Token]:
+        match = regex.match(self.code[offset:])
 
         if not match:
             return None
@@ -48,23 +56,7 @@ class Tokenizer:
         return self._create_token(token_type, offset, end)
 
     def _tokenize_whitespace(self, offset: int) -> Optional[Token]:
-        ws_len = 0
-
-        while True:
-            end = offset + ws_len
-
-            if end >= len(self.code):
-                break
-
-            if not self.code[offset + ws_len].isspace():
-                break
-
-            ws_len += 1
-
-        if ws_len == 0:
-            return None
-
-        return self._create_token(TokenType.WHITESPACE, offset, offset + ws_len)
+        return self._regex(offset, whitespace_regex, TokenType.WHITESPACE)
 
     def _tokenize_fixed_size(self, offset: int) -> Optional[Token]:
         token: Optional[Token] = None
@@ -82,19 +74,19 @@ class Tokenizer:
         return token
 
     def _tokenize_comment(self, offset: int) -> Optional[Token]:
-        return self._regex(offset, "//[^\n]*", TokenType.COMMENT)
+        return self._regex(offset, comment_regex, TokenType.COMMENT)
 
     def _tokenize_integer(self, offset: int) -> Optional[Token]:
-        return self._regex(offset, "(-)?[0-9]+", TokenType.INTEGER)
+        return self._regex(offset, integer_regex, TokenType.INTEGER)
 
     def _tokenize_identifier(self, offset: int) -> Optional[Token]:
-        return self._regex(offset, "[a-zA-Z_]+", TokenType.IDENTIFIER)
+        return self._regex(offset, identifier_regex, TokenType.IDENTIFIER)
 
     def _tokenize_string(self, offset: int) -> Optional[Token]:
-        return self._regex(offset, STRING_LITERAL_REGEX, TokenType.STRING)
+        return self._regex(offset, string_literal_regex, TokenType.STRING)
 
     def _tokenize_character(self, offset: int) -> Optional[Token]:
-        return self._regex(offset, CHARACTER_LITERAL_REGEX, TokenType.CHARACTER)
+        return self._regex(offset, character_literal_regex, TokenType.CHARACTER)
 
     def _print_tokens(self, tokens: List[Token]) -> None:  # pragma: nocover
         if not self.verbose:
