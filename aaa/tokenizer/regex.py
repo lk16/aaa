@@ -1,18 +1,20 @@
 import re
 
 REGULAR_CHARACTER = "([^'\t\n\r\f\v\\\\\"])"
-SIMPLE_ESCAPED_CHARACTER = "(\\\\[/0befnrt\\\\\"'])"
-SHORT_ESCAPED_UNICODE_CHARACTER = "(\\\\u[0-9a-fA-F]{4})"
-LONG_ESCAPED_UNICODE_CHARACTER = "(\\\\U[0-9a-fA-F]{8})"
+ESCACPED_CHAR_SIMPLE = "(\\\\[/0befnrt\\\\\"'])"
+ESCAPED_CHAR_TWO_HEX = "(\\\\x[0-9a-fA-F]{2})"  # TODO #190 add tests for this
+ESCAPED_CHAR_FOUR_HEX = "(\\\\u[0-9a-fA-F]{4})"
+ESCAPED_CHAR_SIX_HEX = "(\\\\U((0[0-9])|10)[0-9a-fA-F]{4})"
 
 CHARACTER_REGEX = (
     "("
     + "|".join(
         [
             REGULAR_CHARACTER,
-            SIMPLE_ESCAPED_CHARACTER,
-            SHORT_ESCAPED_UNICODE_CHARACTER,
-            LONG_ESCAPED_UNICODE_CHARACTER,
+            ESCACPED_CHAR_SIMPLE,
+            ESCAPED_CHAR_TWO_HEX,
+            ESCAPED_CHAR_FOUR_HEX,
+            ESCAPED_CHAR_SIX_HEX,
         ]
     )
     + ")"

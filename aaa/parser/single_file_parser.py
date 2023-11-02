@@ -49,7 +49,6 @@ from aaa.tokenizer.models import Token, TokenType
 
 
 def unescape_string(escaped: str) -> str:
-    # TODO add tests in Aaa for this
     simple_escape_sequences = {
         '"': '"',
         "'": "'",

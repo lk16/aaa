@@ -63,7 +63,7 @@
 			"patterns": [
 				{
 					"name": "constant.character.escape.aaa",
-					"match": "\\\\([0beftnr'/\"\\\\]|(u[0-9a-fA-F]{4})|(U[0-9a-fA-F]{8}))"
+					"match": "\\\\([0beftnr'/\"\\\\]|(x[0-9a-fA-F]{2})|(u[0-9a-fA-F]{4})|(U((0[0-9])|10)[0-9a-fA-F]{4}))"
 				}
 			]
 		},
@@ -74,7 +74,7 @@
 			"patterns": [
 				{
 					"name": "constant.character.escape.aaa",
-					"match": "\\\\([0beftnr'/\"\\\\]|(u[0-9a-fA-F]{4})|(U[0-9a-fA-F]{8}))"
+					"match": "\\\\([0beftnr'/\"\\\\]|(x[0-9a-fA-F]{2})|(u[0-9a-fA-F]{4})|(U((0[0-9])|10)[0-9a-fA-F]{4}))"
 				}
 			]
 		},
