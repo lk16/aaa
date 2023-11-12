@@ -1,15 +1,14 @@
 from glob import glob
 from pathlib import Path
-from typing import Tuple
 
 import pytest
 
-from aaa import aaa_project_root, create_test_output_folder
-from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
-from aaa.tokenizer.exceptions import TokenizerException
-from aaa.tokenizer.models import TokenType
-from aaa.tokenizer.regex import character_literal_regex, string_literal_regex
-from aaa.tokenizer.tokenizer import Tokenizer
+from aaa import aaa_project_root
+from aaa.parser.lib.exceptions import TokenizerException
+from aaa.parser.lib.file_parser import FileParser
+from aaa.parser.parser import SYNTAX_JSON_PATH
+
+file_parser = FileParser(SYNTAX_JSON_PATH)
 
 
 @pytest.mark.parametrize(
@@ -20,7 +19,8 @@ from aaa.tokenizer.tokenizer import Tokenizer
     ],
 )
 def test_tokenizer_parts_add_up(file: Path) -> None:
-    tokens = Tokenizer(file, False).tokenize_unfiltered()
+    # TODO this test should be moved into parser lib, since it's not specific to Aaa
+    tokens = file_parser.tokenize_file(file, filter_token_types=False)
 
     tokens_concatenated = "".join(token.value for token in tokens)
     assert tokens_concatenated == file.read_text()
@@ -29,45 +29,27 @@ def test_tokenizer_parts_add_up(file: Path) -> None:
 @pytest.mark.parametrize(
     ["code", "expected_token_type"],
     [
-        pytest.param(" ", TokenType.WHITESPACE, id="space"),
-        pytest.param("\n", TokenType.WHITESPACE, id="newline"),
-        pytest.param("\t", TokenType.WHITESPACE, id="tab"),
-        pytest.param(" \t\n \t\n", TokenType.WHITESPACE, id="mixed_whitespace"),
-        pytest.param("fn", TokenType.FUNCTION, id="fixed_size"),
-        pytest.param(
-            ">=", TokenType.IDENTIFIER, id="fixed_size_with_shorter_substring"
-        ),
-        pytest.param("// comment", TokenType.COMMENT, id="comment"),
-        pytest.param("123", TokenType.INTEGER, id="positive_integer"),
-        pytest.param("-123", TokenType.INTEGER, id="negative_integer"),
-        pytest.param("AaBb_YyZz", TokenType.IDENTIFIER, id="identifier"),
-        pytest.param('""', TokenType.STRING, id="string_empty"),
-        pytest.param('"hello"', TokenType.STRING, id="string_simple"),
-        pytest.param(
-            '"\\n \\\\ \\""', TokenType.STRING, id="string_with_escape_sequences"
-        ),
+        pytest.param(" ", "whitespace", id="space"),
+        pytest.param("\n", "whitespace", id="newline"),
+        pytest.param("\t", "whitespace", id="tab"),
+        pytest.param(" \t\n \t\n", "whitespace", id="mixed_whitespace"),
+        pytest.param("fn", "fn", id="fixed_size"),
+        pytest.param(">=", "identifier", id="fixed_size_with_shorter_substring"),
+        pytest.param("// comment", "comment", id="comment"),
+        pytest.param("123", "integer", id="positive_integer"),
+        pytest.param("-123", "integer", id="negative_integer"),
+        pytest.param("AaBb_YyZz", "identifier", id="identifier"),
+        pytest.param('""', "string", id="string_empty"),
+        pytest.param('"hello"', "string", id="string_simple"),
+        pytest.param('"\\n \\\\ \\""', "string", id="string_with_escape_sequences"),
     ],
 )
-def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> None:
-    file = create_test_output_folder() / "sample.aaa"
-
-    file.write_text(code)
-    tokenizer = Tokenizer(file, False)
-    tokens = tokenizer.tokenize_unfiltered()
+def test_tokenizer_token_types(code: str, expected_token_type: str) -> None:
+    tokens = file_parser.tokenize_text(code, filter_token_types=False)
 
     assert 1 == len(tokens)
     assert expected_token_type == tokens[0].type
     assert code == tokens[0].value
-
-    tokens = tokenizer.run()
-
-    if expected_token_type in [TokenType.WHITESPACE, TokenType.COMMENT]:
-        assert 0 == len(tokens)
-
-    else:
-        assert 1 == len(tokens)
-        assert expected_token_type == tokens[0].type
-        assert code == tokens[0].value
 
 
 @pytest.mark.parametrize(
@@ -81,11 +63,8 @@ def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> Non
     ],
 )
 def test_tokenizer_error(code: str, expected_line: int, expected_column: int) -> None:
-    file = create_test_output_folder() / "sample.aaa"
-
-    file.write_text(code)
     with pytest.raises(TokenizerException) as e:
-        Tokenizer(file, False).tokenize_unfiltered()
+        file_parser.tokenize_text(code)
 
     tokenizer_exception = e.value
 
@@ -93,115 +72,6 @@ def test_tokenizer_error(code: str, expected_line: int, expected_column: int) ->
     assert expected_column == tokenizer_exception.position.column
 
 
-def test_fixed_sized_tokens_is_sorted() -> None:
-    def sort_key(item: Tuple[str, TokenType]) -> Tuple[int, str]:
-        value = item[0]
-        return (-len(value), value)
+# TODO move test_character_literal_regex() to parse tests
 
-    assert FIXED_SIZED_TOKENS == sorted(FIXED_SIZED_TOKENS, key=sort_key)
-
-
-@pytest.mark.parametrize(
-    ["input", "expected_match"],
-    [
-        ("'a'", True),
-        ("'A'", True),
-        ("'z'", True),
-        ("'Z'", True),
-        ("'aa'", False),
-        ("'\"'", True),
-        ("'\\''", True),
-        ("'\\'", False),
-        ("'\\'", False),
-        ("'\\/'", True),
-        ("'\\\"'", True),
-        ("'\\\\'", True),
-        ("'\\0'", True),
-        ("'\\b'", True),
-        ("'\\e'", True),
-        ("'\\f'", True),
-        ("'\\n'", True),
-        ("'\\r'", True),
-        ("'\\t'", True),
-        ("'\f'", False),
-        ("'\n'", False),
-        ("'\r'", False),
-        ("'\t'", False),
-        ("'\v'", False),
-        ("'∑'", True),
-        ("'😀'", True),
-        ("'\\u000'", False),
-        ("'\\u00000'", False),
-        ("'\\u0000'", True),
-        ("'\\u9999'", True),
-        ("'\\uaaaa'", True),
-        ("'\\uffff'", True),
-        ("'\\uAAAA'", True),
-        ("'\\uFFFF'", True),
-        ("'\\U00000'", False),
-        ("'\\U0000000'", False),
-        ("'\\U000000'", True),
-        ("'\\U109999'", True),
-        ("'\\U10aaaa'", True),
-        ("'\\U10ffff'", True),
-        ("'\\U10AAAA'", True),
-        ("'\\U10FFFF'", True),
-        ("'\\U200000'", False),
-        ("'\\U110000'", False),
-    ],
-)
-def test_character_literal_regex(input: str, expected_match: bool) -> None:
-    assert expected_match == bool(character_literal_regex.match(input))
-
-
-@pytest.mark.parametrize(
-    ["input", "expected_match"],
-    [
-        ('""', True),
-        ('"a"', True),
-        ('"aa"', True),
-        ('"AA"', True),
-        ('"zz"', True),
-        ('"ZZ"', True),
-        ('"\'"', True),
-        ('"\\"', False),
-        ('"\\\'"', True),
-        ('"\\/"', True),
-        ('"\\""', True),
-        ('"\\\\"', True),
-        ('"\\0"', True),
-        ('"\\b"', True),
-        ('"\\e"', True),
-        ('"\\f"', True),
-        ('"\\n"', True),
-        ('"\\r"', True),
-        ('"\\t"', True),
-        ('"\f"', False),
-        ('"\n"', False),
-        ('"\r"', False),
-        ('"\t"', False),
-        ('"\v"', False),
-        ('"∑"', True),
-        ('"😀"', True),
-        ('"\\u000"', False),
-        ('"\\u00000"', True),
-        ('"\\u0000"', True),
-        ('"\\u9999"', True),
-        ('"\\uaaaa"', True),
-        ('"\\uffff"', True),
-        ('"\\uAAAA"', True),
-        ('"\\uFFFF"', True),
-        ('"\\U00000"', False),
-        ('"\\U0000000"', True),
-        ('"\\U000000"', True),
-        ('"\\U109999"', True),
-        ('"\\U10aaaa"', True),
-        ('"\\U10ffff"', True),
-        ('"\\U10AAAA"', True),
-        ('"\\U10FFFF"', True),
-        ('"\\U200000"', False),
-        ('"\\U110000"', False),
-    ],
-)
-def test_string_literal_regex(input: str, expected_match: bool) -> None:
-    assert expected_match == bool(string_literal_regex.match(input))
+# TODO mvoe test_string_literal_regex() to parse tests

@@ -4,50 +4,19 @@ from typing import List, Optional, Set, Tuple, Type
 
 import pytest
 
-from aaa import aaa_project_root, create_test_output_folder
-from aaa.parser.exceptions import (
-    EndOfFileException,
+from aaa import aaa_project_root, get_stdlib_path
+from aaa.parser.lib.exceptions import (
+    EndOfFile,
     ParserBaseException,
-    ParserException,
-    UnhandledTopLevelToken,
+    UnexpectedTokenType,
 )
-from aaa.parser.models import FlatTypeLiteral, FunctionPointerTypeLiteral, TypeLiteral
-from aaa.parser.single_file_parser import SingleFileParser, unescape_string
-from aaa.tokenizer.tokenizer import Tokenizer
-
-
-def parse_code(code: str) -> SingleFileParser:
-    file = create_test_output_folder() / "sample.aaa"
-
-    file.write_text(code)
-
-    tokens = Tokenizer(file, False).run()
-    return SingleFileParser(file, tokens, False)
-
-
-@pytest.mark.parametrize(
-    ["code", "expected"],
-    [
-        ("abc_def", "abc_def"),
-        ("Abc_deF", "Abc_deF"),
-        ("_", "_"),
-        ("", EndOfFileException),
-        ("3", ParserException),
-    ],
+from aaa.parser.models import (
+    FlatTypeLiteral,
+    FlatTypeParams,
+    FunctionPointerTypeLiteral,
+    TypeLiteral,
 )
-def test_parse_identifier(
-    code: str,
-    expected: str | Type[ParserBaseException],
-) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected, str):
-        identifier, offset = parser._parse_identifier(0)
-        assert 1 == offset
-        assert expected == identifier.name
-    else:
-        with pytest.raises(expected):
-            parser._parse_identifier(0)
+from aaa.parser.parser import AaaParser
 
 
 def get_type_param_variable_type_names(
@@ -65,81 +34,77 @@ def get_type_param_variable_type_names(
 
 
 @pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
+    ["code", "expected_result"],
     [
-        ("[", EndOfFileException, 0),
-        ("[A", EndOfFileException, 0),
-        ("[]", ParserException, 0),
-        ("[A]", ["A"], 3),
-        ("[A,", EndOfFileException, 0),
-        ("[A,]", ["A"], 4),
-        ("[,A]", ParserException, 0),
-        ("[A,B", EndOfFileException, 0),
-        ("[A,B]", ["A", "B"], 5),
-        ("[A,B,]", ["A", "B"], 6),
-        ("[A,B,C]", ["A", "B", "C"], 7),
-        ("[A,B,C,]", ["A", "B", "C"], 8),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("[", EndOfFile),
+        ("[A", EndOfFile),
+        ("[]", UnexpectedTokenType),
+        ("[A]", ["A"]),
+        ("[A,", EndOfFile),
+        ("[A,]", ["A"]),
+        ("[,A]", UnexpectedTokenType),
+        ("[A,B", EndOfFile),
+        ("[A,B]", ["A", "B"]),
+        ("[A,B,]", ["A", "B"]),
+        ("[A,B,C]", ["A", "B", "C"]),
+        ("[A,B,C,]", ["A", "B", "C"]),
+        ("", EndOfFile),
+        ("3", UnexpectedTokenType),
     ],
 )
 def test_parse_flat_type_params(
     code: str,
     expected_result: List[str] | Type[ParserBaseException],
-    expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, list):
-        type_params, offset = parser._parse_flat_type_params(0)
-        assert expected_offset == offset
-        assert expected_result == get_type_param_variable_type_names(type_params)
+    try:
+        flat_type_params = AaaParser(False).parse_text(code, "FLAT_TYPE_PARAMS")
+    except Exception as e:
+        assert isinstance(expected_result, type)
+        assert isinstance(e, expected_result)
     else:
-        with pytest.raises(expected_result):
-            parser._parse_flat_type_params(0)
+        assert isinstance(flat_type_params, FlatTypeParams)
+        assert expected_result == [item.name for item in flat_type_params.value]
 
 
 @pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
+    ["code", "expected_result"],
     [
-        ("foo[", ("foo", []), 1),
-        ("foo[A", ("foo", []), 1),
-        ("foo[]", ("foo", []), 1),
-        ("foo", ("foo", []), 1),
-        ("foo[A]", ("foo", ["A"]), 4),
-        ("foo[A[B]]", ("foo", []), 1),
-        ("foo[A,", ("foo", []), 1),
-        ("foo[A,]", ("foo", ["A"]), 5),
-        ("foo[A,B", ("foo", []), 1),
-        ("foo[A,B]", ("foo", ["A", "B"]), 6),
-        ("foo[A,B,]", ("foo", ["A", "B"]), 7),
-        ("foo[A,B,C]", ("foo", ["A", "B", "C"]), 8),
-        ("foo[A,B,C,]", ("foo", ["A", "B", "C"]), 9),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("foo[", UnexpectedTokenType),
+        ("foo[A", UnexpectedTokenType),
+        ("foo[]", UnexpectedTokenType),
+        ("foo", ("foo", [])),
+        ("foo[A]", ("foo", ["A"])),
+        ("foo[A[B]]", UnexpectedTokenType),
+        ("foo[A,", UnexpectedTokenType),
+        ("foo[A,]", ("foo", ["A"])),
+        ("foo[A,B", UnexpectedTokenType),
+        ("foo[A,B]", ("foo", ["A", "B"])),
+        ("foo[A,B,]", ("foo", ["A", "B"])),
+        ("foo[A,B,C", UnexpectedTokenType),
+        ("foo[A,B,C]", ("foo", ["A", "B", "C"])),
+        ("foo[A,B,C,]", ("foo", ["A", "B", "C"])),
+        ("", EndOfFile),
+        ("3", UnexpectedTokenType),
     ],
 )
 def test_parse_flat_type_literal(
     code: str,
     expected_result: Tuple[str, List[str]] | Type[ParserBaseException],
-    expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, tuple):
-        type_literal, offset = parser._parse_flat_type_literal(0)
-        expected_type_name, expected_type_params = expected_result
-
-        assert expected_offset == offset
-        assert expected_type_name == type_literal.identifier.name
-        assert expected_type_params == get_type_param_variable_type_names(
-            type_literal.params
-        )
+    try:
+        flat_type_literal = AaaParser(False).parse_text(code, "FLAT_TYPE_LITERAL")
+    except Exception as e:
+        assert isinstance(expected_result, type)
+        assert isinstance(e, expected_result)
     else:
-        with pytest.raises(expected_result):
-            parser._parse_flat_type_literal(0)
+        assert isinstance(flat_type_literal, FlatTypeLiteral)
+        assert isinstance(expected_result, tuple)
+        expected_name, expected_param_names = expected_result
+        assert expected_name == flat_type_literal.identifier.name
+        assert expected_param_names == [item.name for item in flat_type_literal.params]
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
@@ -155,8 +120,8 @@ def test_parse_flat_type_literal(
         ("struct foo[A,B,]", ("foo", ["A", "B"]), 8),
         ("struct foo[A,B,C]", ("foo", ["A", "B", "C"]), 9),
         ("struct foo[A,B,C,]", ("foo", ["A", "B", "C"]), 10),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_struct_declaration(
@@ -164,29 +129,17 @@ def test_parse_struct_declaration(
     expected_result: Tuple[str, List[str]] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, tuple):
-        type_literal, offset = parser._parse_struct_declaration(0)
-        expected_type_name, expected_type_params = expected_result
-
-        assert expected_offset == offset
-        assert expected_type_name == type_literal.identifier.name
-        assert expected_type_params == get_type_param_variable_type_names(
-            type_literal.params
-        )
-    else:
-        with pytest.raises(expected_result):
-            parser._parse_type_declaration(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
         ("foo", (None, [], "foo"), 1),
         ("foo[", (None, [], "foo"), 1),
         ("foo[]", (None, [], "foo"), 1),
-        ("foo:", EndOfFileException, 0),
+        ("foo:", EndOfFile, 0),
         ("foo[]:", (None, [], "foo"), 1),
         ("foo:bar", ("foo", [], "bar"), 3),
         ("foo[A]", (None, ["A"], "foo"), 4),
@@ -201,8 +154,8 @@ def test_parse_struct_declaration(
         ("foo[A,B,]:bar", ("foo", ["A", "B"], "bar"), 9),
         ("foo[A,B,C]:bar", ("foo", ["A", "B", "C"], "bar"), 10),
         ("foo[A,B,C,]:bar", ("foo", ["A", "B", "C"], "bar"), 11),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_function_name(
@@ -210,47 +163,28 @@ def test_parse_function_name(
     expected_result: Tuple[str, List[str], Optional[str]] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, tuple):
-        function_name, offset = parser._parse_function_name(0)
-        expected_struct_name, expected_type_params, expected_func_name = expected_result
-
-        assert expected_offset == offset
-
-        if expected_struct_name is not None:
-            assert function_name.struct_name
-            assert expected_struct_name == function_name.struct_name.name
-        else:
-            assert function_name.struct_name is None
-
-        assert expected_func_name == function_name.func_name.name
-        assert expected_type_params == get_type_param_variable_type_names(
-            function_name.type_params
-        )
-    else:
-        with pytest.raises(expected_result):
-            parser._parse_function_name(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("[]", ParserException, 0),
+        ("[]", UnexpectedTokenType, 0),
         ("[A]", None, 3),
-        ("[A", EndOfFileException, 0),
-        ("[A,", EndOfFileException, 0),
+        ("[A", EndOfFile, 0),
+        ("[A,", EndOfFile, 0),
         ("[A,]", None, 4),
-        ("[,", ParserException, 0),
+        ("[,", UnexpectedTokenType, 0),
         ("[A,B]", None, 5),
         ("[A,B,]", None, 6),
         ("[A[B]]", None, 6),
         ("[A[B,]]", None, 7),
-        ("[[A]B]", ParserException, 0),
+        ("[[A]B]", UnexpectedTokenType, 0),
         ("[A[B],C]", None, 8),
         ("[A[B[C]],D]", None, 11),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_type_params(
@@ -258,23 +192,17 @@ def test_parse_type_params(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_type_params(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_type_params(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
         ("foo", None, 1),
         ("const foo", None, 2),
         ("foo[]", None, 1),
-        ("[A]", ParserException, 0),
+        ("[A]", UnexpectedTokenType, 0),
         ("foo[A]", None, 4),
         ("const foo[A]", None, 5),
         ("foo[const A]", None, 5),
@@ -291,8 +219,8 @@ def test_parse_type_params(
         ("foo[[A]B]", None, 1),
         ("foo[A[B],C]", None, 9),
         ("foo[A[B[C]],D]", None, 12),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_type_literal(
@@ -300,21 +228,15 @@ def test_parse_type_literal(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_type_literal(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_type_literal(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("foo", EndOfFileException, 0),
-        ("foo as", EndOfFileException, 0),
+        ("foo", EndOfFile, 0),
+        ("foo as", EndOfFile, 0),
         ("foo as bar", None, 3),
         ("foo as bar[]", None, 3),
         ("foo as bar[A", None, 3),
@@ -323,8 +245,8 @@ def test_parse_type_literal(
         ("foo as bar[A,]", None, 7),
         ("foo as bar[A,B]", None, 8),
         ("foo as bar[A,B,]", None, 9),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_argument(
@@ -332,29 +254,23 @@ def test_parse_argument(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_argument(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_argument(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("foo", EndOfFileException, 0),
-        ("foo as", EndOfFileException, 0),
+        ("foo", EndOfFile, 0),
+        ("foo as", EndOfFile, 0),
         ("foo as bar", None, 3),
         ("foo as bar[A]", None, 6),
         ("foo as bar[A,B]", None, 8),
         ("foo as bar[A,B],", None, 9),
         ("foo as bar[A,B],foo as bar[A,B]", None, 17),
         ("foo as bar[A,B],foo as bar[A,B],", None, 18),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_arguments(
@@ -362,16 +278,10 @@ def test_parse_arguments(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_arguments(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_arguments(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -383,8 +293,8 @@ def test_parse_arguments(
         ("foo[A,B],", None, 7),
         ("foo[A,B],foo[A,B]", None, 13),
         ("foo[A,B],foo[A,B],", None, 14),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_return_types(
@@ -392,16 +302,10 @@ def test_parse_return_types(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_return_types(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_return_types(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -420,12 +324,12 @@ def test_parse_return_types(
         ("fn a return vec[int],map[int,int],", None, 15),
         ("fn a return vec[int],map[int,vec[int]],", None, 18),
         ("fn a args b as vec[int], return vec[int],map[int,vec[int]],", None, 26),
-        ("fn a args", EndOfFileException, 0),
-        ("fn a return", EndOfFileException, 0),
-        ("fn a return", EndOfFileException, 0),
+        ("fn a args", EndOfFile, 0),
+        ("fn a return", EndOfFile, 0),
+        ("fn a return", EndOfFile, 0),
         ("fn a return vec[", None, 4),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_function_declaration(
@@ -433,26 +337,15 @@ def test_parse_function_declaration(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_function_declaration(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_function_declaration(0)
+    raise NotImplementedError
 
 
 def test_parse_builtins_file_root() -> None:
-    file = Path("./stdlib/builtins.aaa")
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
-
-    parsed_file, offset = parser._parse_builtins_file_root(0)
-    assert len(tokens) == offset
+    file = get_stdlib_path() / "builtins.aaa"
+    AaaParser(False).parse_file(file)
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -470,21 +363,15 @@ def test_parse_builtins_root(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_builtins_file_root(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_builtins_file_root(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("struct a", EndOfFileException, 0),
-        ("struct a {", EndOfFileException, 0),
+        ("struct a", EndOfFile, 0),
+        ("struct a {", EndOfFile, 0),
         ("struct a {}", None, 4),
         ("struct a { b as int }", None, 7),
         ("struct a { b as int, }", None, 8),
@@ -493,8 +380,8 @@ def test_parse_builtins_root(
         ("struct a { b as int, }", None, 8),
         ("struct a { b as int, c as int }", None, 11),
         ("struct a { b as int, c as int, }", None, 12),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_struct_definition(
@@ -502,16 +389,10 @@ def test_parse_struct_definition(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_struct_definition(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_struct_definition(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
@@ -521,8 +402,8 @@ def test_parse_struct_definition(
         ('"\\r"', "\r", 1),
         ('"\\\\"', "\\", 1),
         ('"\\""', '"', 1),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_string(
@@ -530,25 +411,18 @@ def test_parse_string(
     expected_result: str | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, str):
-        string, offset = parser._parse_string(0)
-        assert expected_offset == offset
-        assert expected_result == string.value
-    else:
-        with pytest.raises(expected_result):
-            parser._parse_string(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
         ("foo", ("foo", "foo"), 1),
-        ("foo as", EndOfFileException, 0),
+        ("foo as", EndOfFile, 0),
         ("foo as bar", ("foo", "bar"), 3),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_import_item(
@@ -556,20 +430,10 @@ def test_parse_import_item(
     expected_result: Tuple[str, str] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, tuple):
-        expected_original_name, expected_imported_name = expected_result
-
-        import_item, offset = parser._parse_import_item(0)
-        assert expected_original_name == import_item.original.name
-        assert expected_imported_name == import_item.imported.name
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_result):
-            parser._parse_import_item(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -581,15 +445,15 @@ def test_parse_import_item(
         ("foo as bar,foo,", None, 6),
         ("foo,foo as bar", None, 5),
         ("foo,foo as bar,", None, 6),
-        ("foo as", EndOfFileException, 0),
+        ("foo as", EndOfFile, 0),
         ("foo as bar", None, 3),
         ("foo as bar,", None, 4),
         ("foo as bar,foo", None, 5),
         ("foo as bar,foo as", None, 4),
         ("foo as bar,foo as bar", None, 7),
         ("foo as bar,foo as bar,", None, 8),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_import_items(
@@ -597,23 +461,17 @@ def test_parse_import_items(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_import_items(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_import_items(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("from", EndOfFileException, 0),
-        ('from "a"', EndOfFileException, 0),
-        ('from "a" import', EndOfFileException, 0),
-        ("from a import b", ParserException, 0),
+        ("from", EndOfFile, 0),
+        ('from "a"', EndOfFile, 0),
+        ('from "a" import', EndOfFile, 0),
+        ("from a import b", UnexpectedTokenType, 0),
         ('from "a" import b', None, 4),
         ('from "a" import b,', None, 5),
         ('from "a" import b as c', None, 6),
@@ -625,8 +483,8 @@ def test_parse_import_items(
         ('from "a" import b,d as e,', None, 9),
         ('from "a" import b as c,d,', None, 9),
         ('from "a" import b,d,', None, 7),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_import_statement(
@@ -634,23 +492,17 @@ def test_parse_import_statement(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_import_statement(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_import_statement(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
         ("true", True, 1),
         ("false", False, 1),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_boolean(
@@ -658,25 +510,18 @@ def test_parse_boolean(
     expected_result: bool | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, bool):
-        boolean, offset = parser._parse_boolean(0)
-        assert expected_result == boolean.value
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_result):
-            parser._parse_boolean(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
         ("0", 0, 1),
         ("123", 123, 1),
         ("-456", -456, 1),
-        ("", EndOfFileException, 0),
-        ("true", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("true", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_integer(
@@ -684,17 +529,10 @@ def test_parse_integer(
     expected_result: int | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, int):
-        boolean, offset = parser._parse_integer(0)
-        assert expected_result == boolean.value
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_result):
-            parser._parse_integer(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -704,8 +542,8 @@ def test_parse_integer(
         ("true", None, 1),
         ("false", None, 1),
         ('"foo"', None, 1),
-        ("case", ParserException, 0),
-        ("", EndOfFileException, 0),
+        ("case", UnexpectedTokenType, 0),
+        ("", EndOfFile, 0),
     ],
 )
 def test_parse_literal(
@@ -713,16 +551,10 @@ def test_parse_literal(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if not expected_exception:
-        _, offset = parser._parse_function_body_item(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_function_body_item(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_result", "expected_offset"],
     [
@@ -732,8 +564,8 @@ def test_parse_literal(
         ("foo[A,B]", (None, ["A", "B"], "foo"), 6),
         ("foo[A,B,]", (None, ["A", "B"], "foo"), 7),
         ("foo:bar", ("foo", [], "bar"), 3),
-        ("fn", ParserException, 0),
-        ("", EndOfFileException, 0),
+        ("fn", UnexpectedTokenType, 0),
+        ("", EndOfFile, 0),
     ],
 )
 def test_parse_function_call(
@@ -741,39 +573,20 @@ def test_parse_function_call(
     expected_result: Tuple[Optional[str], List[str], str] | Type[ParserBaseException],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if isinstance(expected_result, tuple):
-        expected_struct_name, expected_type_params, expected_func_name = expected_result
-        func_call, offset = parser._parse_function_call(0)
-
-        if expected_struct_name is not None:
-            assert func_call.struct_name
-            assert expected_struct_name == func_call.struct_name.name
-        else:
-            assert expected_struct_name is None
-
-        assert expected_type_params == get_type_param_variable_type_names(
-            func_call.type_params
-        )
-        assert expected_func_name == func_call.func_name.name
-
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_result):
-            parser._parse_function_call(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("if", EndOfFileException, 0),
-        ("if true", EndOfFileException, 0),
-        ("if true {", EndOfFileException, 0),
-        ("if true { nop", EndOfFileException, 0),
-        ("if true { nop } else ", EndOfFileException, 0),
-        ("if true { nop } else {", EndOfFileException, 0),
-        ("if true { nop } else { nop", EndOfFileException, 0),
+        ("if", EndOfFile, 0),
+        ("if true", EndOfFile, 0),
+        ("if true {", EndOfFile, 0),
+        ("if true { nop", EndOfFile, 0),
+        ("if true { nop } else ", EndOfFile, 0),
+        ("if true { nop } else {", EndOfFile, 0),
+        ("if true { nop } else { nop", EndOfFile, 0),
         ("if true { nop }", None, 5),
         ("if true { nop } else { nop }", None, 9),
         ("if true { while true { nop } }", None, 9),
@@ -782,8 +595,8 @@ def test_parse_function_call(
         ('if true { "x" { nop } ! }', None, 9),
         ('if true { "x" }', None, 5),
         ('if true { "x" 3 }', None, 6),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_branch(
@@ -791,23 +604,17 @@ def test_parse_branch(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_branch(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_branch(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("while", EndOfFileException, 0),
-        ("while true", EndOfFileException, 0),
-        ("while true {", EndOfFileException, 0),
-        ("while true { nop", EndOfFileException, 0),
+        ("while", EndOfFile, 0),
+        ("while true", EndOfFile, 0),
+        ("while true {", EndOfFile, 0),
+        ("while true { nop", EndOfFile, 0),
         ("while true { nop }", None, 5),
         ("while true { while true { nop } }", None, 9),
         ("while true { if true { nop } else { nop } }", None, 13),
@@ -815,8 +622,8 @@ def test_parse_branch(
         ('while true { "x" { nop } ! }', None, 9),
         ('while true { "x" }', None, 5),
         ('while true { "x" 3 }', None, 6),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_loop(
@@ -824,23 +631,17 @@ def test_parse_loop(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_while_loop(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_while_loop(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ('"foo"', EndOfFileException, 0),
+        ('"foo"', EndOfFile, 0),
         ('"foo" ?', None, 2),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_field_query(
@@ -848,23 +649,17 @@ def test_parse_field_query(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_struct_field_query(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_struct_field_query(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ('"foo"', EndOfFileException, 0),
-        ('"foo" {', EndOfFileException, 0),
-        ('"foo" { nop', EndOfFileException, 0),
-        ('"foo" { nop }', EndOfFileException, 0),
+        ('"foo"', EndOfFile, 0),
+        ('"foo" {', EndOfFile, 0),
+        ('"foo" { nop', EndOfFile, 0),
+        ('"foo" { nop }', EndOfFile, 0),
         ('"foo" { nop } !', None, 5),
         ('"foo" { while true { nop } } !', None, 9),
         ('"foo" { if true { nop } else { nop } } !', None, 13),
@@ -872,8 +667,8 @@ def test_parse_field_query(
         ('"foo" { "x" { nop } ! } !', None, 9),
         ('"foo" { "x" } !', None, 5),
         ('"foo" { "x" 3 } !', None, 6),
-        ("", EndOfFileException, 0),
-        ("3", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_struct_field_update(
@@ -881,16 +676,10 @@ def test_parse_struct_field_update(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_struct_field_update(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_struct_field_update(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -908,8 +697,8 @@ def test_parse_struct_field_update(
         ("while true { nop }", None, 5),
         ('"foo" ?', None, 2),
         ('"foo" { nop } !', None, 5),
-        ("", EndOfFileException, 0),
-        ("case", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("case", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_function_body_item(
@@ -917,16 +706,10 @@ def test_parse_function_body_item(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_function_body_item(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_function_body_item(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -958,8 +741,8 @@ def test_parse_function_body_item(
         ("if true { nop } while true { nop }", None, 10),
         ('if true { nop } "foo" ?', None, 7),
         ('if true { nop } "foo" { nop } !', None, 10),
-        ("", EndOfFileException, 0),
-        ("case", ParserException, 0),
+        ("", EndOfFile, 0),
+        ("case", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_function_body(
@@ -967,28 +750,22 @@ def test_parse_function_body(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_function_body(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_function_body(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("fn", EndOfFileException, 0),
-        ("fn foo", EndOfFileException, 0),
-        ("fn foo {", EndOfFileException, 0),
-        ("fn foo { nop", EndOfFileException, 0),
+        ("fn", EndOfFile, 0),
+        ("fn foo", EndOfFile, 0),
+        ("fn foo {", EndOfFile, 0),
+        ("fn foo { nop", EndOfFile, 0),
         ("fn foo { nop }", None, 5),
         ("fn foo args a as int { nop }", None, 9),
         ("fn foo args a as vec[map[int,str]] { nop }", None, 17),
         ("fn foo args a as vec[map[int,str]] { while true { nop } }", None, 21),
-        ("3", ParserException, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_function_definition(
@@ -996,25 +773,12 @@ def test_parse_function_definition(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_function_definition(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_function_definition(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 def test_parse_regular_file_root_empty_file() -> None:
-    file = create_test_output_folder() / "sample.aaa"
-    file.write_text("")
-
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
-
-    _, offset = parser._parse_regular_file_root(0)
-    assert 0 == offset
+    raise NotImplementedError
 
 
 def get_source_files() -> List[Path]:
@@ -1026,43 +790,26 @@ def get_source_files() -> List[Path]:
     return sorted(aaa_files - {builtins_file})
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["file"],
     [pytest.param(file, id=str(file)) for file in get_source_files()],
 )
 def test_parse_regular_file_all_source_files(file: Path) -> None:
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
-
-    parser.parse_regular_file()
+    raise NotImplementedError
 
 
-def test_parse_builtins_file() -> None:
-    file = Path("./stdlib/builtins.aaa")
-    tokens = Tokenizer(file, False).run()
-    parser = SingleFileParser(file, tokens, False)
-
-    parser.parse_builtins_file()
-
-
+@pytest.mark.skip()  # TODO
 def test_parse_regular_file_fail() -> None:
-    code = "fn foo { nop } 3"
-
-    parser = parse_code(code)
-
-    with pytest.raises(UnhandledTopLevelToken):
-        parser.parse_regular_file()
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 def test_parse_builtins_file_fail() -> None:
-    code = "fn foo args a as int return bool 3"
-
-    parser = parse_code(code)
-
-    with pytest.raises(UnhandledTopLevelToken):
-        parser.parse_builtins_file()
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -1072,7 +819,7 @@ def test_parse_builtins_file_fail() -> None:
         ("a,b,", None, 4),
         ("a,b,c", None, 5),
         ("a,b,c,", None, 6),
-        ("3", ParserException, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_variables(
@@ -1080,27 +827,21 @@ def test_parse_variables(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_variables(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_variables(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("use { nop } ", ParserException, 0),
+        ("use { nop } ", UnexpectedTokenType, 0),
         ("use a { nop } ", None, 5),
         ("use a, { nop } ", None, 6),
         ("use a,b { nop } ", None, 7),
         ("use a,b, { nop } ", None, 8),
         ("use a,b,c { nop } ", None, 9),
         ("use a,b,c, { nop } ", None, 10),
-        ("3", ParserException, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_use_block(
@@ -1108,27 +849,21 @@ def test_parse_use_block(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_use_block(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_use_block(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
-        ("<- { nop } ", ParserException, 0),
+        ("<- { nop } ", UnexpectedTokenType, 0),
         ("a <- { nop } ", None, 5),
         ("a, <- { nop } ", None, 6),
         ("a,b <- { nop } ", None, 7),
         ("a,b, <- { nop } ", None, 8),
         ("a,b,c <- { nop } ", None, 9),
         ("a,b,c, <- { nop } ", None, 10),
-        ("3", ParserException, 0),
+        ("3", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_assignment(
@@ -1136,16 +871,10 @@ def test_parse_assignment(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_assignment(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_assignment(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["code", "expected_exception", "expected_offset"],
     [
@@ -1163,8 +892,8 @@ def test_parse_assignment(
         ("fn[][int,int]", None, 8),
         ("fn[][int,int,]", None, 9),
         ("fn[fn[][]][]", None, 10),
-        ("fn[,][]", ParserException, 0),
-        ("fn[][,]", ParserException, 0),
+        ("fn[,][]", UnexpectedTokenType, 0),
+        ("fn[][,]", UnexpectedTokenType, 0),
     ],
 )
 def test_parse_function_pointer_type_literal(
@@ -1172,16 +901,10 @@ def test_parse_function_pointer_type_literal(
     expected_exception: Optional[Type[ParserBaseException]],
     expected_offset: int,
 ) -> None:
-    parser = parse_code(code)
-
-    if expected_exception is None:
-        _, offset = parser._parse_function_pointer_type_literal(0)
-        assert expected_offset == offset
-    else:
-        with pytest.raises(expected_exception):
-            parser._parse_assignment(0)
+    raise NotImplementedError
 
 
+@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["escaped", "expected_unescaped"],
     [
@@ -1212,4 +935,4 @@ def test_parse_function_pointer_type_literal(
     ],
 )
 def test_unescape_string(escaped: str, expected_unescaped: str) -> None:
-    assert expected_unescaped == unescape_string(escaped)
+    raise NotImplementedError

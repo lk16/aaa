@@ -1,3 +1,4 @@
+import os
 import secrets
 from pathlib import Path
 from tempfile import gettempdir
@@ -16,51 +17,11 @@ class AaaModel:
         )
 
 
-class Position:
-    def __init__(self, file: Path, line: int, column: int) -> None:
-        self.file = file
-        self.line = line
-        self.column = column
-
-    def __str__(self) -> str:
-        return f"{self.file}:{self.line}:{self.column}"
-
-    def __hash__(self) -> int:
-        return hash((self.file, self.line, self.column))
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Position):
-            return False
-
-        return str(self) == str(other)
-
-    def context(self) -> str:  # pragma: nocover
-        code = self.file.read_text()
-        line = code.split("\n")[self.line - 1]
-        return line + "\n" + ((self.column - 1) * " ") + "^\n"
-
-    def short_filename(self) -> str:  # pragma: nocover
-        try:
-            short = self.file.relative_to(Path.cwd())
-        except ValueError:
-            # It is possible the file is not in the subpath of cwd
-            # We just print the absolute path then
-            short = self.file
-
-        return str(short)
-
-    def __lt__(self, other: "Position") -> bool:
-        return (self.file, self.line, self.column) < (
-            other.file,
-            other.line,
-            other.column,
-        )
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
 class AaaException(Exception):
+    ...
+
+
+class AaaEnvironmentError(AaaException):
     ...
 
 
@@ -78,6 +39,7 @@ def __create_output_folder(root: Path, name: Optional[str]) -> Path:
 
 
 def create_test_output_folder(name: Optional[str] = None) -> Path:
+    # TODO remove this function once unused
     return __create_output_folder(AAA_TEST_OUTPUT_FOLDER_ROOT, name)
 
 
@@ -87,3 +49,16 @@ def create_output_folder(name: Optional[str] = None) -> Path:
 
 def aaa_project_root() -> Path:
     return (Path(__file__).parent / "..").resolve()
+
+
+def get_builtins_path() -> Path:
+    return get_stdlib_path() / "builtins.aaa"
+
+
+def get_stdlib_path() -> Path:
+    try:
+        return Path(os.environ["AAA_STDLIB_PATH"])
+    except KeyError as e:
+        raise AaaEnvironmentError(
+            "Cannot find builtins, because env var AAA_STDLIB_PATH is not set.\n"
+        ) from e

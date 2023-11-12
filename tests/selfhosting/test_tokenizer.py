@@ -9,19 +9,18 @@ import pytest
 from pytest import CaptureFixture
 
 from aaa import aaa_project_root
+from aaa.parser.parser import aaa_file_parser
 from aaa.runner.runner import Runner
-from aaa.tokenizer.tokenizer import Tokenizer
 
 
 def tokenize_with_python(aaa_file: Path) -> str:
-    tokenizer = Tokenizer(aaa_file, False)
-    tokens = tokenizer.run()
+    tokens = aaa_file_parser.tokenize_file(aaa_file, filter_token_types=False)
 
     output = ""
     for token in tokens:
         position = token.position
         output += f"{position.file}:{position.line}:{position.column}"
-        output += f" {token.type.value} {token.value}\n"
+        output += f" {token.type} {token.value}\n"
 
     return output
 

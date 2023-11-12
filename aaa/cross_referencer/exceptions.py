@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 import aaa.parser.models as parser
-from aaa import AaaException, Position
+from aaa import AaaException
 from aaa.cross_referencer.models import (
     AaaCrossReferenceModel,
     Argument,
@@ -16,6 +16,7 @@ from aaa.cross_referencer.models import (
     Struct,
     Variable,
 )
+from aaa.parser.lib.models import Position
 from aaa.parser.models import TypeLiteral
 
 
@@ -102,7 +103,7 @@ class CollidingEnumVariant(CrossReferenceBaseException):
         msg = "Duplicate enum variant name collision:\n"
 
         for item in self.colliding:
-            msg += f"{item.position}: enum variant {self.enum.identifier.name}:{item.name.name}\n"
+            msg += f"{item.position}: enum variant {self.enum.get_name()}:{item.name.name}\n"
 
         return msg
 
