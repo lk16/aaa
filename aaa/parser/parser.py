@@ -19,6 +19,7 @@ from aaa.parser.models import (
     CaseBlock,
     CaseLabel,
     Char,
+    CommaSeparatedTypeList,
     DefaultBlock,
     Enum,
     EnumDeclaration,
@@ -76,6 +77,7 @@ NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
     "BUILTINS_FILE": BuiltinsFile,
     "CASE_BLOCK": CaseBlock,
     "CASE_LABEL": CaseLabel,
+    "COMMA_SEPARATED_TYPE_LIST": CommaSeparatedTypeList,
     "DEFAULT_BLOCK": DefaultBlock,
     "ENUM_DECLARATION": EnumDeclaration,
     "ENUM_DEFINITION": Enum,  # TODO rename class

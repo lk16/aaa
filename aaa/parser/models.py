@@ -253,10 +253,14 @@ class Function(AaaParseModel):
             return []
         return arguments.value
 
-    def get_return_types(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+    def get_return_types(
+        self,
+    ) -> List[TypeLiteral | FunctionPointerTypeLiteral] | Never:
         return_types = self.declaration.return_types
         if not return_types:
             return []
+        if isinstance(return_types.value, Never):
+            return return_types.value
         return [item.literal for item in return_types.value]
 
     @classmethod
@@ -527,6 +531,9 @@ class TypeLiteral(AaaParseModel):
         self.const = const
         super().__init__(position)
 
+    def get_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+        return [item.literal for item in self.params]
+
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> TypeLiteral:
         assert len(children) <= 3
@@ -774,14 +781,23 @@ class Arguments(AaaParseModel):
 
 
 class ReturnTypes(AaaParseModel):
-    def __init__(self, return_types: List[TypeOrFunctionPointerLiteral]) -> None:
-        assert len(return_types) >= 1
-
+    def __init__(
+        self, return_types: List[TypeOrFunctionPointerLiteral] | Never
+    ) -> None:
         self.value = return_types
-        super().__init__(return_types[0].position)
+
+        if isinstance(return_types, list):
+            assert len(return_types) >= 1
+            position = return_types[0].position
+        else:
+            position = return_types.position
+        super().__init__(position)
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> ReturnTypes:
+        if isinstance(children[0], Never):
+            return ReturnTypes(children[0])
+
         return_types: List[TypeOrFunctionPointerLiteral] = []
 
         for child in children:

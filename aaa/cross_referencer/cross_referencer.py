@@ -406,7 +406,7 @@ class CrossReferencer:
 
         params: List[VariableType | FunctionPointer] = []
 
-        for parsed_param in parsed.params:
+        for parsed_param in parsed.get_params():
             if isinstance(parsed_param, parser.TypeLiteral):
                 param_type = self._get_type(parsed_param.identifier)
                 assert len(parsed_param.params) == 0

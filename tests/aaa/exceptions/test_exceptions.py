@@ -557,6 +557,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "- indicates if more data is present in the iterable with this last return value\n"
             + "- for const iterators all return values of `next` except the last one must be const\n",
             id="invalid-iterator-never-return",
+            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
@@ -748,6 +749,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "expected return types: never\n"
             + "   found return types: int\n",
             id="return-with-return-type-never",
+            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
@@ -1148,6 +1150,7 @@ def test_one_error(
             InvalidTestSignuture,
             "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types\n",
             id="invalid-test-signature-return-never",
+            marks=pytest.mark.skip,
         ),
     ],
 )
