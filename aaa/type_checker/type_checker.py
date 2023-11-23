@@ -14,6 +14,7 @@ from aaa.cross_referencer.models import (
     CallType,
     CallVariable,
     CaseBlock,
+    CharacterLiteral,
     CrossReferencerOutput,
     DefaultBlock,
     Enum,
@@ -349,6 +350,9 @@ class SingleFunctionTypeChecker:
     def _get_str_var_type(self) -> VariableType:
         return self._get_builtin_var_type("str")
 
+    def _get_char_var_type(self) -> VariableType:
+        return self._get_builtin_var_type("char")
+
     def _get_int_var_type(self) -> VariableType:
         return self._get_builtin_var_type("int")
 
@@ -361,6 +365,13 @@ class SingleFunctionTypeChecker:
         self, literal: StringLiteral, type_stack: List[VariableType | FunctionPointer]
     ) -> List[VariableType | FunctionPointer]:
         return type_stack + [self._get_str_var_type()]
+
+    def _check_character_literal(
+        self,
+        literal: CharacterLiteral,
+        type_stack: List[VariableType | FunctionPointer],
+    ) -> List[VariableType | FunctionPointer]:
+        return type_stack + [self._get_char_var_type()]
 
     def _check_boolean_literal(
         self, literal: BooleanLiteral, type_stack: List[VariableType | FunctionPointer]
@@ -491,6 +502,7 @@ class SingleFunctionTypeChecker:
             CallType: self._check_call_type,
             CallVariable: self._check_call_variable,
             CallEnumConstructor: self._check_call_enum_constructor,
+            CharacterLiteral: self._check_character_literal,
             ForeachLoop: self._check_foreach_loop,
             FunctionPointer: self._check_function_pointer,
             IntegerLiteral: self._check_integer_literal,

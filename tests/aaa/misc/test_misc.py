@@ -340,7 +340,7 @@ def test_recursion() -> None:
 
     expected_output = (
         "S{a: [S{a: []}]}\n"
-        + "Json:null{Empty{}}\n"
+        + "Json:null{}\n"
         + "Json:array{[Json:integer{5}]}\n"
         + 'Json:object{{"key": Json:boolean{false}}}\n'
     )

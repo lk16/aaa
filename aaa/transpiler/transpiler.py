@@ -14,6 +14,7 @@ from aaa.cross_referencer.models import (
     CallType,
     CallVariable,
     CaseBlock,
+    CharacterLiteral,
     CrossReferencerOutput,
     DefaultBlock,
     Enum,
@@ -58,6 +59,7 @@ AAA_RUST_BUILTIN_FUNCS = {
 VARIABLE_GET_FUNCTIONS = {
     "int": "get_integer",
     "bool": "get_boolean",
+    "char": "get_character",
     "str": "get_string",
     "vec": "get_vector",
     "set": "get_set",
@@ -294,6 +296,7 @@ class Transpiler:
             CallFunctionByPointer: self._generate_call_by_function_pointer,
             CallType: self._generate_call_type_code,
             CallVariable: self._generate_call_variable_code,
+            CharacterLiteral: self._generate_character_literal,
             ForeachLoop: self._generate_foreach_loop,
             FunctionPointer: self._generate_function_pointer_literal,
             GetFunctionPointer: self._generate_get_function_pointer,
@@ -567,6 +570,10 @@ class Transpiler:
     def _generate_string_literal(self, string_literal: StringLiteral) -> Code:
         string_value = repr(string_literal.value)[1:-1].replace('"', '\\"')
         return Code(f'stack.push_str("{string_value}");')
+
+    def _generate_character_literal(self, char_literal: CharacterLiteral) -> Code:
+        string_value = repr(char_literal.value)[1:-1].replace('"', '\\"')
+        return Code(f"stack.push_char('{string_value}');")
 
     def _generate_while_loop(self, while_loop: WhileLoop) -> Code:
         code = Code("loop {", r=1)
@@ -921,6 +928,8 @@ class Transpiler:
             return "Variable::integer_zero_value()"
         elif type.name == "bool":
             return "Variable::boolean_zero_value()"
+        elif type.name == "char":
+            return "Variable::character_zero_value()"
         elif type.name == "str":
             return "Variable::string_zero_value()"
         elif type.name == "vec":
@@ -1094,6 +1103,8 @@ class Transpiler:
             return "isize"
         elif type.name == "bool":
             return "bool"
+        elif type.name == "char":
+            return "char"
         elif type.name == "str":
             return "Rc<RefCell<String>>"
         elif type.name == "vec":
@@ -1131,6 +1142,8 @@ class Transpiler:
                 code.add(f"{field_name}: Variable::integer_zero_value(),")
             elif field_var_type.type.name == "bool":
                 code.add(f"{field_name}: Variable::boolean_zero_value(),")
+            elif field_var_type.type.name == "char":
+                code.add(f"{field_name}: Variable::character_zero_value(),")
             elif field_var_type.type.name == "str":
                 code.add(f"{field_name}: Variable::string_zero_value(),")
             elif field_var_type.type.name == "vec":
@@ -1158,7 +1171,7 @@ class Transpiler:
     def _generate_clone_recursive_expression(
         self, source_expr: str, type: Struct | Enum
     ) -> Code:
-        if type.name in ["bool", "int"]:
+        if type.name in ["bool", "int", "char"]:
             code = Code(source_expr)
         elif type.name == "regex":
             code = Code(f"{source_expr}.clone()")

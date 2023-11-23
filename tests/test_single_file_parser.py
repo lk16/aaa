@@ -12,7 +12,7 @@ from aaa.parser.exceptions import (
     UnhandledTopLevelToken,
 )
 from aaa.parser.models import FlatTypeLiteral, FunctionPointerTypeLiteral, TypeLiteral
-from aaa.parser.single_file_parser import SingleFileParser
+from aaa.parser.single_file_parser import SingleFileParser, unescape_string
 from aaa.tokenizer.tokenizer import Tokenizer
 
 
@@ -1180,3 +1180,36 @@ def test_parse_function_pointer_type_literal(
     else:
         with pytest.raises(expected_exception):
             parser._parse_assignment(0)
+
+
+@pytest.mark.parametrize(
+    ["escaped", "expected_unescaped"],
+    [
+        ("", ""),
+        ("abc", "abc"),
+        ("\\\\", "\\"),
+        ("a\\\\b", "a\\b"),
+        ("\\\\b", "\\b"),
+        ("a\\\\", "a\\"),
+        ('a\\"b', 'a"b'),
+        ("a\\'b", "a'b"),
+        ("a\\/b", "a/b"),
+        ("a\\0b", "a\0b"),
+        ("a\\bb", "a\bb"),
+        ("a\\eb", "a\x1bb"),
+        ("a\\fb", "a\fb"),
+        ("a\\nb", "a\nb"),
+        ("a\\rb", "a\rb"),
+        ("a\\tb", "a\tb"),
+        ("a\\u0000b", "a\u0000b"),
+        ("a\\u9999b", "a\u9999b"),
+        ("a\\uaaaab", "a\uaaaab"),
+        ("a\\uffffb", "a\uffffb"),
+        ("a\\uAAAAb", "a\uaaaab"),
+        ("a\\uFFFFb", "a\uffffb"),
+        ("a\\U00000000b", "a\U00000000b"),
+        ("a\\U0001F600b", "a\U0001F600b"),
+    ],
+)
+def test_unescape_string(escaped: str, expected_unescaped: str) -> None:
+    assert expected_unescaped == unescape_string(escaped)

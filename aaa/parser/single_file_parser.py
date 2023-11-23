@@ -16,6 +16,7 @@ from aaa.parser.models import (
     Call,
     CaseBlock,
     CaseLabel,
+    CharacterLiteral,
     DefaultBlock,
     Enum,
     EnumVariant,
@@ -45,6 +46,60 @@ from aaa.parser.models import (
     WhileLoop,
 )
 from aaa.tokenizer.models import Token, TokenType
+
+
+def unescape_string(escaped: str) -> str:
+    simple_escape_sequences = {
+        '"': '"',
+        "'": "'",
+        "/": "/",
+        "\\": "\\",
+        "0": "\0",
+        "b": "\b",
+        "e": "\x1b",
+        "f": "\f",
+        "n": "\n",
+        "r": "\r",
+        "t": "\t",
+    }
+
+    unescaped = ""
+    offset = 0
+
+    while offset < len(escaped):
+        backslash_offset = escaped.find("\\", offset)
+
+        if backslash_offset == -1:
+            unescaped += escaped[offset:]
+            break
+
+        unescaped += escaped[offset:backslash_offset]
+
+        escape_determinant = escaped[backslash_offset + 1]
+
+        if escape_determinant in simple_escape_sequences:
+            unescaped += simple_escape_sequences[escape_determinant]
+            offset = backslash_offset + 2
+            continue
+
+        if escape_determinant == "u":
+            unicode_hex = escaped[backslash_offset + 2 : backslash_offset + 6]
+            unicode_char = chr(int(unicode_hex, 16))
+            unescaped += unicode_char
+            offset = backslash_offset + 6
+            continue
+
+        if escape_determinant == "U":
+            unicode_hex = escaped[backslash_offset + 2 : backslash_offset + 10]
+            unicode_char = chr(int(unicode_hex, 16))
+            unescaped += unicode_char
+            offset = backslash_offset + 10
+            continue
+
+        # Unknown escape sequence
+        raise NotImplementedError
+
+    return unescaped
 
 
 class SingleFileParser:
@@ -523,15 +578,20 @@ class SingleFileParser:
         start_offset = offset
 
         token, offset = self._parse_token(offset, [TokenType.STRING])
-
-        value = token.value[1:-1]
-        value = value.replace("\\\\", "\\")
-        value = value.replace("\\n", "\n")
-        value = value.replace("\\r", "\r")
-        value = value.replace('\\"', '"')
-
+        value = unescape_string(token.value[1:-1])
         string = StringLiteral(token.position, value)
+
         self._print_parse_tree_node("String", start_offset, offset)
+        return string, offset
+
+    def _parse_character(self, offset: int) -> Tuple[CharacterLiteral, int]:
+        start_offset = offset
+
+        token, offset = self._parse_token(offset, [TokenType.CHARACTER])
+        value = unescape_string(token.value[1:-1])
+        string = CharacterLiteral(token.position, value)
+
+        self._print_parse_tree_node("Character", start_offset, offset)
         return string, offset
 
     def _parse_import_item(self, offset: int) -> Tuple[ImportItem, int]:
@@ -752,6 +812,9 @@ class SingleFileParser:
                 item, offset = self._parse_get_function_pointer(offset)
             else:
                 item, offset = self._parse_string(offset)
+
+        elif token.type == TokenType.CHARACTER:
+            item, offset = self._parse_character(offset)
 
         elif token.type in [TokenType.TRUE, TokenType.FALSE]:
             item, offset = self._parse_boolean(offset)

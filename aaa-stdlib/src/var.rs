@@ -28,6 +28,7 @@ where
     None, // TODO #33 Remove when iterators return an enum
     Integer(isize),
     Boolean(bool),
+    Character(char),
     String(Rc<RefCell<String>>),
     Vector(Rc<RefCell<Vector<Variable<T>>>>),
     Set(Rc<RefCell<Set<Variable<T>>>>),
@@ -65,6 +66,10 @@ where
 
     pub fn boolean_zero_value() -> Variable<T> {
         Variable::Boolean(false)
+    }
+
+    pub fn character_zero_value() -> Variable<T> {
+        Variable::Character('\0')
     }
 
     pub fn string_zero_value() -> Variable<T> {
@@ -185,6 +190,7 @@ where
             Self::None => String::from("none"),
             Self::Integer(_) => String::from("int"),
             Self::Boolean(_) => String::from("bool"),
+            Self::Character(_) => String::from("char"),
             Self::String(_) => String::from("str"),
             Self::Vector(_) => String::from("vec"),
             Self::Set(_) => String::from("set"),
@@ -205,6 +211,7 @@ where
             Self::None => Self::None,
             Self::Integer(v) => Self::Integer(*v),
             Self::Boolean(v) => Self::Boolean(*v),
+            Self::Character(v) => Self::Character(*v),
             Self::String(v) => {
                 let string = (**v).borrow().clone();
                 Self::String(Rc::new(RefCell::new(string)))
@@ -255,6 +262,7 @@ where
             Self::Boolean(v) => write!(f, "{}", v),
             Self::Integer(v) => write!(f, "{}", v),
             Self::String(v) => write!(f, "{}", (**v).borrow()),
+            Self::Character(v) => write!(f, "{}", v),
             Self::Vector(v) => write!(f, "{}", (**v).borrow()),
             Self::Set(v) => write!(f, "{}", (**v).borrow().fmt_as_set()),
             Self::Map(v) => write!(f, "{}", (**v).borrow()),
