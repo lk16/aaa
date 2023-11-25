@@ -45,6 +45,7 @@ def test_tokenizer_parts_add_up(file: Path) -> None:
     ],
 )
 def test_tokenizer_token_types(code: str, expected_token_type: str) -> None:
+    # TODO use same testing as in test_parser.py and make sure we test all token types
     tokens = file_parser.tokenize_text(code, filter_token_types=False)
 
     assert 1 == len(tokens)

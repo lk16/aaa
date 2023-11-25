@@ -1,910 +1,610 @@
 from glob import glob
 from pathlib import Path
-from typing import List, Optional, Set, Tuple, Type
+from typing import List, Set, Tuple, Type
 
 import pytest
 
-from aaa import aaa_project_root, get_stdlib_path
-from aaa.parser.lib.exceptions import (
-    EndOfFile,
-    ParserBaseException,
-    UnexpectedTokenType,
-)
+from aaa import aaa_project_root
+from aaa.parser.lib.exceptions import ParserBaseException
 from aaa.parser.models import (
+    AaaParseModel,
+    Argument,
+    Arguments,
+    Assignment,
+    Boolean,
+    Branch,
+    BuiltinsFile,
+    CaseBlock,
+    CaseLabel,
+    CommaSeparatedTypeList,
+    DefaultBlock,
+    Enum,
+    EnumDeclaration,
+    EnumVariant,
+    EnumVariantAssociatedData,
+    EnumVariants,
     FlatTypeLiteral,
     FlatTypeParams,
+    ForeachLoop,
+    Function,
+    FunctionBody,
+    FunctionBodyBlock,
+    FunctionBodyItem,
+    FunctionCall,
+    FunctionDeclaration,
+    FunctionName,
     FunctionPointerTypeLiteral,
+    GetFunctionPointer,
+    Import,
+    ImportItem,
+    ImportItems,
+    MatchBlock,
+    RegularFile,
+    ReturnTypes,
+    Struct,
+    StructDeclaration,
+    StructField,
+    StructFieldQuery,
+    StructFields,
+    StructFieldUpdate,
     TypeLiteral,
+    TypeOrFunctionPointerLiteral,
+    TypeParams,
+    UseBlock,
+    Variables,
+    WhileLoop,
 )
-from aaa.parser.parser import AaaParser
+from aaa.parser.parser import NODE_TYPE_TO_MODEL, AaaParser, unescape_string
+
+MODEL_TO_NODE_TYPE = {
+    model_type: node_type for (node_type, model_type) in NODE_TYPE_TO_MODEL.items()
+}
 
 
-def get_type_param_variable_type_names(
-    type_params: List[FlatTypeLiteral | FunctionPointerTypeLiteral]
-    | List[FlatTypeLiteral]
-    | List[TypeLiteral | FunctionPointerTypeLiteral],
-) -> List[str]:
-    names: List[str] = []
-
-    for type_param in type_params:
-        assert isinstance(type_param, (TypeLiteral, FlatTypeLiteral))
-        names.append(type_param.identifier.name)
-
-    return names
+PARSE_MODEL_TEST_VALUES: List[Tuple[Type[AaaParseModel], str, bool]] = [
+    (Argument, "", False),
+    (Argument, "3", False),
+    (Argument, "foo as bar", True),
+    (Argument, "foo as bar[", False),
+    (Argument, "foo as bar[]", False),
+    (Argument, "foo as bar[A,]", True),
+    (Argument, "foo as bar[A,B,]", True),
+    (Argument, "foo as bar[A,B]", True),
+    (Argument, "foo as bar[A", False),
+    (Argument, "foo as bar[A]", True),
+    (Argument, "foo as", False),
+    (Argument, "foo", False),
+    (Arguments, "", False),
+    (Arguments, "3", False),
+    (Arguments, "foo as bar", True),
+    (Arguments, "foo as bar[A,B],", True),
+    (Arguments, "foo as bar[A,B],foo as bar[A,B],", True),
+    (Arguments, "foo as bar[A,B],foo as bar[A,B]", True),
+    (Arguments, "foo as bar[A,B]", True),
+    (Arguments, "foo as bar[A]", True),
+    (Arguments, "foo as", False),
+    (Arguments, "foo", False),
+    (Assignment, "<- { nop } ", False),
+    (Assignment, "3", False),
+    (Assignment, "a <- { nop } ", True),
+    (Assignment, "a, <- { nop } ", True),
+    (Assignment, "a,b <- { nop } ", True),
+    (Assignment, "a,b, <- { nop } ", True),
+    (Assignment, "a,b,c <- { nop } ", True),
+    (Assignment, "a,b,c, <- { nop } ", True),
+    (Boolean, "", False),
+    (Boolean, "3", False),
+    (Boolean, "false", True),
+    (Boolean, "true", True),
+    (Branch, 'if true { "x" ? }', True),
+    (Branch, 'if true { "x" { nop } ! }', True),
+    (Branch, 'if true { "x" }', True),
+    (Branch, 'if true { "x" 3 }', True),
+    (Branch, "", False),
+    (Branch, "3", False),
+    (Branch, "if true { if true { nop } else { nop } }", True),
+    (Branch, "if true { nop } else ", False),
+    (Branch, "if true { nop } else { nop }", True),
+    (Branch, "if true { nop } else { nop", False),
+    (Branch, "if true { nop } else {", False),
+    (Branch, "if true { nop }", True),
+    (Branch, "if true { nop", False),
+    (Branch, "if true { while true { nop } }", True),
+    (Branch, "if true {", False),
+    (Branch, "if true", False),
+    (Branch, "if", False),
+    (BuiltinsFile, "", True),
+    (BuiltinsFile, "3", False),
+    (BuiltinsFile, "fn a fn b", True),
+    (BuiltinsFile, "fn a", True),
+    (BuiltinsFile, "struct a struct b", True),
+    (BuiltinsFile, "struct a", True),
+    (BuiltinsFile, "struct a[A,B] fn a args b as vec[int,map[int,int]] return c", True),
+    (CaseBlock, "", False),
+    (CaseBlock, "3", False),
+    (CaseBlock, "case a:b { nop }", True),
+    (CaseBlock, "case a:b as c { nop }", True),
+    (CaseBlock, "case a:b as c,d { nop }", True),
+    (CaseLabel, "", False),
+    (CaseLabel, "3", False),
+    (CaseLabel, "a:", False),
+    (CaseLabel, "a:b as c,", True),
+    (CaseLabel, "a:b as c,d,", True),
+    (CaseLabel, "a:b as c,d", True),
+    (CaseLabel, "a:b as c", True),
+    (CaseLabel, "a:b as", False),
+    (CaseLabel, "a:b", True),
+    (CaseLabel, "a", False),
+    (CommaSeparatedTypeList, "", False),
+    (CommaSeparatedTypeList, "3", False),
+    (CommaSeparatedTypeList, "fn[][],", True),
+    (CommaSeparatedTypeList, "fn[][]", True),
+    (CommaSeparatedTypeList, "fn[int][vec[str]], fn[int][vec[str]]", True),
+    (CommaSeparatedTypeList, "int, bool", True),
+    (CommaSeparatedTypeList, "int,", True),
+    (CommaSeparatedTypeList, "int", True),
+    (CommaSeparatedTypeList, "vec[str], vec[str]", True),
+    (CommaSeparatedTypeList, "vec[str]", True),
+    (DefaultBlock, "", False),
+    (DefaultBlock, "3", False),
+    (DefaultBlock, "default { nop ", False),
+    (DefaultBlock, "default { nop }", True),
+    (DefaultBlock, "default {", False),
+    (DefaultBlock, "default", False),
+    (Enum, "", False),
+    (Enum, "3", False),
+    (Enum, "enum foo { a }", True),
+    (Enum, "enum foo { a as { int } }", True),
+    (Enum, "enum foo { a as { int, } }", True),
+    (Enum, "enum foo { a as { int, str } }", True),
+    (Enum, "enum foo { a as { vec[str], map[int, bool] } }", True),
+    (Enum, "enum foo { a as int }", True),
+    (Enum, "enum foo { a as int, }", True),
+    (Enum, "enum foo {", False),
+    (Enum, "enum foo {}", False),
+    (EnumDeclaration, "", False),
+    (EnumDeclaration, "3", False),
+    (EnumDeclaration, "enum foo", True),
+    (EnumDeclaration, "enum", False),
+    (EnumVariant, "", False),
+    (EnumVariant, "3", False),
+    (EnumVariant, "a as { int }", True),
+    (EnumVariant, "a as { int, }", True),
+    (EnumVariant, "a as { int, str }", True),
+    (EnumVariant, "a as { int, str, }", True),
+    (EnumVariant, "a as { vec[str], map[int, set[str]] }", True),
+    (EnumVariant, "a as {", False),
+    (EnumVariant, "a as {}", False),
+    (EnumVariant, "a as int", True),
+    (EnumVariant, "a as map[str, set[int]]", True),
+    (EnumVariant, "a as", False),
+    (EnumVariant, "a", True),
+    (EnumVariantAssociatedData, "{ int }", True),
+    (EnumVariantAssociatedData, "{ int, }", True),
+    (EnumVariantAssociatedData, "{ int, str }", True),
+    (EnumVariantAssociatedData, "{ int, str, }", True),
+    (EnumVariantAssociatedData, "{ int", False),
+    (EnumVariantAssociatedData, "{ vec[str], map[int, set[str]] }", True),
+    (EnumVariantAssociatedData, "{", False),
+    (EnumVariantAssociatedData, "{}", False),
+    (EnumVariantAssociatedData, "3", False),
+    (EnumVariantAssociatedData, "int", True),
+    (EnumVariantAssociatedData, "map[str, set[int]]", True),
+    (EnumVariants, "", False),
+    (EnumVariants, "3", False),
+    (EnumVariants, "a as int,", True),
+    (EnumVariants, "a as int,b as str,", True),
+    (EnumVariants, "a as int", True),
+    (EnumVariants, "a,", True),
+    (EnumVariants, "a,b", True),
+    (EnumVariants, "a", True),
+    (FlatTypeLiteral, "", False),
+    (FlatTypeLiteral, "3", False),
+    (FlatTypeLiteral, "foo", True),
+    (FlatTypeLiteral, "foo[", False),
+    (FlatTypeLiteral, "foo[]", False),
+    (FlatTypeLiteral, "foo[A,", False),
+    (FlatTypeLiteral, "foo[A,]", True),
+    (FlatTypeLiteral, "foo[A,B,]", True),
+    (FlatTypeLiteral, "foo[A,B,C,]", True),
+    (FlatTypeLiteral, "foo[A,B,C", False),
+    (FlatTypeLiteral, "foo[A,B,C]", True),
+    (FlatTypeLiteral, "foo[A,B", False),
+    (FlatTypeLiteral, "foo[A,B]", True),
+    (FlatTypeLiteral, "foo[A", False),
+    (FlatTypeLiteral, "foo[A[B]]", False),
+    (FlatTypeLiteral, "foo[A]", True),
+    (FlatTypeParams, "", False),
+    (FlatTypeParams, "[,A]", False),
+    (FlatTypeParams, "[", False),
+    (FlatTypeParams, "[]", False),
+    (FlatTypeParams, "[A,", False),
+    (FlatTypeParams, "[A,]", True),
+    (FlatTypeParams, "[A,B,]", True),
+    (FlatTypeParams, "[A,B,C,]", True),
+    (FlatTypeParams, "[A,B,C]", True),
+    (FlatTypeParams, "[A,B", False),
+    (FlatTypeParams, "[A,B]", True),
+    (FlatTypeParams, "[A", False),
+    (FlatTypeParams, "[A]", True),
+    (FlatTypeParams, "3", False),
+    (ForeachLoop, "", False),
+    (ForeachLoop, "3", False),
+    (ForeachLoop, "foreach { nop ", False),
+    (ForeachLoop, "foreach { nop }", True),
+    (ForeachLoop, "foreach {", False),
+    (ForeachLoop, "foreach", False),
+    (Function, "3", False),
+    (Function, "fn foo { nop }", True),
+    (Function, "fn foo { nop", False),
+    (Function, "fn foo {", False),
+    (Function, "fn foo args a as b { while true { nop } }", True),
+    (Function, "fn foo args a as int { nop }", True),
+    (Function, "fn foo args a as vec[map[int,str]] { nop }", True),
+    (Function, "fn foo", False),
+    (Function, "fn", False),
+    (FunctionBody, '"foo" ?', True),
+    (FunctionBody, '"foo" { nop } !', True),
+    (FunctionBody, '"foo"', True),
+    (FunctionBody, 'if true { nop } "foo" ?', True),
+    (FunctionBody, 'if true { nop } "foo" { nop } !', True),
+    (FunctionBody, 'if true { nop } "foo"', True),
+    (FunctionBody, "", False),
+    (FunctionBody, "3", True),
+    (FunctionBody, "case", False),
+    (FunctionBody, "false", True),
+    (FunctionBody, "foo:bar", True),
+    (FunctionBody, "foo", True),
+    (FunctionBody, "foo[A,]", True),
+    (FunctionBody, "foo[A,B,]", True),
+    (FunctionBody, "foo[A,B]", True),
+    (FunctionBody, "foo[A]", True),
+    (FunctionBody, "if true { nop } 3", True),
+    (FunctionBody, "if true { nop } else { nop }", True),
+    (FunctionBody, "if true { nop } false", True),
+    (FunctionBody, "if true { nop } foo:bar", True),
+    (FunctionBody, "if true { nop } foo", True),
+    (FunctionBody, "if true { nop } foo[A,]", True),
+    (FunctionBody, "if true { nop } foo[A,B,]", True),
+    (FunctionBody, "if true { nop } foo[A,B]", True),
+    (FunctionBody, "if true { nop } foo[A]", True),
+    (FunctionBody, "if true { nop } if true { nop } else { nop }", True),
+    (FunctionBody, "if true { nop } if true { nop }", True),
+    (FunctionBody, "if true { nop } while true { nop }", True),
+    (FunctionBody, "if true { nop }", True),
+    (FunctionBody, "while true { nop }", True),
+    (FunctionBodyBlock, "", False),
+    (FunctionBodyBlock, "{ nop }", True),
+    (FunctionBodyBlock, "{ nop", False),
+    (FunctionBodyBlock, "{", False),
+    (FunctionBodyBlock, "3", False),
+    (FunctionBodyItem, '"foo" ?', True),
+    (FunctionBodyItem, '"foo" { nop } !', True),
+    (FunctionBodyItem, '"foo"', True),
+    (FunctionBodyItem, "", False),
+    (FunctionBodyItem, "3", True),
+    (FunctionBodyItem, "case", False),
+    (FunctionBodyItem, "false", True),
+    (FunctionBodyItem, "foo:bar", True),
+    (FunctionBodyItem, "foo", True),
+    (FunctionBodyItem, "foo[A,]", True),
+    (FunctionBodyItem, "foo[A,B,]", True),
+    (FunctionBodyItem, "foo[A,B]", True),
+    (FunctionBodyItem, "foo[A]", True),
+    (FunctionBodyItem, "if true { nop } else { nop }", True),
+    (FunctionBodyItem, "if true { nop }", True),
+    (FunctionBodyItem, "while true { nop }", True),
+    (FunctionCall, "", False),
+    (FunctionCall, "fn", False),
+    (FunctionCall, "foo:bar", True),
+    (FunctionCall, "foo", True),
+    (FunctionCall, "foo[A,]", True),
+    (FunctionCall, "foo[A,B,]", True),
+    (FunctionCall, "foo[A,B]", True),
+    (FunctionCall, "foo[A]", True),
+    (FunctionDeclaration, "", False),
+    (FunctionDeclaration, "3", False),
+    (FunctionDeclaration, "fn a args b as int, c as int,", True),
+    (FunctionDeclaration, "fn a args b as int, c as int", True),
+    (FunctionDeclaration, "fn a args b as int,", True),
+    (FunctionDeclaration, "fn a args b as int", True),
+    (FunctionDeclaration, "fn a args b as vec[int,], c as vec[int,],", True),
+    (FunctionDeclaration, "fn a args b as vec[int], c as vec[int],", True),
+    (FunctionDeclaration, "fn a args", False),
+    (FunctionDeclaration, "fn a return int,", True),
+    (FunctionDeclaration, "fn a return int", True),
+    (FunctionDeclaration, "fn a return vec[", False),
+    (FunctionDeclaration, "fn a return vec[int],map[int,int],", True),
+    (FunctionDeclaration, "fn a return vec[int],map[int,int]", True),
+    (FunctionDeclaration, "fn a return vec[int],map[int,vec[int]],", True),
+    (FunctionDeclaration, "fn a return vec[int]", True),
+    (FunctionDeclaration, "fn a return", False),
+    (FunctionDeclaration, "fn a return", False),
+    (FunctionDeclaration, "fn a,", False),
+    (FunctionDeclaration, "fn a", True),
+    (FunctionName, "", False),
+    (FunctionName, "3", False),
+    (FunctionName, "foo:", False),
+    (FunctionName, "foo:bar", True),
+    (FunctionName, "foo", True),
+    (FunctionName, "foo[", False),
+    (FunctionName, "foo[]:", False),
+    (FunctionName, "foo[]", False),
+    (FunctionName, "foo[A,]:bar", True),
+    (FunctionName, "foo[A,]", True),
+    (FunctionName, "foo[A,B,]:bar", True),
+    (FunctionName, "foo[A,B,]", True),
+    (FunctionName, "foo[A,B,C,]:bar", True),
+    (FunctionName, "foo[A,B,C,]", True),
+    (FunctionName, "foo[A,B,C]:bar", True),
+    (FunctionName, "foo[A,B,C]", True),
+    (FunctionName, "foo[A,B]:bar", True),
+    (FunctionName, "foo[A,B]", True),
+    (FunctionName, "foo[A]:bar", True),
+    (FunctionName, "foo[A]", True),
+    (FunctionPointerTypeLiteral, "fn [][]", True),
+    (FunctionPointerTypeLiteral, "fn[ ][]", True),
+    (FunctionPointerTypeLiteral, "fn[,][]", False),
+    (FunctionPointerTypeLiteral, "fn[] []", True),
+    (FunctionPointerTypeLiteral, "fn[][ ]", True),
+    (FunctionPointerTypeLiteral, "fn[][,]", False),
+    (FunctionPointerTypeLiteral, "fn[][]", True),
+    (FunctionPointerTypeLiteral, "fn[][int,int,]", True),
+    (FunctionPointerTypeLiteral, "fn[][int,int]", True),
+    (FunctionPointerTypeLiteral, "fn[][int]", True),
+    (FunctionPointerTypeLiteral, "fn[fn[][]][]", True),
+    (FunctionPointerTypeLiteral, "fn[int,][]", True),
+    (FunctionPointerTypeLiteral, "fn[int,int,][]", True),
+    (FunctionPointerTypeLiteral, "fn[int,int][]", True),
+    (FunctionPointerTypeLiteral, "fn[int][]", True),
+    (FunctionPointerTypeLiteral, "fn[vec[int]][]", True),
+    (GetFunctionPointer, '"foo" fn', True),
+    (GetFunctionPointer, '"foo"', False),
+    (GetFunctionPointer, "", False),
+    (GetFunctionPointer, "3", False),
+    (Import, 'from "a" import b as c,', True),
+    (Import, 'from "a" import b as c,d as e,', True),
+    (Import, 'from "a" import b as c,d as e', True),
+    (Import, 'from "a" import b as c,d,', True),
+    (Import, 'from "a" import b as c,d,', True),
+    (Import, 'from "a" import b as c,d', True),
+    (Import, 'from "a" import b as c', True),
+    (Import, 'from "a" import b,', True),
+    (Import, 'from "a" import b,d as e,', True),
+    (Import, 'from "a" import b,d,', True),
+    (Import, 'from "a" import b', True),
+    (Import, 'from "a" import', False),
+    (Import, 'from "a"', False),
+    (Import, "", False),
+    (Import, "3", False),
+    (Import, "from a import b", False),
+    (Import, "from", False),
+    (ImportItem, "", False),
+    (ImportItem, "3", False),
+    (ImportItem, "foo as bar", True),
+    (ImportItem, "foo as", False),
+    (ImportItem, "foo", True),
+    (ImportItems, "", False),
+    (ImportItems, "3", False),
+    (ImportItems, "foo as bar,", True),
+    (ImportItems, "foo as bar,foo as bar,", True),
+    (ImportItems, "foo as bar,foo as bar", True),
+    (ImportItems, "foo as bar,foo as", False),
+    (ImportItems, "foo as bar,foo,", True),
+    (ImportItems, "foo as bar,foo", True),
+    (ImportItems, "foo as bar,foo", True),
+    (ImportItems, "foo as bar", True),
+    (ImportItems, "foo as", False),
+    (ImportItems, "foo,", True),
+    (ImportItems, "foo,bar,", True),
+    (ImportItems, "foo,bar", True),
+    (ImportItems, "foo,foo as bar,", True),
+    (ImportItems, "foo,foo as bar", True),
+    (ImportItems, "foo", True),
+    (MatchBlock, "", False),
+    (MatchBlock, "3", False),
+    (MatchBlock, "match { }", True),
+    (MatchBlock, "match { case a:b { nop } }", True),
+    (MatchBlock, "match { case a:b { nop } default { nop } }", True),
+    (MatchBlock, "match { default { nop } }", True),
+    (MatchBlock, "match {", False),
+    (MatchBlock, "match", False),
+    (RegularFile, 'from "foo" import bar', True),
+    (RegularFile, "", True),
+    (RegularFile, "3", False),
+    (RegularFile, "enum foo { x as int }", True),
+    (RegularFile, "fn main { nop }", True),
+    (RegularFile, "struct foo { x as int }", True),
+    (ReturnTypes, "", False),
+    (ReturnTypes, "3", False),
+    (ReturnTypes, "foo,", True),
+    (ReturnTypes, "foo", True),
+    (ReturnTypes, "foo[A,B],", True),
+    (ReturnTypes, "foo[A,B],foo[A,B],", True),
+    (ReturnTypes, "foo[A,B],foo[A,B]", True),
+    (ReturnTypes, "foo[A,B]", True),
+    (ReturnTypes, "foo[A],", True),
+    (ReturnTypes, "foo[A]", True),
+    (Struct, "", False),
+    (Struct, "3", False),
+    (Struct, "struct a { b as int }", True),
+    (Struct, "struct a { b as int, }", True),
+    (Struct, "struct a { b as int, }", True),
+    (Struct, "struct a { b as int, c as int }", True),
+    (Struct, "struct a { b as int, c as int, }", True),
+    (Struct, "struct a { b as map[int,vec[int]] }", True),
+    (Struct, "struct a { b as map[int,vec[int]], }", True),
+    (Struct, "struct a {", False),
+    (Struct, "struct a {}", True),
+    (Struct, "struct a", False),
+    (StructDeclaration, "", False),
+    (StructDeclaration, "3", False),
+    (StructDeclaration, "struct foo", True),
+    (StructDeclaration, "struct foo[", False),
+    (StructDeclaration, "struct foo[]", False),
+    (StructDeclaration, "struct foo[A,", False),
+    (StructDeclaration, "struct foo[A,]", True),
+    (StructDeclaration, "struct foo[A,B,]", True),
+    (StructDeclaration, "struct foo[A,B,C,]", True),
+    (StructDeclaration, "struct foo[A,B,C", False),
+    (StructDeclaration, "struct foo[A,B,C]", True),
+    (StructDeclaration, "struct foo[A,B", False),
+    (StructDeclaration, "struct foo[A,B]", True),
+    (StructDeclaration, "struct foo[A", False),
+    (StructDeclaration, "struct foo[A]", True),
+    (StructField, "", False),
+    (StructField, "3", False),
+    (StructField, "x as fn[vec[int]][set[str]]", True),
+    (StructField, "x as int", True),
+    (StructField, "x as", False),
+    (StructField, "x", False),
+    (StructFieldQuery, '"foo" ?', True),
+    (StructFieldQuery, '"foo"', False),
+    (StructFieldQuery, "", False),
+    (StructFieldQuery, "3", False),
+    (StructFields, "", False),
+    (StructFields, "3", False),
+    (StructFields, "x as int, y as str,", True),
+    (StructFields, "x as int, y as str", True),
+    (StructFields, "x as int,", True),
+    (StructFields, "x as int", True),
+    (StructFields, "x as vec[int], y as map[str, set[int]]", True),
+    (StructFieldUpdate, '"foo" { "x" ? } !', True),
+    (StructFieldUpdate, '"foo" { "x" { nop } !', False),
+    (StructFieldUpdate, '"foo" { "x" } !', True),
+    (StructFieldUpdate, '"foo" { "x" 3 } !', True),
+    (StructFieldUpdate, '"foo" { nop } !', True),
+    (StructFieldUpdate, '"foo" { nop }', False),
+    (StructFieldUpdate, '"foo" { nop', False),
+    (StructFieldUpdate, '"foo" { while true { nop } } !', True),
+    (StructFieldUpdate, '"foo" { while True { nop } } !', True),
+    (StructFieldUpdate, '"foo" {', False),
+    (StructFieldUpdate, '"foo"', False),
+    (StructFieldUpdate, "", False),
+    (StructFieldUpdate, "3", False),
+    (TypeLiteral, "", False),
+    (TypeLiteral, "[A]", False),
+    (TypeLiteral, "3", False),
+    (TypeLiteral, "const foo", True),
+    (TypeLiteral, "const foo[A]", True),
+    (TypeLiteral, "foo", True),
+    (TypeLiteral, "foo[,", False),
+    (TypeLiteral, "foo[[A]B]", False),
+    (TypeLiteral, "foo[]", False),
+    (TypeLiteral, "foo[A,", False),
+    (TypeLiteral, "foo[A,]", True),
+    (TypeLiteral, "foo[A,B,]", True),
+    (TypeLiteral, "foo[A,B]", True),
+    (TypeLiteral, "foo[A", False),
+    (TypeLiteral, "foo[A[B,],]", True),
+    (TypeLiteral, "foo[A[B,]]", True),
+    (TypeLiteral, "foo[A[B[C]],D]", True),
+    (TypeLiteral, "foo[A[B],C]", True),
+    (TypeLiteral, "foo[A[B]]", True),
+    (TypeLiteral, "foo[A]", True),
+    (TypeLiteral, "foo[const A,B]", True),
+    (TypeLiteral, "foo[const A]", True),
+    (TypeOrFunctionPointerLiteral, "", False),
+    (TypeOrFunctionPointerLiteral, "3", False),
+    (TypeOrFunctionPointerLiteral, "fn[str][vec[int]]", True),
+    (TypeOrFunctionPointerLiteral, "int", True),
+    (TypeOrFunctionPointerLiteral, "vec[str]", True),
+    (TypeParams, "", False),
+    (TypeParams, "[,", False),
+    (TypeParams, "[[A]B]", False),
+    (TypeParams, "[]", False),
+    (TypeParams, "[A,", False),
+    (TypeParams, "[A,]", True),
+    (TypeParams, "[A,B,]", True),
+    (TypeParams, "[A,B]", True),
+    (TypeParams, "[A", False),
+    (TypeParams, "[A[B,]]", True),
+    (TypeParams, "[A[B[C]],D]", True),
+    (TypeParams, "[A[B],C]", True),
+    (TypeParams, "[A[B]]", True),
+    (TypeParams, "[A]", True),
+    (TypeParams, "3", False),
+    (UseBlock, "3", False),
+    (UseBlock, "use { nop } ", False),
+    (UseBlock, "use a { nop } ", True),
+    (UseBlock, "use a, { nop } ", True),
+    (UseBlock, "use a,b { nop } ", True),
+    (UseBlock, "use a,b, { nop } ", True),
+    (UseBlock, "use a,b,c { nop } ", True),
+    (UseBlock, "use a,b,c, { nop } ", True),
+    (Variables, "3", False),
+    (Variables, "a,", True),
+    (Variables, "a,b,", True),
+    (Variables, "a,b,c,", True),
+    (Variables, "a,b,c", True),
+    (Variables, "a,b", True),
+    (Variables, "a", True),
+    (WhileLoop, 'while true { "x" ? }', True),
+    (WhileLoop, 'while true { "x" { nop } ! }', True),
+    (WhileLoop, 'while true { "x" }', True),
+    (WhileLoop, 'while true { "x" 3 }', True),
+    (WhileLoop, "", False),
+    (WhileLoop, "3", False),
+    (WhileLoop, "while true { if true { nop } else { nop } }", True),
+    (WhileLoop, "while true { nop }", True),
+    (WhileLoop, "while true { nop", False),
+    (WhileLoop, "while true { while true { nop } }", True),
+    (WhileLoop, "while true {", False),
+    (WhileLoop, "while true", False),
+    (WhileLoop, "while", False),
+]
 
 
 @pytest.mark.parametrize(
-    ["code", "expected_result"],
+    ["model_type", "text", "should_parse"],
     [
-        ("[", EndOfFile),
-        ("[A", EndOfFile),
-        ("[]", UnexpectedTokenType),
-        ("[A]", ["A"]),
-        ("[A,", EndOfFile),
-        ("[A,]", ["A"]),
-        ("[,A]", UnexpectedTokenType),
-        ("[A,B", EndOfFile),
-        ("[A,B]", ["A", "B"]),
-        ("[A,B,]", ["A", "B"]),
-        ("[A,B,C]", ["A", "B", "C"]),
-        ("[A,B,C,]", ["A", "B", "C"]),
-        ("", EndOfFile),
-        ("3", UnexpectedTokenType),
+        pytest.param(
+            model_type, text, should_parse, id=f"{model_type.__name__}-{repr(text)}"
+        )
+        for model_type, text, should_parse in PARSE_MODEL_TEST_VALUES
     ],
 )
-def test_parse_flat_type_params(
-    code: str,
-    expected_result: List[str] | Type[ParserBaseException],
-) -> None:
+def test_parser(model_type: Type[AaaParseModel], text: str, should_parse: bool) -> None:
+    node_type = MODEL_TO_NODE_TYPE[model_type]
+
     try:
-        flat_type_params = AaaParser(False).parse_text(code, "FLAT_TYPE_PARAMS")
-    except Exception as e:
-        assert isinstance(expected_result, type)
-        assert isinstance(e, expected_result)
+        model = AaaParser(False).parse_text(text, node_type)
+    except ParserBaseException:
+        assert not should_parse
     else:
-        assert isinstance(flat_type_params, FlatTypeParams)
-        assert expected_result == [item.name for item in flat_type_params.value]
+        assert should_parse
+        assert isinstance(model, model_type)
 
 
-@pytest.mark.parametrize(
-    ["code", "expected_result"],
-    [
-        ("foo[", UnexpectedTokenType),
-        ("foo[A", UnexpectedTokenType),
-        ("foo[]", UnexpectedTokenType),
-        ("foo", ("foo", [])),
-        ("foo[A]", ("foo", ["A"])),
-        ("foo[A[B]]", UnexpectedTokenType),
-        ("foo[A,", UnexpectedTokenType),
-        ("foo[A,]", ("foo", ["A"])),
-        ("foo[A,B", UnexpectedTokenType),
-        ("foo[A,B]", ("foo", ["A", "B"])),
-        ("foo[A,B,]", ("foo", ["A", "B"])),
-        ("foo[A,B,C", UnexpectedTokenType),
-        ("foo[A,B,C]", ("foo", ["A", "B", "C"])),
-        ("foo[A,B,C,]", ("foo", ["A", "B", "C"])),
-        ("", EndOfFile),
-        ("3", UnexpectedTokenType),
-    ],
-)
-def test_parse_flat_type_literal(
-    code: str,
-    expected_result: Tuple[str, List[str]] | Type[ParserBaseException],
-) -> None:
-    try:
-        flat_type_literal = AaaParser(False).parse_text(code, "FLAT_TYPE_LITERAL")
-    except Exception as e:
-        assert isinstance(expected_result, type)
-        assert isinstance(e, expected_result)
-    else:
-        assert isinstance(flat_type_literal, FlatTypeLiteral)
-        assert isinstance(expected_result, tuple)
-        expected_name, expected_param_names = expected_result
-        assert expected_name == flat_type_literal.identifier.name
-        assert expected_param_names == [item.name for item in flat_type_literal.params]
+def test_all_models_are_tested() -> None:
+    all_models = set(NODE_TYPE_TO_MODEL.values())
+    tested_models = {item[0] for item in PARSE_MODEL_TEST_VALUES}
 
+    untested_models = all_models - tested_models
 
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
-    [
-        ("struct foo[", ("foo", []), 2),
-        ("struct foo[A", ("foo", []), 2),
-        ("struct foo[]", ("foo", []), 2),
-        ("struct foo", ("foo", []), 2),
-        ("struct foo[A]", ("foo", ["A"]), 5),
-        ("struct foo[A,", ("foo", []), 2),
-        ("struct foo[A,]", ("foo", ["A"]), 6),
-        ("struct foo[A,B", ("foo", []), 2),
-        ("struct foo[A,B]", ("foo", ["A", "B"]), 7),
-        ("struct foo[A,B,]", ("foo", ["A", "B"]), 8),
-        ("struct foo[A,B,C]", ("foo", ["A", "B", "C"]), 9),
-        ("struct foo[A,B,C,]", ("foo", ["A", "B", "C"]), 10),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_struct_declaration(
-    code: str,
-    expected_result: Tuple[str, List[str]] | Type[ParserBaseException],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
-    [
-        ("foo", (None, [], "foo"), 1),
-        ("foo[", (None, [], "foo"), 1),
-        ("foo[]", (None, [], "foo"), 1),
-        ("foo:", EndOfFile, 0),
-        ("foo[]:", (None, [], "foo"), 1),
-        ("foo:bar", ("foo", [], "bar"), 3),
-        ("foo[A]", (None, ["A"], "foo"), 4),
-        ("foo[A,]", (None, ["A"], "foo"), 5),
-        ("foo[A,B]", (None, ["A", "B"], "foo"), 6),
-        ("foo[A,B,]", (None, ["A", "B"], "foo"), 7),
-        ("foo[A,B,C]", (None, ["A", "B", "C"], "foo"), 8),
-        ("foo[A,B,C,]", (None, ["A", "B", "C"], "foo"), 9),
-        ("foo[A]:bar", ("foo", ["A"], "bar"), 6),
-        ("foo[A,]:bar", ("foo", ["A"], "bar"), 7),
-        ("foo[A,B]:bar", ("foo", ["A", "B"], "bar"), 8),
-        ("foo[A,B,]:bar", ("foo", ["A", "B"], "bar"), 9),
-        ("foo[A,B,C]:bar", ("foo", ["A", "B", "C"], "bar"), 10),
-        ("foo[A,B,C,]:bar", ("foo", ["A", "B", "C"], "bar"), 11),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_function_name(
-    code: str,
-    expected_result: Tuple[str, List[str], Optional[str]] | Type[ParserBaseException],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("[]", UnexpectedTokenType, 0),
-        ("[A]", None, 3),
-        ("[A", EndOfFile, 0),
-        ("[A,", EndOfFile, 0),
-        ("[A,]", None, 4),
-        ("[,", UnexpectedTokenType, 0),
-        ("[A,B]", None, 5),
-        ("[A,B,]", None, 6),
-        ("[A[B]]", None, 6),
-        ("[A[B,]]", None, 7),
-        ("[[A]B]", UnexpectedTokenType, 0),
-        ("[A[B],C]", None, 8),
-        ("[A[B[C]],D]", None, 11),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_type_params(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("foo", None, 1),
-        ("const foo", None, 2),
-        ("foo[]", None, 1),
-        ("[A]", UnexpectedTokenType, 0),
-        ("foo[A]", None, 4),
-        ("const foo[A]", None, 5),
-        ("foo[const A]", None, 5),
-        ("foo[A", None, 1),
-        ("foo[A,", None, 1),
-        ("foo[A,]", None, 5),
-        ("foo[,", None, 1),
-        ("foo[A,B]", None, 6),
-        ("foo[const A,B]", None, 7),
-        ("foo[A,B,]", None, 7),
-        ("foo[A[B]]", None, 7),
-        ("foo[A[B,]]", None, 8),
-        ("foo[A[B,],]", None, 9),
-        ("foo[[A]B]", None, 1),
-        ("foo[A[B],C]", None, 9),
-        ("foo[A[B[C]],D]", None, 12),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_type_literal(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("foo", EndOfFile, 0),
-        ("foo as", EndOfFile, 0),
-        ("foo as bar", None, 3),
-        ("foo as bar[]", None, 3),
-        ("foo as bar[A", None, 3),
-        ("foo as bar[", None, 3),
-        ("foo as bar[A]", None, 6),
-        ("foo as bar[A,]", None, 7),
-        ("foo as bar[A,B]", None, 8),
-        ("foo as bar[A,B,]", None, 9),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_argument(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("foo", EndOfFile, 0),
-        ("foo as", EndOfFile, 0),
-        ("foo as bar", None, 3),
-        ("foo as bar[A]", None, 6),
-        ("foo as bar[A,B]", None, 8),
-        ("foo as bar[A,B],", None, 9),
-        ("foo as bar[A,B],foo as bar[A,B]", None, 17),
-        ("foo as bar[A,B],foo as bar[A,B],", None, 18),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_arguments(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("foo", None, 1),
-        ("foo,", None, 2),
-        ("foo[A]", None, 4),
-        ("foo[A],", None, 5),
-        ("foo[A,B]", None, 6),
-        ("foo[A,B],", None, 7),
-        ("foo[A,B],foo[A,B]", None, 13),
-        ("foo[A,B],foo[A,B],", None, 14),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_return_types(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("fn a", None, 2),
-        ("fn a,", None, 2),
-        ("fn a args b as int", None, 6),
-        ("fn a args b as int,", None, 7),
-        ("fn a args b as int, c as int", None, 10),
-        ("fn a args b as int, c as int,", None, 11),
-        ("fn a args b as vec[int], c as vec[int],", None, 17),
-        ("fn a args b as vec[int,], c as vec[int,],", None, 19),
-        ("fn a return int", None, 4),
-        ("fn a return int,", None, 5),
-        ("fn a return vec[int]", None, 7),
-        ("fn a return vec[int],map[int,int]", None, 14),
-        ("fn a return vec[int],map[int,int],", None, 15),
-        ("fn a return vec[int],map[int,vec[int]],", None, 18),
-        ("fn a args b as vec[int], return vec[int],map[int,vec[int]],", None, 26),
-        ("fn a args", EndOfFile, 0),
-        ("fn a return", EndOfFile, 0),
-        ("fn a return", EndOfFile, 0),
-        ("fn a return vec[", None, 4),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_function_declaration(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-def test_parse_builtins_file_root() -> None:
-    file = get_stdlib_path() / "builtins.aaa"
-    AaaParser(False).parse_file(file)
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("", None, 0),
-        ("fn a", None, 2),
-        ("fn a fn b", None, 4),
-        ("struct a", None, 2),
-        ("struct a struct b", None, 4),
-        ("struct a[A,B] fn a args b as vec[int,map[int,int]] return c", None, 25),
-        ("3", None, 0),
-    ],
-)
-def test_parse_builtins_root(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("struct a", EndOfFile, 0),
-        ("struct a {", EndOfFile, 0),
-        ("struct a {}", None, 4),
-        ("struct a { b as int }", None, 7),
-        ("struct a { b as int, }", None, 8),
-        ("struct a { b as map[int,vec[int]] }", None, 15),
-        ("struct a { b as map[int,vec[int]], }", None, 16),
-        ("struct a { b as int, }", None, 8),
-        ("struct a { b as int, c as int }", None, 11),
-        ("struct a { b as int, c as int, }", None, 12),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_struct_definition(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
-    [
-        ('""', "", 1),
-        ('"foo"', "foo", 1),
-        ('"\\n"', "\n", 1),
-        ('"\\r"', "\r", 1),
-        ('"\\\\"', "\\", 1),
-        ('"\\""', '"', 1),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_string(
-    code: str,
-    expected_result: str | Type[ParserBaseException],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
-    [
-        ("foo", ("foo", "foo"), 1),
-        ("foo as", EndOfFile, 0),
-        ("foo as bar", ("foo", "bar"), 3),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_import_item(
-    code: str,
-    expected_result: Tuple[str, str] | Type[ParserBaseException],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("foo", None, 1),
-        ("foo,", None, 2),
-        ("foo,bar", None, 3),
-        ("foo,bar,", None, 4),
-        ("foo as bar,foo", None, 5),
-        ("foo as bar,foo,", None, 6),
-        ("foo,foo as bar", None, 5),
-        ("foo,foo as bar,", None, 6),
-        ("foo as", EndOfFile, 0),
-        ("foo as bar", None, 3),
-        ("foo as bar,", None, 4),
-        ("foo as bar,foo", None, 5),
-        ("foo as bar,foo as", None, 4),
-        ("foo as bar,foo as bar", None, 7),
-        ("foo as bar,foo as bar,", None, 8),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_import_items(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("from", EndOfFile, 0),
-        ('from "a"', EndOfFile, 0),
-        ('from "a" import', EndOfFile, 0),
-        ("from a import b", UnexpectedTokenType, 0),
-        ('from "a" import b', None, 4),
-        ('from "a" import b,', None, 5),
-        ('from "a" import b as c', None, 6),
-        ('from "a" import b as c,', None, 7),
-        ('from "a" import b as c,d', None, 8),
-        ('from "a" import b as c,d,', None, 9),
-        ('from "a" import b as c,d as e', None, 10),
-        ('from "a" import b as c,d as e,', None, 11),
-        ('from "a" import b,d as e,', None, 9),
-        ('from "a" import b as c,d,', None, 9),
-        ('from "a" import b,d,', None, 7),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_import_statement(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
-    [
-        ("true", True, 1),
-        ("false", False, 1),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_boolean(
-    code: str,
-    expected_result: bool | Type[ParserBaseException],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
-    [
-        ("0", 0, 1),
-        ("123", 123, 1),
-        ("-456", -456, 1),
-        ("", EndOfFile, 0),
-        ("true", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_integer(
-    code: str,
-    expected_result: int | Type[ParserBaseException],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("0", None, 1),
-        ("123", None, 1),
-        ("-456", None, 1),
-        ("true", None, 1),
-        ("false", None, 1),
-        ('"foo"', None, 1),
-        ("case", UnexpectedTokenType, 0),
-        ("", EndOfFile, 0),
-    ],
-)
-def test_parse_literal(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_result", "expected_offset"],
-    [
-        ("foo", (None, [], "foo"), 1),
-        ("foo[A]", (None, ["A"], "foo"), 4),
-        ("foo[A,]", (None, ["A"], "foo"), 5),
-        ("foo[A,B]", (None, ["A", "B"], "foo"), 6),
-        ("foo[A,B,]", (None, ["A", "B"], "foo"), 7),
-        ("foo:bar", ("foo", [], "bar"), 3),
-        ("fn", UnexpectedTokenType, 0),
-        ("", EndOfFile, 0),
-    ],
-)
-def test_parse_function_call(
-    code: str,
-    expected_result: Tuple[Optional[str], List[str], str] | Type[ParserBaseException],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("if", EndOfFile, 0),
-        ("if true", EndOfFile, 0),
-        ("if true {", EndOfFile, 0),
-        ("if true { nop", EndOfFile, 0),
-        ("if true { nop } else ", EndOfFile, 0),
-        ("if true { nop } else {", EndOfFile, 0),
-        ("if true { nop } else { nop", EndOfFile, 0),
-        ("if true { nop }", None, 5),
-        ("if true { nop } else { nop }", None, 9),
-        ("if true { while true { nop } }", None, 9),
-        ("if true { if true { nop } else { nop } }", None, 13),
-        ('if true { "x" ? }', None, 6),
-        ('if true { "x" { nop } ! }', None, 9),
-        ('if true { "x" }', None, 5),
-        ('if true { "x" 3 }', None, 6),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_branch(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("while", EndOfFile, 0),
-        ("while true", EndOfFile, 0),
-        ("while true {", EndOfFile, 0),
-        ("while true { nop", EndOfFile, 0),
-        ("while true { nop }", None, 5),
-        ("while true { while true { nop } }", None, 9),
-        ("while true { if true { nop } else { nop } }", None, 13),
-        ('while true { "x" ? }', None, 6),
-        ('while true { "x" { nop } ! }', None, 9),
-        ('while true { "x" }', None, 5),
-        ('while true { "x" 3 }', None, 6),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_loop(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ('"foo"', EndOfFile, 0),
-        ('"foo" ?', None, 2),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_field_query(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ('"foo"', EndOfFile, 0),
-        ('"foo" {', EndOfFile, 0),
-        ('"foo" { nop', EndOfFile, 0),
-        ('"foo" { nop }', EndOfFile, 0),
-        ('"foo" { nop } !', None, 5),
-        ('"foo" { while true { nop } } !', None, 9),
-        ('"foo" { if true { nop } else { nop } } !', None, 13),
-        ('"foo" { "x" ? } !', None, 6),
-        ('"foo" { "x" { nop } ! } !', None, 9),
-        ('"foo" { "x" } !', None, 5),
-        ('"foo" { "x" 3 } !', None, 6),
-        ("", EndOfFile, 0),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_struct_field_update(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("3", None, 1),
-        ("false", None, 1),
-        ('"foo"', None, 1),
-        ("foo", None, 1),
-        ("foo[A]", None, 4),
-        ("foo[A,]", None, 5),
-        ("foo[A,B]", None, 6),
-        ("foo[A,B,]", None, 7),
-        ("foo:bar", None, 3),
-        ("if true { nop }", None, 5),
-        ("if true { nop } else { nop }", None, 9),
-        ("while true { nop }", None, 5),
-        ('"foo" ?', None, 2),
-        ('"foo" { nop } !', None, 5),
-        ("", EndOfFile, 0),
-        ("case", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_function_body_item(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("3", None, 1),
-        ("false", None, 1),
-        ('"foo"', None, 1),
-        ("foo", None, 1),
-        ("foo[A]", None, 4),
-        ("foo[A,]", None, 5),
-        ("foo[A,B]", None, 6),
-        ("foo[A,B,]", None, 7),
-        ("foo:bar", None, 3),
-        ("if true { nop }", None, 5),
-        ("if true { nop } else { nop }", None, 9),
-        ("while true { nop }", None, 5),
-        ('"foo" ?', None, 2),
-        ('"foo" { nop } !', None, 5),
-        ("if true { nop } 3", None, 6),
-        ("if true { nop } false", None, 6),
-        ('if true { nop } "foo"', None, 6),
-        ("if true { nop } foo", None, 6),
-        ("if true { nop } foo[A]", None, 9),
-        ("if true { nop } foo[A,]", None, 10),
-        ("if true { nop } foo[A,B]", None, 11),
-        ("if true { nop } foo[A,B,]", None, 12),
-        ("if true { nop } foo:bar", None, 8),
-        ("if true { nop } if true { nop }", None, 10),
-        ("if true { nop } if true { nop } else { nop }", None, 14),
-        ("if true { nop } while true { nop }", None, 10),
-        ('if true { nop } "foo" ?', None, 7),
-        ('if true { nop } "foo" { nop } !', None, 10),
-        ("", EndOfFile, 0),
-        ("case", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_function_body(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("fn", EndOfFile, 0),
-        ("fn foo", EndOfFile, 0),
-        ("fn foo {", EndOfFile, 0),
-        ("fn foo { nop", EndOfFile, 0),
-        ("fn foo { nop }", None, 5),
-        ("fn foo args a as int { nop }", None, 9),
-        ("fn foo args a as vec[map[int,str]] { nop }", None, 17),
-        ("fn foo args a as vec[map[int,str]] { while true { nop } }", None, 21),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_function_definition(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-def test_parse_regular_file_root_empty_file() -> None:
-    raise NotImplementedError
+    if untested_models:
+        raise Exception(
+            "Found untested models: "
+            + ", ".join(sorted(model.__name__ for model in untested_models)),
+        )
 
 
 def get_source_files() -> List[Path]:
     aaa_files: Set[Path] = {
-        Path(file)
+        Path(file).resolve()
         for file in glob("**/*.aaa", root_dir=aaa_project_root(), recursive=True)
     }
-    builtins_file = Path("./stdlib/builtins.aaa")
-    return sorted(aaa_files - {builtins_file})
+    return sorted(aaa_files)
 
 
-@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["file"],
     [pytest.param(file, id=str(file)) for file in get_source_files()],
 )
-def test_parse_regular_file_all_source_files(file: Path) -> None:
-    raise NotImplementedError
+def test_parse__all_source_files(file: Path) -> None:
+    AaaParser(False).parse_file(file)
 
 
-@pytest.mark.skip()  # TODO
-def test_parse_regular_file_fail() -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-def test_parse_builtins_file_fail() -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("a", None, 1),
-        ("a,", None, 2),
-        ("a,b", None, 3),
-        ("a,b,", None, 4),
-        ("a,b,c", None, 5),
-        ("a,b,c,", None, 6),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_variables(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("use { nop } ", UnexpectedTokenType, 0),
-        ("use a { nop } ", None, 5),
-        ("use a, { nop } ", None, 6),
-        ("use a,b { nop } ", None, 7),
-        ("use a,b, { nop } ", None, 8),
-        ("use a,b,c { nop } ", None, 9),
-        ("use a,b,c, { nop } ", None, 10),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_use_block(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("<- { nop } ", UnexpectedTokenType, 0),
-        ("a <- { nop } ", None, 5),
-        ("a, <- { nop } ", None, 6),
-        ("a,b <- { nop } ", None, 7),
-        ("a,b, <- { nop } ", None, 8),
-        ("a,b,c <- { nop } ", None, 9),
-        ("a,b,c, <- { nop } ", None, 10),
-        ("3", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_assignment(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
-@pytest.mark.parametrize(
-    ["code", "expected_exception", "expected_offset"],
-    [
-        ("fn[][]", None, 5),
-        ("fn [][]", None, 5),
-        ("fn[ ][]", None, 5),
-        ("fn[] []", None, 5),
-        ("fn[][ ]", None, 5),
-        ("fn[int][]", None, 6),
-        ("fn[int,][]", None, 7),
-        ("fn[][int]", None, 6),
-        ("fn[vec[int]][]", None, 9),
-        ("fn[int,int][]", None, 8),
-        ("fn[int,int,][]", None, 9),
-        ("fn[][int,int]", None, 8),
-        ("fn[][int,int,]", None, 9),
-        ("fn[fn[][]][]", None, 10),
-        ("fn[,][]", UnexpectedTokenType, 0),
-        ("fn[][,]", UnexpectedTokenType, 0),
-    ],
-)
-def test_parse_function_pointer_type_literal(
-    code: str,
-    expected_exception: Optional[Type[ParserBaseException]],
-    expected_offset: int,
-) -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.skip()  # TODO
 @pytest.mark.parametrize(
     ["escaped", "expected_unescaped"],
     [
@@ -935,4 +635,4 @@ def test_parse_function_pointer_type_literal(
     ],
 )
 def test_unescape_string(escaped: str, expected_unescaped: str) -> None:
-    raise NotImplementedError
+    assert expected_unescaped == unescape_string(escaped)
