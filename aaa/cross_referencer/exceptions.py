@@ -103,7 +103,7 @@ class CollidingEnumVariant(CrossReferenceBaseException):
         msg = "Duplicate enum variant name collision:\n"
 
         for item in self.colliding:
-            msg += f"{item.position}: enum variant {self.enum.get_name()}:{item.name.name}\n"
+            msg += f"{item.position}: enum variant {self.enum.get_name()}:{item.name.value}\n"
 
         return msg
 
@@ -132,7 +132,7 @@ class InvalidArgument(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return (
-            f"{self.used.position}: Cannot use {self.used.identifier.name} as argument\n"
+            f"{self.used.position}: Cannot use {self.used.identifier.value} as argument\n"
             + f"{self.found.position}: {describe(self.found)} collides\n"
         )
 

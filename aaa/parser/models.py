@@ -69,7 +69,7 @@ class WhileLoop(AaaParseModel):
 
 class Identifier(AaaParseModel):
     def __init__(self, position: Position, name: str) -> None:
-        self.name = name  # TODO rename field to `value`
+        self.value = name
         super().__init__(position)
 
 
@@ -219,20 +219,17 @@ class Function(AaaParseModel):
     def is_test(self) -> bool:  # pragma: nocover
         return (
             not self.declaration.name.type_name
-            and self.declaration.name.func_name.name.startswith("test_")
+            and self.declaration.name.func_name.startswith("test_")
         )
 
     def get_params(self) -> List[Identifier]:
         return self.declaration.name.params
 
     def get_func_name(self) -> str:
-        return self.declaration.name.func_name.name
+        return self.declaration.name.func_name
 
     def get_type_name(self) -> str:
-        identifier = self.declaration.name.type_name
-        if not identifier:
-            return ""
-        return identifier.name
+        return self.declaration.name.type_name or ""
 
     def get_name(self) -> str:
         type_name = self.get_type_name()
@@ -356,7 +353,7 @@ class Struct(AaaParseModel):
         super().__init__(declaration.position)
 
     def get_name(self) -> str:
-        return self.declaration.flat_type_literal.identifier.name
+        return self.declaration.flat_type_literal.identifier.value
 
     def get_params(self) -> List[Identifier]:
         return self.declaration.flat_type_literal.params
@@ -365,7 +362,7 @@ class Struct(AaaParseModel):
         if not self.fields:
             return {}
 
-        return {field.name.name: field.type.literal for field in self.fields.value}
+        return {field.name.value: field.type.literal for field in self.fields.value}
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> Struct:
@@ -396,7 +393,6 @@ class StructDeclaration(AaaParseModel):
 
 
 class ParsedFile(AaaParseModel):
-    # TODO merge RegularFile and BuiltinsFile to put everything in this class
     def __init__(
         self,
         position: Position,
@@ -460,7 +456,6 @@ class BuiltinsFile(ParsedFile):
 
         for child in children:
             if isinstance(child, FunctionDeclaration):
-                # TODO add builtins keyword and redo this
                 dummy_position = child.position
                 dummy_body = FunctionBody(dummy_position, [])
                 dummy_body_block = FunctionBodyBlock(
@@ -469,12 +464,7 @@ class BuiltinsFile(ParsedFile):
                 functions.append(Function(child, dummy_body_block))
 
             elif isinstance(child, StructDeclaration):
-                # TODO add builtins keyword and redo this
                 structs.append(Struct(child, None))
-
-            elif isinstance(child, EnumDeclaration):
-                # TODO add builtins keyword and redo this
-                raise NotImplementedError  # TODO currently unused
 
             else:
                 raise NotImplementedError
@@ -581,6 +571,7 @@ class StructFields(AaaParseModel):
         assert len(fields) >= 1
 
         self.value = fields
+        super().__init__(fields[0].position)
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> StructFields:
@@ -671,7 +662,10 @@ class FunctionPointerTypeLiteral(AaaParseModel):
 
 class CommaSeparatedTypeList(AaaParseModel):
     def __init__(self, literals: List[TypeOrFunctionPointerLiteral]) -> None:
+        assert len(literals) >= 1
+
         self.value = literals
+        super().__init__(literals[0].position)
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> CommaSeparatedTypeList:
@@ -696,10 +690,13 @@ class FunctionName(AaaParseModel):
         params: List[Identifier],
         func_name: Identifier,
     ) -> None:
-        # TODO consider making type_name and func_name strings
-        self.type_name = type_name
+        if type_name:
+            self.type_name: Optional[str] = type_name.value
+        else:
+            self.type_name = None
+
         self.params = params
-        self.func_name = func_name
+        self.func_name = func_name.value
         super().__init__(position)
 
     @classmethod
@@ -759,17 +756,20 @@ class FunctionDeclaration(AaaParseModel):
 
 
 class Arguments(AaaParseModel):
-    def __init__(self, arguments: List[Argument]) -> None:
+    def __init__(self, position: Position, arguments: List[Argument]) -> None:
         assert len(arguments) >= 1
 
         self.value = arguments
-        super().__init__(arguments[0].position)
+        super().__init__(position)
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> Arguments:
+        arg_token = children[0]
+        assert isinstance(arg_token, Token)
+
         arguments: List[Argument] = []
 
-        for child in children:
+        for child in children[1:]:
             if isinstance(child, Argument):
                 arguments.append(child)
             elif isinstance(child, Token):
@@ -777,38 +777,40 @@ class Arguments(AaaParseModel):
             else:
                 raise NotImplementedError
 
-        return Arguments(arguments)
+        return Arguments(arg_token.position, arguments)
 
 
 class ReturnTypes(AaaParseModel):
     def __init__(
-        self, return_types: List[TypeOrFunctionPointerLiteral] | Never
+        self,
+        position: Position,
+        return_types: List[TypeOrFunctionPointerLiteral] | Never,
     ) -> None:
         self.value = return_types
-
-        if isinstance(return_types, list):
-            assert len(return_types) >= 1
-            position = return_types[0].position
-        else:
-            position = return_types.position
         super().__init__(position)
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> ReturnTypes:
-        if isinstance(children[0], Never):
-            return ReturnTypes(children[0])
+        return_token = children[0]
+        assert isinstance(return_token, Return)
 
-        return_types: List[TypeOrFunctionPointerLiteral] = []
+        return_types: List[TypeOrFunctionPointerLiteral] | Never
 
-        for child in children:
-            if isinstance(child, TypeOrFunctionPointerLiteral):
-                return_types.append(child)
-            elif isinstance(child, Token):
-                pass  # Ignore commas
-            else:
-                raise NotImplementedError
+        if isinstance(children[1], Never):
+            return_types = children[1]
 
-        return ReturnTypes(return_types)
+        else:
+            return_types = []
+
+            for child in children[1:]:
+                if isinstance(child, TypeOrFunctionPointerLiteral):
+                    return_types.append(child)
+                elif isinstance(child, Token):
+                    pass  # Ignore commas
+                else:
+                    raise NotImplementedError
+
+        return ReturnTypes(return_token.position, return_types)
 
 
 class TypeOrFunctionPointerLiteral(AaaParseModel):
@@ -845,8 +847,8 @@ class FunctionCall(AaaParseModel):
 
     def name(self) -> str:
         if self.struct_name:
-            return f"{self.struct_name.name}:{self.func_name.name}"
-        return self.func_name.name
+            return f"{self.struct_name.value}:{self.func_name.value}"
+        return self.func_name.value
 
     def get_type_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
         if not self.type_params:
@@ -888,7 +890,10 @@ class FunctionCall(AaaParseModel):
 
 class TypeParams(AaaParseModel):
     def __init__(self, value: List[TypeOrFunctionPointerLiteral]) -> None:
+        assert len(value) >= 1
+
         self.value = value
+        super().__init__(value[0].position)
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> TypeParams:
@@ -1131,7 +1136,7 @@ class Enum(AaaParseModel):
         return self.variants.value
 
     def get_name(self) -> str:
-        return self.declaration.name.name
+        return self.declaration.name.value
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> Enum:

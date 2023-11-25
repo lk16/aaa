@@ -300,16 +300,16 @@ class CrossReferencer:
             variants: Dict[str, parser.EnumVariant] = {}
             for variant in parsed_enum.get_variants():
                 try:
-                    found = variants[variant.name.name]
+                    found = variants[variant.name.value]
                 except KeyError:
                     pass
                 else:
                     raise CollidingEnumVariant(parsed_enum, [variant, found])
 
-                variants[variant.name.name] = variant
+                variants[variant.name.value] = variant
 
             enum_ctors += [
-                EnumConstructor(enum, variant.name.name)
+                EnumConstructor(enum, variant.name.value)
                 for variant in parsed_enum.get_variants()
             ]
 
@@ -353,7 +353,7 @@ class CrossReferencer:
         return import_.resolve(source)
 
     def _get_identifiable(self, identifier: parser.Identifier) -> Identifiable:
-        return self._get_identifiable_generic(identifier.name, identifier.position)
+        return self._get_identifiable_generic(identifier.value, identifier.position)
 
     def _get_type(self, identifier: parser.Identifier) -> Struct | Enum:
         type = self._get_identifiable(identifier)
@@ -437,7 +437,7 @@ class CrossReferencer:
 
         for parsed_type_param in struct.get_unresolved().parsed_params:
             struct = Struct.from_identifier(parsed_type_param)
-            param_name = parsed_type_param.name
+            param_name = parsed_type_param.value
 
             try:
                 colliding = self.identifiers[(struct.position.file, param_name)]
@@ -460,7 +460,7 @@ class CrossReferencer:
             return self._resolve_type(parsed_field_type)
 
         assert isinstance(parsed_field_type, parser.TypeLiteral)
-        arg_type_name = parsed_field_type.identifier.name
+        arg_type_name = parsed_field_type.identifier.value
 
         params: List[VariableType | FunctionPointer] = []
 
@@ -526,7 +526,7 @@ class CrossReferencer:
 
         for parsed_type_param in function.get_unresolved().parsed.get_params():
             struct = Struct.from_identifier(parsed_type_param)
-            param_name = parsed_type_param.name
+            param_name = parsed_type_param.value
 
             try:
                 colliding = self.identifiers[(function.position.file, param_name)]
@@ -552,7 +552,7 @@ class CrossReferencer:
             return Argument(identifier=parsed_arg.identifier, type=arg_type)
 
         assert isinstance(parsed_type, parser.TypeLiteral)
-        arg_type_name = parsed_type.identifier.name
+        arg_type_name = parsed_type.identifier.value
         type: Identifiable
 
         params: List[VariableType | FunctionPointer] = []
@@ -600,7 +600,7 @@ class CrossReferencer:
         if isinstance(param, parser.FunctionPointerTypeLiteral):
             return self._resolve_type(param)
 
-        param_name = param.identifier.name
+        param_name = param.identifier.value
         if param_name in type_params:
             param_type: Struct | Enum = type_params[param_name]
             is_placeholder = True
@@ -683,7 +683,7 @@ class CrossReferencer:
                 return_types.append(self._resolve_type(parsed_return_type))
                 continue
 
-            return_type_name = parsed_return_type.identifier.name
+            return_type_name = parsed_return_type.identifier.value
 
             if return_type_name in type_params:
                 type: Struct | Enum = type_params[return_type_name]
@@ -902,8 +902,8 @@ class FunctionBodyResolver:
         return MatchBlock(parsed.position, blocks)
 
     def _resolve_case_block(self, parsed: parser.CaseBlock) -> CaseBlock:
-        enum_type_name = parsed.label.enum_name.name
-        variant_name = parsed.label.variant_name.name
+        enum_type_name = parsed.label.enum_name.value
+        variant_name = parsed.label.variant_name.value
         assert enum_type_name  # parser ensures this doesn't fail
 
         enum_type = self._get_identifiable_generic(enum_type_name, parsed.position)

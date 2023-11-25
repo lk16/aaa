@@ -30,7 +30,7 @@ class Function(AaaCrossReferenceModel):
         def __init__(self, parsed: parser.Function) -> None:
             self.parsed = parsed
 
-            self.type_params = {param.name: param for param in parsed.get_params()}
+            self.type_params = {param.value: param for param in parsed.get_params()}
 
     class WithSignature:
         def __init__(
@@ -147,7 +147,7 @@ class Argument(AaaCrossReferenceModel):
         self, type: VariableType | FunctionPointer, identifier: parser.Identifier
     ) -> None:
         self.type = type
-        self.name = identifier.name
+        self.name = identifier.value
         super().__init__(identifier.position)
 
 
@@ -170,8 +170,8 @@ class Import(AaaCrossReferenceModel):
     def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
         self.state: Import.Resolved | Import.Unresolved = Import.Unresolved()
         self.source_file = import_.get_source_file()
-        self.source_name = import_item.original.name
-        self.name = import_item.imported.name
+        self.source_name = import_item.original.value
+        self.name = import_item.imported.value
         super().__init__(import_item.position)
 
     @property
@@ -242,7 +242,7 @@ class Struct(AaaCrossReferenceModel):
 
     @classmethod
     def from_identifier(cls, identifier: parser.Identifier) -> Struct:
-        return Struct(identifier.position, identifier.name, [], {})
+        return Struct(identifier.position, identifier.value, [], {})
 
     def __init__(
         self,
@@ -314,10 +314,10 @@ class Enum(AaaCrossReferenceModel):
             ] = {}
 
             for variant in parsed.get_variants():
-                self.parsed_variants[variant.name.name] = variant.get_data()
+                self.parsed_variants[variant.name.value] = variant.get_data()
 
             # This can't fail, an enum needs to have at least one variant
-            self.zero_variant = parsed.get_variants()[0].name.name
+            self.zero_variant = parsed.get_variants()[0].name.value
 
     class Resolved:
         def __init__(
@@ -564,7 +564,7 @@ class ForeachLoop(AaaCrossReferenceModel):
 
 class Variable(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.Identifier, is_func_arg: bool) -> None:
-        self.name = parsed.name
+        self.name = parsed.value
         self.is_func_arg = is_func_arg
         super().__init__(parsed.position)
 
