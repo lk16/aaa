@@ -1,12 +1,12 @@
 from pathlib import Path
 from queue import Queue
-from typing import Callable, Dict, List, Optional, Type
+from typing import Dict, List, Optional, Type
 
 from aaa import aaa_project_root, get_stdlib_path
 from aaa.parser.exceptions import AaaParserBaseException
 from aaa.parser.lib.exceptions import ParserBaseException
 from aaa.parser.lib.file_parser import FileParser
-from aaa.parser.lib.models import Node, Token
+from aaa.parser.lib.models import Token
 from aaa.parser.models import (
     AaaParseModel,
     Argument,
@@ -286,30 +286,14 @@ class AaaParser:
     def parse_text(
         self, text: str, root_node_type: str, file_name: Optional[str] = None
     ) -> AaaParseModel:
-        parse_tree = self.file_parser.parse_text_as_node_type(
-            text, file_name, node_type=root_node_type, verbose=self.verbose
+        return self.file_parser.parse_text_and_transform(
+            text,
+            file_name,
+            node_type=root_node_type,
+            verbose=self.verbose,
+            token_transformer=transform_token,
+            node_transformer=transform_node,
         )
-
-        return self.transform_parse_tree(parse_tree, transform_node, transform_token)
-
-    def transform_parse_tree(  # TODO move transformation into parser lib
-        self,
-        node: Node,
-        node_transformer: Callable[[str, List[AaaParseModel | Token]], AaaParseModel],
-        token_transformer: Callable[[Token], AaaParseModel | Token],
-    ) -> AaaParseModel:
-        transformed_children: List[AaaParseModel | Token] = []
-        for child in node.children:
-            if isinstance(child, Token):
-                transformed_children.append(token_transformer(child))
-            else:
-                transformed_children.append(
-                    self.transform_parse_tree(
-                        child, node_transformer, token_transformer
-                    )
-                )
-
-        return node_transformer(node.type, transformed_children)
 
     def tokenize_text(self, text: str) -> List[Token]:
         # This is only supposed to be used for testing.

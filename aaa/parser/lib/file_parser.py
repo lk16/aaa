@@ -1,9 +1,11 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional, TypeVar
 
 from aaa.parser.lib.exceptions import TokenizerException, UnexpectedTokenType
 from aaa.parser.lib.models import Node, Position, Token
 from aaa.parser.lib.syntax_loader import SyntaxLoader
+
+T = TypeVar("T")
 
 
 class FileParser:
@@ -77,31 +79,13 @@ class FileParser:
 
         return tokens
 
-    def parse_file(
-        self, file: Path, root_node_type: Optional[str] = None, verbose: bool = False
-    ) -> Node:
-        return self.parse_text(
-            file.read_text(),
-            str(file.resolve()),
-            root_node_type=root_node_type,
-            verbose=verbose,
-        )
+    def parse_file(self, file: Path, node_type: str, verbose: bool = False) -> Node:
+        text = file.read_text()
+        file_name = str(file.resolve())
+
+        return self.parse_text(text, file_name, node_type=node_type, verbose=verbose)
 
     def parse_text(
-        self,
-        text: str,
-        file_name: Optional[str] = None,
-        root_node_type: Optional[str] = None,
-        verbose: bool = False,
-    ) -> Node:
-        if root_node_type is None:
-            root_node_type = self.root_node_type
-
-        return self.parse_text_as_node_type(
-            text, file_name, node_type=root_node_type, verbose=verbose
-        )
-
-    def parse_text_as_node_type(
         self,
         text: str,
         file_name: Optional[str] = None,
@@ -122,3 +106,40 @@ class FileParser:
             raise UnexpectedTokenType(offset, tokens[offset], top_level_tokens)
 
         return root.flatten()
+
+    def parse_text_and_transform(
+        self,
+        text: str,
+        file_name: Optional[str] = None,
+        verbose: bool = False,
+        *,
+        node_type: str,
+        node_transformer: Callable[[str, List[T | Token]], T],
+        token_transformer: Callable[[Token], T | Token],
+    ) -> T:
+        parse_tree = self.parse_text(
+            text, file_name, verbose=verbose, node_type=node_type
+        )
+
+        return self._transform_parse_tree(
+            parse_tree, node_transformer, token_transformer
+        )
+
+    def _transform_parse_tree(
+        self,
+        node: Node,
+        node_transformer: Callable[[str, List[T | Token]], T],
+        token_transformer: Callable[[Token], T | Token],
+    ) -> T:
+        transformed_children: List[T | Token] = []
+        for child in node.children:
+            if isinstance(child, Token):
+                transformed_children.append(token_transformer(child))
+            else:
+                transformed_children.append(
+                    self._transform_parse_tree(
+                        child, node_transformer, token_transformer
+                    )
+                )
+
+        return node_transformer(node.type, transformed_children)
