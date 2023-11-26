@@ -34,7 +34,7 @@ class BaseParser:
 
     def parse(
         self, tokens: List[Token], offset: int, verbose: bool = False
-    ) -> Tuple[Token | InnerNode | None, int]:
+    ) -> Tuple[Token | InnerNode, int]:
         # Implemented in subclasses.
         raise NotImplementedError
 
@@ -48,7 +48,7 @@ class TokenParser(BaseParser):
 
     def parse(
         self, tokens: List[Token], offset: int, verbose: bool = False
-    ) -> Tuple[Token | InnerNode | None, int]:
+    ) -> Tuple[Token | InnerNode, int]:
         self._print(tokens, offset, verbose, f"TokenParser for {self.token_type}")
 
         try:
@@ -80,7 +80,7 @@ class NodeParser(BaseParser):
 
     def parse(
         self, tokens: List[Token], offset: int, verbose: bool = False
-    ) -> Tuple[Token | InnerNode | None, int]:
+    ) -> Tuple[Token | InnerNode, int]:
         self._print(tokens, offset, verbose, f"NodeParser for {self.node_type}")
 
         assert self.inner
@@ -120,8 +120,7 @@ class ConcatenateParser(BaseParser):
         children: List[Token | InnerNode] = []
         for parser in self.parsers:
             child, offset = parser.parse(tokens, offset, verbose=verbose)
-            if child:
-                children.append(child)
+            children.append(child)
 
         return InnerNode(children, type=self.node_type), offset
 
@@ -150,7 +149,7 @@ class ChoiceParser(BaseParser):
 
     def parse(
         self, tokens: List[Token], offset: int, verbose: bool = False
-    ) -> Tuple[Token | InnerNode | None, int]:
+    ) -> Tuple[Token | InnerNode, int]:
         self._print(
             tokens, offset, verbose, f"ChoiceParser with {len(self.parsers)} choices"
         )
@@ -178,13 +177,13 @@ class OptionalParser(BaseParser):
 
     def parse(
         self, tokens: List[Token], offset: int, verbose: bool = False
-    ) -> Tuple[Token | InnerNode | None, int]:
+    ) -> Tuple[Token | InnerNode, int]:
         self._print(tokens, offset, verbose, "OptionalParser")
 
         try:
             return self.inner.parse(tokens, offset, verbose=verbose)
         except ParserBaseException:
-            return None, offset
+            return InnerNode([]), offset
 
 
 class RepeatParser(BaseParser):
@@ -199,7 +198,7 @@ class RepeatParser(BaseParser):
 
     def parse(
         self, tokens: List[Token], offset: int, verbose: bool = False
-    ) -> Tuple[Token | InnerNode | None, int]:
+    ) -> Tuple[Token | InnerNode, int]:
         self._print(tokens, offset, verbose, "RepeatParser")
 
         children: List[Token | InnerNode] = []
@@ -210,8 +209,7 @@ class RepeatParser(BaseParser):
             except ParserBaseException:
                 break
 
-            if child:
-                children.append(child)
+            children.append(child)
 
         return InnerNode(children), offset
 
@@ -221,14 +219,14 @@ class RepeatAtLeastOnceParser(BaseParser):
         self.inner = parser
 
     def __repr__(self) -> str:
-        return "(" + repr(self.inner) + ")*"
+        return "(" + repr(self.inner) + ")+"
 
     def _resolve_node_parsers(self, resolver: Callable[[str], "BaseParser"]) -> None:
         self.inner._resolve_node_parsers(resolver)
 
     def parse(
         self, tokens: List[Token], offset: int, verbose: bool = False
-    ) -> Tuple[Token | InnerNode | None, int]:
+    ) -> Tuple[Token | InnerNode, int]:
         self._print(tokens, offset, verbose, "RepeatAtLeastOnceParser")
 
         children: List[Token | InnerNode] = []
@@ -241,7 +239,6 @@ class RepeatAtLeastOnceParser(BaseParser):
                     raise e
                 break
 
-            if child:
-                children.append(child)
+            children.append(child)
 
         return InnerNode(children), offset

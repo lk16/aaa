@@ -38,6 +38,7 @@ class Runner:
         self.parsed_files: Dict[Path, SourceFile] = {}
         self.verbose = False
 
+    # TODO remove and introduce a with_file() staticmethod
     @staticmethod
     def without_file(code: str) -> "Runner":
         entrypoint = create_test_output_folder() / "main.aaa"

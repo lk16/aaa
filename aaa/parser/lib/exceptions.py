@@ -50,7 +50,6 @@ class UnexpectedTokenType(ParserBaseException):
 
 
 class EndOfFile(ParserBaseException):
-    # TODO make special EOF token_type, so this exception becomes a special case of `UnexpectedTokenType`, then get rid of this
     def __init__(
         self, file: Path, offset: int, expected_token_types: str | Set[str]
     ) -> None:
