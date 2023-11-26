@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 
 from aaa import AaaException
 from aaa.parser.exceptions import AaaParserBaseException
-from aaa.parser.models import Function, ParsedFile
+from aaa.parser.models import Function, SourceFile
 from aaa.parser.parser import AaaParser
 from aaa.runner.runner import Runner
 
@@ -18,7 +18,7 @@ class TestRunner:
     def __init__(self, tests_root: str) -> None:
         self.tests_root = Path(tests_root).resolve()
         self.exceptions: List[AaaException] = []
-        self.parsed_files: Dict[Path, ParsedFile] = {}
+        self.parsed_files: Dict[Path, SourceFile] = {}
         self.test_functions: List[Function] = []
         self.verbose = False
 
@@ -75,11 +75,11 @@ class TestRunner:
             args=[],
         )
 
-    def _get_parsed_test_files(self) -> Dict[Path, ParsedFile]:
+    def _get_parsed_test_files(self) -> Dict[Path, SourceFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.tests_root, recursive=True)
         test_files = {(self.tests_root / path).resolve() for path in glob_paths}
 
-        parsed_files: Dict[Path, ParsedFile] = {}
+        parsed_files: Dict[Path, SourceFile] = {}
 
         parser = AaaParser(self.verbose)
 

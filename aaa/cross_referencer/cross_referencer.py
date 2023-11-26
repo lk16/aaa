@@ -15,6 +15,7 @@ from aaa.cross_referencer.exceptions import (
     InvalidFunctionPointerTarget,
     InvalidReturnType,
     InvalidType,
+    UnexpectedBuiltin,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
@@ -316,9 +317,19 @@ class CrossReferencer:
         return enum_ctors, enums
 
     def _load_struct_types(self, parsed_structs: List[parser.Struct]) -> List[Struct]:
-        return [
-            Struct.from_parsed_struct(parsed_struct) for parsed_struct in parsed_structs
-        ]
+        structs: List[Struct] = []
+
+        for parsed_struct in parsed_structs:
+            fields = parsed_struct.get_fields()
+
+            if fields is None:
+                if parsed_struct.position.file != self.builtins_path:
+                    raise UnexpectedBuiltin(parsed_struct.position)
+                fields = {}
+
+            structs.append(Struct.from_parsed_struct(parsed_struct, fields))
+
+        return structs
 
     def _load_functions(
         self, parsed_functions: List[parser.Function]
@@ -720,6 +731,9 @@ class CrossReferencer:
         parsed_body = function.get_with_signature().parsed_body
 
         if not parsed_body:
+            if function.position.file != self.builtins_path:
+                raise UnexpectedBuiltin(function.position)
+
             function.resolve(None)
             return
 

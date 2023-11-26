@@ -164,6 +164,17 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
         )
 
 
+class UnexpectedBuiltin(CrossReferenceBaseException):  # TODO add test
+    def __init__(
+        self,
+        position: Position,
+    ) -> None:
+        self.position = position
+
+    def __str__(self) -> str:
+        return f"{self.position}: Builtins are not allowed outside the builtins file.\n"
+
+
 class CircularDependencyError(CrossReferenceBaseException):
     def __init__(self, dependencies: List[Path]) -> None:
         self.dependencies = dependencies

@@ -210,8 +210,12 @@ class Argument(AaaParseModel):
 
 class Function(AaaParseModel):
     def __init__(
-        self, declaration: FunctionDeclaration, body_block: FunctionBodyBlock
+        self,
+        is_builtin: bool,
+        declaration: FunctionDeclaration,
+        body_block: Optional[FunctionBodyBlock],
     ) -> None:
+        self.is_builtin = is_builtin
         self.declaration = declaration
         self.body_block = body_block
         super().__init__(declaration.position)
@@ -238,10 +242,14 @@ class Function(AaaParseModel):
             return f"{type_name}:{func_name}"
         return func_name
 
-    def get_end_position(self) -> Position:
+    def get_end_position(self) -> Optional[Position]:
+        if not self.body_block:
+            return None
         return self.body_block.end_token_position
 
-    def get_body(self) -> FunctionBody:
+    def get_body(self) -> Optional[FunctionBody]:
+        if not self.body_block:
+            return None
         return self.body_block.value
 
     def get_arguments(self) -> List[Argument]:
@@ -264,11 +272,20 @@ class Function(AaaParseModel):
     def load(cls, children: List[AaaParseModel | Token]) -> Function:
         assert len(children) == 2
 
-        declaration, body_block = children
+        if isinstance(children[0], Token):
+            assert children[0].type == "builtin"
+
+            declaration = children[1]
+            assert isinstance(declaration, FunctionDeclaration)
+            return Function(True, declaration, None)
+
+        declaration = children[0]
         assert isinstance(declaration, FunctionDeclaration)
+
+        body_block = children[1]
         assert isinstance(body_block, FunctionBodyBlock)
 
-        return Function(declaration, body_block)
+        return Function(False, declaration, body_block)
 
 
 class ImportItem(AaaParseModel):
@@ -345,9 +362,11 @@ class Import(AaaParseModel):
 class Struct(AaaParseModel):
     def __init__(
         self,
+        is_builtin: bool,
         declaration: StructDeclaration,
         fields: Optional[StructFields],
     ) -> None:
+        self.is_builtin = is_builtin
         self.declaration = declaration
         self.fields = fields
         super().__init__(declaration.position)
@@ -358,7 +377,12 @@ class Struct(AaaParseModel):
     def get_params(self) -> List[Identifier]:
         return self.declaration.flat_type_literal.params
 
-    def get_fields(self) -> Dict[str, TypeLiteral | FunctionPointerTypeLiteral]:
+    def get_fields(
+        self,
+    ) -> Optional[Dict[str, TypeLiteral | FunctionPointerTypeLiteral]]:
+        if self.is_builtin:
+            return None
+
         if not self.fields:
             return {}
 
@@ -366,6 +390,16 @@ class Struct(AaaParseModel):
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> Struct:
+        if isinstance(children[0], Token):
+            assert len(children) == 2
+
+            assert children[0].type == "builtin"
+
+            declaration = children[1]
+            assert isinstance(declaration, StructDeclaration)
+
+            return Struct(True, declaration, None)
+
         declaration = children[0]
         assert isinstance(declaration, StructDeclaration)
 
@@ -373,7 +407,7 @@ class Struct(AaaParseModel):
         if isinstance(children[2], StructFields):
             fields = children[2]
 
-        return Struct(declaration, fields)
+        return Struct(False, declaration, fields)
 
 
 class StructDeclaration(AaaParseModel):
@@ -392,7 +426,7 @@ class StructDeclaration(AaaParseModel):
         return StructDeclaration(struct_token.position, flat_type_literal)
 
 
-class ParsedFile(AaaParseModel):
+class SourceFile(AaaParseModel):
     def __init__(
         self,
         position: Position,
@@ -410,10 +444,8 @@ class ParsedFile(AaaParseModel):
     def get_dependencies(self) -> Set[Path]:
         return {import_.get_source_file() for import_ in self.imports}
 
-
-class RegularFile(ParsedFile):
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> RegularFile:
+    def load(cls, children: List[AaaParseModel | Token]) -> SourceFile:
         if children:
             file = children[0].position.file
         else:
@@ -437,39 +469,7 @@ class RegularFile(ParsedFile):
             else:
                 raise NotImplementedError
 
-        return RegularFile(position, functions, imports, structs, enums)
-
-
-class BuiltinsFile(ParsedFile):
-    @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> BuiltinsFile:
-        if children:
-            file = children[0].position.file
-        else:
-            file = Path("/dev/unknown")
-
-        position = Position(file, 1, 1)
-        functions: List[Function] = []
-        imports: List[Import] = []
-        structs: List[Struct] = []
-        enums: List[Enum] = []
-
-        for child in children:
-            if isinstance(child, FunctionDeclaration):
-                dummy_position = child.position
-                dummy_body = FunctionBody(dummy_position, [])
-                dummy_body_block = FunctionBodyBlock(
-                    dummy_position, dummy_body, dummy_position
-                )
-                functions.append(Function(child, dummy_body_block))
-
-            elif isinstance(child, StructDeclaration):
-                structs.append(Struct(child, None))
-
-            else:
-                raise NotImplementedError
-
-        return BuiltinsFile(position, functions, imports, structs, enums)
+        return SourceFile(position, functions, imports, structs, enums)
 
 
 class EnumDeclaration(AaaParseModel):
@@ -1232,7 +1232,7 @@ class FunctionBodyBlock(AaaParseModel):
 class ParserOutput(AaaModel):
     def __init__(
         self,
-        parsed: Dict[Path, ParsedFile],
+        parsed: Dict[Path, SourceFile],
         entrypoint: Path,
         builtins_path: Path,
     ) -> None:

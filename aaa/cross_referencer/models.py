@@ -235,10 +235,12 @@ class Struct(AaaCrossReferenceModel):
             self.fields = fields
 
     @classmethod
-    def from_parsed_struct(cls, struct: parser.Struct) -> Struct:
-        return Struct(
-            struct.position, struct.get_name(), struct.get_params(), struct.get_fields()
-        )
+    def from_parsed_struct(
+        cls,
+        struct: parser.Struct,
+        fields: Dict[str, parser.TypeLiteral | parser.FunctionPointerTypeLiteral],
+    ) -> Struct:
+        return Struct(struct.position, struct.get_name(), struct.get_params(), fields)
 
     @classmethod
     def from_identifier(cls, identifier: parser.Identifier) -> Struct:

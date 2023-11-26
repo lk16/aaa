@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from aaa import AaaException, create_output_folder, create_test_output_folder
 from aaa.cross_referencer.cross_referencer import CrossReferencer
-from aaa.parser.models import ParsedFile
+from aaa.parser.models import SourceFile
 from aaa.parser.parser import AaaParser
 from aaa.runner.exceptions import (
     AaaTranslationException,
@@ -35,7 +35,7 @@ class Runner:
         self.entrypoint = Path(entrypoint).resolve()
         self.verbose = False
         self.exceptions: Sequence[AaaException] = []
-        self.parsed_files: Dict[Path, ParsedFile] = {}
+        self.parsed_files: Dict[Path, SourceFile] = {}
         self.verbose = False
 
     @staticmethod
@@ -88,7 +88,7 @@ class Runner:
             args=list(args),
         )
 
-    def add_parsed_files(self, parsed_files: Dict[Path, ParsedFile]) -> None:
+    def add_parsed_files(self, parsed_files: Dict[Path, SourceFile]) -> None:
         self.parsed_files.update(parsed_files)
 
     def set_verbose(self, verbose: bool) -> None:

@@ -14,7 +14,6 @@ from aaa.parser.models import (
     Assignment,
     Boolean,
     Branch,
-    BuiltinsFile,
     Call,
     CaseBlock,
     CaseLabel,
@@ -44,11 +43,10 @@ from aaa.parser.models import (
     ImportItems,
     Integer,
     MatchBlock,
-    ParsedFile,
     ParserOutput,
-    RegularFile,
     Return,
     ReturnTypes,
+    SourceFile,
     String,
     Struct,
     StructDeclaration,
@@ -74,16 +72,15 @@ NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
     "ASSIGNMENT": Assignment,
     "BOOLEAN": Boolean,
     "BRANCH": Branch,
-    "BUILTINS_FILE": BuiltinsFile,
     "CASE_BLOCK": CaseBlock,
     "CASE_LABEL": CaseLabel,
     "COMMA_SEPARATED_TYPE_LIST": CommaSeparatedTypeList,
     "DEFAULT_BLOCK": DefaultBlock,
     "ENUM_DECLARATION": EnumDeclaration,
     "ENUM_DEFINITION": Enum,  # TODO rename class
+    "ENUM_VARIANT_ASSOCIATED_DATA": EnumVariantAssociatedData,
     "ENUM_VARIANT": EnumVariant,
     "ENUM_VARIANTS": EnumVariants,
-    "ENUM_VARIANT_ASSOCIATED_DATA": EnumVariantAssociatedData,
     "FLAT_TYPE_LITERAL": FlatTypeLiteral,
     "FLAT_TYPE_PARAMS": FlatTypeParams,
     "FOREACH_LOOP": ForeachLoop,
@@ -96,13 +93,13 @@ NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
     "FUNCTION_NAME": FunctionName,
     "FUNCTION_POINTER_TYPE_LITERAL": FunctionPointerTypeLiteral,
     "GET_FUNCTION_POINTER": GetFunctionPointer,
-    "IMPORT": Import,
     "IMPORT_ITEM": ImportItem,
     "IMPORT_ITEMS": ImportItems,
     "IMPORT": Import,
+    "IMPORT": Import,
     "MATCH_BLOCK": MatchBlock,
-    "REGULAR_FILE": RegularFile,
     "RETURN_TYPES": ReturnTypes,
+    "SOURCE_FILE": SourceFile,
     "STRUCT_DECLARATION": StructDeclaration,
     "STRUCT_DEFINITION": Struct,  # TODO rename class
     "STRUCT_FIELD_QUERY": StructFieldQuery,
@@ -121,6 +118,7 @@ UNTRANSFORMED_TOKEN_TYPES = {
     "args",
     "as",
     "assign",
+    "builtin",
     "case",
     "colon",
     "comma",
@@ -244,7 +242,7 @@ class AaaParser:
         self.builtins_path = get_stdlib_path() / "builtins.aaa"
 
         self.exceptions: List[AaaParserBaseException] = []
-        self.parsed: Dict[Path, ParsedFile] = {}
+        self.parsed: Dict[Path, SourceFile] = {}
 
     def run(self, entrypoint: Path) -> ParserOutput:
         queue: Queue[Path] = Queue()
@@ -275,17 +273,14 @@ class AaaParser:
             entrypoint=entrypoint,
         )
 
-    def parse_file(self, file: Path) -> ParsedFile:
-        if file == self.builtins_path:
-            root_node_type = "BUILTINS_FILE"
-        else:
-            root_node_type = "REGULAR_FILE"
-
+    def parse_file(self, file: Path) -> SourceFile:
         model = self.parse_text(
-            file.read_text(), file_name=str(file), root_node_type=root_node_type
+            file.read_text(),
+            file_name=str(file),
+            root_node_type=self.file_parser.root_node_type,
         )
 
-        assert isinstance(model, ParsedFile)
+        assert isinstance(model, SourceFile)
         return model
 
     def parse_text(

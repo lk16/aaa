@@ -15,6 +15,7 @@ from aaa.cross_referencer.exceptions import (
     InvalidFunctionPointerTarget,
     InvalidReturnType,
     InvalidType,
+    UnexpectedBuiltin,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
@@ -1027,6 +1028,24 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "Expected stack top: str\n"
             "       Found stack: int\n",
             id="function-call-with-wrong-type-parameter",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            builtin fn foo
+            """,
+            UnexpectedBuiltin,
+            "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.\n",
+            id="unexpected-builtin-function",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            builtin struct foo
+            """,
+            UnexpectedBuiltin,
+            "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.\n",
+            id="unexpected-builtin-struct",
         ),
     ],
 )
