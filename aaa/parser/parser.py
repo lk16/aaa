@@ -244,7 +244,7 @@ class AaaParser:
         self.exceptions: List[AaaParserBaseException] = []
         self.parsed: Dict[Path, SourceFile] = {}
 
-    def run(self, entrypoint: Path) -> ParserOutput:
+    def run(self, entrypoint: Path, file_dict: Dict[Path, str]) -> ParserOutput:
         queue: Queue[Path] = Queue()
         queue.put(self.builtins_path)
         queue.put(entrypoint)
@@ -253,14 +253,23 @@ class AaaParser:
             file = queue.get()
 
             try:
-                parsed_file = self.parse_file(file)
+                try:
+                    code = file_dict[file]
+                except KeyError:
+                    source_file: AaaParseModel = self.parse_file(file)
+                else:
+                    source_file = self.parse_text(
+                        code, self.file_parser.root_node_type, file_name=str(file)
+                    )
+                assert isinstance(source_file, SourceFile)
+
             except ParserBaseException as e:
                 self.exceptions.append(AaaParserBaseException(e))
                 continue
 
-            self.parsed[file] = parsed_file
+            self.parsed[file] = source_file
 
-            for dependency in parsed_file.get_dependencies():
+            for dependency in source_file.get_dependencies():
                 if dependency not in self.parsed:
                     queue.put(dependency)
 

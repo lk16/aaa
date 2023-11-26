@@ -1,12 +1,12 @@
 import json
 import os
 import re
+import tempfile
 from pathlib import Path
 from time import time
 
 import pytest
 
-from aaa import create_test_output_folder
 from aaa.runner.runner import compile_run
 
 SOURCE_PREFIX = Path(__file__).parent / "src"
@@ -270,13 +270,18 @@ def test_main_with_exit_code() -> None:
 
 
 def test_main_with_argv() -> None:
-    binary_path = create_test_output_folder() / "executable"
-    stdout, stderr, exit_code = compile_run(
-        SOURCE_PREFIX / "main_with_argv.aaa", binary_path=binary_path
-    )
-    assert f'["{binary_path}"]\n' == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    temp_files_root = Path(tempfile.gettempdir())
+
+    binary_path = temp_files_root / "test_main_with_argv"
+    try:
+        stdout, stderr, exit_code = compile_run(
+            SOURCE_PREFIX / "main_with_argv.aaa", binary_path=binary_path
+        )
+        assert f'["{binary_path}"]\n' == stdout
+        assert "" == stderr
+        assert 0 == exit_code
+    finally:
+        binary_path.unlink(missing_ok=True)
 
 
 @pytest.mark.skip()  # TODO

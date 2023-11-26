@@ -5,7 +5,7 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from aaa import AaaException, create_output_folder, create_test_output_folder
+from aaa import AaaException, create_output_folder
 from aaa.cross_referencer.cross_referencer import CrossReferencer
 from aaa.parser.models import SourceFile
 from aaa.parser.parser import AaaParser
@@ -29,21 +29,38 @@ aaa-stdlib = {{ version = "0.1.0", path = "{stdlib_impl_path}" }}
 regex = "1.8.4"
 """
 
+RUNNER_FILE_DICT_ROOT_PATH = Path("/aaa/runner/root")  # This file should not exist
+
 
 class Runner:
-    def __init__(self, entrypoint: str | Path) -> None:
-        self.entrypoint = Path(entrypoint).resolve()
+    def __init__(
+        self, entrypoint: Path, file_dict: Optional[Dict[Path, str]] = None
+    ) -> None:
+        assert not RUNNER_FILE_DICT_ROOT_PATH.exists()
+
+        self.file_dict: Dict[Path, str] = {}
+        if file_dict:
+            assert not entrypoint.is_absolute()
+            assert entrypoint in file_dict.keys()
+
+            for file, code in file_dict.items():
+                assert not file.is_absolute()
+                self.file_dict[RUNNER_FILE_DICT_ROOT_PATH / file] = code
+
+            self.entrypoint = RUNNER_FILE_DICT_ROOT_PATH / entrypoint
+        else:
+            self.entrypoint = Path(entrypoint).resolve()
+
         self.verbose = False
         self.exceptions: Sequence[AaaException] = []
         self.parsed_files: Dict[Path, SourceFile] = {}
         self.verbose = False
 
-    # TODO remove and introduce a with_file() staticmethod
     @staticmethod
     def without_file(code: str) -> "Runner":
-        entrypoint = create_test_output_folder() / "main.aaa"
-        entrypoint.write_text(code)
-        return Runner(entrypoint)
+        entry_point = Path("main.aaa")
+        files = {entry_point: code}
+        return Runner(entry_point, files)
 
     @staticmethod
     def compile_command(
@@ -53,7 +70,7 @@ class Runner:
         runtime_type_checks: bool,
     ) -> int:
         if file_or_code.endswith(".aaa"):
-            runner = Runner(file_or_code)
+            runner = Runner(Path(file_or_code))
         else:
             runner = Runner.without_file(file_or_code)
 
@@ -75,7 +92,7 @@ class Runner:
         args: Tuple[str],
     ) -> int:
         if file_or_code.endswith(".aaa"):
-            runner = Runner(file_or_code)
+            runner = Runner(Path(file_or_code))
         else:
             runner = Runner.without_file(file_or_code)
 
@@ -152,7 +169,7 @@ class Runner:
 
         try:
             parser = AaaParser(self.verbose)
-            parser_output = parser.run(self.entrypoint)
+            parser_output = parser.run(self.entrypoint, self.file_dict)
             cross_referencer_output = CrossReferencer(parser_output, self.verbose).run()
 
             type_checker = TypeChecker(cross_referencer_output, self.verbose)

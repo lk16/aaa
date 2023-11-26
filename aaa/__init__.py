@@ -26,7 +26,6 @@ class AaaEnvironmentError(AaaException):
 
 
 AAA_DEFAULT_OUTPUT_FOLDER_ROOT = Path(gettempdir()) / "aaa/transpiled"
-AAA_TEST_OUTPUT_FOLDER_ROOT = Path(gettempdir()) / "aaa/transpiled/tests"
 
 
 def __create_output_folder(root: Path, name: Optional[str]) -> Path:
@@ -36,11 +35,6 @@ def __create_output_folder(root: Path, name: Optional[str]) -> Path:
     path = root / name
     path.resolve().mkdir(exist_ok=True, parents=True)
     return path
-
-
-def create_test_output_folder(name: Optional[str] = None) -> Path:
-    # TODO remove this function once unused
-    return __create_output_folder(AAA_TEST_OUTPUT_FOLDER_ROOT, name)
 
 
 def create_output_folder(name: Optional[str] = None) -> Path:

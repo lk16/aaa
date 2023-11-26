@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Dict, Type
 
 import pytest
@@ -19,6 +20,7 @@ from aaa.cross_referencer.exceptions import (
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
+from aaa.runner.runner import RUNNER_FILE_DICT_ROOT_PATH
 from aaa.type_checker.exceptions import (
     AssignConstValueError,
     AssignmentTypeError,
@@ -1052,12 +1054,14 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
 def test_one_error(
     code: str, expected_exception_type: Type[Exception], expected_exception_message: str
 ) -> None:
-    tmp_dir, exceptions = check_aaa_full_source(code, "", [expected_exception_type])
+    exceptions = check_aaa_full_source(code, "", [expected_exception_type])
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
 
-    exception_message = exception_message.replace(str(tmp_dir), "/foo")
+    exception_message = exception_message.replace(
+        str(RUNNER_FILE_DICT_ROOT_PATH), "/foo"
+    )
     assert exception_message == expected_exception_message
 
 
@@ -1178,14 +1182,18 @@ def test_multi_file_errors(
     expected_exception_type: Type[Exception],
     expected_exception_message: str,
 ) -> None:
-    tmp_dir, exceptions = check_aaa_full_source_multi_file(
-        files, "", [expected_exception_type]
+    file_dict = {Path(file): code for file, code in files.items()}
+
+    exceptions = check_aaa_full_source_multi_file(
+        file_dict, "", [expected_exception_type]
     )
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
 
-    exception_message = exception_message.replace(str(tmp_dir), "/foo")
+    exception_message = exception_message.replace(
+        str(RUNNER_FILE_DICT_ROOT_PATH), "/foo"
+    )
     assert exception_message == expected_exception_message
 
 
@@ -1379,13 +1387,15 @@ def test_multi_file_errors(
 def test_colliding_identifier(
     files: Dict[str, str], expected_exception_message: str
 ) -> None:
-    tmp_dir, exceptions = check_aaa_full_source_multi_file(
-        files, "", [CollidingIdentifier]
-    )
+    file_dict = {Path(file): code for file, code in files.items()}
+
+    exceptions = check_aaa_full_source_multi_file(file_dict, "", [CollidingIdentifier])
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
-    exception_message = exception_message.replace(str(tmp_dir), "/foo")
+    exception_message = exception_message.replace(
+        str(RUNNER_FILE_DICT_ROOT_PATH), "/foo"
+    )
 
     print(repr(exception_message))
     print()
