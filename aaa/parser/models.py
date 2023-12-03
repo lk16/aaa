@@ -653,7 +653,11 @@ class FunctionPointerTypeLiteral(AaaParseModel):
         return_type_list: Optional[CommaSeparatedTypeList | Never] = None
 
         for child in children[4:]:
-            if isinstance(child, (CommaSeparatedTypeList, Never)):
+            if isinstance(child, Token) and child.value == "never":
+                return_type_list = Never(child.position)
+                break
+
+            if isinstance(child, CommaSeparatedTypeList):
                 return_type_list = child
                 break
 
@@ -796,8 +800,8 @@ class ReturnTypes(AaaParseModel):
 
         return_types: List[TypeOrFunctionPointerLiteral] | Never
 
-        if isinstance(children[1], Never):
-            return_types = children[1]
+        if isinstance(children[1], Token) and children[1].value == "never":
+            return_types = Never(children[1].position)
 
         else:
             return_types = []
