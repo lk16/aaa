@@ -23,7 +23,6 @@ class FileParser:
     def tokenize_file(
         self, file: Path, filter_token_types: bool = True, verbose: bool = False
     ) -> List[Token]:
-        # TODO add verbose param
         file_name = str(file.resolve())
         return self.tokenize_text(
             file.read_text(),

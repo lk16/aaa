@@ -4,6 +4,7 @@ from typing import Dict, List, Type
 import pytest
 
 from aaa.cross_referencer.exceptions import ImportedItemNotFound
+from aaa.parser.exceptions import FileReadError
 from tests.aaa import check_aaa_full_source_multi_file
 
 
@@ -33,7 +34,7 @@ from tests.aaa import check_aaa_full_source_multi_file
                 "add.aaa": "fn add args a as int, b as int, return int, { a b + }",
                 "main.aaa": 'from "add" import foo,\n fn main { 3 2 foo . }',
             },
-            "5",
+            "",
             [ImportedItemNotFound],
             id="two-files-nonexistent-function",
         ),
@@ -41,10 +42,9 @@ from tests.aaa import check_aaa_full_source_multi_file
             {
                 "main.aaa": 'from "add" import add,\n fn main { 3 2 add . }',
             },
-            "5",
-            [Exception],
+            "",
+            [FileReadError],
             id="two-files-nonexistent-file",
-            marks=pytest.mark.skip,  # TODO
         ),
         pytest.param(
             {

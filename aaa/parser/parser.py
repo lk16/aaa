@@ -3,7 +3,7 @@ from queue import Queue
 from typing import Dict, List, Optional, Type
 
 from aaa import aaa_project_root, get_stdlib_path
-from aaa.parser.exceptions import AaaParserBaseException
+from aaa.parser.exceptions import AaaParserBaseException, FileReadError
 from aaa.parser.lib.exceptions import ParserBaseException
 from aaa.parser.lib.file_parser import FileParser
 from aaa.parser.lib.models import Token
@@ -253,18 +253,15 @@ class AaaParser:
             file = queue.get()
 
             try:
-                try:
-                    code = file_dict[file]
-                except KeyError:
-                    source_file: AaaParseModel = self.parse_file(file)
-                else:
-                    source_file = self.parse_text(
-                        code, self.file_parser.root_node_type, file_name=str(file)
-                    )
+                source_file: AaaParseModel = self.parse_file(file, file_dict)
                 assert isinstance(source_file, SourceFile)
 
             except ParserBaseException as e:
                 self.exceptions.append(AaaParserBaseException(e))
+                continue
+
+            except AaaParserBaseException as e:
+                self.exceptions.append(e)
                 continue
 
             self.parsed[file] = source_file
@@ -282,12 +279,20 @@ class AaaParser:
             entrypoint=entrypoint,
         )
 
-    def parse_file(self, file: Path) -> SourceFile:
-        model = self.parse_text(
-            file.read_text(),
-            file_name=str(file),
-            root_node_type=self.file_parser.root_node_type,
-        )
+    def parse_file(
+        self, file: Path, file_dict: Optional[Dict[Path, str]] = None
+    ) -> SourceFile:
+        file_dict = file_dict or {}
+
+        if file in file_dict:
+            text = file_dict[file]
+        else:
+            try:
+                text = file.read_text()
+            except OSError:
+                raise FileReadError(file)
+
+        model = self.parse_text(text, self.file_parser.root_node_type, str(file))
 
         assert isinstance(model, SourceFile)
         return model
