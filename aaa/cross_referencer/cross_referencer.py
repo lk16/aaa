@@ -641,7 +641,6 @@ class CrossReferencer:
 
         for param in parsed_type.params:
             literal = param.literal
-            assert isinstance(literal, parser.TypeLiteral)
 
             looked_up_param = self._lookup_function_param(type_params, literal)
             looked_up_params.append(looked_up_param)
