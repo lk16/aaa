@@ -3,10 +3,7 @@ from typing import List, Tuple
 import pytest
 
 from aaa.parser.lib.exceptions import TokenizerException
-from aaa.parser.lib.file_parser import FileParser
-from aaa.parser.parser import SYNTAX_JSON_PATH, AaaParser
-
-file_parser = FileParser(SYNTAX_JSON_PATH)
+from aaa.parser.parser import AaaParser
 
 TOKENIZER_TEST_VALUES: List[Tuple[str, str, bool]] = [
     ("args", "", False),

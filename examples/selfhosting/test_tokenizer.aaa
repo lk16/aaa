@@ -197,10 +197,10 @@ fn test_tokenize_fixed_size_ok_bare {
     "!=" 0 TokenType:identifier "!=" check_tokenize_fixed_size
     "?" 0 TokenType:get_field "?" check_tokenize_fixed_size
     "." 0 TokenType:identifier "." check_tokenize_fixed_size
-    "[" 0 TokenType:square_bracket_open "[" check_tokenize_fixed_size
-    "]" 0 TokenType:square_bracket_close "]" check_tokenize_fixed_size
-    "{" 0 TokenType:block_start "{" check_tokenize_fixed_size
-    "}" 0 TokenType:block_end "}" check_tokenize_fixed_size
+    "[" 0 TokenType:sq_start "[" check_tokenize_fixed_size
+    "]" 0 TokenType:sq_end "]" check_tokenize_fixed_size
+    "{" 0 TokenType:start "{" check_tokenize_fixed_size
+    "}" 0 TokenType:end "}" check_tokenize_fixed_size
     "*" 0 TokenType:identifier "*" check_tokenize_fixed_size
     "/" 0 TokenType:identifier "/" check_tokenize_fixed_size
     "%" 0 TokenType:identifier "%" check_tokenize_fixed_size
@@ -220,7 +220,7 @@ fn test_tokenize_fixed_size_ok_bare {
     "else" 0 TokenType:else_ "else" check_tokenize_fixed_size
     "enum" 0 TokenType:enum_ "enum" check_tokenize_fixed_size
     "false" 0 TokenType:false_ "false" check_tokenize_fixed_size
-    "fn" 0 TokenType:function "fn" check_tokenize_fixed_size
+    "fn" 0 TokenType:fn_ "fn" check_tokenize_fixed_size
     "foreach" 0 TokenType:foreach_ "foreach" check_tokenize_fixed_size
     "from" 0 TokenType:from_ "from" check_tokenize_fixed_size
     "if" 0 TokenType:if_ "if" check_tokenize_fixed_size
@@ -242,10 +242,10 @@ fn test_tokenize_fixed_size_ok_middle {
     " != " 1 TokenType:identifier "!=" check_tokenize_fixed_size
     " ? " 1 TokenType:get_field "?" check_tokenize_fixed_size
     " . " 1 TokenType:identifier "." check_tokenize_fixed_size
-    " [ " 1 TokenType:square_bracket_open "[" check_tokenize_fixed_size
-    " ] " 1 TokenType:square_bracket_close "]" check_tokenize_fixed_size
-    " { " 1 TokenType:block_start "{" check_tokenize_fixed_size
-    " } " 1 TokenType:block_end "}" check_tokenize_fixed_size
+    " [ " 1 TokenType:sq_start "[" check_tokenize_fixed_size
+    " ] " 1 TokenType:sq_end "]" check_tokenize_fixed_size
+    " { " 1 TokenType:start "{" check_tokenize_fixed_size
+    " } " 1 TokenType:end "}" check_tokenize_fixed_size
     " * " 1 TokenType:identifier "*" check_tokenize_fixed_size
     " / " 1 TokenType:identifier "/" check_tokenize_fixed_size
     " % " 1 TokenType:identifier "%" check_tokenize_fixed_size
@@ -265,7 +265,7 @@ fn test_tokenize_fixed_size_ok_middle {
     " else " 1 TokenType:else_ "else" check_tokenize_fixed_size
     " enum " 1 TokenType:enum_ "enum" check_tokenize_fixed_size
     " false " 1 TokenType:false_ "false" check_tokenize_fixed_size
-    " fn " 1 TokenType:function "fn" check_tokenize_fixed_size
+    " fn " 1 TokenType:fn_ "fn" check_tokenize_fixed_size
     " foreach " 1 TokenType:foreach_ "foreach" check_tokenize_fixed_size
     " from " 1 TokenType:from_ "from" check_tokenize_fixed_size
     " if " 1 TokenType:if_ "if" check_tokenize_fixed_size

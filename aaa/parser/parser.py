@@ -77,7 +77,7 @@ NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
     "COMMA_SEPARATED_TYPE_LIST": CommaSeparatedTypeList,
     "DEFAULT_BLOCK": DefaultBlock,
     "ENUM_DECLARATION": EnumDeclaration,
-    "ENUM_DEFINITION": Enum,  # TODO rename class
+    "ENUM_DEFINITION": Enum,
     "ENUM_VARIANT_ASSOCIATED_DATA": EnumVariantAssociatedData,
     "ENUM_VARIANT": EnumVariant,
     "ENUM_VARIANTS": EnumVariants,
@@ -89,7 +89,7 @@ NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
     "FUNCTION_BODY": FunctionBody,
     "FUNCTION_CALL": FunctionCall,
     "FUNCTION_DECLARATION": FunctionDeclaration,
-    "FUNCTION_DEFINITION": Function,  # TODO rename class
+    "FUNCTION_DEFINITION": Function,
     "FUNCTION_NAME": FunctionName,
     "FUNCTION_POINTER_TYPE_LITERAL": FunctionPointerTypeLiteral,
     "GET_FUNCTION_POINTER": GetFunctionPointer,
@@ -101,7 +101,7 @@ NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
     "RETURN_TYPES": ReturnTypes,
     "SOURCE_FILE": SourceFile,
     "STRUCT_DECLARATION": StructDeclaration,
-    "STRUCT_DEFINITION": Struct,  # TODO rename class
+    "STRUCT_DEFINITION": Struct,
     "STRUCT_FIELD_QUERY": StructFieldQuery,
     "STRUCT_FIELD_UPDATE": StructFieldUpdate,
     "STRUCT_FIELD": StructField,
@@ -146,7 +146,7 @@ UNTRANSFORMED_TOKEN_TYPES = {
     "while",
 }
 
-aaa_file_parser = FileParser(SYNTAX_JSON_PATH)  # TODO use everywhere
+aaa_file_parser = FileParser(SYNTAX_JSON_PATH)
 
 
 def transform_token(token: Token) -> AaaParseModel | Token:
@@ -171,7 +171,7 @@ def transform_token(token: Token) -> AaaParseModel | Token:
     if token.type == "call":
         return Call(token.position)
 
-    raise NotImplementedError(f"for {token.type}")  # TODO
+    raise NotImplementedError(f"for {token.type}")
 
 
 def transform_node(

@@ -3,9 +3,10 @@ import subprocess
 from glob import glob
 from pathlib import Path
 from tempfile import gettempdir
-from typing import List
+from typing import List, Tuple
 
 import pytest
+from _pytest.mark.structures import ParameterSet
 from pytest import CaptureFixture
 
 from aaa import aaa_project_root
@@ -14,7 +15,7 @@ from aaa.runner.runner import Runner
 
 
 def tokenize_with_python(aaa_file: Path) -> str:
-    tokens = aaa_file_parser.tokenize_file(aaa_file, filter_token_types=False)
+    tokens = aaa_file_parser.tokenize_file(aaa_file, filter_token_types=True)
 
     output = ""
     for token in tokens:
@@ -43,19 +44,17 @@ def tokenizer_excecutable() -> str:
     return str(binary_path)
 
 
-def all_aaa_source_files() -> List[Path]:
-    return [
-        Path(file).resolve()
-        for file in glob("**/*.aaa", root_dir=aaa_project_root(), recursive=True)
-    ]
+def aaa_source_files() -> Tuple[List[str], List[ParameterSet]]:
+    return (
+        ["source_file"],
+        [
+            pytest.param(Path(file).resolve(), id=str(file))
+            for file in glob("**/*.aaa", root_dir=aaa_project_root(), recursive=True)
+        ],
+    )
 
 
-# TODO #190 use char syntax in an example source file
-@pytest.mark.skip()  # TODO fix
-@pytest.mark.parametrize(
-    ["source_file"],
-    [pytest.param(file, id=str(file)) for file in all_aaa_source_files()],
-)
+@pytest.mark.parametrize(*aaa_source_files())
 def test_tokenizer_output(
     tokenizer_excecutable: str, capfd: CaptureFixture[str], source_file: Path
 ) -> None:
