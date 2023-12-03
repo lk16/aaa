@@ -244,7 +244,14 @@ class Transpiled:
             CARGO_TOML_TEMPLATE.format(stdlib_impl_path=stdlib_impl_path)
         )
 
-        command = ["cargo", "build", "--quiet", "--manifest-path", str(cargo_toml)]
+        command = [
+            "cargo",
+            "build",
+            "--release",
+            "--quiet",
+            "--manifest-path",
+            str(cargo_toml),
+        ]
 
         completed_process = subprocess.run(
             command, env=compiler_env, capture_output=True
@@ -259,8 +266,9 @@ class Transpiled:
         if exit_code != 0:
             raise RustCompilerError()
 
-        default_binary_path = cargo_shared_target_dir / "debug/aaa-stdlib-user"
+        default_binary_path = cargo_shared_target_dir / "release/aaa-stdlib-user"
         if binary_path:
+            binary_path.parent.mkdir(exist_ok=True)
             binary_path = default_binary_path.rename(binary_path)
 
         return Compiled(binary_path or default_binary_path)
