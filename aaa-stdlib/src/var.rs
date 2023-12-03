@@ -297,6 +297,7 @@ where
         match (self, other) {
             (Self::Integer(lhs), Self::Integer(rhs)) => lhs == rhs,
             (Self::Boolean(lhs), Self::Boolean(rhs)) => lhs == rhs,
+            (Self::Character(lhs), Self::Character(rhs)) => lhs == rhs,
             (Self::String(lhs), Self::String(rhs)) => lhs == rhs,
             (Self::Vector(lhs), Self::Vector(rhs)) => lhs == rhs,
             (Self::Set(lhs), Self::Set(rhs)) => lhs == rhs,
@@ -317,6 +318,7 @@ where
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
             Self::Boolean(v) => Hash::hash(&v, state),
+            Self::Character(v) => Hash::hash(&v, state),
             Self::Integer(v) => Hash::hash(&v, state),
             Self::String(v) => {
                 let string = (**v).borrow().clone();
