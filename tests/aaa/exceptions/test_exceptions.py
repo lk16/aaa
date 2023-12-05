@@ -20,6 +20,7 @@ from aaa.cross_referencer.exceptions import (
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
+from aaa.parser.exceptions import AaaParserBaseException, FileReadError
 from aaa.runner.runner import RUNNER_FILE_DICT_ROOT_PATH
 from aaa.type_checker.exceptions import (
     AssignConstValueError,
@@ -713,10 +714,9 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             "fn",
-            Exception,
-            "/foo/main.aaa: Parsing failed, unexpected end of file.\n",
+            AaaParserBaseException,
+            "/foo/main.aaa: Unexpected end of file\n" + "Expected one of: identifier\n",
             id="end-of-file-exception",
-            marks=pytest.mark.skip,  # TODO
         ),
         pytest.param(
             "fn main { 3 use c { c[int] } }",
@@ -752,7 +752,6 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "expected return types: never\n"
             + "   found return types: int\n",
             id="return-with-return-type-never",
-            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
@@ -1084,10 +1083,9 @@ def test_one_error(
         ),
         pytest.param(
             {},
-            Exception,
-            "/foo/main.aaa: Failed to open or read\n",
+            FileReadError,
+            f"{Path('main.aaa').resolve()}: Could not read file. It may not exist.\n",
             id="file-not-found",
-            marks=pytest.mark.skip,  # TODO
         ),
         pytest.param(
             {

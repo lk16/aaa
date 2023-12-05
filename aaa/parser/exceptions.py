@@ -1,10 +1,11 @@
 from pathlib import Path
 
 from aaa import AaaException
+from aaa.parser.lib.exceptions import ParseError, TokenizerException
 
 
 class AaaParserBaseException(AaaException):
-    def __init__(self, child: Exception):
+    def __init__(self, child: ParseError | TokenizerException):
         self.child = child
 
     def __str__(self) -> str:

@@ -1,42 +1,34 @@
-from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
-from aaa.parser.lib.exceptions import (
-    ChoiceParserException,
-    EndOfFile,
-    ParserBaseException,
-    UnexpectedTokenType,
-)
-from aaa.parser.lib.models import InnerNode, Token
+from aaa.parser.lib.exceptions import ParseError, ParseErrorCollector
+from aaa.parser.lib.models import EndOfFile, InnerNode, ParserInput, Token
 
 
 class BaseParser:
-    def _resolve_node_parsers(self, resolver: Callable[[str], "BaseParser"]) -> None:
-        pass
+    def __init__(self) -> None:
+        self.error_collector: Optional[ParseErrorCollector] = None
+
+    def register_error(self, error: ParseError) -> None:
+        assert self.error_collector
+        self.error_collector.register(error)
 
     def _print(
-        self, tokens: List[Token], offset: int, verbose: bool, parser_name: str
+        self, input: ParserInput, offset: int, verbose: bool, parser_name: str
     ) -> None:
         if not verbose:
             return
 
-        if tokens:
-            file = str(tokens[0].position.file)
-        else:
-            file = "<unknown>"
-
         try:
-            token_type = tokens[offset].type
+            token_type = input.tokens[offset].type
         except IndexError:
             token_type = "<offset is too large>"
 
-        print(f"{file} | offset={offset} | type={token_type} | {parser_name}")
+        print(f"{input.file} | offset={offset} | type={token_type} | {parser_name}")
 
     def parse(
-        self, tokens: List[Token], offset: int, verbose: bool = False
+        self, input: ParserInput, offset: int, verbose: bool = False
     ) -> Tuple[Token | InnerNode, int]:
-        # Implemented in subclasses.
-        raise NotImplementedError
+        raise NotImplementedError  # Implemented in subclasses.
 
 
 class TokenParser(BaseParser):
@@ -47,22 +39,21 @@ class TokenParser(BaseParser):
         return self.token_type
 
     def parse(
-        self, tokens: List[Token], offset: int, verbose: bool = False
+        self, input: ParserInput, offset: int, verbose: bool = False
     ) -> Tuple[Token | InnerNode, int]:
-        self._print(tokens, offset, verbose, f"TokenParser for {self.token_type}")
+        self._print(input, offset, verbose, f"TokenParser for {self.token_type}")
 
         try:
-            token = tokens[offset]
+            token = input.tokens[offset]
         except IndexError:
-            if not tokens:
-                file = Path("/dev/unknown")
-            else:
-                file = tokens[0].position.file
-
-            raise EndOfFile(file, offset, self.token_type)
+            e: ParseError = ParseError(offset, EndOfFile(input.file), {self.token_type})
+            self.register_error(e)
+            raise e
 
         if token.type != self.token_type:
-            raise UnexpectedTokenType(offset, token, self.token_type)
+            e = ParseError(offset, token, {self.token_type})
+            self.register_error(e)
+            raise e
 
         return token, offset + 1
 
@@ -75,21 +66,20 @@ class NodeParser(BaseParser):
     def __repr__(self) -> str:
         return self.node_type
 
-    def _resolve_node_parsers(self, resolver: Callable[[str], "BaseParser"]) -> None:
-        self.inner = resolver(self.node_type)
-
     def parse(
-        self, tokens: List[Token], offset: int, verbose: bool = False
+        self, input: ParserInput, offset: int, verbose: bool = False
     ) -> Tuple[Token | InnerNode, int]:
-        self._print(tokens, offset, verbose, f"NodeParser for {self.node_type}")
+        self._print(input, offset, verbose, f"NodeParser for {self.node_type}")
 
         assert self.inner
-        return self.inner.parse(tokens, offset, verbose=verbose)
+        return self.inner.parse(input, offset, verbose=verbose)
 
 
 class ConcatenateParser(BaseParser):
     def __init__(
-        self, parsers: List[BaseParser], node_type: Optional[str] = None
+        self,
+        parsers: List[BaseParser],
+        node_type: Optional[str] = None,
     ) -> None:
         self.parsers: List[BaseParser] = []
         self.node_type = node_type
@@ -104,22 +94,18 @@ class ConcatenateParser(BaseParser):
     def __repr__(self) -> str:
         return "(" + " ".join(repr(parser) for parser in self.parsers) + ")"
 
-    def _resolve_node_parsers(self, resolver: Callable[[str], "BaseParser"]) -> None:
-        for parser in self.parsers:
-            parser._resolve_node_parsers(resolver)
-
     def parse(
-        self, tokens: List[Token], offset: int, verbose: bool = False
+        self, input: ParserInput, offset: int, verbose: bool = False
     ) -> Tuple[InnerNode, int]:
         parser_name = "ConcatenateParser"
         if self.node_type is not None:
             parser_name += f" for {self.node_type}"
 
-        self._print(tokens, offset, verbose, parser_name)
+        self._print(input, offset, verbose, parser_name)
 
         children: List[Token | InnerNode] = []
         for parser in self.parsers:
-            child, offset = parser.parse(tokens, offset, verbose=verbose)
+            child, offset = parser.parse(input, offset, verbose=verbose)
             children.append(child)
 
         return InnerNode(children, type=self.node_type), offset
@@ -143,26 +129,24 @@ class ChoiceParser(BaseParser):
     def __repr__(self) -> str:
         return "(" + " | ".join(repr(parser) for parser in self.parsers) + " )"
 
-    def _resolve_node_parsers(self, resolver: Callable[[str], "BaseParser"]) -> None:
-        for parser in self.parsers:
-            parser._resolve_node_parsers(resolver)
-
     def parse(
-        self, tokens: List[Token], offset: int, verbose: bool = False
+        self, input: ParserInput, offset: int, verbose: bool = False
     ) -> Tuple[Token | InnerNode, int]:
         self._print(
-            tokens, offset, verbose, f"ChoiceParser with {len(self.parsers)} choices"
+            input, offset, verbose, f"ChoiceParser with {len(self.parsers)} choices"
         )
 
-        exceptions: List[ParserBaseException] = []
+        last_exception: Optional[ParseError] = None
 
         for parser in self.parsers:
             try:
-                return parser.parse(tokens, offset, verbose=verbose)
-            except ParserBaseException as e:
-                exceptions.append(e)
+                return parser.parse(input, offset, verbose=verbose)
+            except ParseError as e:
+                self.register_error(e)
+                last_exception = e
 
-        raise ChoiceParserException(exceptions)
+        assert last_exception
+        raise last_exception
 
 
 class OptionalParser(BaseParser):
@@ -172,70 +156,37 @@ class OptionalParser(BaseParser):
     def __repr__(self) -> str:
         return "(" + repr(self.inner) + ")?"
 
-    def _resolve_node_parsers(self, resolver: Callable[[str], "BaseParser"]) -> None:
-        self.inner._resolve_node_parsers(resolver)
-
     def parse(
-        self, tokens: List[Token], offset: int, verbose: bool = False
+        self, input: ParserInput, offset: int, verbose: bool = False
     ) -> Tuple[Token | InnerNode, int]:
-        self._print(tokens, offset, verbose, "OptionalParser")
+        self._print(input, offset, verbose, "OptionalParser")
 
         try:
-            return self.inner.parse(tokens, offset, verbose=verbose)
-        except ParserBaseException:
+            return self.inner.parse(input, offset, verbose=verbose)
+        except ParseError:
             return InnerNode([]), offset
 
 
 class RepeatParser(BaseParser):
-    def __init__(self, parser: BaseParser) -> None:
+    def __init__(self, parser: BaseParser, min_repeats: int = 0) -> None:
         self.inner = parser
+        self.min_repeats = min_repeats
 
     def __repr__(self) -> str:
         return "(" + repr(self.inner) + ")*"
 
-    def _resolve_node_parsers(self, resolver: Callable[[str], "BaseParser"]) -> None:
-        self.inner._resolve_node_parsers(resolver)
-
     def parse(
-        self, tokens: List[Token], offset: int, verbose: bool = False
+        self, input: ParserInput, offset: int, verbose: bool = False
     ) -> Tuple[Token | InnerNode, int]:
-        self._print(tokens, offset, verbose, "RepeatParser")
+        self._print(input, offset, verbose, "RepeatParser")
 
         children: List[Token | InnerNode] = []
 
         while True:
             try:
-                child, offset = self.inner.parse(tokens, offset, verbose=verbose)
-            except ParserBaseException:
-                break
-
-            children.append(child)
-
-        return InnerNode(children), offset
-
-
-class RepeatAtLeastOnceParser(BaseParser):
-    def __init__(self, parser: BaseParser) -> None:
-        self.inner = parser
-
-    def __repr__(self) -> str:
-        return "(" + repr(self.inner) + ")+"
-
-    def _resolve_node_parsers(self, resolver: Callable[[str], "BaseParser"]) -> None:
-        self.inner._resolve_node_parsers(resolver)
-
-    def parse(
-        self, tokens: List[Token], offset: int, verbose: bool = False
-    ) -> Tuple[Token | InnerNode, int]:
-        self._print(tokens, offset, verbose, "RepeatAtLeastOnceParser")
-
-        children: List[Token | InnerNode] = []
-
-        while True:
-            try:
-                child, offset = self.inner.parse(tokens, offset, verbose=verbose)
-            except ParserBaseException as e:
-                if len(children) == 0:
+                child, offset = self.inner.parse(input, offset, verbose=verbose)
+            except ParseError as e:
+                if len(children) < self.min_repeats:
                     raise e
                 break
 

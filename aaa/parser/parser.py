@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Type
 
 from aaa import aaa_project_root, get_stdlib_path
 from aaa.parser.exceptions import AaaParserBaseException, FileReadError
-from aaa.parser.lib.exceptions import ParserBaseException
+from aaa.parser.lib.exceptions import ParseError, TokenizerException
 from aaa.parser.lib.file_parser import FileParser
 from aaa.parser.lib.models import Token
 from aaa.parser.models import (
@@ -65,7 +65,6 @@ from aaa.runner.exceptions import AaaTranslationException
 
 SYNTAX_JSON_PATH = aaa_project_root() / "syntax.json"
 
-# TODO confirm every node type is represented
 NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
     "ARGUMENT": Argument,
     "ARGUMENTS": Arguments,
@@ -256,7 +255,7 @@ class AaaParser:
                 source_file: AaaParseModel = self.parse_file(file, file_dict)
                 assert isinstance(source_file, SourceFile)
 
-            except ParserBaseException as e:
+            except (TokenizerException, ParseError) as e:
                 self.exceptions.append(AaaParserBaseException(e))
                 continue
 

@@ -3,7 +3,7 @@ import json
 import re
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from aaa.parser.lib.exceptions import SyntaxJSONLoadError
+from aaa.parser.lib.exceptions import ParseErrorCollector, SyntaxJSONLoadError
 from aaa.parser.lib.models import Choice
 from aaa.parser.lib.parser import (
     BaseParser,
@@ -11,7 +11,6 @@ from aaa.parser.lib.parser import (
     ConcatenateParser,
     NodeParser,
     OptionalParser,
-    RepeatAtLeastOnceParser,
     RepeatParser,
     TokenParser,
 )
@@ -177,12 +176,9 @@ class SyntaxLoader:
 
         self._check_values()
 
-        self.parsers = self._load_parsers()
+        self.error_collector = ParseErrorCollector()
 
-        self.top_level_tokens_per_node_type = {
-            node_type: self._get_top_level_token_types(node_type)
-            for node_type in self.nodes
-        }
+        self.parsers = self._load_parsers()
 
     def _load_parsers(self) -> Dict[str, ConcatenateParser]:
         node_parsers: Dict[str, ConcatenateParser] = {}
@@ -192,11 +188,21 @@ class SyntaxLoader:
                 node_type, node_value
             )
 
-        def node_parser_resolver(token_type: str) -> BaseParser:
-            return node_parsers[token_type]
+        def update_parsers(parser: BaseParser) -> None:
+            parser.error_collector = self.error_collector
+
+            if isinstance(parser, NodeParser):
+                parser.inner = node_parsers[parser.node_type]
+
+            elif isinstance(parser, (ChoiceParser, ConcatenateParser)):
+                for child in parser.parsers:
+                    update_parsers(child)
+
+            elif isinstance(parser, (OptionalParser, RepeatParser)):
+                update_parsers(parser.inner)
 
         for node_type, parser in node_parsers.items():
-            parser._resolve_node_parsers(node_parser_resolver)
+            update_parsers(parser)
             parser.node_type = node_type
 
         return node_parsers
@@ -259,7 +265,9 @@ class SyntaxLoader:
                 offset += 1
 
             elif segment_type == "group_start":
-                group_end_offset = self._find_group_end_offset(segments, offset)
+                group_end_offset = self._find_group_end_offset(
+                    node_type, segments, offset
+                )
                 group_inner_segments = segments[offset + 1 : group_end_offset]
                 group_parser = self._parse_parser_definition(
                     node_type, group_inner_segments
@@ -290,7 +298,7 @@ class SyntaxLoader:
                 elif segment_type == "repeat":
                     parser_or_choice_list.append(RepeatParser(last_item))
                 elif segment_type == "repeat_at_least_once":
-                    parser_or_choice_list.append(RepeatAtLeastOnceParser(last_item))
+                    parser_or_choice_list.append(RepeatParser(last_item, min_repeats=1))
                 else:
                     raise NotImplementedError  # This should never happen
 
@@ -353,7 +361,7 @@ class SyntaxLoader:
         return ConcatenateParser(children)
 
     def _find_group_end_offset(
-        self, segments: List[Tuple[str, str]], group_start_offset: int
+        self, node_type: str, segments: List[Tuple[str, str]], group_start_offset: int
     ) -> int:
         group_end_remaining = 1
         offset = group_start_offset + 1
@@ -368,42 +376,6 @@ class SyntaxLoader:
                 if group_end_remaining == 0:
                     return offset
 
-        raise NotImplementedError  # group_end was not found
-
-    def _get_top_level_token_types(self, node_type: str) -> Set[str]:
-        checked_node_types: Set[str] = set()
-
-        def search_recursively(parser: BaseParser) -> Set[str]:
-            if node_type in checked_node_types:
-                return set()
-
-            if isinstance(parser, TokenParser):
-                return {parser.token_type}
-
-            if isinstance(parser, NodeParser):
-                assert parser.inner
-                return search_recursively(parser.inner)
-
-            if isinstance(parser, ConcatenateParser):
-                if parser.node_type in checked_node_types:
-                    return set()
-                return search_recursively(parser.parsers[0])
-
-            if isinstance(parser, ChoiceParser):
-                found: Set[str] = set()
-                for child in parser.parsers:
-                    found |= search_recursively(child)
-                return found
-
-            elif isinstance(parser, OptionalParser):
-                return search_recursively(parser.inner)
-
-            elif isinstance(parser, RepeatParser):
-                return search_recursively(parser.inner)
-
-            elif isinstance(parser, RepeatAtLeastOnceParser):
-                return search_recursively(parser.inner)
-
-            raise NotImplementedError  # Unknown BaseParser subclass
-
-        return search_recursively(self.parsers[node_type])
+        raise SyntaxJSONLoadError(
+            f"In parser definition for node {node_type}: Some brackets don't match"
+        )

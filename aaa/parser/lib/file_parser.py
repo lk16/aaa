@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Callable, List, Optional, TypeVar
 
-from aaa.parser.lib.exceptions import TokenizerException, UnexpectedTokenType
-from aaa.parser.lib.models import Node, Position, Token
+from aaa.parser.lib.exceptions import TokenizerException
+from aaa.parser.lib.models import Node, ParserInput, Position, Token
 from aaa.parser.lib.syntax_loader import SyntaxLoader
 
 T = TypeVar("T")
@@ -15,10 +15,8 @@ class FileParser:
         self.token_regexes = syntax_loader.tokens
         self.root_node_type = syntax_loader.root_node_type
         self.filtered_token_types = syntax_loader.filtered_tokens
-        self.top_level_tokens_per_node_type = (
-            syntax_loader.top_level_tokens_per_node_type
-        )
         self.token_types = syntax_loader.token_types
+        self.error_collector = syntax_loader.error_collector
 
     def tokenize_file(
         self, file: Path, filter_token_types: bool = True, verbose: bool = False
@@ -97,12 +95,14 @@ class FileParser:
         except KeyError as e:
             raise ValueError(f"Unknown node type {node_type}") from e
 
+        self.error_collector.reset()
+
         tokens = self.tokenize_text(text, file_name, verbose=verbose)
-        root, offset = parser.parse(tokens, 0, verbose=verbose)
+        parser_input = ParserInput(tokens, Path(file_name or "/unknown/path"))
+        root, offset = parser.parse(parser_input, 0, verbose=verbose)
 
         if offset != len(tokens):
-            top_level_tokens = self.top_level_tokens_per_node_type[node_type]
-            raise UnexpectedTokenType(offset, tokens[offset], top_level_tokens)
+            raise self.error_collector.get_furthest_error()
 
         return root.flatten()
 

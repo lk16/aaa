@@ -5,7 +5,7 @@ from typing import List, Set, Tuple, Type
 import pytest
 
 from aaa import aaa_project_root
-from aaa.parser.lib.exceptions import ParserBaseException
+from aaa.parser.lib.exceptions import ParseError
 from aaa.parser.models import (
     AaaParseModel,
     Argument,
@@ -571,7 +571,7 @@ def test_parser(model_type: Type[AaaParseModel], text: str, should_parse: bool) 
 
     try:
         model = AaaParser(False).parse_text(text, node_type)
-    except ParserBaseException:
+    except ParseError:
         assert not should_parse
     else:
         assert should_parse

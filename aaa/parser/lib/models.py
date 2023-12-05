@@ -6,7 +6,24 @@ from typing import Any, Dict, List, Optional
 
 
 class Choice:
-    ...
+    """
+    Used by SyntaxLoader to handle the choice operator.
+    """
+
+
+class EndOfFile:
+    """
+    Used to mark a ParseError as a special case: an end-of-file error.
+    """
+
+    def __init__(self, file: Path):
+        self.file = file
+
+
+class ParserInput:
+    def __init__(self, tokens: List[Token], file: Path) -> None:
+        self.tokens = tokens
+        self.file = file
 
 
 class Position:
