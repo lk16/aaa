@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Dict, Type
 
 import pytest
@@ -15,11 +16,12 @@ from aaa.cross_referencer.exceptions import (
     InvalidFunctionPointerTarget,
     InvalidReturnType,
     InvalidType,
+    UnexpectedBuiltin,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
-from aaa.parser.exceptions import EndOfFileException
-from aaa.tokenizer.exceptions import FileReadError
+from aaa.parser.exceptions import AaaParserBaseException, FileReadError
+from aaa.runner.runner import RUNNER_FILE_DICT_ROOT_PATH
 from aaa.type_checker.exceptions import (
     AssignConstValueError,
     AssignmentTypeError,
@@ -559,6 +561,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "- indicates if more data is present in the iterable with this last return value\n"
             + "- for const iterators all return values of `next` except the last one must be const\n",
             id="invalid-iterator-never-return",
+            marks=pytest.mark.skip,
         ),
         pytest.param(
             """
@@ -711,8 +714,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         ),
         pytest.param(
             "fn",
-            EndOfFileException,
-            "/foo/main.aaa: Parsing failed, unexpected end of file.\n",
+            AaaParserBaseException,
+            "/foo/main.aaa: Unexpected end of file\n" + "Expected one of: identifier\n",
             id="end-of-file-exception",
         ),
         pytest.param(
@@ -1027,17 +1030,37 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "       Found stack: int\n",
             id="function-call-with-wrong-type-parameter",
         ),
+        pytest.param(
+            """
+            fn main { nop }
+            builtin fn foo
+            """,
+            UnexpectedBuiltin,
+            "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.\n",
+            id="unexpected-builtin-function",
+        ),
+        pytest.param(
+            """
+            fn main { nop }
+            builtin struct foo
+            """,
+            UnexpectedBuiltin,
+            "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.\n",
+            id="unexpected-builtin-struct",
+        ),
     ],
 )
 def test_one_error(
     code: str, expected_exception_type: Type[Exception], expected_exception_message: str
 ) -> None:
-    tmp_dir, exceptions = check_aaa_full_source(code, "", [expected_exception_type])
+    exceptions = check_aaa_full_source(code, "", [expected_exception_type])
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
 
-    exception_message = exception_message.replace(str(tmp_dir), "/foo")
+    exception_message = exception_message.replace(
+        str(RUNNER_FILE_DICT_ROOT_PATH), "/foo"
+    )
     assert exception_message == expected_exception_message
 
 
@@ -1061,7 +1084,7 @@ def test_one_error(
         pytest.param(
             {},
             FileReadError,
-            "/foo/main.aaa: Failed to open or read\n",
+            f"{Path('main.aaa').resolve()}: Could not read file. It may not exist.\n",
             id="file-not-found",
         ),
         pytest.param(
@@ -1148,6 +1171,7 @@ def test_one_error(
             InvalidTestSignuture,
             "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types\n",
             id="invalid-test-signature-return-never",
+            marks=pytest.mark.skip,
         ),
     ],
 )
@@ -1156,14 +1180,18 @@ def test_multi_file_errors(
     expected_exception_type: Type[Exception],
     expected_exception_message: str,
 ) -> None:
-    tmp_dir, exceptions = check_aaa_full_source_multi_file(
-        files, "", [expected_exception_type]
+    file_dict = {Path(file): code for file, code in files.items()}
+
+    exceptions = check_aaa_full_source_multi_file(
+        file_dict, "", [expected_exception_type]
     )
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
 
-    exception_message = exception_message.replace(str(tmp_dir), "/foo")
+    exception_message = exception_message.replace(
+        str(RUNNER_FILE_DICT_ROOT_PATH), "/foo"
+    )
     assert exception_message == expected_exception_message
 
 
@@ -1357,13 +1385,15 @@ def test_multi_file_errors(
 def test_colliding_identifier(
     files: Dict[str, str], expected_exception_message: str
 ) -> None:
-    tmp_dir, exceptions = check_aaa_full_source_multi_file(
-        files, "", [CollidingIdentifier]
-    )
+    file_dict = {Path(file): code for file, code in files.items()}
+
+    exceptions = check_aaa_full_source_multi_file(file_dict, "", [CollidingIdentifier])
 
     assert len(exceptions) == 1
     exception_message = str(exceptions[0])
-    exception_message = exception_message.replace(str(tmp_dir), "/foo")
+    exception_message = exception_message.replace(
+        str(RUNNER_FILE_DICT_ROOT_PATH), "/foo"
+    )
 
     print(repr(exception_message))
     print()

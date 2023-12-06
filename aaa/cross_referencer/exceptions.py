@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 import aaa.parser.models as parser
-from aaa import AaaException, Position
+from aaa import AaaException
 from aaa.cross_referencer.models import (
     AaaCrossReferenceModel,
     Argument,
@@ -16,6 +16,7 @@ from aaa.cross_referencer.models import (
     Struct,
     Variable,
 )
+from aaa.parser.lib.models import Position
 from aaa.parser.models import TypeLiteral
 
 
@@ -102,7 +103,7 @@ class CollidingEnumVariant(CrossReferenceBaseException):
         msg = "Duplicate enum variant name collision:\n"
 
         for item in self.colliding:
-            msg += f"{item.position}: enum variant {self.enum.identifier.name}:{item.name.name}\n"
+            msg += f"{item.position}: enum variant {self.enum.get_name()}:{item.name.value}\n"
 
         return msg
 
@@ -131,7 +132,7 @@ class InvalidArgument(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return (
-            f"{self.used.position}: Cannot use {self.used.identifier.name} as argument\n"
+            f"{self.used.position}: Cannot use {self.used.identifier.value} as argument\n"
             + f"{self.found.position}: {describe(self.found)} collides\n"
         )
 
@@ -161,6 +162,17 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
             + f"Expected parameter count: {self.expected_param_count}\n"
             + f"   Found parameter count: {self.found_param_count}\n"
         )
+
+
+class UnexpectedBuiltin(CrossReferenceBaseException):
+    def __init__(
+        self,
+        position: Position,
+    ) -> None:
+        self.position = position
+
+    def __str__(self) -> str:
+        return f"{self.position}: Builtins are not allowed outside the builtins file.\n"
 
 
 class CircularDependencyError(CrossReferenceBaseException):

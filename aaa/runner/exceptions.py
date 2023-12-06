@@ -25,7 +25,3 @@ class ExcecutableDidNotRun(RunnerBaseException):
     Indidates that excecutable was compiled but did not run.
     The fact it did not run was intentional. This is here to satisfy the type-checker.
     """
-
-
-class AaaEnvironmentError(RunnerBaseException):
-    ...

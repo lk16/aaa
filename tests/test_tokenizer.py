@@ -1,207 +1,306 @@
-from glob import glob
-from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 import pytest
 
-from aaa import aaa_project_root, create_test_output_folder
-from aaa.tokenizer.constants import FIXED_SIZED_TOKENS
-from aaa.tokenizer.exceptions import TokenizerException
-from aaa.tokenizer.models import TokenType
-from aaa.tokenizer.regex import character_literal_regex, string_literal_regex
-from aaa.tokenizer.tokenizer import Tokenizer
+from aaa.parser.lib.exceptions import TokenizerException
+from aaa.parser.parser import AaaParser
+
+TOKENIZER_TEST_VALUES: List[Tuple[str, str, bool]] = [
+    ("args", "", False),
+    ("args", "args", True),
+    ("args", "argsa", False),
+    ("as", "", False),
+    ("as", "as", True),
+    ("as", "asa", False),
+    ("assign", "", False),
+    ("assign", "<-", True),
+    ("builtin", "", False),
+    ("builtin", "builtin", True),
+    ("builtin", "builtina", False),
+    ("call", "", False),
+    ("call", "call", True),
+    ("call", "calla", False),
+    ("case", "", False),
+    ("case", "case", True),
+    ("case", "casea", False),
+    ("char", "'''", False),
+    ("char", "'", False),
+    ("char", "'/'", True),
+    ("char", "'\"'", True),
+    ("char", "'\\''", True),
+    ("char", "'\\'", False),
+    ("char", "'\\/'", True),
+    ("char", "'\\\"'", True),
+    ("char", "'\\\\'", True),
+    ("char", "'\\0'", True),
+    ("char", "'\\b'", True),
+    ("char", "'\\e'", True),
+    ("char", "'\\f'", True),
+    ("char", "'\\n'", True),
+    ("char", "'\\r'", True),
+    ("char", "'\\t'", True),
+    ("char", "'\\u0000'", True),
+    ("char", "'\\U000000'", True),
+    ("char", "'\\U009999'", True),
+    ("char", "'\\U00aaaa'", True),
+    ("char", "'\\U00AAAA'", True),
+    ("char", "'\\U00ffff'", True),
+    ("char", "'\\U00FFFF'", True),
+    ("char", "'\\U090000'", True),
+    ("char", "'\\U099999'", True),
+    ("char", "'\\U09aaaa'", True),
+    ("char", "'\\U09AAAA'", True),
+    ("char", "'\\U09ffff'", True),
+    ("char", "'\\U09FFFF'", True),
+    ("char", "'\\U100000'", True),
+    ("char", "'\\U109999'", True),
+    ("char", "'\\U10aaaa'", True),
+    ("char", "'\\U10AAAA'", True),
+    ("char", "'\\U10ffff'", True),
+    ("char", "'\\U10FFFF'", True),
+    ("char", "'\\U110000'", False),
+    ("char", "'\\U119999'", False),
+    ("char", "'\\U11aaaa'", False),
+    ("char", "'\\U11AAAA'", False),
+    ("char", "'\\U11ffff'", False),
+    ("char", "'\\U11FFFF'", False),
+    ("char", "'\\u9999'", True),
+    ("char", "'\\uaaaa'", True),
+    ("char", "'\\uAAAA'", True),
+    ("char", "'\\uffff'", True),
+    ("char", "'\\uFFFF'", True),
+    ("char", "'\\x00'", True),
+    ("char", "'\\x99'", True),
+    ("char", "'\\xaa'", True),
+    ("char", "'\\xAA'", True),
+    ("char", "'\\xff'", True),
+    ("char", "'\\xFF'", True),
+    ("char", "'\\xgg'", False),
+    ("char", "'\\xGG'", False),
+    ("char", "'\f'", False),
+    ("char", "'\n'", False),
+    ("char", "'\r'", False),
+    ("char", "'\t'", False),
+    ("char", "'\v'", False),
+    ("char", "'a'", True),
+    ("char", "'A'", True),
+    ("char", "'a", False),
+    ("char", "'z'", True),
+    ("char", "'Z'", True),
+    ("char", "", False),
+    ("colon", ":", True),
+    ("colon", "", False),
+    ("comma", ",", True),
+    ("comma", "", False),
+    ("comment", "", False),
+    ("comment", "// This is a comment.", True),
+    ("comment", "//", True),
+    ("comment", "3", False),
+    ("const", "", False),
+    ("const", "const", True),
+    ("const", "consta", False),
+    ("default", "", False),
+    ("default", "default", True),
+    ("default", "defaulta", False),
+    ("else", "", False),
+    ("else", "else", True),
+    ("else", "elsea", False),
+    ("end", "", False),
+    ("end", "}", True),
+    ("enum", "", False),
+    ("enum", "enum", True),
+    ("enum", "enuma", False),
+    ("false", "", False),
+    ("false", "false", True),
+    ("false", "falsea", False),
+    ("fn", "", False),
+    ("fn", "fn", True),
+    ("fn", "fna", False),
+    ("foreach", "", False),
+    ("foreach", "foreach", True),
+    ("foreach", "foreacha", False),
+    ("from", "", False),
+    ("from", "from", True),
+    ("from", "froma", False),
+    ("get_field", "?", True),
+    ("get_field", "", False),
+    ("identifier", "____", True),
+    ("identifier", "_", True),
+    ("identifier", "-", True),
+    ("identifier", "-0", False),
+    ("identifier", "-9", False),
+    ("identifier", "!=", True),
+    ("identifier", ".", True),
+    ("identifier", "", False),
+    ("identifier", "*", True),
+    ("identifier", "/", True),
+    ("identifier", "//", False),
+    ("identifier", "%", True),
+    ("identifier", "+", True),
+    ("identifier", "<", True),
+    ("identifier", "<=", True),
+    ("identifier", "=", True),
+    ("identifier", ">", True),
+    ("identifier", ">=", True),
+    ("identifier", "3", False),
+    ("identifier", "a", True),
+    ("identifier", "A", True),
+    ("identifier", "aaaa", True),
+    ("identifier", "AAAA", True),
+    ("identifier", "Some_Thing", True),
+    ("identifier", "z", True),
+    ("identifier", "Z", True),
+    ("identifier", "zzzz", True),
+    ("identifier", "ZZZZ", True),
+    ("if", "", False),
+    ("if", "if", True),
+    ("if", "ifa", False),
+    ("import", "", False),
+    ("import", "import", True),
+    ("import", "importa", False),
+    ("integer", "-", False),
+    ("integer", "-0", True),
+    ("integer", "-1234567890", True),
+    ("integer", "-3", True),
+    ("integer", "", False),
+    ("integer", "1234567890", True),
+    ("integer", "3", True),
+    ("integer", "foo", False),
+    ("match", "", False),
+    ("match", "match", True),
+    ("match", "matcha", False),
+    ("never", "", False),
+    ("never", "never", True),
+    ("never", "nevera", False),
+    ("return", "", False),
+    ("return", "return", True),
+    ("return", "returna", False),
+    ("set_field", "!", True),
+    ("set_field", "", False),
+    ("sq_end", "", False),
+    ("sq_end", "]", True),
+    ("sq_start", "", False),
+    ("sq_start", "[", True),
+    ("start", "", False),
+    ("start", "{", True),
+    ("string", '"', False),
+    ("string", '""', True),
+    ("string", '"""', False),
+    ("string", '"\'"', True),
+    ("string", '"\\"', False),
+    ("string", '"\\""', True),
+    ("string", '"\\/"', True),
+    ("string", '"\\\'"', True),
+    ("string", '"\\\\"', True),
+    ("string", '"\\0"', True),
+    ("string", '"\\b"', True),
+    ("string", '"\\e"', True),
+    ("string", '"\\f"', True),
+    ("string", '"\\n"', True),
+    ("string", '"\\r"', True),
+    ("string", '"\\u0000"', True),
+    ("string", '"\\U000000"', True),
+    ("string", '"\\U009999"', True),
+    ("string", '"\\U00aaaa"', True),
+    ("string", '"\\U00AAAA"', True),
+    ("string", '"\\U00ffff"', True),
+    ("string", '"\\U00FFFF"', True),
+    ("string", '"\\U090000"', True),
+    ("string", '"\\U099999"', True),
+    ("string", '"\\U09aaaa"', True),
+    ("string", '"\\U09AAAA"', True),
+    ("string", '"\\U09ffff"', True),
+    ("string", '"\\U09FFFF"', True),
+    ("string", '"\\U100000"', True),
+    ("string", '"\\U109999"', True),
+    ("string", '"\\U10aaaa"', True),
+    ("string", '"\\U10AAAA"', True),
+    ("string", '"\\U10ffff"', True),
+    ("string", '"\\U10FFFF"', True),
+    ("string", '"\\U110000"', False),
+    ("string", '"\\U119999"', False),
+    ("string", '"\\U11aaaa"', False),
+    ("string", '"\\U11AAAA"', False),
+    ("string", '"\\U11ffff"', False),
+    ("string", '"\\U11FFFF"', False),
+    ("string", '"\\u9999"', True),
+    ("string", '"\\uaaaa"', True),
+    ("string", '"\\uAAAA"', True),
+    ("string", '"\\uffff"', True),
+    ("string", '"\\uFFFF"', True),
+    ("string", '"\\x00"', True),
+    ("string", '"\\x99"', True),
+    ("string", '"\\xaa"', True),
+    ("string", '"\\xAA"', True),
+    ("string", '"\\xff"', True),
+    ("string", '"\\xFF"', True),
+    ("string", '"\\xgg"', False),
+    ("string", '"\\xGG"', False),
+    ("string", '"\f"', False),
+    ("string", '"\n"', False),
+    ("string", '"\r"', False),
+    ("string", '"\t"', False),
+    ("string", '"\v"', False),
+    ("string", '"a', False),
+    ("string", '"a"', True),
+    ("string", '"abc"', True),
+    ("string", "", False),
+    ("string", "3", False),
+    ("struct", "", False),
+    ("struct", "struct", True),
+    ("struct", "structa", False),
+    ("true", "", False),
+    ("true", "true", True),
+    ("true", "truea", False),
+    ("use", "", False),
+    ("use", "use", True),
+    ("use", "usea", False),
+    ("while", "", False),
+    ("while", "while", True),
+    ("while", "whilea", False),
+    ("whitespace", " ", True),
+    ("whitespace", "", False),
+    ("whitespace", "\n", True),
+    ("whitespace", "\n\n", True),
+    ("whitespace", "\r", True),
+    ("whitespace", "\r\n", True),
+    ("whitespace", "\r\n\r\n", True),
+    ("whitespace", "\r\r", True),
+    ("whitespace", "\t", True),
+    ("whitespace", "3", False),
+]
 
 
 @pytest.mark.parametrize(
-    ["file"],
+    ["token_type", "text", "should_tokenize"],
     [
-        pytest.param(Path(file_name), id=file_name)
-        for file_name in glob("**/*.aaa", root_dir=aaa_project_root(), recursive=True)
+        pytest.param(token_type, text, should_tokenize, id=f"{token_type}-{repr(text)}")
+        for token_type, text, should_tokenize in TOKENIZER_TEST_VALUES
     ],
 )
-def test_tokenizer_parts_add_up(file: Path) -> None:
-    tokens = Tokenizer(file, False).tokenize_unfiltered()
+def test_tokenizer(token_type: str, text: str, should_tokenize: bool) -> None:
+    try:
+        tokens = AaaParser(False).tokenize_text(text)
+    except TokenizerException:
+        assert not should_tokenize
+        return
 
-    tokens_concatenated = "".join(token.value for token in tokens)
-    assert tokens_concatenated == file.read_text()
-
-
-@pytest.mark.parametrize(
-    ["code", "expected_token_type"],
-    [
-        pytest.param(" ", TokenType.WHITESPACE, id="space"),
-        pytest.param("\n", TokenType.WHITESPACE, id="newline"),
-        pytest.param("\t", TokenType.WHITESPACE, id="tab"),
-        pytest.param(" \t\n \t\n", TokenType.WHITESPACE, id="mixed_whitespace"),
-        pytest.param("fn", TokenType.FUNCTION, id="fixed_size"),
-        pytest.param(
-            ">=", TokenType.IDENTIFIER, id="fixed_size_with_shorter_substring"
-        ),
-        pytest.param("// comment", TokenType.COMMENT, id="comment"),
-        pytest.param("123", TokenType.INTEGER, id="positive_integer"),
-        pytest.param("-123", TokenType.INTEGER, id="negative_integer"),
-        pytest.param("AaBb_YyZz", TokenType.IDENTIFIER, id="identifier"),
-        pytest.param('""', TokenType.STRING, id="string_empty"),
-        pytest.param('"hello"', TokenType.STRING, id="string_simple"),
-        pytest.param(
-            '"\\n \\\\ \\""', TokenType.STRING, id="string_with_escape_sequences"
-        ),
-    ],
-)
-def test_tokenizer_token_types(code: str, expected_token_type: TokenType) -> None:
-    file = create_test_output_folder() / "sample.aaa"
-
-    file.write_text(code)
-    tokenizer = Tokenizer(file, False)
-    tokens = tokenizer.tokenize_unfiltered()
-
-    assert 1 == len(tokens)
-    assert expected_token_type == tokens[0].type
-    assert code == tokens[0].value
-
-    tokens = tokenizer.run()
-
-    if expected_token_type in [TokenType.WHITESPACE, TokenType.COMMENT]:
-        assert 0 == len(tokens)
-
+    if should_tokenize:
+        assert len(tokens) == 1
+        assert tokens[0].type == token_type
     else:
-        assert 1 == len(tokens)
-        assert expected_token_type == tokens[0].type
-        assert code == tokens[0].value
+        if not tokens:
+            return
+        assert tokens[0].type != token_type
 
 
-@pytest.mark.parametrize(
-    ["code", "expected_line", "expected_column"],
-    [
-        pytest.param(' fn "', 1, 5, id="string_without_end"),
-        pytest.param(' fn "\n"', 1, 5, id="string_with_unprintable_char"),
-        pytest.param(' fn "\\y', 1, 5, id="string_with_invalid_escape_sequence"),
-        pytest.param(' fn "\\', 1, 5, id="string_with_half_escape_sequence"),
-        pytest.param("~", 1, 1, id="unknown_sequence"),
-    ],
-)
-def test_tokenizer_error(code: str, expected_line: int, expected_column: int) -> None:
-    file = create_test_output_folder() / "sample.aaa"
+def test_all_token_types_are_tested() -> None:
+    all_token_types = AaaParser(False).file_parser.token_types
+    untested_token_types = {item[0] for item in TOKENIZER_TEST_VALUES}
 
-    file.write_text(code)
-    with pytest.raises(TokenizerException) as e:
-        Tokenizer(file, False).tokenize_unfiltered()
+    untested_token_types = all_token_types - untested_token_types
 
-    tokenizer_exception = e.value
-
-    assert expected_line == tokenizer_exception.position.line
-    assert expected_column == tokenizer_exception.position.column
-
-
-def test_fixed_sized_tokens_is_sorted() -> None:
-    def sort_key(item: Tuple[str, TokenType]) -> Tuple[int, str]:
-        value = item[0]
-        return (-len(value), value)
-
-    assert FIXED_SIZED_TOKENS == sorted(FIXED_SIZED_TOKENS, key=sort_key)
-
-
-@pytest.mark.parametrize(
-    ["input", "expected_match"],
-    [
-        ("'a'", True),
-        ("'A'", True),
-        ("'z'", True),
-        ("'Z'", True),
-        ("'aa'", False),
-        ("'\"'", True),
-        ("'\\''", True),
-        ("'\\'", False),
-        ("'\\'", False),
-        ("'\\/'", True),
-        ("'\\\"'", True),
-        ("'\\\\'", True),
-        ("'\\0'", True),
-        ("'\\b'", True),
-        ("'\\e'", True),
-        ("'\\f'", True),
-        ("'\\n'", True),
-        ("'\\r'", True),
-        ("'\\t'", True),
-        ("'\f'", False),
-        ("'\n'", False),
-        ("'\r'", False),
-        ("'\t'", False),
-        ("'\v'", False),
-        ("'∑'", True),
-        ("'😀'", True),
-        ("'\\u000'", False),
-        ("'\\u00000'", False),
-        ("'\\u0000'", True),
-        ("'\\u9999'", True),
-        ("'\\uaaaa'", True),
-        ("'\\uffff'", True),
-        ("'\\uAAAA'", True),
-        ("'\\uFFFF'", True),
-        ("'\\U00000'", False),
-        ("'\\U0000000'", False),
-        ("'\\U000000'", True),
-        ("'\\U109999'", True),
-        ("'\\U10aaaa'", True),
-        ("'\\U10ffff'", True),
-        ("'\\U10AAAA'", True),
-        ("'\\U10FFFF'", True),
-        ("'\\U200000'", False),
-        ("'\\U110000'", False),
-    ],
-)
-def test_character_literal_regex(input: str, expected_match: bool) -> None:
-    assert expected_match == bool(character_literal_regex.match(input))
-
-
-@pytest.mark.parametrize(
-    ["input", "expected_match"],
-    [
-        ('""', True),
-        ('"a"', True),
-        ('"aa"', True),
-        ('"AA"', True),
-        ('"zz"', True),
-        ('"ZZ"', True),
-        ('"\'"', True),
-        ('"\\"', False),
-        ('"\\\'"', True),
-        ('"\\/"', True),
-        ('"\\""', True),
-        ('"\\\\"', True),
-        ('"\\0"', True),
-        ('"\\b"', True),
-        ('"\\e"', True),
-        ('"\\f"', True),
-        ('"\\n"', True),
-        ('"\\r"', True),
-        ('"\\t"', True),
-        ('"\f"', False),
-        ('"\n"', False),
-        ('"\r"', False),
-        ('"\t"', False),
-        ('"\v"', False),
-        ('"∑"', True),
-        ('"😀"', True),
-        ('"\\u000"', False),
-        ('"\\u00000"', True),
-        ('"\\u0000"', True),
-        ('"\\u9999"', True),
-        ('"\\uaaaa"', True),
-        ('"\\uffff"', True),
-        ('"\\uAAAA"', True),
-        ('"\\uFFFF"', True),
-        ('"\\U00000"', False),
-        ('"\\U0000000"', True),
-        ('"\\U000000"', True),
-        ('"\\U109999"', True),
-        ('"\\U10aaaa"', True),
-        ('"\\U10ffff"', True),
-        ('"\\U10AAAA"', True),
-        ('"\\U10FFFF"', True),
-        ('"\\U200000"', False),
-        ('"\\U110000"', False),
-    ],
-)
-def test_string_literal_regex(input: str, expected_match: bool) -> None:
-    assert expected_match == bool(string_literal_regex.match(input))
+    if untested_token_types:
+        raise Exception(
+            "Found untested token types: " + ", ".join(sorted(untested_token_types)),
+        )

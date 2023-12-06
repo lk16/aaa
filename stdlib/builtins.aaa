@@ -1,172 +1,172 @@
 
 // elementary types
-struct bool
-struct int
-struct str
-struct char
+builtin struct bool
+builtin struct int
+builtin struct str
+builtin struct char
 
 // container types
-struct map[K, V]
-struct set[T]
-struct vec[T]
+builtin struct map[K, V]
+builtin struct set[T]
+builtin struct vec[T]
 
 // container iterator types
-struct map_const_iter[K, V]
-struct map_iter[K, V]
-struct set_iter[T]
-struct vec_const_iter[T]
-struct vec_iter[T]
+builtin struct map_const_iter[K, V]
+builtin struct map_iter[K, V]
+builtin struct set_iter[T]
+builtin struct vec_const_iter[T]
+builtin struct vec_iter[T]
 
-fn make_const[A] args a as A return const A
+builtin fn make_const[A] args a as A return const A
 
 // compiled regular expression
-struct regex
+builtin struct regex
 
 // stack operations
-fn copy[A]      args a as A                 return A, A  // The top object will be non-const
-fn drop[A]      args a as A
-fn dup[A]       args a as A                 return A, A
-fn over[A, B]   args a as A, b as B         return A, B, A
-fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
-fn swap[A, B]   args a as A, b as B         return B, A
+builtin fn copy[A]      args a as A                 return A, A  // The top object will be non-const
+builtin fn drop[A]      args a as A
+builtin fn dup[A]       args a as A                 return A, A
+builtin fn over[A, B]   args a as A, b as B         return A, B, A
+builtin fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
+builtin fn swap[A, B]   args a as A, b as B         return B, A
 
 // special operators
-fn . [A]      args a as const A
-fn repr[A]    args a as const A    return str
-fn assert     args a as const bool
-fn nop
+builtin fn . [A]      args a as const A
+builtin fn repr[A]    args a as const A    return str
+builtin fn assert     args a as const bool
+builtin fn nop
 
 // integer arithmetic
-fn - args a as const int, b as const int return int
-fn * args a as const int, b as const int return int
-fn + args a as const int, b as const int return int
-fn / args a as const int, b as const int return int
-fn % args a as const int, b as const int return int
+builtin fn - args a as const int, b as const int return int
+builtin fn * args a as const int, b as const int return int
+builtin fn + args a as const int, b as const int return int
+builtin fn / args a as const int, b as const int return int
+builtin fn % args a as const int, b as const int return int
 
 // integer comparison
-fn != args a as const int, b as const int return bool
-fn <  args a as const int, b as const int return bool
-fn <= args a as const int, b as const int return bool
-fn =  args a as const int, b as const int return bool
-fn >  args a as const int, b as const int return bool
-fn >= args a as const int, b as const int return bool
+builtin fn != args a as const int, b as const int return bool
+builtin fn <  args a as const int, b as const int return bool
+builtin fn <= args a as const int, b as const int return bool
+builtin fn =  args a as const int, b as const int return bool
+builtin fn >  args a as const int, b as const int return bool
+builtin fn >= args a as const int, b as const int return bool
 
 // boolean operators
-fn and args a as const bool, b as const bool return bool
-fn not args a as const bool                  return bool
-fn or  args a as const bool, b as const bool return bool
+builtin fn and args a as const bool, b as const bool return bool
+builtin fn not args a as const bool                  return bool
+builtin fn or  args a as const bool, b as const bool return bool
 
 // container functions
-fn vec[T]:clear      args v as       vec[T]
-fn vec[T]:const_iter args v as const vec[T]                                       return vec_const_iter[T]
-fn vec[T]:copy       args v as       vec[T]                                       return vec[T]
-fn vec[T]:empty      args v as const vec[T]                                       return bool
-fn vec[T]:get        args v as const vec[T], offset as const int                  return T
-fn vec[T]:iter       args v as       vec[T]                                       return vec_iter[T]
-fn vec[T]:pop        args v as       vec[T]                                       return T
-fn vec[T]:push       args v as       vec[T], item as const T
-fn vec[T]:set        args v as       vec[T], offset as const int, item as const T
-fn vec[T]:len        args v as const vec[T]                                       return int
+builtin fn vec[T]:clear      args v as       vec[T]
+builtin fn vec[T]:const_iter args v as const vec[T]                                       return vec_const_iter[T]
+builtin fn vec[T]:copy       args v as       vec[T]                                       return vec[T]
+builtin fn vec[T]:empty      args v as const vec[T]                                       return bool
+builtin fn vec[T]:get        args v as const vec[T], offset as const int                  return T
+builtin fn vec[T]:iter       args v as       vec[T]                                       return vec_iter[T]
+builtin fn vec[T]:pop        args v as       vec[T]                                       return T
+builtin fn vec[T]:push       args v as       vec[T], item as const T
+builtin fn vec[T]:set        args v as       vec[T], offset as const int, item as const T
+builtin fn vec[T]:len        args v as const vec[T]                                       return int
 
-fn map[K, V]:clear      args m as       map[K, V]
-fn map[K, V]:const_iter args m as const map[K, V]                                   return map_const_iter[K, V]
-fn map[K, V]:copy       args m as       map[K, V]                                   return map[K, V]
-fn map[K, V]:drop       args m as       map[K, V], key as const K                   return bool
-fn map[K, V]:empty      args m as const map[K, V]                                   return bool
-fn map[K, V]:get        args m as const map[K, V], key as const K                   return V, bool
-fn map[K, V]:has_key    args m as const map[K, V], key as const K                   return bool
-fn map[K, V]:iter       args m as       map[K, V]                                   return map_iter[K, V]
-fn map[K, V]:pop        args m as       map[K, V], key as const K                   return V, bool
-fn map[K, V]:set        args m as       map[K, V], key as const K, value as const V
-fn map[K, V]:len        args m as const map[K, V]                                   return int
+builtin fn map[K, V]:clear      args m as       map[K, V]
+builtin fn map[K, V]:const_iter args m as const map[K, V]                                   return map_const_iter[K, V]
+builtin fn map[K, V]:copy       args m as       map[K, V]                                   return map[K, V]
+builtin fn map[K, V]:drop       args m as       map[K, V], key as const K                   return bool
+builtin fn map[K, V]:empty      args m as const map[K, V]                                   return bool
+builtin fn map[K, V]:get        args m as const map[K, V], key as const K                   return V, bool
+builtin fn map[K, V]:has_key    args m as const map[K, V], key as const K                   return bool
+builtin fn map[K, V]:iter       args m as       map[K, V]                                   return map_iter[K, V]
+builtin fn map[K, V]:pop        args m as       map[K, V], key as const K                   return V, bool
+builtin fn map[K, V]:set        args m as       map[K, V], key as const K, value as const V
+builtin fn map[K, V]:len        args m as const map[K, V]                                   return int
 
-fn set[T]:add        args s as       set[T], item as const T
-fn set[T]:clear      args s as       set[T]
-fn set[T]:const_iter args s as const set[T]                   return set_iter[T]
-fn set[T]:copy       args s as       set[T]                   return set[T]
-fn set[T]:empty      args s as const set[T]                   return bool
-fn set[T]:has        args s as const set[T], item as const T  return bool
-fn set[T]:iter       args s as const set[T]                   return set_iter[T]
-fn set[T]:remove     args s as       set[T], item as const T
-fn set[T]:len        args s as const set[T]                   return int
+builtin fn set[T]:add        args s as       set[T], item as const T
+builtin fn set[T]:clear      args s as       set[T]
+builtin fn set[T]:const_iter args s as const set[T]                   return set_iter[T]
+builtin fn set[T]:copy       args s as       set[T]                   return set[T]
+builtin fn set[T]:empty      args s as const set[T]                   return bool
+builtin fn set[T]:has        args s as const set[T], item as const T  return bool
+builtin fn set[T]:iter       args s as const set[T]                   return set_iter[T]
+builtin fn set[T]:remove     args s as       set[T], item as const T
+builtin fn set[T]:len        args s as const set[T]                   return int
 
 // container iteration
-fn map_iter[K, V]:next       args iter as map_iter[K, V]       return const K, V, bool
-fn map_const_iter[K, V]:next args iter as map_const_iter[K, V] return const K, const V, bool
-fn set_iter[T]:next          args iter as set_iter[T]          return const T, bool
-fn vec_iter[T]:next          args iter as vec_iter[T]          return T, bool
-fn vec_const_iter[T]:next    args iter as vec_const_iter[T]    return const T, bool
+builtin fn map_iter[K, V]:next       args iter as map_iter[K, V]       return const K, V, bool
+builtin fn map_const_iter[K, V]:next args iter as map_const_iter[K, V] return const K, const V, bool
+builtin fn set_iter[T]:next          args iter as set_iter[T]          return const T, bool
+builtin fn vec_iter[T]:next          args iter as vec_iter[T]          return T, bool
+builtin fn vec_const_iter[T]:next    args iter as vec_const_iter[T]    return const T, bool
 
-fn map_iter[K, V]:iter       args iter as map_iter[K, V]       return map_iter[K, V]
-fn map_const_iter[K, V]:iter args iter as map_const_iter[K, V] return map_const_iter[K, V]
-fn set_iter[T]:iter          args iter as set_iter[T]          return set_iter[T]
-fn vec_iter[T]:iter          args iter as vec_iter[T]          return vec_iter[T]
-fn vec_const_iter[T]:iter    args iter as vec_const_iter[T]    return vec_const_iter[T]
+builtin fn map_iter[K, V]:iter       args iter as map_iter[K, V]       return map_iter[K, V]
+builtin fn map_const_iter[K, V]:iter args iter as map_const_iter[K, V] return map_const_iter[K, V]
+builtin fn set_iter[T]:iter          args iter as set_iter[T]          return set_iter[T]
+builtin fn vec_iter[T]:iter          args iter as vec_iter[T]          return vec_iter[T]
+builtin fn vec_const_iter[T]:iter    args iter as vec_const_iter[T]    return vec_const_iter[T]
 
 // string functions
 
-fn str:append      args s as       str, other as str                  return str
-fn str:append_char args s as       str, other as char                 return str
-fn str:contains    args s as const str, other as const str            return bool
-fn str:equals      args s as const str, other as const str            return bool
-fn str:join        args s as       str, parts as vec[str]             return str
-fn str:len         args s as const str                                return int
-fn str:lower       args s as       str                                return str
-fn str:replace     args s as       str, search as str, replace as str return str
-fn str:split       args s as       str, sep as str                    return vec[str]
-fn str:strip       args s as       str                                return str
-fn str:upper       args s as       str                                return str
-fn str:at          args s as const str, offset as int                 return char, bool
+builtin fn str:append      args s as       str, other as str                  return str
+builtin fn str:append_char args s as       str, other as char                 return str
+builtin fn str:contains    args s as const str, other as const str            return bool
+builtin fn str:equals      args s as const str, other as const str            return bool
+builtin fn str:join        args s as       str, parts as vec[str]             return str
+builtin fn str:len         args s as const str                                return int
+builtin fn str:lower       args s as       str                                return str
+builtin fn str:replace     args s as       str, search as str, replace as str return str
+builtin fn str:split       args s as       str, sep as str                    return vec[str]
+builtin fn str:strip       args s as       str                                return str
+builtin fn str:upper       args s as       str                                return str
+builtin fn str:at          args s as const str, offset as int                 return char, bool
 
-fn str:find_after  args s as const str, other as str, offset as int   return int, bool
-fn str:find        args s as const str, other as str                  return int, bool
-fn str:substr      args s as const str, start as int, end as int      return str, bool
-fn str:to_bool     args s as const str                                return bool, bool
-fn str:to_int      args s as const str                                return int, bool
+builtin fn str:find_after  args s as const str, other as str, offset as int   return int, bool
+builtin fn str:find        args s as const str, other as str                  return int, bool
+builtin fn str:substr      args s as const str, start as int, end as int      return str, bool
+builtin fn str:to_bool     args s as const str                                return bool, bool
+builtin fn str:to_int      args s as const str                                return int, bool
 
 // char functions
 
-fn char:is_digit      args c as const char                      return bool
-fn char:is_alpha      args c as const char                      return bool
-fn char:is_whitespace args c as const char                      return bool
-fn char:to_str        args c as const char                      return str
-fn char:equals        args c as const char, other as const char return bool
+builtin fn char:is_digit      args c as const char                      return bool
+builtin fn char:is_alpha      args c as const char                      return bool
+builtin fn char:is_whitespace args c as const char                      return bool
+builtin fn char:to_str        args c as const char                      return str
+builtin fn char:equals        args c as const char, other as const char return bool
 
 // regex functions
 
-fn make_regex args pattern as str return regex, bool
-fn regex:find args r as const regex, s as const str, offset as const int return str, int, bool
+builtin fn make_regex args pattern as str return regex, bool
+builtin fn regex:find args r as const regex, s as const str, offset as const int return str, int, bool
 
 // functions to assist type-checker
-fn todo return never
-fn unreachable return never
+builtin fn todo return never
+builtin fn unreachable return never
 
 
 
 // Syscall list: http://faculty.nps.edu/cseagle/assembly/sys_call.html
 
-fn accept args fd as const int return str, int, int, bool
-fn bind args fd as const int, ip_addr as str, port as int return bool
-fn chdir args dir as const str return bool
-fn close args fd as const int return bool
-fn connect args fd as const int, ip_addr as const str, port as const int return bool
-fn environ return map[str, str]
-fn execve args path as const str, argv as const vec[str], env as const map[str, str] return bool
-fn exit args code as const int return never
-fn fork return int
-fn getcwd return str
-fn getenv args name as const str return str, bool
-fn getpid return int
-fn getppid return int
-fn listen args fd as const int, backlog as const int return bool
-fn open args path as const str, flag as const int, mode as const int return int, bool
-fn read args fd as const int, n as const int return str, bool
-fn setenv args name as const str, value as const str
-fn sleep args seconds as int
-fn socket args family as const int, type_ as const int, protocol as const int return int, bool
-fn time return int, int
-fn unlink args path as const str return bool
-fn unsetenv args name as const str
-fn usleep args microseconds as int
-fn waitpid args pid as const int, options as const int return int, int, bool, bool
-fn write args fd as const int, data as const str return int, bool
+builtin fn accept args fd as const int return str, int, int, bool
+builtin fn bind args fd as const int, ip_addr as str, port as int return bool
+builtin fn chdir args dir as const str return bool
+builtin fn close args fd as const int return bool
+builtin fn connect args fd as const int, ip_addr as const str, port as const int return bool
+builtin fn environ return map[str, str]
+builtin fn execve args path as const str, argv as const vec[str], env as const map[str, str] return bool
+builtin fn exit args code as const int return never
+builtin fn fork return int
+builtin fn getcwd return str
+builtin fn getenv args name as const str return str, bool
+builtin fn getpid return int
+builtin fn getppid return int
+builtin fn listen args fd as const int, backlog as const int return bool
+builtin fn open args path as const str, flag as const int, mode as const int return int, bool
+builtin fn read args fd as const int, n as const int return str, bool
+builtin fn setenv args name as const str, value as const str
+builtin fn sleep args seconds as int
+builtin fn socket args family as const int, type_ as const int, protocol as const int return int, bool
+builtin fn time return int, int
+builtin fn unlink args path as const str return bool
+builtin fn unsetenv args name as const str
+builtin fn usleep args microseconds as int
+builtin fn waitpid args pid as const int, options as const int return int, int, bool, bool
+builtin fn write args fd as const int, data as const str return int, bool

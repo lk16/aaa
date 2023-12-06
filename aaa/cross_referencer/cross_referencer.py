@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Tuple, Type
+from typing import Callable, Dict, List, Set, Tuple, Type
 
-from aaa import Position
 from aaa.cross_referencer.exceptions import (
     CircularDependencyError,
     CollidingEnumVariant,
@@ -16,6 +15,7 @@ from aaa.cross_referencer.exceptions import (
     InvalidFunctionPointerTarget,
     InvalidReturnType,
     InvalidType,
+    UnexpectedBuiltin,
     UnexpectedTypeParameterCount,
     UnknownIdentifier,
 )
@@ -60,6 +60,7 @@ from aaa.cross_referencer.models import (
     WhileLoop,
 )
 from aaa.parser import models as parser
+from aaa.parser.lib.models import Position
 from aaa.runner.exceptions import AaaTranslationException
 
 
@@ -118,7 +119,7 @@ class CrossReferencer:
         if file != self.builtins_path:
             deps += [self.builtins_path]
 
-        deps += self.parsed_files[file].dependencies()
+        deps += self.parsed_files[file].get_dependencies()
 
         # NOTE: don't use set difference to maintain import order as in source file
         remaining_deps: List[Path] = []
@@ -198,7 +199,7 @@ class CrossReferencer:
             params = self._resolve_function_params(function)
             arguments = self._resolve_function_arguments(function, params)
             return_types = self._resolve_function_return_types(function, params)
-            parsed_body = function.get_unresolved().parsed.body
+            parsed_body = function.get_unresolved().parsed.get_body()
 
             function.add_signature(parsed_body, params, arguments, return_types)
             self._check_function_identifiers_collision(function)
@@ -298,27 +299,37 @@ class CrossReferencer:
             enums.append(enum)
 
             variants: Dict[str, parser.EnumVariant] = {}
-            for variant in parsed_enum.variants:
+            for variant in parsed_enum.get_variants():
                 try:
-                    found = variants[variant.name.name]
+                    found = variants[variant.name.value]
                 except KeyError:
                     pass
                 else:
                     raise CollidingEnumVariant(parsed_enum, [variant, found])
 
-                variants[variant.name.name] = variant
+                variants[variant.name.value] = variant
 
             enum_ctors += [
-                EnumConstructor(enum, variant.name.name)
-                for variant in parsed_enum.variants
+                EnumConstructor(enum, variant.name.value)
+                for variant in parsed_enum.get_variants()
             ]
 
         return enum_ctors, enums
 
     def _load_struct_types(self, parsed_structs: List[parser.Struct]) -> List[Struct]:
-        return [
-            Struct.from_parsed_struct(parsed_struct) for parsed_struct in parsed_structs
-        ]
+        structs: List[Struct] = []
+
+        for parsed_struct in parsed_structs:
+            fields = parsed_struct.get_fields()
+
+            if fields is None:
+                if parsed_struct.position.file != self.builtins_path:
+                    raise UnexpectedBuiltin(parsed_struct.position)
+                fields = {}
+
+            structs.append(Struct.from_parsed_struct(parsed_struct, fields))
+
+        return structs
 
     def _load_functions(
         self, parsed_functions: List[parser.Function]
@@ -329,7 +340,7 @@ class CrossReferencer:
         imports: List[Import] = []
 
         for parsed_import in parsed_imports:
-            for imported_item in parsed_import.imported_items:
+            for imported_item in parsed_import.imported_items.value:
                 import_ = Import(imported_item, parsed_import)
                 imports.append(import_)
 
@@ -353,7 +364,7 @@ class CrossReferencer:
         return import_.resolve(source)
 
     def _get_identifiable(self, identifier: parser.Identifier) -> Identifiable:
-        return self._get_identifiable_generic(identifier.name, identifier.position)
+        return self._get_identifiable_generic(identifier.value, identifier.position)
 
     def _get_type(self, identifier: parser.Identifier) -> Struct | Enum:
         type = self._get_identifiable(identifier)
@@ -385,17 +396,18 @@ class CrossReferencer:
         self, parsed: parser.TypeLiteral | parser.FunctionPointerTypeLiteral
     ) -> VariableType | FunctionPointer:
         if isinstance(parsed, parser.FunctionPointerTypeLiteral):
-            if isinstance(parsed.return_types, parser.Never):
+            parsed_return_types = parsed.get_return_types()
+            if isinstance(parsed_return_types, parser.Never):
                 return_types: List[VariableType | FunctionPointer] | Never = Never()
             else:
                 return_types = [
-                    self._resolve_type(type) for type in parsed.return_types
+                    self._resolve_type(type) for type in parsed_return_types
                 ]
 
             return FunctionPointer(
                 parsed.position,
                 argument_types=[
-                    self._resolve_type(type) for type in parsed.argument_types
+                    self._resolve_type(type) for type in parsed.get_arguments()
                 ],
                 return_types=return_types,
             )
@@ -405,7 +417,7 @@ class CrossReferencer:
 
         params: List[VariableType | FunctionPointer] = []
 
-        for parsed_param in parsed.params:
+        for parsed_param in parsed.get_params():
             if isinstance(parsed_param, parser.TypeLiteral):
                 param_type = self._get_type(parsed_param.identifier)
                 assert len(parsed_param.params) == 0
@@ -435,8 +447,8 @@ class CrossReferencer:
         resolved_params: Dict[str, Struct] = {}
 
         for parsed_type_param in struct.get_unresolved().parsed_params:
-            struct = Struct.from_parsed_type_literal(parsed_type_param)
-            param_name = parsed_type_param.identifier.name
+            struct = Struct.from_identifier(parsed_type_param)
+            param_name = parsed_type_param.value
 
             try:
                 colliding = self.identifiers[(struct.position.file, param_name)]
@@ -459,7 +471,7 @@ class CrossReferencer:
             return self._resolve_type(parsed_field_type)
 
         assert isinstance(parsed_field_type, parser.TypeLiteral)
-        arg_type_name = parsed_field_type.identifier.name
+        arg_type_name = parsed_field_type.identifier.value
 
         params: List[VariableType | FunctionPointer] = []
 
@@ -523,9 +535,9 @@ class CrossReferencer:
     def _resolve_function_params(self, function: Function) -> Dict[str, Struct]:
         resolved_params: Dict[str, Struct] = {}
 
-        for parsed_type_param in function.get_unresolved().parsed.type_params:
-            struct = Struct.from_parsed_type_literal(parsed_type_param)
-            param_name = parsed_type_param.identifier.name
+        for parsed_type_param in function.get_unresolved().parsed.get_params():
+            struct = Struct.from_identifier(parsed_type_param)
+            param_name = parsed_type_param.value
 
             try:
                 colliding = self.identifiers[(function.position.file, param_name)]
@@ -540,11 +552,10 @@ class CrossReferencer:
 
     def _resolve_function_argument(
         self,
-        function: Function,
         type_params: Dict[str, Struct],
         parsed_arg: parser.Argument,
     ) -> Argument:
-        parsed_type = parsed_arg.type
+        parsed_type = parsed_arg.type.literal
         arg_type: VariableType | FunctionPointer
 
         if isinstance(parsed_type, parser.FunctionPointerTypeLiteral):
@@ -552,7 +563,7 @@ class CrossReferencer:
             return Argument(identifier=parsed_arg.identifier, type=arg_type)
 
         assert isinstance(parsed_type, parser.TypeLiteral)
-        arg_type_name = parsed_type.identifier.name
+        arg_type_name = parsed_type.identifier.value
         type: Identifiable
 
         params: List[VariableType | FunctionPointer] = []
@@ -588,8 +599,8 @@ class CrossReferencer:
         self, function: Function, type_params: Dict[str, Struct]
     ) -> List[Argument]:
         return [
-            self._resolve_function_argument(function, type_params, parsed_arg)
-            for parsed_arg in function.get_unresolved().parsed.arguments
+            self._resolve_function_argument(type_params, parsed_arg)
+            for parsed_arg in function.get_unresolved().parsed.get_arguments()
         ]
 
     def _lookup_function_param(
@@ -600,7 +611,7 @@ class CrossReferencer:
         if isinstance(param, parser.FunctionPointerTypeLiteral):
             return self._resolve_type(param)
 
-        param_name = param.identifier.name
+        param_name = param.identifier.value
         if param_name in type_params:
             param_type: Struct | Enum = type_params[param_name]
             is_placeholder = True
@@ -626,10 +637,15 @@ class CrossReferencer:
         type_params: Dict[str, Struct],
         parsed_type: parser.TypeLiteral,
     ) -> List[VariableType | FunctionPointer]:
-        return [
-            self._lookup_function_param(type_params, param)
-            for param in parsed_type.params
-        ]
+        looked_up_params: List[VariableType | FunctionPointer] = []
+
+        for param in parsed_type.params:
+            literal = param.literal
+
+            looked_up_param = self._lookup_function_param(type_params, literal)
+            looked_up_params.append(looked_up_param)
+
+        return looked_up_params
 
     def _check_function_identifiers_collision(self, function: Function) -> None:
         for lhs_index, lhs_arg in enumerate(function.arguments):
@@ -665,7 +681,7 @@ class CrossReferencer:
     def _resolve_function_return_types(
         self, function: Function, type_params: Dict[str, Struct]
     ) -> List[VariableType | FunctionPointer] | Never:
-        parsed_return_types = function.get_unresolved().parsed.return_types
+        parsed_return_types = function.get_unresolved().parsed.get_return_types()
 
         if isinstance(parsed_return_types, parser.Never):
             return Never()
@@ -677,7 +693,7 @@ class CrossReferencer:
                 return_types.append(self._resolve_type(parsed_return_type))
                 continue
 
-            return_type_name = parsed_return_type.identifier.name
+            return_type_name = parsed_return_type.identifier.value
 
             if return_type_name in type_params:
                 type: Struct | Enum = type_params[return_type_name]
@@ -714,6 +730,9 @@ class CrossReferencer:
         parsed_body = function.get_with_signature().parsed_body
 
         if not parsed_body:
+            if function.position.file != self.builtins_path:
+                raise UnexpectedBuiltin(function.position)
+
             function.resolve(None)
             return
 
@@ -751,14 +770,16 @@ class FunctionBodyResolver:
         )
 
     def _resolve_branch(self, branch: parser.Branch) -> Branch:
-        resolved_else_body: Optional[FunctionBody] = None
+        else_body = branch.get_else_body()
 
-        if branch.else_body:
-            resolved_else_body = self._resolve_function_body(branch.else_body)
+        if else_body:
+            resolved_else_body = self._resolve_function_body(else_body)
+        else:
+            resolved_else_body = None
 
         return Branch(
             condition=self._resolve_function_body(branch.condition),
-            if_body=self._resolve_function_body(branch.if_body),
+            if_body=self._resolve_function_body(branch.get_if_body()),
             else_body=resolved_else_body,
             parsed=branch,
         )
@@ -766,7 +787,7 @@ class FunctionBodyResolver:
     def _resolve_while_loop(self, while_loop: parser.WhileLoop) -> WhileLoop:
         return WhileLoop(
             condition=self._resolve_function_body(while_loop.condition),
-            body=self._resolve_function_body(while_loop.body),
+            body=self._resolve_function_body(while_loop.body.value),
             parsed=while_loop,
         )
 
@@ -776,11 +797,13 @@ class FunctionBodyResolver:
         try:
             identifiable = self._get_identifiable_from_call(call)
         except UnknownIdentifier:
-            return CallVariable(call.name(), bool(call.type_params), call.position)
+            return CallVariable(
+                call.name(), bool(call.get_type_params()), call.position
+            )
 
         type_params = [
             self._lookup_function_param(self.function.type_params, param)
-            for param in call.type_params
+            for param in call.get_type_params()
         ]
 
         if isinstance(identifiable, Function):
@@ -809,7 +832,7 @@ class FunctionBodyResolver:
                 identifiable,
                 [
                     self._lookup_function_param(self.function.type_params, param)
-                    for param in call.type_params
+                    for param in call.get_type_params()
                 ],
                 False,
                 call.position,
@@ -830,53 +853,54 @@ class FunctionBodyResolver:
     ) -> StructFieldUpdate:
         return StructFieldUpdate(
             parsed=update,
-            new_value_expr=self._resolve_function_body(update.new_value_expr),
+            new_value_expr=self._resolve_function_body(update.new_value_expr.value),
         )
 
     def _resolve_function_body_item(
-        self, parsed_item: parser.FunctionBodyItem
+        self, parsed_item: parser.FunctionBodyItem.types
     ) -> FunctionBodyItem:
         resolve_functions: Dict[
-            Type[parser.FunctionBodyItem], Callable[..., FunctionBodyItem]
+            Type[parser.FunctionBodyItem.types], Callable[..., FunctionBodyItem]
         ] = {
             parser.Assignment: self._resolve_assignment,
-            parser.BooleanLiteral: BooleanLiteral,
+            parser.Boolean: BooleanLiteral,
             parser.Branch: self._resolve_branch,
             parser.Call: self._resolve_call_function_by_pointer,
-            parser.CharacterLiteral: CharacterLiteral,
+            parser.Char: CharacterLiteral,
             parser.ForeachLoop: self._resolve_foreach_loop,
             parser.FunctionCall: self._resolve_call,
             parser.FunctionPointerTypeLiteral: self._resolve_function_pointer_literal,
             parser.GetFunctionPointer: self._resolve_get_function_pointer,
-            parser.IntegerLiteral: IntegerLiteral,
+            parser.Integer: IntegerLiteral,
             parser.MatchBlock: self._resolve_match_block,
             parser.Return: self._resolve_return,
-            parser.StringLiteral: StringLiteral,
+            parser.String: StringLiteral,
             parser.StructFieldQuery: StructFieldQuery,
             parser.StructFieldUpdate: self._resolve_struct_field_update,
             parser.UseBlock: self._resolve_use_block,
             parser.WhileLoop: self._resolve_while_loop,
         }
 
-        assert set(resolve_functions.keys()) == set(parser.FunctionBodyItem.__args__)  # type: ignore
+        assert set(resolve_functions.keys()) == set(parser.FunctionBodyItem.types.__args__)  # type: ignore
         return resolve_functions[type(parsed_item)](parsed_item)
 
     def _resolve_function_pointer_literal(
         self, parsed: parser.FunctionPointerTypeLiteral
     ) -> FunctionPointer:
-        if isinstance(parsed.return_types, parser.Never):
+        parsed_return_types = parsed.get_return_types()
+        if isinstance(parsed_return_types, parser.Never):
             return_types: List[VariableType | FunctionPointer] | Never = Never()
         else:
             return_types = [
                 self.cross_referencer._resolve_type(type)
-                for type in parsed.return_types
+                for type in parsed_return_types
             ]
 
         return FunctionPointer(
             parsed.position,
             argument_types=[
                 self.cross_referencer._resolve_type(type)
-                for type in parsed.argument_types
+                for type in parsed.get_arguments()
             ],
             return_types=return_types,
         )
@@ -893,8 +917,8 @@ class FunctionBodyResolver:
         return MatchBlock(parsed.position, blocks)
 
     def _resolve_case_block(self, parsed: parser.CaseBlock) -> CaseBlock:
-        enum_type_name = parsed.label.enum_name.name
-        variant_name = parsed.label.variant_name.name
+        enum_type_name = parsed.label.enum_name.value
+        variant_name = parsed.label.variant_name.value
         assert enum_type_name  # parser ensures this doesn't fail
 
         enum_type = self._get_identifiable_generic(enum_type_name, parsed.position)
@@ -906,10 +930,10 @@ class FunctionBodyResolver:
             raise InvalidEnumVariant(parsed.position, enum_type, variant_name)
 
         variables = [
-            Variable(parsed_var, False) for parsed_var in parsed.label.variables
+            Variable(parsed_var, False) for parsed_var in parsed.label.get_variables()
         ]
 
-        resolved_body = self._resolve_function_body(parsed.body)
+        resolved_body = self._resolve_function_body(parsed.body.value)
 
         return CaseBlock(
             parsed.position,
@@ -920,7 +944,9 @@ class FunctionBodyResolver:
         )
 
     def _resolve_default_block(self, parsed: parser.DefaultBlock) -> DefaultBlock:
-        return DefaultBlock(parsed.position, self._resolve_function_body(parsed.body))
+        return DefaultBlock(
+            parsed.position, self._resolve_function_body(parsed.body_block.value)
+        )
 
     def _resolve_return(self, parsed: parser.Return) -> Return:
         return Return(parsed)
@@ -957,17 +983,19 @@ class FunctionBodyResolver:
         raise InvalidFunctionPointerTarget(parsed.position, target)
 
     def _resolve_assignment(self, parsed: parser.Assignment) -> Assignment:
-        variables = [Variable(var, False) for var in parsed.variables]
-        body = self._resolve_function_body(parsed.body)
+        variables = [Variable(var, False) for var in parsed.variables.value]
+        body = self._resolve_function_body(parsed.body_block.value)
         return Assignment(parsed, variables, body)
 
     def _resolve_use_block(self, parsed: parser.UseBlock) -> UseBlock:
-        variables = [Variable(parsed_var, False) for parsed_var in parsed.variables]
-        body = self._resolve_function_body(parsed.body)
+        variables = [
+            Variable(parsed_var, False) for parsed_var in parsed.variables.value
+        ]
+        body = self._resolve_function_body(parsed.body_block.value)
         return UseBlock(parsed, variables, body)
 
     def _resolve_foreach_loop(self, parsed: parser.ForeachLoop) -> ForeachLoop:
-        body = self._resolve_function_body(parsed.body)
+        body = self._resolve_function_body(parsed.body.value)
         return ForeachLoop(parsed, body)
 
     def _get_identifiable_from_call(self, call: parser.FunctionCall) -> Identifiable:

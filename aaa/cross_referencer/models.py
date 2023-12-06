@@ -3,8 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from aaa import AaaModel, Position
+from aaa import AaaModel
 from aaa.parser import models as parser
+from aaa.parser.lib.models import Position
 
 
 class AaaCrossReferenceModel(AaaModel):
@@ -29,9 +30,7 @@ class Function(AaaCrossReferenceModel):
         def __init__(self, parsed: parser.Function) -> None:
             self.parsed = parsed
 
-            self.type_params = {
-                param.identifier.name: param for param in parsed.type_params
-            }
+            self.type_params = {param.value: param for param in parsed.get_params()}
 
     class WithSignature:
         def __init__(
@@ -63,16 +62,10 @@ class Function(AaaCrossReferenceModel):
         self.state: Function.Resolved | Function.Unresolved | Function.WithSignature = (
             Function.Unresolved(parsed)
         )
-        self.end_position = parsed.end_position
-
-        self.func_name = parsed.func_name.name
-
-        if parsed.struct_name:
-            self.struct_name = parsed.struct_name.name
-            self.name = f"{self.struct_name}:{self.func_name}"
-        else:
-            self.struct_name = ""
-            self.name = self.func_name
+        self.end_position = parsed.get_end_position()
+        self.func_name = parsed.get_func_name()
+        self.struct_name = parsed.get_type_name()
+        self.name = parsed.get_name()
 
         super().__init__(parsed.position)
 
@@ -153,7 +146,7 @@ class Argument(AaaCrossReferenceModel):
         self, type: VariableType | FunctionPointer, identifier: parser.Identifier
     ) -> None:
         self.type = type
-        self.name = identifier.name
+        self.name = identifier.value
         super().__init__(identifier.position)
 
 
@@ -175,9 +168,9 @@ class Import(AaaCrossReferenceModel):
 
     def __init__(self, import_item: parser.ImportItem, import_: parser.Import) -> None:
         self.state: Import.Resolved | Import.Unresolved = Import.Unresolved()
-        self.source_file = import_.source_file
-        self.source_name = import_item.original.name
-        self.name = import_item.imported.name
+        self.source_file = import_.get_source_file()
+        self.source_name = import_item.original.value
+        self.name = import_item.imported.value
         super().__init__(import_item.position)
 
     @property
@@ -226,7 +219,7 @@ class Struct(AaaCrossReferenceModel):
                 str,
                 parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
             ],
-            parsed_params: List[parser.FlatTypeLiteral],
+            parsed_params: List[parser.Identifier],
         ) -> None:
             self.parsed_field_types = parsed_field_types
             self.parsed_params = parsed_params
@@ -241,28 +234,22 @@ class Struct(AaaCrossReferenceModel):
             self.fields = fields
 
     @classmethod
-    def from_parsed_struct(cls, struct: parser.Struct) -> Struct:
-        return Struct(
-            struct.position,
-            struct.identifier.name,
-            struct.params,
-            struct.fields,
-        )
+    def from_parsed_struct(
+        cls,
+        struct: parser.Struct,
+        fields: Dict[str, parser.TypeLiteral | parser.FunctionPointerTypeLiteral],
+    ) -> Struct:
+        return Struct(struct.position, struct.get_name(), struct.get_params(), fields)
 
     @classmethod
-    def from_parsed_type_literal(cls, type_literal: parser.FlatTypeLiteral) -> Struct:
-        return Struct(
-            type_literal.position,
-            type_literal.identifier.name,
-            type_literal.params,
-            {},
-        )
+    def from_identifier(cls, identifier: parser.Identifier) -> Struct:
+        return Struct(identifier.position, identifier.value, [], {})
 
     def __init__(
         self,
         position: Position,
         name: str,
-        params: List[parser.FlatTypeLiteral],
+        params: List[parser.Identifier],
         fields: Dict[
             str,
             parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
@@ -327,11 +314,11 @@ class Enum(AaaCrossReferenceModel):
                 str, List[parser.TypeLiteral | parser.FunctionPointerTypeLiteral]
             ] = {}
 
-            for variant in parsed.variants:
-                self.parsed_variants[variant.name.name] = variant.associated_data
+            for variant in parsed.get_variants():
+                self.parsed_variants[variant.name.value] = variant.get_data()
 
             # This can't fail, an enum needs to have at least one variant
-            self.zero_variant = parsed.variants[0].name.name
+            self.zero_variant = parsed.get_variants()[0].name.value
 
     class Resolved:
         def __init__(
@@ -348,7 +335,7 @@ class Enum(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.Enum, param_count: int) -> None:
         self.state: Enum.Resolved | Enum.Unresolved = Enum.Unresolved(parsed)
         self.param_count = param_count
-        self.name = parsed.identifier.name
+        self.name = parsed.get_name()
         super().__init__(parsed.position)
 
     def __eq__(self, other: object) -> bool:
@@ -467,25 +454,25 @@ class Never:
 
 
 class IntegerLiteral(AaaCrossReferenceModel):
-    def __init__(self, parsed: parser.IntegerLiteral) -> None:
+    def __init__(self, parsed: parser.Integer) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
 class StringLiteral(AaaCrossReferenceModel):
-    def __init__(self, parsed: parser.StringLiteral) -> None:
+    def __init__(self, parsed: parser.String) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
 class CharacterLiteral(AaaCrossReferenceModel):
-    def __init__(self, parsed: parser.CharacterLiteral) -> None:
+    def __init__(self, parsed: parser.Char) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
 
 class BooleanLiteral(AaaCrossReferenceModel):
-    def __init__(self, parsed: parser.BooleanLiteral) -> None:
+    def __init__(self, parsed: parser.Boolean) -> None:
         self.value = parsed.value
         super().__init__(parsed.position)
 
@@ -578,7 +565,7 @@ class ForeachLoop(AaaCrossReferenceModel):
 
 class Variable(AaaCrossReferenceModel):
     def __init__(self, parsed: parser.Identifier, is_func_arg: bool) -> None:
-        self.name = parsed.name
+        self.name = parsed.value
         self.is_func_arg = is_func_arg
         super().__init__(parsed.position)
 
