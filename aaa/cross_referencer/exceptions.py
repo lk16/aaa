@@ -164,7 +164,7 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
         )
 
 
-class UnexpectedBuiltin(CrossReferenceBaseException):  # TODO add test
+class UnexpectedBuiltin(CrossReferenceBaseException):
     def __init__(
         self,
         position: Position,

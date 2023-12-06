@@ -58,7 +58,6 @@ class Function(AaaCrossReferenceModel):
             self.return_types = return_types
             self.body = body
 
-    # TODO remove `Function.` qualification here and similar elsewhere
     def __init__(self, parsed: parser.Function) -> None:
         self.state: Function.Resolved | Function.Unresolved | Function.WithSignature = (
             Function.Unresolved(parsed)

@@ -797,7 +797,9 @@ class FunctionBodyResolver:
         try:
             identifiable = self._get_identifiable_from_call(call)
         except UnknownIdentifier:
-            return CallVariable(call.name(), bool(call.type_params), call.position)
+            return CallVariable(
+                call.name(), bool(call.get_type_params()), call.position
+            )
 
         type_params = [
             self._lookup_function_param(self.function.type_params, param)
@@ -991,8 +993,6 @@ class FunctionBodyResolver:
         ]
         body = self._resolve_function_body(parsed.body_block.value)
         return UseBlock(parsed, variables, body)
-
-    # TODO get rid of `.value` in this file
 
     def _resolve_foreach_loop(self, parsed: parser.ForeachLoop) -> ForeachLoop:
         body = self._resolve_function_body(parsed.body.value)

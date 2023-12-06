@@ -221,19 +221,16 @@ class Function(AaaParseModel):
         super().__init__(declaration.position)
 
     def is_test(self) -> bool:  # pragma: nocover
-        return (
-            not self.declaration.name.type_name
-            and self.declaration.name.func_name.startswith("test_")
-        )
+        return not self.get_type_name() and self.get_func_name().startswith("test_")
 
     def get_params(self) -> List[Identifier]:
-        return self.declaration.name.params
+        return self.declaration.name.get_params()
 
     def get_func_name(self) -> str:
-        return self.declaration.name.func_name
+        return self.declaration.name.get_func_name()
 
     def get_type_name(self) -> str:
-        return self.declaration.name.type_name or ""
+        return self.declaration.name.get_type_name()
 
     def get_name(self) -> str:
         type_name = self.get_type_name()
@@ -687,39 +684,25 @@ class CommaSeparatedTypeList(AaaParseModel):
 
 
 class FunctionName(AaaParseModel):
-    def __init__(
-        self,
-        position: Position,
-        type_name: Optional[Identifier],
-        params: List[Identifier],
-        func_name: Identifier,
-    ) -> None:
-        if type_name:
-            self.type_name: Optional[str] = type_name.value
-        else:
-            self.type_name = None
-
-        self.params = params
-        self.func_name = func_name.value
-        super().__init__(position)
+    def __init__(self, name: FreeFunctionName | MemberFunctionName) -> None:
+        self.name = name
+        super().__init__(name.position)
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> FunctionName:
-        flat_type_literal = children[0]
-        assert isinstance(flat_type_literal, FlatTypeLiteral)
+        name = children[0]
+        assert isinstance(name, (FreeFunctionName, MemberFunctionName))
 
-        if len(children) > 1:
-            identifier = children[2]
-            assert isinstance(identifier, Identifier)
+        return FunctionName(name)
 
-            type_name = flat_type_literal.identifier
-            func_name = identifier
-        else:
-            type_name = None
-            func_name = flat_type_literal.identifier
+    def get_params(self) -> List[Identifier]:
+        return self.name.get_params()
 
-        params = flat_type_literal.params
-        return FunctionName(flat_type_literal.position, type_name, params, func_name)
+    def get_func_name(self) -> str:
+        return self.name.get_func_name()
+
+    def get_type_name(self) -> str:
+        return self.name.get_type_name()
 
 
 class FunctionDeclaration(AaaParseModel):
@@ -833,63 +816,155 @@ class TypeOrFunctionPointerLiteral(AaaParseModel):
         return TypeOrFunctionPointerLiteral(child)
 
 
-# TODO split FunctionCall into MemberFunctionCall and FreeFunctionCall
-# TODO likewise split FunctionName into MemberFunctionName and FreeFunctionName
-# TODO and split Function into MemberFunction and FreeFunction
-class FunctionCall(AaaParseModel):
-    def __init__(
-        self,
-        position: Position,
-        struct_name: Optional[Identifier],
-        type_params: Optional[TypeParams],
-        func_name: Identifier,
-    ) -> None:
-        self.struct_name = struct_name
-        self.type_params = type_params
+class FreeFunctionCall(AaaParseModel):
+    def __init__(self, func_name: Identifier, params: Optional[TypeParams]) -> None:
         self.func_name = func_name
-        super().__init__(position)
+        self.params = params
+        super().__init__(func_name.position)
+
+    @classmethod
+    def load(cls, children: List[AaaParseModel | Token]) -> FreeFunctionCall:
+        func_name = children[0]
+        assert isinstance(func_name, Identifier)
+
+        if len(children) > 1:
+            params = children[1]
+            assert isinstance(params, TypeParams)
+        else:
+            params = None
+
+        return FreeFunctionCall(func_name, params)
 
     def name(self) -> str:
-        if self.struct_name:
-            return f"{self.struct_name.value}:{self.func_name.value}"
         return self.func_name.value
 
     def get_type_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
-        if not self.type_params:
+        if not self.params:
             return []
-        return [item.literal for item in self.type_params.value]
+        return [item.literal for item in self.params.value]
+
+
+class MemberFunctionCall(AaaParseModel):
+    def __init__(
+        self, type_name: Identifier, func_name: Identifier, params: Optional[TypeParams]
+    ) -> None:
+        self.type_name = type_name
+        self.func_name = func_name
+        self.params = params
+        super().__init__(func_name.position)
+
+    @classmethod
+    def load(cls, children: List[AaaParseModel | Token]) -> MemberFunctionCall:
+        type_name = children[0]
+        assert isinstance(type_name, Identifier)
+
+        func_name = children[2]
+        assert isinstance(func_name, Identifier)
+
+        if len(children) > 3:
+            params = children[3]
+            assert isinstance(params, TypeParams)
+        else:
+            params = None
+
+        return MemberFunctionCall(type_name, func_name, params)
+
+    def name(self) -> str:
+        return f"{self.type_name.value}:{self.func_name.value}"
+
+    def get_type_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+        if not self.params:
+            return []
+        return [item.literal for item in self.params.value]
+
+
+class FreeFunctionName(AaaParseModel):
+    def __init__(self, func_name: Identifier, params: Optional[FlatTypeParams]) -> None:
+        self.func_name = func_name
+        self.params = params
+        super().__init__(func_name.position)
+
+    @classmethod
+    def load(cls, children: List[AaaParseModel | Token]) -> FreeFunctionName:
+        func_name = children[0]
+        assert isinstance(func_name, Identifier)
+
+        if len(children) > 1:
+            params = children[1]
+            assert isinstance(params, FlatTypeParams)
+        else:
+            params = None
+
+        return FreeFunctionName(func_name, params)
+
+    def get_params(self) -> List[Identifier]:
+        if not self.params:
+            return []
+        return self.params.value
+
+    def get_func_name(self) -> str:
+        return self.func_name.value
+
+    def get_type_name(self) -> str:
+        return ""
+
+
+class MemberFunctionName(AaaParseModel):
+    def __init__(
+        self,
+        type_name: Identifier,
+        params: Optional[FlatTypeParams],
+        func_name: Identifier,
+    ) -> None:
+        self.type_name = type_name
+        self.params = params
+        self.func_name = func_name
+        super().__init__(type_name.position)
+
+    @classmethod
+    def load(cls, children: List[AaaParseModel | Token]) -> MemberFunctionName:
+        type_name = children[0]
+        assert isinstance(type_name, Identifier)
+
+        if isinstance(children[1], FlatTypeParams):
+            params = children[1]
+        else:
+            params = None
+
+        func_name = children[-1]
+        assert isinstance(func_name, Identifier)
+
+        return MemberFunctionName(type_name, params, func_name)
+
+    def get_params(self) -> List[Identifier]:
+        if not self.params:
+            return []
+        return self.params.value
+
+    def get_func_name(self) -> str:
+        return self.func_name.value
+
+    def get_type_name(self) -> str:
+        return self.type_name.value
+
+
+class FunctionCall(AaaParseModel):
+    def __init__(self, call: FreeFunctionCall | MemberFunctionCall) -> None:
+        self.call = call
+        super().__init__(call.position)
+
+    def name(self) -> str:
+        return self.call.name()
+
+    def get_type_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+        return self.call.get_type_params()
 
     @classmethod
     def load(cls, children: List[AaaParseModel | Token]) -> FunctionCall:
-        first_identifier: AaaParseModel | Token = children[0]
-        assert isinstance(first_identifier, Identifier)
+        call = children[0]
+        assert isinstance(call, (FreeFunctionCall, MemberFunctionCall))
 
-        type_params: Optional[TypeParams] = None
-        second_identifier: Optional[Identifier] = None
-
-        for child in children[1:]:
-            if isinstance(child, TypeParams):
-                type_params = child
-            elif isinstance(child, Token):
-                pass  # Ignore colon token
-            elif isinstance(child, Identifier):
-                second_identifier = child
-            else:
-                raise NotImplementedError  # Unexpected value
-
-        if second_identifier:
-            struct_name = first_identifier
-            func_name = second_identifier
-        else:
-            struct_name = None
-            func_name = first_identifier
-
-        return FunctionCall(
-            first_identifier.position,
-            struct_name,
-            type_params,
-            func_name,
-        )
+        return FunctionCall(call)
 
 
 class TypeParams(AaaParseModel):
