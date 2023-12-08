@@ -114,7 +114,8 @@ class Runner:
 
     def _print_exceptions(self, runner_exception: AaaTranslationException) -> None:
         for exception in runner_exception.exceptions:
-            print(str(exception), file=sys.stderr)
+            print(exception, file=sys.stderr)
+            print(file=sys.stderr)
 
         print(f"Found {len(runner_exception.exceptions)} error(s).", file=sys.stderr)
 

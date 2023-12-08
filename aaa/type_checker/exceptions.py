@@ -56,7 +56,7 @@ class FunctionTypeError(TypeCheckerException):
         return (
             f"{self.position}: Function {self.function.name} returns wrong type(s)\n"
             + f"expected return types: {expected}\n"
-            + f"   found return types: {found}\n"
+            + f"   found return types: {found}"
         )
 
 
@@ -137,7 +137,6 @@ class StackTypesError(TypeCheckerException):
             + "\n"
             + f"       Found stack: "
             + format_typestack(self.type_stack)
-            + "\n"
         )
 
 
@@ -159,7 +158,7 @@ class ConditionTypeError(TypeCheckerException):
         return (
             f"{self.position}: Condition type error\n"
             + f"stack before: {stack_before}\n"
-            + f" stack after: {stack_after}\n"
+            + f" stack after: {stack_after}"
         )
 
 
@@ -185,7 +184,7 @@ class BranchTypeError(TypeCheckerException):
             f"{self.position}: Inconsistent stacks for branches\n"
             + f"           before: {before_stack}\n"
             + f"  after if-branch: {if_stack}\n"
-            + f"after else-branch: {else_stack}\n"
+            + f"after else-branch: {else_stack}"
         )
 
 
@@ -207,7 +206,7 @@ class WhileLoopTypeError(TypeCheckerException):
         return (
             f"{self.position}: Invalid stack modification inside while loop body\n"
             + f"before while loop: {before_stack}\n"
-            + f" after while loop: {after_stack}\n"
+            + f" after while loop: {after_stack}"
         )
 
 
@@ -217,7 +216,7 @@ class InvalidMainSignuture(TypeCheckerException):
             f"{self.position}: Main function has wrong signature, it should have:\n"
             + "- no type parameters\n"
             + "- either no arguments or one vec[str] argument\n"
-            + "- return either nothing or an int\n"
+            + "- return either nothing or an int"
         )
 
 
@@ -227,7 +226,7 @@ class InvalidTestSignuture(TypeCheckerException):
         super().__init__(function.position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Test function {self.function.name} should have no arguments and no return types\n"
+        return f"{self.position}: Test function {self.function.name} should have no arguments and no return types"
 
 
 class StructUpdateStackError(TypeCheckerException):
@@ -248,7 +247,7 @@ class StructUpdateStackError(TypeCheckerException):
         return (
             f"{self.position}: Incorrect stack modification when updating struct field\n"
             + f"  Expected: {expected_stack} <new field value> \n"
-            + f"     Found: {found_stack}\n"
+            + f"     Found: {found_stack}"
         )
 
 
@@ -277,7 +276,6 @@ class StructUpdateTypeError(TypeCheckerException):
             + "\n"
             + "Type stack: "
             + format_typestack(self.type_stack)
-            + "\n"
         )
 
 
@@ -295,7 +293,7 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
 
         formatted += (
             f"Expected arg types: {self.type.name} ...\n"
-            + f"   Found arg types: {' '.join(repr(arg) for arg in arguments)}\n"
+            + f"   Found arg types: {' '.join(repr(arg) for arg in arguments)}"
         )
 
         return formatted
@@ -310,7 +308,7 @@ class UnknownField(TypeCheckerException):
         super().__init__(position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Usage of unknown field {self.field_name} of type {self.struct_type.name}\n"
+        return f"{self.position}: Usage of unknown field {self.field_name} of type {self.struct_type.name}"
 
 
 class MainFunctionNotFound(TypeCheckerException):
@@ -318,12 +316,12 @@ class MainFunctionNotFound(TypeCheckerException):
         self.file = file
 
     def __str__(self) -> str:
-        return f"{self.file}: No main function found\n"
+        return f"{self.file}: No main function found"
 
 
 class MissingIterable(TypeCheckerException):
     def __str__(self) -> str:
-        return f"{self.position}: Cannot use foreach, function stack is empty.\n"
+        return f"{self.position}: Cannot use foreach, function stack is empty."
 
 
 class InvalidIterable(TypeCheckerException):
@@ -338,7 +336,7 @@ class InvalidIterable(TypeCheckerException):
             f"{self.position}: Invalid iterable type {self.iterable_type}.\n"
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
-            + "- returns one value (an iterator)\n"
+            + "- returns one value (an iterator)"
         )
 
 
@@ -360,7 +358,7 @@ class InvalidIterator(TypeCheckerException):
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
             + "- indicates if more data is present in the iterable with this last return value\n"
-            + "- for const iterators all return values of `next` except the last one must be const\n"
+            + "- for const iterators all return values of `next` except the last one must be const"
         )
 
 
@@ -382,7 +380,7 @@ class ForeachLoopTypeError(TypeCheckerException):
         return (
             f"{self.position}: Invalid stack modification inside foreach loop body\n"
             + f"stack at end of foreach loop: {stack_after}\n"
-            + f"              expected stack: {expected_stack_after}\n"
+            + f"              expected stack: {expected_stack_after}"
         )
 
 
@@ -396,7 +394,7 @@ class UseBlockStackUnderflow(TypeCheckerException):
         return (
             f"{self.position}: Use block consumes more values than can be found on the stack\n"
             + f"    stack size: {self.stack_size}\n"
-            + f"used variables: {self.use_block_vars}\n"
+            + f"used variables: {self.use_block_vars}"
         )
 
 
@@ -419,7 +417,6 @@ class AssignmentTypeError(TypeCheckerException):
             + "\n"
             + f"   found types: "
             + " ".join(str(var_type) for var_type in self.found_var_types)
-            + "\n"
         )
 
 
@@ -430,7 +427,7 @@ class UpdateConstStructError(TypeCheckerException):
         super().__init__(field_update.position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Cannot update field {self.field_name} on const struct {self.struct_name}\n"
+        return f"{self.position}: Cannot update field {self.field_name} on const struct {self.struct_name}"
 
 
 class AssignConstValueError(TypeCheckerException):
@@ -440,7 +437,7 @@ class AssignConstValueError(TypeCheckerException):
         super().__init__(var.position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Cannot assign to {self.type} {self.var_name}\n"
+        return f"{self.position}: Cannot assign to {self.type} {self.var_name}"
 
 
 class MemberFunctionTypeNotFound(TypeCheckerException):
@@ -449,12 +446,12 @@ class MemberFunctionTypeNotFound(TypeCheckerException):
 
     def __str__(self) -> str:
         struct_name = self.function.struct_name
-        return f"{self.function.position}: Cannot find type {struct_name} in same file as member function definition.\n"
+        return f"{self.function.position}: Cannot find type {struct_name} in same file as member function definition."
 
 
 class UnreachableCode(TypeCheckerException):
     def __str__(self) -> str:
-        return f"{self.position}: Found unreachable code.\n"
+        return f"{self.position}: Found unreachable code."
 
 
 class ReturnTypesError(TypeCheckerException):
@@ -472,7 +469,7 @@ class ReturnTypesError(TypeCheckerException):
         return (
             f"{self.position}: Invalid stack types when returning.\n"
             + f"function returns: {format_typestack(self.function.return_types)}\n"
-            + f"     found stack: {format_typestack(self.type_stack)}\n"
+            + f"     found stack: {format_typestack(self.type_stack)}"
         )
 
 
@@ -488,7 +485,7 @@ class MatchTypeError(TypeCheckerException):
         return (
             f"{self.position}: Cannot match on this stack:\n"
             + f"expected stack types: <enum type>\n"
-            + f"   found stack types: {format_typestack(self.type_stack)}\n"
+            + f"   found stack types: {format_typestack(self.type_stack)}"
         )
 
 
@@ -502,7 +499,7 @@ class CaseEnumTypeError(TypeCheckerException):
         super().__init__(case_block.position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Cannot use case for enum {self.found_enum.name} when matching on enum {self.expected_enum.name}\n"
+        return f"{self.position}: Cannot use case for enum {self.found_enum.name} when matching on enum {self.expected_enum.name}"
 
 
 def describe_block(block: CaseBlock | DefaultBlock) -> str:
@@ -532,7 +529,7 @@ class CaseStackTypeError(TypeCheckerException):
                 f"{block.position}: ({description}) {format_typestack(type_stack)}\n"
             )
 
-        return message
+        return message.removesuffix("\n")
 
 
 class DuplicateCase(TypeCheckerException):
@@ -546,7 +543,7 @@ class DuplicateCase(TypeCheckerException):
         return (
             f"Duplicate case found in match block:\n"
             + f"{self.first.position}: {describe_block(self.first)}\n"
-            + f"{self.second.position}: {describe_block(self.second)}\n"
+            + f"{self.second.position}: {describe_block(self.second)}"
         )
 
 
@@ -567,7 +564,6 @@ class MissingEnumCases(TypeCheckerException):
                     for variant in self.missing_variants
                 ]
             )
-            + "\n"
         )
 
 
@@ -576,7 +572,7 @@ class UnreachableDefaultBlock(TypeCheckerException):
         self.block = block
 
     def __str__(self) -> str:
-        return f"{self.block.position}: Unreachable default block.\n"
+        return f"{self.block.position}: Unreachable default block."
 
 
 class CaseAsArgumentCountError(TypeCheckerException):
@@ -590,7 +586,7 @@ class CaseAsArgumentCountError(TypeCheckerException):
         return (
             f"{self.case_block.position}: Unexpected number of case-arguments.\n"
             + f"Expected arguments: {expected_args}\n"
-            + f"   Found arguments: {self.associated_items}\n"
+            + f"   Found arguments: {self.associated_items}"
         )
 
 
@@ -600,7 +596,7 @@ class UnknownVariableOrFunction(TypeCheckerException):
         super().__init__(position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Usage of unknown variable or function {self.name}\n"
+        return f"{self.position}: Usage of unknown variable or function {self.name}"
 
 
 class CollidingVariable(TypeCheckerException):
@@ -622,7 +618,7 @@ class CollidingVariable(TypeCheckerException):
         for item in self.colliding:
             msg += f"{item.position}: {describe(item)}\n"
 
-        return msg
+        return msg.removesuffix("\n")
 
 
 class InvalidCallWithTypeParameters(TypeCheckerException):
@@ -638,7 +634,7 @@ class InvalidCallWithTypeParameters(TypeCheckerException):
             assert isinstance(self.var, Variable)
             object = "variable"
 
-        return f"{self.position}: Cannot use {object} {self.call_var.name} with type parameters\n"
+        return f"{self.position}: Cannot use {object} {self.call_var.name} with type parameters"
 
 
 class UseFieldOfEnumException(TypeCheckerException):
@@ -652,7 +648,7 @@ class UseFieldOfEnumException(TypeCheckerException):
         else:
             get_set = "set"
 
-        return f"{self.position}: Cannot {get_set} field on Enum\n"
+        return f"{self.position}: Cannot {get_set} field on Enum"
 
 
 class UseFieldOfFunctionPointerException(TypeCheckerException):
@@ -666,7 +662,7 @@ class UseFieldOfFunctionPointerException(TypeCheckerException):
         else:
             get_set = "set"
 
-        return f"{self.position}: Cannot {get_set} field on FunctionPointer\n"
+        return f"{self.position}: Cannot {get_set} field on FunctionPointer"
 
 
 class SignatureItemMismatch(AaaException):

@@ -18,4 +18,4 @@ class FileReadError(AaaParserBaseException):
         self.file = file
 
     def __str__(self) -> str:
-        return f"{self.file}: Could not read file. It may not exist.\n"
+        return f"{self.file}: Could not read file. It may not exist."

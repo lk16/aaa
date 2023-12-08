@@ -58,7 +58,7 @@ class ImportedItemNotFound(CrossReferenceBaseException):
     def __str__(self) -> str:
         return (
             f"{self.import_.position}: Could not import "
-            + f"{self.import_.source_name} from {self.import_.source_file}\n"
+            + f"{self.import_.source_name} from {self.import_.source_file}"
         )
 
 
@@ -67,7 +67,7 @@ class IndirectImportException(CrossReferenceBaseException):
         self.import_ = import_
 
     def __str__(self) -> str:
-        return f"{self.import_.position}: Indirect imports are forbidden.\n"
+        return f"{self.import_.position}: Indirect imports are forbidden."
 
 
 class CollidingIdentifier(CrossReferenceBaseException):
@@ -86,7 +86,7 @@ class CollidingIdentifier(CrossReferenceBaseException):
         for item in self.colliding:
             msg += f"{item.position}: {describe(item)}\n"
 
-        return msg
+        return msg.removesuffix("\n")
 
 
 class CollidingEnumVariant(CrossReferenceBaseException):
@@ -106,7 +106,7 @@ class CollidingEnumVariant(CrossReferenceBaseException):
         for item in self.colliding:
             msg += f"{item.position}: enum variant {self.enum.get_name()}:{item.name.value}\n"
 
-        return msg
+        return msg.removesuffix("\n")
 
 
 class UnknownIdentifier(CrossReferenceBaseException):
@@ -115,7 +115,7 @@ class UnknownIdentifier(CrossReferenceBaseException):
         self.name = name
 
     def __str__(self) -> str:
-        return f"{self.position}: Usage of unknown identifier {self.name}\n"
+        return f"{self.position}: Usage of unknown identifier {self.name}"
 
 
 class InvalidReturnType(CrossReferenceBaseException):
@@ -123,7 +123,7 @@ class InvalidReturnType(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def __str__(self) -> str:
-        return f"{self.identifiable.position}: Cannot use {describe(self.identifiable)} as return type\n"
+        return f"{self.identifiable.position}: Cannot use {describe(self.identifiable)} as return type"
 
 
 class InvalidArgument(CrossReferenceBaseException):
@@ -134,7 +134,7 @@ class InvalidArgument(CrossReferenceBaseException):
     def __str__(self) -> str:
         return (
             f"{self.used.position}: Cannot use {self.used.identifier.value} as argument\n"
-            + f"{self.found.position}: {describe(self.found)} collides\n"
+            + f"{self.found.position}: {describe(self.found)} collides"
         )
 
 
@@ -143,7 +143,7 @@ class InvalidType(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def __str__(self) -> str:
-        return f"{self.identifiable.position}: Cannot use {describe(self.identifiable)} as type\n"
+        return f"{self.identifiable.position}: Cannot use {describe(self.identifiable)} as type"
 
 
 class UnexpectedTypeParameterCount(CrossReferenceBaseException):
@@ -161,7 +161,7 @@ class UnexpectedTypeParameterCount(CrossReferenceBaseException):
         return (
             f"{self.position}: Unexpected number of type parameters\n"
             + f"Expected parameter count: {self.expected_param_count}\n"
-            + f"   Found parameter count: {self.found_param_count}\n"
+            + f"   Found parameter count: {self.found_param_count}"
         )
 
 
@@ -173,7 +173,7 @@ class UnexpectedBuiltin(CrossReferenceBaseException):
         self.position = position
 
     def __str__(self) -> str:
-        return f"{self.position}: Builtins are not allowed outside the builtins file.\n"
+        return f"{self.position}: Builtins are not allowed outside the builtins file."
 
 
 class CircularDependencyError(CrossReferenceBaseException):
@@ -184,7 +184,7 @@ class CircularDependencyError(CrossReferenceBaseException):
         message = "Circular dependency detected:\n"
         for dep in self.dependencies:
             message += f"- {dep}\n"
-        return message
+        return message.removesuffix("\n")
 
 
 class InvalidEnumType(CrossReferenceBaseException):
@@ -193,9 +193,7 @@ class InvalidEnumType(CrossReferenceBaseException):
         self.position = position
 
     def __str__(self) -> str:
-        return (
-            f"{self.position}: Cannot use {describe(self.identifiable)} as enum type\n"
-        )
+        return f"{self.position}: Cannot use {describe(self.identifiable)} as enum type"
 
 
 class InvalidEnumVariant(CrossReferenceBaseException):
@@ -205,7 +203,7 @@ class InvalidEnumVariant(CrossReferenceBaseException):
         self.position = position
 
     def __str__(self) -> str:
-        return f"{self.position}: Variant {self.variant_name} of enum {self.enum.name} does not exist\n"
+        return f"{self.position}: Variant {self.variant_name} of enum {self.enum.name} does not exist"
 
 
 class InvalidFunctionPointerTarget(CrossReferenceBaseException):
@@ -214,10 +212,8 @@ class InvalidFunctionPointerTarget(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def __str__(self) -> str:
-        return (
-            f"{self.position}: Cannot create function pointer to "
-            + describe(self.identifiable)
-            + "\n"
+        return f"{self.position}: Cannot create function pointer to " + describe(
+            self.identifiable
         )
 
 
@@ -229,5 +225,5 @@ class FunctionPointerTargetNotFound(CrossReferenceBaseException):
     def __str__(self) -> str:
         return (
             f"{self.position}: Cannot create pointer to function "
-            + f"{self.target_name} which was not found\n"
+            + f"{self.target_name} which was not found"
         )
