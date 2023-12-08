@@ -70,7 +70,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:1:11: Inconsistent stacks for branches\n"
             + "           before: \n"
             + "  after if-branch: int\n"
-            + "after else-branch: str\n",
+            + "after else-branch: str",
             id="branch-type",
         ),
         pytest.param(
@@ -78,7 +78,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             ConditionTypeError,
             "/foo/main.aaa:1:14: Condition type error\n"
             + "stack before: \n"
-            + " stack after: int bool\n",
+            + " stack after: int bool",
             id="condition-type-branch",
         ),
         pytest.param(
@@ -86,7 +86,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             ConditionTypeError,
             "/foo/main.aaa:1:17: Condition type error\n"
             + "stack before: \n"
-            + " stack after: int bool\n",
+            + " stack after: int bool",
             id="condition-type-while-loop",
         ),
         pytest.param(
@@ -98,7 +98,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingIdentifier,
             "Found name collision:\n"
             + "/foo/main.aaa:2:13: function foo\n"
-            + "/foo/main.aaa:3:13: function foo\n",
+            + "/foo/main.aaa:3:13: function foo",
             id="funcname-funcname-collision",
         ),
         pytest.param(
@@ -109,7 +109,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             FunctionTypeError,
             "/foo/main.aaa:2:13: Function bar returns wrong type(s)\n"
             + "expected return types: \n"
-            + "   found return types: int\n",
+            + "   found return types: int",
             id="function-type",
         ),
         pytest.param(
@@ -117,7 +117,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             WhileLoopTypeError,
             "/foo/main.aaa:1:11: Invalid stack modification inside while loop body\n"
             + "before while loop: \n"
-            + " after while loop: int\n",
+            + " after while loop: int",
             id="while-loop-type",
         ),
         pytest.param(
@@ -125,7 +125,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             StackTypesError,
             "/foo/main.aaa:1:17: Invalid stack types when calling +\n"
             + "Expected stack top: (const int) (const int)\n"
-            + "       Found stack: int str\n",
+            + "       Found stack: int str",
             id="stack-types",
         ),
         pytest.param(
@@ -133,7 +133,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             StackTypesError,
             "/foo/main.aaa:1:11: Invalid stack types when calling drop\n"
             + "Expected stack top: A\n"
-            + "       Found stack: \n",
+            + "       Found stack: ",
             id="stack-types-underflow",
         ),
         pytest.param(
@@ -141,7 +141,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { bar }
             """,
             UnknownVariableOrFunction,
-            "/foo/main.aaa:2:23: Usage of unknown variable or function bar\n",
+            "/foo/main.aaa:2:23: Usage of unknown variable or function bar",
             id="unknown-function",
         ),
         pytest.param(
@@ -150,7 +150,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownIdentifier,
-            "/foo/main.aaa:2:27: Usage of unknown identifier A\n",
+            "/foo/main.aaa:2:27: Usage of unknown identifier A",
             id="unknown-placeholder-type",
         ),
         pytest.param(
@@ -159,7 +159,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:1:1: Main function has wrong signature, it should have:\n"
             + "- no type parameters\n"
             + "- either no arguments or one vec[str] argument\n"
-            + "- return either nothing or an int\n",
+            + "- return either nothing or an int",
             id="invalid-main-signature-argument",
         ),
         pytest.param(
@@ -167,8 +167,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             FunctionTypeError,
             "/foo/main.aaa:1:1: Function main returns wrong type(s)\n"
             + "expected return types: \n"
-            + "   found return types: int\n",
-            id="invalid-main-signature-return-type\n",
+            + "   found return types: int",
+            id="invalid-main-signature-return-type",
         ),
         pytest.param(
             "fn main[A] { nop }",
@@ -176,7 +176,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:1:1: Main function has wrong signature, it should have:\n"
             + "- no type parameters\n"
             + "- either no arguments or one vec[str] argument\n"
-            + "- return either nothing or an int\n",
+            + "- return either nothing or an int",
             id="invalid-main-type-params",
         ),
         pytest.param(
@@ -186,7 +186,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:3:26: Usage of unknown field y of type bar\n",
+            "/foo/main.aaa:3:26: Usage of unknown field y of type bar",
             id="unknown-struct-field-get",
         ),
         pytest.param(
@@ -196,7 +196,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:3:26: Usage of unknown field y of type bar\n",
+            "/foo/main.aaa:3:26: Usage of unknown field y of type bar",
             id="unknown-struct-field-set",
         ),
         pytest.param(
@@ -205,7 +205,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UnknownField,
-            "/foo/main.aaa:2:24: Usage of unknown field x of type int\n",
+            "/foo/main.aaa:2:24: Usage of unknown field x of type int",
             id="set-field-of-non-struct",
         ),
         pytest.param(
@@ -217,7 +217,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             StructUpdateStackError,
             "/foo/main.aaa:3:26: Incorrect stack modification when updating struct field\n"
             + "  Expected: bar <new field value> \n"
-            + "     Found: bar int int\n",
+            + "     Found: bar int int",
             id="struct-update-stack-error",
         ),
         pytest.param(
@@ -231,7 +231,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "Expected type: int"
             + "\n   Found type: bool\n"
             + "\n"
-            + "Type stack: bar bool\n",
+            + "Type stack: bar bool",
             id="struct-update-type-error",
         ),
         pytest.param(
@@ -244,7 +244,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:13: Function bar:foo has invalid member-function signature\n"
             + "\n"
             + "Expected arg types: bar ...\n"
-            + "   Found arg types: \n",
+            + "   Found arg types: ",
             id="member-func-without-arg-or-return-type",
         ),
         pytest.param(
@@ -257,7 +257,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:13: Function bar:foo has invalid member-function signature\n"
             + "\n"
             + "Expected arg types: bar ...\n"
-            + "   Found arg types: \n",
+            + "   Found arg types: ",
             id="member-func-without-arg-type",
         ),
         pytest.param(
@@ -269,7 +269,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingIdentifier,
             "Found name collision:\n"
             + "/foo/main.aaa:3:13: function bar\n"
-            + "/foo/main.aaa:4:13: struct bar\n",
+            + "/foo/main.aaa:4:13: struct bar",
             id="struct-name-collision",
         ),
         pytest.param(
@@ -277,7 +277,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             struct main { x as int }
             """,
             MainFunctionNotFound,
-            "/foo/main.aaa: No main function found\n",
+            "/foo/main.aaa: No main function found",
             id="struct-named-main",
         ),
         pytest.param(
@@ -285,7 +285,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo { nop }
             """,
             MainFunctionNotFound,
-            "/foo/main.aaa: No main function found\n",
+            "/foo/main.aaa: No main function found",
             id="main-not-found",
         ),
         pytest.param(
@@ -294,7 +294,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args b as bar { nop }
             """,
             UnknownIdentifier,
-            "/foo/main.aaa:3:30: Usage of unknown identifier bar\n",
+            "/foo/main.aaa:3:30: Usage of unknown identifier bar",
             id="unknown-argument-type",
         ),
         pytest.param(
@@ -304,7 +304,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             InvalidArgument,
             "/foo/main.aaa:3:30: Cannot use main as argument\n"
-            + "/foo/main.aaa:2:13: function main collides\n",
+            + "/foo/main.aaa:2:13: function main collides",
             id="invalid-type-parameter",
         ),
         pytest.param(
@@ -315,7 +315,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingIdentifier,
             "Found name collision:\n"
             + "/foo/main.aaa:3:13: function bar\n"
-            + "/foo/main.aaa:3:20: struct bar\n",
+            + "/foo/main.aaa:3:20: struct bar",
             id="funcname-param-collision",
         ),
         pytest.param(
@@ -326,7 +326,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingIdentifier,
             "Found name collision:\n"
             + "/foo/main.aaa:3:20: struct bar\n"
-            + "/foo/main.aaa:3:30: function argument bar\n",
+            + "/foo/main.aaa:3:30: function argument bar",
             id="argument-param-collision",
         ),
         pytest.param(
@@ -334,7 +334,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UnexpectedTypeParameterCount,
             "/foo/main.aaa:1:11: Unexpected number of type parameters\n"
             + "Expected parameter count: 1\n"
-            + "   Found parameter count: 2\n",
+            + "   Found parameter count: 2",
             id="call-with-too-many-type-params",
         ),
         pytest.param(
@@ -342,7 +342,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UnexpectedTypeParameterCount,
             "/foo/main.aaa:1:11: Unexpected number of type parameters\n"
             + "Expected parameter count: 1\n"
-            + "   Found parameter count: 0\n",
+            + "   Found parameter count: 0",
             id="call-with-too-few-type-params",
         ),
         pytest.param(
@@ -353,7 +353,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UnexpectedTypeParameterCount,
             "/foo/main.aaa:3:25: Unexpected number of type parameters\n"
             + "Expected parameter count: 1\n"
-            + "   Found parameter count: 2\n",
+            + "   Found parameter count: 2",
             id="argument-with-too-many-type-params",
         ),
         pytest.param(
@@ -364,7 +364,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UnexpectedTypeParameterCount,
             "/foo/main.aaa:3:25: Unexpected number of type parameters\n"
             + "Expected parameter count: 1\n"
-            + "   Found parameter count: 0\n",
+            + "   Found parameter count: 0",
             id="argument-with-too-few-type-params",
         ),
         pytest.param(
@@ -373,7 +373,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo return main { nop }
             """,
             InvalidReturnType,
-            "/foo/main.aaa:2:13: Cannot use function main as return type\n",
+            "/foo/main.aaa:2:13: Cannot use function main as return type",
             id="return-func-name",
         ),
         pytest.param(
@@ -382,7 +382,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn bar return vec[main] { nop }
             """,
             InvalidType,
-            "/foo/main.aaa:2:13: Cannot use function main as type\n",
+            "/foo/main.aaa:2:13: Cannot use function main as type",
             id="function-as-return-type-param",
         ),
         pytest.param(
@@ -393,7 +393,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UnexpectedTypeParameterCount,
             "/foo/main.aaa:3:27: Unexpected number of type parameters\n"
             + "Expected parameter count: 1\n"
-            + "   Found parameter count: 0\n",
+            + "   Found parameter count: 0",
             id="returntype-with-too-few-type-params",
         ),
         pytest.param(
@@ -404,7 +404,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UnexpectedTypeParameterCount,
             "/foo/main.aaa:3:27: Unexpected number of type parameters\n"
             + "Expected parameter count: 1\n"
-            + "   Found parameter count: 2\n",
+            + "   Found parameter count: 2",
             id="returntype-with-too-many-type-params",
         ),
         pytest.param(
@@ -412,7 +412,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { foreach { nop } }
             """,
             MissingIterable,
-            "/foo/main.aaa:2:23: Cannot use foreach, function stack is empty.\n",
+            "/foo/main.aaa:2:23: Cannot use foreach, function stack is empty.",
             id="missing-iterable",
         ),
         pytest.param(
@@ -423,7 +423,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:2:25: Invalid iterable type int.\n"
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
-            + "- returns one value (an iterator)\n",
+            + "- returns one value (an iterator)",
             id="invalid-iterable-no-next-func",
         ),
         pytest.param(
@@ -436,7 +436,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:4:27: Invalid iterable type foo.\n"
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
-            + "- returns one value (an iterator)\n",
+            + "- returns one value (an iterator)",
             id="invalid-iterable-iter-two-arguments",
         ),
         pytest.param(
@@ -449,7 +449,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:4:27: Invalid iterable type foo.\n"
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
-            + "- returns one value (an iterator)\n",
+            + "- returns one value (an iterator)",
             id="invalid-iterable-iter-two-return-values",
         ),
         pytest.param(
@@ -462,7 +462,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:4:27: Invalid iterable type foo.\n"
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
-            + "- returns one value (an iterator)\n",
+            + "- returns one value (an iterator)",
             id="invalid-iterable-iter-no-return-values",
         ),
         pytest.param(
@@ -475,7 +475,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:4:27: Invalid iterable type foo.\n"
             + "Iterable types need to have a function named iter which:\n"
             + "- takes one argument (the iterable)\n"
-            + "- returns one value (an iterator)\n",
+            + "- returns one value (an iterator)",
             id="invalid-iterable-iter-no-return-values",
         ),
         pytest.param(
@@ -491,7 +491,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
             + "- indicates if more data is present in the iterable with this last return value\n"
-            + "- for const iterators all return values of `next` except the last one must be const\n",
+            + "- for const iterators all return values of `next` except the last one must be const",
             id="invalid-iterator-no-iter-func",
         ),
         pytest.param(
@@ -508,7 +508,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
             + "- indicates if more data is present in the iterable with this last return value\n"
-            + "- for const iterators all return values of `next` except the last one must be const\n",
+            + "- for const iterators all return values of `next` except the last one must be const",
             id="invalid-iterator-two-arguments",
         ),
         pytest.param(
@@ -525,7 +525,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
             + "- indicates if more data is present in the iterable with this last return value\n"
-            + "- for const iterators all return values of `next` except the last one must be const\n",
+            + "- for const iterators all return values of `next` except the last one must be const",
             id="invalid-iterator-one-return-value",
         ),
         pytest.param(
@@ -542,7 +542,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
             + "- indicates if more data is present in the iterable with this last return value\n"
-            + "- for const iterators all return values of `next` except the last one must be const\n",
+            + "- for const iterators all return values of `next` except the last one must be const",
             id="invalid-iterator-no-last-bool-return-value",
         ),
         pytest.param(
@@ -559,7 +559,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
             + "- indicates if more data is present in the iterable with this last return value\n"
-            + "- for const iterators all return values of `next` except the last one must be const\n",
+            + "- for const iterators all return values of `next` except the last one must be const",
             id="invalid-iterator-never-return",
             marks=pytest.mark.skip,
         ),
@@ -570,7 +570,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             ForeachLoopTypeError,
             "/foo/main.aaa:2:32: Invalid stack modification inside foreach loop body\n"
             + f"stack at end of foreach loop: vec_iter[int] int\n"
-            + f"              expected stack: vec_iter[int]\n",
+            + f"              expected stack: vec_iter[int]",
             id="foreach-loop-type-error",
         ),
         pytest.param(
@@ -580,7 +580,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             UseBlockStackUnderflow,
             "/foo/main.aaa:2:23: Use block consumes more values than can be found on the stack\n"
             + "    stack size: 0\n"
-            + "used variables: 1\n",
+            + "used variables: 1",
             id="use-block-stack-underflow",
         ),
         pytest.param(
@@ -590,7 +590,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             AssignmentTypeError,
             "/foo/main.aaa:2:33: Assignment with wrong number and/or type of values\n"
             + "expected types: int\n"
-            + "   found types: bool\n",
+            + "   found types: bool",
             id="assignment-type-error-wrong-type",
         ),
         pytest.param(
@@ -600,7 +600,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             AssignmentTypeError,
             "/foo/main.aaa:2:33: Assignment with wrong number and/or type of values\n"
             + "expected types: int\n"
-            + "   found types: \n",
+            + "   found types: ",
             id="assignment-type-error-empty-stack",
         ),
         pytest.param(
@@ -610,7 +610,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             AssignmentTypeError,
             "/foo/main.aaa:2:33: Assignment with wrong number and/or type of values\n"
             + "expected types: int\n"
-            + "   found types: str bool\n",
+            + "   found types: str bool",
             id="assignment-type-error-too-many-types",
         ),
         pytest.param(
@@ -620,7 +620,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             AssignmentTypeError,
             "/foo/main.aaa:2:33: Assignment with wrong number and/or type of values\n"
             + "expected types: int\n"
-            + "   found types: int int\n",
+            + "   found types: int int",
             id="assignment-type-error-one-too-much",
         ),
         pytest.param(
@@ -628,7 +628,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { a <- { nop } }
             """,
             UnknownVariableOrFunction,
-            "/foo/main.aaa:2:23: Usage of unknown variable or function a\n",
+            "/foo/main.aaa:2:23: Usage of unknown variable or function a",
             id="unknown-var",
         ),
         pytest.param(
@@ -638,7 +638,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:2:31: local variable a\n"
-            + "/foo/main.aaa:2:39: local variable a\n",
+            + "/foo/main.aaa:2:39: local variable a",
             id="colliding-identifier-var-var",
         ),
         pytest.param(
@@ -649,7 +649,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:3:25: function argument a\n"
-            + "/foo/main.aaa:3:42: local variable a\n",
+            + "/foo/main.aaa:3:42: local variable a",
             id="colliding-identifier-var-arg",
         ),
         pytest.param(
@@ -660,7 +660,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:2:13: struct bar\n"
-            + "/foo/main.aaa:3:29: local variable bar\n",
+            + "/foo/main.aaa:3:29: local variable bar",
             id="colliding-identifier-var-identifier",
         ),
         pytest.param(
@@ -672,7 +672,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             StackTypesError,
             "/foo/main.aaa:3:44: Invalid stack types when calling bar\n"
             + "Expected stack top: int\n"
-            + "       Found stack: (const int)\n",
+            + "       Found stack: (const int)",
             id="stack-types-error-const",
         ),
         pytest.param(
@@ -682,7 +682,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             UpdateConstStructError,
-            "/foo/main.aaa:3:48: Cannot update field x on const struct foo\n",
+            "/foo/main.aaa:3:48: Cannot update field x on const struct foo",
             id="update-const-struct",
         ),
         pytest.param(
@@ -691,7 +691,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args x as const int { x <- { 3 } }
             """,
             AssignConstValueError,
-            "/foo/main.aaa:3:42: Cannot assign to (const int) x\n",
+            "/foo/main.aaa:3:42: Cannot assign to (const int) x",
             id="assign-to-const-value",
         ),
         pytest.param(
@@ -701,7 +701,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { nop }
             """,
             AssignConstValueError,
-            "/foo/main.aaa:3:62: Cannot assign to (const int) x\n",
+            "/foo/main.aaa:3:62: Cannot assign to (const int) x",
             id="assign-to-const-value",
         ),
         pytest.param(
@@ -709,19 +709,19 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { 3 make_const use x { x <- { 5 } } }
             """,
             AssignConstValueError,
-            "/foo/main.aaa:2:44: Cannot assign to (const int) x\n",
+            "/foo/main.aaa:2:44: Cannot assign to (const int) x",
             id="assign-to-const-value-makeconst",
         ),
         pytest.param(
             "fn",
             AaaParserBaseException,
-            "/foo/main.aaa: Unexpected end of file\n" + "Expected one of: identifier\n",
+            "/foo/main.aaa: Unexpected end of file\n" + "Expected one of: identifier",
             id="end-of-file-exception",
         ),
         pytest.param(
             "fn main { 3 use c { c[int] } }",
             InvalidCallWithTypeParameters,
-            "/foo/main.aaa:1:21: Cannot use variable c with type parameters\n",
+            "/foo/main.aaa:1:21: Cannot use variable c with type parameters",
             id="invalid-call-with-type-params-argument",
         ),
         pytest.param(
@@ -730,7 +730,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo args a as int { a[b] drop }
             """,
             InvalidCallWithTypeParameters,
-            "/foo/main.aaa:3:36: Cannot use argument a with type parameters\n",
+            "/foo/main.aaa:3:36: Cannot use argument a with type parameters",
             id="invalid-call-with-type-params-argument",
         ),
         pytest.param(
@@ -739,7 +739,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:1:1: Main function has wrong signature, it should have:\n"
             + "- no type parameters\n"
             + "- either no arguments or one vec[str] argument\n"
-            + "- return either nothing or an int\n",
+            + "- return either nothing or an int",
             id="main-returning-wrong-type",
         ),
         pytest.param(
@@ -750,7 +750,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             FunctionTypeError,
             "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
             + "expected return types: never\n"
-            + "   found return types: int\n",
+            + "   found return types: int",
             id="return-with-return-type-never",
         ),
         pytest.param(
@@ -761,7 +761,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             FunctionTypeError,
             "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
             + "expected return types: int\n"
-            + "   found return types: bool\n",
+            + "   found return types: bool",
             id="return-wrong-type",
         ),
         pytest.param(
@@ -772,7 +772,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             ReturnTypesError,
             "/foo/main.aaa:3:39: Invalid stack types when returning.\n"
             + "function returns: int\n"
-            + "     found stack: bool\n",
+            + "     found stack: bool",
             id="return-wrong-type-explicit",
         ),
         pytest.param(
@@ -783,7 +783,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             FunctionTypeError,
             "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
             + "expected return types: vec[int]\n"
-            + "   found return types: vec[bool]\n",
+            + "   found return types: vec[bool]",
             id="return-wrong-type-param",
         ),
         pytest.param(
@@ -794,7 +794,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             FunctionTypeError,
             "/foo/main.aaa:3:13: Function foo returns wrong type(s)\n"
             + "expected return types: (const int)\n"
-            + "   found return types: int\n",
+            + "   found return types: int",
             id="return-not-const",
         ),
         pytest.param(
@@ -803,7 +803,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn foo return int { 5 return 3 }
             """,
             UnreachableCode,
-            "/foo/main.aaa:3:42: Found unreachable code.\n",
+            "/foo/main.aaa:3:42: Found unreachable code.",
             id="unreachable-code",
         ),
         pytest.param(
@@ -812,7 +812,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { match { case main:bar { nop } } }
             """,
             InvalidEnumType,
-            "/foo/main.aaa:3:31: Cannot use function main as enum type\n",
+            "/foo/main.aaa:3:31: Cannot use function main as enum type",
             id="invalid-enum-type-non-enum",
         ),
         pytest.param(
@@ -820,7 +820,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { match { case int:bar { nop } } }
             """,
             InvalidEnumType,
-            "/foo/main.aaa:2:31: Cannot use struct int as enum type\n",
+            "/foo/main.aaa:2:31: Cannot use struct int as enum type",
             id="use-non-type-as-enum-type",
         ),
         pytest.param(
@@ -829,7 +829,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { match { case foo:b { nop } } }
             """,
             InvalidEnumVariant,
-            "/foo/main.aaa:3:31: Variant b of enum foo does not exist\n",
+            "/foo/main.aaa:3:31: Variant b of enum foo does not exist",
             id="non-existent-enum-variant",
         ),
         pytest.param(
@@ -840,7 +840,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             MatchTypeError,
             "/foo/main.aaa:3:23: Cannot match on this stack:\n"
             + "expected stack types: <enum type>\n"
-            + "   found stack types: \n",
+            + "   found stack types: ",
             id="match-empty-stack",
         ),
         pytest.param(
@@ -851,7 +851,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             MatchTypeError,
             "/foo/main.aaa:3:25: Cannot match on this stack:\n"
             + "expected stack types: <enum type>\n"
-            + "   found stack types: int\n",
+            + "   found stack types: int",
             id="match-non-emum",
         ),
         pytest.param(
@@ -861,7 +861,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { 3 foo:bar match { case baz:quux { nop } } }
             """,
             CaseEnumTypeError,
-            "/foo/main.aaa:4:41: Cannot use case for enum baz when matching on enum foo\n",
+            "/foo/main.aaa:4:41: Cannot use case for enum baz when matching on enum foo",
             id="case-from-different-enum",
         ),
         pytest.param(
@@ -878,7 +878,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CaseStackTypeError,
             "Inconsistent stack types for match cases:\n"
             + "/foo/main.aaa:6:21: (case foo:a) int\n"
-            + "/foo/main.aaa:7:21: (case foo:b) int int\n",
+            + "/foo/main.aaa:7:21: (case foo:b) int int",
             id="case-stack-type-error",
         ),
         pytest.param(
@@ -887,7 +887,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { 3 foo:a match { case foo:a { nop } } }
             """,
             MissingEnumCases,
-            "/foo/main.aaa:3:31: Missing cases for enum foo.\n- foo:b\n",
+            "/foo/main.aaa:3:31: Missing cases for enum foo.\n- foo:b",
             id="missing-enum-case",
         ),
         pytest.param(
@@ -898,7 +898,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             DuplicateCase,
             "Duplicate case found in match block:\n"
             + "/foo/main.aaa:3:39: case foo:a\n"
-            + "/foo/main.aaa:3:58: case foo:a\n",
+            + "/foo/main.aaa:3:58: case foo:a",
             id="duplicate-case",
         ),
         pytest.param(
@@ -909,7 +909,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             DuplicateCase,
             "Duplicate case found in match block:\n"
             + "/foo/main.aaa:3:39: default\n"
-            + "/foo/main.aaa:3:55: default\n",
+            + "/foo/main.aaa:3:55: default",
             id="duplicate-default",
         ),
         pytest.param(
@@ -918,7 +918,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { 3 foo:a match { case foo:a { drop } case foo:b { drop } default { nop } } }
             """,
             UnreachableDefaultBlock,
-            "/foo/main.aaa:3:79: Unreachable default block.\n",
+            "/foo/main.aaa:3:79: Unreachable default block.",
             id="unreachable-default-block",
         ),
         pytest.param(
@@ -929,7 +929,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingEnumVariant,
             "Duplicate enum variant name collision:\n"
             + "/foo/main.aaa:2:24: enum variant foo:x\n"
-            + "/foo/main.aaa:2:34: enum variant foo:x\n",
+            + "/foo/main.aaa:2:34: enum variant foo:x",
             id="colliding-enum-variant",
         ),
         pytest.param(
@@ -940,7 +940,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CaseAsArgumentCountError,
             "/foo/main.aaa:3:35: Unexpected number of case-arguments.\n"
             + "Expected arguments: 3\n"
-            + "   Found arguments: 0\n",
+            + "   Found arguments: 0",
             id="case-as-argument-count-error",
         ),
         pytest.param(
@@ -961,7 +961,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:6:37: local variable value\n"
-            + "/foo/main.aaa:8:29: local variable value\n",
+            + "/foo/main.aaa:8:29: local variable value",
             id="case-as-use-collision",
         ),
         pytest.param(
@@ -982,7 +982,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             CollidingVariable,
             "Found name collision:\n"
             + "/foo/main.aaa:5:21: local variable value\n"
-            + "/foo/main.aaa:8:41: local variable value\n",
+            + "/foo/main.aaa:8:41: local variable value",
             id="use-case-as-collision",
         ),
         pytest.param(
@@ -991,7 +991,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { Foo "field" { 3 } ! }
             """,
             UseFieldOfEnumException,
-            "/foo/main.aaa:3:27: Cannot set field on Enum\n",
+            "/foo/main.aaa:3:27: Cannot set field on Enum",
             id="set-field-on-enum",
         ),
         pytest.param(
@@ -1000,7 +1000,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { Foo "field" ? drop }
             """,
             UseFieldOfEnumException,
-            "/foo/main.aaa:3:27: Cannot get field on Enum\n",
+            "/foo/main.aaa:3:27: Cannot get field on Enum",
             id="set-field-on-enum",
         ),
         pytest.param(
@@ -1009,7 +1009,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { "Foo" fn drop }
             """,
             InvalidFunctionPointerTarget,
-            "/foo/main.aaa:3:23: Cannot create function pointer to struct Foo\n",
+            "/foo/main.aaa:3:23: Cannot create function pointer to struct Foo",
             id="invalid-function-pointer-target",
         ),
         pytest.param(
@@ -1017,7 +1017,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             fn main { "foo" fn drop }
             """,
             FunctionPointerTargetNotFound,
-            "/foo/main.aaa:2:23: Cannot create pointer to function foo which was not found\n",
+            "/foo/main.aaa:2:23: Cannot create pointer to function foo which was not found",
             id="function-pointer-target-not-found",
         ),
         pytest.param(
@@ -1027,7 +1027,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             StackTypesError,
             "/foo/main.aaa:2:25: Invalid stack types when calling drop[str]\n"
             "Expected stack top: str\n"
-            "       Found stack: int\n",
+            "       Found stack: int",
             id="function-call-with-wrong-type-parameter",
         ),
         pytest.param(
@@ -1036,7 +1036,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             builtin fn foo
             """,
             UnexpectedBuiltin,
-            "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.\n",
+            "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.",
             id="unexpected-builtin-function",
         ),
         pytest.param(
@@ -1045,7 +1045,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             builtin struct foo
             """,
             UnexpectedBuiltin,
-            "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.\n",
+            "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.",
             id="unexpected-builtin-struct",
         ),
     ],
@@ -1078,13 +1078,13 @@ def test_one_error(
                 """,
             },
             ImportedItemNotFound,
-            "/foo/main.aaa:2:36: Could not import six from /foo/five.aaa\n",
+            "/foo/main.aaa:2:36: Could not import six from /foo/five.aaa",
             id="imported-item-not-found",
         ),
         pytest.param(
             {},
             FileReadError,
-            f"{Path('main.aaa').resolve()}: Could not read file. It may not exist.\n",
+            f"{Path('main.aaa').resolve()}: Could not read file. It may not exist.",
             id="file-not-found",
         ),
         pytest.param(
@@ -1107,7 +1107,7 @@ def test_one_error(
             + "- /foo/main.aaa\n"
             + "- /foo/five.aaa\n"
             + "- /foo/six.aaa\n"
-            + "- /foo/five.aaa\n",
+            + "- /foo/five.aaa",
             id="circular-dependency",
         ),
         pytest.param(
@@ -1120,7 +1120,7 @@ def test_one_error(
                 "bar.aaa": "fn bar { nop }",
             },
             IndirectImportException,
-            "/foo/main.aaa:2:31: Indirect imports are forbidden.\n",
+            "/foo/main.aaa:2:31: Indirect imports are forbidden.",
             id="indirect-import",
         ),
         pytest.param(
@@ -1133,7 +1133,7 @@ def test_one_error(
                 "type.aaa": "struct foo { x as int }",
             },
             MemberFunctionTypeNotFound,
-            "/foo/main.aaa:3:17: Cannot find type foo in same file as member function definition.\n",
+            "/foo/main.aaa:3:17: Cannot find type foo in same file as member function definition.",
             id="member-function-in-different-file",
         ),
         pytest.param(
@@ -1145,7 +1145,7 @@ def test_one_error(
                 "test_foo.aaa": "fn test_bar args a as int { nop }",
             },
             InvalidTestSignuture,
-            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types\n",
+            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types",
             id="invalid-test-signature-args",
         ),
         pytest.param(
@@ -1157,7 +1157,7 @@ def test_one_error(
                 "test_foo.aaa": "fn test_bar return int { 4 }",
             },
             InvalidTestSignuture,
-            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types\n",
+            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types",
             id="invalid-test-signature-return-types",
         ),
         pytest.param(
@@ -1169,7 +1169,7 @@ def test_one_error(
                 "test_foo.aaa": "fn test_bar return never { 0 exit }",
             },
             InvalidTestSignuture,
-            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types\n",
+            "/foo/test_foo.aaa:1:1: Test function test_bar should have no arguments and no return types",
             id="invalid-test-signature-return-never",
             marks=pytest.mark.skip,
         ),
@@ -1208,7 +1208,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:17: function bar\n"
-            + "/foo/main.aaa:3:29: function argument bar\n",
+            + "/foo/main.aaa:3:29: function argument bar",
             id="argname-other-func-name",
         ),
         pytest.param(
@@ -1220,7 +1220,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:17: function foo\n"
-            + "/foo/main.aaa:2:29: function argument foo\n",
+            + "/foo/main.aaa:2:29: function argument foo",
             id="argname-same-funcname",
         ),
         pytest.param(
@@ -1232,7 +1232,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:29: function argument bar\n"
-            + "/foo/main.aaa:2:41: function argument bar\n",
+            + "/foo/main.aaa:2:41: function argument bar",
             id="argname-argname",
         ),
         pytest.param(
@@ -1245,7 +1245,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:17: struct bar\n"
-            + "/foo/main.aaa:3:29: function argument bar\n",
+            + "/foo/main.aaa:3:29: function argument bar",
             id="argname-struct",
         ),
         pytest.param(
@@ -1261,7 +1261,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:36: imported identifier five\n"
-            + "/foo/main.aaa:3:29: function argument five\n",
+            + "/foo/main.aaa:3:29: function argument five",
             id="argname-import",
         ),
         pytest.param(
@@ -1274,7 +1274,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:17: function foo\n"
-            + "/foo/main.aaa:3:17: function foo\n",
+            + "/foo/main.aaa:3:17: function foo",
             id="funcname-funcname",
         ),
         pytest.param(
@@ -1287,7 +1287,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:17: struct foo\n"
-            + "/foo/main.aaa:3:17: function foo\n",
+            + "/foo/main.aaa:3:17: function foo",
             id="funcname-struct",
         ),
         pytest.param(
@@ -1303,7 +1303,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:36: imported identifier five\n"
-            + "/foo/main.aaa:3:17: function five\n",
+            + "/foo/main.aaa:3:17: function five",
             id="funcname-import",
         ),
         pytest.param(
@@ -1316,7 +1316,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:17: function foo\n"
-            + "/foo/main.aaa:3:17: struct foo\n",
+            + "/foo/main.aaa:3:17: struct foo",
             id="struct-funcname",
         ),
         pytest.param(
@@ -1329,7 +1329,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:17: struct foo\n"
-            + "/foo/main.aaa:3:17: struct foo\n",
+            + "/foo/main.aaa:3:17: struct foo",
             id="struct-struct",
         ),
         pytest.param(
@@ -1345,7 +1345,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:36: imported identifier five\n"
-            + "/foo/main.aaa:3:17: struct five\n",
+            + "/foo/main.aaa:3:17: struct five",
             id="struct-import",
         ),
         pytest.param(
@@ -1361,7 +1361,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:36: imported identifier bar\n"
-            + "/foo/main.aaa:3:29: function argument bar\n",
+            + "/foo/main.aaa:3:29: function argument bar",
             id="argname-import-renamed",
         ),
         pytest.param(
@@ -1377,7 +1377,7 @@ def test_multi_file_errors(
             },
             "Found name collision:\n"
             + "/foo/main.aaa:2:36: imported identifier foo\n"
-            + "/foo/main.aaa:3:36: imported identifier foo\n",
+            + "/foo/main.aaa:3:36: imported identifier foo",
             id="import-import",
         ),
     ],

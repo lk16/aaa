@@ -213,13 +213,13 @@ class CrossReferencer:
 
         for (_, identifier), identifiable in self.identifiers.items():
             if isinstance(identifiable, Function):
-                file = identifiable.position.short_filename()
+                file = identifiable.position.file
                 prefix = f"cross_referencer | Function {file}:{identifier}"
 
                 print(prefix)
 
                 for arg in identifiable.arguments:
-                    file = arg.type.position.short_filename()
+                    file = arg.type.position.file
                     name = arg.name
                     var_type = arg.type
 
@@ -239,21 +239,21 @@ class CrossReferencer:
                         elif return_type.is_placeholder:
                             print(f"{prefix} | Return type {return_type}")
                         else:
-                            file = return_type.type.position.short_filename()
+                            file = return_type.type.position.file
                             print(f"{prefix} | Return type {file}:{return_type}")
 
             elif isinstance(identifiable, Struct):
-                file = identifiable.position.short_filename()
+                file = identifiable.position.file
                 prefix = f"cross_referencer | Type {file}:{identifier}"
 
                 print(prefix)
 
                 for name, var_type in identifiable.fields.items():
-                    file = var_type.position.short_filename()
+                    file = var_type.position.file
                     print(f"{prefix} | Field {name} of type {file}:{var_type}")
 
             elif isinstance(identifiable, Import):
-                file = identifiable.position.short_filename()
+                file = identifiable.position.file
                 prefix = f"cross_referencer | Import {file}:{identifier}"
                 source_type = type(identifiable.source).__name__
 

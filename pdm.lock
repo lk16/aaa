@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:91c2d1642af1b3b633894699e5e37169439eb3afac88923eb4073ec1898724a0"
+content_hash = "sha256:5e6539c105cd5f8519c30778ef2bc2a09f377456e240862cd219f8f9cad61b8f"
 
 [[package]]
 name = "attrs"
@@ -19,11 +19,11 @@ files = [
 
 [[package]]
 name = "basil"
-version = "0.4.0"
+version = "0.4.2"
 requires_python = ">=3.11"
 git = "https://github.com/lk16/basil.git"
-ref = "v0.4.0"
-revision = "52fc6d692ede3d7a0d3c919b10b16b042f78389d"
+ref = "v0.4.2"
+revision = "49fc7076151a5561d20213f94f4d2ef6f54ebfd3"
 summary = "Parser library using JSON file to describe language."
 
 [[package]]
