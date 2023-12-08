@@ -715,7 +715,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
         pytest.param(
             "fn",
             AaaParserBaseException,
-            "/foo/main.aaa: Unexpected end of file\n" + "Expected one of: identifier\n",
+            "/foo/main.aaa: Unexpected end of file\n" + "Expected one of: identifier",
             id="end-of-file-exception",
         ),
         pytest.param(
