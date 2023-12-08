@@ -2,6 +2,8 @@ from copy import copy, deepcopy
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Type
 
+from basil.models import Position
+
 from aaa.cross_referencer.models import (
     Argument,
     Assignment,
@@ -37,7 +39,6 @@ from aaa.cross_referencer.models import (
     VariableType,
     WhileLoop,
 )
-from aaa.parser.lib.models import Position
 from aaa.runner.exceptions import AaaTranslationException
 from aaa.type_checker.exceptions import (
     AssignConstValueError,

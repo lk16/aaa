@@ -1,8 +1,9 @@
 from typing import Dict, List
 
+from basil.models import Position
+
 from aaa import AaaModel
 from aaa.cross_referencer.models import FunctionPointer, Never, VariableType
-from aaa.parser.lib.models import Position
 
 
 class TypeCheckerOutput(AaaModel):

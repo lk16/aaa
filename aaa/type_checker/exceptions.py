@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
+from basil.models import Position
+
 from aaa import AaaException
 from aaa.cross_referencer.exceptions import describe
 from aaa.cross_referencer.models import (
@@ -23,7 +25,6 @@ from aaa.cross_referencer.models import (
     Variable,
     VariableType,
 )
-from aaa.parser.lib.models import Position
 
 
 def format_typestack(type_stack: List[VariableType | FunctionPointer] | Never) -> str:

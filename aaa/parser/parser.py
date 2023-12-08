@@ -2,11 +2,12 @@ from pathlib import Path
 from queue import Queue
 from typing import Dict, List, Optional, Type
 
+from basil.exceptions import ParseError, TokenizerException
+from basil.file_parser import FileParser
+from basil.models import Token
+
 from aaa import aaa_project_root, get_stdlib_path
 from aaa.parser.exceptions import AaaParserBaseException, FileReadError
-from aaa.parser.lib.exceptions import ParseError, TokenizerException
-from aaa.parser.lib.file_parser import FileParser
-from aaa.parser.lib.models import Token
 from aaa.parser.models import (
     AaaParseModel,
     Argument,

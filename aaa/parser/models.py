@@ -4,8 +4,9 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
+from basil.models import Position, Token
+
 from aaa import AaaModel
-from aaa.parser.lib.models import Position, Token
 
 
 class AaaParseModel(AaaModel):
