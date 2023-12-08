@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from basil.models import Position
+
 from aaa import AaaModel
 from aaa.parser import models as parser
-from aaa.parser.lib.models import Position
 
 
 class AaaCrossReferenceModel(AaaModel):

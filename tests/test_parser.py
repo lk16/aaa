@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import List, Set, Tuple, Type
 
 import pytest
+from basil.exceptions import ParseError
 
 from aaa import aaa_project_root
-from aaa.parser.lib.exceptions import ParseError
 from aaa.parser.models import (
     AaaParseModel,
     Argument,

@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List, Tuple
 
+from basil.models import Position
+
 import aaa.parser.models as parser
 from aaa import AaaException
 from aaa.cross_referencer.models import (
@@ -16,7 +18,6 @@ from aaa.cross_referencer.models import (
     Struct,
     Variable,
 )
-from aaa.parser.lib.models import Position
 from aaa.parser.models import TypeLiteral
 
 

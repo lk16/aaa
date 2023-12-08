@@ -1,7 +1,8 @@
 from pathlib import Path
 
+from basil.exceptions import ParseError, TokenizerException
+
 from aaa import AaaException
-from aaa.parser.lib.exceptions import ParseError, TokenizerException
 
 
 class AaaParserBaseException(AaaException):

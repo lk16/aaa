@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Callable, Dict, List, Set, Tuple, Type
 
+from basil.models import Position
+
 from aaa.cross_referencer.exceptions import (
     CircularDependencyError,
     CollidingEnumVariant,
@@ -60,7 +62,6 @@ from aaa.cross_referencer.models import (
     WhileLoop,
 )
 from aaa.parser import models as parser
-from aaa.parser.lib.models import Position
 from aaa.runner.exceptions import AaaTranslationException
 
 

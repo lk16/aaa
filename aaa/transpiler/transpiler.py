@@ -3,6 +3,8 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Type
 
+from basil.models import Position
+
 from aaa import create_output_folder
 from aaa.cross_referencer.models import (
     Assignment,
@@ -37,7 +39,6 @@ from aaa.cross_referencer.models import (
     VariableType,
     WhileLoop,
 )
-from aaa.parser.lib.models import Position
 from aaa.transpiler.code import Code
 from aaa.type_checker.models import TypeCheckerOutput
 

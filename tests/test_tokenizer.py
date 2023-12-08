@@ -1,8 +1,8 @@
 from typing import List, Tuple
 
 import pytest
+from basil.exceptions import TokenizerException
 
-from aaa.parser.lib.exceptions import TokenizerException
 from aaa.parser.parser import AaaParser
 
 TOKENIZER_TEST_VALUES: List[Tuple[str, str, bool]] = [
