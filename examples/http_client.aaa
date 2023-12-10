@@ -1,0 +1,39 @@
+from "http.client" import make_http_socket, raw_http_request
+
+fn main return int {
+    make_http_socket
+    use fd, socket_ok {
+        if socket_ok not {
+            "socket failed\n" .
+            1 return
+        }
+
+        fd "icanhazip.com" 80 connect
+        use connect_ok {
+            if connect_ok not {
+                "connect failed\n" .
+                1 return
+            }
+        }
+
+        fd raw_http_request write
+        use written, write_ok {
+            if write_ok not {
+                "write failed\n" .
+                1 return
+            }
+        }
+
+        fd 2048 read
+        use response, read_ok {
+            if read_ok not {
+                "read failed\n" .
+                1 return
+            }
+
+            response .
+        }
+    }
+
+    0
+}

@@ -15,46 +15,7 @@ fn make_http_socket return int, bool {
 
 fn raw_http_request return str { // TODO use Request from request.aaa
     "GET / HTTP/1.1\r\n"
-    "Host: icanhazip.com\r\n" str:append
-    "User-Agent: curl/7.68.0\r\n" str:append
+    "Host: icanhazip.com\r\n" str:append // TODO don't hardcode host
+    "User-Agent: curl/7.68.0\r\n" str:append  // TODO change User-Agent
     "Accept: */*\r\n\r\n" str:append
-}
-
-// TODO move main out of http package
-fn main return int {
-    make_http_socket
-    use fd, socket_ok {
-        if socket_ok not {
-            "socket failed\n" .
-            1 return
-        }
-
-        fd "icanhazip.com" 80 connect
-        use connect_ok {
-            if connect_ok not {
-                "connect failed\n" .
-                1 return
-            }
-        }
-
-        fd raw_http_request write
-        use written, write_ok {
-            if write_ok not {
-                "write failed\n" .
-                1 return
-            }
-        }
-
-        fd 2048 read
-        use response, read_ok {
-            if read_ok not {
-                "read failed\n" .
-                1 return
-            }
-
-            response .
-        }
-    }
-
-    0
 }

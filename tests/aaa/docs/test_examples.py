@@ -122,7 +122,7 @@ def test_http_server() -> None:
 
 
 def test_http_client(capfd: CaptureFixture[str]) -> None:
-    entrypoint = Path("examples/http/client.aaa")
+    entrypoint = Path("examples/http_client.aaa")
     runner = Runner(entrypoint)
     runner.run(
         compile=True, binary_path=None, run=True, args=[], runtime_type_checks=True
