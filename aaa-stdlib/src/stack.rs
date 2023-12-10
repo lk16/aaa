@@ -19,8 +19,8 @@ use nix::{
     fcntl::{open, OFlag},
     sys::{
         socket::{
-            accept, bind, connect, getpeername, listen, socket, AddressFamily, SockFlag, SockType,
-            SockaddrIn,
+            accept, bind, connect, getpeername, listen, setsockopt, socket, sockopt::ReuseAddr,
+            AddressFamily, SockFlag, SockType, SockaddrIn,
         },
         stat::Mode,
         wait::{WaitPidFlag, WaitStatus},
@@ -600,7 +600,16 @@ where
         let addr = SockaddrIn::from_str(&format!("{ip_addr}:{port}")).unwrap();
 
         let result = bind(fd as i32, &addr);
-        self.push_bool(result.is_ok());
+
+        if !result.is_ok() {
+            self.push_bool(false);
+        }
+
+        // We allow reuse addresses for all bind() calls.
+        // Implementing it separately would get messy, because the
+        // second argument cannot be loaded from int without usage of unsafe.
+        let setsockopt_result = setsockopt(fd as i32, ReuseAddr, &true);
+        self.push_bool(setsockopt_result.is_ok());
     }
 
     pub fn listen(&mut self) {
