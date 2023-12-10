@@ -1,6 +1,8 @@
 from "http.client" import make_http_socket, raw_http_request
 
 fn main return int {
+    // TODO refactor this so we can just call one function that sends an http request
+
     make_http_socket
     use fd, socket_ok {
         if socket_ok not {
@@ -16,7 +18,7 @@ fn main return int {
             }
         }
 
-        fd raw_http_request write
+        fd "icanhazip.com" raw_http_request write
         use written, write_ok {
             if write_ok not {
                 "write failed\n" .
