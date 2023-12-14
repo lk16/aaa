@@ -379,6 +379,21 @@ fn test_vec_nested_one_item {
     repr "[[5]]" str:equals assert
 }
 
+fn test_vec_equals_true {
+    vec[int]
+    vec[int]
+    vec:equals
+    assert
+}
+
+fn test_vec_equals_false {
+    vec[int]
+    vec[int]
+    dup 5 vec:push
+    vec:equals not
+    assert
+}
+
 fn test_map_set_copies {
     map[int, str] 0 "zero"
     use m, k, v {
@@ -575,6 +590,21 @@ fn test_map_drop_fail {
     dup "two" map:drop
     not assert
     drop
+}
+
+fn test_map_equals_true {
+    map[int, str]
+    map[int, str]
+    map:equals
+    assert
+}
+
+fn test_map_equals_false {
+    map[int, str]
+    map[int, str]
+    dup 5 "five" map:set
+    map:equals not
+    assert
 }
 
 fn test_str_zero_value {
