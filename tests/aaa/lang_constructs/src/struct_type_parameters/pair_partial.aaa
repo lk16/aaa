@@ -14,14 +14,14 @@ fn main {
 
     use pair {
         pair "a" ? 69 = assert
-        pair "b" ? "hello" str:equals assert
+        pair "b" ? "hello" = assert
     }
 
     "foo" make_pair_partial
 
     use pair {
-        pair "a" ? "foo" str:equals assert
-        pair "b" ? "hello" str:equals assert
+        pair "a" ? "foo" = assert
+        pair "b" ? "hello" = assert
 
         pair .
         "\n" .

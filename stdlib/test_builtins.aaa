@@ -145,12 +145,12 @@ fn test_int_zero_value {
 
 fn test_int_repr_positive {
     123 repr
-    "123" str:equals assert
+    "123" = assert
 }
 
 fn test_int_repr_negative {
     -123 repr
-    "-123" str:equals assert
+    "-123" = assert
 }
 
 fn test_and_true_true {
@@ -210,22 +210,22 @@ fn test_bool_zero_value {
 
 fn test_bool_repr_true {
     true repr
-    "true" str:equals assert
+    "true" = assert
 }
 
 fn test_bool_repr_false {
     false repr
-    "false" str:equals assert
+    "false" = assert
 }
 
 fn test_vec_print_zero_items {
     vec[int] repr
-    "[]" str:equals assert
+    "[]" = assert
 }
 
 fn test_vec_print_one_item {
     vec[int] dup 1 vec:push repr
-    "[1]" str:equals assert
+    "[1]" = assert
 }
 
 fn test_vec_print_two_items {
@@ -233,18 +233,18 @@ fn test_vec_print_two_items {
     dup 1 vec:push
     dup 2 vec:push
     repr
-    "[1, 2]" str:equals assert
+    "[1, 2]" = assert
 }
 
 fn test_vec_print_nested_zero_items {
     vec[vec[int]] repr
-    "[]" str:equals assert
+    "[]" = assert
 }
 
 fn test_vec_print_nested_one_item {
     vec[vec[int]]
     dup vec[int] vec:push repr
-    "[[]]" str:equals assert
+    "[[]]" = assert
 }
 
 fn test_vec_push_copy {
@@ -283,7 +283,7 @@ fn test_vec_pop {
     dup 5 vec:push
     dup vec:pop
     5 = assert
-    repr "[]" str:equals assert
+    repr "[]" = assert
 }
 
 fn test_vec_get_copy {
@@ -305,7 +305,7 @@ fn test_vec_set {
     dup 0 7 vec:set
     dup vec:pop
     7 = assert
-    repr "[]" str:equals assert
+    repr "[]" = assert
 }
 
 fn test_vec_set_copies {
@@ -348,7 +348,7 @@ fn test_vec_clear {
     vec[int]
     dup 5 vec:push
     dup vec:clear
-    repr "[]" str:equals assert
+    repr "[]" = assert
 }
 
 fn test_vec_copy {
@@ -376,13 +376,13 @@ fn test_vec_nested_one_item {
     vec[int]
     dup 5 vec:push
     vec:push
-    repr "[[5]]" str:equals assert
+    repr "[[5]]" = assert
 }
 
 fn test_vec_equals_true {
     vec[int]
     vec[int]
-    vec:equals
+    =
     assert
 }
 
@@ -390,7 +390,7 @@ fn test_vec_equals_false {
     vec[int]
     vec[int]
     dup 5 vec:push
-    vec:equals not
+    = not
     assert
 }
 
@@ -400,25 +400,25 @@ fn test_map_set_copies {
         m k v map:set
         k <- { 1 }
         v <- {"one"}
-        m repr "{0: \"zero\"}" str:equals assert
+        m repr "{0: \"zero\"}" = assert
     }
 }
 
 fn test_map_print_zero_items {
     map[int, int] repr
-    "{}" str:equals assert
+    "{}" = assert
 }
 
 fn test_map_print_nested {
     map[int, map[int, int]] repr
-    "{}" str:equals assert
+    "{}" = assert
 }
 
 fn test_map_print_one_item {
     map[str, int]
     dup "one" 1 map:set
     repr
-    "{\"one\": 1}" str:equals assert
+    "{\"one\": 1}" = assert
 }
 
 fn test_map_print_two_items {
@@ -427,8 +427,8 @@ fn test_map_print_two_items {
     dup "two" 2 map:set
     repr
 
-    dup "{\"one\": 1, \"two\": 2}" str:equals
-    swap "{\"two\": 2, \"one\": 1}" str:equals
+    dup "{\"one\": 1, \"two\": 2}" =
+    swap "{\"two\": 2, \"one\": 1}" =
     or assert
 }
 
@@ -581,7 +581,7 @@ fn test_map_drop_ok {
     dup "one" map:drop
     assert
     repr
-    "{}" str:equals assert
+    "{}" = assert
 }
 
 fn test_map_drop_fail {
@@ -595,7 +595,7 @@ fn test_map_drop_fail {
 fn test_map_equals_true {
     map[int, str]
     map[int, str]
-    map:equals
+    =
     assert
 }
 
@@ -603,49 +603,49 @@ fn test_map_equals_false {
     map[int, str]
     map[int, str]
     dup 5 "five" map:set
-    map:equals not
+    = not
     assert
 }
 
 fn test_str_zero_value {
     str repr
-    "\"\"" str:equals assert
+    "\"\"" = assert
 }
 
 fn test_str_split {
     "a b c" " " str:split
     repr
-    "[\"a\", \"b\", \"c\"]" str:equals assert
+    "[\"a\", \"b\", \"c\"]" = assert
 }
 
 fn test_str_substr_ok {
     "abcd" 1 3 str:substr
     assert
-    "bc" str:equals assert
+    "bc" = assert
 }
 
 fn test_str_substr_fail_start {
     "abcd" -1 3 str:substr
     not assert
-    "" str:equals assert
+    "" = assert
 }
 
 fn test_str_substr_fail_end {
     "abcd" 1 5 str:substr
     not assert
-    "" str:equals assert
+    "" = assert
 }
 
 fn test_str_substr_fail_both {
     "abcd" -1 5 str:substr
     not assert
-    "" str:equals assert
+    "" = assert
 }
 
 fn test_str_substr_start_after_end {
     "abcd" 2 1 str:substr
     not assert
-    "" str:equals assert
+    "" = assert
 }
 
 fn test_str_len {
@@ -660,12 +660,12 @@ fn test_str_len_multibyte_chars {
 
 fn test_str_upper {
     "abcd" str:upper
-    "ABCD" str:equals assert
+    "ABCD" = assert
 }
 
 fn test_str_lower {
     "ABCD" str:lower
-    "abcd" str:equals assert
+    "abcd" = assert
 }
 
 fn test_str_find_ok {
@@ -722,16 +722,16 @@ fn test_str_join {
     dup "a" vec:push
     dup "b" vec:push
     str:join
-    "a.b" str:equals assert
+    "a.b" = assert
 }
 
 fn test_str_equals_ok {
-    "a" "a" str:equals
+    "a" "a" =
     assert
 }
 
 fn test_str_equals_fail {
-    "a" "b" str:equals
+    "a" "b" =
     not assert
 }
 
@@ -765,17 +765,17 @@ fn test_str_to_bool_fail {
 
 fn test_str_replace {
     "abcd" "bc" "ef" str:replace
-    "aefd" str:equals assert
+    "aefd" = assert
 }
 
 fn test_str_append {
     "abcd" "ef" str:append
-    "abcdef" str:equals assert
+    "abcdef" = assert
 }
 
 fn test_str_at_ok {
     "hello" 4 str:at assert
-    'o' char:equals assert
+    'o' = assert
 }
 
 fn test_str_at_fail_offset_too_high {
@@ -792,7 +792,7 @@ fn test_str_at_fail_offset_too_low {
 
 fn test_str_append_char {
     "hell" 'o' str:append_char
-    "hello" str:equals assert
+    "hello" = assert
 }
 
 fn test_if_true {
@@ -877,7 +877,7 @@ struct StringHolder {
 
 fn test_struct_zero_value_str {
     StringHolder "value" ?
-    "" str:equals assert
+    "" = assert
 }
 
 struct VectorHolder {
@@ -886,7 +886,7 @@ struct VectorHolder {
 
 fn test_struct_zero_value_vec {
     VectorHolder "value" ?
-    repr "[]" str:equals assert
+    repr "[]" = assert
 }
 
 struct MapHolder {
@@ -895,7 +895,7 @@ struct MapHolder {
 
 fn test_struct_zero_value_map {
     MapHolder "value" ?
-    repr "{}" str:equals assert
+    repr "{}" = assert
 }
 
 struct IndirectIntHolder {
@@ -913,7 +913,7 @@ struct CharHolder {
 
 fn test_struct_zero_value_char {
     CharHolder "value" ?
-    '\0' char:equals assert
+    '\0' = assert
 }
 
 fn test_struct_set_get_int {
@@ -937,7 +937,7 @@ fn test_struct_set_get_str {
     dup "value" { "foo" } !
     "value" ?
 
-    "foo" str:equals assert
+    "foo" = assert
 }
 
 fn test_struct_set_get_char {
@@ -945,7 +945,7 @@ fn test_struct_set_get_char {
     dup "value" { 'x' } !
     "value" ?
 
-    'x' char:equals assert
+    'x' = assert
 }
 
 fn test_struct_set_get_vec {
@@ -954,7 +954,7 @@ fn test_struct_set_get_vec {
     5 vec:push
     "value" ?
 
-    repr "[5]" str:equals assert
+    repr "[5]" = assert
 }
 
 // TODO #40 Add tests `set` functions
@@ -977,7 +977,7 @@ fn test_regex_find_ok {
         re " aaa aaaaa" 0 regex:find
         use matched, match_offset, match_ok {
             match_ok assert
-            matched "aaa" str:equals assert
+            matched "aaa" = assert
             match_offset 1 = assert
         }
     }
@@ -989,7 +989,7 @@ fn test_regex_find_ok_multibyte_chars {
         re "Привет, мир" 0 regex:find
         use matched, match_offset, match_ok {
             match_ok assert
-            matched "мир" str:equals assert
+            matched "мир" = assert
             match_offset 8 = assert
         }
     }
@@ -1005,13 +1005,24 @@ fn test_regex_find_fail {
     }
 }
 
+fn test_regex_equals_true {
+    "b+" make_regex assert
+    "b+" make_regex assert
+    = assert
+}
+
+fn test_regex_equals_false {
+    "b+" make_regex assert
+    "c+" make_regex assert
+    = not assert
+}
 
 fn test_char_equals_true {
-    'a' 'a' char:equals assert
+    'a' 'a' = assert
 }
 
 fn test_char_equals_false {
-    'a' 'b' char:equals not assert
+    'a' 'b' = not assert
 }
 
 fn test_char_is_digit_true {
@@ -1048,9 +1059,21 @@ fn test_char_is_whitespace_false {
 }
 
 fn test_char_to_str {
-    'a' char:to_str "a" str:equals assert
-    ' ' char:to_str " " str:equals assert
-    '\\' char:to_str "\\" str:equals assert
-    '\r' char:to_str "\r" str:equals assert
-    '\n' char:to_str "\n" str:equals assert
+    'a' char:to_str "a" = assert
+    ' ' char:to_str " " = assert
+    '\\' char:to_str "\\" = assert
+    '\r' char:to_str "\r" = assert
+    '\n' char:to_str "\n" = assert
+}
+
+fn test_fn_equals_true {
+    "test_fn_equals_true" fn
+    "test_fn_equals_true" fn
+    = assert
+}
+
+fn test_fn_equals_false {
+    "test_fn_equals_false" fn
+    "test_fn_equals_true" fn
+    = not assert
 }

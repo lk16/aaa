@@ -302,6 +302,13 @@ where
             (Self::Vector(lhs), Self::Vector(rhs)) => lhs == rhs,
             (Self::Set(lhs), Self::Set(rhs)) => lhs == rhs,
             (Self::Map(lhs), Self::Map(rhs)) => lhs == rhs,
+            (Self::Regex(lhs), Self::Regex(rhs)) => {
+                let lhs_ref = lhs.borrow();
+                let rhs_ref = rhs.borrow();
+                lhs_ref.as_str() == rhs_ref.as_str()
+            }
+            (Self::FunctionPointer(lhs), Self::FunctionPointer(rhs)) => lhs == rhs,
+            (Self::UserType(lhs), Self::UserType(rhs)) => lhs == rhs,
             _ => {
                 unreachable!() // Can't compare variables of different types
             }

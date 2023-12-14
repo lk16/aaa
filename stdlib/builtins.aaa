@@ -31,10 +31,12 @@ builtin fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
 builtin fn swap[A, B]   args a as A, b as B         return B, A
 
 // special operators
-builtin fn . [A]      args a as const A
-builtin fn repr[A]    args a as const A    return str
-builtin fn assert     args a as const bool
+builtin fn .[A]         args   a as const A
+builtin fn repr[A]      args   a as const A                 return str
+builtin fn assert       args   a as const bool
 builtin fn nop
+builtin fn =[A]         args lhs as const A, rhs as const A return bool
+builtin fn fn_equals[A] args lhs as const A, rhs as const A return bool
 
 // integer arithmetic
 builtin fn - args a as const int, b as const int return int
@@ -44,24 +46,25 @@ builtin fn / args a as const int, b as const int return int
 builtin fn % args a as const int, b as const int return int
 
 // integer comparison
-builtin fn != args a as const int, b as const int return bool
-builtin fn <  args a as const int, b as const int return bool
-builtin fn <= args a as const int, b as const int return bool
-builtin fn =  args a as const int, b as const int return bool
-builtin fn >  args a as const int, b as const int return bool
-builtin fn >= args a as const int, b as const int return bool
+builtin fn !=    args a as const int, b as const int return bool
+builtin fn <     args a as const int, b as const int return bool
+builtin fn <=    args a as const int, b as const int return bool
+builtin fn >     args a as const int, b as const int return bool
+builtin fn >=    args a as const int, b as const int return bool
+builtin fn int:= args a as const int, b as const int return bool
 
 // boolean operators
-builtin fn and args a as const bool, b as const bool return bool
-builtin fn not args a as const bool                  return bool
-builtin fn or  args a as const bool, b as const bool return bool
+builtin fn and    args a as const bool, b as const bool return bool
+builtin fn not    args a as const bool                  return bool
+builtin fn or     args a as const bool, b as const bool return bool
+builtin fn bool:= args a as const bool, b as const bool return bool
 
 // container functions
 builtin fn vec[T]:clear      args v as       vec[T]
 builtin fn vec[T]:const_iter args v as const vec[T]                                       return vec_const_iter[T]
 builtin fn vec[T]:copy       args v as       vec[T]                                       return vec[T]
 builtin fn vec[T]:empty      args v as const vec[T]                                       return bool
-builtin fn vec[T]:equals     args v as const vec[T], other as const vec[T]                return bool
+builtin fn vec[T]:=          args v as const vec[T], other as const vec[T]                return bool
 builtin fn vec[T]:get        args v as const vec[T], offset as const int                  return T
 builtin fn vec[T]:iter       args v as       vec[T]                                       return vec_iter[T]
 builtin fn vec[T]:pop        args v as       vec[T]                                       return T
@@ -73,7 +76,7 @@ builtin fn map[K, V]:clear      args m as       map[K, V]
 builtin fn map[K, V]:const_iter args m as const map[K, V]                                   return map_const_iter[K, V]
 builtin fn map[K, V]:copy       args m as       map[K, V]                                   return map[K, V]
 builtin fn map[K, V]:drop       args m as       map[K, V], key as const K                   return bool
-builtin fn map[K, V]:equals     args s as const map[K, V], other as const map[K, V]         return bool
+builtin fn map[K, V]:=          args s as const map[K, V], other as const map[K, V]         return bool
 builtin fn map[K, V]:empty      args m as const map[K, V]                                   return bool
 builtin fn map[K, V]:get        args m as const map[K, V], key as const K                   return V, bool
 builtin fn map[K, V]:has_key    args m as const map[K, V], key as const K                   return bool
@@ -87,7 +90,7 @@ builtin fn set[T]:clear      args s as       set[T]
 builtin fn set[T]:const_iter args s as const set[T]                        return set_iter[T]
 builtin fn set[T]:copy       args s as       set[T]                        return set[T]
 builtin fn set[T]:empty      args s as const set[T]                        return bool
-builtin fn set[T]:equals     args s as const set[T], other as const set[T] return bool
+builtin fn set[T]:=          args s as const set[T], other as const set[T] return bool
 builtin fn set[T]:has        args s as const set[T], item as const T       return bool
 builtin fn set[T]:iter       args s as const set[T]                        return set_iter[T]
 builtin fn set[T]:remove     args s as       set[T], item as const T
@@ -111,7 +114,7 @@ builtin fn vec_const_iter[T]:iter    args iter as vec_const_iter[T]    return ve
 builtin fn str:append      args s as       str, other as str                  return str
 builtin fn str:append_char args s as       str, other as char                 return str
 builtin fn str:contains    args s as const str, other as const str            return bool
-builtin fn str:equals      args s as const str, other as const str            return bool
+builtin fn str:=           args s as const str, other as const str            return bool
 builtin fn str:join        args s as       str, parts as vec[str]             return str
 builtin fn str:len         args s as const str                                return int
 builtin fn str:lower       args s as       str                                return str
@@ -133,12 +136,13 @@ builtin fn char:is_digit      args c as const char                      return b
 builtin fn char:is_alpha      args c as const char                      return bool
 builtin fn char:is_whitespace args c as const char                      return bool
 builtin fn char:to_str        args c as const char                      return str
-builtin fn char:equals        args c as const char, other as const char return bool
+builtin fn char:=             args c as const char, other as const char return bool
 
 // regex functions
 
 builtin fn make_regex args pattern as str return regex, bool
 builtin fn regex:find args r as const regex, s as const str, offset as const int return str, int, bool
+builtin fn regex:=    args lhs as const regex, rhs as const regex return bool
 
 // functions to assist type-checker
 builtin fn todo return never

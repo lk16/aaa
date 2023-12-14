@@ -50,7 +50,7 @@ fn read_file args path as const str, return FileReadResult {
                         FileReadResult:read_error return
                     }
 
-                    if buff "" str:equals {
+                    if buff "" = {
                         content FileReadResult:ok return
                     }
 
@@ -233,7 +233,7 @@ fn Position:update args position as Position, token as Token {
                         unreachable
                     }
 
-                    if char_ '\n' char:equals {
+                    if char_ '\n' = {
                         position "line" { position "line" ? 1 + } !
                         position "column" { 1 } !
                     }
@@ -252,18 +252,18 @@ struct Token {
     value as str,
 }
 
-fn Token:equals args lhs as const Token, rhs as const Token return bool {
+fn Token:= args lhs as const Token, rhs as const Token return bool {
     if
         lhs "type_" ? TokenType:to_str
         rhs "type_" ? TokenType:to_str
-        str:equals not
+        = not
     {
         false return
     }
 
     lhs "value" ?
     rhs "value" ?
-    str:equals
+    =
 }
 
 enum OptionalToken {
@@ -458,7 +458,7 @@ fn is_identifier_char args input as const str, offset as int return bool {
         }
 
         char_ char:is_alpha
-        char_ '_' char:equals
+        char_ '_' =
         or
     }
 }

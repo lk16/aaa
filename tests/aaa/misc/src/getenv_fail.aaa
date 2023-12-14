@@ -1,5 +1,5 @@
 fn main {
     "NON_EXISTENT" getenv
     not assert
-    "" str:equals assert
+    "" = assert
 }

@@ -263,9 +263,9 @@ class Struct(AaaCrossReferenceModel):
         self.name = name
         super().__init__(position)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Struct):
-            return False
+            raise TypeError
 
         return self.name == other.name and self.position.file == other.position.file
 
@@ -339,9 +339,9 @@ class Enum(AaaCrossReferenceModel):
         self.name = parsed.get_name()
         super().__init__(parsed.position)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Enum):
-            return False
+            raise TypeError
 
         return self.name == other.name and self.position == other.position
 
@@ -404,9 +404,9 @@ class VariableType(AaaCrossReferenceModel):
 
         return output
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, VariableType):  # pragma: nocover
-            return False
+            raise TypeError
 
         return (
             self.type == other.type
@@ -437,9 +437,11 @@ class FunctionPointer(AaaCrossReferenceModel):
         return f"fn[{args}][{returns}]"
 
     def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, FunctionPointer):
+            raise TypeError
+
         return (
-            type(other) == type(self)
-            and self.argument_types == other.argument_types
+            self.argument_types == other.argument_types
             and self.return_types == other.return_types
         )
 
@@ -451,7 +453,10 @@ class Never:
     """
 
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other)
+        if not isinstance(other, Never):
+            raise TypeError
+
+        return True
 
 
 class IntegerLiteral(AaaCrossReferenceModel):

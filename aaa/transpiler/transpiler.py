@@ -44,7 +44,7 @@ from aaa.type_checker.models import TypeCheckerOutput
 
 AAA_RUST_BUILTIN_FUNCS = {
     "-": "minus",
-    "!=": "unequal",
+    "!=": "unequal",  # TODO remove?
     ".": "print",
     "*": "multiply",
     "/": "divide",
@@ -52,7 +52,6 @@ AAA_RUST_BUILTIN_FUNCS = {
     "+": "plus",
     "<": "less",
     "<=": "less_equal",
-    "=": "equals",
     ">": "greater",
     ">=": "greater_equal",
 }
@@ -218,7 +217,12 @@ class Transpiler:
         return code
 
     def _generate_builtin_function_name(self, function: Function) -> str:
-        return self._generate_builtin_function_name_from_str(function.name)
+        if function.is_member_function() and function.func_name == "=":
+            name = f"{function.struct_name}_equals"
+        else:
+            name = function.name
+
+        return self._generate_builtin_function_name_from_str(name)
 
     def _generate_builtin_function_name_from_str(self, name: str) -> str:
         if name in AAA_RUST_BUILTIN_FUNCS:
@@ -668,7 +672,6 @@ class Transpiler:
 
         if called.name == "make_const":
             # This function doesn't do anything at runtime, so don't generate any code.
-            # In fact it doesn't even exist since #32.
             return Code()
 
         rust_func_name = self._generate_function_name(called)
@@ -788,35 +791,24 @@ class Transpiler:
 
         code = Code(f"impl PartialEq for {rust_enum_name} {{", r=1)
         code.add("fn eq(&self, other: &Self) -> bool {", r=1)
-        code.add("match (self, other) {", r=1)
 
-        for variant_name, associated_data in enum.variants.items():
-            line = f"(Self::variant_{variant_name}("
-            line += ", ".join([f"lhs_arg{i}" for i in range(len(associated_data))])
-            line += f"), Self::variant_{variant_name}("
-            line += ", ".join([f"rhs_arg{i}" for i in range(len(associated_data))])
-            line += ")) => {"
+        try:
+            equals_func = self.functions[(enum.position.file, f"{enum.name}:=")]
+        except KeyError:
+            code.add(f'panic!("{enum.name} does not support operator =")')
+        else:
+            equals_func_name = self._generate_function_name(equals_func)
 
-            code.add(line, r=1)
-            code.add("true")
+            code.add("let mut stack: Stack<UserTypeEnum> = Stack::new();")
+            code.add(
+                f"stack.push_user_type(UserTypeEnum::{rust_enum_name}(self.clone()));"
+            )
+            code.add(
+                f"stack.push_user_type(UserTypeEnum::{rust_enum_name}(other.clone()));"
+            )
+            code.add(f"{equals_func_name}(&mut stack);")
+            code.add("stack.pop_bool()")
 
-            for i, item in enumerate(associated_data):
-                if isinstance(item, FunctionPointer):
-                    # Function pointers can't be reliably compared
-                    continue
-
-                elif item.type.name == "regex":
-                    # Compiled regexes can't be compared
-                    continue
-
-                code.add(f"&& lhs_arg{i} == rhs_arg{i}")
-
-            code.add("},", l=1)
-
-        if len(enum.variants) > 1:
-            code.add("_ => false,")
-
-        code.add("}", l=1)
         code.add("}", l=1)
         code.add("}", l=1)
         code.add("")
@@ -1300,16 +1292,23 @@ class Transpiler:
 
         code = Code(f"impl PartialEq for {rust_struct_name} {{", r=1)
         code.add("fn eq(&self, other: &Self) -> bool {", r=1)
-        code.add("true")
 
-        for field_name, field_type in struct.fields.items():
-            if isinstance(field_type, FunctionPointer):
-                continue
+        try:
+            equals_func = self.functions[(struct.position.file, f"{struct.name}:=")]
+        except KeyError:
+            code.add(f'panic!("{struct.name} does not support operator =")')
+        else:
+            equals_func_name = self._generate_function_name(equals_func)
 
-            if field_type.name == "regex":
-                continue
-
-            code.add(f"&& self.{field_name} == other.{field_name}")
+            code.add("let mut stack: Stack<UserTypeEnum> = Stack::new();")
+            code.add(
+                f"stack.push_user_type(UserTypeEnum::{rust_struct_name}(self.clone()));"
+            )
+            code.add(
+                f"stack.push_user_type(UserTypeEnum::{rust_struct_name}(other.clone()));"
+            )
+            code.add(f"{equals_func_name}(&mut stack);")
+            code.add("stack.pop_bool()")
 
         code.add("}", l=1)
         code.add("}", l=1)

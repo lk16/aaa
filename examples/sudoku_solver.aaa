@@ -42,7 +42,7 @@ fn load_sudoku args s as str return vec[int] {
                         if ok {
                             v n vec:push
                         } else {
-                            if char_ "." str:equals {
+                            if char_ "." = {
                                 v 0 vec:push
                             }
                         }

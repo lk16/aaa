@@ -33,7 +33,7 @@ fn check_tokenize_whitespace args input as str, offset as int, expected_value as
             use token_ {
                 token_ "value" ?
                 use value {
-                    value expected_value str:equals assert
+                    value expected_value = assert
                 }
             }
         }
@@ -76,7 +76,7 @@ fn check_tokenize_comment args input as str, offset as int, expected_value as co
             use token_ {
                 token_ "value" ?
                 use value {
-                    value expected_value str:equals assert
+                    value expected_value = assert
                 }
             }
         }
@@ -121,7 +121,7 @@ fn check_tokenize_integer args input as str, offset as int, expected_value as co
             use token_ {
                 token_ "value" ?
                 use value {
-                    value expected_value str:equals assert
+                    value expected_value = assert
                 }
             }
         }
@@ -182,7 +182,7 @@ fn check_tokenize_fixed_size args input as str, offset as int, expected_type as 
                 dup "type_" { expected_type } !
                 dup "value" { expected_value } !
 
-                Token:equals assert
+                = assert
             }
         }
         case OptionalToken:none { unreachable }
@@ -309,7 +309,7 @@ fn check_tokenize_string args input as str, offset as int, expected_value as con
             use token_ {
                 token_ "value" ?
                 use value {
-                    value expected_value str:equals assert
+                    value expected_value = assert
                 }
             }
         }
@@ -362,7 +362,7 @@ fn check_tokenize_identifier args input as str, offset as int, expected_value as
             use token_ {
                 token_ "value" ?
                 use value {
-                    value expected_value str:equals assert
+                    value expected_value = assert
                 }
             }
         }
