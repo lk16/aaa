@@ -697,6 +697,16 @@ where
         self.pop_vec().borrow_mut().clear();
     }
 
+    pub fn vec_equals(&mut self) {
+        let lhs_rc = self.pop_vec();
+        let lhs = lhs_rc.borrow();
+
+        let rhs_rc = self.pop_vec();
+        let rhs = rhs_rc.borrow();
+
+        self.push_bool(*lhs == *rhs);
+    }
+
     pub fn push_map_empty(&mut self) {
         self.push_map(Map::new())
     }
@@ -775,6 +785,16 @@ where
 
         let result = map.remove_entry(&key);
         self.push_bool(result.is_some());
+    }
+
+    pub fn map_equals(&mut self) {
+        let lhs_rc = self.pop_map();
+        let lhs = lhs_rc.borrow();
+
+        let rhs_rc = self.pop_map();
+        let rhs = rhs_rc.borrow();
+
+        self.push_bool(*lhs == *rhs);
     }
 
     pub fn str_append(&mut self) {
@@ -1393,6 +1413,16 @@ where
                 self.push_bool(false);
             }
         }
+    }
+
+    pub fn set_equals(&mut self) {
+        let lhs_rc = self.pop_set();
+        let lhs = lhs_rc.borrow();
+
+        let rhs_rc = self.pop_set();
+        let rhs = rhs_rc.borrow();
+
+        self.push_bool(*lhs == *rhs);
     }
 
     pub fn copy(&mut self) {
