@@ -46,7 +46,6 @@ builtin fn / args a as const int, b as const int return int
 builtin fn % args a as const int, b as const int return int
 
 // integer comparison
-builtin fn !=    args a as const int, b as const int return bool
 builtin fn <     args a as const int, b as const int return bool
 builtin fn <=    args a as const int, b as const int return bool
 builtin fn >     args a as const int, b as const int return bool

@@ -194,7 +194,6 @@ fn test_tokenize_fixed_size_ok_bare {
     "," 0 TokenType:comma "," check_tokenize_fixed_size
     ":" 0 TokenType:colon ":" check_tokenize_fixed_size
     "!" 0 TokenType:set_field "!" check_tokenize_fixed_size
-    "!=" 0 TokenType:identifier "!=" check_tokenize_fixed_size
     "?" 0 TokenType:get_field "?" check_tokenize_fixed_size
     "." 0 TokenType:identifier "." check_tokenize_fixed_size
     "[" 0 TokenType:sq_start "[" check_tokenize_fixed_size
@@ -239,7 +238,6 @@ fn test_tokenize_fixed_size_ok_middle {
     " , " 1 TokenType:comma "," check_tokenize_fixed_size
     " : " 1 TokenType:colon ":" check_tokenize_fixed_size
     " ! " 1 TokenType:set_field "!" check_tokenize_fixed_size
-    " != " 1 TokenType:identifier "!=" check_tokenize_fixed_size
     " ? " 1 TokenType:get_field "?" check_tokenize_fixed_size
     " . " 1 TokenType:identifier "." check_tokenize_fixed_size
     " [ " 1 TokenType:sq_start "[" check_tokenize_fixed_size

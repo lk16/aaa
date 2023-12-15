@@ -128,16 +128,6 @@ fn test_int_greater_equal_true_different {
     assert
 }
 
-fn test_int_unequal_true {
-    2 3 !=
-    assert
-}
-
-fn test_int_unequal_false {
-    2 2 !=
-    not assert
-}
-
 fn test_int_zero_value {
     int
     0 = assert

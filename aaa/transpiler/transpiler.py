@@ -44,7 +44,6 @@ from aaa.type_checker.models import TypeCheckerOutput
 
 AAA_RUST_BUILTIN_FUNCS = {
     "-": "minus",
-    "!=": "unequal",  # TODO remove?
     ".": "print",
     "*": "multiply",
     "/": "divide",

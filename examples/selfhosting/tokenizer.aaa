@@ -178,7 +178,6 @@ fn get_fixed_sized_tokens return vec[FixedSizedToken] {
         v "from"    TokenType:from_                make_fixed_sized_token vec:push
         v "true"    TokenType:true_                make_fixed_sized_token vec:push
         v "use"     TokenType:use_                 make_fixed_sized_token vec:push
-        v "!="      TokenType:identifier           make_fixed_sized_token vec:push
         v "<-"      TokenType:assign               make_fixed_sized_token vec:push
         v "<="      TokenType:identifier           make_fixed_sized_token vec:push
         v ">="      TokenType:identifier           make_fixed_sized_token vec:push
@@ -306,7 +305,7 @@ fn Tokenizer:tokenize_whitespace args tokenizer as Tokenizer return OptionalToke
     use input, offset, whitespace_regex {
         whitespace_regex input offset regex:find
         use matched_str, matched_offset, matched {
-            if matched not matched_offset offset != or {
+            if matched not matched_offset offset = not or {
                 OptionalToken:none
             } else {
                 Token
@@ -325,7 +324,7 @@ fn Tokenizer:tokenize_comment args tokenizer as Tokenizer return OptionalToken {
     use input, offset, comment_regex {
         comment_regex input offset regex:find
         use matched_str, matched_offset, matched {
-            if matched not matched_offset offset != or {
+            if matched not matched_offset offset = not or {
                 OptionalToken:none return
             }
 
@@ -344,7 +343,7 @@ fn Tokenizer:tokenize_integer args tokenizer as Tokenizer return OptionalToken {
     use input, offset, integer_regex {
         integer_regex input offset regex:find
         use matched_str, matched_offset, matched {
-            if matched not matched_offset offset != or {
+            if matched not matched_offset offset = not or {
                 OptionalToken:none return
             }
 
@@ -470,7 +469,7 @@ fn Tokenizer:tokenize_identifier args tokenizer as Tokenizer return OptionalToke
     use input, offset, identifier_regex {
         identifier_regex input offset regex:find
         use matched_str, matched_offset, matched {
-            if matched not matched_offset offset != or {
+            if matched not matched_offset offset = not or {
                 OptionalToken:none return
             }
 
@@ -586,7 +585,7 @@ fn print_tokens args tokens as vec[Token] {
 }
 
 fn main args argv as vec[str] return int {
-    if argv vec:len 2 != {
+    if argv vec:len 2 = not {
         "Usage: " .
         argv 0 vec:get .
         " <source_file>\n" .

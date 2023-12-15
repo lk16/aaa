@@ -53,7 +53,7 @@ fn load_sudoku args s as str return vec[int] {
 
         v vec:len
         use len {
-            if len 81 != {
+            if len 81 = not {
                 "Expected 81 chars to be either a period or a digit, found " .
                 len .
                 "\n" .
@@ -107,7 +107,7 @@ fn solve_sudoku_recursive args cells as vec[int], index as int {
             cells print_sudoku
             0 exit
         } else {
-            if cells index vec:get 0 != {
+            if cells index vec:get 0 = not {
                 cells index 1 + solve_sudoku_recursive
             }
             else {
@@ -165,7 +165,7 @@ fn check_sudoku_row args cells as vec[int], y as int return bool {
             use x {
                 cells y 9 * x + vec:get
                 use n {
-                    if n 0 != values n set:has and {
+                    if n 0 = not values n set:has and {
                         ok <- { false }
                     }
                     values n set:add
@@ -184,7 +184,7 @@ fn check_sudoku_column args cells as vec[int], x as int return bool {
             use y {
                 cells y 9 * x + vec:get
                 use n {
-                    if n 0 != values n set:has and {
+                    if n 0 = not values n set:has and {
                         ok <- { false }
                     }
                     values n set:add
@@ -209,7 +209,7 @@ fn check_sudoku_block args cells as vec[int], x_start as int, y_start as int, re
                         use y, x {
                             cells y 9 * x + vec:get
                             use n {
-                                if n 0 != values n set:has and {
+                                if n 0 = not values n set:has and {
                                     ok <- { false }
                                 }
                                 values n set:add
