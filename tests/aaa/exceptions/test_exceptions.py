@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Type
+from typing import Dict, List, Type
 
 import pytest
 
@@ -35,6 +35,7 @@ from aaa.type_checker.exceptions import (
     ForeachLoopTypeError,
     FunctionTypeError,
     InvalidCallWithTypeParameters,
+    InvalidEqualsFunctionSignature,
     InvalidIterable,
     InvalidIterator,
     InvalidMainSignuture,
@@ -53,6 +54,7 @@ from aaa.type_checker.exceptions import (
     UnknownVariableOrFunction,
     UnreachableCode,
     UnreachableDefaultBlock,
+    UnsupportedOperator,
     UpdateConstStructError,
     UseBlockStackUnderflow,
     UseFieldOfEnumException,
@@ -1048,6 +1050,15 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             "/foo/main.aaa:3:21: Builtins are not allowed outside the builtins file.",
             id="unexpected-builtin-struct",
         ),
+        pytest.param(
+            """
+            struct Foo {}
+            fn main { Foo Foo = }
+            """,
+            UnsupportedOperator,
+            "/foo/main.aaa:3:31: Type Foo does not support operator =",
+            id="unsupported-operator",
+        ),
     ],
 )
 def test_one_error(
@@ -1398,3 +1409,37 @@ def test_colliding_identifier(
     print(repr(exception_message))
     print()
     assert exception_message == expected_exception_message
+
+
+@pytest.mark.parametrize(
+    ["func_def_code", "expect_ok"],
+    [
+        ("fn Foo:= args lhs as const Foo, rhs as const Foo return bool { todo }", True),
+        ("fn Foo:= args lhs as const Foo, rhs as Foo return bool { todo }", False),
+        ("fn Foo:= args lhs as Foo, rhs as Foo return bool { todo }", False),
+        ("fn Foo:= args lhs as Foo, rhs as const Foo return bool { todo }", False),
+        ("fn Foo:= args lhs as const Foo, rhs as const Foo return int { todo }", False),
+        (
+            "fn Foo:= args lhs as const Foo, rhs as const Foo return never { todo }",
+            False,
+        ),
+        ("fn Foo:= args lhs as const Foo, rhs as fn[][] return bool { todo }", False),
+        (
+            "fn Foo:= args lhs as const Foo, rhs as const Foo return bool, bool { todo }",
+            False,
+        ),
+        ("fn Foo:= args lhs as const Foo return bool { todo }", False),
+        ("fn Foo:= args lhs as Foo { nop }", False),
+    ],
+)
+def test_equals_function_signature(func_def_code: str, expect_ok: bool) -> None:
+    code = "fn main { nop } struct Foo {} " + func_def_code
+
+    expected_exception_types: List[Type[Exception]] = []
+
+    if not expect_ok:
+        expected_exception_types = [InvalidEqualsFunctionSignature]
+
+    exceptions = check_aaa_full_source(code, "", expected_exception_types)
+
+    assert expect_ok == (not exceptions)

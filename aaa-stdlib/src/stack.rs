@@ -698,13 +698,9 @@ where
     }
 
     pub fn vec_equals(&mut self) {
-        let lhs_rc = self.pop_vec();
-        let lhs = lhs_rc.borrow();
-
-        let rhs_rc = self.pop_vec();
-        let rhs = rhs_rc.borrow();
-
-        self.push_bool(*lhs == *rhs);
+        let lhs = self.pop();
+        let rhs = self.pop();
+        self.push_bool(lhs == rhs);
     }
 
     pub fn push_map_empty(&mut self) {
@@ -788,13 +784,9 @@ where
     }
 
     pub fn map_equals(&mut self) {
-        let lhs_rc = self.pop_map();
-        let lhs = lhs_rc.borrow();
-
-        let rhs_rc = self.pop_map();
-        let rhs = rhs_rc.borrow();
-
-        self.push_bool(*lhs == *rhs);
+        let lhs = self.pop();
+        let rhs = self.pop();
+        self.push_bool(lhs == rhs);
     }
 
     pub fn str_append(&mut self) {
@@ -820,13 +812,9 @@ where
     }
 
     pub fn str_equals(&mut self) {
-        let lhs_rc = self.pop_str();
-        let lhs = (*lhs_rc).borrow();
-
-        let rhs_rc = self.pop_str();
-        let rhs = (*rhs_rc).borrow();
-
-        self.push_bool(lhs.as_str() == rhs.as_str());
+        let lhs = self.pop();
+        let rhs = self.pop();
+        self.push_bool(lhs == rhs);
     }
 
     pub fn str_join(&mut self) {
@@ -1416,13 +1404,9 @@ where
     }
 
     pub fn set_equals(&mut self) {
-        let lhs_rc = self.pop_set();
-        let lhs = lhs_rc.borrow();
-
-        let rhs_rc = self.pop_set();
-        let rhs = rhs_rc.borrow();
-
-        self.push_bool(*lhs == *rhs);
+        let lhs = self.pop();
+        let rhs = self.pop();
+        self.push_bool(lhs == rhs);
     }
 
     pub fn copy(&mut self) {
@@ -1576,13 +1560,37 @@ where
     }
 
     pub fn char_equals(&mut self) {
-        let lhs = self.pop_char();
-        let rhs = self.pop_char();
+        let lhs = self.pop();
+        let rhs = self.pop();
         self.push_bool(lhs == rhs);
     }
 
     pub fn char_to_str(&mut self) {
         let char = self.pop_char();
         self.push_str(&char.to_string());
+    }
+
+    pub fn int_equals(&mut self) {
+        let lhs = self.pop();
+        let rhs = self.pop();
+        self.push_bool(lhs == rhs);
+    }
+
+    pub fn bool_equals(&mut self) {
+        let lhs = self.pop();
+        let rhs = self.pop();
+        self.push_bool(lhs == rhs);
+    }
+
+    pub fn regex_equals(&mut self) {
+        let lhs = self.pop();
+        let rhs = self.pop();
+        self.push_bool(lhs == rhs);
+    }
+
+    pub fn fn_equals(&mut self) {
+        let lhs = self.pop();
+        let rhs = self.pop();
+        self.push_bool(lhs == rhs);
     }
 }

@@ -449,6 +449,19 @@ class MemberFunctionTypeNotFound(TypeCheckerException):
         return f"{self.function.position}: Cannot find type {struct_name} in same file as member function definition."
 
 
+class InvalidEqualsFunctionSignature(TypeCheckerException):
+    def __init__(self, function: Function) -> None:
+        self.function = function
+
+    def __str__(self) -> str:
+        return (
+            f"{self.function.position}: Invalid equals function signature.\n"
+            + "An equals function should have:\n"
+            + "- 2 const arguments of same type\n"
+            + "- 1 return value, which is a boolean"
+        )
+
+
 class UnreachableCode(TypeCheckerException):
     def __str__(self) -> str:
         return f"{self.position}: Found unreachable code."
@@ -597,6 +610,16 @@ class UnknownVariableOrFunction(TypeCheckerException):
 
     def __str__(self) -> str:
         return f"{self.position}: Usage of unknown variable or function {self.name}"
+
+
+class UnsupportedOperator(TypeCheckerException):
+    def __init__(self, type_name: str, operator: str, position: Position) -> None:
+        self.type_name = type_name
+        self.operator = operator
+        super().__init__(position)
+
+    def __str__(self) -> str:
+        return f"{self.position}: Type {self.type_name} does not support operator {self.operator}"
 
 
 class CollidingVariable(TypeCheckerException):

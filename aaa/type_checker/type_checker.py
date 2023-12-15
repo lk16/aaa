@@ -53,6 +53,7 @@ from aaa.type_checker.exceptions import (
     ForeachLoopTypeError,
     FunctionTypeError,
     InvalidCallWithTypeParameters,
+    InvalidEqualsFunctionSignature,
     InvalidIterable,
     InvalidIterator,
     InvalidMainSignuture,
@@ -73,6 +74,7 @@ from aaa.type_checker.exceptions import (
     UnknownVariableOrFunction,
     UnreachableCode,
     UnreachableDefaultBlock,
+    UnsupportedOperator,
     UpdateConstStructError,
     UseBlockStackUnderflow,
     UseFieldOfEnumException,
@@ -291,6 +293,14 @@ class SingleFunctionTypeChecker:
             if expected_var_type.name in placeholder_types:
                 if placeholder_types[expected_var_type.name] == var_type:
                     return placeholder_types
+
+                if isinstance(var_type, VariableType):
+                    non_const_var_type = copy(var_type)
+                    non_const_var_type.is_const = False
+
+                    if placeholder_types[expected_var_type.name] == non_const_var_type:
+                        return placeholder_types
+
                 raise SignatureItemMismatch
 
             placeholder_types[expected_var_type.name] = var_type
@@ -769,11 +779,32 @@ class SingleFunctionTypeChecker:
 
         return stack
 
+    def _get_equals_function(
+        self, call_func: CallFunction, type_stack: List[VariableType | FunctionPointer]
+    ) -> Function:
+        type = type_stack[-1]
+
+        if isinstance(type, FunctionPointer):
+            return self.functions[(self.builtins_path, "fn_equals")]
+
+        func_file = type.type.position.file
+        func_name = f"{type.name}:="
+
+        try:
+            return self.functions[(func_file, func_name)]
+        except KeyError:
+            raise UnsupportedOperator(type.name, "=", call_func.position)
+
     def _check_call_function(
         self,
         call_function: CallFunction,
         type_stack: List[VariableType | FunctionPointer],
     ) -> List[VariableType | FunctionPointer] | Never:
+        if call_function.function.name == "=":
+            call_function.function = self._get_equals_function(
+                call_function, type_stack
+            )
+
         self.position_stacks[call_function.position] = copy(type_stack)
 
         arguments = [argument.type for argument in call_function.function.arguments]
@@ -877,6 +908,30 @@ class SingleFunctionTypeChecker:
             and self.function.arguments[0].type.type == type
         ):
             raise InvalidMemberFunctionSignature(self.function, type)
+
+        if (
+            self.function.func_name == "="
+            and not self._has_valid_equals_member_function_signature()
+        ):
+            raise InvalidEqualsFunctionSignature(self.function)
+
+    def _has_valid_equals_member_function_signature(self) -> bool:
+        # Equals member-function should take 2 const arguments of same type and return bool
+
+        arguments = self.function.arguments
+        return_types = self.function.return_types
+
+        return (
+            len(arguments) == 2
+            and isinstance(arguments[0].type, VariableType)
+            and isinstance(arguments[1].type, VariableType)
+            and arguments[0].type.is_const
+            and arguments[0].type == arguments[1].type
+            and isinstance(return_types, list)
+            and len(return_types) == 1
+            and isinstance(return_types[0], VariableType)
+            and return_types[0].type == self._get_bool_var_type().type
+        )
 
     def _get_struct_field_type(
         self,

@@ -28,14 +28,14 @@ fn main {
     use pair {
         pair Pair:print
         pair "a" ? 69 = assert
-        pair "b" ? "hello" str:equals assert
+        pair "b" ? "hello" = assert
 
 
         pair "a" { 420 } !
         pair "b" { "world" } !
 
         pair "a" ? 420 = assert
-        pair "b" ? "world" str:equals assert
+        pair "b" ? "world" = assert
 
         pair Pair:print
     }

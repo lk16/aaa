@@ -4,7 +4,7 @@ fn stdin return int {
 }
 
 fn run_process args input as str {
-    if input "" str:equals {
+    if input "" = {
         return
     }
 
@@ -25,7 +25,7 @@ fn main return int {
         "$ " .
         stdin 1024 read
         use command, read_ok {
-            if command str:strip "exit" str:equals {
+            if command str:strip "exit" = {
                 0 return
             }
 
@@ -46,7 +46,4 @@ fn main return int {
             }
         }
     }
-
-    // unreachable
-    1
 }

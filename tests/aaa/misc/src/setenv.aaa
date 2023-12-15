@@ -4,9 +4,9 @@ fn main {
 
     "KEY" getenv
     assert
-    "VALUE" str:equals assert
+    "VALUE" = assert
 
     "WITH_EQUALS_CHAR" getenv
     assert
-    "FOO=BAR" str:equals assert
+    "FOO=BAR" = assert
 }
