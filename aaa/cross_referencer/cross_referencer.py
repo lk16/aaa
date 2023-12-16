@@ -84,6 +84,10 @@ class CrossReferencer:
         except KeyError:
             self.identifiers[key] = identifiable
         else:
+            if found.position == identifiable.position:
+                # Cannot collide with same item
+                return
+
             self.exceptions += [CollidingIdentifier([identifiable, found])]
 
     def run(self) -> CrossReferencerOutput:

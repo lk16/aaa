@@ -1,0 +1,616 @@
+from "tokenizer" import
+    make_tokenizer,
+    Position,
+    Token,
+    TokenizeError,
+    Tokenizer,
+    TokenizeResult,
+    TokenType,
+
+struct Range {
+    next_value as int,
+    end as int,
+}
+
+fn make_range args start as int, end as int return Range {
+    Range
+    dup "next_value" { start } !
+    dup "end" { end } !
+}
+
+fn Range:iter args r as Range return Range {
+    r
+}
+
+fn Range:next args r as Range return int, bool {
+    r "next_value" ?
+    if dup r "end" ? < {
+        true
+        r "next_value" { r "next_value" ? 1 + } !
+    } else {
+        drop 0
+        false
+    }
+}
+
+struct Parser {
+    tokens as vec[Token],
+}
+
+enum Json {
+    null,
+    boolean as bool,
+    integer as int,
+    string as str,
+    array as vec[Json],
+    object as map[str, Json],
+}
+
+fn Json:= args json as const Json, other as const Json return bool {
+    json match {
+        case Json:null {
+            other match {
+                case Json:null { true }
+                default { false }
+            }
+        }
+        case Json:boolean as bool_ {
+            other match {
+                case Json:boolean as other_bool {
+                    bool_ other_bool and
+                    bool_ not other_bool not and
+                    or
+                }
+                default { false }
+            }
+        }
+        case Json:integer as integer_ {
+            other match {
+                case Json:integer as other_integer { integer_ other_integer = }
+                default { false }
+            }
+        }
+        case Json:string as string_ {
+            other match {
+                case Json:string as other_string { string_ other_string = }
+                default { false }
+            }
+        }
+        case Json:array as array {
+            other match {
+                case Json:array as other_array { array other_array = }
+                default { false }
+            }
+        }
+        case Json:object as object {
+            other match {
+                case Json:object as other_object { object other_object = }
+                default { false }
+            }
+        }
+    }
+}
+
+fn _escape_json_string_char args char_ as char return str {
+    if char_ '\b' = { "\\b" return }
+    if char_ '\f' = { "\\f" return }
+    if char_ '\n' = { "\\n" return }
+    if char_ '\r' = { "\\r" return }
+    if char_ '\t' = { "\\t" return }
+    if char_ '"' = { "\\\"" return }
+    if char_ '/' = { "/" return }
+    if char_ '\\' = { "\\\\" return }
+    // TODO #201 Support unicode escape sequences
+    char_ char:to_str
+}
+
+fn _escape_json_string args string as str return str {
+    ""
+    use escaped {
+        0 string str:len make_range
+        foreach {
+            use offset {
+                string offset str:at assert
+                use char_ {
+                    escaped <- { escaped char_ _escape_json_string_char str:append }
+                }
+            }
+        }
+        "\"" escaped str:append "\"" str:append
+    }
+}
+
+fn Json:to_str args json as Json return str {
+    json
+    match {
+        case Json:null { "null" }
+        case Json:boolean as boolean { boolean repr }
+        case Json:integer as integer { integer repr }
+        case Json:string as string { string _escape_json_string }
+        case Json:array as array {
+            vec[str]
+            use str_items {
+                array
+                foreach {
+                    use item {
+                        str_items item Json:to_str vec:push
+                    }
+                }
+
+                "["
+                "," str_items str:join str:append
+                "]" str:append
+            }
+        }
+        case Json:object as object {
+            vec[str]
+            use str_items {
+                object
+                foreach {
+                    use key, value {
+                        key repr
+                        ":" str:append
+                        value Json:to_str str:append
+
+                        use str_item { str_items str_item vec:push }
+                    }
+                }
+
+                "{"
+                "," str_items str:join str:append
+                "}" str:append
+            }
+        }
+    }
+}
+
+enum ParseError {
+    unexpected_extra_token as Token,
+    unexpected_token_type as { Token, vec[TokenType] },
+    unexpected_end_of_file,
+    integer_parse_error as Token,
+}
+
+fn ParseError:to_str args parse_error as ParseError return str {
+    parse_error
+    match {
+        case ParseError:unexpected_extra_token as token {
+            "unexpected token at "
+            token "position" ? Position:to_str str:append
+        }
+        case ParseError:unexpected_token_type as token, expected_token_types {
+            "unexpected token type at "
+            token "position" ? Position:to_str str:append
+            "\nallowed: " str:append
+
+            vec[str]
+            use expected_token_types_str {
+                expected_token_types
+                foreach {
+                    use expected_token_type {
+                        expected_token_types_str expected_token_type TokenType:to_str vec:push
+                    }
+                }
+
+                ", " expected_token_types_str str:join str:append
+            }
+
+            "\n  found: " str:append
+            token "type_" ? TokenType:to_str str:append
+        }
+        case ParseError:unexpected_end_of_file { "unexpected end of file" }
+        case ParseError:integer_parse_error as token {
+            "integer parse error at "
+            token "position" ? Position:to_str str:append
+        }
+    }
+}
+
+enum ParseResult {
+    ok as { Json, int },
+    error as ParseError,
+}
+
+enum OptionalToken {
+    none,
+    some as Token,
+}
+
+fn make_parser args tokens as vec[Token] return Parser {
+    Parser
+    dup "tokens" { tokens } !
+}
+
+fn Parser:run args parser as Parser return ParseResult {
+    parser 0 Parser:parse
+
+    match {
+        case ParseResult:error as error { error ParseResult:error }
+        case ParseResult:ok as json, offset {
+            parser "tokens" ?
+            use tokens {
+                if offset tokens vec:len = not {
+                    tokens offset vec:get ParseError:unexpected_extra_token ParseResult:error return
+                }
+            }
+
+            json offset ParseResult:ok
+        }
+    }
+}
+
+fn Parser:get_token args parser as Parser, offset as int return OptionalToken {
+    parser "tokens" ?
+    use tokens {
+        if offset tokens vec:len >= {
+            OptionalToken:none return
+        }
+
+        tokens offset vec:get OptionalToken:some
+    }
+}
+
+fn Parser:parse args parser as Parser, offset as int return ParseResult {
+    parser offset Parser:get_token
+    match {
+        case OptionalToken:some as token { token }
+        default { ParseError:unexpected_end_of_file ParseResult:error return }
+    }
+
+    use token {
+        token "type_" ?
+        match {
+            case TokenType:null { parser offset Parser:parse_null }
+            case TokenType:boolean { parser offset token Parser:parse_boolean }
+            case TokenType:integer { parser offset token Parser:parse_integer }
+            case TokenType:string { parser offset token Parser:parse_string }
+            case TokenType:square_bracket_open { parser offset Parser:parse_array }
+            case TokenType:curly_bracket_open { parser offset Parser:parse_object }
+            default {
+                vec[TokenType]
+                use expected_token_types {
+                    expected_token_types TokenType:null vec:push
+                    expected_token_types TokenType:boolean vec:push
+                    expected_token_types TokenType:integer vec:push
+                    expected_token_types TokenType:string vec:push
+                    expected_token_types TokenType:square_bracket_open vec:push
+                    expected_token_types TokenType:curly_bracket_open vec:push
+
+                    token expected_token_types ParseError:unexpected_token_type ParseResult:error return
+                }
+            }
+        }
+    }
+}
+
+fn Parser:parse_null args parser as Parser, offset as int return ParseResult {
+    Json:null
+    offset 1 +
+    ParseResult:ok
+}
+
+fn Parser:parse_boolean args parser as Parser, offset as int, token as Token return ParseResult {
+    token "value" ? "true" = Json:boolean
+    offset 1 +
+    ParseResult:ok
+}
+
+fn Parser:parse_integer args parser as Parser, offset as int, token as Token return ParseResult {
+    token "value" ? str:to_int
+    use integer, to_int_ok {
+        if to_int_ok not {
+            token ParseError:integer_parse_error ParseResult:error return
+        }
+
+        integer Json:integer
+    }
+    offset 1 +
+    ParseResult:ok
+}
+
+fn _unescape_json_string args string as str return str {
+    // remove leading and trailing quote
+    string <- { string 1 string str:len 1 - str:substr assert }
+
+    "" 0
+    use unescaped, offset {
+        while true {
+            string "\\" offset str:find_after
+            use backslash_offset, found {
+                if found {
+                    unescaped <- {
+                        unescaped
+                        string offset backslash_offset str:substr
+                        assert
+                        str:append
+                    }
+
+                    string backslash_offset 1 + str:at
+                    use next_char, str_at_ok {
+                        str_at_ok assert
+
+                        if next_char 'u' = {
+                            todo // TODO #201 Support unicode escape sequences
+                        } else {
+                            if next_char 'b' = { unescaped <- { unescaped "\b" str:append } }
+                            if next_char 'f' = { unescaped <- { unescaped "\f" str:append } }
+                            if next_char 'n' = { unescaped <- { unescaped "\n" str:append } }
+                            if next_char 'r' = { unescaped <- { unescaped "\r" str:append } }
+                            if next_char 't' = { unescaped <- { unescaped "\t" str:append } }
+                            if next_char '"' = { unescaped <- { unescaped "\"" str:append } }
+                            if next_char '/' = { unescaped <- { unescaped "/" str:append } }
+                            if next_char '\\' = { unescaped <- { unescaped "\\" str:append } }
+
+                            offset <- { backslash_offset 2 + }
+                        }
+                    }
+                } else {
+                     unescaped <- {
+                        unescaped
+                        string offset string str:len str:substr
+                        assert
+                        str:append
+                    }
+
+                    unescaped return
+                }
+            }
+        }
+    }
+}
+
+fn Parser:parse_string args parser as Parser, offset as int, token as Token return ParseResult {
+    token "value" ? _unescape_json_string Json:string
+    offset 1 +
+    ParseResult:ok
+}
+
+fn Parser:is_empty_array args parser as Parser, offset as int return bool {
+    parser offset Parser:get_token
+    match {
+        case OptionalToken:some as token {
+            token "type_" ?
+            match {
+                case TokenType:square_bracket_close { true return }
+                default { nop }
+            }
+        }
+        default { nop }
+    }
+
+    false
+}
+
+fn Parser:parse_array args parser as Parser, offset as int return ParseResult {
+    offset <- { offset 1 + }
+
+    if parser offset Parser:is_empty_array {
+        vec[Json] Json:array offset 1 + ParseResult:ok return
+    }
+
+    vec[Json]
+    use array {
+        while true {
+            parser offset Parser:parse
+            match {
+                case ParseResult:ok as json, new_offset {
+                    offset <- { new_offset }
+                    array json vec:push
+                }
+                case ParseResult:error as error { error ParseResult:error return }
+            }
+
+            parser offset Parser:get_token
+            match {
+                case OptionalToken:some as token { token }
+                default { ParseError:unexpected_end_of_file ParseResult:error return }
+            }
+
+            use token {
+                token "type_" ?
+                match {
+                    case TokenType:comma { offset <- { offset 1 + } }
+                    case TokenType:square_bracket_close {
+                        array Json:array offset 1 + ParseResult:ok return
+                    }
+                    default {
+                        vec[TokenType]
+                        use expected_token_types {
+                            expected_token_types TokenType:comma vec:push
+                            expected_token_types TokenType:square_bracket_close vec:push
+
+                            token expected_token_types ParseError:unexpected_token_type ParseResult:error return
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn Parser:is_empty_object args parser as Parser, offset as int return bool {
+    parser offset Parser:get_token
+    match {
+        case OptionalToken:some as token {
+            token "type_" ?
+            match {
+                case TokenType:curly_bracket_close { true return }
+                default { nop }
+            }
+        }
+        default { nop }
+    }
+
+    false
+}
+
+enum ParseObjectItemResult {
+    ok as { str, Json, int },
+    error as ParseError,
+}
+
+fn Parser:parse_object_item args parser as Parser, offset as int return ParseObjectItemResult {
+    parser offset Parser:get_token
+    match {
+        case OptionalToken:some as token { token }
+        default { ParseError:unexpected_end_of_file ParseObjectItemResult:error return }
+    }
+
+    use token {
+        token "type_" ?
+        match {
+            case TokenType:string { nop }
+            default {
+                vec[TokenType]
+                use expected_token_types {
+                    expected_token_types TokenType:string vec:push
+
+                    token expected_token_types ParseError:unexpected_token_type ParseObjectItemResult:error return
+                }
+            }
+        }
+
+        parser offset token Parser:parse_string
+    }
+
+    match {
+        case ParseResult:ok as json, new_offset {
+            offset <- { new_offset }
+
+            json
+            match {
+                case Json:string as key { key }
+                default { unreachable }
+            }
+
+        }
+        case ParseResult:error as error { error ParseObjectItemResult:error return }
+    }
+
+    use key {
+        parser offset Parser:get_token
+        match {
+            case OptionalToken:some as token { token }
+            default { ParseError:unexpected_end_of_file ParseObjectItemResult:error return }
+        }
+
+        use token {
+            token "type_" ?
+            match {
+                case TokenType:colon { offset <- { offset 1 + } }
+                default {
+                    vec[TokenType]
+                    use expected_token_types {
+                        expected_token_types TokenType:colon vec:push
+
+                        token expected_token_types ParseError:unexpected_token_type ParseObjectItemResult:error return
+                    }
+                }
+            }
+        }
+
+        parser offset Parser:parse
+        match {
+            case ParseResult:ok as value, new_offset {
+                offset <- { new_offset }
+                value
+            }
+            case ParseResult:error as error { error ParseObjectItemResult:error return }
+        }
+
+        use value {
+            key value offset ParseObjectItemResult:ok
+        }
+    }
+}
+
+fn Parser:parse_object args parser as Parser, offset as int return ParseResult {
+    offset <- { offset 1 + }
+
+    if parser offset Parser:is_empty_object {
+        map[str, Json] Json:object offset 1 + ParseResult:ok return
+    }
+
+    map[str, Json]
+    use object {
+        while true {
+            parser offset Parser:parse_object_item
+            match {
+                case ParseObjectItemResult:ok as key, value, new_offset {
+                    offset <- { new_offset }
+                    object key value map:set
+                }
+                case ParseObjectItemResult:error as error { error ParseResult:error return }
+            }
+
+            parser offset Parser:get_token
+            match {
+                case OptionalToken:some as token { token }
+                default { ParseError:unexpected_end_of_file ParseResult:error return }
+            }
+
+            use token {
+                token "type_" ?
+                match {
+                    case TokenType:comma { offset <- { offset 1 + } }
+                    case TokenType:curly_bracket_close {
+                        object Json:object offset 1 + ParseResult:ok return
+                    }
+                    default {
+                        vec[TokenType]
+                        use expected_token_types {
+                            expected_token_types TokenType:comma vec:push
+                            expected_token_types TokenType:curly_bracket_close vec:push
+
+                            token expected_token_types ParseError:unexpected_token_type ParseResult:error return
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+enum JsonError {
+    tokenize_error as TokenizeError,
+    parse_error as ParseError,
+}
+
+fn JsonError:to_str args error as JsonError return str {
+    error
+    match {
+        case JsonError:tokenize_error as tokenize_error {
+            tokenize_error TokenizeError:to_str
+        }
+        case JsonError:parse_error as parse_error {
+            parse_error ParseError:to_str
+        }
+    }
+}
+
+enum JsonResult {
+    ok as Json,
+    error as JsonError,
+}
+
+fn json_from_str args input as str return JsonResult {
+    input
+
+    make_tokenizer Tokenizer:run
+    match {
+        case TokenizeResult:error as tokens, error {
+            error JsonError:tokenize_error JsonResult:error return
+        }
+        case TokenizeResult:ok as tokens { tokens }
+    }
+
+    use tokens {
+        tokens make_parser Parser:run
+        match {
+            case ParseResult:error as error {
+                error JsonError:parse_error JsonResult:error return
+            }
+            case ParseResult:ok as json, token_offset { json JsonResult:ok }
+        }
+    }
+}

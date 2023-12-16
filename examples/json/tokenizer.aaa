@@ -1,0 +1,340 @@
+enum TokenType {
+    boolean,
+    colon,
+    comma,
+    curly_bracket_close,
+    curly_bracket_open,
+    integer,
+    null,
+    square_bracket_close,
+    square_bracket_open,
+    string,
+    whitespace,
+}
+
+fn TokenType:to_str args token_type as TokenType return str {
+    token_type
+    match {
+        case TokenType:boolean { "boolean" }
+        case TokenType:colon { "colon" }
+        case TokenType:comma { "comma" }
+        case TokenType:curly_bracket_close { "curly_bracket_close" }
+        case TokenType:curly_bracket_open { "curly_bracket_open" }
+        case TokenType:integer { "integer" }
+        case TokenType:null { "null" }
+        case TokenType:square_bracket_close { "square_bracket_close" }
+        case TokenType:square_bracket_open { "square_bracket_open" }
+        case TokenType:string { "string" }
+        case TokenType:whitespace { "whitespace" }
+    }
+}
+
+struct Position {
+    line as int,
+    column as int,
+}
+
+fn Position:to_str args position as Position return str {
+    "<file>:"
+    position "line" ? repr str:append
+    ":" str:append
+    position "column" ? repr str:append
+}
+
+fn get_line_column_count args string as str return int, int {
+    "(\r\n?|\n)" make_regex assert
+    0
+    0
+    use line_end_regex, line, offset {
+        while true {
+            line_end_regex string offset regex:find
+
+            use matched_str, matched_offset, matched_ok {
+                if matched_ok not {
+                    string str:len offset -
+                    use column {
+                        line column return
+                    }
+                }
+
+                line <- { line 1 + }
+                offset <- { matched_offset matched_str str:len + }
+            }
+        }
+    }
+}
+
+fn Position:after_str args position as Position, string as str return Position {
+    string get_line_column_count
+    use lines, columns {
+        Position
+        dup "line" { position "line" ? lines + } !
+        dup "column" {
+            if lines 0 = {
+                position "column" ? columns +
+            } else {
+                columns 1 +
+            }
+        } !
+    }
+
+}
+
+fn make_position args line as int, column as int return Position {
+    Position
+    dup "line" { line } !
+    dup "column" { column } !
+}
+
+struct Token {
+    value as str,
+    type_ as TokenType,
+    position as Position,
+}
+
+fn make_token args value as str, type_ as TokenType, position as Position return Token {
+    Token
+    dup "value" { value } !
+    dup "type_" { type_ } !
+    dup "position" { position } !
+}
+
+
+fn make_token_null args position as Position return Token {
+    "null" TokenType:null position make_token
+}
+
+fn make_token_true args position as Position return Token {
+    "true" TokenType:boolean position make_token
+}
+
+fn make_token_false args position as Position return Token {
+    "false" TokenType:boolean position make_token
+}
+
+fn make_token_one_char args char_ as char, position as Position return TokenResult {
+    if char_ ',' = { char_ char:to_str TokenType:comma position make_token TokenResult:ok return }
+    if char_ ':' = { char_ char:to_str TokenType:colon position make_token TokenResult:ok return }
+    if char_ '[' = { char_ char:to_str TokenType:square_bracket_open position make_token TokenResult:ok return }
+    if char_ ']' = { char_ char:to_str TokenType:square_bracket_close position make_token TokenResult:ok return }
+    if char_ '{' = { char_ char:to_str TokenType:curly_bracket_open position make_token TokenResult:ok return }
+    if char_ '}' = { char_ char:to_str TokenType:curly_bracket_close position make_token TokenResult:ok return }
+    unreachable
+}
+
+enum OptionalChar {
+    none,
+    some as str,  // TODO #48 use `char` type
+}
+
+enum TokenizeResult {
+    ok as vec[Token],
+    error as { vec[Token], TokenizeError },
+}
+
+enum TokenResult {
+    ok as Token,
+    error as TokenizeError,
+}
+
+enum TokenizeError {
+    integer_parse_error as Position,
+    string_parse_error as Position,
+    expected_prefix_parse_error as { str, Position },
+    generic_parse_error as Position,
+}
+
+fn TokenizeError:to_str args tokenize_error as TokenizeError return str {
+    tokenize_error
+    match {
+        case TokenizeError:integer_parse_error as position {
+            position Position:to_str
+            ": Could not tokenize integer." str:append
+        }
+        case TokenizeError:string_parse_error as position {
+            position Position:to_str
+            ": Could not tokenize string." str:append
+        }
+        case TokenizeError:expected_prefix_parse_error as expected, position {
+            position Position:to_str
+            ": Tokenizing failed, expected \"" str:append
+            expected str:append
+            "\"." str:append
+        }
+        case TokenizeError:generic_parse_error as position {
+            position Position:to_str
+            ": Tokenizing failed." str:append
+        }
+    }
+}
+
+struct Tokenizer {
+    input as str,
+    offset as int,
+    position as Position,
+    integer_regex as regex,
+    string_regex as regex,
+    whitespace_regex as regex,
+}
+
+fn make_tokenizer args input as str return Tokenizer {
+    Tokenizer
+    dup "input" { input } !
+    dup "position" { 1 1 make_position } !
+    dup "integer_regex" { "(-)?[0-9]+" make_regex assert } !
+    dup "string_regex" { "\"([^\\\\\"]|\\\\([/bfnrt\\\\\"]|u[0-9a-fA-F]{4}))*\"" make_regex assert } !
+    dup "whitespace_regex" { "\\s+" make_regex assert } !
+}
+
+fn Tokenizer:get_char args tokenizer as Tokenizer return char, bool {
+    tokenizer "input" ?
+    tokenizer "offset" ?
+    use input, offset {
+        input offset str:at
+    }
+}
+
+fn Tokenizer:tokenize_expected_prefix args tokenizer as Tokenizer, expected_token as Token return TokenResult {
+    tokenizer "input" ?
+    tokenizer "offset" ?
+    expected_token "value" ?
+    use input, offset, expected_prefix {
+        input offset offset expected_prefix str:len + str:substr
+        use prefix, substr_ok {
+            if substr_ok prefix expected_prefix = and {
+                expected_token TokenResult:ok return
+            }
+        }
+
+        expected_prefix
+        tokenizer "position" ? copy swap drop
+        TokenizeError:expected_prefix_parse_error
+        TokenResult:error
+    }
+}
+
+fn Tokenizer:run args tokenizer as Tokenizer return TokenizeResult {
+    vec[Token]
+    use tokens {
+        while
+            tokenizer "offset" ?
+            tokenizer "input" ? str:len
+            <
+        {
+            tokenizer Tokenizer:get_token
+            match {
+                case TokenResult:error as error { tokens error TokenizeResult:error return }
+                case TokenResult:ok as token {
+                    token "type_" ?
+                    match {
+                        case TokenType:whitespace { nop }
+                        default { tokens token vec:push }
+                    }
+                    tokenizer token Tokenizer:update
+                }
+            }
+        }
+
+        tokens TokenizeResult:ok
+    }
+}
+
+fn Tokenizer:update args tokenizer as Tokenizer, token as Token {
+    // Update `offset` and `position` fields when new `Token` is found
+    tokenizer "offset" { tokenizer "offset" ? token "value" ? str:len + } !
+
+    tokenizer "position" {
+        tokenizer "position" ?
+        token "value" ?
+        Position:after_str
+    } !
+}
+
+fn Tokenizer:tokenize_integer args tokenizer as Tokenizer return TokenResult {
+    tokenizer "input" ?
+    tokenizer "offset" ?
+    tokenizer "integer_regex" ?
+    use input, offset, integer_regex {
+        integer_regex input offset regex:find
+        use matched_str, matched_offset, matched {
+            if matched not matched_offset offset = not or {
+                tokenizer "position" ? copy swap drop
+                TokenizeError:integer_parse_error
+                TokenResult:error return
+            }
+
+            tokenizer "position" ?
+            use position {
+                matched_str TokenType:integer position make_token TokenResult:ok
+            }
+        }
+    }
+}
+
+fn Tokenizer:tokenize_string args tokenizer as Tokenizer return TokenResult {
+    tokenizer "input" ?
+    tokenizer "offset" ?
+    tokenizer "string_regex" ?
+    use input, offset, string_regex {
+        string_regex input offset regex:find
+        use matched_str, matched_offset, matched {
+            if matched not matched_offset offset = not or {
+                tokenizer "position" ? copy swap drop
+                TokenizeError:string_parse_error
+                TokenResult:error return
+            }
+
+            tokenizer "position" ?
+            use position {
+                matched_str TokenType:string position make_token TokenResult:ok
+            }
+        }
+    }
+}
+
+fn Tokenizer:tokenize_whitespace args tokenizer as Tokenizer return TokenResult {
+    tokenizer "input" ?
+    tokenizer "offset" ?
+    tokenizer "whitespace_regex" ?
+    use input, offset, whitespace_regex {
+        whitespace_regex input offset regex:find
+        use matched_str, matched_offset, matched {
+            if matched not matched_offset offset = not or { unreachable }
+
+            tokenizer "position" ?
+            use position {
+                matched_str TokenType:whitespace position make_token TokenResult:ok
+            }
+        }
+    }
+}
+
+fn Tokenizer:get_token args tokenizer as Tokenizer return TokenResult {
+    tokenizer Tokenizer:get_char
+    use char_, ok {
+        if ok not { unreachable }
+
+        char_
+    }
+
+    tokenizer "position" ?
+    use char_, position {
+        if char_ 'n' = { tokenizer position make_token_null Tokenizer:tokenize_expected_prefix return }
+        if char_ 't' = { tokenizer position make_token_true Tokenizer:tokenize_expected_prefix return }
+        if char_ 'f' = { tokenizer position make_token_false Tokenizer:tokenize_expected_prefix return }
+        if char_ '[' = { char_ position make_token_one_char return }
+        if char_ ']' = { char_ position make_token_one_char return }
+        if char_ '{' = { char_ position make_token_one_char return }
+        if char_ '}' = { char_ position make_token_one_char return }
+        if char_ ':' = { char_ position make_token_one_char return }
+        if char_ ',' = { char_ position make_token_one_char return }
+        if char_ '"' = { tokenizer Tokenizer:tokenize_string return }
+        if char_ '-' = { tokenizer Tokenizer:tokenize_integer return }
+        if char_ char:is_digit { tokenizer Tokenizer:tokenize_integer return }
+        if char_ char:is_whitespace { tokenizer Tokenizer:tokenize_whitespace return }
+
+        tokenizer "position" ? copy swap drop
+        TokenizeError:generic_parse_error
+        TokenResult:error
+    }
+}
