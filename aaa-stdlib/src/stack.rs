@@ -960,6 +960,12 @@ where
         let string_rc = self.pop_str();
         let string = (*string_rc).borrow();
 
+        if start == end && start == string.len() {
+            self.push_str("");
+            self.push_bool(true);
+            return;
+        }
+
         let start_byte_index = string
             .char_indices()
             .nth(start)
@@ -975,18 +981,15 @@ where
         };
 
         if let (Some(start), Some(end)) = (start_byte_index, end_byte_index) {
-            if start > end {
-                self.push_str("");
-                self.push_bool(false);
+            if start <= end {
+                self.push_str(&string[start..end]);
+                self.push_bool(true);
                 return;
             }
-
-            self.push_str(&string[start..end]);
-            self.push_bool(true);
-        } else {
-            self.push_str("");
-            self.push_bool(false);
         }
+
+        self.push_str("");
+        self.push_bool(false);
     }
 
     pub fn str_to_bool(&mut self) {
