@@ -1,0 +1,26 @@
+from "../json/parser.aaa" import json_from_str, Json, JsonResult, JsonError
+
+enum SyntaxLoaderResult {
+    ok as SyntaxLoader,
+    error as str,
+}
+
+struct SyntaxLoader {}
+
+fn syntax_loader_new_from_file args filename as str return SyntaxLoaderResult {
+    // TODO load file and call syntax_loader_new_from_str
+    todo
+}
+
+fn syntax_loader_new_from_str args text as str return SyntaxLoaderResult {
+    text json_from_str
+    match {
+        case JsonResult:error as error { error JsonError:to_str SyntaxLoaderResult:error return }
+        case JsonResult:ok as json { json }
+    }
+
+    todo
+    // TODO of data validation
+
+    // TODO loading fields of SyntaxLoader
+}
