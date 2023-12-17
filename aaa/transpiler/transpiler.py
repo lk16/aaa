@@ -1,7 +1,7 @@
+from collections.abc import Callable
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Type
 
 from basil.models import Position
 
@@ -77,7 +77,7 @@ class Transpiler:
         *,
         cross_referencer_output: CrossReferencerOutput,
         type_checker_output: TypeCheckerOutput,
-        transpiler_root: Optional[Path],
+        transpiler_root: Path | None,
         runtime_type_checks: bool,
         verbose: bool,
     ) -> None:
@@ -90,11 +90,11 @@ class Transpiler:
         self.verbose = verbose
         self.runtime_type_checks = runtime_type_checks
 
-        self.structs: Dict[Tuple[Path, str], Struct] = {}
-        self.enums: Dict[Tuple[Path, str], Enum] = {}
+        self.structs: dict[tuple[Path, str], Struct] = {}
+        self.enums: dict[tuple[Path, str], Enum] = {}
 
         # Function currently being transpiled
-        self.current_function: Optional[Function] = None
+        self.current_function: Function | None = None
 
         for key, struct in cross_referencer_output.structs.items():
             if struct.position.file != self.builtins_path:
@@ -199,7 +199,7 @@ class Transpiler:
         )
 
         code = Code()
-        code.add("fn main() {", r=1)
+        code.add("fn main() {", indent=1)
 
         if argv_used:
             code.add("let mut stack:Stack<UserTypeEnum> = Stack::from_argv();")
@@ -211,7 +211,7 @@ class Transpiler:
         if exit_code_returned:
             code.add("stack.exit();")
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         return code
 
@@ -266,7 +266,7 @@ class Transpiler:
         func_name = self._generate_function_name(function)
 
         code = Code(f"// Generated from: {function.position.file} {function.name}")
-        code.add(f"fn {func_name}(stack: &mut Stack<UserTypeEnum>) {{", r=1)
+        code.add(f"fn {func_name}(stack: &mut Stack<UserTypeEnum>) {{", indent=1)
 
         if function.arguments:
             code.add("// load arguments")
@@ -276,7 +276,7 @@ class Transpiler:
 
         code.add(self._generate_function_body(function.body))
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
 
         self.current_function = None
@@ -292,7 +292,7 @@ class Transpiler:
         return code
 
     def _generate_function_body_item(self, item: FunctionBodyItem) -> Code:
-        generate_funcs: Dict[Type[FunctionBodyItem], Callable[..., Code]] = {
+        generate_funcs: dict[type[FunctionBodyItem], Callable[..., Code]] = {
             Assignment: self._generate_assignment_code,
             BooleanLiteral: self._generate_boolean_literal,
             Branch: self._generate_branch,
@@ -337,7 +337,7 @@ class Transpiler:
             # If there is no type stack for this position, one of these is true:
             # - the code is unreachable
             # - there are bugs in generating the `position_stacks` (in TypeChecker)
-            # Since we reached a state that should never happen either way, we want to crash.
+            # Either way should never, so we crash.
             return Code(
                 "stack.unreachable_with_position(Some(("
                 + f'"{position.file}", {position.line}, {position.column}'
@@ -347,7 +347,7 @@ class Transpiler:
         # We should not get here with unreachable code
         assert not isinstance(type_stack, Never)
 
-        variable_kinds: List[str] = []
+        variable_kinds: list[str] = []
         for item in type_stack:
             if isinstance(item, FunctionPointer):
                 variable_kinds.append("fn_ptr")
@@ -411,13 +411,13 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct_type)
 
-        code = Code("{", r=1)
+        code = Code("{", indent=1)
         code.add("let popped = stack.pop_user_type();")
         code.add("let mut borrowed = (*popped).borrow_mut();")
 
         code.add(f"stack.push(borrowed.get_{rust_struct_name}().{field_name}.clone());")
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         return code
 
     def _generate_field_update_code(self, field_update: StructFieldUpdate) -> Code:
@@ -440,14 +440,14 @@ class Transpiler:
         rust_struct_name = self._generate_type_name(struct_type)
         field_name = field_update.field_name.value
 
-        code.add("{", r=1)
+        code.add("{", indent=1)
 
-        code.add(f"let value = stack.pop();")
+        code.add("let value = stack.pop();")
 
         code.add("let popped = stack.pop_user_type();")
         code.add("let mut borrowed = (*popped).borrow_mut();")
         code.add(f"borrowed.get_{rust_struct_name}().{field_name} = value;")
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         return code
 
     def _generate_match_block_code(self, match_block: MatchBlock) -> Code:
@@ -470,9 +470,10 @@ class Transpiler:
         )
 
         code = Code(
-            f"let {match_var} = stack.pop_user_type().borrow_mut().get_{rust_enum_name}().clone();"
+            f"let {match_var} = "
+            + f"stack.pop_user_type().borrow_mut().get_{rust_enum_name}().clone();"
         )
-        code.add(f"match {match_var} {{", r=1)
+        code.add(f"match {match_var} {{", indent=1)
 
         has_default = False
         case_blocks = 0
@@ -489,7 +490,7 @@ class Transpiler:
         if not has_default and case_blocks != len(enum_type.variants):
             code.add("_ => {}")
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         return code
 
@@ -519,7 +520,7 @@ class Transpiler:
         variant_name = case_block.variant_name
         associated_data = enum.variants[variant_name]
 
-        for i, item in enumerate(associated_data):
+        for i, _item in enumerate(associated_data):
             arg = f"{case_var_prefix}_{i}"
             code.add(f"stack.push({arg});")
 
@@ -543,7 +544,7 @@ class Transpiler:
         line += ", ".join(f"{case_var_prefix}_{i}" for i in range(len(associated_data)))
         line += ") => {"
 
-        code = Code(line, r=1)
+        code = Code(line, indent=1)
         if case_block.variables:
             code.add(
                 self._generate_case_block_body_with_variables(
@@ -558,14 +559,14 @@ class Transpiler:
             )
 
         code.add(self._generate_function_body(case_block.body))
-        code.add("},", l=1)
+        code.add("},", unindent=1)
 
         return code
 
     def _generate_default_block_code(self, default_block: DefaultBlock) -> Code:
-        code = Code("_ => {", r=1)
+        code = Code("_ => {", indent=1)
         code.add(self._generate_function_body(default_block.body))
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         return code
 
@@ -581,13 +582,13 @@ class Transpiler:
         return Code(f"stack.push_char('{string_value}');")
 
     def _generate_while_loop(self, while_loop: WhileLoop) -> Code:
-        code = Code("loop {", r=1)
+        code = Code("loop {", indent=1)
         code.add(self._generate_function_body(while_loop.condition))
-        code.add("if !stack.pop_bool() {", r=1)
+        code.add("if !stack.pop_bool() {", indent=1)
         code.add("break;")
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add(self._generate_function_body(while_loop.body))
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         return code
 
     def _generate_foreach_loop(self, foreach_loop: ForeachLoop) -> Code:
@@ -642,27 +643,28 @@ class Transpiler:
         else:
             code.add(f"{iter}(stack);")
 
-        code.add("loop {", r=1)
+        code.add("loop {", indent=1)
 
-        code.add(f"stack.dup();")
+        code.add("stack.dup();")
         if iter_func.position.file == self.builtins_path:
             code.add(f"{next}();")
         else:
             code.add(f"{next}(stack);")
 
-        code.add("if !stack.pop_bool() {", r=1)
+        code.add("if !stack.pop_bool() {", indent=1)
 
-        # drop number of next items - 1 (boolean returned by `next` was popped earlier) + 1 (iterator)
+        # drop number of next items - 1 (boolean returned by `next` was popped earlier)
+        # and drop iterator (+ 1)
         for _ in range(break_drop_count):
             code.add("stack.drop();")
 
         code.add("break;")
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         code.add(self._generate_function_body(foreach_loop.body))
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         return code
 
@@ -680,7 +682,8 @@ class Transpiler:
                 position = call_func.position
                 rust_func_name = f"stack.{called.name}_with_position"
                 return Code(
-                    f'{rust_func_name}(Some(("{position.file}", {position.line}, {position.column})));'
+                    f'{rust_func_name}(Some(("{position.file}", '
+                    + f"{position.line}, {position.column})));"
                 )
             return Code(f"{rust_func_name}();")
 
@@ -703,14 +706,14 @@ class Transpiler:
     def _generate_branch(self, branch: Branch) -> Code:
         code = self._generate_function_body(branch.condition)
 
-        code.add("if stack.pop_bool() {", r=1)
+        code.add("if stack.pop_bool() {", indent=1)
         code.add(self._generate_function_body(branch.if_body))
 
         if branch.else_body:
-            code.add("} else {", l=1, r=1)
+            code.add("} else {", unindent=1, indent=1)
             code.add(self._generate_function_body(branch.else_body))
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         return code
 
@@ -726,8 +729,8 @@ class Transpiler:
         rust_enum_name = self._generate_type_name(enum)
 
         code = Code(f"// Generated for: {enum.position.file} {enum.name}")
-        code.add(f"#[derive(Clone)]")
-        code.add(f"enum {rust_enum_name} {{", r=1)
+        code.add("#[derive(Clone)]")
+        code.add(f"enum {rust_enum_name} {{", indent=1)
 
         for variant_name, variant_data in enum.variants.items():
             line = f"variant_{variant_name}("
@@ -736,7 +739,7 @@ class Transpiler:
 
             line += "),"
             code.add(line)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -750,7 +753,8 @@ class Transpiler:
                 enum, variant_name
             )
             code.add(
-                f"fn {enum_ctor_func_name}(stack: &mut Stack<UserTypeEnum>) {{", r=1
+                f"fn {enum_ctor_func_name}(stack: &mut Stack<UserTypeEnum>) {{",
+                indent=1,
             )
             for i, _ in reversed(list(enumerate(associated_data))):
                 code.add(f"let arg{i} = stack.pop();")
@@ -761,23 +765,23 @@ class Transpiler:
 
             code.add(line)
             code.add(f"stack.push_user_type(UserTypeEnum::{rust_enum_name}(enum_));")
-            code.add("}", l=1)
+            code.add("}", unindent=1)
             code.add("")
         return code
 
     def _generate_enum_impl(self, enum: Enum) -> Code:
         rust_enum_name = self._generate_type_name(enum)
 
-        code = Code(f"impl {rust_enum_name} {{", r=1)
-        code.add(f"fn new() -> Self {{", r=1)
-        code.add(f"Self::variant_{enum.zero_variant}(", r=1)
+        code = Code(f"impl {rust_enum_name} {{", indent=1)
+        code.add("fn new() -> Self {", indent=1)
+        code.add(f"Self::variant_{enum.zero_variant}(", indent=1)
 
         for variant_data_item in enum.variants[enum.zero_variant]:
             zero_value = self._generate_zero_expression(variant_data_item)
             code.add(f"{zero_value},")
-        code.add(")", l=1)
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code.add(")", unindent=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
         code.add("")
 
         return code
@@ -788,8 +792,8 @@ class Transpiler:
 
         rust_enum_name = self._generate_type_name(enum)
 
-        code = Code(f"impl PartialEq for {rust_enum_name} {{", r=1)
-        code.add("fn eq(&self, other: &Self) -> bool {", r=1)
+        code = Code(f"impl PartialEq for {rust_enum_name} {{", indent=1)
+        code.add("fn eq(&self, other: &Self) -> bool {", indent=1)
 
         try:
             equals_func = self.functions[(enum.position.file, f"{enum.name}:=")]
@@ -808,8 +812,8 @@ class Transpiler:
             code.add(f"{equals_func_name}(&mut stack);")
             code.add("stack.pop_bool()")
 
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -819,13 +823,13 @@ class Transpiler:
 
         rust_enun_name = self._generate_type_name(enum)
 
-        code = Code(f"impl Hash for {rust_enun_name} {{", r=1)
+        code = Code(f"impl Hash for {rust_enun_name} {{", indent=1)
 
-        code.add("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {", r=1)
+        code.add("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {", indent=1)
         code.add("todo!();")  # TODO #125 Implement hash for structs and enums
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -835,16 +839,16 @@ class Transpiler:
 
         rust_enum_name = self._generate_type_name(enum)
 
-        code = Code(f"impl UserType for {rust_enum_name} {{", r=1)
+        code = Code(f"impl UserType for {rust_enum_name} {{", indent=1)
 
-        code.add("fn kind(&self) -> String {", r=1)
+        code.add("fn kind(&self) -> String {", indent=1)
         code.add(f'String::from("{enum.name}")')
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         code.add("")
 
-        code.add("fn clone_recursive(&self) -> Self {", r=1)
-        code.add("match self {", r=1)
+        code.add("fn clone_recursive(&self) -> Self {", indent=1)
+        code.add("match self {", indent=1)
 
         for variant_name, associated_data in enum.variants.items():
             line = f"Self::variant_{variant_name}("
@@ -852,18 +856,18 @@ class Transpiler:
             line += ", ".join([f"arg{i}" for i in range(len(associated_data))])
             line += ") => {"
 
-            code.add(line, r=1)
+            code.add(line, indent=1)
 
-            code.add(f"Self::variant_{variant_name}(", r=1)
+            code.add(f"Self::variant_{variant_name}(", indent=1)
             for i, _ in enumerate(associated_data):
                 code.add(f"arg{i}.clone_recursive(),")
-            code.add(")", l=1)
+            code.add(")", unindent=1)
 
-            code.add("},", l=1)
+            code.add("},", unindent=1)
 
-        code.add("}", l=1)
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -873,43 +877,43 @@ class Transpiler:
 
         rust_enum_type = self._generate_type_name(enum)
 
-        code = Code(f"impl Display for {rust_enum_type} {{", r=1)
+        code = Code(f"impl Display for {rust_enum_type} {{", indent=1)
 
-        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
-        code.add("match self {", r=1)
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", indent=1)
+        code.add("match self {", indent=1)
 
         for variant_name, associated_data in enum.variants.items():
             line = f"Self::variant_{variant_name}("
             line += ", ".join([f"arg{i}" for i in range(len(associated_data))])
             line += ") => {"
 
-            code.add(line, r=1)
+            code.add(line, indent=1)
 
             code.add(f'write!(f, "{enum.name}:{variant_name}{{{{")?;')
 
-            for offset, item in enumerate(associated_data):
+            for offset, _item in enumerate(associated_data):
                 if offset != 0:
                     code.add('write!(f, ", ")?;')
 
                 code.add(f'write!(f, "{{:?}}", arg{offset})?;')
 
             code.add('write!(f, "}}")')
-            code.add("}", l=1)
-        code.add("}", l=1)
-        code.add("}", l=1)
+            code.add("}", unindent=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
     def _generate_enum_Debug_impl(self, enum: Enum) -> Code:
         rust_enum_type = self._generate_type_name(enum)
 
-        code = Code(f"impl Debug for {rust_enum_type} {{", r=1)
-        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
-        code.add(f'write!(f, "{{}}", self)')
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code = Code(f"impl Debug for {rust_enum_type} {{", indent=1)
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", indent=1)
+        code.add('write!(f, "{}", self)')
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -934,32 +938,37 @@ class Transpiler:
         elif type.name == "regex":
             return "Variable::regex_zero_value()"
         rust_type_name = self._generate_type_name(type.type)
-        return f"Variable::UserType(Rc::new(RefCell::new(UserTypeEnum::{rust_type_name}({rust_type_name}::new()))))"
+        return (
+            "Variable::UserType(Rc::new(RefCell::new("
+            + f"UserTypeEnum::{rust_type_name}({rust_type_name}::new()))))"
+        )
 
     def _generate_UserTypeEnum(self) -> Code:
         code = Code("#[derive(Clone, Hash, PartialEq)]")
-        code.add("enum UserTypeEnum {", r=1)
+        code.add("enum UserTypeEnum {", indent=1)
 
         for (file, name), struct in self.structs.items():
             rust_struct_name = self._generate_type_name(struct)
             code.add(
-                f"{rust_struct_name}({rust_struct_name}), // Generated for {file} {name}"
+                f"{rust_struct_name}({rust_struct_name}), "
+                + f"// Generated for {file} {name}"
             )
 
         for (file, name), enum in self.enums.items():
             rust_struct_name = self._generate_type_name(enum)
             code.add(
-                f"{rust_struct_name}({rust_struct_name}), // Generated for {file} {name}"
+                f"{rust_struct_name}({rust_struct_name}), "
+                + f"// Generated for {file} {name}"
             )
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
     def _generate_UserTypeEnum_impl(self) -> Code:
-        code = Code("impl UserTypeEnum {", r=1)
+        code = Code("impl UserTypeEnum {", indent=1)
 
-        func_code_list: List[Code] = []
+        func_code_list: list[Code] = []
 
         user_types = self.structs | self.enums
 
@@ -968,107 +977,108 @@ class Transpiler:
 
             func_code = Code(
                 f"fn get_{rust_struct_name}(&mut self) -> &mut {rust_struct_name} {{",
-                r=1,
+                indent=1,
             )
-            func_code.add("match self {", r=1)
+            func_code.add("match self {", indent=1)
             func_code.add(f"Self::{rust_struct_name}(v) => v,")
 
             if len(user_types) != 1:
-                func_code.add(f"_ => unreachable!(),")
+                func_code.add("_ => unreachable!(),")
 
-            func_code.add("}", l=1)
-            func_code.add("}", l=1)
+            func_code.add("}", unindent=1)
+            func_code.add("}", unindent=1)
 
             func_code_list.append(func_code)
 
         code.add_joined("", func_code_list)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
     def _generate_UserTypeEnum_UserType_impl(self) -> Code:
-        code = Code("impl UserType for UserTypeEnum {", r=1)
-        code.add("fn kind(&self) -> String {", r=1)
+        code = Code("impl UserType for UserTypeEnum {", indent=1)
+        code.add("fn kind(&self) -> String {", indent=1)
 
         user_types = self.structs | self.enums
 
         if user_types:
-            code.add("match self {", r=1)
+            code.add("match self {", indent=1)
 
             for user_type in user_types.values():
                 rust_struct_name = self._generate_type_name(user_type)
                 code.add(f"Self::{rust_struct_name}(v) => v.kind(),")
 
-            code.add("}", l=1)
+            code.add("}", unindent=1)
         else:
             code.add("unreachable!();")
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
 
-        code.add("fn clone_recursive(&self) -> Self {", r=1)
+        code.add("fn clone_recursive(&self) -> Self {", indent=1)
 
         if user_types:
-            code.add("match self {", r=1)
+            code.add("match self {", indent=1)
 
             for user_type in user_types.values():
                 rust_struct_name = self._generate_type_name(user_type)
                 code.add(
-                    f"Self::{rust_struct_name}(v) => Self::{rust_struct_name}(v.clone_recursive()),"
+                    f"Self::{rust_struct_name}(v) => "
+                    + f"Self::{rust_struct_name}(v.clone_recursive()),"
                 )
 
-            code.add("}", l=1)
+            code.add("}", unindent=1)
         else:
             code.add("unreachable!();")
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
     def _generate_UserTypeEnum_Debug_impl(self) -> Code:
-        code = Code("impl Display for UserTypeEnum {", r=1)
-        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
+        code = Code("impl Display for UserTypeEnum {", indent=1)
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", indent=1)
 
         user_types = self.structs | self.enums
 
         if user_types:
-            code.add("match self {", r=1)
+            code.add("match self {", indent=1)
 
             for type in user_types.values():
                 rust_struct_name = self._generate_type_name(type)
                 code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{}}", v),')
 
-            code.add("}", l=1)
+            code.add("}", unindent=1)
 
         else:
             code.add("unreachable!();")
 
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
     def _generate_UserTypeEnum_Display_impl(self) -> Code:
-        code = Code("impl Debug for UserTypeEnum {", r=1)
-        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
+        code = Code("impl Debug for UserTypeEnum {", indent=1)
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", indent=1)
 
         user_types = self.structs | self.enums
 
         if user_types:
-            code.add("match self {", r=1)
+            code.add("match self {", indent=1)
 
             for type in user_types.values():
                 rust_struct_name = self._generate_type_name(type)
                 code.add(f'Self::{rust_struct_name}(v) => write!(f, "{{}}", v),')
 
-            code.add("}", l=1)
+            code.add("}", unindent=1)
         else:
             code.add("unreachable!();")
 
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -1079,13 +1089,13 @@ class Transpiler:
         rust_struct_name = self._generate_type_name(struct)
 
         code = Code(f"// Generated for: {struct.position.file} {struct.name}")
-        code.add(f"#[derive(Clone)]")
-        code.add(f"struct {rust_struct_name} {{", r=1)
+        code.add("#[derive(Clone)]")
+        code.add(f"struct {rust_struct_name} {{", indent=1)
 
         for field_name in struct.fields:
             code.add(f"{field_name}: Variable<UserTypeEnum>,")
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -1117,10 +1127,10 @@ class Transpiler:
         rust_struct_name = self._generate_type_name(struct)
 
         code = Code(f"// Generated for: {struct.position.file} {struct.name}")
-        code.add(f"impl {rust_struct_name} {{", r=1)
-        code.add(f"fn new() -> Self {{", r=1)
+        code.add(f"impl {rust_struct_name} {{", indent=1)
+        code.add("fn new() -> Self {", indent=1)
 
-        code.add("Self {", r=1)
+        code.add("Self {", indent=1)
 
         for field_name, field_var_type in struct.fields.items():
             if isinstance(field_var_type, FunctionPointer):
@@ -1155,9 +1165,9 @@ class Transpiler:
                     + "))),"
                 )
 
-        code.add("}", l=1)
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -1174,27 +1184,27 @@ class Transpiler:
         elif type.name == "vec":
             code = Code("let mut vector = Vector::new();")
             code.add(f"let source = (*{source_expr}).borrow();")
-            code.add("for item in source.iter() {", r=1)
+            code.add("for item in source.iter() {", indent=1)
             code.add("vector.push(item.clone_recursive())")
-            code.add("}", l=1)
+            code.add("}", unindent=1)
             code.add("Rc::new(RefCell::new(vector))")
         elif type.name == "set":
             code = Code("let mut set = Map::new();")
             code.add(f"let source = (*{source_expr}).borrow();")
-            code.add("for (item, _) in source.iter() {", r=1)
+            code.add("for (item, _) in source.iter() {", indent=1)
             code.add("set.insert(item.clone_recursive(), SetValue{});")
-            code.add("}", l=1)
+            code.add("}", unindent=1)
             code.add("Rc::new(RefCell::new(set))")
         elif type.name == "map":
             code = Code("let mut map = Map::new();")
             code.add(f"let source = (*{source_expr}).borrow();")
-            code.add("for (key, value) in source.iter() {", r=1)
+            code.add("for (key, value) in source.iter() {", indent=1)
             code.add("map.insert(key.clone_recursive(), value.clone_recursive());")
-            code.add("}", l=1)
+            code.add("}", unindent=1)
             code.add("Rc::new(RefCell::new(map))")
         else:
             code = Code(f"let source = (*{source_expr}).borrow();")
-            code.add(f"Rc::new(RefCell::new(source.clone_recursive()))")
+            code.add("Rc::new(RefCell::new(source.clone_recursive()))")
         return code
 
     def _generate_struct_UserType_impl(self, struct: Struct) -> Code:
@@ -1203,26 +1213,26 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct)
 
-        code = Code(f"impl UserType for {rust_struct_name} {{", r=1)
+        code = Code(f"impl UserType for {rust_struct_name} {{", indent=1)
 
-        code.add("fn kind(&self) -> String {", r=1)
+        code.add("fn kind(&self) -> String {", indent=1)
         code.add(f'String::from("{struct.name}")')
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         code.add("")
 
-        code.add("fn clone_recursive(&self) -> Self {", r=1)
+        code.add("fn clone_recursive(&self) -> Self {", indent=1)
 
-        code.add("Self {", r=1)
+        code.add("Self {", indent=1)
 
         for field_name in struct.fields:
             code.add(f"{field_name}: self.{field_name}.clone_recursive(),")
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -1232,9 +1242,9 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct)
 
-        code = Code(f"impl Display for {rust_struct_name} {{", r=1)
+        code = Code(f"impl Display for {rust_struct_name} {{", indent=1)
 
-        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", indent=1)
 
         code.add(f'write!(f, "{struct.name}{{{{")?;')
 
@@ -1246,9 +1256,9 @@ class Transpiler:
 
         code.add('write!(f, "}}")')
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -1258,11 +1268,11 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct)
 
-        code = Code(f"impl Debug for {rust_struct_name} {{", r=1)
-        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", r=1)
+        code = Code(f"impl Debug for {rust_struct_name} {{", indent=1)
+        code.add("fn fmt(&self, f: &mut Formatter<'_>) -> Result {", indent=1)
         code.add('write!(f, "{}", self)')
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
 
         code.add("")
         return code
@@ -1273,13 +1283,13 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct)
 
-        code = Code(f"impl Hash for {rust_struct_name} {{", r=1)
+        code = Code(f"impl Hash for {rust_struct_name} {{", indent=1)
 
-        code.add("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {", r=1)
+        code.add("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {", indent=1)
         code.add("todo!();")  # TODO #125 Implement hash for structs and enums
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
-        code.add("}", l=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
@@ -1289,8 +1299,8 @@ class Transpiler:
 
         rust_struct_name = self._generate_type_name(struct)
 
-        code = Code(f"impl PartialEq for {rust_struct_name} {{", r=1)
-        code.add("fn eq(&self, other: &Self) -> bool {", r=1)
+        code = Code(f"impl PartialEq for {rust_struct_name} {{", indent=1)
+        code.add("fn eq(&self, other: &Self) -> bool {", indent=1)
 
         try:
             equals_func = self.functions[(struct.position.file, f"{struct.name}:=")]
@@ -1309,19 +1319,19 @@ class Transpiler:
             code.add(f"{equals_func_name}(&mut stack);")
             code.add("stack.pop_bool()")
 
-        code.add("}", l=1)
-        code.add("}", l=1)
+        code.add("}", unindent=1)
+        code.add("}", unindent=1)
         code.add("")
         return code
 
     def _generate_use_block_code(self, use_block: UseBlock) -> Code:
-        code = Code("{", r=1)
+        code = Code("{", indent=1)
 
         for var in reversed(use_block.variables):
             code.add(f"let mut var_{var.name} = stack.pop();")
 
         code.add(self._generate_function_body(use_block.body))
-        code.add("}", l=1)
+        code.add("}", unindent=1)
 
         return code
 

@@ -1,11 +1,10 @@
 # This is an extremely inefficient sudoku solver.
-# It was translated from the solver in Aaa, keeping the code as close to the original as possible.
+# It was translated from the solver in Aaa,
+# keeping the code as close to the original as possible.
 
-from typing import List, Set
 
-
-def load_sudoku(s: str) -> List[int]:
-    v: List[int] = []
+def load_sudoku(s: str) -> list[int]:
+    v: list[int] = []
     for i in range(len(s)):
         char = s[i : i + 1]
         try:
@@ -23,7 +22,7 @@ def load_sudoku(s: str) -> List[int]:
     return v
 
 
-def print_sudoku(cells: List[int]) -> None:
+def print_sudoku(cells: list[int]) -> None:
     for y in range(9):
         if y in [3, 6]:
             print("------+-------+------")
@@ -39,11 +38,11 @@ def print_sudoku(cells: List[int]) -> None:
         print()
 
 
-def solve_sudoku(cells: List[int]) -> None:
+def solve_sudoku(cells: list[int]) -> None:
     solve_sudoku_recursive(cells, 0)
 
 
-def solve_sudoku_recursive(cells: List[int], index: int) -> None:
+def solve_sudoku_recursive(cells: list[int], index: int) -> None:
     if check_sudoku(cells):
         if index == 81:
             print_sudoku(cells)
@@ -61,7 +60,7 @@ def solve_sudoku_recursive(cells: List[int], index: int) -> None:
                     cells[index] = 0
 
 
-def check_sudoku(cells: List[int]) -> bool:
+def check_sudoku(cells: list[int]) -> bool:
     # NOTE: use `all()` instead of `and` to prevent python boolean short-circuiting
     return all(
         [
@@ -96,9 +95,9 @@ def check_sudoku(cells: List[int]) -> bool:
     )
 
 
-def check_sudoku_row(cells: List[int], y: int) -> bool:
+def check_sudoku_row(cells: list[int], y: int) -> bool:
     ok = True
-    values: Set[int] = set()
+    values: set[int] = set()
 
     for x in range(9):
         n = cells[9 * y + x]
@@ -111,9 +110,9 @@ def check_sudoku_row(cells: List[int], y: int) -> bool:
     return ok
 
 
-def check_sudoku_column(cells: List[int], x: int) -> bool:
+def check_sudoku_column(cells: list[int], x: int) -> bool:
     ok = True
-    values: Set[int] = set()
+    values: set[int] = set()
 
     for y in range(9):
         n = cells[9 * y + x]
@@ -126,9 +125,9 @@ def check_sudoku_column(cells: List[int], x: int) -> bool:
     return ok
 
 
-def check_sudoku_block(cells: List[int], x_start: int, y_start: int) -> bool:
+def check_sudoku_block(cells: list[int], x_start: int, y_start: int) -> bool:
     ok = True
-    values: Set[int] = set()
+    values: set[int] = set()
 
     for y_delta in range(3):
         for x_delta in range(3):

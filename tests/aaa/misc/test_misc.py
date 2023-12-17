@@ -11,34 +11,40 @@ from aaa.runner.runner import compile_run
 
 SOURCE_PREFIX = Path(__file__).parent / "src"
 
+# Ignore line length linter errors for this file
+# ruff: noqa: E501
+
 
 def test_assert_true() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "assert_true.aaa")
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_assert_false() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "assert_false.aaa")
-    assert "" == stdout
+    assert stdout == ""
 
     project_root = str(Path(__file__).parents[3])
     assert (
         f"Assertion failure at {project_root}/tests/aaa/misc/src/assert_false.aaa:2:11\n"
         == stderr
     )
-    assert 1 == exit_code
+    assert exit_code == 1
 
 
 @pytest.mark.parametrize(
     ["source", "expected_exitcode"],
-    [pytest.param("exit_0.aaa", 0, id="0"), pytest.param("exit_1.aaa", 1, id="1")],
+    [
+        pytest.param("exit_0.aaa", 0, id="0"),
+        pytest.param("exit_1.aaa", 1, id="1"),
+    ],
 )
 def test_exit(source: str, expected_exitcode: int) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source)
-    assert "" == stdout
-    assert "" == stderr
+    assert stdout == ""
+    assert stderr == ""
     assert expected_exitcode == exit_code
 
 
@@ -53,15 +59,15 @@ def test_time() -> None:
     assert current_time - printed_sec in [0, 1]
     assert printed_usec in range(1_000_000)
 
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_getcwd() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "getcwd.aaa")
     assert f"{os.getcwd()}\n" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 @pytest.mark.parametrize(
@@ -74,8 +80,8 @@ def test_getcwd() -> None:
 def test_chdir(source: str, expected_stdout: str) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source)
     assert expected_stdout == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 @pytest.mark.parametrize(
@@ -88,15 +94,15 @@ def test_chdir(source: str, expected_stdout: str) -> None:
 def test_execve(source: str, expected_stdout: str) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source)
     assert expected_stdout == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_fork() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "fork.aaa")
     assert stdout in ["parent\nchild\n", "child\nparent\n"]
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 @pytest.mark.parametrize(
@@ -108,24 +114,24 @@ def test_fork() -> None:
 )
 def test_waitpid(source: str) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source)
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_getpid() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "getpid.aaa")
     int(stdout.strip())
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_getppid() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "getppid.aaa")
 
     assert f"{os.getpid()}\n" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 DUMMY_ENV_VARS = {
@@ -140,9 +146,9 @@ def test_environ() -> None:
     )
 
     # NOTE: loading this output as json is a hack and may break in the future
-    assert DUMMY_ENV_VARS == json.loads(stdout)
-    assert "" == stderr
-    assert 0 == exit_code
+    assert json.loads(stdout) == DUMMY_ENV_VARS
+    assert stderr == ""
+    assert exit_code == 0
 
 
 @pytest.mark.parametrize(
@@ -154,25 +160,25 @@ def test_environ() -> None:
 )
 def test_getenv(source: str) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source, env=DUMMY_ENV_VARS)
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_setenv() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "setenv.aaa", env={})
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_unsetenv() -> None:
     stdout, stderr, exit_code = compile_run(
         SOURCE_PREFIX / "unsetenv.aaa", env=DUMMY_ENV_VARS
     )
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 @pytest.mark.parametrize(
@@ -193,23 +199,23 @@ def test_unlink(source: str, success: bool) -> None:
     if success:
         assert not dummy_file.exists()
 
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_foreach_vector() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "foreach_vector.aaa")
-    assert "2\n4\n6\n8\n" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == "2\n4\n6\n8\n"
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_foreach_vector_empty() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "foreach_vector_empty.aaa")
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_foreach_map() -> None:
@@ -219,22 +225,22 @@ def test_foreach_map() -> None:
     expected_lines = {"2 -> two", "4 -> four", "6 -> six", "8 -> eight"}
 
     assert expected_lines == lines
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_foreach_map_empty() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "foreach_map_empty.aaa")
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_foreach_custom() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "foreach_custom.aaa")
-    assert "1\n2\n3\n4\n" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == "1\n2\n3\n4\n"
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_foreach_set() -> None:
@@ -244,29 +250,29 @@ def test_foreach_set() -> None:
     expected_lines = {"2", "4", "6", "8"}
 
     assert expected_lines == lines
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_assignment() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "assignment.aaa")
-    assert '1\ntrue\nbar\n[2]\n{"two": 2}\n{2}\n6\n' == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == '1\ntrue\nbar\n[2]\n{"two": 2}\n{2}\n6\n'
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_const() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "const.aaa")
-    assert "69\n[5]\n[5]\n[5]\n[]\n" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == "69\n[5]\n[5]\n[5]\n[]\n"
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_main_with_exit_code() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "main_with_exitcode.aaa")
-    assert "" == stdout
-    assert "" == stderr
-    assert 1 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 1
 
 
 def test_main_with_argv() -> None:
@@ -278,17 +284,17 @@ def test_main_with_argv() -> None:
             SOURCE_PREFIX / "main_with_argv.aaa", binary_path=binary_path
         )
         assert f'["{binary_path}"]\n' == stdout
-        assert "" == stderr
-        assert 0 == exit_code
+        assert stderr == ""
+        assert exit_code == 0
     finally:
         binary_path.unlink(missing_ok=True)
 
 
 def test_return() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "return.aaa")
-    assert "" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == ""
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_enum() -> None:
@@ -336,8 +342,8 @@ def test_enum() -> None:
     )
 
     assert expected_stdout == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_recursion() -> None:
@@ -351,26 +357,26 @@ def test_recursion() -> None:
     )
 
     assert expected_output == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_todo() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "todo.aaa")
 
-    assert "" == stdout
+    assert stdout == ""
     assert stderr.startswith("Code at ")
     assert stderr.endswith(" is not implemented\n")
-    assert 1 == exit_code
+    assert exit_code == 1
 
 
 def test_unreachable() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "unreachable.aaa")
 
-    assert "" == stdout
+    assert stdout == ""
     assert stderr.startswith("Code at ")
     assert stderr.endswith(" should be unreachable\n")
-    assert 1 == exit_code
+    assert exit_code == 1
 
 
 def test_enum_without_associated_data() -> None:
@@ -378,9 +384,9 @@ def test_enum_without_associated_data() -> None:
         SOURCE_PREFIX / "enum_without_associated_data.aaa"
     )
 
-    assert "some\nnone\n" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == "some\nnone\n"
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_enum_with_multiple_associated_fields() -> None:
@@ -389,19 +395,19 @@ def test_enum_with_multiple_associated_fields() -> None:
     )
 
     assert (
-        "quit\nmessage text=hello\nmessage_with_brackets text=world\nclick x=6 y=9\n"
-        == stdout
+        stdout
+        == "quit\nmessage text=hello\nmessage_with_brackets text=world\nclick x=6 y=9\n"
     )
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_enum_case_as() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "enum_case_as.aaa")
 
-    assert "quit\ntext = hello\nx = 6 y = 9\n" == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stdout == "quit\ntext = hello\nx = 6 y = 9\n"
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_struct() -> None:
@@ -425,21 +431,21 @@ def test_struct() -> None:
     stdout = re.sub("UserStruct[0-9a-f]+", "UserStructXYZ", stdout)
 
     assert expected_output == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 def test_divide_by_zero() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "divide_by_zero.aaa")
 
-    assert "" == stdout
+    assert stdout == ""
     assert "Cannot divide by zero!" in stderr
-    assert 101 == exit_code
+    assert exit_code == 101
 
 
 def test_modulo_zero() -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / "modulo_zero.aaa")
 
-    assert "" == stdout
+    assert stdout == ""
     assert "Cannot use modulo zero!" in stderr
-    assert 101 == exit_code
+    assert exit_code == 101

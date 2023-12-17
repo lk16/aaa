@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List, Tuple
 
 from basil.models import Position
 
@@ -24,12 +23,10 @@ from aaa.parser.models import TypeLiteral
 def describe(item: Identifiable | Argument | Variable) -> str:
     if isinstance(
         item,
-        (
-            Function,
-            ImplicitFunctionImport,
-            EnumConstructor,
-            ImplicitEnumConstructorImport,
-        ),
+        Function
+        | ImplicitFunctionImport
+        | EnumConstructor
+        | ImplicitEnumConstructorImport,
     ):
         return f"function {item.name}"
     elif isinstance(item, Import):
@@ -71,11 +68,11 @@ class IndirectImportException(CrossReferenceBaseException):
 
 
 class CollidingIdentifier(CrossReferenceBaseException):
-    def __init__(self, colliding: List[Identifiable | Argument | Variable]) -> None:
+    def __init__(self, colliding: list[Identifiable | Argument | Variable]) -> None:
         assert len(colliding) == 2
         assert colliding[0].position.file == colliding[1].position.file
 
-        def sort_key(item: AaaCrossReferenceModel) -> Tuple[int, int]:
+        def sort_key(item: AaaCrossReferenceModel) -> tuple[int, int]:
             return (item.position.line, item.position.column)
 
         self.colliding = sorted(colliding, key=sort_key)
@@ -90,11 +87,11 @@ class CollidingIdentifier(CrossReferenceBaseException):
 
 
 class CollidingEnumVariant(CrossReferenceBaseException):
-    def __init__(self, enum: parser.Enum, variants: List[parser.EnumVariant]) -> None:
+    def __init__(self, enum: parser.Enum, variants: list[parser.EnumVariant]) -> None:
         assert len(variants) == 2
         assert variants[0].position.file == variants[1].position.file
 
-        def sort_key(item: parser.EnumVariant) -> Tuple[int, int]:
+        def sort_key(item: parser.EnumVariant) -> tuple[int, int]:
             return (item.position.line, item.position.column)
 
         self.colliding = sorted(variants, key=sort_key)
@@ -104,7 +101,10 @@ class CollidingEnumVariant(CrossReferenceBaseException):
         msg = "Duplicate enum variant name collision:\n"
 
         for item in self.colliding:
-            msg += f"{item.position}: enum variant {self.enum.get_name()}:{item.name.value}\n"
+            msg += (
+                f"{item.position}: enum variant "
+                + f"{self.enum.get_name()}:{item.name.value}\n"
+            )
 
         return msg.removesuffix("\n")
 
@@ -123,7 +123,11 @@ class InvalidReturnType(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def __str__(self) -> str:
-        return f"{self.identifiable.position}: Cannot use {describe(self.identifiable)} as return type"
+        return (
+            f"{self.identifiable.position}: Cannot use "
+            + describe(self.identifiable)
+            + " as return type"
+        )
 
 
 class InvalidArgument(CrossReferenceBaseException):
@@ -133,7 +137,8 @@ class InvalidArgument(CrossReferenceBaseException):
 
     def __str__(self) -> str:
         return (
-            f"{self.used.position}: Cannot use {self.used.identifier.value} as argument\n"
+            f"{self.used.position}: Cannot use {self.used.identifier.value} "
+            + "as argument\n"
             + f"{self.found.position}: {describe(self.found)} collides"
         )
 
@@ -143,7 +148,11 @@ class InvalidType(CrossReferenceBaseException):
         self.identifiable = identifiable
 
     def __str__(self) -> str:
-        return f"{self.identifiable.position}: Cannot use {describe(self.identifiable)} as type"
+        return (
+            f"{self.identifiable.position}: Cannot use "
+            + describe(self.identifiable)
+            + " as type"
+        )
 
 
 class UnexpectedTypeParameterCount(CrossReferenceBaseException):
@@ -177,7 +186,7 @@ class UnexpectedBuiltin(CrossReferenceBaseException):
 
 
 class CircularDependencyError(CrossReferenceBaseException):
-    def __init__(self, dependencies: List[Path]) -> None:
+    def __init__(self, dependencies: list[Path]) -> None:
         self.dependencies = dependencies
 
     def __str__(self) -> str:
@@ -203,7 +212,10 @@ class InvalidEnumVariant(CrossReferenceBaseException):
         self.position = position
 
     def __str__(self) -> str:
-        return f"{self.position}: Variant {self.variant_name} of enum {self.enum.name} does not exist"
+        return (
+            f"{self.position}: Variant {self.variant_name} of enum "
+            + f"{self.enum.name} does not exist"
+        )
 
 
 class InvalidFunctionPointerTarget(CrossReferenceBaseException):

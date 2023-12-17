@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Sequence, Type
+from typing import Any
 
 from aaa import AaaException
 from aaa.runner.exceptions import AaaTranslationException
@@ -7,7 +8,9 @@ from aaa.runner.runner import Runner
 
 
 def check_aaa_main(
-    code: str, expected_output: str, expected_exception_types: List[Type[Exception]]
+    code: str,
+    expected_output: str,
+    expected_exception_types: list[type[Exception]],
 ) -> Sequence[AaaException]:
     code = "fn main {\n" + code + "\n}"
     return check_aaa_full_source(code, expected_output, expected_exception_types)
@@ -16,7 +19,7 @@ def check_aaa_main(
 def check_aaa_full_source(
     code: str,
     expected_output: str,
-    expected_exception_types: List[Type[Exception]],
+    expected_exception_types: list[type[Exception]],
     **run_kwargs: Any,
 ) -> Sequence[AaaException]:
     files = {Path("main.aaa"): code}
@@ -26,15 +29,15 @@ def check_aaa_full_source(
 
 
 def check_aaa_full_source_multi_file(
-    file_dict: Dict[Path, str],
+    file_dict: dict[Path, str],
     expected_output: str,
-    expected_exception_types: List[Type[Exception]],
+    expected_exception_types: list[type[Exception]],
     **run_kwargs: Any,
 ) -> Sequence[AaaException]:
     entrypoint = Path("main.aaa")
     runner = Runner(entrypoint, file_dict)
 
-    exception_types: List[Type[AaaException]] = []
+    exception_types: list[type[AaaException]] = []
 
     # Make type-checker happy
     stdout = ""
@@ -78,10 +81,10 @@ def check_aaa_full_source_multi_file(
             for exception in runner.exceptions:
                 error += f"{exception}\n"
 
-        assert False, error
+        raise AssertionError(error)
 
     if not expected_exception_types:
         assert expected_output == stdout
-        assert "" == stderr
+        assert stderr == ""
 
     return runner.exceptions

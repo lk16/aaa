@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 from aaa import AaaException
 
@@ -9,7 +9,8 @@ class RunnerBaseException(AaaException):
 
 class AaaTranslationException(RunnerBaseException):
     """
-    Indicates one or more errors happened while reading, parsing, and type-checking Aaa source.
+    Indicates one or more errors happened while reading, parsingand type-checking Aaa
+    source.
     """
 
     def __init__(self, exceptions: Sequence[AaaException]) -> None:

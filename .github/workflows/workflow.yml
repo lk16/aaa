@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python 3.12.1
       uses: actions/setup-python@v2
       with:
@@ -28,6 +28,6 @@ jobs:
         pdm run pre-commit run --all-files
     - name: Run Python tests
       run: |
-        pdm install
+        pdm install --production
         export AAA_STDLIB_PATH=$(pwd)/stdlib
         pdm run pytest --color=yes --cov=aaa --cov-report=term-missing -x -vv

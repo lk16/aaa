@@ -1,34 +1,4 @@
 repos:
-  - repo: https://github.com/hadialqattan/pycln
-    rev: v2.4.0
-    hooks:
-      - id: pycln
-        args: [--config=pyproject.toml]
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.1.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-broken-line
-          - flake8-builtins
-          - flake8-comprehensions
-          - flake8-eradicate
-          - flake8-quotes
-          - flake8-tidy-imports
-          - pep8-naming
-
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.6.4
-    hooks:
-      - id: isort
-        args: ["--profile", "black"]
-
-  - repo: https://github.com/psf/black
-    rev: 22.3.0
-    hooks:
-      - id: black
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
@@ -54,7 +24,7 @@ repos:
     rev: v0.1.6
     hooks:
       - id: detect-missing-init
-        args: ["--create", "--track", "--python-folders", "lang,tests"]
+        args: ["--create", "--track", "--python-folders", "aaa,tests"]
 
   - repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
@@ -68,3 +38,10 @@ repos:
       - id: clippy
         pass_filenames: false
         args: [--manifest-path, aaa-stdlib/Cargo.toml]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.8
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format

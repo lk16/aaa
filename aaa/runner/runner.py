@@ -1,9 +1,10 @@
 import os
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 from aaa import AaaException, create_output_folder
 from aaa.cross_referencer.cross_referencer import CrossReferencer
@@ -22,7 +23,6 @@ CARGO_TOML_TEMPLATE = """
 name = "aaa-stdlib-user"
 version = "0.1.0"
 edition = "2021"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 aaa-stdlib = {{ version = "0.1.0", path = "{stdlib_impl_path}" }}
@@ -34,14 +34,14 @@ RUNNER_FILE_DICT_ROOT_PATH = Path("/aaa/runner/root")  # This file should not ex
 
 class Runner:
     def __init__(
-        self, entrypoint: Path, file_dict: Optional[Dict[Path, str]] = None
+        self, entrypoint: Path, file_dict: dict[Path, str] | None = None
     ) -> None:
         assert not RUNNER_FILE_DICT_ROOT_PATH.exists()
 
-        self.file_dict: Dict[Path, str] = {}
+        self.file_dict: dict[Path, str] = {}
         if file_dict:
             assert not entrypoint.is_absolute()
-            assert entrypoint in file_dict.keys()
+            assert entrypoint in file_dict
 
             for file, code in file_dict.items():
                 assert not file.is_absolute()
@@ -53,7 +53,7 @@ class Runner:
 
         self.verbose = False
         self.exceptions: Sequence[AaaException] = []
-        self.parsed_files: Dict[Path, SourceFile] = {}
+        self.parsed_files: dict[Path, SourceFile] = {}
         self.verbose = False
 
     @staticmethod
@@ -89,7 +89,7 @@ class Runner:
         file_or_code: str,
         verbose: bool,
         runtime_type_checks: bool,
-        args: Tuple[str],
+        args: tuple[str],
     ) -> int:
         if file_or_code.endswith(".aaa"):
             runner = Runner(Path(file_or_code))
@@ -106,7 +106,7 @@ class Runner:
             args=list(args),
         )
 
-    def add_parsed_files(self, parsed_files: Dict[Path, SourceFile]) -> None:
+    def add_parsed_files(self, parsed_files: dict[Path, SourceFile]) -> None:
         self.parsed_files.update(parsed_files)
 
     def set_verbose(self, verbose: bool) -> None:
@@ -117,16 +117,19 @@ class Runner:
             print(exception, file=sys.stderr)
             print(file=sys.stderr)
 
-        print(f"Found {len(runner_exception.exceptions)} error(s).", file=sys.stderr)
+        print(
+            f"Found {len(runner_exception.exceptions)} error(s).",
+            file=sys.stderr,
+        )
 
     def run(
         self,
         *,
         compile: bool,
-        binary_path: Optional[Path],
+        binary_path: Path | None,
         run: bool,
         runtime_type_checks: bool,
-        args: List[str],
+        args: list[str],
         **run_kwargs: Any,
     ) -> int:
         try:
@@ -147,10 +150,10 @@ class Runner:
         self,
         *,
         compile: bool,
-        binary_path: Optional[Path],
+        binary_path: Path | None,
         run: bool,
         runtime_type_checks: bool,
-        args: List[str],
+        args: list[str],
         **run_kwargs: Any,
     ) -> CompletedProcess[bytes]:
         transpiled = self.transpile(runtime_type_checks)
@@ -203,8 +206,8 @@ class Runner:
 
 
 def compile_run(
-    entrypoint: Path, binary_path: Optional[Path] = None, **run_kwargs: Any
-) -> Tuple[str, str, int]:
+    entrypoint: Path, binary_path: Path | None = None, **run_kwargs: Any
+) -> tuple[str, str, int]:
     completed_process = Runner(entrypoint)._run_process(
         compile=True,
         binary_path=binary_path,
@@ -227,10 +230,11 @@ class Transpiled:
         self.transpiler_root = transpiler_root
 
     def compile(
-        self, binary_path: Optional[Path] = None, verbose: bool = False
+        self, binary_path: Path | None = None, verbose: bool = False
     ) -> "Compiled":
         # Use shared target dir between executables,
-        # because every Aaa compilation would otherwise take 120 MB disk, due to Rust dependencies.
+        # because every Aaa compilation would otherwise take 120 MB disk,
+        # due to Rust dependencies.
         cargo_shared_target_dir = create_output_folder("") / "shared_target"
         cargo_shared_target_dir.mkdir(exist_ok=True, parents=True)
 
@@ -279,6 +283,6 @@ class Compiled:
     def __init__(self, binary_file: Path) -> None:
         self.binary_file = binary_file
 
-    def execute(self, args: List[str], **run_kwargs: Any) -> CompletedProcess[bytes]:
+    def execute(self, args: list[str], **run_kwargs: Any) -> CompletedProcess[bytes]:
         command = [str(self.binary_file)] + args
         return subprocess.run(command, **run_kwargs)

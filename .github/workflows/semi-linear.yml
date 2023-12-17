@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Semi linear
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Fetch all history so that later commands succeed
         run: git fetch --prune --unshallow
       - name: Fail if the branch requires a rebase

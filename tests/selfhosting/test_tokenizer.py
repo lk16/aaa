@@ -3,7 +3,6 @@ import subprocess
 from glob import glob
 from pathlib import Path
 from tempfile import gettempdir
-from typing import List, Tuple
 
 import pytest
 from _pytest.mark.structures import ParameterSet
@@ -44,7 +43,7 @@ def tokenizer_excecutable() -> str:
     return str(binary_path)
 
 
-def aaa_source_files() -> Tuple[List[str], List[ParameterSet]]:
+def aaa_source_files() -> tuple[list[str], list[ParameterSet]]:
     return (
         ["source_file"],
         [

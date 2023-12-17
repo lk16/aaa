@@ -1,7 +1,6 @@
 import subprocess
 from ipaddress import IPv4Address
 from pathlib import Path
-from typing import List
 
 import pytest
 import requests
@@ -21,7 +20,7 @@ def expected_fizzbuzz_output() -> str:
         12: "fizz",
     }
 
-    output: List[str] = []
+    output: list[str] = []
 
     for i in range(1, 101):
         output.append(fizzbuzz_table.get(i % 15, str(i)))
@@ -35,7 +34,8 @@ EXPECTED_EXAMPLE_OUTPUT = {
     "examples/fizzbuzz.aaa": expected_fizzbuzz_output(),
     "examples/print_twice.aaa": "hello!\nhello!\n",
     "examples/function_demo.aaa": "a=1\nb=2\nc=3\n",
-    "examples/typing_playground.aaa": "five = 5\n3 5 max = 5\n4 factorial = 24\n7 dup_twice = 777\n",
+    "examples/typing_playground.aaa": "five = 5\n3 5 max = 5\n"
+    + "4 factorial = 24\n7 dup_twice = 777\n",
     "examples/renamed_import/main.aaa": "5",
 }
 
@@ -49,10 +49,14 @@ EXPECTED_EXAMPLE_OUTPUT = {
             id="one_to_ten.aaa",
         ),
         pytest.param(
-            "examples/fizzbuzz.aaa", expected_fizzbuzz_output(), id="fizzbuzz.aaa"
+            "examples/fizzbuzz.aaa",
+            expected_fizzbuzz_output(),
+            id="fizzbuzz.aaa",
         ),
         pytest.param(
-            "examples/renamed_import/main.aaa", "5\n", id="renamed_import/main.aaa"
+            "examples/renamed_import/main.aaa",
+            "5\n",
+            id="renamed_import/main.aaa",
         ),
         pytest.param("examples/import/main.aaa", "5\n", id="renamed_import/main.aaa"),
     ],
@@ -62,7 +66,11 @@ def test_examples(
 ) -> None:
     runner = Runner(entrypoint)
     runner.run(
-        compile=True, binary_path=None, run=True, args=[], runtime_type_checks=True
+        compile=True,
+        binary_path=None,
+        run=True,
+        args=[],
+        runtime_type_checks=True,
     )
     stdout, stderr = capfd.readouterr()
     assert str(stderr) == ""
@@ -100,7 +108,11 @@ def test_http_client(capfd: CaptureFixture[str]) -> None:
     entrypoint = Path("examples/http_client.aaa")
     runner = Runner(entrypoint)
     runner.run(
-        compile=True, binary_path=None, run=True, args=[], runtime_type_checks=True
+        compile=True,
+        binary_path=None,
+        run=True,
+        args=[],
+        runtime_type_checks=True,
     )
 
     stdout, stderr = capfd.readouterr()

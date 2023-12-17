@@ -1,6 +1,5 @@
 from glob import glob
 from pathlib import Path
-from typing import List, Set, Tuple, Type
 
 import pytest
 from basil.exceptions import ParseError
@@ -64,7 +63,7 @@ MODEL_TO_NODE_TYPE = {
 }
 
 
-PARSE_MODEL_TEST_VALUES: List[Tuple[Type[AaaParseModel], str, bool]] = [
+PARSE_MODEL_TEST_VALUES: list[tuple[type[AaaParseModel], str, bool]] = [
     (Argument, "", False),
     (Argument, "3", False),
     (Argument, "foo as bar", True),
@@ -454,7 +453,11 @@ PARSE_MODEL_TEST_VALUES: List[Tuple[Type[AaaParseModel], str, bool]] = [
     (SourceFile, "builtin struct a builtin struct b", True),
     (SourceFile, "builtin struct a", True),
     (SourceFile, "builtin struct a", True),
-    (SourceFile, "builtin struct a[A,B] builtin fn a args b as map[int,int]", True),
+    (
+        SourceFile,
+        "builtin struct a[A,B] builtin fn a args b as map[int,int]",
+        True,
+    ),
     (SourceFile, "enum foo { x as int }", True),
     (SourceFile, "fn a { nop }", True),
     (SourceFile, "fn a", False),
@@ -594,12 +597,15 @@ PARSE_MODEL_TEST_VALUES: List[Tuple[Type[AaaParseModel], str, bool]] = [
     ["model_type", "text", "should_parse"],
     [
         pytest.param(
-            model_type, text, should_parse, id=f"{model_type.__name__}-{repr(text)}"
+            model_type,
+            text,
+            should_parse,
+            id=f"{model_type.__name__}-{repr(text)}",
         )
         for model_type, text, should_parse in PARSE_MODEL_TEST_VALUES
     ],
 )
-def test_parser(model_type: Type[AaaParseModel], text: str, should_parse: bool) -> None:
+def test_parser(model_type: type[AaaParseModel], text: str, should_parse: bool) -> None:
     node_type = MODEL_TO_NODE_TYPE[model_type]
 
     try:
@@ -624,8 +630,8 @@ def test_all_models_are_tested() -> None:
         )
 
 
-def get_source_files() -> List[Path]:
-    aaa_files: Set[Path] = {
+def get_source_files() -> list[Path]:
+    aaa_files: set[Path] = {
         Path(file).resolve()
         for file in glob("**/*.aaa", root_dir=aaa_project_root(), recursive=True)
     }

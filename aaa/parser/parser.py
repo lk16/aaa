@@ -1,6 +1,5 @@
 from pathlib import Path
 from queue import Queue
-from typing import Dict, List, Optional, Type
 
 from basil.exceptions import ParseError, TokenizerException
 from basil.file_parser import FileParser
@@ -70,7 +69,7 @@ from aaa.runner.exceptions import AaaTranslationException
 
 SYNTAX_JSON_PATH = aaa_project_root() / "syntax.json"
 
-NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
+NODE_TYPE_TO_MODEL: dict[str, type[AaaParseModel]] = {
     "ARGUMENT": Argument,
     "ARGUMENTS": Arguments,
     "ASSIGNMENT": Assignment,
@@ -101,7 +100,6 @@ NODE_TYPE_TO_MODEL: Dict[str, Type[AaaParseModel]] = {
     "GET_FUNCTION_POINTER": GetFunctionPointer,
     "IMPORT_ITEM": ImportItem,
     "IMPORT_ITEMS": ImportItems,
-    "IMPORT": Import,
     "IMPORT": Import,
     "MATCH_BLOCK": MatchBlock,
     "MEMBER_FUNCTION_CALL": MemberFunctionCall,
@@ -183,7 +181,7 @@ def transform_token(token: Token) -> AaaParseModel | Token:
 
 
 def transform_node(
-    node_type: str, children: List[AaaParseModel | Token]
+    node_type: str, children: list[AaaParseModel | Token]
 ) -> AaaParseModel:
     return NODE_TYPE_TO_MODEL[node_type].load(children)
 
@@ -249,10 +247,10 @@ class AaaParser:
         self.file_parser = aaa_file_parser
         self.builtins_path = get_stdlib_path() / "builtins.aaa"
 
-        self.exceptions: List[AaaParserBaseException] = []
-        self.parsed: Dict[Path, SourceFile] = {}
+        self.exceptions: list[AaaParserBaseException] = []
+        self.parsed: dict[Path, SourceFile] = {}
 
-    def run(self, entrypoint: Path, file_dict: Dict[Path, str]) -> ParserOutput:
+    def run(self, entrypoint: Path, file_dict: dict[Path, str]) -> ParserOutput:
         queue: Queue[Path] = Queue()
         queue.put(self.builtins_path)
         queue.put(entrypoint)
@@ -288,7 +286,7 @@ class AaaParser:
         )
 
     def parse_file(
-        self, file: Path, file_dict: Optional[Dict[Path, str]] = None
+        self, file: Path, file_dict: dict[Path, str] | None = None
     ) -> SourceFile:
         file_dict = file_dict or {}
 
@@ -297,8 +295,8 @@ class AaaParser:
         else:
             try:
                 text = file.read_text()
-            except OSError:
-                raise FileReadError(file)
+            except OSError as e:
+                raise FileReadError(file) from e
 
         model = self.parse_text(text, self.file_parser.root_node_type, str(file))
 
@@ -306,7 +304,7 @@ class AaaParser:
         return model
 
     def parse_text(
-        self, text: str, root_node_type: str, file_name: Optional[str] = None
+        self, text: str, root_node_type: str, file_name: str | None = None
     ) -> AaaParseModel:
         return self.file_parser.parse_text_and_transform(
             text,
@@ -317,6 +315,6 @@ class AaaParser:
             node_transformer=transform_node,
         )
 
-    def tokenize_text(self, text: str) -> List[Token]:
+    def tokenize_text(self, text: str) -> list[Token]:
         # This is only supposed to be used for testing.
         return self.file_parser.tokenize_text(text, filter_token_types=False)
