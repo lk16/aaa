@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, List, Type
 
 import pytest
 
@@ -59,9 +58,9 @@ from tests.aaa import check_aaa_full_source_multi_file
     ],
 )
 def test_imports(
-    files: Dict[str, str],
+    files: dict[str, str],
     expected_output: str,
-    expected_exception_types: List[Type[Exception]],
+    expected_exception_types: list[type[Exception]],
 ) -> None:
     file_dict = {Path(file): code for file, code in files.items()}
     check_aaa_full_source_multi_file(

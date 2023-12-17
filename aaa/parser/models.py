@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
 
 from basil.models import Position, Token
 
@@ -14,7 +13,7 @@ class AaaParseModel(AaaModel):
         self.position = position
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> AaaParseModel:
+    def load(cls, children: list[AaaParseModel | Token]) -> AaaParseModel:
         raise NotImplementedError(f"for {cls.__name__}")
 
 
@@ -36,7 +35,7 @@ class Boolean(AaaParseModel):
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Boolean:
+    def load(cls, children: list[AaaParseModel | Token]) -> Boolean:
         assert len(children) == 1
         child = children[0]
         assert isinstance(child, Token)
@@ -51,14 +50,17 @@ class Char(AaaParseModel):
 
 class WhileLoop(AaaParseModel):
     def __init__(
-        self, position: Position, condition: FunctionBody, body: FunctionBodyBlock
+        self,
+        position: Position,
+        condition: FunctionBody,
+        body: FunctionBodyBlock,
     ) -> None:
         self.condition = condition
         self.body = body
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> WhileLoop:
+    def load(cls, children: list[AaaParseModel | Token]) -> WhileLoop:
         assert len(children) == 3
         while_token, condition, body_block = children
         assert isinstance(while_token, Token)
@@ -80,7 +82,7 @@ class Branch(AaaParseModel):
         position: Position,
         condition: FunctionBody,
         if_body_block: FunctionBodyBlock,
-        else_body_block: Optional[FunctionBodyBlock],
+        else_body_block: FunctionBodyBlock | None,
     ) -> None:
         self.condition = condition
         self.if_body_block = if_body_block
@@ -90,14 +92,14 @@ class Branch(AaaParseModel):
     def get_if_body(self) -> FunctionBody:
         return self.if_body_block.value
 
-    def get_else_body(self) -> Optional[FunctionBody]:
+    def get_else_body(self) -> FunctionBody | None:
         block = self.else_body_block
         if block:
             return block.value
         return None
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Branch:
+    def load(cls, children: list[AaaParseModel | Token]) -> Branch:
         assert len(children) in [3, 5]
 
         if_token, condition, if_body_block = children[:3]
@@ -115,13 +117,13 @@ class Branch(AaaParseModel):
 
 
 class FunctionBody(AaaParseModel):
-    def __init__(self, position: Position, items: List[FunctionBodyItem]) -> None:
+    def __init__(self, position: Position, items: list[FunctionBodyItem]) -> None:
         self.items = [item.value for item in items]
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FunctionBody:
-        items: List[FunctionBodyItem] = []
+    def load(cls, children: list[AaaParseModel | Token]) -> FunctionBody:
+        items: list[FunctionBodyItem] = []
 
         for child in children:
             assert isinstance(child, FunctionBodyItem)
@@ -137,7 +139,7 @@ class StructFieldQuery(AaaParseModel):
         super().__init__(field_name.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> StructFieldQuery:
+    def load(cls, children: list[AaaParseModel | Token]) -> StructFieldQuery:
         assert len(children) == 2
         field_name, get_field_token = children
         assert isinstance(field_name, String)
@@ -159,7 +161,7 @@ class StructFieldUpdate(AaaParseModel):
         super().__init__(field_name.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> StructFieldUpdate:
+    def load(cls, children: list[AaaParseModel | Token]) -> StructFieldUpdate:
         assert len(children) == 3
         field_name, new_value_block, set_field_token = children
         assert isinstance(field_name, String)
@@ -175,7 +177,7 @@ class GetFunctionPointer(AaaParseModel):
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> GetFunctionPointer:
+    def load(cls, children: list[AaaParseModel | Token]) -> GetFunctionPointer:
         function_name = children[0]
         assert isinstance(function_name, String)
 
@@ -199,7 +201,7 @@ class Argument(AaaParseModel):
         super().__init__(identifier.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Argument:
+    def load(cls, children: list[AaaParseModel | Token]) -> Argument:
         assert len(children) == 3
         identifier, _, type_or_func_ptr_literal = children
 
@@ -214,7 +216,7 @@ class Function(AaaParseModel):
         self,
         is_builtin: bool,
         declaration: FunctionDeclaration,
-        body_block: Optional[FunctionBodyBlock],
+        body_block: FunctionBodyBlock | None,
     ) -> None:
         self.is_builtin = is_builtin
         self.declaration = declaration
@@ -224,7 +226,7 @@ class Function(AaaParseModel):
     def is_test(self) -> bool:  # pragma: nocover
         return not self.get_type_name() and self.get_func_name().startswith("test_")
 
-    def get_params(self) -> List[Identifier]:
+    def get_params(self) -> list[Identifier]:
         return self.declaration.name.get_params()
 
     def get_func_name(self) -> str:
@@ -240,17 +242,17 @@ class Function(AaaParseModel):
             return f"{type_name}:{func_name}"
         return func_name
 
-    def get_end_position(self) -> Optional[Position]:
+    def get_end_position(self) -> Position | None:
         if not self.body_block:
             return None
         return self.body_block.end_token_position
 
-    def get_body(self) -> Optional[FunctionBody]:
+    def get_body(self) -> FunctionBody | None:
         if not self.body_block:
             return None
         return self.body_block.value
 
-    def get_arguments(self) -> List[Argument]:
+    def get_arguments(self) -> list[Argument]:
         arguments = self.declaration.arguments
         if not arguments:
             return []
@@ -258,7 +260,7 @@ class Function(AaaParseModel):
 
     def get_return_types(
         self,
-    ) -> List[TypeLiteral | FunctionPointerTypeLiteral] | Never:
+    ) -> list[TypeLiteral | FunctionPointerTypeLiteral] | Never:
         return_types = self.declaration.return_types
         if not return_types:
             return []
@@ -267,7 +269,7 @@ class Function(AaaParseModel):
         return [item.literal for item in return_types.value]
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Function:
+    def load(cls, children: list[AaaParseModel | Token]) -> Function:
         assert len(children) == 2
 
         if isinstance(children[0], Token):
@@ -293,7 +295,7 @@ class ImportItem(AaaParseModel):
         super().__init__(original.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> ImportItem:
+    def load(cls, children: list[AaaParseModel | Token]) -> ImportItem:
         original = children[0]
         assert isinstance(original, Identifier)
 
@@ -307,15 +309,15 @@ class ImportItem(AaaParseModel):
 
 
 class ImportItems(AaaParseModel):
-    def __init__(self, items: List[ImportItem]) -> None:
+    def __init__(self, items: list[ImportItem]) -> None:
         assert len(items) >= 1
 
         self.value = items
         super().__init__(items[0].position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> ImportItems:
-        items: List[ImportItem] = []
+    def load(cls, children: list[AaaParseModel | Token]) -> ImportItems:
+        items: list[ImportItem] = []
 
         for child in children:
             if isinstance(child, ImportItem):
@@ -347,7 +349,7 @@ class Import(AaaParseModel):
             )
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Import:
+    def load(cls, children: list[AaaParseModel | Token]) -> Import:
         assert len(children) == 4
         from_token, source, _, import_items = children
         assert isinstance(from_token, Token)
@@ -362,7 +364,7 @@ class Struct(AaaParseModel):
         self,
         is_builtin: bool,
         declaration: StructDeclaration,
-        fields: Optional[StructFields],
+        fields: StructFields | None,
     ) -> None:
         self.is_builtin = is_builtin
         self.declaration = declaration
@@ -372,12 +374,12 @@ class Struct(AaaParseModel):
     def get_name(self) -> str:
         return self.declaration.flat_type_literal.identifier.value
 
-    def get_params(self) -> List[Identifier]:
+    def get_params(self) -> list[Identifier]:
         return self.declaration.flat_type_literal.params
 
     def get_fields(
         self,
-    ) -> Optional[Dict[str, TypeLiteral | FunctionPointerTypeLiteral]]:
+    ) -> dict[str, TypeLiteral | FunctionPointerTypeLiteral] | None:
         if self.is_builtin:
             return None
 
@@ -387,7 +389,7 @@ class Struct(AaaParseModel):
         return {field.name.value: field.type.literal for field in self.fields.value}
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Struct:
+    def load(cls, children: list[AaaParseModel | Token]) -> Struct:
         if isinstance(children[0], Token):
             assert len(children) == 2
 
@@ -401,7 +403,7 @@ class Struct(AaaParseModel):
         declaration = children[0]
         assert isinstance(declaration, StructDeclaration)
 
-        fields: Optional[StructFields] = None
+        fields: StructFields | None = None
         if isinstance(children[2], StructFields):
             fields = children[2]
 
@@ -414,7 +416,7 @@ class StructDeclaration(AaaParseModel):
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> StructDeclaration:
+    def load(cls, children: list[AaaParseModel | Token]) -> StructDeclaration:
         assert len(children) == 2
 
         struct_token, flat_type_literal = children
@@ -428,10 +430,10 @@ class SourceFile(AaaParseModel):
     def __init__(
         self,
         position: Position,
-        functions: List[Function],
-        imports: List[Import],
-        structs: List[Struct],
-        enums: List[Enum],
+        functions: list[Function],
+        imports: list[Import],
+        structs: list[Struct],
+        enums: list[Enum],
     ) -> None:
         self.functions = functions
         self.imports = imports
@@ -439,21 +441,21 @@ class SourceFile(AaaParseModel):
         self.enums = enums
         super().__init__(position)
 
-    def get_dependencies(self) -> Set[Path]:
+    def get_dependencies(self) -> set[Path]:
         return {import_.get_source_file() for import_ in self.imports}
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> SourceFile:
+    def load(cls, children: list[AaaParseModel | Token]) -> SourceFile:
         if children:
             file = children[0].position.file
         else:
             file = Path("/dev/unknown")
 
         position = Position(file, 1, 1)
-        functions: List[Function] = []
-        imports: List[Import] = []
-        structs: List[Struct] = []
-        enums: List[Enum] = []
+        functions: list[Function] = []
+        imports: list[Import] = []
+        structs: list[Struct] = []
+        enums: list[Enum] = []
 
         for child in children:
             if isinstance(child, Function):
@@ -476,7 +478,7 @@ class EnumDeclaration(AaaParseModel):
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> EnumDeclaration:
+    def load(cls, children: list[AaaParseModel | Token]) -> EnumDeclaration:
         assert len(children) == 2
         enum_token, name = children
 
@@ -486,14 +488,14 @@ class EnumDeclaration(AaaParseModel):
 
 
 class FlatTypeParams(AaaParseModel):
-    def __init__(self, position: Position, type_params: List[Identifier]) -> None:
+    def __init__(self, position: Position, type_params: list[Identifier]) -> None:
         self.value = type_params
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FlatTypeParams:
+    def load(cls, children: list[AaaParseModel | Token]) -> FlatTypeParams:
         sq_start_token = children[0]
-        type_params: List[Identifier] = []
+        type_params: list[Identifier] = []
 
         for child in children[1:]:
             if isinstance(child, Identifier):
@@ -511,7 +513,7 @@ class TypeLiteral(AaaParseModel):
         self,
         position: Position,
         identifier: Identifier,
-        params: List[TypeOrFunctionPointerLiteral],
+        params: list[TypeOrFunctionPointerLiteral],
         const: bool,
     ) -> None:
         self.identifier = identifier
@@ -519,16 +521,16 @@ class TypeLiteral(AaaParseModel):
         self.const = const
         super().__init__(position)
 
-    def get_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+    def get_params(self) -> list[TypeLiteral | FunctionPointerTypeLiteral]:
         return [item.literal for item in self.params]
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> TypeLiteral:
+    def load(cls, children: list[AaaParseModel | Token]) -> TypeLiteral:
         assert len(children) <= 3
 
         const = False
-        identifier: Optional[Identifier] = None
-        params: List[TypeOrFunctionPointerLiteral] = []
+        identifier: Identifier | None = None
+        params: list[TypeOrFunctionPointerLiteral] = []
 
         for child in children:
             if isinstance(child, Token):
@@ -555,7 +557,7 @@ class StructField(AaaParseModel):
         super().__init__(name.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> StructField:
+    def load(cls, children: list[AaaParseModel | Token]) -> StructField:
         assert len(children) == 3
         name, _, type = children
         assert isinstance(name, Identifier)
@@ -565,15 +567,15 @@ class StructField(AaaParseModel):
 
 
 class StructFields(AaaParseModel):
-    def __init__(self, fields: List[StructField]) -> None:
+    def __init__(self, fields: list[StructField]) -> None:
         assert len(fields) >= 1
 
         self.value = fields
         super().__init__(fields[0].position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> StructFields:
-        fields: List[StructField] = []
+    def load(cls, children: list[AaaParseModel | Token]) -> StructFields:
+        fields: list[StructField] = []
 
         for child in children:
             if isinstance(child, StructField):
@@ -591,20 +593,20 @@ class FlatTypeLiteral(AaaParseModel):
         self,
         position: Position,
         identifier: Identifier,
-        params: List[Identifier],
+        params: list[Identifier],
     ) -> None:
         self.identifier = identifier
         self.params = params
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FlatTypeLiteral:
+    def load(cls, children: list[AaaParseModel | Token]) -> FlatTypeLiteral:
         assert len(children) <= 2
 
         identifier = children[0]
         assert isinstance(identifier, Identifier)
 
-        params: List[Identifier] = []
+        params: list[Identifier] = []
         if len(children) == 2:
             flat_type_params = children[1]
             assert isinstance(flat_type_params, FlatTypeParams)
@@ -617,21 +619,21 @@ class FunctionPointerTypeLiteral(AaaParseModel):
     def __init__(
         self,
         position: Position,
-        argument_types: Optional[CommaSeparatedTypeList],
-        return_types: Optional[CommaSeparatedTypeList | Never],
+        argument_types: CommaSeparatedTypeList | None,
+        return_types: CommaSeparatedTypeList | Never | None,
     ) -> None:
         self.argument_types = argument_types
         self.return_types = return_types
         super().__init__(position)
 
-    def get_arguments(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+    def get_arguments(self) -> list[TypeLiteral | FunctionPointerTypeLiteral]:
         if self.argument_types is None:
             return []
         return [item.literal for item in self.argument_types.value]
 
     def get_return_types(
         self,
-    ) -> List[TypeLiteral | FunctionPointerTypeLiteral] | Never:
+    ) -> list[TypeLiteral | FunctionPointerTypeLiteral] | Never:
         if self.return_types is None:
             return []
         if isinstance(self.return_types, Never):
@@ -639,7 +641,7 @@ class FunctionPointerTypeLiteral(AaaParseModel):
         return [item.literal for item in self.return_types.value]
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FunctionPointerTypeLiteral:
+    def load(cls, children: list[AaaParseModel | Token]) -> FunctionPointerTypeLiteral:
         fn_token = children[0]
         assert isinstance(fn_token, Token)
 
@@ -648,7 +650,7 @@ class FunctionPointerTypeLiteral(AaaParseModel):
         else:
             arg_list = None
 
-        return_type_list: Optional[CommaSeparatedTypeList | Never] = None
+        return_type_list: CommaSeparatedTypeList | Never | None = None
 
         for child in children[4:]:
             if isinstance(child, Token) and child.value == "never":
@@ -663,15 +665,15 @@ class FunctionPointerTypeLiteral(AaaParseModel):
 
 
 class CommaSeparatedTypeList(AaaParseModel):
-    def __init__(self, literals: List[TypeOrFunctionPointerLiteral]) -> None:
+    def __init__(self, literals: list[TypeOrFunctionPointerLiteral]) -> None:
         assert len(literals) >= 1
 
         self.value = literals
         super().__init__(literals[0].position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> CommaSeparatedTypeList:
-        literals: List[TypeOrFunctionPointerLiteral] = []
+    def load(cls, children: list[AaaParseModel | Token]) -> CommaSeparatedTypeList:
+        literals: list[TypeOrFunctionPointerLiteral] = []
 
         for child in children:
             if isinstance(child, TypeOrFunctionPointerLiteral):
@@ -690,13 +692,13 @@ class FunctionName(AaaParseModel):
         super().__init__(name.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FunctionName:
+    def load(cls, children: list[AaaParseModel | Token]) -> FunctionName:
         name = children[0]
-        assert isinstance(name, (FreeFunctionName, MemberFunctionName))
+        assert isinstance(name, FreeFunctionName | MemberFunctionName)
 
         return FunctionName(name)
 
-    def get_params(self) -> List[Identifier]:
+    def get_params(self) -> list[Identifier]:
         return self.name.get_params()
 
     def get_func_name(self) -> str:
@@ -711,8 +713,8 @@ class FunctionDeclaration(AaaParseModel):
         self,
         position: Position,
         name: FunctionName,
-        arguments: Optional[Arguments],
-        return_types: Optional[ReturnTypes],
+        arguments: Arguments | None,
+        return_types: ReturnTypes | None,
     ) -> None:
         self.name = name
         self.arguments = arguments
@@ -720,22 +722,22 @@ class FunctionDeclaration(AaaParseModel):
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FunctionDeclaration:
+    def load(cls, children: list[AaaParseModel | Token]) -> FunctionDeclaration:
         fn_token = children[0]
         assert isinstance(fn_token, Token)
 
         name = children[1]
         assert isinstance(name, FunctionName)
 
-        arguments: Optional[Arguments] = None
-        return_types: Optional[ReturnTypes] = None
+        arguments: Arguments | None = None
+        return_types: ReturnTypes | None = None
 
         for child in children[2:]:
             if isinstance(child, Arguments):
                 arguments = child
             elif isinstance(child, ReturnTypes):
                 return_types = child
-            elif isinstance(child, (Token, Return)):
+            elif isinstance(child, Token | Return):
                 pass
             else:
                 raise NotImplementedError  # Unexpected child
@@ -744,18 +746,18 @@ class FunctionDeclaration(AaaParseModel):
 
 
 class Arguments(AaaParseModel):
-    def __init__(self, position: Position, arguments: List[Argument]) -> None:
+    def __init__(self, position: Position, arguments: list[Argument]) -> None:
         assert len(arguments) >= 1
 
         self.value = arguments
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Arguments:
+    def load(cls, children: list[AaaParseModel | Token]) -> Arguments:
         arg_token = children[0]
         assert isinstance(arg_token, Token)
 
-        arguments: List[Argument] = []
+        arguments: list[Argument] = []
 
         for child in children[1:]:
             if isinstance(child, Argument):
@@ -772,17 +774,17 @@ class ReturnTypes(AaaParseModel):
     def __init__(
         self,
         position: Position,
-        return_types: List[TypeOrFunctionPointerLiteral] | Never,
+        return_types: list[TypeOrFunctionPointerLiteral] | Never,
     ) -> None:
         self.value = return_types
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> ReturnTypes:
+    def load(cls, children: list[AaaParseModel | Token]) -> ReturnTypes:
         return_token = children[0]
         assert isinstance(return_token, Return)
 
-        return_types: List[TypeOrFunctionPointerLiteral] | Never
+        return_types: list[TypeOrFunctionPointerLiteral] | Never
 
         if isinstance(children[1], Token) and children[1].value == "never":
             return_types = Never(children[1].position)
@@ -808,23 +810,23 @@ class TypeOrFunctionPointerLiteral(AaaParseModel):
 
     @classmethod
     def load(
-        cls, children: List[AaaParseModel | Token]
+        cls, children: list[AaaParseModel | Token]
     ) -> TypeOrFunctionPointerLiteral:
         assert len(children) == 1
         child = children[0]
 
-        assert isinstance(child, (TypeLiteral, FunctionPointerTypeLiteral))
+        assert isinstance(child, TypeLiteral | FunctionPointerTypeLiteral)
         return TypeOrFunctionPointerLiteral(child)
 
 
 class FreeFunctionCall(AaaParseModel):
-    def __init__(self, func_name: Identifier, params: Optional[TypeParams]) -> None:
+    def __init__(self, func_name: Identifier, params: TypeParams | None) -> None:
         self.func_name = func_name
         self.params = params
         super().__init__(func_name.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FreeFunctionCall:
+    def load(cls, children: list[AaaParseModel | Token]) -> FreeFunctionCall:
         func_name = children[0]
         assert isinstance(func_name, Identifier)
 
@@ -839,7 +841,9 @@ class FreeFunctionCall(AaaParseModel):
     def name(self) -> str:
         return self.func_name.value
 
-    def get_type_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+    def get_type_params(
+        self,
+    ) -> list[TypeLiteral | FunctionPointerTypeLiteral]:
         if not self.params:
             return []
         return [item.literal for item in self.params.value]
@@ -847,7 +851,10 @@ class FreeFunctionCall(AaaParseModel):
 
 class MemberFunctionCall(AaaParseModel):
     def __init__(
-        self, type_name: Identifier, func_name: Identifier, params: Optional[TypeParams]
+        self,
+        type_name: Identifier,
+        func_name: Identifier,
+        params: TypeParams | None,
     ) -> None:
         self.type_name = type_name
         self.func_name = func_name
@@ -855,7 +862,7 @@ class MemberFunctionCall(AaaParseModel):
         super().__init__(func_name.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> MemberFunctionCall:
+    def load(cls, children: list[AaaParseModel | Token]) -> MemberFunctionCall:
         type_name = children[0]
         assert isinstance(type_name, Identifier)
 
@@ -873,20 +880,22 @@ class MemberFunctionCall(AaaParseModel):
     def name(self) -> str:
         return f"{self.type_name.value}:{self.func_name.value}"
 
-    def get_type_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+    def get_type_params(
+        self,
+    ) -> list[TypeLiteral | FunctionPointerTypeLiteral]:
         if not self.params:
             return []
         return [item.literal for item in self.params.value]
 
 
 class FreeFunctionName(AaaParseModel):
-    def __init__(self, func_name: Identifier, params: Optional[FlatTypeParams]) -> None:
+    def __init__(self, func_name: Identifier, params: FlatTypeParams | None) -> None:
         self.func_name = func_name
         self.params = params
         super().__init__(func_name.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FreeFunctionName:
+    def load(cls, children: list[AaaParseModel | Token]) -> FreeFunctionName:
         func_name = children[0]
         assert isinstance(func_name, Identifier)
 
@@ -898,7 +907,7 @@ class FreeFunctionName(AaaParseModel):
 
         return FreeFunctionName(func_name, params)
 
-    def get_params(self) -> List[Identifier]:
+    def get_params(self) -> list[Identifier]:
         if not self.params:
             return []
         return self.params.value
@@ -914,7 +923,7 @@ class MemberFunctionName(AaaParseModel):
     def __init__(
         self,
         type_name: Identifier,
-        params: Optional[FlatTypeParams],
+        params: FlatTypeParams | None,
         func_name: Identifier,
     ) -> None:
         self.type_name = type_name
@@ -923,7 +932,7 @@ class MemberFunctionName(AaaParseModel):
         super().__init__(type_name.position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> MemberFunctionName:
+    def load(cls, children: list[AaaParseModel | Token]) -> MemberFunctionName:
         type_name = children[0]
         assert isinstance(type_name, Identifier)
 
@@ -937,7 +946,7 @@ class MemberFunctionName(AaaParseModel):
 
         return MemberFunctionName(type_name, params, func_name)
 
-    def get_params(self) -> List[Identifier]:
+    def get_params(self) -> list[Identifier]:
         if not self.params:
             return []
         return self.params.value
@@ -957,27 +966,29 @@ class FunctionCall(AaaParseModel):
     def name(self) -> str:
         return self.call.name()
 
-    def get_type_params(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+    def get_type_params(
+        self,
+    ) -> list[TypeLiteral | FunctionPointerTypeLiteral]:
         return self.call.get_type_params()
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FunctionCall:
+    def load(cls, children: list[AaaParseModel | Token]) -> FunctionCall:
         call = children[0]
-        assert isinstance(call, (FreeFunctionCall, MemberFunctionCall))
+        assert isinstance(call, FreeFunctionCall | MemberFunctionCall)
 
         return FunctionCall(call)
 
 
 class TypeParams(AaaParseModel):
-    def __init__(self, value: List[TypeOrFunctionPointerLiteral]) -> None:
+    def __init__(self, value: list[TypeOrFunctionPointerLiteral]) -> None:
         assert len(value) >= 1
 
         self.value = value
         super().__init__(value[0].position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> TypeParams:
-        type_params: List[TypeOrFunctionPointerLiteral] = []
+    def load(cls, children: list[AaaParseModel | Token]) -> TypeParams:
+        type_params: list[TypeOrFunctionPointerLiteral] = []
 
         for child in children:
             if isinstance(child, TypeOrFunctionPointerLiteral):
@@ -991,15 +1002,15 @@ class TypeParams(AaaParseModel):
 
 
 class Variables(AaaParseModel):
-    def __init__(self, value: List[Identifier]) -> None:
+    def __init__(self, value: list[Identifier]) -> None:
         assert len(value) >= 1
 
         self.value = value
         super().__init__(value[0].position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Variables:
-        variables: List[Identifier] = []
+    def load(cls, children: list[AaaParseModel | Token]) -> Variables:
+        variables: list[Identifier] = []
 
         for child in children:
             if isinstance(child, Identifier):
@@ -1018,20 +1029,20 @@ class CaseLabel(AaaParseModel):
         position: Position,
         enum_name: Identifier,
         variant_name: Identifier,
-        variables: Optional[Variables],
+        variables: Variables | None,
     ) -> None:
         self.enum_name = enum_name
         self.variant_name = variant_name
         self.variables = variables
         super().__init__(position)
 
-    def get_variables(self) -> List[Identifier]:
+    def get_variables(self) -> list[Identifier]:
         if not self.variables:
             return []
         return self.variables.value
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> CaseLabel:
+    def load(cls, children: list[AaaParseModel | Token]) -> CaseLabel:
         enum_name, _, variant_name = children[:3]
         assert isinstance(enum_name, Identifier)
         assert isinstance(variant_name, Identifier)
@@ -1051,7 +1062,7 @@ class ForeachLoop(AaaParseModel):
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> ForeachLoop:
+    def load(cls, children: list[AaaParseModel | Token]) -> ForeachLoop:
         assert len(children) == 2
         foreach_token, body_block = children
         assert isinstance(foreach_token, Token)
@@ -1062,14 +1073,17 @@ class ForeachLoop(AaaParseModel):
 
 class UseBlock(AaaParseModel):
     def __init__(
-        self, position: Position, variables: Variables, body_block: FunctionBodyBlock
+        self,
+        position: Position,
+        variables: Variables,
+        body_block: FunctionBodyBlock,
     ) -> None:
         self.variables = variables
         self.body_block = body_block
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> UseBlock:
+    def load(cls, children: list[AaaParseModel | Token]) -> UseBlock:
         assert len(children) == 3
         use_token, variables, body_block = children
         assert isinstance(use_token, Token)
@@ -1081,14 +1095,17 @@ class UseBlock(AaaParseModel):
 
 class Assignment(AaaParseModel):
     def __init__(
-        self, position: Position, variables: Variables, body_block: FunctionBodyBlock
+        self,
+        position: Position,
+        variables: Variables,
+        body_block: FunctionBodyBlock,
     ) -> None:
         self.variables = variables
         self.body_block = body_block
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Assignment:
+    def load(cls, children: list[AaaParseModel | Token]) -> Assignment:
         assert len(children) == 3
         variables, _, body_block = children
         assert isinstance(variables, Variables)
@@ -1099,14 +1116,17 @@ class Assignment(AaaParseModel):
 
 class CaseBlock(AaaParseModel):
     def __init__(
-        self, position: Position, label: CaseLabel, body_block: FunctionBodyBlock
+        self,
+        position: Position,
+        label: CaseLabel,
+        body_block: FunctionBodyBlock,
     ) -> None:
         self.label = label
         self.body = body_block
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> CaseBlock:
+    def load(cls, children: list[AaaParseModel | Token]) -> CaseBlock:
         assert len(children) == 3
         case_token, case_label, body_block = children
         assert isinstance(case_token, Token)
@@ -1122,7 +1142,7 @@ class DefaultBlock(AaaParseModel):
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> DefaultBlock:
+    def load(cls, children: list[AaaParseModel | Token]) -> DefaultBlock:
         assert len(children) == 2
         default_token, body_block = children
 
@@ -1134,19 +1154,19 @@ class DefaultBlock(AaaParseModel):
 
 class MatchBlock(AaaParseModel):
     def __init__(
-        self, position: Position, blocks: List[CaseBlock | DefaultBlock]
+        self, position: Position, blocks: list[CaseBlock | DefaultBlock]
     ) -> None:
         self.blocks = blocks
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> MatchBlock:
-        blocks: List[CaseBlock | DefaultBlock] = []
+    def load(cls, children: list[AaaParseModel | Token]) -> MatchBlock:
+        blocks: list[CaseBlock | DefaultBlock] = []
         match_token = children[0]
         assert isinstance(match_token, Token)
 
         for child in children[2:-1]:
-            assert isinstance(child, (CaseBlock, DefaultBlock))
+            assert isinstance(child, CaseBlock | DefaultBlock)
             blocks.append(child)
 
         return MatchBlock(match_token.position, blocks)
@@ -1156,13 +1176,13 @@ class EnumVariant(AaaParseModel):
     def __init__(
         self,
         name: Identifier,
-        associated_data: Optional[EnumVariantAssociatedData],
+        associated_data: EnumVariantAssociatedData | None,
     ) -> None:
         self.name = name
         self.associated_data = associated_data
         super().__init__(name.position)
 
-    def get_data(self) -> List[TypeLiteral | FunctionPointerTypeLiteral]:
+    def get_data(self) -> list[TypeLiteral | FunctionPointerTypeLiteral]:
         if self.associated_data is None:
             return []
         data = self.associated_data.value
@@ -1171,7 +1191,7 @@ class EnumVariant(AaaParseModel):
         return [item.literal for item in data.value]
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> EnumVariant:
+    def load(cls, children: list[AaaParseModel | Token]) -> EnumVariant:
         name = children[0]
         assert isinstance(name, Identifier)
 
@@ -1185,15 +1205,15 @@ class EnumVariant(AaaParseModel):
 
 
 class EnumVariants(AaaParseModel):
-    def __init__(self, variants: List[EnumVariant]) -> None:
+    def __init__(self, variants: list[EnumVariant]) -> None:
         assert len(variants) >= 1
 
         self.value = variants
         super().__init__(variants[0].position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> EnumVariants:
-        variants: List[EnumVariant] = []
+    def load(cls, children: list[AaaParseModel | Token]) -> EnumVariants:
+        variants: list[EnumVariant] = []
 
         for child in children:
             if isinstance(child, EnumVariant):
@@ -1212,14 +1232,14 @@ class Enum(AaaParseModel):
         self.variants = variants
         super().__init__(declaration.position)
 
-    def get_variants(self) -> List[EnumVariant]:
+    def get_variants(self) -> list[EnumVariant]:
         return self.variants.value
 
     def get_name(self) -> str:
         return self.declaration.name.value
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> Enum:
+    def load(cls, children: list[AaaParseModel | Token]) -> Enum:
         assert len(children) == 4
         declaration, _, variants, _ = children
 
@@ -1239,7 +1259,7 @@ class EnumVariantAssociatedData(AaaParseModel):
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> EnumVariantAssociatedData:
+    def load(cls, children: list[AaaParseModel | Token]) -> EnumVariantAssociatedData:
         position = children[0].position
 
         data: TypeOrFunctionPointerLiteral | CommaSeparatedTypeList
@@ -1257,32 +1277,32 @@ class Never(AaaParseModel):
 
 
 class FunctionBodyItem(AaaParseModel):
-    types = Union[
-        Assignment,
-        Boolean,
-        Branch,
-        Call,
-        Char,
-        ForeachLoop,
-        FunctionCall,
-        FunctionPointerTypeLiteral,
-        GetFunctionPointer,
-        Integer,
-        MatchBlock,
-        Return,
-        String,
-        StructFieldQuery,
-        StructFieldUpdate,
-        UseBlock,
-        WhileLoop,
-    ]
+    types = (
+        Assignment
+        | Boolean
+        | Branch
+        | Call
+        | Char
+        | ForeachLoop
+        | FunctionCall
+        | FunctionPointerTypeLiteral
+        | GetFunctionPointer
+        | Integer
+        | MatchBlock
+        | Return
+        | String
+        | StructFieldQuery
+        | StructFieldUpdate
+        | UseBlock
+        | WhileLoop
+    )
 
     def __init__(self, position: Position, value: types) -> None:
         self.value = value
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FunctionBodyItem:
+    def load(cls, children: list[AaaParseModel | Token]) -> FunctionBodyItem:
         assert len(children) == 1
         child = children[0]
 
@@ -1292,14 +1312,17 @@ class FunctionBodyItem(AaaParseModel):
 
 class FunctionBodyBlock(AaaParseModel):
     def __init__(
-        self, position: Position, body: FunctionBody, end_token_position: Position
+        self,
+        position: Position,
+        body: FunctionBody,
+        end_token_position: Position,
     ) -> None:
         self.value = body
         self.end_token_position = end_token_position
         super().__init__(position)
 
     @classmethod
-    def load(cls, children: List[AaaParseModel | Token]) -> FunctionBodyBlock:
+    def load(cls, children: list[AaaParseModel | Token]) -> FunctionBodyBlock:
         assert len(children) == 3
         start_token, body, end_token = children
         assert isinstance(start_token, Token)
@@ -1312,7 +1335,7 @@ class FunctionBodyBlock(AaaParseModel):
 class ParserOutput(AaaModel):
     def __init__(
         self,
-        parsed: Dict[Path, SourceFile],
+        parsed: dict[Path, SourceFile],
         entrypoint: Path,
         builtins_path: Path,
     ) -> None:

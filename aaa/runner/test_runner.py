@@ -2,7 +2,6 @@ import re
 import sys
 from glob import glob
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from aaa import AaaException
 from aaa.parser.exceptions import AaaParserBaseException
@@ -17,9 +16,9 @@ class TestRunner:
 
     def __init__(self, tests_root: str) -> None:
         self.tests_root = Path(tests_root).resolve()
-        self.exceptions: List[AaaException] = []
-        self.parsed_files: Dict[Path, SourceFile] = {}
-        self.test_functions: List[Function] = []
+        self.exceptions: list[AaaException] = []
+        self.parsed_files: dict[Path, SourceFile] = {}
+        self.test_functions: list[Function] = []
         self.verbose = False
 
     @classmethod
@@ -27,7 +26,7 @@ class TestRunner:
         cls,
         path: str,
         verbose: bool,
-        binary: Optional[str],
+        binary: str | None,
         runtime_type_checks: bool,
     ) -> int:
         test_runner = TestRunner(path)
@@ -51,7 +50,7 @@ class TestRunner:
     def run(
         self,
         compile: bool,
-        binary: Optional[Path],
+        binary: Path | None,
         run: bool,
         runtime_type_checks: bool,
     ) -> int:
@@ -75,11 +74,11 @@ class TestRunner:
             args=[],
         )
 
-    def _get_parsed_test_files(self) -> Dict[Path, SourceFile]:
+    def _get_parsed_test_files(self) -> dict[Path, SourceFile]:
         glob_paths = glob("**/test_*.aaa", root_dir=self.tests_root, recursive=True)
         test_files = {(self.tests_root / path).resolve() for path in glob_paths}
 
-        parsed_files: Dict[Path, SourceFile] = {}
+        parsed_files: dict[Path, SourceFile] = {}
 
         parser = AaaParser(self.verbose)
 
@@ -91,8 +90,8 @@ class TestRunner:
 
         return parsed_files
 
-    def _get_test_functions(self) -> List[Function]:
-        test_functions: List[Function] = []
+    def _get_test_functions(self) -> list[Function]:
+        test_functions: list[Function] = []
 
         for parsed_file in self.parsed_files.values():
             for function in parsed_file.functions:
@@ -117,8 +116,8 @@ class TestRunner:
         self.parsed_files = self._get_parsed_test_files()
         self.test_functions = self._get_test_functions()
 
-        imports: List[str] = []
-        pushed_test_funcs: List[str] = []
+        imports: list[str] = []
+        pushed_test_funcs: list[str] = []
 
         for test_number, test_function in enumerate(self.test_functions):
             from_ = str(test_function.position.file)
@@ -135,6 +134,8 @@ class TestRunner:
         code = re.sub(" *// \\[COMMENT\\].*\n", "", code)
         code = re.sub(" *// \\[IMPORTS\\].*\n", "\n".join(imports) + "\n", code)
         code = re.sub(
-            " *// \\[TEST FUNCTIONS\\].*\n", "\n".join(pushed_test_funcs) + "\n", code
+            " *// \\[TEST FUNCTIONS\\].*\n",
+            "\n".join(pushed_test_funcs) + "\n",
+            code,
         )
         return code

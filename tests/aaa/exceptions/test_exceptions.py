@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, List, Type
 
 import pytest
 
@@ -61,6 +60,9 @@ from aaa.type_checker.exceptions import (
     WhileLoopTypeError,
 )
 from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
+
+# Ignore line length linter errors for this file
+# ruff: noqa: E501
 
 
 @pytest.mark.parametrize(
@@ -571,8 +573,8 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
             """,
             ForeachLoopTypeError,
             "/foo/main.aaa:2:32: Invalid stack modification inside foreach loop body\n"
-            + f"stack at end of foreach loop: vec_iter[int] int\n"
-            + f"              expected stack: vec_iter[int]",
+            + "stack at end of foreach loop: vec_iter[int] int\n"
+            + "              expected stack: vec_iter[int]",
             id="foreach-loop-type-error",
         ),
         pytest.param(
@@ -1062,7 +1064,7 @@ from tests.aaa import check_aaa_full_source, check_aaa_full_source_multi_file
     ],
 )
 def test_one_error(
-    code: str, expected_exception_type: Type[Exception], expected_exception_message: str
+    code: str, expected_exception_type: type[Exception], expected_exception_message: str
 ) -> None:
     exceptions = check_aaa_full_source(code, "", [expected_exception_type])
 
@@ -1187,8 +1189,8 @@ def test_one_error(
     ],
 )
 def test_multi_file_errors(
-    files: Dict[str, str],
-    expected_exception_type: Type[Exception],
+    files: dict[str, str],
+    expected_exception_type: type[Exception],
     expected_exception_message: str,
 ) -> None:
     file_dict = {Path(file): code for file, code in files.items()}
@@ -1394,7 +1396,7 @@ def test_multi_file_errors(
     ],
 )
 def test_colliding_identifier(
-    files: Dict[str, str], expected_exception_message: str
+    files: dict[str, str], expected_exception_message: str
 ) -> None:
     file_dict = {Path(file): code for file, code in files.items()}
 
@@ -1435,7 +1437,7 @@ def test_colliding_identifier(
 def test_equals_function_signature(func_def_code: str, expect_ok: bool) -> None:
     code = "fn main { nop } struct Foo {} " + func_def_code
 
-    expected_exception_types: List[Type[Exception]] = []
+    expected_exception_types: list[type[Exception]] = []
 
     if not expect_ok:
         expected_exception_types = [InvalidEqualsFunctionSignature]

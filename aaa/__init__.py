@@ -2,7 +2,6 @@ import os
 import secrets
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Optional
 
 
 class AaaModel:
@@ -28,7 +27,7 @@ class AaaEnvironmentError(AaaException):
 AAA_DEFAULT_OUTPUT_FOLDER_ROOT = Path(gettempdir()) / "aaa/transpiled"
 
 
-def __create_output_folder(root: Path, name: Optional[str]) -> Path:
+def __create_output_folder(root: Path, name: str | None) -> Path:
     if name is None:
         name = "".join(secrets.choice("0123456789abcdef") for _ in range(16))
 
@@ -37,7 +36,7 @@ def __create_output_folder(root: Path, name: Optional[str]) -> Path:
     return path
 
 
-def create_output_folder(name: Optional[str] = None) -> Path:
+def create_output_folder(name: str | None = None) -> Path:
     return __create_output_folder(AAA_DEFAULT_OUTPUT_FOLDER_ROOT, name)
 
 

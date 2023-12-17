@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
 
 from basil.models import Position
 
@@ -27,7 +26,9 @@ from aaa.cross_referencer.models import (
 )
 
 
-def format_typestack(type_stack: List[VariableType | FunctionPointer] | Never) -> str:
+def format_typestack(
+    type_stack: list[VariableType | FunctionPointer] | Never,
+) -> str:
     if isinstance(type_stack, Never):
         return "never"
 
@@ -43,7 +44,7 @@ class FunctionTypeError(TypeCheckerException):
     def __init__(
         self,
         function: Function,
-        computed_return_types: List[VariableType | FunctionPointer] | Never,
+        computed_return_types: list[VariableType | FunctionPointer] | Never,
     ) -> None:
         self.computed_return_types = computed_return_types
         self.function = function
@@ -64,25 +65,23 @@ class StackTypesError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
         func_like: Function
         | EnumConstructor
         | CallFunctionByPointer
         | StructFieldUpdate
         | StructFieldQuery,
-        type_params: List[VariableType | FunctionPointer] = [],
-        expected_stack_top_override: Optional[
-            List[VariableType | FunctionPointer]
-        ] = None,
+        type_params: list[VariableType | FunctionPointer] | None = None,
+        expected_stack_top_override: list[VariableType | FunctionPointer] | None = None,
     ) -> None:
         self.type_stack = type_stack
         self.func_like = func_like
-        self.type_params = type_params
+        self.type_params = type_params or []
         self.expected_stack_top_override = expected_stack_top_override
         super().__init__(position)
 
     def func_like_name(self) -> str:  # pragma: nocover
-        if isinstance(self.func_like, (Function, EnumConstructor)):
+        if isinstance(self.func_like, Function | EnumConstructor):
             name = self.func_like.name
 
             if self.type_params:
@@ -131,11 +130,12 @@ class StackTypesError(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"{self.position}: Invalid stack types when calling {self.func_like_name()}\n"
-            + f"Expected stack top: "
+            f"{self.position}: Invalid stack types when calling "
+            + f"{self.func_like_name()}\n"
+            + "Expected stack top: "
             + self.format_expected_typestack()
             + "\n"
-            + f"       Found stack: "
+            + "       Found stack: "
             + format_typestack(self.type_stack)
         )
 
@@ -144,8 +144,8 @@ class ConditionTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
-        condition_stack: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
+        condition_stack: list[VariableType | FunctionPointer],
     ) -> None:
         self.type_stack = type_stack
         self.condition_stack = condition_stack
@@ -166,9 +166,9 @@ class BranchTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
-        if_stack: List[VariableType | FunctionPointer],
-        else_stack: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
+        if_stack: list[VariableType | FunctionPointer],
+        else_stack: list[VariableType | FunctionPointer],
     ) -> None:
         self.type_stack = type_stack
         self.if_stack = if_stack
@@ -192,8 +192,8 @@ class WhileLoopTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
-        loop_stack: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
+        loop_stack: list[VariableType | FunctionPointer],
     ) -> None:
         self.type_stack = type_stack
         self.loop_stack = loop_stack
@@ -226,15 +226,18 @@ class InvalidTestSignuture(TypeCheckerException):
         super().__init__(function.position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Test function {self.function.name} should have no arguments and no return types"
+        return (
+            f"{self.position}: Test function {self.function.name} should have no "
+            + "arguments and no return types"
+        )
 
 
 class StructUpdateStackError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
-        type_stack_before: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
+        type_stack_before: list[VariableType | FunctionPointer],
     ) -> None:
         self.type_stack = type_stack
         self.type_stack_before = type_stack_before
@@ -245,7 +248,8 @@ class StructUpdateStackError(TypeCheckerException):
         found_stack = format_typestack(self.type_stack)
 
         return (
-            f"{self.position}: Incorrect stack modification when updating struct field\n"
+            f"{self.position}: Incorrect stack modification when updating "
+            + "struct field\n"
             + f"  Expected: {expected_stack} <new field value> \n"
             + f"     Found: {found_stack}"
         )
@@ -255,7 +259,7 @@ class StructUpdateTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
         struct_type: Struct,
         field_name: str,
         expected_type: VariableType | FunctionPointer,
@@ -270,7 +274,8 @@ class StructUpdateTypeError(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"{self.position}: Attempt to set field {self.field_name} of {self.struct_type.name} to wrong type\n"
+            f"{self.position}: Attempt to set field {self.field_name} of "
+            + f"{self.struct_type.name} to wrong type\n"
             + f"Expected type: {self.expected_type}\n"
             + f"   Found type: {self.found_type}\n"
             + "\n"
@@ -287,7 +292,10 @@ class InvalidMemberFunctionSignature(TypeCheckerException):
 
     def __str__(self) -> str:
         full_func_name = f"{self.function.struct_name}:{self.function.func_name}"
-        formatted = f"{self.position}: Function {full_func_name} has invalid member-function signature\n\n"
+        formatted = (
+            f"{self.position}: Function {full_func_name} has invalid "
+            + "member-function signature\n\n"
+        )
 
         arguments = [arg.type for arg in self.function.arguments]
 
@@ -308,7 +316,10 @@ class UnknownField(TypeCheckerException):
         super().__init__(position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Usage of unknown field {self.field_name} of type {self.struct_type.name}"
+        return (
+            f"{self.position}: Usage of unknown field {self.field_name} of type "
+            + self.struct_type.name
+        )
 
 
 class MainFunctionNotFound(TypeCheckerException):
@@ -353,12 +364,15 @@ class InvalidIterator(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"{self.position}: Invalid iterator type {self.iterator_type} to iterate over {self.iterable_type}.\n"
+            f"{self.position}: Invalid iterator type {self.iterator_type} "
+            + f"to iterate over {self.iterable_type}.\n"
             + "Iterator types need to have a function named next which:\n"
             + "- takes one argument (the iterator)\n"
             + "- returns at least 2 values, the last being a boolean\n"
-            + "- indicates if more data is present in the iterable with this last return value\n"
-            + "- for const iterators all return values of `next` except the last one must be const"
+            + "- indicates if more data is present in the iterable with "
+            + "this last return value\n"
+            + "- for const iterators all return values of `next` except "
+            + "the last one must be const"
         )
 
 
@@ -366,8 +380,8 @@ class ForeachLoopTypeError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        expected_type_stack_after: List[VariableType | FunctionPointer],
-        type_stack_after: List[VariableType | FunctionPointer],
+        expected_type_stack_after: list[VariableType | FunctionPointer],
+        type_stack_after: list[VariableType | FunctionPointer],
     ) -> None:
         self.type_stack_after = type_stack_after
         self.expected_type_stack_after = expected_type_stack_after
@@ -392,7 +406,8 @@ class UseBlockStackUnderflow(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"{self.position}: Use block consumes more values than can be found on the stack\n"
+            f"{self.position}: Use block consumes more values "
+            + "than can be found on the stack\n"
             + f"    stack size: {self.stack_size}\n"
             + f"used variables: {self.use_block_vars}"
         )
@@ -401,8 +416,8 @@ class UseBlockStackUnderflow(TypeCheckerException):
 class AssignmentTypeError(TypeCheckerException):
     def __init__(
         self,
-        expected_var_types: List[VariableType | FunctionPointer],
-        found_var_types: List[VariableType | FunctionPointer],
+        expected_var_types: list[VariableType | FunctionPointer],
+        found_var_types: list[VariableType | FunctionPointer],
         assignment: Assignment,
     ) -> None:
         self.expected_var_types = expected_var_types
@@ -412,10 +427,10 @@ class AssignmentTypeError(TypeCheckerException):
     def __str__(self) -> str:
         return (
             f"{self.position}: Assignment with wrong number and/or type of values\n"
-            + f"expected types: "
+            + "expected types: "
             + " ".join(str(var_type) for var_type in self.expected_var_types)
             + "\n"
-            + f"   found types: "
+            + "   found types: "
             + " ".join(str(var_type) for var_type in self.found_var_types)
         )
 
@@ -427,7 +442,10 @@ class UpdateConstStructError(TypeCheckerException):
         super().__init__(field_update.position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Cannot update field {self.field_name} on const struct {self.struct_name}"
+        return (
+            f"{self.position}: Cannot update field {self.field_name} on "
+            + f"const struct {self.struct_name}"
+        )
 
 
 class AssignConstValueError(TypeCheckerException):
@@ -446,7 +464,10 @@ class MemberFunctionTypeNotFound(TypeCheckerException):
 
     def __str__(self) -> str:
         struct_name = self.function.struct_name
-        return f"{self.function.position}: Cannot find type {struct_name} in same file as member function definition."
+        return (
+            f"{self.function.position}: Cannot find type {struct_name} in "
+            + "same file as member function definition."
+        )
 
 
 class InvalidEqualsFunctionSignature(TypeCheckerException):
@@ -471,7 +492,7 @@ class ReturnTypesError(TypeCheckerException):
     def __init__(
         self,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
         function: Function,
     ) -> None:
         self.type_stack = type_stack
@@ -488,7 +509,9 @@ class ReturnTypesError(TypeCheckerException):
 
 class MatchTypeError(TypeCheckerException):
     def __init__(
-        self, match_block: MatchBlock, type_stack: List[VariableType | FunctionPointer]
+        self,
+        match_block: MatchBlock,
+        type_stack: list[VariableType | FunctionPointer],
     ) -> None:
         self.match_block = match_block
         self.type_stack = type_stack
@@ -497,7 +520,7 @@ class MatchTypeError(TypeCheckerException):
     def __str__(self) -> str:
         return (
             f"{self.position}: Cannot match on this stack:\n"
-            + f"expected stack types: <enum type>\n"
+            + "expected stack types: <enum type>\n"
             + f"   found stack types: {format_typestack(self.type_stack)}"
         )
 
@@ -512,7 +535,10 @@ class CaseEnumTypeError(TypeCheckerException):
         super().__init__(case_block.position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Cannot use case for enum {self.found_enum.name} when matching on enum {self.expected_enum.name}"
+        return (
+            f"{self.position}: Cannot use case for enum {self.found_enum.name} "
+            + f"when matching on enum {self.expected_enum.name}"
+        )
 
 
 def describe_block(block: CaseBlock | DefaultBlock) -> str:
@@ -525,8 +551,8 @@ def describe_block(block: CaseBlock | DefaultBlock) -> str:
 class CaseStackTypeError(TypeCheckerException):
     def __init__(
         self,
-        blocks: List[CaseBlock | DefaultBlock],
-        block_type_stacks: List[List[VariableType | FunctionPointer] | Never],
+        blocks: list[CaseBlock | DefaultBlock],
+        block_type_stacks: list[list[VariableType | FunctionPointer] | Never],
     ) -> None:
         self.blocks = blocks
         self.block_type_stacks = block_type_stacks
@@ -554,7 +580,7 @@ class DuplicateCase(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"Duplicate case found in match block:\n"
+            "Duplicate case found in match block:\n"
             + f"{self.first.position}: {describe_block(self.first)}\n"
             + f"{self.second.position}: {describe_block(self.second)}"
         )
@@ -562,7 +588,10 @@ class DuplicateCase(TypeCheckerException):
 
 class MissingEnumCases(TypeCheckerException):
     def __init__(
-        self, match_block: MatchBlock, enum_type: Enum, missing_variants: Set[str]
+        self,
+        match_block: MatchBlock,
+        enum_type: Enum,
+        missing_variants: set[str],
     ) -> None:
         self.match_block = match_block
         self.missing_variants = missing_variants
@@ -570,7 +599,8 @@ class MissingEnumCases(TypeCheckerException):
 
     def __str__(self) -> str:
         return (
-            f"{self.match_block.position}: Missing cases for enum {self.enum_type.name}.\n"
+            f"{self.match_block.position}: Missing cases "
+            + f"for enum {self.enum_type.name}.\n"
             + "\n".join(
                 [
                     f"- {self.enum_type.name}:{variant}"
@@ -619,7 +649,10 @@ class UnsupportedOperator(TypeCheckerException):
         super().__init__(position)
 
     def __str__(self) -> str:
-        return f"{self.position}: Type {self.type_name} does not support operator {self.operator}"
+        return (
+            f"{self.position}: Type {self.type_name} "
+            + f"does not support operator {self.operator}"
+        )
 
 
 class CollidingVariable(TypeCheckerException):
@@ -630,7 +663,7 @@ class CollidingVariable(TypeCheckerException):
     ) -> None:
         def sort_key(
             item: Variable | Argument | Struct | Function | Enum,
-        ) -> Tuple[int, int]:
+        ) -> tuple[int, int]:
             return (item.position.line, item.position.column)
 
         self.colliding = sorted([lhs, rhs], key=sort_key)
@@ -657,7 +690,10 @@ class InvalidCallWithTypeParameters(TypeCheckerException):
             assert isinstance(self.var, Variable)
             object = "variable"
 
-        return f"{self.position}: Cannot use {object} {self.call_var.name} with type parameters"
+        return (
+            f"{self.position}: Cannot use {object} {self.call_var.name} "
+            + "with type parameters"
+        )
 
 
 class UseFieldOfEnumException(TypeCheckerException):

@@ -28,8 +28,8 @@ def test_function_pointer(source_path: Path, expected_stdout: str) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source_path)
 
     assert expected_stdout == stdout
-    assert "" == stderr
-    assert 0 == exit_code
+    assert stderr == ""
+    assert exit_code == 0
 
 
 @pytest.mark.parametrize(
@@ -43,9 +43,9 @@ def test_function_pointer(source_path: Path, expected_stdout: str) -> None:
 def test_zero_value(source_path: Path) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source_path)
 
-    assert "" == stdout
-    assert "Function pointer with zero-value was called.\n" == stderr
-    assert 1 == exit_code
+    assert stdout == ""
+    assert stderr == "Function pointer with zero-value was called.\n"
+    assert exit_code == 1
 
 
 @pytest.mark.parametrize(
@@ -59,6 +59,6 @@ def test_zero_value(source_path: Path) -> None:
 def test_print_calling_location(source_path: Path, expected_stderr: str) -> None:
     stdout, stderr, exit_code = compile_run(SOURCE_PREFIX / source_path)
 
-    assert "" == stdout
+    assert stdout == ""
     assert expected_stderr == stderr
-    assert 1 == exit_code
+    assert exit_code == 1

@@ -1,6 +1,7 @@
+from collections.abc import Callable, Mapping
 from copy import copy, deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Type
+from typing import Any
 
 from basil.models import Position
 
@@ -90,15 +91,15 @@ class TypeChecker:
         self, cross_referencer_output: CrossReferencerOutput, verbose: bool
     ) -> None:
         self.functions = cross_referencer_output.functions
-        self.types: Dict[Tuple[Path, str], Struct | Enum] = (
+        self.types: dict[tuple[Path, str], Struct | Enum] = (
             cross_referencer_output.structs | cross_referencer_output.enums
         )
         self.imports = cross_referencer_output.imports
         self.builtins_path = cross_referencer_output.builtins_path
         self.entrypoint = cross_referencer_output.entrypoint
-        self.exceptions: List[TypeCheckerException] = []
-        self.position_stacks: Dict[
-            Position, List[VariableType | FunctionPointer] | Never
+        self.exceptions: list[TypeCheckerException] = []
+        self.position_stacks: dict[
+            Position, list[VariableType | FunctionPointer] | Never
         ] = {}
         self.verbose = verbose
 
@@ -134,7 +135,7 @@ class TypeChecker:
             return
 
         for position in sorted(self.position_stacks.keys()):
-            type_stack: List[
+            type_stack: list[
                 VariableType | FunctionPointer
             ] | Never = self.position_stacks[position]
 
@@ -152,8 +153,8 @@ class TypeChecker:
     def _check_main_function(self) -> None:
         try:
             function = self.functions[(self.entrypoint, "main")]
-        except KeyError:
-            raise MainFunctionNotFound(self.entrypoint)
+        except KeyError as e:
+            raise MainFunctionNotFound(self.entrypoint) from e
 
         main_arguments_ok = False
 
@@ -203,15 +204,15 @@ class SingleFunctionTypeChecker:
         self.types = type_checker.types
         self.functions = type_checker.functions
         self.builtins_path = type_checker.builtins_path
-        self.vars: Dict[
-            str, Tuple[Variable | Argument, VariableType | FunctionPointer]
+        self.vars: dict[
+            str, tuple[Variable | Argument, VariableType | FunctionPointer]
         ] = {arg.name: (arg, arg.type) for arg in function.arguments}
         self.verbose = type_checker.verbose
 
         # NOTE: we keep track of stacks per position.
         # This is useful for the Transpiler and for debugging.
-        self.position_stacks: Dict[
-            Position, List[VariableType | FunctionPointer] | Never
+        self.position_stacks: dict[
+            Position, list[VariableType | FunctionPointer] | Never
         ] = {}
 
     def run(self) -> None:
@@ -235,12 +236,13 @@ class SingleFunctionTypeChecker:
             raise FunctionTypeError(self.function, computed_return_types)
 
     def _confirm_return_types(
-        self, computed: List[VariableType | FunctionPointer] | Never
+        self, computed: list[VariableType | FunctionPointer] | Never
     ) -> bool:
         expected = self.function.return_types
 
         if isinstance(computed, Never):
-            # If we never return, it doesn't matter what the signature promised to return.
+            # If we never return, it doesn't matter
+            # what the signature promised to return.
             return True
 
         if isinstance(expected, Never):
@@ -249,7 +251,7 @@ class SingleFunctionTypeChecker:
         if len(expected) != len(computed):
             return False
 
-        for expected_value, computed_value in zip(expected, computed):
+        for expected_value, computed_value in zip(expected, computed, strict=True):
             if isinstance(expected_value, VariableType):
                 if not isinstance(computed_value, VariableType):
                     return False
@@ -278,8 +280,8 @@ class SingleFunctionTypeChecker:
         self,
         expected_var_type: VariableType | FunctionPointer,
         var_type: VariableType | FunctionPointer,
-        placeholder_types: Dict[str, VariableType | FunctionPointer],
-    ) -> Dict[str, VariableType | FunctionPointer]:
+        placeholder_types: dict[str, VariableType | FunctionPointer],
+    ) -> dict[str, VariableType | FunctionPointer]:
         if isinstance(expected_var_type, FunctionPointer):
             if not isinstance(var_type, FunctionPointer):
                 raise SignatureItemMismatch
@@ -316,7 +318,9 @@ class SingleFunctionTypeChecker:
             if len(var_type.params) != len(expected_var_type.params):
                 raise SignatureItemMismatch
 
-            for expected_param, param in zip(expected_var_type.params, var_type.params):
+            for expected_param, param in zip(
+                expected_var_type.params, var_type.params, strict=True
+            ):
                 placeholder_types = self._match_signature_items(
                     expected_param, param, placeholder_types
                 )
@@ -368,36 +372,42 @@ class SingleFunctionTypeChecker:
         return self._get_builtin_var_type("int")
 
     def _check_integer_literal(
-        self, literal: IntegerLiteral, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer]:
+        self,
+        literal: IntegerLiteral,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         return type_stack + [self._get_int_var_type()]
 
     def _check_string_literal(
-        self, literal: StringLiteral, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer]:
+        self,
+        literal: StringLiteral,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         return type_stack + [self._get_str_var_type()]
 
     def _check_character_literal(
         self,
         literal: CharacterLiteral,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer]:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         return type_stack + [self._get_char_var_type()]
 
     def _check_boolean_literal(
-        self, literal: BooleanLiteral, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer]:
+        self,
+        literal: BooleanLiteral,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         return type_stack + [self._get_bool_var_type()]
 
     def _check_get_function_pointer(
         self,
         get_func_ptr: GetFunctionPointer,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer]:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         target = get_func_ptr.target
 
-        argument_types: List[VariableType | FunctionPointer] | Never
-        return_types: List[VariableType | FunctionPointer] | Never
+        argument_types: list[VariableType | FunctionPointer] | Never
+        return_types: list[VariableType | FunctionPointer] | Never
 
         if isinstance(target, Function):
             argument_types = [arg.type for arg in target.arguments]
@@ -415,8 +425,8 @@ class SingleFunctionTypeChecker:
     def _check_condition(
         self,
         function_body: FunctionBody,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer] | Never:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         # Condition is a special type of function body:
         # It should push exactly one boolean and not modify the type stack under it
         condition_stack = self._check_function_body(function_body, copy(type_stack))
@@ -432,8 +442,8 @@ class SingleFunctionTypeChecker:
         return condition_stack
 
     def _check_branch(
-        self, branch: Branch, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer] | Never:
+        self, branch: Branch, type_stack: list[VariableType | FunctionPointer]
+    ) -> list[VariableType | FunctionPointer] | Never:
         condition_stack = self._check_condition(branch.condition, copy(type_stack))
 
         if isinstance(condition_stack, Never):
@@ -448,8 +458,8 @@ class SingleFunctionTypeChecker:
         else:
             else_stack = copy(type_stack)
 
-        # If a branch doesn't return, the return type will be whatever the other one returns
-        # This works even if neither branch returns
+        # If a branch doesn't return, the return type will be whatever
+        # the other one returns. This works even if neither branch returns.
         if isinstance(if_stack, Never):
             return else_stack
 
@@ -465,8 +475,10 @@ class SingleFunctionTypeChecker:
         return if_stack
 
     def _check_while_loop(
-        self, while_loop: WhileLoop, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer] | Never:
+        self,
+        while_loop: WhileLoop,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         condition_stack = self._check_condition(while_loop.condition, copy(type_stack))
 
         if isinstance(condition_stack, Never):
@@ -497,13 +509,13 @@ class SingleFunctionTypeChecker:
     def _check_function_body(
         self,
         function_body: FunctionBody,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer] | Never:
-        checkers: Dict[
-            Type[FunctionBodyItem],
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
+        checkers: dict[
+            type[FunctionBodyItem],
             Callable[
-                [Any, List[VariableType | FunctionPointer]],
-                List[VariableType | FunctionPointer] | Never,
+                [Any, list[VariableType | FunctionPointer]],
+                list[VariableType | FunctionPointer] | Never,
             ],
         ] = {
             Assignment: self._check_assignment,
@@ -554,9 +566,9 @@ class SingleFunctionTypeChecker:
     def _check_case_block(
         self,
         block: CaseBlock,
-        type_stack: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
         enum_type: Enum,
-    ) -> List[VariableType | FunctionPointer] | Never:
+    ) -> list[VariableType | FunctionPointer] | Never:
         if block.enum_type != enum_type:
             raise CaseEnumTypeError(block, enum_type, block.enum_type)
 
@@ -582,7 +594,8 @@ class SingleFunctionTypeChecker:
 
                 self.vars[var.name] = (var, type_stack_item)
 
-            # NOTE: all pushed associated data is immediately used so we don't modify block_type_stack
+            # NOTE: all pushed associated data is immediately used,
+            # so we don't modify block_type_stack
 
         else:
             type_stack += associated_data
@@ -597,16 +610,14 @@ class SingleFunctionTypeChecker:
     def _get_block_type_stacks(
         self,
         match_block: MatchBlock,
-        type_stack: List[VariableType | FunctionPointer],
+        type_stack: list[VariableType | FunctionPointer],
         enum_type: Enum,
-    ) -> Tuple[
-        List[List[VariableType | FunctionPointer] | Never], Optional[DefaultBlock]
-    ]:
-        block_type_stacks: List[List[VariableType | FunctionPointer] | Never] = []
-        found_default_block: Optional[DefaultBlock] = None
+    ) -> tuple[list[list[VariableType | FunctionPointer] | Never], DefaultBlock | None]:
+        block_type_stacks: list[list[VariableType | FunctionPointer] | Never] = []
+        found_default_block: DefaultBlock | None = None
 
         for block in match_block.blocks:
-            block_type_stack: List[VariableType | FunctionPointer] | Never = copy(
+            block_type_stack: list[VariableType | FunctionPointer] | Never = copy(
                 type_stack[:-1]
             )
             assert not isinstance(block_type_stack, Never)
@@ -629,12 +640,14 @@ class SingleFunctionTypeChecker:
         return block_type_stacks, found_default_block
 
     def _check_match_block(
-        self, match_block: MatchBlock, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer] | Never:
+        self,
+        match_block: MatchBlock,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         try:
             matched_var_type = type_stack[-1]
-        except IndexError:
-            raise MatchTypeError(match_block, type_stack)
+        except IndexError as e:
+            raise MatchTypeError(match_block, type_stack) from e
 
         if not isinstance(matched_var_type, VariableType):
             raise MatchTypeError(match_block, type_stack)
@@ -644,7 +657,7 @@ class SingleFunctionTypeChecker:
 
         enum_type = matched_var_type.type
 
-        found_enum_variants: Dict[str, CaseBlock] = {}
+        found_enum_variants: dict[str, CaseBlock] = {}
 
         for block in match_block.blocks:
             if isinstance(block, CaseBlock):
@@ -671,7 +684,7 @@ class SingleFunctionTypeChecker:
         if not missing_enum_variants and found_default_block:
             raise UnreachableDefaultBlock(found_default_block)
 
-        match_stack: Never | List[VariableType | FunctionPointer] = Never()
+        match_stack: Never | list[VariableType | FunctionPointer] = Never()
 
         for block_type_stack in block_type_stacks:
             if isinstance(block_type_stack, Never):
@@ -687,7 +700,7 @@ class SingleFunctionTypeChecker:
         return match_stack
 
     def _check_return(
-        self, return_: Return, type_stack: List[VariableType | FunctionPointer]
+        self, return_: Return, type_stack: list[VariableType | FunctionPointer]
     ) -> Never:
         if not self._confirm_return_types(type_stack):
             raise ReturnTypesError(return_.position, type_stack, self.function)
@@ -695,12 +708,14 @@ class SingleFunctionTypeChecker:
         return Never()
 
     def _check_call_variable(
-        self, call_var: CallVariable, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer]:
+        self,
+        call_var: CallVariable,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         try:
             var_or_arg, var_type = self.vars[call_var.name]
-        except KeyError:
-            raise UnknownVariableOrFunction(call_var.name, call_var.position)
+        except KeyError as e:
+            raise UnknownVariableOrFunction(call_var.name, call_var.position) from e
 
         if call_var.has_type_params:
             # Handles cases like:
@@ -713,13 +728,13 @@ class SingleFunctionTypeChecker:
 
     def __check_call_function(
         self,
-        type_params: List[VariableType | FunctionPointer],
-        arguments: List[VariableType | FunctionPointer],
-        return_types: List[VariableType | FunctionPointer] | Never,
+        type_params: list[VariableType | FunctionPointer],
+        arguments: list[VariableType | FunctionPointer],
+        return_types: list[VariableType | FunctionPointer] | Never,
         call: Function | EnumConstructor | CallFunctionByPointer,
         position: Position,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer] | Never:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         error_types_stack = self.position_stacks[position]
         assert not isinstance(error_types_stack, Never)
 
@@ -729,16 +744,17 @@ class SingleFunctionTypeChecker:
         if len(stack) < arg_count:
             raise StackTypesError(position, error_types_stack, call)
 
-        placeholder_types: Dict[str, VariableType | FunctionPointer] = {}
+        placeholder_types: dict[str, VariableType | FunctionPointer] = {}
 
         if isinstance(call, Function):
             if len(type_params) == len(call.type_params):
                 for type_param_name, type_param in zip(
-                    call.type_param_names, type_params
+                    call.type_param_names, type_params, strict=True
                 ):
                     placeholder_types[type_param_name] = type_param
             elif len(type_params) != 0:
-                raise NotImplementedError  # Unreachable, should be caught by CrossReferencer
+                # Unreachable, should be caught by CrossReferencer
+                raise NotImplementedError
 
         types = stack[len(stack) - arg_count :]
 
@@ -748,9 +764,9 @@ class SingleFunctionTypeChecker:
                     argument, copy(type), placeholder_types
                 )
             except SignatureItemMismatch as e:
-                expected_stack_top_override: Optional[
-                    List[VariableType | FunctionPointer]
-                ] = None
+                expected_stack_top_override: list[
+                    VariableType | FunctionPointer
+                ] | None = None
 
                 if isinstance(call, Function):
                     expected_stack_top_override = [
@@ -780,7 +796,9 @@ class SingleFunctionTypeChecker:
         return stack
 
     def _get_equals_function(
-        self, call_func: CallFunction, type_stack: List[VariableType | FunctionPointer]
+        self,
+        call_func: CallFunction,
+        type_stack: list[VariableType | FunctionPointer],
     ) -> Function:
         type = type_stack[-1]
 
@@ -792,14 +810,14 @@ class SingleFunctionTypeChecker:
 
         try:
             return self.functions[(func_file, func_name)]
-        except KeyError:
-            raise UnsupportedOperator(type.name, "=", call_func.position)
+        except KeyError as e:
+            raise UnsupportedOperator(type.name, "=", call_func.position) from e
 
     def _check_call_function(
         self,
         call_function: CallFunction,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer] | Never:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         if call_function.function.name == "=":
             call_function.function = self._get_equals_function(
                 call_function, type_stack
@@ -830,20 +848,22 @@ class SingleFunctionTypeChecker:
     def _check_call_by_function_pointer(
         self,
         call_by_func_ptr: CallFunctionByPointer,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer] | Never:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         self.position_stacks[call_by_func_ptr.position] = copy(type_stack)
 
         try:
             func_ptr = type_stack.pop()
-        except IndexError:
+        except IndexError as e:
             raise StackTypesError(
                 call_by_func_ptr.position, copy(type_stack), call_by_func_ptr
-            )
+            ) from e
 
         if not isinstance(func_ptr, FunctionPointer):
             raise StackTypesError(
-                call_by_func_ptr.position, type_stack + [func_ptr], call_by_func_ptr
+                call_by_func_ptr.position,
+                type_stack + [func_ptr],
+                call_by_func_ptr,
             )
 
         return self.__check_call_function(
@@ -858,8 +878,8 @@ class SingleFunctionTypeChecker:
     def _check_call_enum_constructor(
         self,
         call_enum_ctor: CallEnumConstructor,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer] | Never:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         self.position_stacks[call_enum_ctor.position] = copy(type_stack)
 
         enum = call_enum_ctor.enum_ctor.enum
@@ -876,8 +896,10 @@ class SingleFunctionTypeChecker:
         )
 
     def _check_call_type(
-        self, call_type: CallType, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer]:
+        self,
+        call_type: CallType,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         return type_stack + [call_type.var_type]
 
     def _check_test_function(self) -> None:
@@ -894,14 +916,17 @@ class SingleFunctionTypeChecker:
             raise InvalidTestSignuture(self.function)
 
     def _check_member_function(self) -> None:
-        struct_type_key = (self.function.position.file, self.function.struct_name)
+        struct_type_key = (
+            self.function.position.file,
+            self.function.struct_name,
+        )
 
         try:
             type = self.types[struct_type_key]
-        except KeyError:
-            raise MemberFunctionTypeNotFound(self.function)
+        except KeyError as e:
+            raise MemberFunctionTypeNotFound(self.function) from e
 
-        # A member function on a type foo needs to take a foo object as the first argument
+        # Make sure first argument of member function is the associated type
         if not (
             len(self.function.arguments) >= 1
             and isinstance(self.function.arguments[0].type, VariableType)
@@ -916,7 +941,9 @@ class SingleFunctionTypeChecker:
             raise InvalidEqualsFunctionSignature(self.function)
 
     def _has_valid_equals_member_function_signature(self) -> bool:
-        # Equals member-function should take 2 const arguments of same type and return bool
+        # Equals member-function should:
+        # - take 2 const arguments of same type
+        # - return bool
 
         arguments = self.function.arguments
         return_types = self.function.return_types
@@ -966,8 +993,8 @@ class SingleFunctionTypeChecker:
     def _check_struct_field_query(
         self,
         field_query: StructFieldQuery,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer]:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         literal = StringLiteral(field_query.field_name)
         self.position_stacks[literal.position] = copy(type_stack)
 
@@ -986,8 +1013,8 @@ class SingleFunctionTypeChecker:
     def _check_struct_field_update(
         self,
         field_update: StructFieldUpdate,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer] | Never:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         literal = StringLiteral(field_update.field_name)
         self.position_stacks[literal.position] = copy(type_stack)
 
@@ -1045,7 +1072,7 @@ class SingleFunctionTypeChecker:
 
     def _lookup_function(
         self, var_type: VariableType, func_name: str
-    ) -> Optional[Function]:
+    ) -> Function | None:
         # NOTE It is required that member funcitions are
         # defined in same file as the type they operate on.
         file = var_type.type.position.file
@@ -1055,8 +1082,8 @@ class SingleFunctionTypeChecker:
     def _check_foreach_loop(
         self,
         foreach_loop: ForeachLoop,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer] | Never:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         type_stack_before_foreach = copy(type_stack)
 
         if not type_stack:
@@ -1177,8 +1204,10 @@ class SingleFunctionTypeChecker:
         return None
 
     def _check_use_block(
-        self, use_block: UseBlock, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer] | Never:
+        self,
+        use_block: UseBlock,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         use_var_count = len(use_block.variables)
 
         if len(type_stack) < use_var_count:
@@ -1206,17 +1235,19 @@ class SingleFunctionTypeChecker:
         return returned_type_stack
 
     def _check_assignment(
-        self, assignment: Assignment, type_stack: List[VariableType | FunctionPointer]
-    ) -> List[VariableType | FunctionPointer] | Never:
+        self,
+        assignment: Assignment,
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer] | Never:
         assign_stack = self._check_function_body(assignment.body, [])
 
-        expected_var_types: List[VariableType | FunctionPointer] = []
+        expected_var_types: list[VariableType | FunctionPointer] = []
 
         for var in assignment.variables:
             try:
                 _, type = self.vars[var.name]
-            except KeyError:
-                raise UnknownVariableOrFunction(var.name, var.position)
+            except KeyError as e:
+                raise UnknownVariableOrFunction(var.name, var.position) from e
 
             if isinstance(type, VariableType):
                 if type.is_const:
@@ -1241,6 +1272,6 @@ class SingleFunctionTypeChecker:
     def _check_function_pointer(
         self,
         func_ptr: FunctionPointer,
-        type_stack: List[VariableType | FunctionPointer],
-    ) -> List[VariableType | FunctionPointer]:
+        type_stack: list[VariableType | FunctionPointer],
+    ) -> list[VariableType | FunctionPointer]:
         return type_stack + [func_ptr]
