@@ -5,7 +5,12 @@ enum SyntaxLoaderResult {
     error as str,
 }
 
-struct SyntaxLoader {}
+struct SyntaxLoader {
+    tokens as map[str, regex],
+    nodes as map[str, str],
+    filtered_tokens as vec[str],
+    root_node as str,
+}
 
 enum FileReadError {
     open_error as str,
@@ -72,7 +77,7 @@ enum LoadTokensResult {
 }
 
 enum LoadNodesResult {
-    ok as map[str,str],
+    ok as map[str, str],
     error as str,
 }
 
@@ -86,23 +91,77 @@ enum LoadRootNodeResult {
     error as str,
 }
 
-fn load_regular_tokens args root_json as map[str, Json] return LoadTokensResult {
+fn load_regular_tokens args root_object as map[str, Json] return LoadTokensResult {
     todo // TODO
 }
 
-fn load_keyword_tokens args root_json as map[str, Json] return LoadTokensResult {
+fn load_keyword_tokens args root_object as map[str, Json] return LoadTokensResult {
     todo // TODO
 }
 
-fn load_nodes args root_json as map[str, Json] return LoadNodesResult {
+enum MergeMapsResult {
+    ok as map[str, regex],
+    error as vec[str],
+}
+
+// Merge maps but fail if maps have overlapping keys
+fn merge_maps args lhs as map[str, regex], rhs as map[str, regex] return MergeMapsResult {
+    vec[str] map[str, regex]
+    use overlap, merged {
+        lhs foreach {
+            use key, value {
+                if rhs key map:has_key {
+                    overlap key vec:push
+                }
+                merged key value map:set
+            }
+        }
+
+        if overlap vec:empty not {
+            overlap MergeMapsResult:error return
+        }
+
+        rhs foreach {
+            use key, value {
+                merged key value map:set
+            }
+        }
+
+        merged MergeMapsResult:ok
+    }
+}
+
+fn load_tokens args root_object as map[str, Json] return LoadTokensResult {
+    root_object load_keyword_tokens
+    match {
+        case LoadTokensResult:error as error { error LoadTokensResult:error return }
+        case LoadTokensResult:ok as keyword_tokens {
+            root_object load_regular_tokens
+            match {
+                case LoadTokensResult:error as error { error LoadTokensResult:error return }
+                case LoadTokensResult:ok as regular_tokens { keyword_tokens regular_tokens }
+            }
+        }
+    }
+
+    use keyword_tokens, regular_tokens {
+        keyword_tokens regular_tokens merge_maps
+        match {
+            case MergeMapsResult:error { todo }
+            case MergeMapsResult:ok as tokens { tokens LoadTokensResult:ok }
+        }
+    }
+}
+
+fn load_nodes args root_object as map[str, Json] return LoadNodesResult {
     todo // TODO
 }
 
-fn load_filter_tokens args root_json as map[str, Json] return LoadFilteredTokensResult {
+fn load_filtered_tokens args root_object as map[str, Json] return LoadFilteredTokensResult {
     todo // TODO
 }
 
-fn load_root_node args root_json as map[str, Json] return LoadRootNodeResult {
+fn load_root_node args root_object as map[str, Json] return LoadRootNodeResult {
     todo // TODO
 }
 
@@ -121,9 +180,18 @@ fn syntax_loader_new_from_str args text as str return SyntaxLoaderResult {
         }
     }
 
-    use root_object {
+    SyntaxLoader
+    use root_object, syntax_loader {
+        root_object load_tokens
+        match {
+            case LoadTokensResult:ok as tokens { syntax_loader "tokens" { tokens } ! }
+            case LoadTokensResult:error as error { error SyntaxLoaderResult:error return }
+        }
+
         todo
-        // TODO call load_* functions
+        // TODO filtered tokens
+        // TODO load nodes
+        // TODO root node
         // TODO check for extra values in root_dict
     }
 

@@ -1,7 +1,19 @@
-from "syntax_loader" import syntax_loader_new_from_file
+from "syntax_loader" import
+    syntax_loader_new_from_file,
+    SyntaxLoaderResult,
 
 fn main {
     "syntax.json" syntax_loader_new_from_file
+    match {
+        case SyntaxLoaderResult:error as error {
+            error .
+            "\n" .
+            1 exit
+        }
+        case SyntaxLoaderResult:ok as syntax_loader {
+            syntax_loader
+        }
+    }
 
     drop // TODO do something with SyntaxLoader
 }

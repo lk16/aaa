@@ -256,6 +256,10 @@ class SingleFunctionTypeChecker:
                 if not isinstance(computed_value, VariableType):
                     return False
 
+                # A struct is never equal to an enum
+                if not isinstance(computed_value.type, type(expected_value.type)):
+                    return False
+
                 if computed_value.type != expected_value.type:
                     return False
 
@@ -310,6 +314,10 @@ class SingleFunctionTypeChecker:
 
         else:
             if not isinstance(var_type, VariableType):
+                raise SignatureItemMismatch
+
+            # prevent comparing enum with struct
+            if not isinstance(expected_var_type.type, type(var_type.type)):
                 raise SignatureItemMismatch
 
             if expected_var_type.type != var_type.type:
