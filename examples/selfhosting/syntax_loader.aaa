@@ -7,9 +7,63 @@ enum SyntaxLoaderResult {
 
 struct SyntaxLoader {}
 
-fn syntax_loader_new_from_file args filename as str return SyntaxLoaderResult {
-    // TODO load file and call syntax_loader_new_from_str
-    todo
+enum FileReadError {
+    open_error as str,
+    read_error as str,
+}
+
+fn FileReadError:to_str args error as FileReadError return str {
+    error
+    match {
+        case FileReadError:open_error as path { "Could not open " path str:append }
+        case FileReadError:read_error as path { "Could not read " path str:append }
+    }
+}
+
+enum FileReadResult {
+    ok as str,
+    error as FileReadError,
+}
+
+fn read_file args path as const str, return FileReadResult {
+    path 0 0 open
+
+    use fd, open_ok {
+        if open_ok not {
+            path
+            copy swap drop  // TODO make ticket for const arguments of enum-ctors
+            FileReadError:open_error FileReadResult:error return
+        }
+
+        ""
+        use content {
+            while true {
+                fd 4096 read
+
+                use buff, read_ok {
+                    if read_ok not {
+                        path
+                        copy swap drop
+                        FileReadError:read_error FileReadResult:error return
+                    }
+
+                    if buff "" = {
+                        content FileReadResult:ok return
+                    }
+
+                    content <- { content buff str:append }
+                }
+            }
+        }
+    }
+}
+
+fn syntax_loader_new_from_file args path as str return SyntaxLoaderResult {
+    path read_file
+    match {
+        case FileReadResult:ok as text { text syntax_loader_new_from_str }
+        case FileReadResult:error as error { error FileReadError:to_str SyntaxLoaderResult:error }
+    }
 }
 
 fn syntax_loader_new_from_str args text as str return SyntaxLoaderResult {

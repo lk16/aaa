@@ -1,6 +1,7 @@
-from "syntax_loader" import syntax_loader_new_from_str  // TODO remove
+from "syntax_loader" import syntax_loader_new_from_file
 
 fn main {
-    nop
-    // TODO do something useful
+    "syntax.json" syntax_loader_new_from_file
+
+    drop // TODO do something with SyntaxLoader
 }

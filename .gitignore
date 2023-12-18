@@ -5,6 +5,8 @@ __pycache__
 .envrc
 *.idea
 *.prof
+.ruff_cache/
+.mypy_cache/
 
 aaa-stdlib/target/*
 aaa-stdlib-user/target/*
