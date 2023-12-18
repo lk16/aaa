@@ -66,6 +66,46 @@ fn syntax_loader_new_from_file args path as str return SyntaxLoaderResult {
     }
 }
 
+enum LoadTokensResult {
+    ok as map[str, regex],
+    error as str,
+}
+
+enum LoadNodesResult {
+    ok as map[str,str],
+    error as str,
+}
+
+enum LoadFilteredTokensResult {
+    ok as vec[str],
+    error as str,
+}
+
+enum LoadRootNodeResult {
+    ok as str,
+    error as str,
+}
+
+fn load_regular_tokens args root_json as map[str, Json] return LoadTokensResult {
+    todo // TODO
+}
+
+fn load_keyword_tokens args root_json as map[str, Json] return LoadTokensResult {
+    todo // TODO
+}
+
+fn load_nodes args root_json as map[str, Json] return LoadNodesResult {
+    todo // TODO
+}
+
+fn load_filter_tokens args root_json as map[str, Json] return LoadFilteredTokensResult {
+    todo // TODO
+}
+
+fn load_root_node args root_json as map[str, Json] return LoadRootNodeResult {
+    todo // TODO
+}
+
 fn syntax_loader_new_from_str args text as str return SyntaxLoaderResult {
     text json_from_str
     match {
@@ -73,8 +113,20 @@ fn syntax_loader_new_from_str args text as str return SyntaxLoaderResult {
         case JsonResult:ok as json { json }
     }
 
-    todo
-    // TODO of data validation
+    use json {
+        json
+        match {
+            case Json:object as object { object }
+            default { "json root should be an object" SyntaxLoaderResult:error return }
+        }
+    }
 
-    // TODO loading fields of SyntaxLoader
+    use root_object {
+        todo
+        // TODO call load_* functions
+        // TODO check for extra values in root_dict
+    }
+
+    // TODO run equivalent of `_check_values()`
+    // TODO run equivalent of `_load_parsers()`
 }
