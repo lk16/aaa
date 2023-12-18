@@ -1,0 +1,200 @@
+from "../json/parser.aaa" import json_from_str, Json, JsonResult, JsonError
+
+enum SyntaxLoaderResult {
+    ok as SyntaxLoader,
+    error as str,
+}
+
+struct SyntaxLoader {
+    tokens as map[str, regex],
+    nodes as map[str, str],
+    filtered_tokens as vec[str],
+    root_node as str,
+}
+
+enum FileReadError {
+    open_error as str,
+    read_error as str,
+}
+
+fn FileReadError:to_str args error as FileReadError return str {
+    error
+    match {
+        case FileReadError:open_error as path { "Could not open " path str:append }
+        case FileReadError:read_error as path { "Could not read " path str:append }
+    }
+}
+
+enum FileReadResult {
+    ok as str,
+    error as FileReadError,
+}
+
+fn read_file args path as const str, return FileReadResult {
+    path 0 0 open
+
+    use fd, open_ok {
+        if open_ok not {
+            path
+            copy swap drop  // TODO make ticket for const arguments of enum-ctors
+            FileReadError:open_error FileReadResult:error return
+        }
+
+        ""
+        use content {
+            while true {
+                fd 4096 read
+
+                use buff, read_ok {
+                    if read_ok not {
+                        path
+                        copy swap drop
+                        FileReadError:read_error FileReadResult:error return
+                    }
+
+                    if buff "" = {
+                        content FileReadResult:ok return
+                    }
+
+                    content <- { content buff str:append }
+                }
+            }
+        }
+    }
+}
+
+fn syntax_loader_new_from_file args path as str return SyntaxLoaderResult {
+    path read_file
+    match {
+        case FileReadResult:ok as text { text syntax_loader_new_from_str }
+        case FileReadResult:error as error { error FileReadError:to_str SyntaxLoaderResult:error }
+    }
+}
+
+enum LoadTokensResult {
+    ok as map[str, regex],
+    error as str,
+}
+
+enum LoadNodesResult {
+    ok as map[str, str],
+    error as str,
+}
+
+enum LoadFilteredTokensResult {
+    ok as vec[str],
+    error as str,
+}
+
+enum LoadRootNodeResult {
+    ok as str,
+    error as str,
+}
+
+fn load_regular_tokens args root_object as map[str, Json] return LoadTokensResult {
+    todo // TODO
+}
+
+fn load_keyword_tokens args root_object as map[str, Json] return LoadTokensResult {
+    todo // TODO
+}
+
+enum MergeMapsResult {
+    ok as map[str, regex],
+    error as vec[str],
+}
+
+// Merge maps but fail if maps have overlapping keys
+fn merge_maps args lhs as map[str, regex], rhs as map[str, regex] return MergeMapsResult {
+    vec[str] map[str, regex]
+    use overlap, merged {
+        lhs foreach {
+            use key, value {
+                if rhs key map:has_key {
+                    overlap key vec:push
+                }
+                merged key value map:set
+            }
+        }
+
+        if overlap vec:empty not {
+            overlap MergeMapsResult:error return
+        }
+
+        rhs foreach {
+            use key, value {
+                merged key value map:set
+            }
+        }
+
+        merged MergeMapsResult:ok
+    }
+}
+
+fn load_tokens args root_object as map[str, Json] return LoadTokensResult {
+    root_object load_keyword_tokens
+    match {
+        case LoadTokensResult:error as error { error LoadTokensResult:error return }
+        case LoadTokensResult:ok as keyword_tokens {
+            root_object load_regular_tokens
+            match {
+                case LoadTokensResult:error as error { error LoadTokensResult:error return }
+                case LoadTokensResult:ok as regular_tokens { keyword_tokens regular_tokens }
+            }
+        }
+    }
+
+    use keyword_tokens, regular_tokens {
+        keyword_tokens regular_tokens merge_maps
+        match {
+            case MergeMapsResult:error { todo }
+            case MergeMapsResult:ok as tokens { tokens LoadTokensResult:ok }
+        }
+    }
+}
+
+fn load_nodes args root_object as map[str, Json] return LoadNodesResult {
+    todo // TODO
+}
+
+fn load_filtered_tokens args root_object as map[str, Json] return LoadFilteredTokensResult {
+    todo // TODO
+}
+
+fn load_root_node args root_object as map[str, Json] return LoadRootNodeResult {
+    todo // TODO
+}
+
+fn syntax_loader_new_from_str args text as str return SyntaxLoaderResult {
+    text json_from_str
+    match {
+        case JsonResult:error as error { error JsonError:to_str SyntaxLoaderResult:error return }
+        case JsonResult:ok as json { json }
+    }
+
+    use json {
+        json
+        match {
+            case Json:object as object { object }
+            default { "json root should be an object" SyntaxLoaderResult:error return }
+        }
+    }
+
+    SyntaxLoader
+    use root_object, syntax_loader {
+        root_object load_tokens
+        match {
+            case LoadTokensResult:ok as tokens { syntax_loader "tokens" { tokens } ! }
+            case LoadTokensResult:error as error { error SyntaxLoaderResult:error return }
+        }
+
+        todo
+        // TODO filtered tokens
+        // TODO load nodes
+        // TODO root node
+        // TODO check for extra values in root_dict
+    }
+
+    // TODO run equivalent of `_check_values()`
+    // TODO run equivalent of `_load_parsers()`
+}

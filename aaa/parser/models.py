@@ -341,12 +341,18 @@ class Import(AaaParseModel):
     def get_source_file(self) -> Path:
         source_path = Path(self.source.value)
 
-        if source_path.is_file() and self.source.value.endswith(".aaa"):
-            return source_path
+        if source_path.is_absolute():
+            if source_path.is_file() and self.source.value.endswith(".aaa"):
+                return source_path
+
         else:
-            return self.position.file.parent / (
-                self.source.value.replace(".", os.sep) + ".aaa"
-            )
+            source_path = (self.position.file.parent / source_path).resolve()
+            if source_path.is_file() and self.source.value.endswith(".aaa"):
+                return source_path
+
+        return self.position.file.parent / (
+            self.source.value.replace(".", os.sep) + ".aaa"
+        )
 
     @classmethod
     def load(cls, children: list[AaaParseModel | Token]) -> Import:
