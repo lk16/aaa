@@ -1,0 +1,25 @@
+
+// used to create socket for IPv4 connections
+fn AF_INET return int {
+    2
+}
+
+// used to create TCP connections
+fn SOCK_STREAM return int {
+    1
+}
+
+fn make_http_socket return int, bool {
+    AF_INET SOCK_STREAM 0 socket
+}
+
+fn raw_http_request args host as str return str { // TODO use Request from request.aaa
+    "GET / HTTP/1.1\r\n"
+
+    "Host: " str:append
+    host str:append
+    "\r\n" str:append
+
+    "User-Agent: Aaa\r\n" str:append
+    "Accept: */*\r\n\r\n" str:append
+}

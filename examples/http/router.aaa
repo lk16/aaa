@@ -1,0 +1,122 @@
+from "request" import Request
+from "response" import make_not_found_response, Response
+
+// TODO move into builtins
+fn str_has_prefix args string as str, prefix as str return bool {
+    string 0 prefix str:len str:substr
+    use string_prefix, ok {
+        if ok not {
+            false return
+        }
+        string_prefix prefix str:equals
+    }
+}
+
+fn get_suffix args path_suffix as str, matched_prefix as str return str {
+    path_suffix matched_prefix str:len path_suffix str:len str:substr assert
+}
+
+struct EndpointRouterItem {
+    method as str,
+    path as str,
+    handler as fn[Request][Response],
+}
+
+fn make_endpoint_router_item args
+    method as str,
+    path as str,
+    handler as fn[Request][Response],
+return EndpointRouterItem {
+    EndpointRouterItem
+    dup "method" { method } !
+    dup "path" { path } !
+    dup "handler" { handler } !
+}
+
+struct ChildRouterItem {
+    prefix as str,
+    child as Router,
+}
+
+fn make_child_router args prefix as str, child as Router return ChildRouterItem {
+    ChildRouterItem
+    dup "prefix" { prefix } !
+    dup "child" { child } !
+}
+
+enum RouterItem {
+    endpoint as EndpointRouterItem,
+    child_router_item as ChildRouterItem,
+}
+
+fn RouterItem:is_match args
+    router_item as RouterItem,
+    request as Request,
+    path_suffix as str,
+return bool {
+    router_item
+    match {
+        case RouterItem:endpoint as endpoint {
+            request "method" ? endpoint "method" ? str:equals
+            path_suffix endpoint "path" ? str:equals and
+        }
+        case RouterItem:child_router_item as child_router_item {
+            path_suffix child_router_item "prefix" ? str_has_prefix
+        }
+    }
+}
+
+struct Router {
+    items as vec[RouterItem],
+}
+
+fn Router:add_router args router as Router, prefix as str, child_router as Router {
+    prefix child_router make_child_router RouterItem:child_router_item
+
+    use router_item {
+        router "items" ? router_item vec:push
+    }
+}
+
+fn Router:add_endpoint args router as Router, method as str, path as str, endpoint as fn[Request][Response] {
+    method path endpoint make_endpoint_router_item RouterItem:endpoint
+
+    use router_item {
+        router "items" ? router_item vec:push
+    }
+}
+
+fn Router:_route args router as Router, request as Request, path_suffix as str return Response {
+    router "items" ?
+    foreach {
+        use router_item {
+            if router_item request path_suffix RouterItem:is_match {
+                router_item
+                match {
+                    case RouterItem:endpoint as endpoint {
+                        drop
+                        request endpoint "handler" ? call return
+                    }
+                    case RouterItem:child_router_item as child_router_item {
+                        path_suffix child_router_item "prefix" ? get_suffix
+                        use child_path_suffix {
+                            drop
+                            child_router_item "child" ?
+                            use child_router {
+                                child_router request child_path_suffix Router:_route return
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    make_not_found_response
+}
+
+fn Router:route args router as Router, request as Request return Response {
+    request "path" ?
+    use path_suffix {
+        router request path_suffix Router:_route
+    }
+}

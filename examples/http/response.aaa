@@ -1,0 +1,83 @@
+
+struct Response {
+    status_code as int,
+    content as str,
+    headers as map[str, str]
+}
+
+fn make_internal_server_error_response return Response {
+    Response
+    dup 500 Response:set_status_code
+    dup "Internal Server Error\n" Response:set_body
+}
+
+fn make_not_found_response return Response {
+    Response
+    dup 404 Response:set_status_code
+    dup "Not Found\n" Response:set_body
+}
+
+fn make_response return Response {
+    Response
+    dup "" Response:set_body
+}
+
+fn Response:set_header args response as Response, header_name as str, header_value as str {
+    response "headers" ?
+    header_name str:lower
+    header_value str:lower
+    map:set
+}
+
+fn Response:set_status_code args response as Response, status_code as int {
+    response "status_code" { status_code } !
+}
+
+fn Response:set_body args response as Response, body as str {
+    response "content" { body } !
+    response "Content-Length" body str:len repr Response:set_header
+}
+
+fn Response:set_json_body args response as Response, body as str {
+    response body Response:set_body
+    response "Content-Type" "application/json" Response:set_header
+}
+
+fn Response:status_code_to_str args response as Response return str {
+    response "status_code" ?
+    use status_code {
+        if status_code 200 = { "200 OK" return }
+        if status_code 400 = { "400 Bad Request" return }
+        if status_code 404 = { "404 Not Found" return }
+        if status_code 500 = { "500 Internal Server Error" return }
+
+        "WARNING: Can't find string for status code " .
+        status_code .
+        "\n" .
+
+        "500 Internal Server Error"
+    }
+}
+
+fn Response:to_str args response as Response return str {
+    "HTTP/1.1 "
+    use raw {
+        raw <- { raw response Response:status_code_to_str str:append }
+        raw <- { raw "\r\n" str:append }
+
+        response "headers" ?
+        foreach {
+            use name, value {
+                raw <- { raw name copy swap drop str:append }
+                raw <- { raw ": " str:append }
+                raw <- { raw value str:append }
+                raw <- { raw "\r\n" str:append }
+            }
+        }
+
+        raw <- { raw "\r\n" str:append }
+        raw <- { raw response "content" ? str:append }
+
+        raw
+    }
+}
