@@ -724,6 +724,26 @@ class UseFieldOfFunctionPointerException(TypeCheckerException):
         return f"{self.position}: Cannot {get_set} field on FunctionPointer"
 
 
+class UnexpectedTypeParameterCount(TypeCheckerException):
+    def __init__(
+        self,
+        position: Position,
+        expected_param_count: int,
+        found_param_count: int,
+    ) -> None:
+        self.position = position
+        self.expected_param_count = expected_param_count
+        self.found_param_count = found_param_count
+        super().__init__(position)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.position}: Unexpected number of type parameters\n"
+            + f"Expected parameter count: {self.expected_param_count}\n"
+            + f"   Found parameter count: {self.found_param_count}"
+        )
+
+
 class SignatureItemMismatch(AaaException):
     """
     Raised when stack doesn't match the signature of a function.

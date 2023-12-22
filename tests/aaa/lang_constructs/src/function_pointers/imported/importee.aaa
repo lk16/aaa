@@ -11,6 +11,7 @@ fn Foo:print_value args foo as Foo {
     foo "value" ? .
 }
 
+// We don't use Option from stdlib, so we can add member function.
 enum OptionalInt {
     none,
     some as int,

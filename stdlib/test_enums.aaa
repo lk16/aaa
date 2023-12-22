@@ -1,0 +1,79 @@
+from "enums" import Option, Result
+
+fn test_option_unwrap_some {
+    3 Option[int]:some
+    Option:unwrap
+    3 = assert
+}
+
+fn test_option_unwrap_or_some {
+    3 Option[int]:some 4
+    Option:unwrap_or
+    3 = assert
+}
+
+fn test_option_unwrap_or_none {
+    Option[int]:none 4
+    Option:unwrap_or
+    4 = assert
+}
+
+fn test_option_is_some_true {
+    3 Option[int]:some
+    Option:is_some
+    assert
+}
+
+fn test_option_is_some_false {
+    Option[int]:none
+    Option:is_some
+    not assert
+}
+
+fn test_option_is_none_true {
+    3 Option[int]:some
+    Option:is_none
+    not assert
+}
+
+fn test_option_is_none_false {
+    Option[int]:none
+    Option:is_none
+    assert
+}
+
+fn test_result_unwrap {
+    3 Result[int, str]:ok
+    Result:unwrap
+    3 = assert
+}
+
+fn test_result_unwrap_error {
+    "oh no!" Result[int, str]:error
+    Result:unwrap_error
+    "oh no!" = assert
+}
+
+fn test_result_is_ok_true {
+    3 Result[int, str]:ok
+    Result:is_ok
+    assert
+}
+
+fn test_result_is_ok_false {
+    "oh no!" Result[int, str]:error
+    Result:is_ok
+    not assert
+}
+
+fn test_result_is_error_true {
+    "oh no!" Result[int, str]:error
+    Result:is_error
+    assert
+}
+
+fn test_result_is_error_false {
+    3 Result[int, str]:ok
+    Result:is_error
+    not assert
+}

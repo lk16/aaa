@@ -1,6 +1,7 @@
+from "../../stdlib/enums.aaa" import Option
+
 from "tokenizer" import
     make_tokenizer,
-    OptionalToken,
     Token,
     Tokenizer,
     TokenType,
@@ -11,8 +12,8 @@ fn check_tokenize_whitespace_fail args input as str, offset as int {
     dup "offset" { offset } !
     Tokenizer:tokenize_whitespace
     match {
-        case OptionalToken:some { unreachable }
-        case OptionalToken:none { nop }
+        case Option:some { unreachable }
+        case Option:none { nop }
     }
 }
 
@@ -29,7 +30,7 @@ fn check_tokenize_whitespace args input as str, offset as int, expected_value as
     dup "offset" { offset } !
     Tokenizer:tokenize_whitespace
     match {
-        case OptionalToken:some {
+        case Option:some {
             use token_ {
                 token_ "value" ?
                 use value {
@@ -37,7 +38,7 @@ fn check_tokenize_whitespace args input as str, offset as int, expected_value as
                 }
             }
         }
-        case OptionalToken:none { unreachable }
+        case Option:none { unreachable }
     }
 }
 
@@ -53,8 +54,8 @@ fn check_tokenize_comment_fail args input as str, offset as int {
     dup "offset" { offset } !
     Tokenizer:tokenize_comment
     match {
-        case OptionalToken:some { unreachable }
-        case OptionalToken:none { nop }
+        case Option:some { unreachable }
+        case Option:none { nop }
     }
 }
 
@@ -72,7 +73,7 @@ fn check_tokenize_comment args input as str, offset as int, expected_value as co
     dup "offset" { offset } !
     Tokenizer:tokenize_comment
     match {
-        case OptionalToken:some {
+        case Option:some {
             use token_ {
                 token_ "value" ?
                 use value {
@@ -80,7 +81,7 @@ fn check_tokenize_comment args input as str, offset as int, expected_value as co
                 }
             }
         }
-        case OptionalToken:none { unreachable }
+        case Option:none { unreachable }
     }
 }
 
@@ -98,8 +99,8 @@ fn check_tokenize_integer_fail args input as str, offset as int {
     dup "offset" { offset } !
     Tokenizer:tokenize_integer
     match {
-        case OptionalToken:some { unreachable }
-        case OptionalToken:none { nop }
+        case Option:some { unreachable }
+        case Option:none { nop }
     }
 }
 
@@ -117,7 +118,7 @@ fn check_tokenize_integer args input as str, offset as int, expected_value as co
     dup "offset" { offset } !
     Tokenizer:tokenize_integer
     match {
-        case OptionalToken:some {
+        case Option:some {
             use token_ {
                 token_ "value" ?
                 use value {
@@ -125,7 +126,7 @@ fn check_tokenize_integer args input as str, offset as int, expected_value as co
                 }
             }
         }
-        case OptionalToken:none { unreachable }
+        case Option:none { unreachable }
     }
     "123a" 0 "123" check_tokenize_integer
     "a123a" 1 "123" check_tokenize_integer
@@ -140,8 +141,8 @@ fn check_tokenize_fixed_size_fail args input as str, offset as int {
     dup "offset" { offset } !
     Tokenizer:tokenize_fixed_size
     match {
-        case OptionalToken:some { unreachable }
-        case OptionalToken:none { nop }
+        case Option:some { unreachable }
+        case Option:none { nop }
     }
 }
 
@@ -174,7 +175,7 @@ fn check_tokenize_fixed_size args input as str, offset as int, expected_type as 
     dup "offset" { offset } !
     Tokenizer:tokenize_fixed_size
     match {
-        case OptionalToken:some {
+        case Option:some {
             use token_ {
                 token_
 
@@ -185,7 +186,7 @@ fn check_tokenize_fixed_size args input as str, offset as int, expected_type as 
                 = assert
             }
         }
-        case OptionalToken:none { unreachable }
+        case Option:none { unreachable }
     }
 }
 
@@ -282,8 +283,8 @@ fn check_tokenize_string_fail args input as str, offset as int {
     dup "offset" { offset } !
     Tokenizer:tokenize_string
     match {
-        case OptionalToken:some { unreachable }
-        case OptionalToken:none { nop }
+        case Option:some { unreachable }
+        case Option:none { nop }
     }
 }
 
@@ -303,7 +304,7 @@ fn check_tokenize_string args input as str, offset as int, expected_value as con
     dup "offset" { offset } !
     Tokenizer:tokenize_string
     match {
-        case OptionalToken:some {
+        case Option:some {
             use token_ {
                 token_ "value" ?
                 use value {
@@ -311,7 +312,7 @@ fn check_tokenize_string args input as str, offset as int, expected_value as con
                 }
             }
         }
-        case OptionalToken:none { unreachable }
+        case Option:none { unreachable }
     }
 }
 
@@ -339,8 +340,8 @@ fn check_tokenize_identifier_fail args input as str, offset as int {
     dup "offset" { offset } !
     Tokenizer:tokenize_string
     match {
-        case OptionalToken:some { unreachable }
-        case OptionalToken:none { nop }
+        case Option:some { unreachable }
+        case Option:none { nop }
     }
 }
 
@@ -356,7 +357,7 @@ fn check_tokenize_identifier args input as str, offset as int, expected_value as
     dup "offset" { offset } !
     Tokenizer:tokenize_identifier
     match {
-        case OptionalToken:some {
+        case Option:some {
             use token_ {
                 token_ "value" ?
                 use value {
@@ -364,7 +365,7 @@ fn check_tokenize_identifier args input as str, offset as int, expected_value as
                 }
             }
         }
-        case OptionalToken:none { unreachable }
+        case Option:none { unreachable }
     }
 }
 

@@ -1,3 +1,5 @@
+from "../../stdlib/enums.aaa" import Option
+
 from "tokenizer" import
     make_tokenizer,
     Position,
@@ -211,11 +213,6 @@ enum ParseResult {
     error as ParseError,
 }
 
-enum OptionalToken {
-    none,
-    some as Token,
-}
-
 fn make_parser args tokens as vec[Token] return Parser {
     Parser
     dup "tokens" { tokens } !
@@ -239,21 +236,21 @@ fn Parser:run args parser as Parser return ParseResult {
     }
 }
 
-fn Parser:get_token args parser as Parser, offset as int return OptionalToken {
+fn Parser:get_token args parser as Parser, offset as int return Option[Token] {
     parser "tokens" ?
     use tokens {
         if offset tokens vec:len >= {
-            OptionalToken:none return
+            Option[Token]:none return
         }
 
-        tokens offset vec:get OptionalToken:some
+        tokens offset vec:get Option[Token]:some
     }
 }
 
 fn Parser:parse args parser as Parser, offset as int return ParseResult {
     parser offset Parser:get_token
     match {
-        case OptionalToken:some as token { token }
+        case Option:some as token { token }
         default { ParseError:unexpected_end_of_file ParseResult:error return }
     }
 
@@ -368,7 +365,7 @@ fn Parser:parse_string args parser as Parser, offset as int, token as Token retu
 fn Parser:is_empty_array args parser as Parser, offset as int return bool {
     parser offset Parser:get_token
     match {
-        case OptionalToken:some as token {
+        case Option:some as token {
             token "type_" ?
             match {
                 case TokenType:square_bracket_close { true return }
@@ -402,7 +399,7 @@ fn Parser:parse_array args parser as Parser, offset as int return ParseResult {
 
             parser offset Parser:get_token
             match {
-                case OptionalToken:some as token { token }
+                case Option:some as token { token }
                 default { ParseError:unexpected_end_of_file ParseResult:error return }
             }
 
@@ -431,7 +428,7 @@ fn Parser:parse_array args parser as Parser, offset as int return ParseResult {
 fn Parser:is_empty_object args parser as Parser, offset as int return bool {
     parser offset Parser:get_token
     match {
-        case OptionalToken:some as token {
+        case Option:some as token {
             token "type_" ?
             match {
                 case TokenType:curly_bracket_close { true return }
@@ -452,7 +449,7 @@ enum ParseObjectItemResult {
 fn Parser:parse_object_item args parser as Parser, offset as int return ParseObjectItemResult {
     parser offset Parser:get_token
     match {
-        case OptionalToken:some as token { token }
+        case Option:some as token { token }
         default { ParseError:unexpected_end_of_file ParseObjectItemResult:error return }
     }
 
@@ -490,7 +487,7 @@ fn Parser:parse_object_item args parser as Parser, offset as int return ParseObj
     use key {
         parser offset Parser:get_token
         match {
-            case OptionalToken:some as token { token }
+            case Option:some as token { token }
             default { ParseError:unexpected_end_of_file ParseObjectItemResult:error return }
         }
 
@@ -545,7 +542,7 @@ fn Parser:parse_object args parser as Parser, offset as int return ParseResult {
 
             parser offset Parser:get_token
             match {
-                case OptionalToken:some as token { token }
+                case Option:some as token { token }
                 default { ParseError:unexpected_end_of_file ParseResult:error return }
             }
 

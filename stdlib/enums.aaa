@@ -1,6 +1,4 @@
-// TODO make these actual builtins
-
-// TODO add tests for all of these
+// TODO #208 Make `Option` and `Result` usuable without import statements.
 
 enum Option[T] {
     none,

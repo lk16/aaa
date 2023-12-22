@@ -1,3 +1,4 @@
+// We're not using Option from stdlib here, so we can add a method in this file.
 enum OptionalInt {
     none,
     some as int,

@@ -5,6 +5,7 @@ from typing import Any
 
 from basil.models import Position
 
+from aaa.cross_referencer.exceptions import UnexpectedTypeParameterCount
 from aaa.cross_referencer.models import (
     Argument,
     Assignment,
@@ -892,6 +893,15 @@ class SingleFunctionTypeChecker:
 
         enum = call_enum_ctor.enum_ctor.enum
         variant_name = call_enum_ctor.enum_ctor.variant_name
+
+        found_param_count = len(call_enum_ctor.enum_var_type.params)
+        expected_param_count = len(enum.get_resolved().type_params)
+
+        if expected_param_count != found_param_count:
+            raise UnexpectedTypeParameterCount(
+                call_enum_ctor.position, expected_param_count, found_param_count
+            )
+
         placeholder_types = enum.param_dict(call_enum_ctor.enum_var_type)
 
         variant_associated_data_after = [
