@@ -568,14 +568,19 @@ class SingleFunctionTypeChecker:
         block: CaseBlock,
         type_stack: list[VariableType | FunctionPointer],
         enum_type: Enum,
+        enum_var_type: VariableType,
     ) -> list[VariableType | FunctionPointer] | Never:
         if block.enum_type != enum_type:
             raise CaseEnumTypeError(block, enum_type, block.enum_type)
 
         variant_name = block.variant_name
+        placeholders = enum_type.param_dict(enum_var_type)
 
         # The variant name is checked in the cross referencer so it cannot fail here.
-        associated_data = enum_type.variants[variant_name]
+        associated_data = [
+            self._apply_placeholders_in_type(item, placeholders)
+            for item in enum_type.variants[variant_name]
+        ]
 
         if block.variables:
             if len(block.variables) != len(associated_data):
@@ -616,6 +621,9 @@ class SingleFunctionTypeChecker:
         block_type_stacks: list[list[VariableType | FunctionPointer] | Never] = []
         found_default_block: DefaultBlock | None = None
 
+        enum_var_type = type_stack[-1]
+        assert isinstance(enum_var_type, VariableType)
+
         for block in match_block.blocks:
             block_type_stack: list[VariableType | FunctionPointer] | Never = copy(
                 type_stack[:-1]
@@ -624,7 +632,7 @@ class SingleFunctionTypeChecker:
 
             if isinstance(block, CaseBlock):
                 block_type_stack = self._check_case_block(
-                    block, block_type_stack, enum_type
+                    block, block_type_stack, enum_type, enum_var_type
                 )
 
             else:
@@ -884,11 +892,16 @@ class SingleFunctionTypeChecker:
 
         enum = call_enum_ctor.enum_ctor.enum
         variant_name = call_enum_ctor.enum_ctor.variant_name
-        variant_associated_data = enum.get_resolved().variants[variant_name]
+        placeholder_types = enum.param_dict(call_enum_ctor.enum_var_type)
+
+        variant_associated_data_after = [
+            self._apply_placeholders_in_type(item, placeholder_types)
+            for item in enum.get_resolved().variants[variant_name]
+        ]
 
         return self.__check_call_function(
             [],
-            variant_associated_data,
+            variant_associated_data_after,
             [call_enum_ctor.enum_var_type],
             call_enum_ctor.enum_ctor,
             call_enum_ctor.position,

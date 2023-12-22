@@ -1,0 +1,80 @@
+// TODO make these actual builtins
+
+// TODO add tests for all of these
+
+enum Option[T] {
+    none,
+    some as T,
+}
+
+fn Option[T]:unwrap args option as Option[T] return T {
+    option
+    match {
+        case Option:some as value { value }
+        case Option:none {
+            "unwrap called on Option:none.\n" .
+            1 exit
+        }
+    }
+}
+
+fn Option[T]:unwrap_or args option as Option[T], default_ as T return T {
+    option
+    match {
+        case Option:some as value { value }
+        case Option:none { default_ }
+    }
+}
+
+fn Option[T]:is_some args option as Option[T] return bool {
+    option
+    match {
+        case Option:some { drop true }
+        case Option:none { false }
+    }
+}
+
+fn Option[T]:is_none args option as Option[T] return bool {
+    option Option:is_some not
+}
+
+enum Result[T, E] {
+    ok as T,
+    error as E,
+}
+
+fn Result[T, E]:unwrap args result as Result[T, E] return T {
+    result
+    match {
+        case Result:ok as value { value }
+        case Result:error {
+            drop
+            "unwrap was called on Result:error.\n" .
+            1 exit
+        }
+    }
+}
+
+fn Result[T, E]:unwrap_error args result as Result[T, E] return E {
+    result
+    match {
+        case Result:ok {
+            drop
+            "unwrap_error called on Result:ok.\n" .
+            1 exit
+        }
+        case Result:error as error { error }
+    }
+}
+
+fn Result[T, E]:is_ok args result as Result[T, E] return bool {
+    result
+    match {
+        case Result:ok { drop true }
+        case Result:error { drop false }
+    }
+}
+
+fn Result[T, E]:is_error args result as Result[T, E] return bool {
+    result Result:is_ok not
+}

@@ -312,35 +312,52 @@ class Struct(AaaCrossReferenceModel):
 
 class Enum(AaaCrossReferenceModel):
     class Unresolved:
-        def __init__(self, parsed: parser.Enum) -> None:
-            self.parsed_variants: dict[
-                str,
-                list[parser.TypeLiteral | parser.FunctionPointerTypeLiteral],
-            ] = {}
+        def __init__(
+            self,
+            variants: list[parser.EnumVariant],
+            parsed_params: list[parser.Identifier],
+        ) -> None:
+            self.parsed_variants = {
+                variant.name.value: variant.get_data() for variant in variants
+            }
 
-            for variant in parsed.get_variants():
-                self.parsed_variants[variant.name.value] = variant.get_data()
+            self.parsed_params = parsed_params
 
             # This can't fail, an enum needs to have at least one variant
-            self.zero_variant = parsed.get_variants()[0].name.value
+            self.zero_variant = variants[0].name.value
 
     class Resolved:
         def __init__(
             self,
+            type_params: dict[str, Struct],
             variants: dict[str, list[VariableType | FunctionPointer]],
             zero_variant: str,
         ) -> None:
+            self.type_params = type_params
+
             if variants and zero_variant not in variants:
                 raise ValueError("zero value not in variants")
 
             self.variants = variants
             self.zero_variant = zero_variant
 
-    def __init__(self, parsed: parser.Enum, param_count: int) -> None:
-        self.state: Enum.Resolved | Enum.Unresolved = Enum.Unresolved(parsed)
-        self.param_count = param_count
-        self.name = parsed.get_name()
-        super().__init__(parsed.position)
+    def __init__(
+        self,
+        position: Position,
+        name: str,
+        params: list[parser.Identifier],
+        variants: list[parser.EnumVariant],
+    ) -> None:
+        self.state: Enum.Resolved | Enum.Unresolved = Enum.Unresolved(variants, params)
+        self.param_count = len(params)
+        self.name = name
+        super().__init__(position)
+
+    @classmethod
+    def from_parsed_enum(cls, enum: parser.Enum) -> Enum:
+        return Enum(
+            enum.position, enum.get_name(), enum.get_params(), enum.get_variants()
+        )
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Enum):
@@ -366,10 +383,24 @@ class Enum(AaaCrossReferenceModel):
         return self.state
 
     def resolve(
-        self, variants: dict[str, list[VariableType | FunctionPointer]]
+        self,
+        type_params: dict[str, Struct],
+        variants: dict[str, list[VariableType | FunctionPointer]],
     ) -> None:
         assert isinstance(self.state, Enum.Unresolved)
-        self.state = Enum.Resolved(variants, self.state.zero_variant)
+        self.state = Enum.Resolved(type_params, variants, self.state.zero_variant)
+
+    def param_dict(
+        self, var_type: VariableType
+    ) -> dict[str, VariableType | FunctionPointer]:
+        struct_type_placeholders = [
+            enum.name
+            for enum in sorted(
+                self.get_resolved().type_params.values(), key=lambda s: s.position
+            )
+        ]
+
+        return dict(zip(struct_type_placeholders, var_type.params, strict=True))
 
     def is_resolved(self) -> bool:
         return isinstance(self.state, Enum.Resolved)

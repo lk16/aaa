@@ -1,0 +1,29 @@
+// TODO remove this file
+
+from "stdlib/enums.aaa" import Option, Result
+
+fn main {
+    Option[int]:none
+    match {
+        case Option:none { nop }
+        default { unreachable }
+    }
+
+    5 Option[int]:some
+    match {
+        case Option:some as value { value 5 = assert }
+        default { unreachable }
+    }
+
+    3 Result[int, str]:ok
+    match {
+        case Result:ok as value { value 3 = assert }
+        default { unreachable }
+    }
+
+    "error" Result[int, str]:error
+    match {
+        case Result:error as error { error "error" = assert }
+        default { unreachable }
+    }
+}

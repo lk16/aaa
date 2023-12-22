@@ -309,7 +309,7 @@ class CrossReferencer:
         enums: list[Enum] = []
 
         for parsed_enum in parsed_enums:
-            enum = Enum(parsed_enum, 0)
+            enum = Enum.from_parsed_enum(parsed_enum)
             enums.append(enum)
 
             variants: dict[str, parser.EnumVariant] = {}
@@ -475,9 +475,8 @@ class CrossReferencer:
 
         return resolved_params
 
-    def _resolve_struct_field(
+    def _resolve_field_type(
         self,
-        struct: Struct,
         type_params: dict[str, Struct],
         parsed_field_type: parser.TypeLiteral | parser.FunctionPointerTypeLiteral,
     ) -> VariableType | FunctionPointer:
@@ -523,30 +522,44 @@ class CrossReferencer:
         resolved_params = self._resolve_struct_params(struct)
 
         fields = {
-            field_name: self._resolve_struct_field(
-                struct, resolved_params, parsed_field
-            )
+            field_name: self._resolve_field_type(resolved_params, parsed_field)
             for field_name, parsed_field in parsed_field_types.items()
         }
 
         struct.resolve(resolved_params, fields)
 
+    def _resolve_enum_params(self, enum: Enum) -> dict[str, Struct]:
+        resolved_params: dict[str, Struct] = {}
+
+        for parsed_type_param in enum.get_unresolved().parsed_params:
+            struct = Struct.from_identifier(parsed_type_param)
+            param_name = parsed_type_param.value
+
+            try:
+                colliding = self.identifiers[(struct.position.file, param_name)]
+            except KeyError:
+                pass
+            else:
+                raise CollidingIdentifier([struct, colliding])
+
+            resolved_params[param_name] = struct
+
+        return resolved_params
+
     def _resolve_enum(self, enum: Enum) -> None:
         parsed_variants = enum.get_unresolved().parsed_variants
+        resolved_params = self._resolve_enum_params(enum)
 
         enum_variants: dict[str, list[VariableType | FunctionPointer]] = {}
         for variant_name, associated_data in parsed_variants.items():
-            try:
-                resolved_associated_data = [
-                    self._resolve_type(item) for item in associated_data
-                ]
-            except CrossReferenceBaseException as e:
-                self.exceptions.append(e)
-                continue
+            resolved_associated_data = [
+                self._resolve_field_type(resolved_params, item)
+                for item in associated_data
+            ]
 
             enum_variants[variant_name] = resolved_associated_data
 
-        enum.resolve(enum_variants)
+        enum.resolve(resolved_params, enum_variants)
 
     def _resolve_function_params(self, function: Function) -> dict[str, Struct]:
         resolved_params: dict[str, Struct] = {}
