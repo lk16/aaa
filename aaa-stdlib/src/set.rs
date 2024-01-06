@@ -4,12 +4,12 @@ use std::{
 };
 
 use crate::{
-    map::{HashTableIterator, Map},
+    map::{Map, MapIterator},
     var::UserType,
 };
 
 // Can't use unit type `()` as it does not implement Display, Hash or UserType
-#[derive(Clone, Debug, Hash, PartialEq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct SetValue;
 
 impl Display for SetValue {
@@ -30,4 +30,4 @@ impl UserType for SetValue {
 
 pub type Set<T> = Map<T, SetValue>;
 
-pub type SetIterator<T> = HashTableIterator<T, SetValue>;
+pub type SetIterator<T> = MapIterator<T, SetValue>;
