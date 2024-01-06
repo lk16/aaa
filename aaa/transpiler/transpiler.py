@@ -134,6 +134,7 @@ class Transpiler:
             code.add(self._generate_enum_Debug_impl(enum))
             code.add(self._generate_enum_Hash_impl(enum))
             code.add(self._generate_enum_PartialEq_impl(enum))
+            code.add(self._generate_enum_Eq_impl(enum))
 
         for struct in self.structs.values():
             code.add(self._generate_struct(struct))
@@ -143,6 +144,7 @@ class Transpiler:
             code.add(self._generate_struct_Debug_impl(struct))
             code.add(self._generate_struct_Hash_impl(struct))
             code.add(self._generate_struct_PartialEq_impl(struct))
+            code.add(self._generate_struct_Eq_impl(struct))
 
         for function in self.functions.values():
             code.add(self._generate_function(function))
@@ -824,6 +826,17 @@ class Transpiler:
         code.add("")
         return code
 
+    def _generate_enum_Eq_impl(self, enum: Enum) -> Code:
+        if enum.position.file == self.builtins_path:
+            return Code()
+
+        rust_struct_name = self._generate_type_name(enum)
+
+        code = Code(f"impl Eq for {rust_struct_name} {{", indent=1)
+        code.add("}", unindent=1)
+        code.add("")
+        return code
+
     def _generate_enum_Hash_impl(self, enum: Enum) -> Code:
         if enum.position.file == self.builtins_path:
             return Code()
@@ -951,7 +964,7 @@ class Transpiler:
         )
 
     def _generate_UserTypeEnum(self) -> Code:
-        code = Code("#[derive(Clone, Hash, PartialEq)]")
+        code = Code("#[derive(Clone, Hash, PartialEq, Eq)]")
         code.add("enum UserTypeEnum {", indent=1)
 
         for (file, name), struct in self.structs.items():
@@ -1305,6 +1318,17 @@ class Transpiler:
             code.add("stack.pop_bool()")
 
         code.add("}", unindent=1)
+        code.add("}", unindent=1)
+        code.add("")
+        return code
+
+    def _generate_struct_Eq_impl(self, struct: Struct) -> Code:
+        if struct.position.file == self.builtins_path:
+            return Code()
+
+        rust_struct_name = self._generate_type_name(struct)
+
+        code = Code(f"impl Eq for {rust_struct_name} {{", indent=1)
         code.add("}", unindent=1)
         code.add("")
         return code

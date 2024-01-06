@@ -15,7 +15,7 @@ use crate::{
     vector::{Vector, VectorIterator},
 };
 
-pub trait UserType: Clone + Debug + Display + Hash + PartialEq {
+pub trait UserType: Clone + Debug + Display + Hash + PartialEq + Eq {
     fn kind(&self) -> String;
     fn clone_recursive(&self) -> Self;
 }
