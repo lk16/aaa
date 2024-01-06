@@ -1,6 +1,8 @@
+// We can't use the standard library's Option type because it's generic, and
+// we don't support function variables with type parameters. So we'll just use our own.
 enum OptionalInt {
     none,
-    some as int,
+    some as { int },
 }
 
 fn main {

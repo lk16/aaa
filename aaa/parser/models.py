@@ -341,8 +341,10 @@ class Import(AaaParseModel):
     def get_source_file(self) -> Path:
         source_path = Path(self.source.value)
 
-        if source_path.is_file() and self.source.value.endswith(".aaa"):
-            return source_path
+        if self.source.value.endswith(".aaa"):
+            if source_path.is_absolute():
+                return source_path
+            return (self.position.file.parent / source_path).resolve()
         else:
             return self.position.file.parent / (
                 self.source.value.replace(".", os.sep) + ".aaa"
@@ -473,18 +475,18 @@ class SourceFile(AaaParseModel):
 
 
 class EnumDeclaration(AaaParseModel):
-    def __init__(self, position: Position, name: Identifier) -> None:
-        self.name = name
+    def __init__(self, position: Position, flat_type_literal: FlatTypeLiteral) -> None:
+        self.flat_type_literal = flat_type_literal
         super().__init__(position)
 
     @classmethod
     def load(cls, children: list[AaaParseModel | Token]) -> EnumDeclaration:
         assert len(children) == 2
-        enum_token, name = children
+        enum_token, flat_type_literal = children
 
         assert isinstance(enum_token, Token)
-        assert isinstance(name, Identifier)
-        return EnumDeclaration(enum_token.position, name)
+        assert isinstance(flat_type_literal, FlatTypeLiteral)
+        return EnumDeclaration(enum_token.position, flat_type_literal)
 
 
 class FlatTypeParams(AaaParseModel):
@@ -866,14 +868,23 @@ class MemberFunctionCall(AaaParseModel):
         type_name = children[0]
         assert isinstance(type_name, Identifier)
 
-        func_name = children[2]
-        assert isinstance(func_name, Identifier)
+        if isinstance(children[1], Token):
+            assert children[1].type == "colon"
 
-        if len(children) > 3:
-            params = children[3]
-            assert isinstance(params, TypeParams)
+            func_name = children[2]
+            assert isinstance(func_name, Identifier)
+
+            if len(children) > 3:
+                params = children[3]
+                assert isinstance(params, TypeParams)
+            else:
+                params = None
         else:
-            params = None
+            params = children[1]
+            assert isinstance(params, TypeParams)
+
+            func_name = children[3]
+            assert isinstance(func_name, Identifier)
 
         return MemberFunctionCall(type_name, func_name, params)
 
@@ -1236,7 +1247,10 @@ class Enum(AaaParseModel):
         return self.variants.value
 
     def get_name(self) -> str:
-        return self.declaration.name.value
+        return self.declaration.flat_type_literal.identifier.value
+
+    def get_params(self) -> list[Identifier]:
+        return self.declaration.flat_type_literal.params
 
     @classmethod
     def load(cls, children: list[AaaParseModel | Token]) -> Enum:

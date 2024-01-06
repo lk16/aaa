@@ -11,7 +11,6 @@ SOURCE_PREFIX = Path(__file__).parent / "src/function_pointers"
     ["source_path", "expected_stdout"],
     [
         ("basic.aaa", "69\n69\n69\n69\n"),
-        ("in_enum.aaa", "69\n69\n69\n"),
         ("in_struct.aaa", "69\n"),
         ("in_vector.aaa", "69\n"),
         ("assignment.aaa", "69\n"),

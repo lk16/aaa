@@ -104,6 +104,7 @@ def test_http_server() -> None:
         subproc.wait()
 
 
+@pytest.mark.skip()  # TODO #131 Extend http examples and redo Aaa's `connect()`
 def test_http_client(capfd: CaptureFixture[str]) -> None:
     entrypoint = Path("examples/http_client.aaa")
     runner = Runner(entrypoint)

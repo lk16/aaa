@@ -777,6 +777,13 @@ class Transpiler:
         code.add(f"Self::variant_{enum.zero_variant}(", indent=1)
 
         for variant_data_item in enum.variants[enum.zero_variant]:
+            if (
+                isinstance(variant_data_item, VariableType)
+                and variant_data_item.is_placeholder
+            ):
+                code.add("Variable::None,")
+                continue
+
             zero_value = self._generate_zero_expression(variant_data_item)
             code.add(f"{zero_value},")
         code.add(")", unindent=1)
@@ -1133,37 +1140,15 @@ class Transpiler:
         code.add("Self {", indent=1)
 
         for field_name, field_var_type in struct.fields.items():
-            if isinstance(field_var_type, FunctionPointer):
-                code.add(f"{field_name}: Variable::function_pointer_zero_value(),")
-                continue
-
-            if field_var_type.name in struct.type_params:
+            if (
+                isinstance(field_var_type, VariableType)
+                and field_var_type.name in struct.type_params
+            ):
                 code.add(f"{field_name}: Variable::None,")
                 continue
 
-            if field_var_type.type.name == "int":
-                code.add(f"{field_name}: Variable::integer_zero_value(),")
-            elif field_var_type.type.name == "bool":
-                code.add(f"{field_name}: Variable::boolean_zero_value(),")
-            elif field_var_type.type.name == "char":
-                code.add(f"{field_name}: Variable::character_zero_value(),")
-            elif field_var_type.type.name == "str":
-                code.add(f"{field_name}: Variable::string_zero_value(),")
-            elif field_var_type.type.name == "vec":
-                code.add(f"{field_name}: Variable::vector_zero_value(),")
-            elif field_var_type.type.name == "set":
-                code.add(f"{field_name}: Variable::set_zero_value(),")
-            elif field_var_type.type.name == "map":
-                code.add(f"{field_name}: Variable::map_zero_value(),")
-            elif field_var_type.type.name == "regex":
-                code.add(f"{field_name}: Variable::regex_zero_value(),")
-            else:
-                rust_struct_name = self._generate_type_name(field_var_type.type)
-                code.add(
-                    f"{field_name}: Variable::UserType(Rc::new(RefCell::new("
-                    + f"UserTypeEnum::{rust_struct_name}({rust_struct_name}::new())"
-                    + "))),"
-                )
+            zero_expression = self._generate_zero_expression(field_var_type)
+            code.add(f"{field_name}: {zero_expression},")
 
         code.add("}", unindent=1)
         code.add("}", unindent=1)
