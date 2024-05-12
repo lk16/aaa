@@ -3,7 +3,7 @@ name: Python package
 on: [push, pull_request]
 
 jobs:
-  build:
+  build-python:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -31,3 +31,26 @@ jobs:
         pdm install --production
         export AAA_STDLIB_PATH=$(pwd)/stdlib
         pdm run pytest --color=yes --cov=aaa --cov-report=term-missing -x -vv
+  build-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --manifest-path rust/Cargo.toml
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path rust/Cargo.toml
