@@ -1,6 +1,6 @@
 use super::{position::Position, token_type::TokenType};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Token {
     pub type_: TokenType,
     pub value: String,
@@ -18,5 +18,9 @@ impl Token {
 
     pub fn len(&self) -> usize {
         self.value.len()
+    }
+
+    pub fn end(&self) -> Position {
+        self.position.after(self)
     }
 }

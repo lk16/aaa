@@ -1,10 +1,11 @@
 use std::env;
 use std::fs;
 
+mod common;
 mod parser;
 
-use parser::token_type::TokenType;
-use parser::tokenizer::tokenize;
+use parser::parser::parse;
+use parser::tokenizer::tokenize_filtered;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -24,23 +25,30 @@ fn main() {
         }
     };
 
-    let tokens = match tokenize(&file_content, Some(file_name)) {
+    let tokens = match tokenize_filtered(&file_content, Some(file_name)) {
         Err(e) => {
-            eprintln!("Tokenizer error at: {}", e.position);
+            eprintln!("{:?}", e);
             std::process::exit(1);
         }
         Ok(tokens) => tokens,
     };
 
     for token in tokens.iter() {
-        match token.type_ {
-            TokenType::Whitespace => continue,
-            _ => println!(
-                "{:<30} {:>15} {:?}",
-                format!("{}", token.position),
-                format!("{:?}", token.type_),
-                token.value
-            ),
+        if token.type_.is_filtered() {
+            continue;
         }
+
+        println!(
+            "{:<50} {:>15} {:?}",
+            format!("{}", token.position),
+            format!("{:?}", token.type_),
+            token.value
+        );
     }
+
+    match parse(tokens) {
+        Ok(_) => (),
+        Err(e) => eprintln!("{}", e),
+    }
+    // TODO print result
 }

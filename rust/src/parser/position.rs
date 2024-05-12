@@ -1,7 +1,7 @@
 use super::token::Token;
 use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Position {
     file: String,
     line: usize,

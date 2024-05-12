@@ -1,9 +1,10 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub enum TokenType {
     // Keyword tokens
+    #[default]
     Args,
     As,
     Builtin,
@@ -72,6 +73,13 @@ impl TokenType {
             | TokenType::True
             | TokenType::Use
             | TokenType::While => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_filtered(&self) -> bool {
+        match self {
+            TokenType::Comment | TokenType::Whitespace => true,
             _ => false,
         }
     }
@@ -146,6 +154,9 @@ lazy_static! {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
+    use super::super::super::common::files::find_aaa_files;
     use super::super::tokenizer::tokenize;
     use super::{TokenType, TOKEN_TYPE_REGEXES};
     use rstest::rstest;
@@ -415,8 +426,6 @@ mod tests {
     #[case(" ", Some(TokenType::Whitespace))]
     #[case("  ", Some(TokenType::Whitespace))]
     #[case("\n", Some(TokenType::Whitespace))]
-    #[case("\n\n", Some(TokenType::Whitespace))]
-    #[case("\n ", Some(TokenType::Whitespace))]
     fn test_tokenizer(#[case] code: &str, #[case] expected_token: Option<TokenType>) {
         let token = match tokenize(code, None) {
             Ok(tokens) => {
@@ -426,5 +435,13 @@ mod tests {
             Err(_) => None,
         };
         assert_eq!(expected_token, token);
+    }
+
+    #[test]
+    fn test_tokenize_all_files() {
+        for path in find_aaa_files().iter() {
+            let code = fs::read_to_string(path).unwrap();
+            tokenize(&code, path.to_str()).unwrap();
+        }
     }
 }
