@@ -1,6 +1,33 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
+use crate::common::position::Position;
+
+#[derive(Debug, Default, Clone)]
+pub struct Token {
+    pub type_: TokenType,
+    pub value: String,
+    pub position: Position,
+}
+
+impl Token {
+    pub fn new(type_: TokenType, value: String, position: Position) -> Self {
+        Token {
+            type_,
+            value,
+            position,
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.value.len()
+    }
+
+    pub fn end(&self) -> Position {
+        self.position.after(&self.value)
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub enum TokenType {
     // Keyword tokens
@@ -441,7 +468,7 @@ mod tests {
     fn test_tokenize_all_files() {
         for path in find_aaa_files().iter() {
             let code = fs::read_to_string(path).unwrap();
-            tokenize(&code, path.to_str()).unwrap();
+            tokenize(&code, Some(path.clone())).unwrap();
         }
     }
 }

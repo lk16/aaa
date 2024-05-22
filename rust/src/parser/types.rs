@@ -1,7 +1,16 @@
+#![allow(dead_code)] // TODO
+
 use lazy_static::lazy_static;
 
-use super::{token::Token, token_type::TokenType};
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    path::{PathBuf, MAIN_SEPARATOR},
+};
+
+use crate::{
+    common::{files::normalize_path, position::Position},
+    tokenizer::types::{Token, TokenType},
+};
 
 #[derive(Default)]
 pub struct SourceFile {
@@ -11,127 +20,168 @@ pub struct SourceFile {
     pub structs: Vec<Struct>,
 }
 
-#[derive(Default)]
+impl SourceFile {
+    pub fn dependencies(&self, current_dir: &PathBuf) -> Vec<PathBuf> {
+        self.imports
+            .iter()
+            .map(|import| import.get_source_path(current_dir))
+            .collect()
+    }
+}
+
+#[derive(Clone, Default)]
 pub struct Enum {
+    pub position: Position,
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
     pub variants: Vec<EnumVariant>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Argument {
+    pub position: Position,
     pub name: Identifier,
     pub type_: Type,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Assignment {
+    pub position: Position,
     pub variables: Vec<Identifier>,
     pub body: FunctionBody,
 }
 
+#[derive(Clone)]
 pub struct Boolean {
+    pub position: Position,
     pub value: bool,
 }
 
 impl Boolean {
-    pub fn new(token: Token) -> Self {
+    pub fn new(token: &Token) -> Self {
         let value = match token.type_ {
             TokenType::True => true,
             TokenType::False => false,
             _ => unreachable!(),
         };
 
-        Self { value }
+        Self {
+            position: token.position.clone(),
+            value,
+        }
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Branch {
+    pub position: Position,
     pub condition: FunctionBody,
-    pub then_body: FunctionBody,
+    pub if_body: FunctionBody,
     pub else_body: Option<FunctionBody>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct CaseBlock {
+    pub position: Position,
     pub label: CaseLabel,
     pub body: FunctionBody,
 }
-#[derive(Default)]
+#[derive(Clone, Default)]
 
 pub struct CaseLabel {
+    pub position: Position,
     pub enum_name: Identifier,
     pub enum_variant: Identifier,
     pub variables: Vec<Identifier>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct DefaultBlock {
+    pub position: Position,
     pub body: FunctionBody,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct EnumVariant {
+    pub position: Position,
     pub name: Identifier,
     pub data: Vec<Type>,
 }
 
-#[derive(Default)]
-pub struct ForeachLoop {
+#[derive(Clone, Default)]
+pub struct Foreach {
+    pub position: Position,
     pub body: FunctionBody,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct FreeFunctionCall {
+    pub position: Position,
     pub name: Identifier,
     pub parameters: Vec<Type>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct FreeFunctionName {
+    pub position: Position,
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
 }
 
+#[derive(Clone)]
 pub enum FunctionBodyItem {
     Assignment(Assignment),
-    Branch(Branch),
     Boolean(Boolean),
-    Call(Call),
+    Branch(Branch),
+    CallByPointer(CallByPointer),
     Char(Char),
-    Foreach(ForeachLoop),
+    Foreach(Foreach),
     FunctionCall(FunctionCall),
     FunctionType(FunctionType),
-    GetFunction(GetFunction),
-    Integer(Integer),
-    Match(MatchBlock),
-    Return(Return),
     GetField(GetField),
+    CallByName(CallByName),
+    Integer(Integer),
+    Match(Match),
+    Return(Return),
     SetField(SetField),
-    Use(UseBlock),
-    While(WhileLoop),
     String(ParsedString),
+    Use(Use),
+    While(While),
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct FunctionBody {
+    pub position: Position,
     pub items: Vec<FunctionBodyItem>,
 }
 
+#[derive(Clone)]
 pub enum FunctionCall {
     Member(MemberFunctionCall),
     Free(FreeFunctionCall),
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Function {
+    pub position: Position,
     pub name: FunctionName,
     pub arguments: Vec<Argument>,
     pub return_types: ReturnTypes,
     pub body: Option<FunctionBody>,
 }
 
+impl Function {
+    pub fn name(&self) -> String {
+        match &self.name {
+            FunctionName::Free(free) => free.name.value.clone(),
+            FunctionName::Member(member) => {
+                format!("{}:{}", member.type_name.value, member.func_name.value)
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
 pub enum FunctionName {
     Member(MemberFunctionName),
     Free(FreeFunctionName),
@@ -143,51 +193,89 @@ impl Default for FunctionName {
     }
 }
 
-pub struct GetFunction {
+#[derive(Clone)]
+pub struct CallByName {
+    pub position: Position,
     pub target: ParsedString,
 }
 
-impl GetFunction {
-    pub fn new(token: Token) -> Self {
+impl CallByName {
+    pub fn new(token: &Token) -> Self {
+        let target = ParsedString::new(token);
         Self {
-            target: ParsedString::new(token),
+            position: target.position.clone(),
+            target,
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct ImportItem {
+    pub position: Position,
     pub name: Identifier,
     pub alias: Option<Identifier>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Import {
+    pub position: Position,
     pub source: ParsedString,
     pub items: Vec<ImportItem>,
 }
 
-#[derive(Default)]
-pub struct MatchBlock {
+impl Import {
+    pub fn get_source_path(&self, current_dir: &PathBuf) -> PathBuf {
+        let source = &self.source.value;
+
+        if source.ends_with(".aaa") {
+            let path = PathBuf::from(source);
+
+            if path.is_absolute() {
+                return path;
+            }
+
+            let path = self.position.path.parent().unwrap().join(source);
+
+            return normalize_path(&path, current_dir);
+        }
+
+        let mut path = self
+            .position
+            .path
+            .parent()
+            .unwrap()
+            .join(source.replace(".", &MAIN_SEPARATOR.to_string()));
+
+        path.set_extension("aaa");
+
+        normalize_path(&path, current_dir)
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct Match {
+    pub position: Position,
     pub case_blocks: Vec<CaseBlock>,
     pub default_blocks: Vec<DefaultBlock>,
 }
 
-#[derive(Default)]
-
+#[derive(Clone, Default)]
 pub struct MemberFunctionCall {
+    pub position: Position,
     pub type_name: Identifier,
     pub func_name: Identifier,
     pub parameters: Vec<Type>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct MemberFunctionName {
+    pub position: Position,
     pub type_name: Identifier,
     pub func_name: Identifier,
     pub parameters: Vec<Identifier>,
 }
 
+#[derive(Clone)]
 pub enum ReturnTypes {
     Never,
     Sometimes(Vec<Type>),
@@ -199,61 +287,84 @@ impl Default for ReturnTypes {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Struct {
+    pub position: Position,
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
     pub fields: Option<Vec<StructField>>,
 }
 
+#[derive(Clone)]
 pub struct GetField {
+    pub position: Position,
     pub field_name: ParsedString,
 }
 
 impl GetField {
-    pub fn new(token: Token) -> Self {
+    pub fn new(token: &Token) -> Self {
+        let field_name = ParsedString::new(token);
         Self {
-            field_name: ParsedString::new(token),
+            position: field_name.position.clone(),
+            field_name,
         }
     }
 }
 
+#[derive(Clone)]
 pub struct SetField {
+    pub position: Position,
     pub field_name: ParsedString,
     pub body: FunctionBody,
 }
 
 impl SetField {
-    pub fn new(token: Token, body: FunctionBody) -> Self {
+    pub fn new(token: &Token, body: FunctionBody) -> Self {
+        let field_name = ParsedString::new(token);
+
         Self {
-            field_name: ParsedString::new(token),
+            position: field_name.position.clone(),
+            field_name,
             body,
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct StructField {
+    pub position: Position,
     pub name: Identifier,
     pub type_: Type,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct RegularType {
+    pub position: Position,
     pub is_const: bool,
     pub name: Identifier,
     pub parameters: Vec<Type>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct FunctionType {
+    pub position: Position,
     pub argument_types: Vec<Type>,
     pub return_types: ReturnTypes,
 }
 
+#[derive(Clone)]
 pub enum Type {
     Regular(RegularType),
     Function(FunctionType),
+}
+
+impl Type {
+    pub fn position(&self) -> Position {
+        match self {
+            Self::Function(function) => function.position.clone(),
+            Self::Regular(regular) => regular.position.clone(),
+        }
+    }
 }
 
 impl Default for Type {
@@ -262,60 +373,77 @@ impl Default for Type {
     }
 }
 
-#[derive(Default)]
-pub struct UseBlock {
+#[derive(Clone, Default)]
+pub struct Use {
+    pub position: Position,
     pub variables: Vec<Identifier>,
     pub body: FunctionBody,
 }
 
-#[derive(Default)]
-pub struct WhileLoop {
+#[derive(Clone, Default)]
+pub struct While {
+    pub position: Position,
     pub condition: FunctionBody,
     pub body: FunctionBody,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Identifier {
+    pub position: Position,
     pub value: String,
 }
 
-pub struct Call {}
+#[derive(Clone)]
+pub struct CallByPointer {
+    pub position: Position,
+}
 
+#[derive(Clone)]
 pub struct Char {
+    pub position: Position,
     pub value: char,
 }
 
 impl Char {
-    pub fn new(token: Token) -> Self {
+    pub fn new(token: &Token) -> Self {
         let string = ParsedString::new(token);
         Self {
+            position: token.position.clone(),
             value: string.value.chars().next().unwrap(),
         }
     }
 }
 
+#[derive(Clone)]
 pub struct Integer {
+    pub position: Position,
     pub value: isize,
 }
 
 impl Integer {
-    pub fn new(token: Token) -> Self {
+    pub fn new(token: &Token) -> Self {
         Self {
+            position: token.position.clone(),
             value: token.value.parse().unwrap(),
         }
     }
 }
 
-pub struct Return {}
+#[derive(Clone)]
+pub struct Return {
+    pub position: Position,
+}
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct ParsedString {
+    pub position: Position,
     pub value: String,
 }
 
 impl ParsedString {
-    pub fn new(token: Token) -> Self {
+    pub fn new(token: &Token) -> Self {
         Self {
+            position: token.position.clone(),
             value: unescape_string(&token.value[1..token.len() - 1]),
         }
     }
@@ -401,7 +529,11 @@ fn unescape_string(escaped: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::unescape_string;
+    use std::path::PathBuf;
+
+    use crate::common::position::Position;
+
+    use super::{unescape_string, Import, ParsedString};
     use rstest::rstest;
 
     #[rstest]
@@ -433,5 +565,56 @@ mod tests {
     fn test_unescape_string(#[case] escaped: &str, #[case] expected_unescaped: &str) {
         let unescaped = unescape_string(escaped);
         assert_eq!(unescaped, expected_unescaped);
+    }
+
+    #[test]
+    fn test_import_source_path_relative() {
+        let current_dir = PathBuf::from("/home/user");
+
+        let import = Import {
+            position: Position::new("/bbb/ccc.aaa", 1, 1),
+            source: ParsedString {
+                position: Position::new("/bbb/ccc.aaa", 1, 1),
+                value: String::from("ddd/eee.aaa"),
+            },
+            items: vec![],
+        };
+
+        let source_path = import.get_source_path(&current_dir);
+        assert_eq!(source_path, PathBuf::from("/bbb/ddd/eee.aaa"));
+    }
+
+    #[test]
+    fn test_import_source_path_absolute() {
+        let current_dir = PathBuf::from("/home/user");
+
+        let import = Import {
+            position: Position::new("/bbb/ccc.aaa", 1, 1),
+            source: ParsedString {
+                position: Position::new("/bbb/ccc.aaa", 1, 1),
+                value: String::from("/ddd/eee.aaa"),
+            },
+            items: vec![],
+        };
+
+        let source_path = import.get_source_path(&current_dir);
+        assert_eq!(source_path, PathBuf::from("/ddd/eee.aaa"));
+    }
+
+    #[test]
+    fn test_import_source_path_period_separated() {
+        let current_dir = PathBuf::from("/home/user");
+
+        let import = Import {
+            position: Position::new("/bbb/ccc.aaa", 1, 1),
+            source: ParsedString {
+                position: Position::new("/bbb/ccc.aaa", 1, 1),
+                value: String::from("ddd.eee"),
+            },
+            items: vec![],
+        };
+
+        let source_path = import.get_source_path(&current_dir);
+        assert_eq!(source_path, PathBuf::from("/bbb/ddd/eee.aaa"));
     }
 }
