@@ -1,14 +1,13 @@
-#![allow(dead_code)] // TODO
-
 use lazy_static::lazy_static;
 
 use std::{
     collections::HashMap,
+    fmt::Display,
     path::{PathBuf, MAIN_SEPARATOR},
 };
 
 use crate::{
-    common::{files::normalize_path, position::Position},
+    common::{files::normalize_path, position::Position, traits::HasPosition},
     tokenizer::types::{Token, TokenType},
 };
 
@@ -44,6 +43,18 @@ pub struct Argument {
     pub type_: Type,
 }
 
+impl HasPosition for Argument {
+    fn position(&self) -> Position {
+        self.position.clone()
+    }
+}
+
+impl Display for Argument {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "argument {}", self.name.value)
+    }
+}
+
 #[derive(Clone, Default)]
 pub struct Assignment {
     pub position: Position,
@@ -66,7 +77,7 @@ impl Boolean {
         };
 
         Self {
-            position: token.position.clone(),
+            position: token.position().clone(),
             value,
         }
     }
@@ -139,7 +150,7 @@ pub enum FunctionBodyItem {
     FunctionCall(FunctionCall),
     FunctionType(FunctionType),
     GetField(GetField),
-    CallByName(CallByName),
+    GetFunction(GetFunction),
     Integer(Integer),
     Match(Match),
     Return(Return),
@@ -147,6 +158,30 @@ pub enum FunctionBodyItem {
     String(ParsedString),
     Use(Use),
     While(While),
+}
+
+impl HasPosition for FunctionBodyItem {
+    fn position(&self) -> Position {
+        match self {
+            Self::Assignment(item) => item.position.clone(),
+            Self::Boolean(item) => item.position.clone(),
+            Self::Branch(item) => item.position.clone(),
+            Self::CallByPointer(item) => item.position.clone(),
+            Self::Char(item) => item.position.clone(),
+            Self::Foreach(item) => item.position.clone(),
+            Self::FunctionCall(item) => item.position(),
+            Self::FunctionType(item) => item.position.clone(),
+            Self::GetField(item) => item.position.clone(),
+            Self::GetFunction(item) => item.position.clone(),
+            Self::Integer(item) => item.position.clone(),
+            Self::Match(item) => item.position.clone(),
+            Self::Return(item) => item.position.clone(),
+            Self::SetField(item) => item.position.clone(),
+            Self::String(item) => item.position.clone(),
+            Self::Use(item) => item.position.clone(),
+            Self::While(item) => item.position.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Default)]
@@ -159,6 +194,24 @@ pub struct FunctionBody {
 pub enum FunctionCall {
     Member(MemberFunctionCall),
     Free(FreeFunctionCall),
+}
+
+impl FunctionCall {
+    pub fn parameters(&self) -> &Vec<Type> {
+        match self {
+            Self::Free(free) => &free.parameters,
+            Self::Member(member) => &member.parameters,
+        }
+    }
+}
+
+impl HasPosition for FunctionCall {
+    fn position(&self) -> Position {
+        match self {
+            Self::Free(free) => free.position.clone(),
+            Self::Member(member) => member.position.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Default)]
@@ -193,13 +246,22 @@ impl Default for FunctionName {
     }
 }
 
+impl FunctionName {
+    pub fn type_name(&self) -> Option<String> {
+        match &self {
+            FunctionName::Free(_) => None,
+            FunctionName::Member(member) => Some(member.type_name.value.clone()),
+        }
+    }
+}
+
 #[derive(Clone)]
-pub struct CallByName {
+pub struct GetFunction {
     pub position: Position,
     pub target: ParsedString,
 }
 
-impl CallByName {
+impl GetFunction {
     pub fn new(token: &Token) -> Self {
         let target = ParsedString::new(token);
         Self {
@@ -340,7 +402,10 @@ pub struct StructField {
 #[derive(Clone, Default)]
 pub struct RegularType {
     pub position: Position,
+
+    #[allow(dead_code)] // TODO #216 Support const qualifier in Rust-based transpiler
     pub is_const: bool,
+
     pub name: Identifier,
     pub parameters: Vec<Type>,
 }
@@ -358,8 +423,8 @@ pub enum Type {
     Function(FunctionType),
 }
 
-impl Type {
-    pub fn position(&self) -> Position {
+impl HasPosition for Type {
+    fn position(&self) -> Position {
         match self {
             Self::Function(function) => function.position.clone(),
             Self::Regular(regular) => regular.position.clone(),
@@ -408,7 +473,7 @@ impl Char {
     pub fn new(token: &Token) -> Self {
         let string = ParsedString::new(token);
         Self {
-            position: token.position.clone(),
+            position: token.position().clone(),
             value: string.value.chars().next().unwrap(),
         }
     }
@@ -423,7 +488,7 @@ pub struct Integer {
 impl Integer {
     pub fn new(token: &Token) -> Self {
         Self {
-            position: token.position.clone(),
+            position: token.position().clone(),
             value: token.value.parse().unwrap(),
         }
     }
@@ -443,7 +508,7 @@ pub struct ParsedString {
 impl ParsedString {
     pub fn new(token: &Token) -> Self {
         Self {
-            position: token.position.clone(),
+            position: token.position().clone(),
             value: unescape_string(&token.value[1..token.len() - 1]),
         }
     }

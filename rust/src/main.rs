@@ -4,7 +4,9 @@ mod common;
 mod cross_referencer;
 mod parser;
 mod runner;
+mod tests;
 mod tokenizer;
+mod type_checker;
 
 use runner::runner::Runner;
 

@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO
-
 use std::{
     cell::RefCell,
     collections::{hash_map::Entry as HashMapEntry, HashMap, HashSet},
@@ -10,24 +8,28 @@ use std::{
 
 use super::{
     errors::{
-        CollidingIdentifiables, CrossReferencerError, CyclicDependency, ImportNotFound,
-        IndirectImport, InvalidArgument, UnexpectedBuiltin, UnknownIdentifiable,
+        cyclic_dependency, import_not_found, indirect_import, name_collision, unexpected_builtin,
+        unknown_identifiable, CrossReferencerError,
     },
     types::{
-        Argument, Assignment, Boolean, Branch, Call, CallArgument, CallByName, CallEnum,
-        CallEnumConstructor, CallFunction, CallLocalVariable, CallStruct, CaseBlock, Char,
-        DefaultBlock, Enum, Foreach, Function, FunctionBody, FunctionBodyItem, FunctionSignature,
-        GetField, Identifiable, Import, Integer, Match, ParsedString, ResolvedEnum, ResolvedStruct,
-        Return, ReturnTypes, Struct, Type, TypeParameter, Use, Variable,
+        function_body::{
+            Assignment, Boolean, Branch, Call, CallArgument, CallEnum, CallEnumConstructor,
+            CallFunction, CallLocalVariable, CallStruct, CaseBlock, Char, DefaultBlock, Foreach,
+            FunctionBody, FunctionBodyItem, GetField, GetFunction, Integer, Match, ParsedString,
+            Return, SetField, Use, Variable, While,
+        },
+        identifiable::{
+            Argument, Enum, EnumType, Function, FunctionPointerType, FunctionSignature,
+            Identifiable, Import, ResolvedEnum, ResolvedStruct, ReturnTypes, Struct, StructType,
+            Type,
+        },
     },
 };
 use crate::{
-    common::position::Position,
-    cross_referencer::{
-        errors::InvalidReturnType,
-        types::{FunctionType, SetField, While},
-    },
+    common::{position::Position, traits::HasPosition},
+    cross_referencer::types::function_body::FunctionType,
     parser::types::{self as parsed, SourceFile},
+    type_checker::errors::NameCollision,
 };
 
 pub fn cross_reference(
@@ -43,6 +45,7 @@ pub fn cross_reference(
 
 pub struct Output {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
+    pub builtins_path: PathBuf,
 }
 
 impl Debug for Output {
@@ -94,6 +97,7 @@ impl CrossReferencer {
 
         Ok(Output {
             identifiables: self.identifiables,
+            builtins_path: self.builtins_path,
         })
     }
 
@@ -105,8 +109,7 @@ impl CrossReferencer {
             let mut dependencies = self.dependency_stack.clone();
             dependencies.push(path.clone());
 
-            let error = CyclicDependency { dependencies };
-            return Err(error.into());
+            return cyclic_dependency(dependencies);
         }
 
         self.dependency_stack.push(path.clone());
@@ -148,11 +151,8 @@ impl CrossReferencer {
 
         for identifiable in indentifiables.iter() {
             if identifiable.is_builtin() && identifiable.key().0 != self.builtins_path {
-                let error = UnexpectedBuiltin {
-                    position: identifiable.position(),
-                    identifiable: identifiable.clone(),
-                };
-                self.errors.push(error.into());
+                let error = unexpected_builtin(identifiable.position(), identifiable.clone());
+                self.errors.push(error);
             }
         }
 
@@ -164,10 +164,14 @@ impl CrossReferencer {
                     entry.insert(identifiable.clone());
                 }
                 HashMapEntry::Occupied(entry) => {
-                    let error = CollidingIdentifiables {
-                        identifiables: [entry.get().clone(), identifiable.clone()],
-                    };
-                    self.errors.push(error.into());
+                    let error = CrossReferencerError::NameCollision(NameCollision {
+                        items: [
+                            Box::new(entry.get().clone()),
+                            Box::new(identifiable.clone()),
+                        ],
+                    });
+
+                    self.errors.push(error);
                 }
             };
         }
@@ -188,7 +192,9 @@ impl CrossReferencer {
         }
 
         for import in imports.iter().cloned() {
-            self.errors.extend(self.resolve_import(import));
+            if let Err(error) = self.resolve_import(import) {
+                self.errors.push(error);
+            }
         }
 
         for struct_ in structs.iter().cloned() {
@@ -277,38 +283,24 @@ impl CrossReferencer {
         imports
     }
 
-    fn resolve_import(&self, import_rc: Rc<RefCell<Import>>) -> Vec<CrossReferencerError> {
-        let mut errors = vec![];
+    fn resolve_import(&self, import_rc: Rc<RefCell<Import>>) -> Result<(), CrossReferencerError> {
+        let mut import = import_rc.borrow_mut();
+        let target_key = import.target_key();
 
-        let target = {
-            let import = import_rc.borrow();
-            let target_key = import.target_key();
-
-            let target = match self.identifiables.get(&target_key) {
-                Some(identifiable) => identifiable,
-                None => {
-                    let error = ImportNotFound {
-                        position: import.position(),
-                    };
-                    errors.push(error.into());
-                    return errors;
-                }
-            };
-
-            if let Identifiable::Import(_) = target {
-                let error = IndirectImport {
-                    position: import.parsed_item.position.clone(),
-                };
-                errors.push(error.into());
-                return errors;
+        let target = match self.identifiables.get(&target_key) {
+            Some(identifiable) => identifiable,
+            None => {
+                return import_not_found(import.position(), import.name(), import.target_key().0)
             }
-
-            target
         };
 
-        (*import_rc).borrow_mut().resolved = Some(target.clone());
+        if let Identifiable::Import(_) = target {
+            return indirect_import(import.parsed_item.position.clone());
+        }
 
-        errors
+        import.resolved = Some(target.clone());
+
+        Ok(())
     }
 
     fn resolve_struct(&self, struct_rc: Rc<RefCell<Struct>>) -> Result<(), CrossReferencerError> {
@@ -331,19 +323,23 @@ impl CrossReferencer {
         let struct_ = struct_rc.borrow();
 
         for parsed_parameter in struct_.parsed.parameters.iter() {
-            let parameter = TypeParameter::from_parsed(&parsed_parameter);
-            let key = (struct_.position().path, parameter.name.clone());
+            let name = &parsed_parameter.value;
+            let key = (struct_.position().path, name.clone());
 
-            if let Some(identifier) = self.identifiables.get(&key) {
-                let error = CollidingIdentifiables {
-                    identifiables: [Identifiable::Struct(struct_rc.clone()), identifier.clone()],
-                };
-                return Err(error.into());
+            if let Some(identifiable) = self.identifiables.get(&key) {
+                let error = CrossReferencerError::NameCollision(NameCollision {
+                    items: [
+                        Box::new(Identifiable::Struct(struct_rc.clone())),
+                        Box::new(identifiable.clone()),
+                    ],
+                });
+
+                return Err(error);
             }
 
-            let name = parameter.name.clone();
+            let parameter = parsed_parameter.clone().into();
             let type_ = Type::Parameter(parameter);
-            resolved_parameters.insert(name, type_);
+            resolved_parameters.insert(name.clone(), type_);
         }
 
         Ok(resolved_parameters)
@@ -410,10 +406,10 @@ impl CrossReferencer {
             }
         };
 
-        let type_ = Type::FunctionPointer {
+        let type_ = Type::FunctionPointer(FunctionPointerType {
             argument_types,
             return_types,
-        };
+        });
 
         Ok(type_)
     }
@@ -435,11 +431,11 @@ impl CrossReferencer {
         let parameters = self.resolve_type_parameters(parsed, type_parameters)?;
 
         let type_ = match identifiable {
-            Identifiable::Enum(enum_) => Type::Enum { enum_, parameters },
-            Identifiable::Struct(struct_) => Type::Struct {
+            Identifiable::Enum(enum_) => Type::Enum(EnumType { enum_, parameters }),
+            Identifiable::Struct(struct_) => Type::Struct(StructType {
                 struct_,
                 parameters,
-            },
+            }),
             _ => unreachable!(),
         };
 
@@ -482,18 +478,12 @@ impl CrossReferencer {
         let parameters = self.resolve_type_parameters(regular_type, type_parameters)?;
 
         let type_ = match identifiable {
-            Identifiable::Enum(enum_) => Type::Enum { enum_, parameters },
-            Identifiable::Struct(struct_) => Type::Struct {
+            Identifiable::Enum(enum_) => Type::Enum(EnumType { enum_, parameters }),
+            Identifiable::Struct(struct_) => Type::Struct(StructType {
                 struct_,
                 parameters,
-            },
-            _ => {
-                let error = InvalidArgument {
-                    position: parsed.position(),
-                    identifiable,
-                };
-                return Err(error.into());
-            }
+            }),
+            _ => unreachable!(),
         };
 
         Ok(type_)
@@ -522,10 +512,7 @@ impl CrossReferencer {
             let import = &*import.borrow();
 
             match &import.resolved {
-                None => {
-                    let error = UnknownIdentifiable { name, position };
-                    return Err(error.into());
-                }
+                None => return unknown_identifiable(position, name),
                 Some(imported) => return Ok(imported.clone()),
             }
         }
@@ -557,8 +544,7 @@ impl CrossReferencer {
             }
         }
 
-        let error = UnknownIdentifiable { name, position };
-        Err(error.into())
+        unknown_identifiable(position, name)
     }
 
     fn resolve_enum(&self, enum_: Rc<RefCell<Enum>>) -> Result<(), CrossReferencerError> {
@@ -581,20 +567,23 @@ impl CrossReferencer {
         let enum_ = enum_rc.borrow();
 
         for parsed_parameter in enum_.parsed.parameters.iter() {
-            let parameter = TypeParameter::from_parsed(&parsed_parameter);
-            let key = (enum_.position().path, parameter.name.clone());
+            let name = &parsed_parameter.value;
+            let key = (enum_.position().path, name.clone());
 
             if let Some(identifier) = self.identifiables.get(&key) {
-                let error = CollidingIdentifiables {
-                    identifiables: [Identifiable::Enum(enum_rc.clone()), identifier.clone()],
-                };
+                let error = CrossReferencerError::NameCollision(NameCollision {
+                    items: [
+                        Box::new(Identifiable::Enum(enum_rc.clone())),
+                        Box::new(identifier.clone()),
+                    ],
+                });
 
-                return Err(error.into());
+                return Err(error);
             }
 
-            let name = parameter.name.clone();
+            let parameter = parsed_parameter.clone().into();
             let type_ = Type::Parameter(parameter);
-            resolved_parameters.insert(name, type_);
+            resolved_parameters.insert(name.clone(), type_);
         }
 
         Ok(resolved_parameters)
@@ -653,22 +642,23 @@ impl CrossReferencer {
         };
 
         for parsed_parameter in parsed_parameters.iter() {
-            let parameter = TypeParameter::from_parsed(&parsed_parameter);
-            let key = (function.position().path, parameter.name.clone());
+            let name = &parsed_parameter.value;
+            let key = (function.position().path, name.clone());
 
             if let Some(identifier) = self.identifiables.get(&key) {
-                let error = CollidingIdentifiables {
-                    identifiables: [
-                        Identifiable::Function(function_rc.clone()),
-                        identifier.clone(),
+                let error = CrossReferencerError::NameCollision(NameCollision {
+                    items: [
+                        Box::new(Identifiable::Function(function_rc.clone())),
+                        Box::new(identifier.clone()),
                     ],
-                };
-                return Err(error.into());
+                });
+
+                return Err(error);
             }
 
-            let name = parameter.name.clone();
+            let parameter = parsed_parameter.clone().into();
             let type_ = Type::Parameter(parameter);
-            resolved_parameters.insert(name, type_);
+            resolved_parameters.insert(name.clone(), type_);
         }
 
         Ok(resolved_parameters)
@@ -714,22 +704,16 @@ impl CrossReferencer {
         parsed: &parsed::Argument,
         type_parameters: &HashMap<String, Type>,
     ) -> Result<Argument, CrossReferencerError> {
-        let result = self.resolve_function_return_type(&parsed.type_, type_parameters);
+        let type_ = self.resolve_function_return_type(&parsed.type_, type_parameters)?;
 
-        let type_ = match result {
-            Ok(type_) => type_,
-            Err(CrossReferencerError::InvalidReturnType(invalid_return_type)) => {
-                let error = InvalidArgument {
-                    identifiable: invalid_return_type.identifiable,
-                    position: parsed.position.clone(),
-                };
-                return Err(error.into());
-            }
-            Err(error) => return Err(error),
-        };
+        if let Ok(identifier) = self.get_identifiable(parsed.position(), parsed.name.value.clone())
+        {
+            return name_collision(Box::new(parsed.clone()), Box::new(identifier));
+        }
 
         let name = parsed.name.value.clone();
-        Ok(Argument { type_, name })
+        let position = parsed.position.clone();
+        Ok(Argument::new(position, type_, name))
     }
 
     fn resolve_function_return_type_function_pointer(
@@ -753,10 +737,10 @@ impl CrossReferencer {
             ),
         };
 
-        return Ok(Type::FunctionPointer {
+        return Ok(Type::FunctionPointer(FunctionPointerType {
             argument_types,
             return_types,
-        });
+        }));
     }
 
     fn resolve_function_return_type(
@@ -784,21 +768,12 @@ impl CrossReferencer {
         let parameters = self.lookup_function_parameters(type_parameters, parsed)?;
 
         let type_ = match identifiable {
-            Identifiable::Enum(enum_rc) => Type::Enum {
-                enum_: enum_rc,
+            Identifiable::Enum(enum_) => Type::Enum(EnumType { enum_, parameters }),
+            Identifiable::Struct(struct_) => Type::Struct(StructType {
+                struct_,
                 parameters,
-            },
-            Identifiable::Struct(struct_rc) => Type::Struct {
-                struct_: struct_rc,
-                parameters,
-            },
-            identifiable => {
-                let error = InvalidReturnType {
-                    position: parsed.position(),
-                    identifiable,
-                };
-                return Err(error.into());
-            }
+            }),
+            _ => unreachable!(),
         };
 
         Ok(type_)
@@ -841,18 +816,15 @@ impl CrossReferencer {
                     self.lookup_function_parameters(type_parameters, parsed_type_parameter)?;
 
                 match identifiable {
-                    Identifiable::Struct(struct_) => Type::Struct {
+                    Identifiable::Struct(struct_) => Type::Struct(StructType {
                         struct_,
                         parameters,
-                    },
-                    Identifiable::Enum(enum_) => Type::Enum { enum_, parameters },
+                    }),
+                    Identifiable::Enum(enum_) => Type::Enum(EnumType { enum_, parameters }),
                     _ => todo!(), // InvalidType
                 }
             }
-            Some(_type_) => Type::Parameter(TypeParameter {
-                position: regular_parsed_type_parameter.position.clone(),
-                name: regular_parsed_type_parameter.name.value.clone(),
-            }),
+            Some(_type_) => Type::Parameter(regular_parsed_type_parameter.clone().into()),
         };
 
         Ok(type_)
@@ -895,6 +867,7 @@ impl CrossReferencer {
     }
 }
 
+// TODO #217 Move resolving of FunctionBody into type checker
 struct FunctionBodyResolver<'a> {
     cross_referencer: &'a CrossReferencer,
     function: &'a Function,
@@ -945,7 +918,7 @@ impl<'a> FunctionBodyResolver<'a> {
             ParsedItem::FunctionCall(call) => self.resolve_function_call(call),
             ParsedItem::FunctionType(type_) => self.resolve_function_type(type_),
             ParsedItem::GetField(get_field) => self.resolve_get_field(get_field),
-            ParsedItem::CallByName(call_by_name) => self.resolve_call_by_name(call_by_name),
+            ParsedItem::GetFunction(get_function) => self.resolve_get_function(get_function),
             ParsedItem::Integer(integer) => Self::resolve_integer(integer),
             ParsedItem::Match(match_) => self.resolve_match(match_),
             ParsedItem::Return(return_) => self.resolve_return(return_),
@@ -1061,51 +1034,50 @@ impl<'a> FunctionBodyResolver<'a> {
             }));
         }
 
-        let identifiable = self.cross_referencer.get_identifiable(position, name)?;
+        let identifiable = self
+            .cross_referencer
+            .get_identifiable(position.clone(), name)?;
 
-        let type_parameters = match &self.function.resolved_signature {
-            Some(signature) => &signature.type_parameters,
-            None => unreachable!(),
-        };
+        let type_parameters = self.function.signature().type_parameters.clone();
 
-        let call_parameters = match parsed {
-            parsed::FunctionCall::Free(free) => &free.parameters,
-            parsed::FunctionCall::Member(member) => &member.parameters,
-        };
-
-        let _parameters = call_parameters.iter().map(|param| {
-            self.cross_referencer
-                .resolve_type_parameter(param, &type_parameters)
-        });
+        let parameters: Vec<_> = parsed
+            .parameters()
+            .iter()
+            .cloned()
+            .map(|param| {
+                self.cross_referencer
+                    .resolve_type_parameter(&param, &type_parameters)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
         match identifiable {
             Identifiable::Import(_) => unreachable!(),
             Identifiable::Function(function_rc) => {
                 return Ok(FunctionBodyItem::CallFunction(CallFunction {
                     function: function_rc.clone(),
-                    type_parameters: type_parameters.clone(),
-                    position: function_rc.borrow().position(),
+                    type_parameters: parameters,
+                    position: parsed.position(),
                 }))
             }
             Identifiable::Enum(enum_rc) => {
                 return Ok(FunctionBodyItem::CallEnum(CallEnum {
-                    function: enum_rc.clone(),
-                    type_parameters: type_parameters.clone(),
-                    position: enum_rc.borrow().position(),
+                    enum_: enum_rc.clone(),
+                    type_parameters: parameters,
+                    position: parsed.position(),
                 }))
             }
             Identifiable::Struct(struct_rc) => {
                 return Ok(FunctionBodyItem::CallStruct(CallStruct {
-                    function: struct_rc.clone(),
-                    type_parameters: type_parameters.clone(),
-                    position: struct_rc.borrow().position(),
+                    struct_: struct_rc.clone(),
+                    type_parameters: parameters,
+                    position: parsed.position(),
                 }))
             }
             Identifiable::EnumConstructor(enum_ctor) => {
                 return Ok(FunctionBodyItem::CallEnumConstructor(CallEnumConstructor {
                     enum_constructor: enum_ctor.clone(),
-                    type_parameters: type_parameters.clone(),
-                    position: enum_ctor.borrow().position(),
+                    type_parameters: parameters,
+                    position: parsed.position(),
                 }));
             }
         }
@@ -1115,33 +1087,31 @@ impl<'a> FunctionBodyResolver<'a> {
         &mut self,
         parsed: &parsed::FunctionType,
     ) -> Result<FunctionBodyItem, CrossReferencerError> {
-        let type_parameters = HashMap::new(); // TODO
+        // TODO #154 Support using type parameters in function pointer values
+        let type_parameters = HashMap::new();
 
         let type_ = self
             .cross_referencer
             .resolve_function_return_type_function_pointer(parsed, &type_parameters)?;
 
-        if let Type::FunctionPointer {
-            argument_types,
-            return_types,
-        } = type_
-        {
-            return Ok(FunctionBodyItem::FunctionType(FunctionType {
-                position: parsed.position.clone(),
-                argument_types,
-                return_types,
-            }));
-        }
+        let Type::FunctionPointer(function_pointer_type) = type_ else {
+            unreachable!()
+        };
 
-        unreachable!()
+        Ok(FunctionBodyItem::FunctionType(FunctionType {
+            position: parsed.position.clone(),
+            argument_types: function_pointer_type.argument_types,
+            return_types: function_pointer_type.return_types,
+        }))
     }
 
-    fn resolve_call_by_name(
+    fn resolve_get_function(
         &mut self,
-        parsed: &parsed::CallByName,
+        parsed: &parsed::GetFunction,
     ) -> Result<FunctionBodyItem, CrossReferencerError> {
-        Ok(FunctionBodyItem::CallByName(CallByName {
+        Ok(FunctionBodyItem::GetFunction(GetFunction {
             position: parsed.position.clone(),
+            function_name: parsed.target.value.clone(),
         }))
     }
 
@@ -1206,13 +1176,13 @@ impl<'a> FunctionBodyResolver<'a> {
             .collect();
 
         for variable in &variables {
-            self.local_variables.insert(variable.value.clone());
+            self.local_variables.insert(variable.name.clone());
         }
 
         let body_result = self.resolve_function_body(&parsed.body);
 
         for variable in &variables {
-            self.local_variables.remove(&variable.value);
+            self.local_variables.remove(&variable.name);
         }
 
         let case_block = CaseBlock {
@@ -1220,6 +1190,7 @@ impl<'a> FunctionBodyResolver<'a> {
             position: parsed.position.clone(),
             enum_name: parsed.label.enum_name.value.clone(),
             variant_name: parsed.label.enum_variant.value.clone(),
+            variables,
         };
 
         Ok(case_block)
@@ -1273,13 +1244,13 @@ impl<'a> FunctionBodyResolver<'a> {
             .collect();
 
         for variable in &variables {
-            self.local_variables.insert(variable.value.clone());
+            self.local_variables.insert(variable.name.clone());
         }
 
         let body_result = self.resolve_function_body(&parsed.body);
 
         for variable in &variables {
-            self.local_variables.remove(&variable.value);
+            self.local_variables.remove(&variable.name);
         }
 
         Ok(FunctionBodyItem::Use(Use {
@@ -1311,232 +1282,5 @@ impl<'a> FunctionBodyResolver<'a> {
         };
 
         Ok(FunctionBodyItem::String(string))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::{collections::HashMap, env, fs::read_to_string, path::PathBuf};
-
-    use rstest::rstest;
-
-    use crate::{
-        common::position::Position,
-        cross_referencer::errors::CrossReferencerError,
-        cross_referencer::errors::CrossReferencerError::*,
-        parser::{parser::parse, types::SourceFile},
-        runner::runner::RunnerError,
-        tokenizer::tokenizer::tokenize_filtered,
-    };
-
-    use super::{cross_reference, Output};
-
-    const CURRENT_DIR: &str = "/testfolder";
-
-    fn parse_file(code: &str, path: &PathBuf) -> Result<SourceFile, RunnerError> {
-        let tokens = tokenize_filtered(code, Some(path.clone()))?;
-        let parsed = parse(tokens)?;
-
-        Ok(parsed)
-    }
-
-    fn cross_reference_files(
-        files: HashMap<&str, &str>,
-    ) -> Result<Output, Vec<CrossReferencerError>> {
-        let stdlib_path = env::var("AAA_STDLIB_PATH").unwrap();
-        let builtins_path = PathBuf::from(stdlib_path).join("builtins.aaa");
-        let builtins_code = read_to_string(&builtins_path).unwrap();
-        let parsed_builtins = parse_file(&builtins_code, &builtins_path).unwrap();
-
-        let mut parsed_files = HashMap::from([(builtins_path.clone(), parsed_builtins)]);
-
-        let current_dir = PathBuf::from(CURRENT_DIR);
-
-        for (suffix, code) in files {
-            let filename = current_dir.clone().join(suffix);
-            let parsed_file = match parse_file(code, &filename) {
-                Ok(parsed_file) => parsed_file,
-                Err(err) => {
-                    panic!("Parsing failed {}", err);
-                }
-            };
-            parsed_files.insert(filename.clone(), parsed_file);
-        }
-
-        let entrypoint = current_dir.clone().join("main.aaa");
-
-        cross_reference(parsed_files, entrypoint, builtins_path, current_dir)
-    }
-
-    fn cross_reference_file(code: &str) -> Result<Output, Vec<CrossReferencerError>> {
-        let files = HashMap::from([("main.aaa", code)]);
-        cross_reference_files(files)
-    }
-
-    fn get_single_error(result: Result<Output, Vec<CrossReferencerError>>) -> CrossReferencerError {
-        let errors = match result {
-            Ok(_) => unreachable!(),
-            Err(errors) => errors,
-        };
-        assert_eq!(errors.len(), 1);
-        errors.into_iter().next().unwrap()
-    }
-
-    #[test]
-    fn test_no_error() {
-        cross_reference_file("fn main { nop }").unwrap();
-    }
-
-    #[rstest]
-    #[case("builtin fn foo", "function foo")]
-    #[case("builtin struct bar", "struct bar")]
-    fn test_unexpected_builtin(#[case] code: &str, #[case] expected_describe: &str) {
-        let result = cross_reference_file(code);
-
-        let UnexpectedBuiltin(error) = get_single_error(result) else {
-            unreachable!()
-        };
-
-        assert_eq!(
-            error.position,
-            Position::new(PathBuf::from(CURRENT_DIR).join("main.aaa"), 1, 1)
-        );
-
-        assert_eq!(
-            error.identifiable.describe(),
-            String::from(expected_describe)
-        );
-    }
-
-    #[rstest]
-    fn test_colliding_identifiables() {
-        let result = cross_reference_file("fn foo { nop }\nstruct foo {}");
-
-        let CollidingIdentifiables(colliding) = get_single_error(result) else {
-            unreachable!()
-        };
-
-        assert_eq!(colliding.first().describe(), "function foo".to_string());
-        assert_eq!(colliding.second().describe(), "struct foo".to_string());
-    }
-
-    #[rstest]
-    fn test_cyclic_dependency() {
-        let files = HashMap::from([
-            ("main.aaa", "from \"foo\" import bar\nstruct baz {}"),
-            ("foo.aaa", "from \"main\" import baz\nstruct bar {}"),
-        ]);
-
-        let result = cross_reference_files(files);
-
-        let CyclicDependency(cyclic) = get_single_error(result) else {
-            unreachable!()
-        };
-
-        assert_eq!(
-            cyclic.dependencies,
-            vec![
-                PathBuf::from(CURRENT_DIR).join("main.aaa"),
-                PathBuf::from(CURRENT_DIR).join("foo.aaa"),
-                PathBuf::from(CURRENT_DIR).join("main.aaa"),
-            ]
-        )
-    }
-
-    #[rstest]
-    fn test_import_not_found() {
-        let files = HashMap::from([("main.aaa", "from \"foo\" import bar"), ("foo.aaa", "")]);
-
-        let result = cross_reference_files(files);
-
-        let ImportNotFound(import_not_found) = get_single_error(result) else {
-            unreachable!()
-        };
-
-        // TODO make position be the imported item as with indirect import
-        assert_eq!(
-            import_not_found.position,
-            Position::new(PathBuf::from(CURRENT_DIR).join("main.aaa"), 1, 1)
-        )
-    }
-
-    #[rstest]
-    fn test_indirect_import() {
-        let files = HashMap::from([
-            ("main.aaa", "from \"foo\" import bar"),
-            ("foo.aaa", "from \"bar\" import bar"),
-            ("bar.aaa", "struct bar {}"),
-        ]);
-
-        let result = cross_reference_files(files);
-
-        let IndirectImport(indirect_import) = get_single_error(result) else {
-            unreachable!()
-        };
-
-        assert_eq!(
-            indirect_import.position,
-            Position::new(PathBuf::from(CURRENT_DIR).join("main.aaa"), 1, 19)
-        )
-    }
-
-    #[rstest]
-    fn test_invalid_argument() {
-        let code = "fn foo { nop }\nfn bar args x as foo { nop }";
-
-        let result = cross_reference_file(code);
-
-        let InvalidArgument(invalid_argument) = get_single_error(result) else {
-            unreachable!()
-        };
-
-        assert_eq!(
-            invalid_argument.position,
-            Position::new(PathBuf::from(CURRENT_DIR).join("main.aaa"), 2, 13)
-        );
-
-        assert_eq!(
-            invalid_argument.identifiable.describe(),
-            "function foo".to_string()
-        );
-    }
-
-    #[rstest]
-    fn test_invalid_return_type() {
-        let code = "fn foo { nop }\nfn bar return foo { nop }";
-
-        let result = cross_reference_file(code);
-
-        let InvalidReturnType(invalid_return_type) = get_single_error(result) else {
-            unreachable!()
-        };
-
-        assert_eq!(
-            invalid_return_type.position,
-            Position::new(PathBuf::from(CURRENT_DIR).join("main.aaa"), 2, 15)
-        );
-
-        assert_eq!(
-            invalid_return_type.identifiable.describe(),
-            "function foo".to_string()
-        );
-    }
-
-    #[rstest]
-    fn test_unknown_identifiable() {
-        let code = "fn foo { bar }";
-
-        let result = cross_reference_file(code);
-
-        let UnknownIdentifiable(unknown_identifiable) = get_single_error(result) else {
-            unreachable!()
-        };
-
-        assert_eq!(
-            unknown_identifiable.position,
-            Position::new(PathBuf::from(CURRENT_DIR).join("main.aaa"), 1, 10)
-        );
-
-        assert_eq!(unknown_identifiable.name, "bar".to_string());
     }
 }

@@ -1,8 +1,9 @@
 use std::{
     collections::{HashMap, HashSet},
     env,
-    fmt::{Debug, Display},
+    fmt::Display,
     fs::read_to_string,
+    io,
     path::PathBuf,
 };
 
@@ -13,15 +14,16 @@ use crate::{
         types::SourceFile,
     },
     tokenizer::tokenizer::{tokenize_filtered, TokenizerError},
+    type_checker::type_checker::type_check,
 };
 
-#[derive(Debug)]
 pub enum RunnerError {
     CliArguments(String),
     EnvVariables(String),
     IO(std::io::Error),
     Tokenizer(TokenizerError),
     Parser(ParseError),
+    FileNotFound(PathBuf),
 }
 
 impl From<std::io::Error> for RunnerError {
@@ -50,6 +52,7 @@ impl Display for RunnerError {
             RunnerError::IO(error) => write!(f, "{}", error),
             RunnerError::Parser(error) => write!(f, "{}", error),
             RunnerError::Tokenizer(error) => write!(f, "{}", error),
+            RunnerError::FileNotFound(path) => write!(f, "Could not open {}", path.display()),
         }
     }
 }
@@ -133,7 +136,14 @@ impl Runner {
 
             remaining_files.remove(&file);
 
-            let code = read_to_string(&file)?;
+            let code = match read_to_string(&file) {
+                Err(error) => match error.kind() {
+                    io::ErrorKind::NotFound => return Err(RunnerError::FileNotFound(file)),
+                    _ => return Err(RunnerError::IO(error)),
+                },
+                Ok(code) => code,
+            };
+
             let parsed_file = self.parse_file(&code, &file)?;
 
             for dependency in parsed_file.dependencies(&self.current_dir) {
@@ -152,12 +162,12 @@ impl Runner {
         let parsed_files = match self.parse_files() {
             Ok(parsed_files) => parsed_files,
             Err(error) => {
-                eprintln!("{:?}", error);
+                eprintln!("{}", error);
                 return 1;
             }
         };
 
-        let _ = match cross_reference(
+        let cross_referenced = match cross_reference(
             parsed_files,
             self.entrypoint_path.clone(),
             self.builtins_path.clone(),
@@ -166,13 +176,24 @@ impl Runner {
             Ok(cross_referenced) => cross_referenced,
             Err(errors) => {
                 for error in &errors {
-                    eprintln!("{:?}", error);
+                    eprint!("{}", error);
                 }
-
+                eprintln!("");
                 eprintln!("Found {} errors", errors.len());
                 return 1;
             }
         };
+
+        let type_errors = type_check(cross_referenced);
+
+        if !type_errors.is_empty() {
+            for error in &type_errors {
+                eprint!("{}", error);
+            }
+            eprintln!("");
+            eprintln!("Found {} errors", type_errors.len());
+            return 1;
+        }
 
         0
     }

@@ -1,7 +1,8 @@
 use std::{fmt, vec};
 
 use crate::{
-    parser::types::{CallByName, GetField, ParsedString, SetField, Use},
+    common::traits::HasPosition,
+    parser::types::{GetField, GetFunction, ParsedString, SetField, Use},
     tokenizer::{types::Token, types::TokenType},
 };
 
@@ -29,16 +30,11 @@ impl fmt::Display for ParseError {
                 write!(
                     f,
                     "{}: Unexpected token with type {:?}",
-                    token.position, token.type_
+                    token.position(),
+                    token.type_
                 )
             }
         }
-    }
-}
-
-impl fmt::Debug for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
     }
 }
 
@@ -177,8 +173,8 @@ impl Parser {
         (struct_token, offset) = self.parse_token(offset, TokenType::Struct)?;
 
         struct_.position = match builtin_token {
-            Some(builtin_token) => builtin_token.position,
-            None => struct_token.position,
+            Some(builtin_token) => builtin_token.position(),
+            None => struct_token.position(),
         };
 
         (struct_.name, offset) = self.parse_identifier(offset)?;
@@ -201,7 +197,7 @@ impl Parser {
         let mut identifier = Identifier::default();
 
         (token, offset) = self.parse_token(offset, TokenType::Identifier)?;
-        identifier.position = token.position;
+        identifier.position = token.position();
         identifier.value = token.value;
 
         Ok((identifier, offset))
@@ -316,7 +312,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::Fn)?;
-        type_.position = first_token.position;
+        type_.position = first_token.position();
 
         (type_.argument_types, offset) = self.parse_function_type_arguments(offset)?;
         (type_.return_types, offset) = self.parse_function_type_return_types(offset)?;
@@ -345,7 +341,7 @@ impl Parser {
         (type_.name, offset) = self.parse_identifier(offset)?;
 
         type_.position = match const_token {
-            Some(const_token) => const_token.position,
+            Some(const_token) => const_token.position(),
             None => type_.name.position.clone(),
         };
 
@@ -395,7 +391,7 @@ impl Parser {
 
             let first_token;
             (first_token, offset) = self.parse_token(offset, TokenType::Builtin)?;
-            builtin_token = Some(first_token.position.clone());
+            builtin_token = Some(first_token.position().clone());
         }
 
         let fn_token;
@@ -403,7 +399,7 @@ impl Parser {
 
         function.position = match builtin_token {
             Some(first_token) => first_token,
-            None => fn_token.position.clone(),
+            None => fn_token.position().clone(),
         };
 
         (function.name, offset) = self.parse_function_name(offset)?;
@@ -514,6 +510,8 @@ impl Parser {
             }
         }
 
+        body.position = body.items.first().unwrap().position();
+
         Ok((body, offset))
     }
 
@@ -549,8 +547,8 @@ impl Parser {
         (token, offset) = self.parse_token(offset, TokenType::Operator)?;
 
         let identifier = Identifier {
-            value: token.value,
-            position: token.position,
+            value: token.value.clone(),
+            position: token.position(),
         };
         Ok((identifier, offset))
     }
@@ -569,7 +567,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::If)?;
-        branch.position = first_token.position;
+        branch.position = first_token.position();
 
         (branch.condition, offset) = self.parse_function_body(offset)?;
         (branch.if_body, offset) = self.parse_function_body_block(offset)?;
@@ -649,7 +647,7 @@ impl Parser {
         (first_token, offset) = self.parse_token(offset, TokenType::Call)?;
 
         let call = CallByPointer {
-            position: first_token.position,
+            position: first_token.position(),
         };
 
         Ok((FunctionBodyItem::CallByPointer(call), offset))
@@ -672,7 +670,7 @@ impl Parser {
         (first_token, offset) = self.parse_token(offset, TokenType::Return)?;
 
         let return_ = Return {
-            position: first_token.position,
+            position: first_token.position(),
         };
 
         Ok((FunctionBodyItem::Return(return_), offset))
@@ -707,7 +705,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::Foreach)?;
-        foreach.position = first_token.position;
+        foreach.position = first_token.position();
 
         (foreach.body, offset) = self.parse_function_body_block(offset)?;
         Ok((FunctionBodyItem::Foreach(foreach), offset))
@@ -721,7 +719,7 @@ impl Parser {
         (item, offset) = match self.peek_token_type(offset + 1) {
             Some(TokenType::GetField) => self.parse_get_field(offset)?,
             Some(TokenType::Start) => self.parse_set_field(offset)?,
-            Some(TokenType::Fn) => self.parse_call_by_name(offset)?,
+            Some(TokenType::Fn) => self.parse_get_function(offset)?,
             _ => self.parse_string_as_item(offset)?,
         };
 
@@ -749,12 +747,12 @@ impl Parser {
         Ok((item, offset))
     }
 
-    fn parse_call_by_name(&self, mut offset: usize) -> ParseResult<FunctionBodyItem> {
+    fn parse_get_function(&self, mut offset: usize) -> ParseResult<FunctionBodyItem> {
         let token;
         (token, offset) = self.parse_token(offset, TokenType::String)?;
         (_, offset) = self.parse_token(offset, TokenType::Fn)?;
 
-        let item = FunctionBodyItem::CallByName(CallByName::new(&token));
+        let item = FunctionBodyItem::GetFunction(GetFunction::new(&token));
         Ok((item, offset))
     }
 
@@ -777,7 +775,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::Match)?;
-        match_.position = first_token.position;
+        match_.position = first_token.position();
 
         (_, offset) = self.parse_token(offset, TokenType::Start)?;
 
@@ -825,7 +823,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::Case)?;
-        label.position = first_token.position;
+        label.position = first_token.position();
 
         (label.enum_name, offset) = self.parse_identifier(offset)?;
         (_, offset) = self.parse_token(offset, TokenType::Colon)?;
@@ -845,7 +843,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::Default)?;
-        default.position = first_token.position;
+        default.position = first_token.position();
 
         (default.body, offset) = self.parse_function_body_block(offset)?;
 
@@ -857,7 +855,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::Use)?;
-        use_.position = first_token.position;
+        use_.position = first_token.position();
 
         (use_.variables, offset) = self.parse_comma_separated(offset, Parser::parse_identifier)?;
         (use_.body, offset) = self.parse_function_body_block(offset)?;
@@ -871,7 +869,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::While)?;
-        while_.position = first_token.position;
+        while_.position = first_token.position();
 
         (while_.condition, offset) = self.parse_function_body(offset)?;
         (while_.body, offset) = self.parse_function_body_block(offset)?;
@@ -885,7 +883,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::Enum)?;
-        enum_.position = first_token.position;
+        enum_.position = first_token.position();
 
         (enum_.name, offset) = self.parse_identifier(offset)?;
 
@@ -937,7 +935,7 @@ impl Parser {
 
         let first_token;
         (first_token, offset) = self.parse_token(offset, TokenType::From)?;
-        import_.position = first_token.position.clone();
+        import_.position = first_token.position().clone();
 
         (import_.source, offset) = self.parse_string(offset)?;
         (_, offset) = self.parse_token(offset, TokenType::Import)?;
@@ -980,7 +978,9 @@ mod tests {
     fn parse_as<T>(code: &str, parse_func: fn(&Parser, usize) -> ParseResult<T>) -> T {
         let tokens = tokenize_filtered(code, None).unwrap();
         let parser = Parser::new(tokens.clone());
-        let (parsed, offset) = parse_func(&parser, 0).unwrap();
+        let Ok((parsed, offset)) = parse_func(&parser, 0) else {
+            unreachable!()
+        };
         assert_eq!(offset, tokens.len());
         parsed
     }
@@ -1021,7 +1021,7 @@ mod tests {
             Err(err) => {
                 if expected_parsed_ok {
                     print_tokens(&tokens);
-                    println!("Parse error: {:?}", err);
+                    println!("Parse error: {}", err);
                     println!("Parsing failed unexpectedly!");
                     assert!(false);
                 }
@@ -1257,8 +1257,8 @@ mod tests {
     #[case("\"foo\"", false)]
     #[case("\"foo:bar\"", false)]
     #[case("fn", false)]
-    fn test_parse_call_by_name(#[case] code: &str, #[case] expected_parsed: bool) {
-        check_parse(code, expected_parsed, Parser::parse_call_by_name);
+    fn test_parse_call_get_function(#[case] code: &str, #[case] expected_parsed: bool) {
+        check_parse(code, expected_parsed, Parser::parse_get_function);
     }
 
     #[rstest]
@@ -1674,7 +1674,7 @@ mod tests {
                 Ok(_) => (),
                 Err(e) => {
                     println!("Failed to parse {:?}", path);
-                    println!("{:?}", e);
+                    println!("{}", e);
                     assert!(false);
                 }
             }

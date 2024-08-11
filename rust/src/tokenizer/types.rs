@@ -1,13 +1,13 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::common::position::Position;
+use crate::common::{position::Position, traits::HasPosition};
 
 #[derive(Debug, Default, Clone)]
 pub struct Token {
     pub type_: TokenType,
     pub value: String,
-    pub position: Position,
+    position: Position,
 }
 
 impl Token {
@@ -25,6 +25,12 @@ impl Token {
 
     pub fn end(&self) -> Position {
         self.position.after(&self.value)
+    }
+}
+
+impl HasPosition for Token {
+    fn position(&self) -> Position {
+        return self.position.clone();
     }
 }
 
