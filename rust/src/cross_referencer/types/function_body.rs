@@ -123,8 +123,6 @@ pub struct Branch {
 
 pub struct Boolean {
     pub position: Position,
-
-    #[allow(dead_code)] // TODO #213 implement transpiler in Rust
     pub value: bool,
 }
 
@@ -134,8 +132,6 @@ pub struct Call {
 
 pub struct Char {
     pub position: Position,
-
-    #[allow(dead_code)] // TODO #213 implement transpiler in Rust
     pub value: char,
 }
 
@@ -191,12 +187,11 @@ pub struct FunctionType {
 pub struct GetFunction {
     pub position: Position,
     pub function_name: String,
+    pub target: Rc<RefCell<Function>>,
 }
 
 pub struct Integer {
     pub position: Position,
-
-    #[allow(dead_code)] // TODO #213 implement transpiler in Rust
     pub value: isize,
 }
 
@@ -251,7 +246,5 @@ pub struct While {
 
 pub struct ParsedString {
     pub position: Position,
-
-    #[allow(dead_code)] // TODO #213 implement transpiler in Rust
     pub value: String,
 }

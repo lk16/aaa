@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display};
+use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
 use crate::{
     common::{formatting::join_display_prefixed, position::Position, traits::HasPosition},
@@ -42,6 +42,8 @@ pub enum TypeError {
     MemberFunctionWithoutArguments(MemberFunctionWithoutArguments),
     MemberFunctionInvalidTarget(MemberFunctionInvalidTarget),
     MemberFunctionUnexpectedTarget(MemberFunctionUnexpectedTarget),
+    MainFunctionNotFound(MainFunctionNotFound),
+    InvalidMainSignature(InvalidMainSignature),
 }
 
 impl Display for TypeError {
@@ -83,6 +85,8 @@ impl Display for TypeError {
             Self::MemberFunctionWithoutArguments(error) => write!(f, "{}", error),
             Self::MemberFunctionInvalidTarget(error) => write!(f, "{}", error),
             Self::MemberFunctionUnexpectedTarget(error) => write!(f, "{}", error),
+            Self::MainFunctionNotFound(error) => write!(f, "{}", error),
+            Self::InvalidMainSignature(error) => write!(f, "{}", error),
         }
     }
 }
@@ -1135,4 +1139,43 @@ pub fn member_function_unexpected_target<T>(
             found_target_name,
         },
     ))
+}
+
+pub struct MainFunctionNotFound {
+    pub main_file: PathBuf,
+}
+
+impl Display for MainFunctionNotFound {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}: No main function found", self.main_file.display())
+    }
+}
+
+pub fn main_function_not_found<T>(main_file: PathBuf) -> Result<T, TypeError> {
+    Err(TypeError::MainFunctionNotFound(MainFunctionNotFound {
+        main_file,
+    }))
+}
+
+pub struct InvalidMainSignature {
+    pub position: Position,
+}
+
+impl Display for InvalidMainSignature {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "{}: Main function has wrong signature, it should have:",
+            self.position
+        )?;
+        writeln!(f, "- no type parameters")?;
+        writeln!(f, "- either no arguments or one vec[str] argument")?;
+        writeln!(f, "- return either nothing or an int")
+    }
+}
+
+pub fn invalid_main_signature<T>(position: Position) -> Result<T, TypeError> {
+    Err(TypeError::InvalidMainSignature(InvalidMainSignature {
+        position,
+    }))
 }

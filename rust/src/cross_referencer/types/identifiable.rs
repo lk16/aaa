@@ -50,8 +50,12 @@ impl Struct {
         self.resolved().type_parameters.len()
     }
 
+    pub fn fields(&self) -> &HashMap<String, Type> {
+        &self.resolved().fields
+    }
+
     pub fn field(&self, name: &String) -> Option<&Type> {
-        self.resolved().fields.get(name)
+        self.fields().get(name)
     }
 }
 
@@ -244,11 +248,13 @@ impl Display for Argument {
 pub struct Enum {
     pub parsed: parsed::Enum,
     pub resolved: Option<ResolvedEnum>,
+    pub is_builtin: bool,
 }
 
 impl From<parsed::Enum> for Enum {
     fn from(parsed: parsed::Enum) -> Self {
         Self {
+            is_builtin: false, // TODO #224 add is_builtin to parsed Enum, Struct and Function
             parsed,
             resolved: None,
         }
@@ -275,6 +281,10 @@ impl Enum {
     pub fn expected_parameter_count(&self) -> usize {
         self.resolved().type_parameters.len()
     }
+
+    pub fn variants(&self) -> &HashMap<String, Vec<Type>> {
+        &self.resolved().variants
+    }
 }
 
 impl HasPosition for Enum {
@@ -288,6 +298,7 @@ pub struct ResolvedEnum {
     pub variants: HashMap<String, Vec<Type>>,
 }
 
+// TODO #219 use Function instead and remove EnumConstructor
 pub struct EnumConstructor {
     pub enum_: Rc<RefCell<Enum>>,
     pub parsed: parsed::EnumVariant,
@@ -393,6 +404,10 @@ impl Function {
         &self.signature().arguments
     }
 
+    pub fn return_types(&self) -> &ReturnTypes {
+        &self.signature().return_types
+    }
+
     pub fn type_name(&self) -> Option<String> {
         self.parsed.name.type_name()
     }
@@ -488,6 +503,10 @@ impl Identifiable {
         match self {
             Identifiable::Function(function) => function.borrow().is_builtin,
             Identifiable::Struct(struct_) => struct_.borrow().is_builtin,
+            Identifiable::Enum(enum_) => enum_.borrow().is_builtin,
+            Identifiable::EnumConstructor(enum_ctor) => {
+                enum_ctor.borrow().enum_.borrow().is_builtin
+            }
             _ => false,
         }
     }

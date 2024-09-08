@@ -1,7 +1,18 @@
-#[cfg(test)]
-use std::path::Path;
+use std::path::Component;
+use std::path::{Path, PathBuf};
 
-use std::path::{Component, PathBuf};
+use rand::Rng;
+
+pub fn repository_root() -> PathBuf {
+    Path::new(file!())
+        .canonicalize()
+        .unwrap()
+        .ancestors()
+        .skip(4)
+        .next()
+        .unwrap()
+        .to_path_buf()
+}
 
 pub fn normalize_path(path: &PathBuf, current_dir: &PathBuf) -> PathBuf {
     let path = if path.is_relative() {
@@ -25,16 +36,12 @@ pub fn normalize_path(path: &PathBuf, current_dir: &PathBuf) -> PathBuf {
     normalized_path
 }
 
-#[cfg(test)]
-pub fn repository_root() -> PathBuf {
-    Path::new(file!())
-        .canonicalize()
-        .unwrap()
-        .ancestors()
-        .skip(4)
-        .next()
-        .unwrap()
-        .to_path_buf()
+pub fn random_folder_name() -> String {
+    rand::thread_rng()
+        .sample_iter(rand::distributions::Alphanumeric)
+        .take(10)
+        .map(char::from)
+        .collect()
 }
 
 #[cfg(test)]

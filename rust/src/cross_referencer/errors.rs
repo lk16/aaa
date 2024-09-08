@@ -2,7 +2,9 @@ use std::{fmt::Display, path::PathBuf};
 
 use crate::{
     common::position::Position,
-    type_checker::errors::{NameCollision, NameCollisionItem},
+    type_checker::errors::{
+        GetFunctionNonFunction, GetFunctionNotFound, NameCollision, NameCollisionItem,
+    },
 };
 
 use super::types::identifiable::Identifiable;
@@ -14,6 +16,8 @@ pub enum CrossReferencerError {
     UnexpectedBuiltin(UnexpectedBuiltin),
     UnknownIdentifiable(UnknownIdentifiable),
     NameCollision(NameCollision),
+    GetFunctionNotFound(GetFunctionNotFound),
+    GetFunctionNonFunction(GetFunctionNonFunction),
 }
 
 impl Display for CrossReferencerError {
@@ -25,6 +29,8 @@ impl Display for CrossReferencerError {
             Self::UnexpectedBuiltin(error) => write!(f, "{}", error),
             Self::UnknownIdentifiable(error) => write!(f, "{}", error),
             Self::NameCollision(error) => write!(f, "{}", error),
+            Self::GetFunctionNotFound(error) => write!(f, "{}", error),
+            Self::GetFunctionNonFunction(error) => write!(f, "{}", error),
         }
     }
 }
@@ -146,4 +152,30 @@ pub fn name_collision<T>(
     Err(CrossReferencerError::NameCollision(NameCollision {
         items: [first, second],
     }))
+}
+
+pub fn get_function_not_found<T>(
+    position: Position,
+    function_name: String,
+) -> Result<T, CrossReferencerError> {
+    Err(CrossReferencerError::GetFunctionNotFound(
+        GetFunctionNotFound {
+            position,
+            function_name,
+        },
+    ))
+}
+
+pub fn get_function_non_function<T>(
+    position: Position,
+    function_name: String,
+    identifiable: Identifiable,
+) -> Result<T, CrossReferencerError> {
+    Err(CrossReferencerError::GetFunctionNonFunction(
+        GetFunctionNonFunction {
+            position,
+            function_name,
+            identifiable,
+        },
+    ))
 }
