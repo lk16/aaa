@@ -39,6 +39,19 @@ repos:
         pass_filenames: false
         args: [--manifest-path, aaa-stdlib/Cargo.toml]
 
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      - id: fmt
+        pass_filenames: false
+        args: [--manifest-path, rust/Cargo.toml]
+      - id: cargo-check
+        pass_filenames: false
+        args: [--manifest-path, rust/Cargo.toml]
+      - id: clippy
+        pass_filenames: false
+        args: [--manifest-path, rust/Cargo.toml]
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.8
     hooks:
