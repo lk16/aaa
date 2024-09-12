@@ -6,7 +6,7 @@ pub struct Vector<T>
 where
     T: UserType,
 {
-    vec: Rc<RefCell<Vec<T>>>,
+    inner: Vec<T>,
     iterator_count: Rc<RefCell<usize>>, // vector can only be modified if no iterators exist
 }
 
@@ -16,45 +16,45 @@ where
 {
     pub fn new() -> Self {
         Self {
-            vec: Rc::new(RefCell::new(vec![])),
+            inner: vec![],
             iterator_count: Rc::new(RefCell::new(0)),
         }
     }
 
     pub fn push(&mut self, item: T) {
         self.detect_invalid_change();
-        self.vec.borrow_mut().push(item);
+        self.inner.push(item);
     }
 
     pub fn pop(&mut self) -> Option<T> {
         self.detect_invalid_change();
-        self.vec.borrow_mut().pop()
+        self.inner.pop()
     }
 
     pub fn len(&self) -> usize {
-        self.vec.borrow().len()
+        self.inner.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.vec.borrow().is_empty()
+        self.inner.is_empty()
     }
 
     pub fn clear(&mut self) {
         self.detect_invalid_change();
-        self.vec.borrow_mut().clear();
+        self.inner.clear();
     }
 
     pub fn iter(&self) -> VectorIterator<T> {
-        VectorIterator::new(self.vec.clone(), self.iterator_count.clone())
+        VectorIterator::new(self.inner.clone().into_iter(), self.iterator_count.clone())
     }
 
     pub fn get(&self, index: usize) -> T {
-        self.vec.borrow()[index].clone()
+        self.inner[index].clone()
     }
 
     pub fn set(&mut self, index: usize, item: T) {
         self.detect_invalid_change();
-        self.vec.borrow_mut()[index] = item;
+        self.inner[index] = item;
     }
 
     fn detect_invalid_change(&self) {
@@ -69,15 +69,8 @@ where
     T: UserType,
 {
     fn from(value: Vec<T>) -> Self {
-        let vec = Self::new();
-
-        {
-            let mut inner = vec.vec.borrow_mut();
-            for item in value {
-                inner.push(item);
-            }
-        } // be sure borrow ends here
-
+        let mut vec = Self::new();
+        vec.inner = value;
         vec
     }
 }
@@ -100,7 +93,7 @@ where
     T: UserType,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.vec == other.vec
+        self.inner == other.inner
     }
 }
 
@@ -143,22 +136,20 @@ pub struct VectorIterator<T>
 where
     T: UserType,
 {
-    vector: Rc<RefCell<Vec<T>>>,
+    iterator: std::vec::IntoIter<T>,
     iterator_count: Rc<RefCell<usize>>,
-    offset: usize,
 }
 
 impl<T> VectorIterator<T>
 where
     T: UserType,
 {
-    fn new(vector: Rc<RefCell<Vec<T>>>, iterator_count: Rc<RefCell<usize>>) -> Self {
+    fn new(iterator: std::vec::IntoIter<T>, iterator_count: Rc<RefCell<usize>>) -> Self {
         *iterator_count.borrow_mut() += 1;
 
         Self {
-            vector,
+            iterator,
             iterator_count,
-            offset: 0,
         }
     }
 }
@@ -170,11 +161,7 @@ where
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let vector = self.vector.borrow();
-        let item = vector.get(self.offset).cloned();
-        self.offset += 1;
-
-        item
+        self.iterator.next()
     }
 }
 
