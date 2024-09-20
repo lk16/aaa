@@ -243,7 +243,7 @@ class Transpiled:
 
         cargo_toml = (self.transpiler_root / "Cargo.toml").resolve()
 
-        stdlib_impl_path = (Path(__file__).parent / "../../aaa-stdlib").resolve()
+        stdlib_impl_path = (Path(__file__).parent / "../../../aaa-stdlib").resolve()
 
         cargo_toml.write_text(
             CARGO_TOML_TEMPLATE.format(stdlib_impl_path=stdlib_impl_path)

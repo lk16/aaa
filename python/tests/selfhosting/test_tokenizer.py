@@ -33,7 +33,7 @@ def tokenizer_excecutable() -> str:
     )
 
     exit_code = Runner.compile_command(
-        file_or_code="examples/selfhosting/tokenizer.aaa",
+        file_or_code="../examples/selfhosting/tokenizer.aaa",
         verbose=False,
         binary_path=str(binary_path),
         runtime_type_checks=True,

@@ -1,4 +1,4 @@
-from "../../../../stdlib/enums.aaa" import Option
+from "../../../../../stdlib/enums.aaa" import Option
 
 struct Bar {
     value as int,

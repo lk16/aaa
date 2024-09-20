@@ -24,7 +24,8 @@ repos:
     rev: v0.1.6
     hooks:
       - id: detect-missing-init
-        args: ["--create", "--track", "--python-folders", "aaa,tests"]
+        args:
+          ["--create", "--track", "--python-folders", "python/aaa,python/tests"]
 
   - repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
@@ -44,13 +45,13 @@ repos:
     hooks:
       - id: fmt
         pass_filenames: false
-        args: [--manifest-path, rust/Cargo.toml]
+        args: [--manifest-path, aaa/Cargo.toml]
       - id: cargo-check
         pass_filenames: false
-        args: [--manifest-path, rust/Cargo.toml]
+        args: [--manifest-path, aaa/Cargo.toml]
       - id: clippy
         pass_filenames: false
-        args: [--manifest-path, rust/Cargo.toml]
+        args: [--manifest-path, aaa/Cargo.toml]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.8

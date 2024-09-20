@@ -3,14 +3,16 @@ Stack-based language, like forth.
 
 ### Contents
 The following tools for the Aaa language can be found is this repo
-* A [tokenizer](./aaa/tokenizer/) and [parser](./aaa/parser/) for Aaa.
-* A [type checker](./aaa/type_checker/)
-* A [transpiler to Rust](./aaa/transpiler/)
+* A [parser](./python/aaa/parser/) for Aaa.
+* A [type checker](./python/aaa/type_checker/)
+* A [transpiler to Rust](./python/aaa/transpiler/)
 * A [VS Code extension](./aaa-vscode-extension/README.md) for the Aaa language.
 * A lot of tests, written both in python and Aaa
 
 ### Examples
 ```sh
+cd python
+
 # Run the obligatory hello world example
 pdm run ./manage.py run 'fn main { "Hello world\n" . }'
 
