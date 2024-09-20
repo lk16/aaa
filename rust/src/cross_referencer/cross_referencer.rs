@@ -8,8 +8,8 @@ use std::{
 
 use super::{
     errors::{
-        cyclic_dependency, import_not_found, indirect_import, name_collision, unexpected_builtin,
-        unknown_identifiable, CrossReferencerError,
+        cyclic_dependency, get_function_not_found, import_not_found, indirect_import,
+        name_collision, unexpected_builtin, unknown_identifiable, CrossReferencerError,
     },
     types::{
         function_body::{
@@ -27,7 +27,7 @@ use super::{
 };
 use crate::{
     common::{position::Position, traits::HasPosition},
-    cross_referencer::types::function_body::FunctionType,
+    cross_referencer::{errors::get_function_non_function, types::function_body::FunctionType},
     parser::types::{self as parsed, SourceFile},
     type_checker::errors::NameCollision,
 };
@@ -43,9 +43,11 @@ pub fn cross_reference(
     cross_referencer.cross_reference()
 }
 
+#[derive(Clone)]
 pub struct Output {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
     pub builtins_path: PathBuf,
+    pub entrypoint_path: PathBuf,
 }
 
 impl Debug for Output {
@@ -98,6 +100,7 @@ impl CrossReferencer {
         Ok(Output {
             identifiables: self.identifiables,
             builtins_path: self.builtins_path,
+            entrypoint_path: self.entrypoint_path,
         })
     }
 
@@ -1109,9 +1112,26 @@ impl<'a> FunctionBodyResolver<'a> {
         &mut self,
         parsed: &parsed::GetFunction,
     ) -> Result<FunctionBodyItem, CrossReferencerError> {
+        let position = parsed.position.clone();
+        let name = parsed.target.value.clone();
+
+        let identifiable = match self
+            .cross_referencer
+            .get_identifiable(position.clone(), name.clone())
+        {
+            // TODO #217 remove this error conversion here
+            Err(_) => return get_function_not_found(position, name),
+            Ok(identifiable) => identifiable,
+        };
+
+        let Identifiable::Function(target) = identifiable else {
+            return get_function_non_function(position, name, identifiable);
+        };
+
         Ok(FunctionBodyItem::GetFunction(GetFunction {
             position: parsed.position.clone(),
             function_name: parsed.target.value.clone(),
+            target,
         }))
     }
 

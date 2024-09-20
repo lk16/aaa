@@ -8,7 +8,7 @@ mod tests {
         process::Command,
     };
 
-    use rand::Rng;
+    use crate::common::files::random_folder_name;
 
     enum CommentMode {
         Default,
@@ -24,6 +24,7 @@ mod tests {
         expected_stdout: String,
         expected_stderr: String,
         source_path: PathBuf,
+        skipped: bool,
     }
 
     struct DocTestRunner {
@@ -41,16 +42,6 @@ mod tests {
                 doc_tests: vec![],
                 stdlib_path: std::env::var("AAA_STDLIB_PATH").unwrap(),
             }
-        }
-
-        fn get_tmp_path() -> PathBuf {
-            let path_name: String = rand::thread_rng()
-                .sample_iter(rand::distributions::Alphanumeric)
-                .take(10)
-                .map(char::from)
-                .collect();
-
-            env::temp_dir().join("aaa-doctests").join(path_name)
         }
 
         fn run(&mut self) {
@@ -101,7 +92,10 @@ mod tests {
 
             let mut comment_mode = Default;
             let mut doc_test = DocTest::default();
-            doc_test.source_path = Self::get_tmp_path();
+
+            doc_test.source_path = env::temp_dir()
+                .join("aaa-doctests")
+                .join(random_folder_name());
 
             let mut file_name = "main.aaa".to_owned();
 
@@ -109,6 +103,19 @@ mod tests {
                 if line == "\n" {
                     comment_mode = Default;
                     continue;
+                }
+
+                if let Some(suffix) = line.strip_prefix("/// skip") {
+                    // Prevent finding marker with grep
+                    let to_do = String::from("TO") + "DO";
+
+                    if !suffix.contains(&to_do) {
+                        panic!(
+                            "Found skipped doctest without {} comment on same line",
+                            to_do
+                        );
+                    }
+                    doc_test.skipped = true;
                 }
 
                 if let Some(suffix) = line.strip_prefix("/// name:") {
@@ -158,6 +165,13 @@ mod tests {
         }
 
         fn run_doc_test(&self, doc_test: &DocTest) {
+            if doc_test.skipped {
+                println!("Skipping doctest {} ...", doc_test.name);
+                return;
+            }
+
+            println!("Running doctest {} ...", doc_test.name);
+
             fs::create_dir_all(&doc_test.source_path).unwrap();
 
             for (file_name, content) in &doc_test.files {

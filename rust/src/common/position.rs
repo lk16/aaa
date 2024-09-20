@@ -1,6 +1,6 @@
-use std::{fmt, path::PathBuf};
+use std::{fmt, hash::Hash, path::PathBuf};
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Position {
     pub path: PathBuf,
     pub line: usize,

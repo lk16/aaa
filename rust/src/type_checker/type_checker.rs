@@ -1,7 +1,6 @@
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
-    env,
     fmt::Display,
     iter::zip,
     path::PathBuf,
@@ -27,8 +26,9 @@ use crate::{
     type_checker::errors::{
         assigned_variable_not_found, assignment_stack_size_error, colliding_case_blocks,
         colliding_default_blocks, does_not_return, get_field_from_non_struct,
-        match_stack_underflow, match_unexpected_enum, member_function_unexpected_target,
-        name_collision, unexpected_case_variable_count, unhandled_enum_variants,
+        invalid_main_signature, main_function_not_found, match_stack_underflow,
+        match_unexpected_enum, member_function_unexpected_target, name_collision,
+        unexpected_case_variable_count, unhandled_enum_variants,
     },
 };
 
@@ -48,9 +48,13 @@ use super::{
 pub struct TypeChecker {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
     pub builtins_path: PathBuf,
+    pub entrypoint_path: PathBuf,
+    pub position_stacks: HashMap<Position, Vec<Type>>,
 }
 
-pub fn type_check(input: cross_referencer::Output) -> Vec<TypeError> {
+pub fn type_check(
+    input: cross_referencer::Output,
+) -> Result<HashMap<Position, Vec<Type>>, Vec<TypeError>> {
     TypeChecker::new(input).run()
 }
 
@@ -59,6 +63,8 @@ impl TypeChecker {
         Self {
             identifiables: input.identifiables,
             builtins_path: input.builtins_path,
+            entrypoint_path: input.entrypoint_path,
+            position_stacks: HashMap::new(),
         }
     }
 
@@ -77,25 +83,121 @@ impl TypeChecker {
         functions
     }
 
-    fn run(&self) -> Vec<TypeError> {
+    fn run(mut self) -> Result<HashMap<Position, Vec<Type>>, Vec<TypeError>> {
         let mut errors = vec![];
 
         for function_rc in self.functions() {
-            if let Err(error) = type_check_function(function_rc, &self) {
-                errors.push(error);
+            let function = &*(*function_rc).borrow();
+            let checker = FunctionTypeChecker::new(function, &self);
+
+            match checker.run() {
+                Err(error) => errors.push(error),
+                Ok(position_stacks) => {
+                    self.position_stacks.extend(position_stacks);
+                }
             }
         }
 
-        errors
-    }
-}
+        // TODO #217 make type checker return main function so we don't have to look for it again in transpiler
+        if let Err(error) = self.check_main_function() {
+            errors.push(error);
+        }
 
-fn type_check_function(
-    function_rc: Rc<RefCell<Function>>,
-    type_checker: &TypeChecker,
-) -> Result<(), TypeError> {
-    let function = &*(*function_rc).borrow();
-    FunctionTypeChecker::new(function, type_checker).run()
+        if errors.is_empty() {
+            Ok(self.position_stacks)
+        } else {
+            Err(errors)
+        }
+    }
+
+    fn check_main_function(&self) -> Result<(), TypeError> {
+        let key = (self.entrypoint_path.clone(), "main".to_owned());
+
+        let Some(identifiable) = self.identifiables.get(&key) else {
+            return main_function_not_found(self.entrypoint_path.clone());
+        };
+
+        let Identifiable::Function(function) = identifiable else {
+            unreachable!(); // TODO #217
+        };
+
+        let function = &*function.borrow();
+
+        let arguments = function.arguments();
+
+        match arguments.len() {
+            0 => (),
+            1 => {
+                let argument_type = &arguments.get(0).unwrap().type_;
+                if !self.is_valid_main_argument_type(argument_type) {
+                    return invalid_main_signature(function.position());
+                }
+            }
+            _ => return invalid_main_signature(function.position()),
+        }
+
+        match function.return_types() {
+            ReturnTypes::Never => (),
+            ReturnTypes::Sometimes(return_types) => match return_types.len() {
+                0 => (),
+                1 => {
+                    let return_type = return_types.get(0).unwrap();
+                    if !self.is_valid_main_return_type(return_type) {
+                        return invalid_main_signature(function.position());
+                    }
+                }
+                _ => return invalid_main_signature(function.position()),
+            },
+        }
+
+        Ok(())
+    }
+
+    fn is_valid_main_argument_type(&self, type_: &Type) -> bool {
+        let Type::Struct(struct_type) = type_ else {
+            return false;
+        };
+
+        let parameters = struct_type.parameters.clone();
+
+        let struct_ = &*struct_type.struct_.borrow();
+
+        if struct_.name().as_str() != "vec" {
+            return false;
+        }
+
+        if parameters.len() != 1 {
+            return false;
+        }
+
+        let parameter = parameters.get(0).unwrap();
+
+        let Type::Struct(parameter_struct_type) = parameter else {
+            return false;
+        };
+
+        let parameter_struct = &*parameter_struct_type.struct_.borrow();
+
+        if parameter_struct.name().as_str() != "str" {
+            return false;
+        }
+
+        true
+    }
+
+    fn is_valid_main_return_type(&self, type_: &Type) -> bool {
+        let Type::Struct(struct_type) = type_ else {
+            return false;
+        };
+
+        let struct_ = &*struct_type.struct_.borrow();
+
+        if struct_.name().as_str() != "int" {
+            return false;
+        }
+
+        true
+    }
 }
 
 #[derive(Clone)]
@@ -130,8 +232,8 @@ impl From<Argument> for LocalVariable {
 pub struct FunctionTypeChecker<'a> {
     function: &'a Function,
     type_checker: &'a TypeChecker,
-
     local_variables: HashMap<String, LocalVariable>,
+    position_stacks: HashMap<Position, Vec<Type>>,
 }
 
 impl<'a> FunctionTypeChecker<'a> {
@@ -146,12 +248,13 @@ impl<'a> FunctionTypeChecker<'a> {
             function,
             type_checker,
             local_variables,
+            position_stacks: HashMap::new(),
         }
     }
 
-    fn run(&mut self) -> Result<(), TypeError> {
+    fn run(mut self) -> Result<HashMap<Position, Vec<Type>>, TypeError> {
         if self.function.is_builtin {
-            return Ok(());
+            return Ok(self.position_stacks);
         }
 
         self.print_signature();
@@ -181,7 +284,7 @@ impl<'a> FunctionTypeChecker<'a> {
             );
         }
 
-        Ok(())
+        Ok(self.position_stacks)
     }
 
     fn confirm_return_types(&self, computed: &ReturnTypes) -> bool {
@@ -198,7 +301,7 @@ impl<'a> FunctionTypeChecker<'a> {
 
     fn debug_print_is_enabled() -> bool {
         // TODO #215 Make cli flag
-        env::var("AAA_DEBUG").is_ok()
+        false
     }
 
     fn print_signature(&self) {
@@ -217,13 +320,13 @@ impl<'a> FunctionTypeChecker<'a> {
         println!("");
     }
 
-    fn print_position_stack(&self, position: Position, stack: &Vec<Type>) {
-        if !Self::debug_print_is_enabled() {
-            return;
+    fn save_position_stack(&mut self, position: Position, stack: &Vec<Type>) {
+        if Self::debug_print_is_enabled() {
+            let stack_types = join_display(" ", &stack);
+            println!("{} {}", position, stack_types);
         }
 
-        let stack_types = join_display(" ", &stack);
-        println!("{} {}", position, stack_types);
+        self.position_stacks.insert(position, stack.clone());
     }
 
     fn builtin_type(&self, name: &str) -> Type {
@@ -281,7 +384,7 @@ impl<'a> FunctionTypeChecker<'a> {
 
     fn check_function_body(&mut self, mut stack: Vec<Type>, body: &FunctionBody) -> TypeResult {
         for (i, item) in body.items.iter().enumerate() {
-            self.print_position_stack(item.position(), &stack);
+            self.save_position_stack(item.position(), &stack);
 
             let item_result = self.check_function_body_item(stack, item);
 

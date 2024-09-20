@@ -6,6 +6,7 @@ mod parser;
 mod runner;
 mod tests;
 mod tokenizer;
+mod transpiler;
 mod type_checker;
 
 use runner::runner::Runner;
