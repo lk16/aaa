@@ -2,7 +2,7 @@ use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
 use crate::{
     common::{formatting::join_display_prefixed, position::Position, traits::HasPosition},
-    cross_referencer::types::identifiable::{ReturnTypes, Type},
+    cross_referencer::types::identifiable::{Identifiable, ReturnTypes, Type},
 };
 
 pub enum TypeError {
@@ -42,6 +42,7 @@ pub enum TypeError {
     MemberFunctionUnexpectedTarget(MemberFunctionUnexpectedTarget),
     MainFunctionNotFound(MainFunctionNotFound),
     InvalidMainSignature(InvalidMainSignature),
+    MainNonFunction(MainNonFunction),
 }
 
 impl Display for TypeError {
@@ -83,6 +84,7 @@ impl Display for TypeError {
             Self::MemberFunctionUnexpectedTarget(error) => write!(f, "{}", error),
             Self::MainFunctionNotFound(error) => write!(f, "{}", error),
             Self::InvalidMainSignature(error) => write!(f, "{}", error),
+            Self::MainNonFunction(error) => write!(f, "{}", error),
         }
     }
 }
@@ -1123,5 +1125,30 @@ impl Display for InvalidMainSignature {
 pub fn invalid_main_signature<T>(position: Position) -> Result<T, TypeError> {
     Err(TypeError::InvalidMainSignature(InvalidMainSignature {
         position,
+    }))
+}
+
+pub struct MainNonFunction {
+    pub position: Position,
+    pub identifiable: Identifiable,
+}
+
+impl Display for MainNonFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "{}: main should be a function, found {} instead.",
+            self.position, self.identifiable
+        )
+    }
+}
+
+pub fn main_non_function<T>(
+    position: Position,
+    identifiable: Identifiable,
+) -> Result<T, TypeError> {
+    Err(TypeError::MainNonFunction(MainNonFunction {
+        position,
+        identifiable,
     }))
 }

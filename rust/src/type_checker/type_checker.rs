@@ -37,10 +37,11 @@ use super::{
     errors::{
         assignment_type_error, branch_error, condition_error, function_type_error,
         get_field_not_found, get_field_stack_underflow, inconsistent_match_children,
-        match_non_enum, member_function_invalid_target, member_function_without_arguments,
-        parameter_count_error, return_stack_error, set_field_not_found, set_field_on_non_struct,
-        set_field_stack_underflow, set_field_type_error, unreachable_code, unreachable_default,
-        use_stack_underflow, while_error, TypeError, TypeResult,
+        main_non_function, match_non_enum, member_function_invalid_target,
+        member_function_without_arguments, parameter_count_error, return_stack_error,
+        set_field_not_found, set_field_on_non_struct, set_field_stack_underflow,
+        set_field_type_error, unreachable_code, unreachable_default, use_stack_underflow,
+        while_error, TypeError, TypeResult,
     },
 };
 
@@ -122,7 +123,7 @@ impl TypeChecker {
         };
 
         let Identifiable::Function(function_rc) = identifiable else {
-            todo!(); // TODO return proper error
+            return main_non_function(identifiable.position(), identifiable.clone());
         };
 
         let function = &*function_rc.borrow();
