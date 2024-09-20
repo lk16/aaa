@@ -3,16 +3,13 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     common::{position::Position, traits::HasPosition},
-    cross_referencer::{
-        cross_referencer,
-        types::{
-            function_body::{
-                Assignment, Boolean, Branch, CallArgument, CallEnum, CallFunction,
-                CallLocalVariable, CallStruct, Char, FunctionBody, FunctionBodyItem, FunctionType,
-                GetField, GetFunction, Integer, Match, ParsedString, Return, SetField, Use, While,
-            },
-            identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
+    cross_referencer::types::{
+        function_body::{
+            Assignment, Boolean, Branch, CallArgument, CallEnum, CallFunction, CallLocalVariable,
+            CallStruct, Char, FunctionBody, FunctionBodyItem, FunctionType, GetField, GetFunction,
+            Integer, Match, ParsedString, Return, SetField, Use, While,
         },
+        identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
     },
     transpiler::code::Code,
     type_checker::type_checker,
@@ -66,16 +63,12 @@ pub struct Transpiler {
 }
 
 impl Transpiler {
-    pub fn new(
-        transpiler_root_path: PathBuf,
-        cross_referenced: cross_referencer::Output,
-        type_checked: type_checker::Output,
-    ) -> Self {
+    pub fn new(transpiler_root_path: PathBuf, type_checked: type_checker::Output) -> Self {
         let mut functions = HashMap::new();
         let mut structs = HashMap::new();
         let mut enums = HashMap::new();
 
-        for (key, identifiable) in &cross_referenced.identifiables {
+        for (key, identifiable) in &type_checked.identifiables {
             if identifiable.is_builtin() {
                 continue;
             }

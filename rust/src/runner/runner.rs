@@ -218,8 +218,7 @@ impl Runner {
         };
 
         let transpiler_root_path = Self::get_transpiler_root_path();
-        let transpiler =
-            Transpiler::new(transpiler_root_path.clone(), cross_referenced, type_checked);
+        let transpiler = Transpiler::new(transpiler_root_path.clone(), type_checked);
 
         transpiler.run();
 

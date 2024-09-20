@@ -55,6 +55,7 @@ pub struct TypeChecker {
 pub struct Output {
     pub position_stacks: HashMap<Position, Vec<Type>>,
     pub main_function: Rc<RefCell<Function>>,
+    pub identifiables: HashMap<(PathBuf, String), Identifiable>,
 }
 
 pub fn type_check(input: cross_referencer::Output) -> Result<Output, Vec<TypeError>> {
@@ -115,6 +116,7 @@ impl TypeChecker {
         let output = Output {
             position_stacks: self.position_stacks,
             main_function: main_function.unwrap(),
+            identifiables: self.identifiables,
         };
 
         Ok(output)
