@@ -15,7 +15,7 @@ use crate::{
     type_checker::type_checker,
 };
 use lazy_static::lazy_static;
-use std::{cell::RefCell, collections::HashMap, env, fs, path::PathBuf, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fs, path::PathBuf, rc::Rc};
 
 lazy_static! {
     pub static ref CUSTOM_FUNCTION_NAMES: HashMap<&'static str, &'static str> = {
@@ -59,10 +59,15 @@ pub struct Transpiler {
     pub enums: HashMap<(PathBuf, String), Rc<RefCell<Enum>>>,
     pub functions: HashMap<(PathBuf, String), Rc<RefCell<Function>>>,
     pub main_function: Rc<RefCell<Function>>,
+    pub verbose: bool,
 }
 
 impl Transpiler {
-    pub fn new(transpiler_root_path: PathBuf, type_checked: type_checker::Output) -> Self {
+    pub fn new(
+        transpiler_root_path: PathBuf,
+        type_checked: type_checker::Output,
+        verbose: bool,
+    ) -> Self {
         let mut functions = HashMap::new();
         let mut structs = HashMap::new();
         let mut enums = HashMap::new();
@@ -92,6 +97,7 @@ impl Transpiler {
             enums,
             functions,
             main_function: type_checked.main_function,
+            verbose,
         }
     }
 
@@ -103,8 +109,7 @@ impl Transpiler {
         fs::create_dir_all(&self.transpiler_root_path.join("src")).unwrap();
         let main_path = self.transpiler_root_path.join("src/main.rs");
 
-        // TODO #215 use CLI args here instead of env var
-        if env::var("AAA_DEBUG").is_ok() {
+        if self.verbose {
             println!("writing to {:?}", main_path);
         }
 

@@ -188,7 +188,7 @@ mod tests {
 
             // Enable optimizations with `--release` to speed up running doctests.
             let output = Command::new("cargo")
-                .args(["run", "-q", "--release", &main_file])
+                .args(["run", "-q", "--release", "check", &main_file])
                 .output()
                 .expect("Failed to execute command");
 

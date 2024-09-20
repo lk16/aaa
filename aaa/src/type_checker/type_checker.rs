@@ -49,6 +49,7 @@ pub struct TypeChecker {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
     pub builtins_path: PathBuf,
     pub entrypoint_path: PathBuf,
+    pub verbose: bool,
 }
 
 pub struct Output {
@@ -56,16 +57,20 @@ pub struct Output {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
 }
 
-pub fn type_check(input: cross_referencer::Output) -> Result<Output, Vec<TypeError>> {
-    TypeChecker::new(input).run()
+pub fn type_check(
+    input: cross_referencer::Output,
+    verbose: bool,
+) -> Result<Output, Vec<TypeError>> {
+    TypeChecker::new(input, verbose).run()
 }
 
 impl TypeChecker {
-    fn new(input: cross_referencer::Output) -> Self {
+    fn new(input: cross_referencer::Output, verbose: bool) -> Self {
         Self {
             identifiables: input.identifiables,
             builtins_path: input.builtins_path,
             entrypoint_path: input.entrypoint_path,
+            verbose,
         }
     }
 
@@ -274,7 +279,7 @@ impl<'a> FunctionTypeChecker<'a> {
             Err(error) => return Err(error),
         };
 
-        if Self::debug_print_is_enabled() {
+        if self.type_checker.verbose {
             println!("computed return type: {}", computed);
         }
 
@@ -302,13 +307,8 @@ impl<'a> FunctionTypeChecker<'a> {
         }
     }
 
-    fn debug_print_is_enabled() -> bool {
-        // TODO #215 Make cli flag
-        false
-    }
-
     fn print_signature(&self) {
-        if !Self::debug_print_is_enabled() {
+        if !self.type_checker.verbose {
             return;
         }
 
@@ -324,7 +324,7 @@ impl<'a> FunctionTypeChecker<'a> {
     }
 
     fn print_position_stack(&mut self, position: Position, stack: &Vec<Type>) {
-        if !Self::debug_print_is_enabled() {
+        if !self.type_checker.verbose {
             return;
         }
 
