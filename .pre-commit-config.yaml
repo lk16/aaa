@@ -45,13 +45,13 @@ repos:
     hooks:
       - id: fmt
         pass_filenames: false
-        args: [--manifest-path, rust/Cargo.toml]
+        args: [--manifest-path, aaa/Cargo.toml]
       - id: cargo-check
         pass_filenames: false
-        args: [--manifest-path, rust/Cargo.toml]
+        args: [--manifest-path, aaa/Cargo.toml]
       - id: clippy
         pass_filenames: false
-        args: [--manifest-path, rust/Cargo.toml]
+        args: [--manifest-path, aaa/Cargo.toml]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.8

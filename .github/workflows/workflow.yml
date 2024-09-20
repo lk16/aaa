@@ -47,8 +47,8 @@ jobs:
       - name: Build
         run: |
           export AAA_STDLIB_PATH=$(pwd)/stdlib
-          cargo build --manifest-path rust/Cargo.toml
+          cargo build --manifest-path aaa/Cargo.toml
       - name: Test
         run: |
           export AAA_STDLIB_PATH=$(pwd)/stdlib
-          cargo test --manifest-path rust/Cargo.toml
+          cargo test --manifest-path aaa/Cargo.toml
