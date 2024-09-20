@@ -23,14 +23,19 @@ jobs:
           enable-pep582: false # Enable PEP 582 package loading globally
           allow-python-prereleases: false # Allow prerelease versions of Python to be installed. For example if only 3.12-dev is available, 3.12 will fallback to 3.12-dev
       - name: Install dependencies
-        run: pdm install
+        run: |
+          cd python
+          pdm install
       - name: Run linters
-        run: pdm add pre-commit &&
+        run: |
+          cd python
+          pdm add pre-commit
           pdm run pre-commit run --all-files
       - name: Run Python tests
         run: |
+          cd python
           pdm install --production
-          export AAA_STDLIB_PATH=$(pwd)/stdlib
+          export AAA_STDLIB_PATH=$(pwd)/../stdlib
           pdm run pytest --color=yes --cov=aaa --cov-report=term-missing -x -vv
   build-rust:
     runs-on: ubuntu-latest

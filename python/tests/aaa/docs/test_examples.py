@@ -29,14 +29,14 @@ def expected_fizzbuzz_output() -> str:
 
 
 EXPECTED_EXAMPLE_OUTPUT = {
-    "examples/one_to_ten.aaa": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n",
-    "examples/print_number.aaa": "42\n",
-    "examples/fizzbuzz.aaa": expected_fizzbuzz_output(),
-    "examples/print_twice.aaa": "hello!\nhello!\n",
-    "examples/function_demo.aaa": "a=1\nb=2\nc=3\n",
-    "examples/typing_playground.aaa": "five = 5\n3 5 max = 5\n"
+    "../examples/one_to_ten.aaa": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n",
+    "../examples/print_number.aaa": "42\n",
+    "../examples/fizzbuzz.aaa": expected_fizzbuzz_output(),
+    "../examples/print_twice.aaa": "hello!\nhello!\n",
+    "../examples/function_demo.aaa": "a=1\nb=2\nc=3\n",
+    "../examples/typing_playground.aaa": "five = 5\n3 5 max = 5\n"
     + "4 factorial = 24\n7 dup_twice = 777\n",
-    "examples/renamed_import/main.aaa": "5",
+    "../examples/renamed_import/main.aaa": "5",
 }
 
 
@@ -44,21 +44,23 @@ EXPECTED_EXAMPLE_OUTPUT = {
     ["entrypoint", "expected_output"],
     [
         pytest.param(
-            "examples/one_to_ten.aaa",
+            "../examples/one_to_ten.aaa",
             "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n",
             id="one_to_ten.aaa",
         ),
         pytest.param(
-            "examples/fizzbuzz.aaa",
+            "../examples/fizzbuzz.aaa",
             expected_fizzbuzz_output(),
             id="fizzbuzz.aaa",
         ),
         pytest.param(
-            "examples/renamed_import/main.aaa",
+            "../examples/renamed_import/main.aaa",
             "5\n",
             id="renamed_import/main.aaa",
         ),
-        pytest.param("examples/import/main.aaa", "5\n", id="renamed_import/main.aaa"),
+        pytest.param(
+            "../examples/import/main.aaa", "5\n", id="renamed_import/main.aaa"
+        ),
     ],
 )
 def test_examples(
@@ -78,7 +80,7 @@ def test_examples(
 
 
 def test_http_server() -> None:
-    entrypoint = Path("examples/http_server.aaa")
+    entrypoint = Path("../examples/http_server.aaa")
     runner = Runner(entrypoint)
 
     binary = "/tmp/aaa/test_http_server"
@@ -106,7 +108,7 @@ def test_http_server() -> None:
 
 @pytest.mark.skip()  # TODO #131 Extend http examples and redo Aaa's `connect()`
 def test_http_client(capfd: CaptureFixture[str]) -> None:
-    entrypoint = Path("examples/http_client.aaa")
+    entrypoint = Path("../examples/http_client.aaa")
     runner = Runner(entrypoint)
     runner.run(
         compile=True,
