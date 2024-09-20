@@ -49,11 +49,9 @@ pub struct TypeChecker {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
     pub builtins_path: PathBuf,
     pub entrypoint_path: PathBuf,
-    pub position_stacks: HashMap<Position, Vec<Type>>,
 }
 
 pub struct Output {
-    pub position_stacks: HashMap<Position, Vec<Type>>,
     pub main_function: Rc<RefCell<Function>>,
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
 }
@@ -68,7 +66,6 @@ impl TypeChecker {
             identifiables: input.identifiables,
             builtins_path: input.builtins_path,
             entrypoint_path: input.entrypoint_path,
-            position_stacks: HashMap::new(),
         }
     }
 
@@ -87,18 +84,15 @@ impl TypeChecker {
         functions
     }
 
-    fn run(mut self) -> Result<Output, Vec<TypeError>> {
+    fn run(self) -> Result<Output, Vec<TypeError>> {
         let mut errors = vec![];
 
         for function_rc in self.functions() {
             let function = &*(*function_rc).borrow();
             let checker = FunctionTypeChecker::new(function, &self);
 
-            match checker.run() {
-                Err(error) => errors.push(error),
-                Ok(position_stacks) => {
-                    self.position_stacks.extend(position_stacks);
-                }
+            if let Err(error) = checker.run() {
+                errors.push(error);
             }
         }
 
@@ -114,7 +108,6 @@ impl TypeChecker {
         }
 
         let output = Output {
-            position_stacks: self.position_stacks,
             main_function: main_function.unwrap(),
             identifiables: self.identifiables,
         };
@@ -245,7 +238,6 @@ pub struct FunctionTypeChecker<'a> {
     function: &'a Function,
     type_checker: &'a TypeChecker,
     local_variables: HashMap<String, LocalVariable>,
-    position_stacks: HashMap<Position, Vec<Type>>,
 }
 
 impl<'a> FunctionTypeChecker<'a> {
@@ -260,13 +252,12 @@ impl<'a> FunctionTypeChecker<'a> {
             function,
             type_checker,
             local_variables,
-            position_stacks: HashMap::new(),
         }
     }
 
-    fn run(mut self) -> Result<HashMap<Position, Vec<Type>>, TypeError> {
+    fn run(mut self) -> Result<(), TypeError> {
         if self.function.is_builtin {
-            return Ok(self.position_stacks);
+            return Ok(());
         }
 
         self.print_signature();
@@ -296,7 +287,7 @@ impl<'a> FunctionTypeChecker<'a> {
             );
         }
 
-        Ok(self.position_stacks)
+        Ok(())
     }
 
     fn confirm_return_types(&self, computed: &ReturnTypes) -> bool {
@@ -332,13 +323,13 @@ impl<'a> FunctionTypeChecker<'a> {
         println!("");
     }
 
-    fn save_position_stack(&mut self, position: Position, stack: &Vec<Type>) {
-        if Self::debug_print_is_enabled() {
-            let stack_types = join_display(" ", &stack);
-            println!("{} {}", position, stack_types);
+    fn print_position_stack(&mut self, position: Position, stack: &Vec<Type>) {
+        if !Self::debug_print_is_enabled() {
+            return;
         }
 
-        self.position_stacks.insert(position, stack.clone());
+        let stack_types = join_display(" ", &stack);
+        println!("{} {}", position, stack_types);
     }
 
     fn builtin_type(&self, name: &str) -> Type {
@@ -396,7 +387,7 @@ impl<'a> FunctionTypeChecker<'a> {
 
     fn check_function_body(&mut self, mut stack: Vec<Type>, body: &FunctionBody) -> TypeResult {
         for (i, item) in body.items.iter().enumerate() {
-            self.save_position_stack(item.position(), &stack);
+            self.print_position_stack(item.position(), &stack);
 
             let item_result = self.check_function_body_item(stack, item);
 
@@ -715,6 +706,9 @@ impl<'a> FunctionTypeChecker<'a> {
             );
         };
 
+        // Update target, such that we can use this in transpiler
+        get_field.target.set(Some(struct_type.struct_.clone()));
+
         let struct_ = (*struct_type.struct_).borrow();
 
         let Some(field_type) = struct_.field(&get_field.field_name) else {
@@ -745,6 +739,9 @@ impl<'a> FunctionTypeChecker<'a> {
                 type_,
             );
         };
+
+        // Update target, such that we can use this in transpiler
+        set_field.target.set(Some(struct_type.struct_.clone()));
 
         let struct_ = (*struct_type.struct_).borrow();
 

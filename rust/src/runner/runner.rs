@@ -214,7 +214,7 @@ impl Runner {
                 eprintln!("Found {} errors", type_errors.len());
                 return 1;
             }
-            Ok(position_stacks) => position_stacks,
+            Ok(type_checked) => type_checked,
         };
 
         let transpiler_root_path = Self::get_transpiler_root_path();

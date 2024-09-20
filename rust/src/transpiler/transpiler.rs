@@ -2,7 +2,7 @@ use chrono::Local;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    common::{position::Position, traits::HasPosition},
+    common::traits::HasPosition,
     cross_referencer::types::{
         function_body::{
             Assignment, Boolean, Branch, CallArgument, CallEnum, CallFunction, CallLocalVariable,
@@ -58,7 +58,6 @@ pub struct Transpiler {
     pub structs: HashMap<(PathBuf, String), Rc<RefCell<Struct>>>,
     pub enums: HashMap<(PathBuf, String), Rc<RefCell<Enum>>>,
     pub functions: HashMap<(PathBuf, String), Rc<RefCell<Function>>>,
-    pub position_stacks: HashMap<Position, Vec<Type>>,
     pub main_function: Rc<RefCell<Function>>,
 }
 
@@ -92,7 +91,6 @@ impl Transpiler {
             structs,
             enums,
             functions,
-            position_stacks: type_checked.position_stacks,
             main_function: type_checked.main_function,
         }
     }
@@ -707,28 +705,11 @@ impl Transpiler {
         todo!(); // TODO #219 Implement Enum
     }
 
-    fn get_stack_top_struct(&self, position: &Position) -> Rc<RefCell<Struct>> {
-        // TODO remove position_stacks and this function
-        // TODO make GetField and SetField have a target Struct field
-
-        let Some(stack) = self.position_stacks.get(position) else {
-            unreachable!();
-        };
-
-        let Some(top_type) = stack.last() else {
-            unreachable!();
-        };
-
-        let Type::Struct(struct_type) = top_type else {
-            unreachable!();
-        };
-
-        struct_type.struct_.clone()
-    }
-
     fn generate_get_field(&self, get_field: &GetField) -> Code {
-        let struct_ = self.get_stack_top_struct(&get_field.position);
-        let struct_ = &*struct_.borrow();
+        let struct_rc = get_field.target.take().unwrap();
+        get_field.target.set(Some(struct_rc.clone()));
+
+        let struct_ = &*struct_rc.borrow();
 
         let struct_name = self.generate_struct_name(struct_);
 
@@ -747,8 +728,10 @@ impl Transpiler {
     }
 
     fn generate_set_field(&self, set_field: &SetField) -> Code {
-        let struct_ = self.get_stack_top_struct(&set_field.position);
-        let struct_ = &*struct_.borrow();
+        let struct_rc = set_field.target.take().unwrap();
+        set_field.target.set(Some(struct_rc.clone()));
+
+        let struct_ = &*struct_rc.borrow();
 
         let struct_name = self.generate_struct_name(struct_);
 

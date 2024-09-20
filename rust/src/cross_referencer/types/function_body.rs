@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::rc::Rc;
 use std::{cell::RefCell, fmt::Display};
 
@@ -224,12 +225,14 @@ pub struct Return {
 pub struct GetField {
     pub position: Position,
     pub field_name: String,
+    pub target: Cell<Option<Rc<RefCell<Struct>>>>,
 }
 
 pub struct SetField {
     pub position: Position,
     pub field_name: String,
     pub body: FunctionBody,
+    pub target: Cell<Option<Rc<RefCell<Struct>>>>,
 }
 
 pub struct Use {
