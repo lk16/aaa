@@ -1744,3 +1744,16 @@ struct dummy {}
 /// $SOURCE_PATH/main.aaa: No main function found
 ///
 /// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: main not a function
+
+struct main {}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: main should be a function, found struct main instead.
+///
+/// Found 1 errors

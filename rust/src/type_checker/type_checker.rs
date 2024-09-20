@@ -36,12 +36,12 @@ use super::{
     call_checker::FunctionCallChecker,
     errors::{
         assignment_type_error, branch_error, condition_error, function_type_error,
-        get_field_not_found, get_field_stack_underflow, get_function_non_function,
-        get_function_not_found, inconsistent_match_children, match_non_enum,
-        member_function_invalid_target, member_function_without_arguments, parameter_count_error,
-        return_stack_error, set_field_not_found, set_field_on_non_struct,
-        set_field_stack_underflow, set_field_type_error, unreachable_code, unreachable_default,
-        use_stack_underflow, while_error, TypeError, TypeResult,
+        get_field_not_found, get_field_stack_underflow, inconsistent_match_children,
+        main_non_function, match_non_enum, member_function_invalid_target,
+        member_function_without_arguments, parameter_count_error, return_stack_error,
+        set_field_not_found, set_field_on_non_struct, set_field_stack_underflow,
+        set_field_type_error, unreachable_code, unreachable_default, use_stack_underflow,
+        while_error, TypeError, TypeResult,
     },
 };
 
@@ -49,12 +49,14 @@ pub struct TypeChecker {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
     pub builtins_path: PathBuf,
     pub entrypoint_path: PathBuf,
-    pub position_stacks: HashMap<Position, Vec<Type>>,
 }
 
-pub fn type_check(
-    input: cross_referencer::Output,
-) -> Result<HashMap<Position, Vec<Type>>, Vec<TypeError>> {
+pub struct Output {
+    pub main_function: Rc<RefCell<Function>>,
+    pub identifiables: HashMap<(PathBuf, String), Identifiable>,
+}
+
+pub fn type_check(input: cross_referencer::Output) -> Result<Output, Vec<TypeError>> {
     TypeChecker::new(input).run()
 }
 
@@ -64,7 +66,6 @@ impl TypeChecker {
             identifiables: input.identifiables,
             builtins_path: input.builtins_path,
             entrypoint_path: input.entrypoint_path,
-            position_stacks: HashMap::new(),
         }
     }
 
@@ -83,45 +84,49 @@ impl TypeChecker {
         functions
     }
 
-    fn run(mut self) -> Result<HashMap<Position, Vec<Type>>, Vec<TypeError>> {
+    fn run(self) -> Result<Output, Vec<TypeError>> {
         let mut errors = vec![];
 
         for function_rc in self.functions() {
             let function = &*(*function_rc).borrow();
             let checker = FunctionTypeChecker::new(function, &self);
 
-            match checker.run() {
-                Err(error) => errors.push(error),
-                Ok(position_stacks) => {
-                    self.position_stacks.extend(position_stacks);
-                }
+            if let Err(error) = checker.run() {
+                errors.push(error);
             }
         }
 
-        // TODO #217 make type checker return main function so we don't have to look for it again in transpiler
-        if let Err(error) = self.check_main_function() {
-            errors.push(error);
+        let mut main_function: Option<Rc<RefCell<Function>>> = None;
+
+        match self.check_main_function() {
+            Err(error) => errors.push(error),
+            Ok(function) => main_function = Some(function),
         }
 
-        if errors.is_empty() {
-            Ok(self.position_stacks)
-        } else {
-            Err(errors)
+        if !errors.is_empty() {
+            return Err(errors);
         }
+
+        let output = Output {
+            main_function: main_function.unwrap(),
+            identifiables: self.identifiables,
+        };
+
+        Ok(output)
     }
 
-    fn check_main_function(&self) -> Result<(), TypeError> {
+    fn check_main_function(&self) -> Result<Rc<RefCell<Function>>, TypeError> {
         let key = (self.entrypoint_path.clone(), "main".to_owned());
 
         let Some(identifiable) = self.identifiables.get(&key) else {
             return main_function_not_found(self.entrypoint_path.clone());
         };
 
-        let Identifiable::Function(function) = identifiable else {
-            unreachable!(); // TODO #217
+        let Identifiable::Function(function_rc) = identifiable else {
+            return main_non_function(identifiable.position(), identifiable.clone());
         };
 
-        let function = &*function.borrow();
+        let function = &*function_rc.borrow();
 
         let arguments = function.arguments();
 
@@ -150,7 +155,7 @@ impl TypeChecker {
             },
         }
 
-        Ok(())
+        Ok(function_rc.clone())
     }
 
     fn is_valid_main_argument_type(&self, type_: &Type) -> bool {
@@ -233,7 +238,6 @@ pub struct FunctionTypeChecker<'a> {
     function: &'a Function,
     type_checker: &'a TypeChecker,
     local_variables: HashMap<String, LocalVariable>,
-    position_stacks: HashMap<Position, Vec<Type>>,
 }
 
 impl<'a> FunctionTypeChecker<'a> {
@@ -248,13 +252,12 @@ impl<'a> FunctionTypeChecker<'a> {
             function,
             type_checker,
             local_variables,
-            position_stacks: HashMap::new(),
         }
     }
 
-    fn run(mut self) -> Result<HashMap<Position, Vec<Type>>, TypeError> {
+    fn run(mut self) -> Result<(), TypeError> {
         if self.function.is_builtin {
-            return Ok(self.position_stacks);
+            return Ok(());
         }
 
         self.print_signature();
@@ -284,7 +287,7 @@ impl<'a> FunctionTypeChecker<'a> {
             );
         }
 
-        Ok(self.position_stacks)
+        Ok(())
     }
 
     fn confirm_return_types(&self, computed: &ReturnTypes) -> bool {
@@ -320,13 +323,13 @@ impl<'a> FunctionTypeChecker<'a> {
         println!("");
     }
 
-    fn save_position_stack(&mut self, position: Position, stack: &Vec<Type>) {
-        if Self::debug_print_is_enabled() {
-            let stack_types = join_display(" ", &stack);
-            println!("{} {}", position, stack_types);
+    fn print_position_stack(&mut self, position: Position, stack: &Vec<Type>) {
+        if !Self::debug_print_is_enabled() {
+            return;
         }
 
-        self.position_stacks.insert(position, stack.clone());
+        let stack_types = join_display(" ", &stack);
+        println!("{} {}", position, stack_types);
     }
 
     fn builtin_type(&self, name: &str) -> Type {
@@ -384,7 +387,7 @@ impl<'a> FunctionTypeChecker<'a> {
 
     fn check_function_body(&mut self, mut stack: Vec<Type>, body: &FunctionBody) -> TypeResult {
         for (i, item) in body.items.iter().enumerate() {
-            self.save_position_stack(item.position(), &stack);
+            self.print_position_stack(item.position(), &stack);
 
             let item_result = self.check_function_body_item(stack, item);
 
@@ -703,6 +706,9 @@ impl<'a> FunctionTypeChecker<'a> {
             );
         };
 
+        // Update target, such that we can use this in transpiler
+        get_field.target.set(Some(struct_type.struct_.clone()));
+
         let struct_ = (*struct_type.struct_).borrow();
 
         let Some(field_type) = struct_.field(&get_field.field_name) else {
@@ -733,6 +739,9 @@ impl<'a> FunctionTypeChecker<'a> {
                 type_,
             );
         };
+
+        // Update target, such that we can use this in transpiler
+        set_field.target.set(Some(struct_type.struct_.clone()));
 
         let struct_ = (*struct_type.struct_).borrow();
 
@@ -798,37 +807,7 @@ impl<'a> FunctionTypeChecker<'a> {
     }
 
     fn check_get_function(&self, mut stack: Vec<Type>, get_function: &GetFunction) -> TypeResult {
-        let builtins_key = (
-            self.type_checker.builtins_path.clone(),
-            get_function.function_name.clone(),
-        );
-
-        let key = (
-            get_function.position.path.clone(),
-            get_function.function_name.clone(),
-        );
-
-        let Some(identifiable) = self
-            .type_checker
-            .identifiables
-            .get(&builtins_key)
-            .or(self.type_checker.identifiables.get(&key))
-        else {
-            return get_function_not_found(
-                get_function.position.clone(),
-                get_function.function_name.clone(),
-            );
-        };
-
-        let Identifiable::Function(function) = identifiable else {
-            return get_function_non_function(
-                get_function.position.clone(),
-                get_function.function_name.clone(),
-                identifiable.clone(),
-            );
-        };
-
-        let function = (**function).borrow();
+        let function = &*get_function.target.borrow();
         let signature = function.signature();
 
         let function_type = Type::FunctionPointer(FunctionPointerType {

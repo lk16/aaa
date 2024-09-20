@@ -1,5 +1,5 @@
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     collections::{hash_map::Entry as HashMapEntry, HashMap, HashSet},
     fmt::Debug,
     path::PathBuf,
@@ -870,7 +870,6 @@ impl CrossReferencer {
     }
 }
 
-// TODO #217 Move resolving of FunctionBody into type checker
 struct FunctionBodyResolver<'a> {
     cross_referencer: &'a CrossReferencer,
     function: &'a Function,
@@ -1119,7 +1118,6 @@ impl<'a> FunctionBodyResolver<'a> {
             .cross_referencer
             .get_identifiable(position.clone(), name.clone())
         {
-            // TODO #217 remove this error conversion here
             Err(_) => return get_function_not_found(position, name),
             Ok(identifiable) => identifiable,
         };
@@ -1130,7 +1128,6 @@ impl<'a> FunctionBodyResolver<'a> {
 
         Ok(FunctionBodyItem::GetFunction(GetFunction {
             position: parsed.position.clone(),
-            function_name: parsed.target.value.clone(),
             target,
         }))
     }
@@ -1234,6 +1231,7 @@ impl<'a> FunctionBodyResolver<'a> {
         let get_field = GetField {
             position: parsed.position.clone(),
             field_name: parsed.field_name.value.clone(),
+            target: Cell::new(None), // Target is set in type checker
         };
 
         Ok(FunctionBodyItem::GetField(get_field))
@@ -1247,6 +1245,7 @@ impl<'a> FunctionBodyResolver<'a> {
             position: parsed.position.clone(),
             field_name: parsed.field_name.value.clone(),
             body: self.resolve_function_body(&parsed.body)?,
+            target: Cell::new(None), // Target is set in type checker
         };
 
         Ok(FunctionBodyItem::SetField(set_field))

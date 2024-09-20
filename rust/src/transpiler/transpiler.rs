@@ -2,19 +2,17 @@ use chrono::Local;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    common::{position::Position, traits::HasPosition},
-    cross_referencer::{
-        cross_referencer,
-        types::{
-            function_body::{
-                Assignment, Boolean, Branch, CallArgument, CallEnum, CallFunction,
-                CallLocalVariable, CallStruct, Char, FunctionBody, FunctionBodyItem, FunctionType,
-                GetField, GetFunction, Integer, Match, ParsedString, Return, SetField, Use, While,
-            },
-            identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
+    common::traits::HasPosition,
+    cross_referencer::types::{
+        function_body::{
+            Assignment, Boolean, Branch, CallArgument, CallEnum, CallFunction, CallLocalVariable,
+            CallStruct, Char, FunctionBody, FunctionBodyItem, FunctionType, GetField, GetFunction,
+            Integer, Match, ParsedString, Return, SetField, Use, While,
         },
+        identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
     },
     transpiler::code::Code,
+    type_checker::type_checker,
 };
 use lazy_static::lazy_static;
 use std::{cell::RefCell, collections::HashMap, env, fs, path::PathBuf, rc::Rc};
@@ -57,25 +55,19 @@ lazy_static! {
 
 pub struct Transpiler {
     transpiler_root_path: PathBuf,
-    pub identifiables: HashMap<(PathBuf, String), Identifiable>,
-    pub entrypoint_path: PathBuf,
     pub structs: HashMap<(PathBuf, String), Rc<RefCell<Struct>>>,
     pub enums: HashMap<(PathBuf, String), Rc<RefCell<Enum>>>,
     pub functions: HashMap<(PathBuf, String), Rc<RefCell<Function>>>,
-    pub position_stacks: HashMap<Position, Vec<Type>>,
+    pub main_function: Rc<RefCell<Function>>,
 }
 
 impl Transpiler {
-    pub fn new(
-        transpiler_root_path: PathBuf,
-        cross_referenced: cross_referencer::Output,
-        position_stacks: HashMap<Position, Vec<Type>>,
-    ) -> Self {
+    pub fn new(transpiler_root_path: PathBuf, type_checked: type_checker::Output) -> Self {
         let mut functions = HashMap::new();
         let mut structs = HashMap::new();
         let mut enums = HashMap::new();
 
-        for (key, identifiable) in &cross_referenced.identifiables {
+        for (key, identifiable) in &type_checked.identifiables {
             if identifiable.is_builtin() {
                 continue;
             }
@@ -96,12 +88,10 @@ impl Transpiler {
 
         Self {
             transpiler_root_path,
-            identifiables: cross_referenced.identifiables,
-            entrypoint_path: cross_referenced.entrypoint_path,
             structs,
             enums,
             functions,
-            position_stacks,
+            main_function: type_checked.main_function,
         }
     }
 
@@ -427,14 +417,7 @@ impl Transpiler {
     }
 
     fn generate_main_function(&self) -> Code {
-        let key = (self.entrypoint_path.clone(), "main".to_owned());
-        let main_function = self.identifiables.get(&key).unwrap();
-
-        let Identifiable::Function(main_function) = main_function else {
-            unreachable!();
-        };
-
-        let main_function = &*main_function.borrow();
+        let main_function = &*self.main_function.borrow();
 
         let main_func_name = self.generate_function_name(main_function);
 
@@ -722,28 +705,11 @@ impl Transpiler {
         todo!(); // TODO #219 Implement Enum
     }
 
-    fn get_stack_top_struct(&self, position: &Position) -> Rc<RefCell<Struct>> {
-        // TODO #217 remove position_stacks and this function
-        // TODO #217 make GetField and SetField have a target Struct field
-
-        let Some(stack) = self.position_stacks.get(position) else {
-            unreachable!();
-        };
-
-        let Some(top_type) = stack.last() else {
-            unreachable!();
-        };
-
-        let Type::Struct(struct_type) = top_type else {
-            unreachable!();
-        };
-
-        struct_type.struct_.clone()
-    }
-
     fn generate_get_field(&self, get_field: &GetField) -> Code {
-        let struct_ = self.get_stack_top_struct(&get_field.position);
-        let struct_ = &*struct_.borrow();
+        let struct_rc = get_field.target.take().unwrap();
+        get_field.target.set(Some(struct_rc.clone()));
+
+        let struct_ = &*struct_rc.borrow();
 
         let struct_name = self.generate_struct_name(struct_);
 
@@ -762,8 +728,10 @@ impl Transpiler {
     }
 
     fn generate_set_field(&self, set_field: &SetField) -> Code {
-        let struct_ = self.get_stack_top_struct(&set_field.position);
-        let struct_ = &*struct_.borrow();
+        let struct_rc = set_field.target.take().unwrap();
+        set_field.target.set(Some(struct_rc.clone()));
+
+        let struct_ = &*struct_rc.borrow();
 
         let struct_name = self.generate_struct_name(struct_);
 

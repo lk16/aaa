@@ -2,9 +2,7 @@ use std::{fmt::Display, path::PathBuf};
 
 use crate::{
     common::position::Position,
-    type_checker::errors::{
-        GetFunctionNonFunction, GetFunctionNotFound, NameCollision, NameCollisionItem,
-    },
+    type_checker::errors::{NameCollision, NameCollisionItem},
 };
 
 use super::types::identifiable::Identifiable;
@@ -154,6 +152,21 @@ pub fn name_collision<T>(
     }))
 }
 
+pub struct GetFunctionNotFound {
+    pub position: Position,
+    pub function_name: String,
+}
+
+impl Display for GetFunctionNotFound {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "{}: Cannot get function {}, it does not exist.",
+            self.position, self.function_name
+        )
+    }
+}
+
 pub fn get_function_not_found<T>(
     position: Position,
     function_name: String,
@@ -164,6 +177,22 @@ pub fn get_function_not_found<T>(
             function_name,
         },
     ))
+}
+
+pub struct GetFunctionNonFunction {
+    pub position: Position,
+    pub function_name: String,
+    pub identifiable: Identifiable,
+}
+
+impl Display for GetFunctionNonFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "{}: Cannot get function {}, found {} instead.",
+            self.position, self.function_name, self.identifiable
+        )
+    }
 }
 
 pub fn get_function_non_function<T>(
