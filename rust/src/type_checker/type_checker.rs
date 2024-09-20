@@ -52,9 +52,12 @@ pub struct TypeChecker {
     pub position_stacks: HashMap<Position, Vec<Type>>,
 }
 
-pub fn type_check(
-    input: cross_referencer::Output,
-) -> Result<HashMap<Position, Vec<Type>>, Vec<TypeError>> {
+pub struct Output {
+    pub position_stacks: HashMap<Position, Vec<Type>>,
+    pub main_function: Rc<RefCell<Function>>,
+}
+
+pub fn type_check(input: cross_referencer::Output) -> Result<Output, Vec<TypeError>> {
     TypeChecker::new(input).run()
 }
 
@@ -83,7 +86,7 @@ impl TypeChecker {
         functions
     }
 
-    fn run(mut self) -> Result<HashMap<Position, Vec<Type>>, Vec<TypeError>> {
+    fn run(mut self) -> Result<Output, Vec<TypeError>> {
         let mut errors = vec![];
 
         for function_rc in self.functions() {
@@ -98,30 +101,37 @@ impl TypeChecker {
             }
         }
 
-        // TODO #217 make type checker return main function so we don't have to look for it again in transpiler
-        if let Err(error) = self.check_main_function() {
-            errors.push(error);
+        let mut main_function: Option<Rc<RefCell<Function>>> = None;
+
+        match self.check_main_function() {
+            Err(error) => errors.push(error),
+            Ok(function) => main_function = Some(function),
         }
 
-        if errors.is_empty() {
-            Ok(self.position_stacks)
-        } else {
-            Err(errors)
+        if !errors.is_empty() {
+            return Err(errors);
         }
+
+        let output = Output {
+            position_stacks: self.position_stacks,
+            main_function: main_function.unwrap(),
+        };
+
+        Ok(output)
     }
 
-    fn check_main_function(&self) -> Result<(), TypeError> {
+    fn check_main_function(&self) -> Result<Rc<RefCell<Function>>, TypeError> {
         let key = (self.entrypoint_path.clone(), "main".to_owned());
 
         let Some(identifiable) = self.identifiables.get(&key) else {
             return main_function_not_found(self.entrypoint_path.clone());
         };
 
-        let Identifiable::Function(function) = identifiable else {
+        let Identifiable::Function(function_rc) = identifiable else {
             unreachable!(); // TODO #217
         };
 
-        let function = &*function.borrow();
+        let function = &*function_rc.borrow();
 
         let arguments = function.arguments();
 
@@ -150,7 +160,7 @@ impl TypeChecker {
             },
         }
 
-        Ok(())
+        Ok(function_rc.clone())
     }
 
     fn is_valid_main_argument_type(&self, type_: &Type) -> bool {

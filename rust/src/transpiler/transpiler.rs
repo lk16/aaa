@@ -15,6 +15,7 @@ use crate::{
         },
     },
     transpiler::code::Code,
+    type_checker::type_checker,
 };
 use lazy_static::lazy_static;
 use std::{cell::RefCell, collections::HashMap, env, fs, path::PathBuf, rc::Rc};
@@ -57,19 +58,18 @@ lazy_static! {
 
 pub struct Transpiler {
     transpiler_root_path: PathBuf,
-    pub identifiables: HashMap<(PathBuf, String), Identifiable>,
-    pub entrypoint_path: PathBuf,
     pub structs: HashMap<(PathBuf, String), Rc<RefCell<Struct>>>,
     pub enums: HashMap<(PathBuf, String), Rc<RefCell<Enum>>>,
     pub functions: HashMap<(PathBuf, String), Rc<RefCell<Function>>>,
     pub position_stacks: HashMap<Position, Vec<Type>>,
+    pub main_function: Rc<RefCell<Function>>,
 }
 
 impl Transpiler {
     pub fn new(
         transpiler_root_path: PathBuf,
         cross_referenced: cross_referencer::Output,
-        position_stacks: HashMap<Position, Vec<Type>>,
+        type_checked: type_checker::Output,
     ) -> Self {
         let mut functions = HashMap::new();
         let mut structs = HashMap::new();
@@ -96,12 +96,11 @@ impl Transpiler {
 
         Self {
             transpiler_root_path,
-            identifiables: cross_referenced.identifiables,
-            entrypoint_path: cross_referenced.entrypoint_path,
             structs,
             enums,
             functions,
-            position_stacks,
+            position_stacks: type_checked.position_stacks,
+            main_function: type_checked.main_function,
         }
     }
 
@@ -427,14 +426,7 @@ impl Transpiler {
     }
 
     fn generate_main_function(&self) -> Code {
-        let key = (self.entrypoint_path.clone(), "main".to_owned());
-        let main_function = self.identifiables.get(&key).unwrap();
-
-        let Identifiable::Function(main_function) = main_function else {
-            unreachable!();
-        };
-
-        let main_function = &*main_function.borrow();
+        let main_function = &*self.main_function.borrow();
 
         let main_func_name = self.generate_function_name(main_function);
 

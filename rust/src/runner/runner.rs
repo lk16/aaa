@@ -205,7 +205,7 @@ impl Runner {
             }
         };
 
-        let position_stacks = match type_check(cross_referenced.clone()) {
+        let type_checked = match type_check(cross_referenced.clone()) {
             Err(type_errors) => {
                 for error in &type_errors {
                     eprint!("{}", error);
@@ -218,11 +218,8 @@ impl Runner {
         };
 
         let transpiler_root_path = Self::get_transpiler_root_path();
-        let transpiler = Transpiler::new(
-            transpiler_root_path.clone(),
-            cross_referenced,
-            position_stacks,
-        );
+        let transpiler =
+            Transpiler::new(transpiler_root_path.clone(), cross_referenced, type_checked);
 
         transpiler.run();
 
