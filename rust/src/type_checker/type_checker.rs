@@ -36,10 +36,9 @@ use super::{
     call_checker::FunctionCallChecker,
     errors::{
         assignment_type_error, branch_error, condition_error, function_type_error,
-        get_field_not_found, get_field_stack_underflow, get_function_non_function,
-        get_function_not_found, inconsistent_match_children, match_non_enum,
-        member_function_invalid_target, member_function_without_arguments, parameter_count_error,
-        return_stack_error, set_field_not_found, set_field_on_non_struct,
+        get_field_not_found, get_field_stack_underflow, inconsistent_match_children,
+        match_non_enum, member_function_invalid_target, member_function_without_arguments,
+        parameter_count_error, return_stack_error, set_field_not_found, set_field_on_non_struct,
         set_field_stack_underflow, set_field_type_error, unreachable_code, unreachable_default,
         use_stack_underflow, while_error, TypeError, TypeResult,
     },
@@ -807,37 +806,7 @@ impl<'a> FunctionTypeChecker<'a> {
     }
 
     fn check_get_function(&self, mut stack: Vec<Type>, get_function: &GetFunction) -> TypeResult {
-        let builtins_key = (
-            self.type_checker.builtins_path.clone(),
-            get_function.function_name.clone(),
-        );
-
-        let key = (
-            get_function.position.path.clone(),
-            get_function.function_name.clone(),
-        );
-
-        let Some(identifiable) = self
-            .type_checker
-            .identifiables
-            .get(&builtins_key)
-            .or(self.type_checker.identifiables.get(&key))
-        else {
-            return get_function_not_found(
-                get_function.position.clone(),
-                get_function.function_name.clone(),
-            );
-        };
-
-        let Identifiable::Function(function) = identifiable else {
-            return get_function_non_function(
-                get_function.position.clone(),
-                get_function.function_name.clone(),
-                identifiable.clone(),
-            );
-        };
-
-        let function = (**function).borrow();
+        let function = &*get_function.target.borrow();
         let signature = function.signature();
 
         let function_type = Type::FunctionPointer(FunctionPointerType {

@@ -2,7 +2,7 @@ use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
 use crate::{
     common::{formatting::join_display_prefixed, position::Position, traits::HasPosition},
-    cross_referencer::types::identifiable::{Identifiable, ReturnTypes, Type},
+    cross_referencer::types::identifiable::{ReturnTypes, Type},
 };
 
 pub enum TypeError {
@@ -28,8 +28,6 @@ pub enum TypeError {
     AssignmentStackSizeError(AssignmentStackSizeError),
     AssignedVariableNotFound(AssignedVariableNotFound),
     AssignmentTypeError(AssignmentTypeError),
-    GetFunctionNotFound(GetFunctionNotFound),
-    GetFunctionNonFunction(GetFunctionNonFunction),
     MatchStackUnderflow(MatchStackUnderflow),
     MatchNonEnum(MatchNonEnum),
     MatchUnexpectedEnum(MatchUnexpectedEnum),
@@ -71,8 +69,6 @@ impl Display for TypeError {
             Self::AssignmentStackSizeError(error) => write!(f, "{}", error),
             Self::AssignedVariableNotFound(error) => write!(f, "{}", error),
             Self::AssignmentTypeError(error) => write!(f, "{}", error),
-            Self::GetFunctionNotFound(error) => write!(f, "{}", error),
-            Self::GetFunctionNonFunction(error) => write!(f, "{}", error),
             Self::MatchStackUnderflow(error) => write!(f, "{}", error),
             Self::MatchNonEnum(error) => write!(f, "{}", error),
             Self::MatchUnexpectedEnum(error) => write!(f, "{}", error),
@@ -750,56 +746,6 @@ pub fn assignment_type_error(
         field_name,
         expected_type,
         found_type,
-    }))
-}
-
-pub struct GetFunctionNotFound {
-    pub position: Position,
-    pub function_name: String,
-}
-
-impl Display for GetFunctionNotFound {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(
-            f,
-            "{}: Cannot get function {}, it does not exist.",
-            self.position, self.function_name
-        )
-    }
-}
-
-pub fn get_function_not_found(position: Position, function_name: String) -> TypeResult {
-    Err(TypeError::GetFunctionNotFound(GetFunctionNotFound {
-        position,
-        function_name,
-    }))
-}
-
-pub struct GetFunctionNonFunction {
-    pub position: Position,
-    pub function_name: String,
-    pub identifiable: Identifiable,
-}
-
-impl Display for GetFunctionNonFunction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(
-            f,
-            "{}: Cannot get function {}, found {} instead.",
-            self.position, self.function_name, self.identifiable
-        )
-    }
-}
-
-pub fn get_function_non_function(
-    position: Position,
-    function_name: String,
-    identifiable: Identifiable,
-) -> TypeResult {
-    Err(TypeError::GetFunctionNonFunction(GetFunctionNonFunction {
-        position,
-        function_name,
-        identifiable,
     }))
 }
 

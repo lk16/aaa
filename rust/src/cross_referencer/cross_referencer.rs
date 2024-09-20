@@ -1128,7 +1128,6 @@ impl<'a> FunctionBodyResolver<'a> {
 
         Ok(FunctionBodyItem::GetFunction(GetFunction {
             position: parsed.position.clone(),
-            function_name: parsed.target.value.clone(),
             target,
         }))
     }

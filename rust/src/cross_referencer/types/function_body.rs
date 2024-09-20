@@ -187,7 +187,6 @@ pub struct FunctionType {
 
 pub struct GetFunction {
     pub position: Position,
-    pub function_name: String,
     pub target: Rc<RefCell<Function>>,
 }
 
