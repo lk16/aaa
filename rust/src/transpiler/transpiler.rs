@@ -708,8 +708,8 @@ impl Transpiler {
     }
 
     fn get_stack_top_struct(&self, position: &Position) -> Rc<RefCell<Struct>> {
-        // TODO #217 remove position_stacks and this function
-        // TODO #217 make GetField and SetField have a target Struct field
+        // TODO remove position_stacks and this function
+        // TODO make GetField and SetField have a target Struct field
 
         let Some(stack) = self.position_stacks.get(position) else {
             unreachable!();

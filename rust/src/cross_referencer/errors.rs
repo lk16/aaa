@@ -3,7 +3,11 @@ use std::{fmt::Display, path::PathBuf};
 use crate::{
     common::position::Position,
     type_checker::errors::{
-        GetFunctionNonFunction, GetFunctionNotFound, NameCollision, NameCollisionItem,
+        // TODO move these types over and remove from type checker
+        GetFunctionNonFunction,
+        GetFunctionNotFound,
+        NameCollision,
+        NameCollisionItem,
     },
 };
 

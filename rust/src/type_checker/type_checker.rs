@@ -130,7 +130,7 @@ impl TypeChecker {
         };
 
         let Identifiable::Function(function_rc) = identifiable else {
-            unreachable!(); // TODO #217
+            todo!(); // TODO return proper error
         };
 
         let function = &*function_rc.borrow();

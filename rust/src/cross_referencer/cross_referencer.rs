@@ -870,7 +870,6 @@ impl CrossReferencer {
     }
 }
 
-// TODO #217 Move resolving of FunctionBody into type checker
 struct FunctionBodyResolver<'a> {
     cross_referencer: &'a CrossReferencer,
     function: &'a Function,
@@ -1119,7 +1118,6 @@ impl<'a> FunctionBodyResolver<'a> {
             .cross_referencer
             .get_identifiable(position.clone(), name.clone())
         {
-            // TODO #217 remove this error conversion here
             Err(_) => return get_function_not_found(position, name),
             Ok(identifiable) => identifiable,
         };
