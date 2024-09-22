@@ -1,13 +1,17 @@
 use std::{fmt::Display, path::PathBuf};
 
-use crate::{parser::parser::ParseError, tokenizer::tokenizer::TokenizerError};
+use crate::{
+    cross_referencer::errors::CrossReferencerError, parser::parser::ParseError,
+    tokenizer::tokenizer::TokenizerError, type_checker::errors::TypeError,
+};
 
 pub enum RunnerError {
-    CliArguments(String),
     EnvVariables(String),
     IO(std::io::Error),
     Tokenizer(TokenizerError),
     Parser(ParseError),
+    CrossReferencer(CrossReferencerError),
+    Type(TypeError),
     FileNotFound(PathBuf),
     CompilerError(String),
 }
@@ -30,23 +34,31 @@ impl From<ParseError> for RunnerError {
     }
 }
 
+impl From<CrossReferencerError> for RunnerError {
+    fn from(value: CrossReferencerError) -> Self {
+        Self::CrossReferencer(value)
+    }
+}
+
+impl From<TypeError> for RunnerError {
+    fn from(value: TypeError) -> Self {
+        Self::Type(value)
+    }
+}
+
 impl Display for RunnerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::CliArguments(error) => write!(f, "{}", error),
             Self::EnvVariables(error) => write!(f, "{}", error),
             Self::IO(error) => write!(f, "{}", error),
             Self::Parser(error) => write!(f, "{}", error),
             Self::Tokenizer(error) => write!(f, "{}", error),
-            Self::FileNotFound(path) => write!(f, "Could not open {}", path.display()),
+            Self::CrossReferencer(error) => write!(f, "{}", error),
+            Self::Type(error) => write!(f, "{}", error),
+            Self::FileNotFound(path) => writeln!(f, "Could not open {}", path.display()),
             Self::CompilerError(stderr) => write!(f, "{}", stderr),
         }
     }
-}
-
-pub fn cli_arg_error<T>(first_arg: &str) -> Result<T, RunnerError> {
-    let message = format!("Usage: {} <code_or_file_name>", first_arg);
-    Err(RunnerError::CliArguments(message))
 }
 
 pub fn env_var_error<T>(env_var_name: &str) -> Result<T, RunnerError> {

@@ -379,11 +379,6 @@ fn main {
 /// name: if and else with type never
 
 fn main {
-    // TODO #215 remove this if block once we only typecheck these doctests
-    if true {
-        return
-    }
-
     if true {
         unreachable
     } else {
@@ -396,7 +391,7 @@ fn main {
 /// status: 1
 
 /// stderr:
-/// $SOURCE_PATH/main.aaa:11:5: Code is unreachable
+/// $SOURCE_PATH/main.aaa:7:5: Code is unreachable
 ///
 /// Found 1 errors
 
@@ -686,6 +681,8 @@ fn main {
 
 /// stderr:
 /// Could not open $SOURCE_PATH/foo.aaa
+///
+/// Found 1 errors
 
 /// ----------------------------------------------------------------------------
 

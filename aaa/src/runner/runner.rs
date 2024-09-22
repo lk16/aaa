@@ -16,21 +16,35 @@ use crate::{
     type_checker::type_checker::type_check,
 };
 
-use super::errors::{cli_arg_error, compiler_error, env_var_error, RunnerError};
+use super::errors::{compiler_error, env_var_error, RunnerError};
+
+#[derive(Default)]
+pub struct RunnerOptions {
+    pub file: String,
+    pub output_binary: Option<PathBuf>,
+    pub verbose: bool,
+    pub command: String,
+}
 
 pub struct Runner {
     entrypoint_path: PathBuf,
     entrypoint_code: String,
     builtins_path: PathBuf,
     current_dir: PathBuf,
+    options: RunnerOptions,
 }
 
 impl Runner {
-    pub fn new(args: Vec<String>) -> Result<Self, RunnerError> {
-        if args.len() != 2 {
-            return cli_arg_error(&args[0]);
-        }
+    pub fn run_with_options(options: RunnerOptions) -> i32 {
+        let runner = match Runner::new(options) {
+            Ok(runner) => runner,
+            Err(error) => return Self::fail_with_error(error),
+        };
 
+        runner.run()
+    }
+
+    fn new(options: RunnerOptions) -> Result<Self, RunnerError> {
         let current_dir = env::current_dir()?;
 
         let builtins_path = match env::var("AAA_STDLIB_PATH") {
@@ -38,24 +52,50 @@ impl Runner {
             Err(_) => return env_var_error("AAA_STDLIB_PATH"),
         };
 
-        let runner = if args[1].ends_with(".aaa") {
-            let path = PathBuf::from(&args[1]);
+        let runner = if options.file.ends_with(".aaa") {
+            let path = PathBuf::from(options.file.clone());
             Self {
                 entrypoint_code: read_to_string(&path)?,
                 entrypoint_path: path,
                 builtins_path,
                 current_dir,
+                options,
             }
         } else {
             Self {
-                entrypoint_code: args[1].clone(),
+                entrypoint_code: options.file.clone(),
                 entrypoint_path: PathBuf::from("/dev/stdin"),
                 builtins_path,
                 current_dir,
+                options,
             }
         };
 
         Ok(runner)
+    }
+
+    fn should_compile(&self) -> bool {
+        self.options.command != "check"
+    }
+
+    fn should_run_binary(&self) -> bool {
+        self.options.command == "run"
+    }
+
+    fn fail_with_error<T: Into<RunnerError>>(error: T) -> i32 {
+        Self::fail_with_errors(vec![error])
+    }
+
+    fn fail_with_errors<T: Into<RunnerError>>(errors: Vec<T>) -> i32 {
+        let error_count = errors.len();
+
+        for error in errors {
+            let runner_error: RunnerError = error.into();
+            eprint!("{}", runner_error);
+        }
+        eprintln!("");
+        eprintln!("Found {} errors", error_count);
+        return 1;
     }
 
     fn parse_entrypoint(&self) -> Result<SourceFile, RunnerError> {
@@ -166,26 +206,28 @@ impl Runner {
             .output()
             .unwrap();
 
-        // TODO #215 use CLI args here instead of env var
-        if env::var("AAA_DEBUG").is_ok() {
-            let status = output.status.code().unwrap();
+        let status = output.status.code().unwrap();
 
-            if status != 0 {
-                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-                return compiler_error(stderr);
-            }
+        if status != 0 {
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            return compiler_error(stderr);
         }
 
-        Ok(cargo_target_dir.join("release/aaa-stdlib-user"))
+        let binary_path = cargo_target_dir.join("release/aaa-stdlib-user");
+
+        if let Some(requested_binary_path) = &self.options.output_binary {
+            fs::rename(binary_path, &requested_binary_path).unwrap();
+
+            return Ok(requested_binary_path.clone());
+        }
+
+        Ok(binary_path)
     }
 
-    pub fn run(&self) -> i32 {
+    fn run(&self) -> i32 {
         let parsed_files = match self.parse_files() {
             Ok(parsed_files) => parsed_files,
-            Err(error) => {
-                eprintln!("{}", error);
-                return 1;
-            }
+            Err(error) => return Self::fail_with_error(error),
         };
 
         let cross_referenced = match cross_reference(
@@ -195,45 +237,41 @@ impl Runner {
             self.current_dir.clone(),
         ) {
             Ok(cross_referenced) => cross_referenced,
-            Err(errors) => {
-                for error in &errors {
-                    eprint!("{}", error);
-                }
-                eprintln!("");
-                eprintln!("Found {} errors", errors.len());
-                return 1;
-            }
+            Err(errors) => return Self::fail_with_errors(errors),
         };
 
-        let type_checked = match type_check(cross_referenced.clone()) {
-            Err(type_errors) => {
-                for error in &type_errors {
-                    eprint!("{}", error);
-                }
-                eprintln!("");
-                eprintln!("Found {} errors", type_errors.len());
-                return 1;
-            }
+        let type_checked = match type_check(cross_referenced, self.options.verbose) {
+            Err(errors) => return Self::fail_with_errors(errors),
             Ok(type_checked) => type_checked,
         };
 
         let transpiler_root_path = Self::get_transpiler_root_path();
-        let transpiler = Transpiler::new(transpiler_root_path.clone(), type_checked);
+        let transpiler = Transpiler::new(
+            transpiler_root_path.clone(),
+            type_checked,
+            self.options.verbose,
+        );
 
         transpiler.run();
 
-        // TODO #215 make compilation optional
-        let binary_path = match self.compile(&transpiler_root_path) {
-            Ok(binary_path) => binary_path,
-            Err(error) => {
-                eprintln!("{}", error);
-                return 1;
-            }
-        };
+        if self.should_compile() {
+            let binary_path = match self.compile(&transpiler_root_path) {
+                Ok(binary_path) => binary_path,
+                Err(error) => return Self::fail_with_error(error),
+            };
 
-        // TODO #215 make executing binary optional
-        // TODO #215 handle errors better and forward exit code
-        Command::new(binary_path).spawn().unwrap();
+            if self.should_run_binary() {
+                return Command::new(binary_path)
+                    .status()
+                    .expect("could not run binary")
+                    .code()
+                    .unwrap();
+            } else {
+                if self.options.output_binary.is_none() {
+                    println!("Generated binary in {}", binary_path.display());
+                }
+            }
+        }
 
         0
     }
