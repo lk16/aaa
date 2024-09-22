@@ -26,7 +26,7 @@ impl Code {
             panic!("add_line() string should not end with newline!")
         }
 
-        if string.ends_with('}') {
+        if string.ends_with('}') || string.ends_with("},") {
             if self.indent_level == 0 {
                 panic!("Cannot indent below level 0.");
             }

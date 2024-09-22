@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, fmt::Display, path::PathBuf, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, iter::zip, path::PathBuf, rc::Rc};
 
 use crate::{
     common::{formatting::join_display, position::Position, traits::HasPosition},
@@ -11,6 +11,12 @@ pub struct Struct {
     pub is_builtin: bool,
     pub parsed: parsed::Struct,
     pub resolved: Option<ResolvedStruct>,
+}
+
+impl PartialEq for Struct {
+    fn eq(&self, other: &Self) -> bool {
+        self.name() == other.name() && self.position() == other.position()
+    }
 }
 
 impl From<parsed::Struct> for Struct {
@@ -57,6 +63,27 @@ impl Struct {
     pub fn field(&self, name: &String) -> Option<&Type> {
         self.fields().get(name)
     }
+
+    pub fn parameter_names(&self) -> Vec<String> {
+        // We use parsed, because it maintains order of the parameters.
+        // This is not the case in resolved, which stores parameters in a HashMap, losing the order.
+        self.parsed
+            .parameters
+            .iter()
+            .cloned()
+            .map(|param| param.value)
+            .collect()
+    }
+
+    pub fn parameter_mapping(&self, parameter_vec: &Vec<Type>) -> HashMap<String, Type> {
+        let mut mapping = HashMap::new();
+
+        for (key, value) in zip(self.parameter_names(), parameter_vec) {
+            mapping.insert(key.clone(), value.clone());
+        }
+
+        mapping
+    }
 }
 
 pub struct ResolvedStruct {
@@ -66,13 +93,13 @@ pub struct ResolvedStruct {
 
 #[derive(Clone, PartialEq)]
 pub struct TypeParameter {
-    position: Position,
+    pub position: Position,
     pub name: String,
 }
 
 impl Display for TypeParameter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "type parameter {}", self.name)
+        write!(f, "{}", self.name)
     }
 }
 
@@ -130,7 +157,18 @@ impl Type {
     }
 }
 
-#[derive(Clone)]
+impl HasPosition for Type {
+    fn position(&self) -> Position {
+        match &self {
+            Self::FunctionPointer(_) => todo!(),
+            &Self::Struct(struct_type) => struct_type.struct_.borrow().position(),
+            &Self::Enum(enum_type) => enum_type.enum_.borrow().position(),
+            &Self::Parameter(parameter) => parameter.position.clone(),
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
 pub struct EnumType {
     pub enum_: Rc<RefCell<Enum>>,
     pub parameters: Vec<Type>,
@@ -150,13 +188,7 @@ impl Display for EnumType {
     }
 }
 
-impl PartialEq for EnumType {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.enum_, &other.enum_) && self.parameters == other.parameters
-    }
-}
-
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct StructType {
     pub struct_: Rc<RefCell<Struct>>,
     pub parameters: Vec<Type>,
@@ -173,12 +205,6 @@ impl Display for StructType {
         }
 
         Ok(())
-    }
-}
-
-impl PartialEq for StructType {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.struct_, &other.struct_) && self.parameters == other.parameters
     }
 }
 
@@ -218,7 +244,7 @@ impl Display for ReturnTypes {
 
 #[derive(Clone)]
 pub struct Argument {
-    position: Position,
+    pub position: Position,
     pub type_: Type,
     pub name: String,
 }
@@ -249,6 +275,12 @@ pub struct Enum {
     pub parsed: parsed::Enum,
     pub resolved: Option<ResolvedEnum>,
     pub is_builtin: bool,
+}
+
+impl PartialEq for Enum {
+    fn eq(&self, other: &Self) -> bool {
+        self.name() == other.name() && self.position() == other.position()
+    }
 }
 
 impl From<parsed::Enum> for Enum {
@@ -285,6 +317,36 @@ impl Enum {
     pub fn variants(&self) -> &HashMap<String, Vec<Type>> {
         &self.resolved().variants
     }
+
+    pub fn zero_variant_name(&self) -> &String {
+        &self.parsed.variants.get(0).unwrap().name.value
+    }
+
+    pub fn zero_variant_data(&self) -> &Vec<Type> {
+        let name = self.zero_variant_name();
+        &self.variants().get(name).unwrap()
+    }
+
+    pub fn parameter_names(&self) -> Vec<String> {
+        // We use parsed, because it maintains order of the parameters.
+        // This is not the case in resolved, which stores parameters in a HashMap, losing the order.
+        self.parsed
+            .parameters
+            .iter()
+            .cloned()
+            .map(|param| param.value)
+            .collect()
+    }
+
+    pub fn parameter_mapping(&self, parameter_vec: &Vec<Type>) -> HashMap<String, Type> {
+        let mut mapping = HashMap::new();
+
+        for (key, value) in zip(self.parameter_names(), parameter_vec) {
+            mapping.insert(key.clone(), value.clone());
+        }
+
+        mapping
+    }
 }
 
 impl HasPosition for Enum {
@@ -298,7 +360,6 @@ pub struct ResolvedEnum {
     pub variants: HashMap<String, Vec<Type>>,
 }
 
-// TODO #219 use Function instead and remove EnumConstructor
 pub struct EnumConstructor {
     pub enum_: Rc<RefCell<Enum>>,
     pub parsed: parsed::EnumVariant,
@@ -320,7 +381,6 @@ impl EnumConstructor {
         self.parsed.name.value.clone()
     }
 
-    #[allow(dead_code)] // TODO #219 Support EnumConstructor
     pub fn data(&self) -> Vec<Type> {
         let enum_ = self.enum_.borrow();
 

@@ -1481,8 +1481,6 @@ fn main {
 
 /// name: match ok simple
 
-/// skip TODO #219 Support enums
-
 enum FooBar {
     foo as int,
     bar,
@@ -1504,8 +1502,6 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: match ok with never
-
-/// skip TODO #219 Support enums
 
 enum FooBar {
     foo as int,
@@ -1752,5 +1748,118 @@ struct main {}
 
 /// stderr:
 /// $SOURCE_PATH/main.aaa:1:1: main should be a function, found struct main instead.
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: set struct field with type param ok
+
+struct Foo[T] {
+    foo as T
+}
+
+fn main {
+    Foo[int]
+    "foo" { 69 } !
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: set struct field with type param fail
+
+struct Foo[T] {
+    foo as T
+}
+
+fn main {
+    Foo[int]
+    "foo" { false } !
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:6:5: Invalid stack types when setting field foo on struct Foo:
+///    Found: bool
+/// Expected: int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: get struct field with type param ok
+
+struct Foo[T] {
+    foo as T
+}
+
+fn main {
+    Foo[int]
+    dup "foo" { 69 } !
+    "foo" ?
+    69 =
+    drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: get struct field with type param fail
+
+struct Foo[T] {
+    foo as T
+}
+
+fn main {
+    Foo[int]
+    dup "foo" { 69 } !
+    "foo" ?
+    false =
+    drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:8:11: Invalid stack when calling =
+///        stack: int bool
+/// expected top: A A
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: enum with type parameter and make function
+
+enum Foo[F] {
+    foo as F,
+}
+
+fn make_foo[T] args foo as T return Foo[T] {
+    foo Foo[T]:foo
+}
+
+fn main {
+    3 make_foo drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: enum constructor call with missing parameters
+
+enum Foo[int] {
+    foo
+}
+
+fn main {
+    Foo:foo drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:5: Unexpected number of parameters
+///    Found: 0
+/// Expected: 1
 ///
 /// Found 1 errors

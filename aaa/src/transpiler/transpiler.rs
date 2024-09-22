@@ -2,12 +2,13 @@ use chrono::Local;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    common::traits::HasPosition,
+    common::{position::Position, traits::HasPosition},
     cross_referencer::types::{
         function_body::{
-            Assignment, Boolean, Branch, CallArgument, CallEnum, CallFunction, CallLocalVariable,
-            CallStruct, Char, FunctionBody, FunctionBodyItem, FunctionType, GetField, GetFunction,
-            Integer, Match, ParsedString, Return, SetField, Use, While,
+            Assignment, Boolean, Branch, CallArgument, CallEnum, CallEnumConstructor, CallFunction,
+            CallLocalVariable, CallStruct, CaseBlock, Char, DefaultBlock, FunctionBody,
+            FunctionBodyItem, FunctionType, GetField, GetFunction, Integer, Match, ParsedString,
+            Return, SetField, Use, While,
         },
         identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
     },
@@ -15,7 +16,7 @@ use crate::{
     type_checker::type_checker,
 };
 use lazy_static::lazy_static;
-use std::{cell::RefCell, collections::HashMap, fs, path::PathBuf, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fs, iter::zip, path::PathBuf, rc::Rc};
 
 lazy_static! {
     pub static ref CUSTOM_FUNCTION_NAMES: HashMap<&'static str, &'static str> = {
@@ -28,6 +29,7 @@ lazy_static! {
             ("+", "plus"),
             ("<", "less"),
             ("<=", "less_equal"),
+            ("=", "equals"),
             (">", "greater"),
             (">=", "greater_equal"),
         ];
@@ -235,6 +237,24 @@ impl Transpiler {
         code
     }
 
+    fn user_type_names(&self) -> Vec<String> {
+        let mut names = vec![];
+
+        for struct_ in self.structs.values() {
+            let struct_ = &*struct_.borrow();
+            let name = self.generate_struct_name(struct_);
+            names.push(name);
+        }
+
+        for enum_ in self.enums.values() {
+            let enum_ = &*enum_.borrow();
+            let name = self.generate_enum_name(enum_);
+            names.push(name);
+        }
+
+        names
+    }
+
     #[allow(non_snake_case)]
     fn generate_UserTypeEnum_definition(&self) -> Code {
         let mut code = Code::new();
@@ -271,19 +291,7 @@ impl Transpiler {
 
         code.add_line("impl UserTypeEnum {");
 
-        let mut names = vec![];
-
-        for struct_ in self.structs.values() {
-            let struct_ = &*struct_.borrow();
-            let name = self.generate_struct_name(struct_);
-            names.push(name);
-        }
-
-        for enum_ in self.enums.values() {
-            let enum_ = &*enum_.borrow();
-            let name = self.generate_enum_name(enum_);
-            names.push(name);
-        }
+        let names = self.user_type_names();
 
         for name in &names {
             code.add_line(format!("fn get_{}(&mut self) -> &mut {} {{", name, name));
@@ -305,17 +313,43 @@ impl Transpiler {
 
     #[allow(non_snake_case)]
     fn generate_UserTypeEnum_UserType_impl(&self) -> Code {
+        let names = self.user_type_names();
+
         let mut code = Code::new();
         code.add_line("impl UserType for UserTypeEnum {");
 
         code.add_line("fn kind(&self) -> String {");
-        code.add_line("todo!();"); // TODO #219 Implement Enum
+
+        code.add_line("match self {");
+
+        if names.is_empty() {
+            code.add_line("unreachable!();");
+        } else {
+            for name in &names {
+                code.add_line(format!("Self::{name}(v) => v.kind(),"));
+            }
+        }
+
+        code.add_line("}");
         code.add_line("}");
 
         code.add_line("");
 
         code.add_line("fn clone_recursive(&self) -> Self {");
-        code.add_line("todo!();"); // TODO #219 Implement Enum
+
+        code.add_line("match self {");
+
+        if names.is_empty() {
+            code.add_line("unreachable!();");
+        } else {
+            for name in &names {
+                code.add_line(format!(
+                    "Self::{name}(v) => Self::{name}(v.clone_recursive()),"
+                ));
+            }
+        }
+
+        code.add_line("}");
         code.add_line("}");
 
         code.add_line("}");
@@ -332,19 +366,7 @@ impl Transpiler {
 
         code.add_line("fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {");
 
-        let mut names = vec![];
-
-        for struct_ in self.structs.values() {
-            let struct_ = &*struct_.borrow();
-            let name = self.generate_struct_name(struct_);
-            names.push(name);
-        }
-
-        for enum_ in self.enums.values() {
-            let enum_ = &*enum_.borrow();
-            let name = self.generate_enum_name(enum_);
-            names.push(name);
-        }
+        let names = self.user_type_names();
 
         if names.is_empty() {
             code.add_line("unreachable!();");
@@ -372,7 +394,21 @@ impl Transpiler {
         code.add_line("impl Debug for UserTypeEnum {");
 
         code.add_line("fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {");
-        code.add_line("todo!();"); // TODO #219 Implement Enum
+
+        let names = self.user_type_names();
+
+        if names.is_empty() {
+            code.add_line("unreachable!();");
+        } else {
+            code.add_line("match self {");
+
+            for name in names {
+                code.add_line(format!("Self::{}(v) => write!(f, \"{{}}\", v),", name));
+            }
+
+            code.add_line("}");
+        }
+
         code.add_line("}");
 
         code.add_line("}");
@@ -395,6 +431,16 @@ impl Transpiler {
         let mut hasher = Sha256::new();
         hasher.update(path.to_string_lossy().as_bytes());
         hasher.update(name.as_bytes());
+
+        let hash = hasher.finalize();
+        let hash = format!("{:x}", hash);
+
+        hash[..16].to_owned()
+    }
+
+    fn hash_position(position: &Position) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(format!("{}", position).as_bytes());
 
         let hash = hasher.finalize();
         let hash = format!("{:x}", hash);
@@ -499,7 +545,7 @@ impl Transpiler {
             CallArgument(call) => self.generate_call_argument(call),
             CallFunction(call) => self.generate_call_function(call),
             CallEnum(call) => self.generate_call_enum(call),
-            CallEnumConstructor(_) => unreachable!(), // TODO #219 Support CallEnumConstructor
+            CallEnumConstructor(call) => self.generate_call_enum_constructor(call),
             CallLocalVariable(call) => self.generate_call_local_variabiable(call),
             CallStruct(call) => self.generate_call_struct(call),
             Char(char) => self.generate_char(char),
@@ -659,7 +705,7 @@ impl Transpiler {
             Type::FunctionPointer(_) => {
                 "Variable::FunctionPointer(Stack::zero_function_pointer_value)".to_owned()
             }
-            _ => unreachable!(),
+            Type::Parameter(_) => "Variable::None".to_owned(),
         }
     }
 
@@ -706,8 +752,90 @@ impl Transpiler {
         Code::from_string(format!("stack.push_function_pointer({});", ptr_expr))
     }
 
-    fn generate_match(&self, _: &Match) -> Code {
-        todo!(); // TODO #219 Implement Enum
+    fn generate_match(&self, match_: &Match) -> Code {
+        let enum_rc = match_.target.take().unwrap();
+        match_.target.set(Some(enum_rc.clone()));
+
+        let enum_ = &*enum_rc.borrow();
+        let enum_name = self.generate_enum_name(enum_);
+
+        let match_var = format!("match_var_{}", Self::hash_position(&match_.position));
+
+        let mut code = Code::new();
+
+        code.add_line(format!(
+            "let {} = stack.pop_user_type().borrow_mut().get_{}().clone();",
+            match_var, enum_name
+        ));
+
+        code.add_line(format!("match {} {{", match_var));
+
+        for case_block in &match_.case_blocks {
+            code.add_code(self.generate_case_block(case_block, enum_));
+        }
+
+        for default_block in &match_.default_blocks {
+            code.add_code(self.generate_default_block(default_block));
+        }
+
+        if match_.default_blocks.is_empty() && match_.case_blocks.len() != enum_.variants().len() {
+            code.add_line("_ => {}");
+        }
+
+        code.add_line("}");
+
+        code
+    }
+
+    fn generate_case_block(&self, block: &CaseBlock, enum_: &Enum) -> Code {
+        let enum_name = self.generate_enum_name(enum_);
+
+        // Number of data items associated with variant handled here
+        let data_items = enum_.variants().get(&block.variant_name).unwrap().len();
+
+        // We add the hash of location to prevent collisions with nested case blocks.
+        let var_prefix = format!("case_var_{}", Self::hash_position(&block.position));
+
+        let mut line = format!("{}::variant_{}(", enum_name, block.variant_name);
+
+        line += (0..data_items)
+            .map(|i| format!("{var_prefix}_{}", i))
+            .collect::<Vec<String>>()
+            .join(", ")
+            .as_str();
+
+        line += ") => {";
+
+        let mut code = Code::new();
+
+        code.add_line(line);
+
+        if block.variables.is_empty() {
+            for i in 0..data_items {
+                code.add_line(format!("stack.push({var_prefix}_{i});"));
+            }
+        } else {
+            for (i, var) in zip(0.., &block.variables) {
+                let var_name = &var.name;
+                code.add_line(format!(
+                    "let mut var_{var_name}: Variable<UserTypeEnum> = {var_prefix}_{i};"
+                ));
+            }
+        }
+
+        code.add_code(self.generate_function_body(&block.body));
+        code.add_line("},");
+
+        code
+    }
+
+    fn generate_default_block(&self, block: &DefaultBlock) -> Code {
+        let mut code = Code::new();
+        code.add_line("_ => {");
+        code.add_code(self.generate_function_body(&block.body));
+        code.add_line("}");
+
+        code
     }
 
     fn generate_get_field(&self, get_field: &GetField) -> Code {
@@ -764,7 +892,7 @@ impl Transpiler {
         let mut code = Code::new();
 
         code.add_line(format!(
-            "//Generated for: {} {}",
+            "// Generated for: {} {}",
             enum_.position().path.display(),
             enum_.name()
         ));
@@ -787,41 +915,199 @@ impl Transpiler {
         code
     }
 
-    fn generate_enum_constructors(&self, _enum_: &Enum) -> Code {
+    fn generate_enum_constructors(&self, enum_: &Enum) -> Code {
+        let enum_name = self.generate_enum_name(enum_);
+
         let mut code = Code::new();
-        code.add_line("// TODO implement generate_enum_constructors()"); // TODO #219 Support Enum
-        code.add_line("");
+
+        for (variant_name, associated_data) in enum_.variants() {
+            let enum_ctor_func_name =
+                self.generate_enum_constructor_name(enum_, variant_name.clone());
+            code.add_line(format!(
+                "fn {}(stack: &mut Stack<UserTypeEnum>) {{",
+                enum_ctor_func_name
+            ));
+            for (i, _) in associated_data.iter().enumerate().rev() {
+                code.add_line(format!("let arg{} = stack.pop();", i));
+            }
+
+            let mut line = format!("let enum_ = {}::variant_{}(", enum_name, variant_name);
+
+            line += (0..associated_data.len())
+                .map(|i| format!("arg{}", i))
+                .collect::<Vec<String>>()
+                .join(", ")
+                .as_str();
+            line += ");";
+
+            code.add_line(line);
+            code.add_line(format!(
+                "stack.push_user_type(UserTypeEnum::{}(enum_));",
+                enum_name
+            ));
+            code.add_line("}");
+            code.add_line("");
+        }
+
         code
     }
 
-    fn generate_enum_impl(&self, _enum_: &Enum) -> Code {
+    fn generate_enum_impl(&self, enum_: &Enum) -> Code {
+        let enum_name = self.generate_enum_name(enum_);
+
         let mut code = Code::new();
-        code.add_line("// TODO implement generate_enum_impl()"); // TODO #219 Support Enum
+
+        code.add_line(format!("impl {} {{", enum_name));
+        code.add_line("fn new() -> Self {");
+        code.add_line(format!("Self::variant_{}(", enum_.zero_variant_name()));
+
+        for variant_data_item in enum_.zero_variant_data() {
+            let zero_value = self.generate_type_zero_expression(variant_data_item);
+            code.add_line(format!("{},", zero_value));
+        }
+
+        code.add_line(")");
+        code.add_line("}");
+        code.add_line("}");
         code.add_line("");
+
         code
     }
 
     #[allow(non_snake_case)]
-    fn generate_enum_UserType_impl(&self, _enum_: &Enum) -> Code {
+    fn generate_enum_UserType_impl(&self, enum_: &Enum) -> Code {
         let mut code = Code::new();
-        code.add_line("// TODO implement generate_enum_UserType_impl()"); // TODO #219 Support Enum
+
+        let enum_name = self.generate_enum_name(enum_);
+
+        code.add_line(format!("impl UserType for {enum_name} {{"));
+
+        code.add_line("fn kind(&self) -> String {");
+        code.add_line(format!("String::from(\"{}\")", enum_.name()));
+        code.add_line("}");
+
         code.add_line("");
+
+        code.add_line("fn clone_recursive(&self) -> Self {");
+        code.add_line("match self {");
+
+        for (variant_name, associated_data) in enum_.variants() {
+            let mut line = format!("Self::variant_{variant_name}(");
+            line += (0..associated_data.len())
+                .map(|i| format!("arg{}", i))
+                .collect::<Vec<String>>()
+                .join(", ")
+                .as_str();
+            line += ") => {";
+
+            code.add_line(line);
+
+            code.add_line(format!("Self::variant_{variant_name}("));
+            for i in 0..associated_data.len() {
+                code.add_line(format!("arg{i}.clone_recursive(),"));
+            }
+
+            code.add_line(")");
+            code.add_line("},");
+        }
+
+        code.add_line("}");
+        code.add_line("}");
+        code.add_line("}");
+        code.add_line("");
+
         code
     }
 
     #[allow(non_snake_case)]
-    fn generate_enum_Display_impl(&self, _enum_: &Enum) -> Code {
+    fn generate_enum_Display_impl(&self, enum_: &Enum) -> Code {
+        let enum_name = self.generate_enum_name(enum_);
+
         let mut code = Code::new();
-        code.add_line("// TODO implement generate_enum_Display_impl()"); // TODO #219 Support Enum
+        code.add_line(format!("impl Display for {} {{", enum_name));
+
+        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
+        code.add_line("match self {");
+
+        for (variant_name, associated_data) in enum_.variants() {
+            let mut line = format!("Self::variant_{}(", variant_name);
+            line += (0..associated_data.len())
+                .map(|i| format!("arg{}", i))
+                .collect::<Vec<String>>()
+                .join(", ")
+                .as_str();
+
+            line += ") => {";
+
+            code.add_line(line);
+
+            code.add_line(format!(
+                "write!(f, \"{}:{}{{{{\")?;",
+                enum_.name(),
+                variant_name
+            ));
+
+            for (offset, _) in associated_data.iter().enumerate() {
+                if offset != 0 {
+                    code.add_line("write!(f, \", \")?;");
+                }
+                code.add_line(format!("write!(f, \"{{:?}}\", arg{offset})?;"));
+            }
+
+            code.add_line("write!(f, \"}}\")");
+            code.add_line("}");
+        }
+        code.add_line("}");
+        code.add_line("}");
+        code.add_line("}");
         code.add_line("");
+
         code
     }
 
     #[allow(non_snake_case)]
-    fn generate_enum_Debug_impl(&self, _enum_: &Enum) -> Code {
+    fn generate_enum_Debug_impl(&self, enum_: &Enum) -> Code {
+        let enum_name = self.generate_enum_name(enum_);
+
         let mut code = Code::new();
-        code.add_line("// TODO implement generate_enum_Debug_impl()"); // TODO #219 Support Enum
+        code.add_line(format!("impl Debug for {} {{", enum_name));
+
+        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
+        code.add_line("match self {");
+
+        for (variant_name, associated_data) in enum_.variants() {
+            let mut line = format!("Self::variant_{}(", variant_name);
+            line += (0..associated_data.len())
+                .map(|i| format!("arg{}", i))
+                .collect::<Vec<String>>()
+                .join(", ")
+                .as_str();
+
+            line += ") => {";
+
+            code.add_line(line);
+
+            code.add_line(format!(
+                "write!(f, \"{}:{}{{{{\")?;",
+                enum_.name(),
+                variant_name
+            ));
+
+            for (offset, _) in associated_data.iter().enumerate() {
+                if offset != 0 {
+                    code.add_line("write!(f, \", \")?;");
+                }
+                code.add_line(format!("write!(f, \"{{:?}}\", arg{offset})?;"));
+            }
+
+            code.add_line("write!(f, \"}}\")");
+            code.add_line("}");
+        }
+        code.add_line("}");
+        code.add_line("}");
+        code.add_line("}");
         code.add_line("");
+
         code
     }
 
@@ -855,7 +1141,7 @@ impl Transpiler {
 
         code.add_line("fn eq(&self, other: &Self) -> bool {");
 
-        code.add_line("todo!();"); // TODO #219 implement generate_enum_PartialEq_impl()
+        code.add_line("todo!();"); // TODO #214 Implement interfaces
 
         code.add_line("}");
 
@@ -1052,7 +1338,7 @@ impl Transpiler {
 
         code.add_line("fn eq(&self, other: &Self) -> bool {");
 
-        code.add_line("todo!();"); // TODO #219 implement generate_enum_PartialEq_impl()
+        code.add_line("todo!();"); // TODO #214 Implement interfaces
 
         code.add_line("}");
 
@@ -1060,5 +1346,19 @@ impl Transpiler {
         code.add_line("");
 
         code
+    }
+
+    fn generate_enum_constructor_name(&self, enum_: &Enum, variant_name: String) -> String {
+        let function_name = format!("{}:{}", enum_.name(), variant_name);
+        let hash = Self::hash_name(enum_.position().path, function_name);
+        format!("enum_ctor_{}", hash)
+    }
+
+    fn generate_call_enum_constructor(&self, call: &CallEnumConstructor) -> Code {
+        let enum_ctor = &*call.enum_constructor.borrow();
+        let variant_name = enum_ctor.variant_name();
+        let enum_ = &*enum_ctor.enum_.borrow();
+        let enum_ctor_name = self.generate_enum_constructor_name(enum_, variant_name);
+        Code::from_string(format!("{}(stack);", enum_ctor_name))
     }
 }

@@ -13,9 +13,9 @@ use crate::{
         cross_referencer,
         types::{
             function_body::{
-                Assignment, Branch, CallArgument, CallEnum, CallFunction, CallLocalVariable,
-                CallStruct, CaseBlock, Foreach, FunctionBody, FunctionBodyItem, FunctionType,
-                GetField, GetFunction, Match, Return, SetField, Use, While,
+                Assignment, Branch, CallArgument, CallEnum, CallEnumConstructor, CallFunction,
+                CallLocalVariable, CallStruct, CaseBlock, Foreach, FunctionBody, FunctionBodyItem,
+                FunctionType, GetField, GetFunction, Match, Return, SetField, Use, While,
             },
             identifiable::{
                 Argument, EnumType, Function, FunctionPointerType, Identifiable, ReturnTypes,
@@ -33,7 +33,7 @@ use crate::{
 };
 
 use super::{
-    call_checker::FunctionCallChecker,
+    call_checker::CallChecker,
     errors::{
         assignment_type_error, branch_error, condition_error, function_type_error,
         get_field_not_found, get_field_stack_underflow, inconsistent_match_children,
@@ -431,12 +431,10 @@ impl<'a> FunctionTypeChecker<'a> {
             GetFunction(get_function) => self.check_get_function(stack, get_function),
             Foreach(foreach) => self.check_foreach(stack, foreach),
             Match(match_) => self.check_match(stack, match_),
+            CallEnumConstructor(call) => self.check_call_enum_constructor(stack, call),
 
             // TODO #220 Support Call
             Call(_) => panic!("checking not implemented for: Call"),
-
-            // TODO #219 Support CallEnumConstructor
-            CallEnumConstructor(_) => panic!("checking not implemented for: CallEnumConstructor"),
         }
     }
 
@@ -524,10 +522,18 @@ impl<'a> FunctionTypeChecker<'a> {
     }
 
     fn check_call_function(&self, stack: Vec<Type>, call: &CallFunction) -> TypeResult {
-        let position = call.position.clone();
         let function = &*(*call.function).borrow();
+        let signature = function.signature();
 
-        let checker = FunctionCallChecker::new(position, stack, function);
+        let checker = CallChecker {
+            type_params: signature.type_parameters.clone(),
+            argument_types: signature.argument_types(),
+            return_types: signature.return_types.clone(),
+            name: function.name(),
+            position: call.position.clone(),
+            stack,
+        };
+
         checker.check()
     }
 
@@ -719,7 +725,11 @@ impl<'a> FunctionTypeChecker<'a> {
             );
         };
 
-        stack.push(field_type.clone());
+        let type_parameters = struct_.parameter_mapping(&struct_type.parameters);
+
+        let field_type = CallChecker::apply_type_params(field_type, &type_parameters);
+
+        stack.push(field_type);
 
         Ok(stack)
     }
@@ -755,7 +765,11 @@ impl<'a> FunctionTypeChecker<'a> {
 
         let body_stack = self.check_function_body(vec![], &set_field.body)?;
 
-        let expected_body_stack = vec![field_type.clone()];
+        let type_parameters = struct_.parameter_mapping(&struct_type.parameters);
+
+        let expected_body_stack_top = CallChecker::apply_type_params(field_type, &type_parameters);
+
+        let expected_body_stack = vec![expected_body_stack_top];
 
         if body_stack != expected_body_stack {
             return set_field_type_error(
@@ -828,6 +842,9 @@ impl<'a> FunctionTypeChecker<'a> {
         let Type::Enum(enum_type) = type_ else {
             return match_non_enum(match_.position.clone(), type_);
         };
+
+        // Update target, such that we can use this in transpiler
+        match_.target.set(Some(enum_type.enum_.clone()));
 
         Self::check_match_is_expected_enum(&enum_type, &match_)?;
         Self::check_match_is_full_enumeration(&enum_type, &match_)?;
@@ -1012,5 +1029,50 @@ impl<'a> FunctionTypeChecker<'a> {
         }
 
         case_block_result
+    }
+
+    fn check_call_enum_constructor(
+        &self,
+        stack: Vec<Type>,
+        call: &CallEnumConstructor,
+    ) -> TypeResult {
+        let enum_ctor = &*call.enum_constructor.borrow();
+        let enum_ = &*enum_ctor.enum_.borrow();
+
+        let found_param_count = call.type_parameters.len();
+        let expected_param_count = enum_.resolved().type_parameters.len();
+
+        if found_param_count != expected_param_count {
+            return parameter_count_error(
+                call.position.clone(),
+                found_param_count,
+                expected_param_count,
+            );
+        }
+
+        let type_parameters = enum_.parameter_mapping(&call.type_parameters);
+
+        let enum_type_ = Type::Enum(EnumType {
+            enum_: enum_ctor.enum_.clone(),
+            parameters: call.type_parameters.clone(),
+        });
+
+        let argument_types: Vec<_> = enum_ctor
+            .data()
+            .iter()
+            .map(|type_| CallChecker::apply_type_params(type_, &type_parameters))
+            .clone()
+            .collect();
+
+        let checker = CallChecker {
+            type_params: HashMap::new(),
+            argument_types,
+            return_types: ReturnTypes::Sometimes(vec![enum_type_]),
+            name: enum_ctor.name(),
+            position: call.position.clone(),
+            stack,
+        };
+
+        checker.check()
     }
 }
