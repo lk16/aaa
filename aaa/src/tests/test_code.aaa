@@ -1863,3 +1863,93 @@ fn main {
 /// Expected: 1
 ///
 /// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: call ok
+
+fn is_nice args x as int return bool {
+    x 69 =
+}
+
+fn main {
+    420 "is_nice" fn call
+    not assert
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: call fail wrong argument
+
+fn is_nice args x as int return bool {
+    x 69 =
+}
+
+fn main {
+    false "is_nice" fn call
+    not assert
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:24: Invalid stack when calling function pointer
+///        stack: bool
+/// expected top: int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: call fail use return type incorrectly
+
+fn is_nice args x as int return bool {
+    x 69 =
+}
+
+fn main {
+    420 "is_nice" fn call
+    1 +
+    drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:6:7: Invalid stack when calling +
+///        stack: bool int
+/// expected top: int int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: call fail empty stack
+
+fn main {
+    call
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Stack underflow when using call
+///        stack:
+/// expected top: <function pointer>
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: call fail non-function
+
+fn main {
+    3 call
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:7: call should be used on a function pointer, found int instead.
+///
+/// Found 1 errors
