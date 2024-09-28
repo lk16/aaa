@@ -153,10 +153,11 @@ pub struct CallEnum {
     pub type_parameters: Vec<Type>,
 }
 
-#[allow(dead_code)] // TODO #219 Support CallEnumConstructor
 pub struct CallEnumConstructor {
     pub position: Position,
     pub enum_constructor: Rc<RefCell<EnumConstructor>>,
+
+    #[allow(dead_code)] // TODO #221 Improve type parameter handling
     pub type_parameters: Vec<Type>,
 }
 
@@ -195,14 +196,13 @@ pub struct Integer {
     pub value: isize,
 }
 
-#[allow(dead_code)]
 pub struct Match {
     pub position: Position,
     pub case_blocks: Vec<CaseBlock>,
     pub default_blocks: Vec<DefaultBlock>,
+    pub target: Cell<Option<Rc<RefCell<Enum>>>>,
 }
 
-#[allow(dead_code)]
 pub struct CaseBlock {
     pub position: Position,
     pub enum_name: String,
@@ -211,7 +211,6 @@ pub struct CaseBlock {
     pub variables: Vec<Variable>,
 }
 
-#[allow(dead_code)]
 pub struct DefaultBlock {
     pub position: Position,
     pub body: FunctionBody,

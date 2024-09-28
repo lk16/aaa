@@ -827,7 +827,7 @@ impl CrossReferencer {
                     _ => todo!(), // InvalidType
                 }
             }
-            Some(_type_) => Type::Parameter(regular_parsed_type_parameter.clone().into()),
+            Some(type_) => type_.clone(),
         };
 
         Ok(type_)
@@ -1163,6 +1163,7 @@ impl<'a> FunctionBodyResolver<'a> {
             case_blocks,
             default_blocks,
             position: parsed.position.clone(),
+            target: Cell::new(None), // Target is set in type checker
         };
 
         Ok(FunctionBodyItem::Match(match_))

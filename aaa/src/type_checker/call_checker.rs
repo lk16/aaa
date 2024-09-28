@@ -3,82 +3,89 @@ use std::{collections::HashMap, iter::zip};
 use super::errors::{does_not_return, stack_error, TypeResult};
 use crate::{
     common::position::Position,
-    cross_referencer::types::identifiable::{EnumType, Function, ReturnTypes, StructType, Type},
+    cross_referencer::types::identifiable::{EnumType, ReturnTypes, StructType, Type},
     type_checker::errors::stack_underflow,
 };
 
-pub struct FunctionCallChecker<'a> {
-    position: Position,
-    stack: Vec<Type>,
-    function: &'a Function,
-    type_params: HashMap<String, Type>,
+pub struct CallChecker {
+    pub type_params: HashMap<String, Type>,
+    pub argument_types: Vec<Type>,
+    pub return_types: ReturnTypes,
+    pub name: String,
+    pub position: Position,
+    pub stack: Vec<Type>,
 }
 
-impl<'a> FunctionCallChecker<'a> {
-    pub fn new(position: Position, stack: Vec<Type>, function: &'a Function) -> Self {
-        Self {
-            position,
-            stack,
-            function,
-            type_params: HashMap::new(),
-        }
-    }
-
-    pub fn check(mut self) -> TypeResult {
-        let signature = self.function.signature();
-        let func_arg_types = signature.argument_types();
-
+impl CallChecker {
+    pub fn check(self) -> TypeResult {
         let stack_before = self.stack.clone();
 
-        if func_arg_types.len() > self.stack.len() {
-            let func_name = self.function.name();
-            return stack_underflow(self.position, func_name, stack_before, func_arg_types);
+        if self.argument_types.len() > self.stack.len() {
+            return stack_underflow(self.position, self.name, stack_before, self.argument_types);
         }
 
-        let func_return_types = match &signature.return_types {
-            ReturnTypes::Sometimes(types) => types,
-            ReturnTypes::Never => return does_not_return(),
-        };
+        let stack_size_after_call = self.stack.len() - self.argument_types.len();
 
-        let stack_size_after_call = self.stack.len() - func_arg_types.len();
-        let stack_arg_types = self.stack.split_off(stack_size_after_call);
+        let mut stack = self.stack.clone();
 
-        for (func_arg, stack_arg) in zip(&func_arg_types, &stack_arg_types) {
-            if !self.types_match(func_arg, stack_arg) {
-                let func_name = self.function.name();
-                return stack_error(self.position, func_name, stack_before, func_arg_types);
+        let stack_arg_types = stack.split_off(stack_size_after_call);
+
+        let mut type_params = self.type_params.clone();
+
+        for (func_arg, stack_arg) in zip(&self.argument_types, &stack_arg_types) {
+            if !Self::types_match(func_arg, stack_arg, &mut type_params) {
+                let func_name = self.name;
+                return stack_error(self.position, func_name, stack_before, self.argument_types);
             }
         }
 
-        let return_types = self.get_return_types(&func_return_types);
-        self.stack.extend(return_types);
+        let return_types = match &self.return_types {
+            ReturnTypes::Sometimes(types) => types.clone(),
+            ReturnTypes::Never => return does_not_return(),
+        };
 
-        Ok(self.stack)
+        let return_types: Vec<_> = return_types
+            .iter()
+            .map(|type_| Self::apply_type_params(type_, &type_params))
+            .collect();
+
+        stack.extend(return_types);
+
+        Ok(stack)
     }
 
-    // Returns whether rhs matches lhs, updating `self.type_params` in the process.
-    fn types_match(&mut self, lhs: &Type, rhs: &Type) -> bool {
+    // Returns whether rhs matches lhs, updating `type_params` in the process.
+    fn types_match(lhs: &Type, rhs: &Type, type_params: &mut HashMap<String, Type>) -> bool {
         use Type::*;
 
         match (lhs, rhs) {
             (FunctionPointer(lhs), FunctionPointer(rhs)) => lhs == rhs,
-            (Struct(lhs), Struct(rhs)) => self.struct_types_match(lhs, rhs),
-            (Enum(lhs), Enum(rhs)) => self.enum_types_match(lhs, rhs),
+            (Struct(lhs), Struct(rhs)) => Self::struct_types_match(lhs, rhs, type_params),
+            (Enum(lhs), Enum(rhs)) => Self::enum_types_match(lhs, rhs, type_params),
             (Parameter(lhs), _) => {
-                if let Some(lhs) = self.type_params.get(&lhs.name) {
-                    if lhs != rhs {
-                        return false;
+                if let Some(lhs) = type_params.get(&lhs.name) {
+                    match lhs {
+                        Parameter(_) => (),
+                        _ => {
+                            if lhs != rhs {
+                                return false;
+                            }
+                        }
                     }
                 };
 
-                self.type_params.insert(lhs.name.clone(), rhs.clone());
+                type_params.insert(lhs.name.clone(), rhs.clone());
                 true
             }
             _ => false,
         }
     }
 
-    fn struct_types_match(&mut self, lhs: &StructType, rhs: &StructType) -> bool {
+    fn struct_types_match(
+        lhs: &StructType,
+        rhs: &StructType,
+        type_params: &mut HashMap<String, Type>,
+    ) -> bool {
         let lhs_key = (*lhs.struct_).borrow().key();
         let rhs_key = (*rhs.struct_).borrow().key();
 
@@ -89,11 +96,15 @@ impl<'a> FunctionCallChecker<'a> {
         lhs.parameters
             .iter()
             .zip(&rhs.parameters)
-            .map(|(lhs, rhs)| self.types_match(lhs, rhs))
+            .map(|(lhs, rhs)| Self::types_match(lhs, rhs, type_params))
             .all(|x| x)
     }
 
-    fn enum_types_match(&mut self, lhs: &EnumType, rhs: &EnumType) -> bool {
+    fn enum_types_match(
+        lhs: &EnumType,
+        rhs: &EnumType,
+        type_params: &mut HashMap<String, Type>,
+    ) -> bool {
         let lhs_key = (*lhs.enum_).borrow().key();
         let rhs_key = (*rhs.enum_).borrow().key();
 
@@ -104,39 +115,43 @@ impl<'a> FunctionCallChecker<'a> {
         lhs.parameters
             .iter()
             .zip(&rhs.parameters)
-            .map(|(lhs, rhs)| self.types_match(lhs, rhs))
+            .map(|(lhs, rhs)| Self::types_match(lhs, rhs, type_params))
             .all(|x| x)
     }
 
-    fn get_return_types(&self, func_return_types: &Vec<Type>) -> Vec<Type> {
-        let mut return_types = vec![];
-
-        for type_ in func_return_types.iter().cloned() {
-            let return_type = self.apply_type_params(type_.clone());
-            return_types.push(return_type);
-        }
-
-        return_types
-    }
-
-    fn apply_type_params(&self, mut type_: Type) -> Type {
+    pub fn apply_type_params(type_: &Type, type_params: &HashMap<String, Type>) -> Type {
         match type_ {
-            Type::Parameter(ref type_param) => {
-                if let Some(found_type) = self.type_params.get(&type_param.name) {
+            Type::Parameter(type_param) => {
+                if let Some(found_type) = type_params.get(&type_param.name) {
                     return found_type.clone();
                 }
+                return Type::Parameter(type_param.clone());
             }
-            Type::Struct(ref mut struct_) => {
+            Type::Struct(struct_) => {
+                let mut struct_ = struct_.clone();
+
                 struct_.parameters = struct_
                     .parameters
                     .iter()
-                    .cloned()
-                    .map(|param| self.apply_type_params(param))
+                    .map(|param| Self::apply_type_params(param, type_params))
                     .collect();
+
+                return Type::Struct(struct_);
+            }
+            Type::Enum(enum_) => {
+                let mut enum_ = enum_.clone();
+
+                enum_.parameters = enum_
+                    .parameters
+                    .iter()
+                    .map(|param| Self::apply_type_params(param, type_params))
+                    .collect();
+
+                return Type::Enum(enum_);
             }
             _ => (),
         }
 
-        type_
+        type_.clone()
     }
 }
