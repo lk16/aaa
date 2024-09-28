@@ -13,9 +13,10 @@ use crate::{
         cross_referencer,
         types::{
             function_body::{
-                Assignment, Branch, CallArgument, CallEnum, CallEnumConstructor, CallFunction,
-                CallLocalVariable, CallStruct, CaseBlock, Foreach, FunctionBody, FunctionBodyItem,
-                FunctionType, GetField, GetFunction, Match, Return, SetField, Use, While,
+                Assignment, Branch, Call, CallArgument, CallEnum, CallEnumConstructor,
+                CallFunction, CallLocalVariable, CallStruct, CaseBlock, Foreach, FunctionBody,
+                FunctionBodyItem, FunctionType, GetField, GetFunction, Match, Return, SetField,
+                Use, While,
             },
             identifiable::{
                 Argument, EnumType, Function, FunctionPointerType, Identifiable, ReturnTypes,
@@ -24,24 +25,24 @@ use crate::{
         },
     },
     type_checker::errors::{
-        assigned_variable_not_found, assignment_stack_size_error, colliding_case_blocks,
-        colliding_default_blocks, does_not_return, get_field_from_non_struct,
-        invalid_main_signature, main_function_not_found, match_stack_underflow,
-        match_unexpected_enum, member_function_unexpected_target, name_collision,
-        unexpected_case_variable_count, unhandled_enum_variants,
+        assigned_variable_not_found, assignment_stack_size_error, call_non_function,
+        colliding_case_blocks, colliding_default_blocks, does_not_return,
+        get_field_from_non_struct, invalid_main_signature, main_function_not_found,
+        match_stack_underflow, match_unexpected_enum, member_function_unexpected_target,
+        name_collision, unexpected_case_variable_count, unhandled_enum_variants,
     },
 };
 
 use super::{
     call_checker::CallChecker,
     errors::{
-        assignment_type_error, branch_error, condition_error, function_type_error,
-        get_field_not_found, get_field_stack_underflow, inconsistent_match_children,
-        main_non_function, match_non_enum, member_function_invalid_target,
-        member_function_without_arguments, parameter_count_error, return_stack_error,
-        set_field_not_found, set_field_on_non_struct, set_field_stack_underflow,
-        set_field_type_error, unreachable_code, unreachable_default, use_stack_underflow,
-        while_error, TypeError, TypeResult,
+        assignment_type_error, branch_error, call_stack_underflow, condition_error,
+        function_type_error, get_field_not_found, get_field_stack_underflow,
+        inconsistent_match_children, main_non_function, match_non_enum,
+        member_function_invalid_target, member_function_without_arguments, parameter_count_error,
+        return_stack_error, set_field_not_found, set_field_on_non_struct,
+        set_field_stack_underflow, set_field_type_error, unreachable_code, unreachable_default,
+        use_stack_underflow, while_error, TypeError, TypeResult,
     },
 };
 
@@ -432,9 +433,7 @@ impl<'a> FunctionTypeChecker<'a> {
             Foreach(foreach) => self.check_foreach(stack, foreach),
             Match(match_) => self.check_match(stack, match_),
             CallEnumConstructor(call) => self.check_call_enum_constructor(stack, call),
-
-            // TODO #220 Support Call
-            Call(_) => panic!("checking not implemented for: Call"),
+            Call(call) => self.check_call(stack, call),
         }
     }
 
@@ -1071,6 +1070,27 @@ impl<'a> FunctionTypeChecker<'a> {
             name: enum_ctor.name(),
             position: call.position.clone(),
             stack,
+        };
+
+        checker.check()
+    }
+
+    fn check_call(&self, mut stack: Vec<Type>, call: &Call) -> TypeResult {
+        let Some(top_type) = stack.pop() else {
+            return call_stack_underflow(call.position.clone(), stack);
+        };
+
+        let Type::FunctionPointer(function_pointer) = top_type else {
+            return call_non_function(call.position.clone(), top_type);
+        };
+
+        let checker = CallChecker {
+            name: "function pointer".to_owned(),
+            position: call.position.clone(),
+            argument_types: function_pointer.argument_types,
+            return_types: function_pointer.return_types,
+            stack: stack,
+            type_params: HashMap::new(),
         };
 
         checker.check()

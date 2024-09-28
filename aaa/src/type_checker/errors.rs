@@ -43,6 +43,8 @@ pub enum TypeError {
     MainFunctionNotFound(MainFunctionNotFound),
     InvalidMainSignature(InvalidMainSignature),
     MainNonFunction(MainNonFunction),
+    CallNonFunction(CallNonFunction),
+    CallStackUndeflow(CallStackUndeflow),
 }
 
 impl Display for TypeError {
@@ -85,6 +87,8 @@ impl Display for TypeError {
             Self::MainFunctionNotFound(error) => write!(f, "{}", error),
             Self::InvalidMainSignature(error) => write!(f, "{}", error),
             Self::MainNonFunction(error) => write!(f, "{}", error),
+            Self::CallNonFunction(error) => write!(f, "{}", error),
+            Self::CallStackUndeflow(error) => write!(f, "{}", error),
         }
     }
 }
@@ -1150,5 +1154,51 @@ pub fn main_non_function<T>(
     Err(TypeError::MainNonFunction(MainNonFunction {
         position,
         identifiable,
+    }))
+}
+
+pub struct CallNonFunction {
+    pub position: Position,
+    pub type_: Type,
+}
+
+impl Display for CallNonFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "{}: call should be used on a function pointer, found {} instead.",
+            self.position, self.type_
+        )
+    }
+}
+
+pub fn call_non_function<T>(position: Position, type_: Type) -> Result<T, TypeError> {
+    Err(TypeError::CallNonFunction(CallNonFunction {
+        position,
+        type_,
+    }))
+}
+
+pub struct CallStackUndeflow {
+    pub position: Position,
+    pub before_stack: Vec<Type>,
+}
+
+impl Display for CallStackUndeflow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}: Stack underflow when using call", self.position)?;
+        writeln!(
+            f,
+            "{}",
+            join_display_prefixed("       stack: ", " ", &self.before_stack)
+        )?;
+        writeln!(f, "expected top: <function pointer>")
+    }
+}
+
+pub fn call_stack_underflow(position: Position, before_stack: Vec<Type>) -> TypeResult {
+    Err(TypeError::CallStackUndeflow(CallStackUndeflow {
+        position,
+        before_stack,
     }))
 }

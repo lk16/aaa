@@ -320,36 +320,34 @@ impl Transpiler {
 
         code.add_line("fn kind(&self) -> String {");
 
-        code.add_line("match self {");
-
         if names.is_empty() {
             code.add_line("unreachable!();");
         } else {
+            code.add_line("match self {");
             for name in &names {
                 code.add_line(format!("Self::{name}(v) => v.kind(),"));
             }
+            code.add_line("}");
         }
 
-        code.add_line("}");
         code.add_line("}");
 
         code.add_line("");
 
         code.add_line("fn clone_recursive(&self) -> Self {");
 
-        code.add_line("match self {");
-
         if names.is_empty() {
             code.add_line("unreachable!();");
         } else {
+            code.add_line("match self {");
             for name in &names {
                 code.add_line(format!(
                     "Self::{name}(v) => Self::{name}(v.clone_recursive()),"
                 ));
             }
+            code.add_line("}");
         }
 
-        code.add_line("}");
         code.add_line("}");
 
         code.add_line("}");
@@ -541,7 +539,7 @@ impl Transpiler {
             Assignment(assignment) => self.generate_assignment(assignment),
             Branch(branch) => self.generate_branch(branch),
             Boolean(bool) => self.generate_boolean(bool),
-            Call(_) => unreachable!(), // TODO #220 Support Call
+            Call(_) => self.generate_call(),
             CallArgument(call) => self.generate_call_argument(call),
             CallFunction(call) => self.generate_call_function(call),
             CallEnum(call) => self.generate_call_enum(call),
@@ -1360,5 +1358,9 @@ impl Transpiler {
         let enum_ = &*enum_ctor.enum_.borrow();
         let enum_ctor_name = self.generate_enum_constructor_name(enum_, variant_name);
         Code::from_string(format!("{}(stack);", enum_ctor_name))
+    }
+
+    fn generate_call(&self) -> Code {
+        Code::from_string("stack.pop_function_pointer_and_call();")
     }
 }
