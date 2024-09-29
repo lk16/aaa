@@ -93,7 +93,7 @@ impl CrossReferencer {
             self.errors.push(error);
         }
 
-        if self.errors.len() > 0 {
+        if !self.errors.is_empty() {
             return Err(self.errors);
         }
 
@@ -108,7 +108,7 @@ impl CrossReferencer {
         &mut self,
         path: &PathBuf,
     ) -> Result<(), CrossReferencerError> {
-        if self.dependency_stack.contains(&path) {
+        if self.dependency_stack.contains(path) {
             let mut dependencies = self.dependency_stack.clone();
             dependencies.push(path.clone());
 
@@ -236,7 +236,7 @@ impl CrossReferencer {
         identifiables
     }
 
-    fn load_structs(parsed_structs: &Vec<parsed::Struct>) -> Vec<Identifiable> {
+    fn load_structs(parsed_structs: &[parsed::Struct]) -> Vec<Identifiable> {
         parsed_structs
             .iter()
             .cloned()
@@ -244,7 +244,7 @@ impl CrossReferencer {
             .collect()
     }
 
-    fn load_enums(parsed_enums: &Vec<parsed::Enum>) -> Vec<Identifiable> {
+    fn load_enums(parsed_enums: &[parsed::Enum]) -> Vec<Identifiable> {
         let mut identifiables = vec![];
 
         for parsed_enum in parsed_enums.iter() {
@@ -265,7 +265,7 @@ impl CrossReferencer {
         identifiables
     }
 
-    fn load_functions(parsed_functions: &Vec<parsed::Function>) -> Vec<Identifiable> {
+    fn load_functions(parsed_functions: &[parsed::Function]) -> Vec<Identifiable> {
         parsed_functions
             .iter()
             .cloned()
@@ -273,7 +273,7 @@ impl CrossReferencer {
             .collect()
     }
 
-    fn load_imports(parsed_imports: &Vec<parsed::Import>) -> Vec<Identifiable> {
+    fn load_imports(parsed_imports: &[parsed::Import]) -> Vec<Identifiable> {
         let mut imports = vec![];
 
         for parsed_import in parsed_imports.iter() {
@@ -359,7 +359,7 @@ impl CrossReferencer {
         if let Some(parsed_fields) = &struct_.parsed.fields {
             for parsed_field in parsed_fields {
                 let name = parsed_field.name.value.clone();
-                let field = self.resolve_type(&parsed_field.type_, &type_parameters)?;
+                let field = self.resolve_type(&parsed_field.type_, type_parameters)?;
                 fields.insert(name, field);
             }
         }
@@ -500,9 +500,9 @@ impl CrossReferencer {
         let builtins_key = &(self.builtins_path.clone(), name.clone());
         let key = (position.path.clone(), name.clone());
 
-        let mut identifiable = self.identifiables.get(&builtins_key);
+        let mut identifiable = self.identifiables.get(builtins_key);
 
-        if let None = identifiable {
+        if identifiable.is_none() {
             identifiable = self.identifiables.get(&key);
         }
 
@@ -605,7 +605,7 @@ impl CrossReferencer {
             let mut data = vec![];
 
             for unresolved_data_item in parsed_variant.data.iter() {
-                let data_item = self.resolve_type(&unresolved_data_item, &type_parameters)?;
+                let data_item = self.resolve_type(unresolved_data_item, type_parameters)?;
                 data.push(data_item);
             }
             variants.insert(name, data);
@@ -740,10 +740,10 @@ impl CrossReferencer {
             ),
         };
 
-        return Ok(Type::FunctionPointer(FunctionPointerType {
+        Ok(Type::FunctionPointer(FunctionPointerType {
             argument_types,
             return_types,
-        }));
+        }))
     }
 
     fn resolve_function_return_type(
@@ -939,7 +939,7 @@ impl<'a> FunctionBodyResolver<'a> {
             .variables
             .iter()
             .cloned()
-            .map(|var| Variable::from(var))
+            .map(Variable::from)
             .collect();
 
         let assignment = Assignment {
@@ -1029,7 +1029,7 @@ impl<'a> FunctionBodyResolver<'a> {
             }));
         }
 
-        if let Some(_) = self.local_variables.get(&name) {
+        if self.local_variables.contains(&name) {
             return Ok(FunctionBodyItem::CallLocalVariable(CallLocalVariable {
                 name,
                 position,
@@ -1055,32 +1055,28 @@ impl<'a> FunctionBodyResolver<'a> {
         match identifiable {
             Identifiable::Import(_) => unreachable!(),
             Identifiable::Function(function_rc) => {
-                return Ok(FunctionBodyItem::CallFunction(CallFunction {
+                Ok(FunctionBodyItem::CallFunction(CallFunction {
                     function: function_rc.clone(),
                     type_parameters: parameters,
                     position: parsed.position(),
                 }))
             }
-            Identifiable::Enum(enum_rc) => {
-                return Ok(FunctionBodyItem::CallEnum(CallEnum {
-                    enum_: enum_rc.clone(),
-                    type_parameters: parameters,
-                    position: parsed.position(),
-                }))
-            }
-            Identifiable::Struct(struct_rc) => {
-                return Ok(FunctionBodyItem::CallStruct(CallStruct {
-                    struct_: struct_rc.clone(),
-                    type_parameters: parameters,
-                    position: parsed.position(),
-                }))
-            }
+            Identifiable::Enum(enum_rc) => Ok(FunctionBodyItem::CallEnum(CallEnum {
+                enum_: enum_rc.clone(),
+                type_parameters: parameters,
+                position: parsed.position(),
+            })),
+            Identifiable::Struct(struct_rc) => Ok(FunctionBodyItem::CallStruct(CallStruct {
+                struct_: struct_rc.clone(),
+                type_parameters: parameters,
+                position: parsed.position(),
+            })),
             Identifiable::EnumConstructor(enum_ctor) => {
-                return Ok(FunctionBodyItem::CallEnumConstructor(CallEnumConstructor {
+                Ok(FunctionBodyItem::CallEnumConstructor(CallEnumConstructor {
                     enum_constructor: enum_ctor.clone(),
                     type_parameters: parameters,
                     position: parsed.position(),
-                }));
+                }))
             }
         }
     }
@@ -1190,7 +1186,7 @@ impl<'a> FunctionBodyResolver<'a> {
             .variables
             .iter()
             .cloned()
-            .map(|var| Variable::from(var))
+            .map(Variable::from)
             .collect();
 
         for variable in &variables {
@@ -1260,7 +1256,7 @@ impl<'a> FunctionBodyResolver<'a> {
             .variables
             .iter()
             .cloned()
-            .map(|var| Variable::from(var))
+            .map(Variable::from)
             .collect();
 
         for variable in &variables {

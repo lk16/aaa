@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 use std::{
     collections::HashMap,
     fmt::Display,
-    path::{PathBuf, MAIN_SEPARATOR},
+    path::{Path, PathBuf, MAIN_SEPARATOR_STR},
 };
 
 use crate::{
@@ -20,7 +20,7 @@ pub struct SourceFile {
 }
 
 impl SourceFile {
-    pub fn dependencies(&self, current_dir: &PathBuf) -> Vec<PathBuf> {
+    pub fn dependencies(&self, current_dir: &Path) -> Vec<PathBuf> {
         self.imports
             .iter()
             .map(|import| import.get_source_path(current_dir))
@@ -242,7 +242,7 @@ pub enum FunctionName {
 
 impl Default for FunctionName {
     fn default() -> Self {
-        return Self::Free(FreeFunctionName::default());
+        Self::Free(FreeFunctionName::default())
     }
 }
 
@@ -286,7 +286,7 @@ pub struct Import {
 }
 
 impl Import {
-    pub fn get_source_path(&self, current_dir: &PathBuf) -> PathBuf {
+    pub fn get_source_path(&self, current_dir: &Path) -> PathBuf {
         let source = &self.source.value;
 
         if source.ends_with(".aaa") {
@@ -306,7 +306,7 @@ impl Import {
             .path
             .parent()
             .unwrap()
-            .join(source.replace(".", &MAIN_SEPARATOR.to_string()));
+            .join(source.replace(".", MAIN_SEPARATOR_STR));
 
         path.set_extension("aaa");
 
@@ -345,7 +345,7 @@ pub enum ReturnTypes {
 
 impl Default for ReturnTypes {
     fn default() -> Self {
-        return ReturnTypes::Sometimes(vec![]);
+        ReturnTypes::Sometimes(vec![])
     }
 }
 
@@ -434,7 +434,7 @@ impl HasPosition for Type {
 
 impl Default for Type {
     fn default() -> Self {
-        return Self::Regular(RegularType::default());
+        Self::Regular(RegularType::default())
     }
 }
 

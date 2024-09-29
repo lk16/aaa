@@ -1,5 +1,3 @@
-.python-version
-__pycache__
 .coverage
 *.code-workspace
 .envrc

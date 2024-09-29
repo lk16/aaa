@@ -1,9 +1,0 @@
-fn main {
-    time
-    use unix_ts, usec {
-        unix_ts .
-        " " .
-        usec .
-    }
-    "\n" .
-}

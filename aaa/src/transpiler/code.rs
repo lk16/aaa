@@ -1,4 +1,4 @@
-const INDENTATION: &'static str = "    ";
+const INDENTATION: &str = "    ";
 
 pub struct Code {
     lines: Vec<String>,

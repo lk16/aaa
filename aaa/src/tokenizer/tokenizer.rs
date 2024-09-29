@@ -32,7 +32,7 @@ impl TokenizerError {
 }
 
 pub fn tokenize(code: &str, path: Option<PathBuf>) -> Result<Vec<Token>, TokenizerError> {
-    let path = path.or(Some(PathBuf::from("/unknown/path.aaa"))).unwrap();
+    let path = path.unwrap_or(PathBuf::from("/unknown/path.aaa"));
 
     let mut tokens = vec![];
     let mut position = Position::new(path.clone(), 1, 1);

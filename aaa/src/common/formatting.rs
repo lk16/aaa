@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-pub fn join_display<T: Display>(separator: &str, values: &Vec<T>) -> String {
+pub fn join_display<T: Display>(separator: &str, values: &[T]) -> String {
     values
         .iter()
         .map(|value| format!("{}", value))
@@ -8,7 +8,7 @@ pub fn join_display<T: Display>(separator: &str, values: &Vec<T>) -> String {
         .join(separator)
 }
 
-pub fn join_display_prefixed<T: Display>(prefix: &str, separator: &str, values: &Vec<T>) -> String {
+pub fn join_display_prefixed<T: Display>(prefix: &str, separator: &str, values: &[T]) -> String {
     let suffix = join_display(separator, values);
 
     format!("{}{}", prefix.to_owned(), suffix)

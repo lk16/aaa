@@ -16,12 +16,8 @@ impl Position {
         }
     }
 
-    pub fn after(&self, string: &String) -> Self {
-        let newline_indices: Vec<_> = string
-            .match_indices("\n")
-            .into_iter()
-            .map(|(n, _)| n)
-            .collect();
+    pub fn after(&self, string: &str) -> Self {
+        let newline_indices: Vec<_> = string.match_indices("\n").map(|(n, _)| n).collect();
 
         let line = self.line + newline_indices.len();
 

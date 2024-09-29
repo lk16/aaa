@@ -149,10 +149,10 @@ impl Display for Type {
 impl Type {
     pub fn kind(&self) -> &'static str {
         match &self {
-            &Self::FunctionPointer(_) => "function pointer",
-            &Self::Struct(_) => "struct",
-            &Self::Enum(_) => "enum",
-            &Self::Parameter(_) => "parameter",
+            Self::FunctionPointer(_) => "function pointer",
+            Self::Struct(_) => "struct",
+            Self::Enum(_) => "enum",
+            Self::Parameter(_) => "parameter",
         }
     }
 }
@@ -233,7 +233,7 @@ pub enum ReturnTypes {
 impl Display for ReturnTypes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Never => return write!(f, "never"),
+            Self::Never => write!(f, "never"),
             Self::Sometimes(types) => {
                 let joined_types = join_display(", ", types);
                 write!(f, "{}", joined_types)
@@ -319,12 +319,12 @@ impl Enum {
     }
 
     pub fn zero_variant_name(&self) -> &String {
-        &self.parsed.variants.get(0).unwrap().name.value
+        &self.parsed.variants.first().unwrap().name.value
     }
 
     pub fn zero_variant_data(&self) -> &Vec<Type> {
         let name = self.zero_variant_name();
-        &self.variants().get(name).unwrap()
+        self.variants().get(name).unwrap()
     }
 
     pub fn parameter_names(&self) -> Vec<String> {
@@ -422,7 +422,7 @@ impl From<parsed::Function> for Function {
     fn from(parsed: parsed::Function) -> Self {
         Self {
             is_builtin: parsed.body.is_none(),
-            parsed: parsed,
+            parsed,
             resolved_signature: None,
             resolved_body: None,
         }
@@ -438,8 +438,7 @@ impl Function {
         self.signature()
             .arguments
             .iter()
-            .filter(|arg| &arg.name == name)
-            .next()
+            .find(|arg| &arg.name == name)
     }
 
     pub fn has_argument(&self, name: &String) -> bool {

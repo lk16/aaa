@@ -17,6 +17,7 @@ pub struct CallChecker {
 }
 
 impl CallChecker {
+    #[allow(clippy::result_large_err)] // TODO
     pub fn check(self) -> TypeResult {
         let stack_before = self.stack.clone();
 

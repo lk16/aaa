@@ -1,4 +1,0 @@
-fn main {
-    "/tmp/unlink_dummy" unlink
-    not assert
-}
