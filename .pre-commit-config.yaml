@@ -14,11 +14,36 @@ repos:
 
   - repo: local
     hooks:
-      - id: mypy
-        name: run mypy
+      - id: cargo-check-aaa
+        name: aaa cargo check
         language: system
-        entry: mypy --strict
-        types: [python]
+        entry: cargo check --manifest-path aaa/Cargo.toml
+        pass_filenames: false
+      - id: cargo-fmt-aaa
+        name: aaa cargo fmt
+        language: system
+        entry: cargo check --manifest-path aaa/Cargo.toml
+        pass_filenames: false
+      - id: cargo-clippy-aaa
+        name: aaa cargo clippy
+        language: system
+        entry: cargo clippy --manifest-path aaa/Cargo.toml # TODO -- -Dwarnings
+        pass_filenames: false
+      - id: cargo-check-aaa-stdlib
+        name: aaa-stdlib cargo check
+        language: system
+        entry: cargo check --manifest-path aaa-stdlib/Cargo.toml
+        pass_filenames: false
+      - id: cargo-fmt-aaa-stdlib
+        name: aaa-stdlib cargo fmt
+        language: system
+        entry: cargo check --manifest-path aaa-stdlib/Cargo.toml
+        pass_filenames: false
+      - id: cargo-clippy-aaa-stdlib
+        name: aaa-stdlib cargo clippy
+        language: system
+        entry: cargo clippy --manifest-path aaa-stdlib/Cargo.toml # TODO -- -Dwarnings
+        pass_filenames: false
 
   - repo: https://github.com/lk16/detect-missing-init
     rev: v0.1.6
@@ -26,36 +51,3 @@ repos:
       - id: detect-missing-init
         args:
           ["--create", "--track", "--python-folders", "python/aaa,python/tests"]
-
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
-    hooks:
-      - id: fmt
-        pass_filenames: false
-        args: [--manifest-path, aaa-stdlib/Cargo.toml]
-      - id: cargo-check
-        pass_filenames: false
-        args: [--manifest-path, aaa-stdlib/Cargo.toml]
-      - id: clippy
-        pass_filenames: false
-        args: [--manifest-path, aaa-stdlib/Cargo.toml]
-
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
-    hooks:
-      - id: fmt
-        pass_filenames: false
-        args: [--manifest-path, aaa/Cargo.toml]
-      - id: cargo-check
-        pass_filenames: false
-        args: [--manifest-path, aaa/Cargo.toml]
-      - id: clippy
-        pass_filenames: false
-        args: [--manifest-path, aaa/Cargo.toml]
-
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.8
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
