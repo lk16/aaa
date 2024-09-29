@@ -1,7 +1,9 @@
 # Aaa
-Stack-based language, like forth.
 
-TODO improve docs
+This project implements tools for working with the Aaa programming language.
+
+The language is stack-based and is inspired by [Forth](https://en.wikipedia.org/wiki/Forth_(programming_language)) and [Porth](https://gitlab.com/tsoding/porth).
+
 
 ### Installation
 ```sh
@@ -9,9 +11,11 @@ TODO improve docs
 cargo install --path aaa
 ```
 
-TODO add tests for examples
 
 ### Examples
+
+<!-- TODO #237 add tests for examples -->
+
 ```sh
 # Run the obligatory hello world example
 aaa run 'fn main { "Hello world\n" . }'
@@ -28,15 +32,15 @@ curl http://localhost:8080
 
 ### Running tests
 
+<!-- TODO #218 Add command for running tests and make sure the below example works. -->
+
 ```sh
 # Run tests written in Aaa
-# TODO this is not implemented yet
 aaa test .
 
 # Run tests written in Rust
 cargo test --manifest-path aaa/Cargo.toml
 ```
-
 
 ### Aaa features
 - elementary types (`int`, `bool`, `str`)
@@ -48,11 +52,6 @@ cargo test --manifest-path aaa/Cargo.toml
 
 ### Name
 The name of this language is just the first letter of the Latin alphabet repeated three times. When code in this language doesn't work, its meaning becomes an [abbreviation](https://en.uncyclopedia.co/wiki/AAAAAAAAA!).
-
-### Setup
-
-TODO write this down
-
 
 ### Aaa and porth
 After watching part of the [Youtube series](https://www.youtube.com/playlist?list=PLpM-Dvs8t0VbMZA7wW9aR3EtBqe2kinu4) on [porth](https://gitlab.com/tsoding/porth), I wanted to make my own stack-based language. Aaa and porth have some similarities, but obviously are not compatible with each other. No code was copied over from the porth repo.

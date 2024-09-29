@@ -1,4 +1,4 @@
-#![allow(clippy::result_large_err)] // TODO
+#![allow(clippy::result_large_err)] // TODO #239 Handle linter error for large error result
 
 use std::{
     cell::RefCell,
