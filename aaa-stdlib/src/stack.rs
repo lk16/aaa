@@ -434,6 +434,7 @@ where
         self.push_str(&repr);
     }
 
+    #[allow(clippy::should_implement_trait)] // TODO rename drop function
     pub fn drop(&mut self) {
         self.pop();
     }
@@ -601,7 +602,7 @@ where
 
         let result = bind(fd as i32, &addr);
 
-        if !result.is_ok() {
+        if result.is_err() {
             self.push_bool(false);
         }
 
@@ -1034,7 +1035,7 @@ where
         let string_rc = self.pop_str();
         let string = &*string_rc.borrow();
 
-        match string.char_indices().skip(offset as usize).next() {
+        match string.char_indices().nth(offset as usize) {
             None => {
                 self.push_char('\0');
                 self.push_bool(false);
@@ -1054,7 +1055,7 @@ where
 
         string.push(char);
 
-        self.push_str(&string);
+        self.push_str(string);
     }
 
     pub fn vec_copy(&mut self) {
@@ -1568,7 +1569,7 @@ where
 
     pub fn char_is_digit(&mut self) {
         let char = self.pop_char();
-        self.push_bool(char.is_digit(10));
+        self.push_bool(char.is_ascii_digit());
     }
 
     pub fn char_equals(&mut self) {

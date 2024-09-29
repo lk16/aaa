@@ -42,7 +42,7 @@ repos:
       - id: cargo-clippy-aaa-stdlib
         name: aaa-stdlib cargo clippy
         language: system
-        entry: cargo clippy --manifest-path aaa-stdlib/Cargo.toml # TODO -- -Dwarnings
+        entry: cargo clippy --manifest-path aaa-stdlib/Cargo.toml -- -Dwarnings
         pass_filenames: false
 
   - repo: https://github.com/lk16/detect-missing-init

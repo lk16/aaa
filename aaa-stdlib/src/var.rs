@@ -168,7 +168,7 @@ where
 
     pub fn get_function_pointer(&self) -> fn(&mut Stack<T>) {
         match self {
-            Self::FunctionPointer(v) => v.clone(),
+            Self::FunctionPointer(v) => *v,
             _ => unreachable!(),
         }
     }
@@ -244,7 +244,7 @@ where
                 unreachable!(); // Cannot recursively clone an iterator
             }
             Self::Regex(regex) => Self::Regex(regex.clone()),
-            Self::FunctionPointer(v) => Self::FunctionPointer(v.clone()),
+            Self::FunctionPointer(v) => Self::FunctionPointer(*v),
             Self::UserType(v) => {
                 let cloned = (**v).borrow().clone_recursive();
                 Self::UserType(Rc::new(RefCell::new(cloned)))
