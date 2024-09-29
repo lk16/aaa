@@ -434,7 +434,7 @@ where
         self.push_str(&repr);
     }
 
-    #[allow(clippy::should_implement_trait)] // TODO rename drop function
+    #[allow(clippy::should_implement_trait)] // TODO #238 Rename drop function
     pub fn drop(&mut self) {
         self.pop();
     }

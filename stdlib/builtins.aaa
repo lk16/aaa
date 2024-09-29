@@ -176,3 +176,10 @@ builtin fn unsetenv args name as const str
 builtin fn usleep args microseconds as int
 builtin fn waitpid args pid as const int, options as const int return int, int, bool, bool
 builtin fn write args fd as const int, data as const str return int, bool
+
+
+// TODO #214 move Option and Result enums into this file
+
+// TODO #214 add interfaces Showable and Representable and implement for all types here
+
+// TODO #214 add interfaces Iterable and Iterator

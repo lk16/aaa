@@ -17,7 +17,7 @@ pub struct CallChecker {
 }
 
 impl CallChecker {
-    #[allow(clippy::result_large_err)] // TODO
+    #[allow(clippy::result_large_err)] // TODO #239 Handle linter error for large error result
     pub fn check(self) -> TypeResult {
         let stack_before = self.stack.clone();
 

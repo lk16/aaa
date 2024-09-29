@@ -548,7 +548,7 @@ impl Transpiler {
             CallLocalVariable(call) => self.generate_call_local_variabiable(call),
             CallStruct(call) => self.generate_call_struct(call),
             Char(char) => self.generate_char(char),
-            Foreach(_) => unreachable!(), // TODO #214 support interfaces
+            Foreach(_) => unreachable!(), // TODO #214 Support interfaces
             FunctionType(function_type) => self.generate_function_type(function_type),
             GetFunction(get_function) => self.generate_get_function(get_function),
             Integer(integer) => self.generate_integer(integer),
