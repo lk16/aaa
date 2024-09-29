@@ -355,7 +355,8 @@ pub struct Struct {
     pub position: Position,
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
-    pub fields: Option<Vec<StructField>>,
+    pub fields: Vec<StructField>,
+    pub is_builtin: bool,
 }
 
 #[derive(Clone)]

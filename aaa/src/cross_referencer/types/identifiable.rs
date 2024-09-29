@@ -8,7 +8,6 @@ use crate::{
 use super::function_body::FunctionBody;
 
 pub struct Struct {
-    pub is_builtin: bool,
     pub parsed: parsed::Struct,
     pub resolved: Option<ResolvedStruct>,
 }
@@ -22,7 +21,6 @@ impl PartialEq for Struct {
 impl From<parsed::Struct> for Struct {
     fn from(parsed: parsed::Struct) -> Self {
         Self {
-            is_builtin: parsed.fields.is_none(),
             parsed,
             resolved: None,
         }
@@ -83,6 +81,10 @@ impl Struct {
         }
 
         mapping
+    }
+
+    pub fn is_builtin(&self) -> bool {
+        self.parsed.is_builtin
     }
 }
 
@@ -563,7 +565,7 @@ impl Identifiable {
     pub fn is_builtin(&self) -> bool {
         match self {
             Identifiable::Function(function) => function.borrow().is_builtin,
-            Identifiable::Struct(struct_) => struct_.borrow().is_builtin,
+            Identifiable::Struct(struct_) => struct_.borrow().is_builtin(),
             Identifiable::Enum(enum_) => enum_.borrow().is_builtin(),
             Identifiable::EnumConstructor(enum_ctor) => {
                 enum_ctor.borrow().enum_.borrow().is_builtin()

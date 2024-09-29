@@ -356,12 +356,10 @@ impl CrossReferencer {
         let struct_ = struct_rc.borrow();
         let mut fields = HashMap::new();
 
-        if let Some(parsed_fields) = &struct_.parsed.fields {
-            for parsed_field in parsed_fields {
-                let name = parsed_field.name.value.clone();
-                let field = self.resolve_type(&parsed_field.type_, type_parameters)?;
-                fields.insert(name, field);
-            }
+        for parsed_field in &struct_.parsed.fields {
+            let name = parsed_field.name.value.clone();
+            let field = self.resolve_type(&parsed_field.type_, type_parameters)?;
+            fields.insert(name, field);
         }
 
         Ok(fields)

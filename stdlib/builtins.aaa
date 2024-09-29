@@ -1,26 +1,26 @@
 
 // elementary types
-builtin struct bool
-builtin struct int
-builtin struct str
-builtin struct char
+builtin struct bool {}
+builtin struct int {}
+builtin struct str {}
+builtin struct char {}
 
 // container types
-builtin struct map[K, V]
-builtin struct set[T]
-builtin struct vec[T]
+builtin struct map[K, V] {}
+builtin struct set[T] {}
+builtin struct vec[T] {}
 
 // container iterator types
-builtin struct map_const_iter[K, V]
-builtin struct map_iter[K, V]
-builtin struct set_iter[T]
-builtin struct vec_const_iter[T]
-builtin struct vec_iter[T]
+builtin struct map_const_iter[K, V] {}
+builtin struct map_iter[K, V] {}
+builtin struct set_iter[T] {}
+builtin struct vec_const_iter[T] {}
+builtin struct vec_iter[T] {}
 
 builtin fn make_const[A] args a as A return const A
 
 // compiled regular expression
-builtin struct regex
+builtin struct regex {}
 
 builtin enum Option[T] {
     none,

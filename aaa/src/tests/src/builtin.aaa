@@ -21,7 +21,7 @@ fn main {
     nop
 }
 
-builtin struct bar
+builtin struct bar {}
 
 /// status: 1
 

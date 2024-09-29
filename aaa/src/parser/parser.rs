@@ -161,14 +161,13 @@ impl Parser {
     fn parse_struct(&self, mut offset: usize) -> ParseResult<Struct> {
         let mut struct_ = Struct::default();
 
-        let mut is_builtin = false;
         let mut builtin_token = None;
 
         if self.peek_token_type(offset) == Some(TokenType::Builtin) {
             let first_token;
             (first_token, offset) = self.parse_token(offset, TokenType::Builtin)?;
             builtin_token = Some(first_token);
-            is_builtin = true;
+            struct_.is_builtin = true;
         }
 
         let struct_token;
@@ -185,11 +184,7 @@ impl Parser {
             (struct_.parameters, offset) = self.parse_parameter_list(offset)?;
         }
 
-        if !is_builtin {
-            let fields;
-            (fields, offset) = self.parse_struct_fields(offset)?;
-            struct_.fields = Some(fields);
-        }
+        (struct_.fields, offset) = self.parse_struct_fields(offset)?;
 
         Ok((struct_, offset))
     }
@@ -1596,13 +1591,14 @@ mod tests {
 
     #[rstest]
     #[case("", false)]
-    #[case("builtin struct foo", true)]
-    #[case("builtin struct foo { }", false)]
-    #[case("builtin struct foo[A]", true)]
-    #[case("builtin struct foo[A,]", true)]
-    #[case("builtin struct foo[A,B]", true)]
-    #[case("builtin struct foo[A,B,]", true)]
-    #[case("builtin struct foo[A,B,]", true)]
+    #[case("builtin struct foo", false)]
+    #[case("builtin struct foo { }", true)]
+    #[case("builtin struct foo[A]", false)]
+    #[case("builtin struct foo[A] { }", true)]
+    #[case("builtin struct foo[A,] { }", true)]
+    #[case("builtin struct foo[A,B] { }", true)]
+    #[case("builtin struct foo[A,B,] { }", true)]
+    #[case("builtin struct foo[A,B,] { }", true)]
     #[case("struct foo { }", true)]
     #[case("struct foo", false)]
     #[case("struct foo[A] { }", true)]
