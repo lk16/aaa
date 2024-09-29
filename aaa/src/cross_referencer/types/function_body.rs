@@ -136,7 +136,7 @@ pub struct Char {
     pub value: char,
 }
 
-#[allow(dead_code)] // TODO #214 implement interfaces
+#[allow(dead_code)] // TODO implement interfaces
 pub struct Foreach {
     pub position: Position,
     pub body: FunctionBody,

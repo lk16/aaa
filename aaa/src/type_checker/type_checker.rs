@@ -785,7 +785,7 @@ impl<'a> FunctionTypeChecker<'a> {
     }
 
     fn check_foreach(&self, _stack: Vec<Type>, _for_each: &Foreach) -> TypeResult {
-        todo!() // TODO #214 Implement interfaces in Rust-based transpiler
+        todo!() // TODO Implement interfaces in Rust-based transpiler
     }
 
     fn check_assignment(&mut self, stack: Vec<Type>, assignment: &Assignment) -> TypeResult {
