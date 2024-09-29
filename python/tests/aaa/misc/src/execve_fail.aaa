@@ -1,4 +1,0 @@
-fn main {
-    "/non-existent" vec[str] map[str, str] execve
-    not assert
-}

@@ -1,9 +1,0 @@
-fn main {
-    fork
-    if dup 0 = {
-        "child\n" .
-    } else {
-        "parent\n" .
-    }
-    drop
-}
