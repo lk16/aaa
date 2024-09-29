@@ -30,7 +30,7 @@ impl Token {
 
 impl HasPosition for Token {
     fn position(&self) -> Position {
-        return self.position.clone();
+        self.position.clone()
     }
 }
 
@@ -111,14 +111,11 @@ impl TokenType {
     }
 
     pub fn is_filtered(&self) -> bool {
-        match self {
-            TokenType::Comment | TokenType::Whitespace => true,
-            _ => false,
-        }
+        matches!(self, TokenType::Comment | TokenType::Whitespace)
     }
 }
 
-const TOKEN_TYPE_REGEXES: &[(TokenType, &'static str, usize)] = &[
+const TOKEN_TYPE_REGEXES: &[(TokenType, &str, usize)] = &[
     (TokenType::Args, "(args)([^_a-zA-Z]|$)", 1),
     (TokenType::As, "(as)([^_a-zA-Z]|$)", 1),
     (TokenType::Builtin, "(builtin)([^_a-zA-Z]|$)", 1),

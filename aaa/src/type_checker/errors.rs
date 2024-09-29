@@ -1,3 +1,5 @@
+#![allow(clippy::result_large_err)] // TODO
+
 use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
 use crate::{
@@ -5,6 +7,7 @@ use crate::{
     cross_referencer::types::identifiable::{Identifiable, ReturnTypes, Type},
 };
 
+#[allow(clippy::enum_variant_names)]
 pub enum TypeError {
     BranchError(BranchError),
     CondtionError(ConditionError),

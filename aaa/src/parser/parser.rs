@@ -50,7 +50,7 @@ struct Parser {
 
 impl Parser {
     fn new(tokens: Vec<Token>) -> Self {
-        return Self { tokens };
+        Self { tokens }
     }
 
     fn parse(&self) -> Result<SourceFile, ParseError> {
@@ -89,17 +89,14 @@ impl Parser {
         let mut items = vec![];
         let item;
 
-        (item, offset) = parse_func(&self, offset)?;
+        (item, offset) = parse_func(self, offset)?;
         items.push(item);
 
-        loop {
-            match self.peek_token_type(offset) {
-                Some(TokenType::Comma) => offset += 1,
-                _ => break,
-            }
+        while let Some(TokenType::Comma) = self.peek_token_type(offset) {
+            offset += 1;
 
             let item;
-            (item, offset) = match parse_func(&self, offset) {
+            (item, offset) = match parse_func(self, offset) {
                 Ok((item, offset)) => (item, offset),
                 Err(_) => break,
             };

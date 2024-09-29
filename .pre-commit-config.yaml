@@ -27,7 +27,7 @@ repos:
       - id: cargo-clippy-aaa
         name: aaa cargo clippy
         language: system
-        entry: cargo clippy --manifest-path aaa/Cargo.toml # TODO -- -Dwarnings
+        entry: cargo clippy --manifest-path aaa/Cargo.toml -- -Dwarnings
         pass_filenames: false
       - id: cargo-check-aaa-stdlib
         name: aaa-stdlib cargo check

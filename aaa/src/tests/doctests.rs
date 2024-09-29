@@ -3,7 +3,7 @@ use std::{
     env,
     fmt::Display,
     fs::{self, read_to_string},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
 };
 
@@ -168,7 +168,7 @@ impl DocTestRunner {
         let mut errors = vec![];
 
         for doc_test in self.doc_tests.values() {
-            match self.run_doc_test(&doc_test) {
+            match self.run_doc_test(doc_test) {
                 DocTestResult::Ok => (),
                 DocTestResult::Skipped => skipped_tests += 1,
                 DocTestResult::Err(error) => errors.push(error),
@@ -235,12 +235,12 @@ impl DocTestRunner {
         sections
     }
 
-    fn parse_doc_test(path: &PathBuf, lines: Vec<String>) -> DocTest {
+    fn parse_doc_test(path: &Path, lines: Vec<String>) -> DocTest {
         use CommentMode::*;
 
         let mut comment_mode = Default;
         let mut doc_test = DocTest {
-            path: path.clone(),
+            path: path.to_path_buf(),
             source_path: env::temp_dir()
                 .join("aaa-doctests")
                 .join(random_folder_name()),
@@ -383,7 +383,7 @@ impl DocTestRunner {
         }
 
         println!("OK");
-        return DocTestResult::Ok;
+        DocTestResult::Ok
     }
 }
 

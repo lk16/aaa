@@ -1,3 +1,5 @@
+#![allow(clippy::result_large_err)] // TODO
+
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -139,7 +141,7 @@ impl TypeChecker {
         match arguments.len() {
             0 => (),
             1 => {
-                let argument_type = &arguments.get(0).unwrap().type_;
+                let argument_type = &arguments.first().unwrap().type_;
                 if !self.is_valid_main_argument_type(argument_type) {
                     return invalid_main_signature(function.position());
                 }
@@ -152,7 +154,7 @@ impl TypeChecker {
             ReturnTypes::Sometimes(return_types) => match return_types.len() {
                 0 => (),
                 1 => {
-                    let return_type = return_types.get(0).unwrap();
+                    let return_type = return_types.first().unwrap();
                     if !self.is_valid_main_return_type(return_type) {
                         return invalid_main_signature(function.position());
                     }
@@ -181,7 +183,7 @@ impl TypeChecker {
             return false;
         }
 
-        let parameter = parameters.get(0).unwrap();
+        let parameter = parameters.first().unwrap();
 
         let Type::Struct(parameter_struct_type) = parameter else {
             return false;
@@ -321,15 +323,15 @@ impl<'a> FunctionTypeChecker<'a> {
         }
 
         println!("returns: {}", &self.function.signature().return_types);
-        println!("");
+        println!();
     }
 
-    fn print_position_stack(&mut self, position: Position, stack: &Vec<Type>) {
+    fn print_position_stack(&mut self, position: Position, stack: &[Type]) {
         if !self.type_checker.verbose {
             return;
         }
 
-        let stack_types = join_display(" ", &stack);
+        let stack_types = join_display(" ", stack);
         println!("{} {}", position, stack_types);
     }
 
@@ -362,7 +364,7 @@ impl<'a> FunctionTypeChecker<'a> {
         let position = self.function.position();
         let name = self.function.name();
 
-        let Some(first_argument) = self.function.arguments().get(0) else {
+        let Some(first_argument) = self.function.arguments().first() else {
             return member_function_without_arguments(position, name);
         };
 
@@ -458,7 +460,7 @@ impl<'a> FunctionTypeChecker<'a> {
     }
 
     fn check_condition_body(&mut self, stack: Vec<Type>, body: &FunctionBody) -> TypeResult {
-        let mut stack_after = self.check_function_body(stack.clone(), &body)?;
+        let mut stack_after = self.check_function_body(stack.clone(), body)?;
 
         let mut expected_stack_after = stack.clone();
         expected_stack_after.push(self.builtin_type("bool"));
@@ -597,8 +599,7 @@ impl<'a> FunctionTypeChecker<'a> {
             .signature()
             .arguments
             .iter()
-            .filter(|arg| arg.name == call_arg.name)
-            .next()
+            .find(|arg| arg.name == call_arg.name)
             .unwrap();
 
         let argument_type = argument.type_.clone();
@@ -845,10 +846,10 @@ impl<'a> FunctionTypeChecker<'a> {
         // Update target, such that we can use this in transpiler
         match_.target.set(Some(enum_type.enum_.clone()));
 
-        Self::check_match_is_expected_enum(&enum_type, &match_)?;
-        Self::check_match_is_full_enumeration(&enum_type, &match_)?;
+        Self::check_match_is_expected_enum(&enum_type, match_)?;
+        Self::check_match_is_full_enumeration(&enum_type, match_)?;
 
-        stack = self.check_match_child_stacks(&stack, &enum_type, &match_)?;
+        stack = self.check_match_child_stacks(&stack, &enum_type, match_)?;
 
         Ok(stack)
     }
@@ -891,7 +892,7 @@ impl<'a> FunctionTypeChecker<'a> {
 
         if match_.default_blocks.len() > 1 {
             return colliding_default_blocks([
-                match_.default_blocks.get(0).unwrap().position.clone(),
+                match_.default_blocks.first().unwrap().position.clone(),
                 match_.default_blocks.get(1).unwrap().position.clone(),
             ]);
         }
@@ -899,9 +900,9 @@ impl<'a> FunctionTypeChecker<'a> {
         let missing_cases: HashSet<_> = enum_
             .resolved()
             .variants
-            .iter()
-            .map(|(variant_name, _)| variant_name.clone())
-            .filter(|variant_name| !found_cases.contains_key(variant_name))
+            .keys()
+            .filter(|variant_name| !found_cases.contains_key(*variant_name))
+            .cloned()
             .collect();
 
         if !missing_cases.is_empty() && match_.default_blocks.is_empty() {
@@ -909,7 +910,7 @@ impl<'a> FunctionTypeChecker<'a> {
         }
 
         if missing_cases.is_empty() && !match_.default_blocks.is_empty() {
-            let default_position = match_.default_blocks.get(0).unwrap().position.clone();
+            let default_position = match_.default_blocks.first().unwrap().position.clone();
             return unreachable_default(default_position);
         }
 
@@ -918,7 +919,7 @@ impl<'a> FunctionTypeChecker<'a> {
 
     fn check_match_child_stacks(
         &mut self,
-        stack: &Vec<Type>,
+        stack: &[Type],
         enum_type: &EnumType,
         match_: &Match,
     ) -> TypeResult {
@@ -935,7 +936,8 @@ impl<'a> FunctionTypeChecker<'a> {
                 .get(&case_block.variant_name)
                 .unwrap();
 
-            let case_stack = match self.check_case_block(stack.clone(), variant_data, &case_block) {
+            let case_stack = match self.check_case_block(stack.to_owned(), variant_data, case_block)
+            {
                 Ok(case_stack) => ReturnTypes::Sometimes(case_stack),
                 Err(TypeError::DoesNotReturn) => ReturnTypes::Never,
                 Err(err) => return Err(err),
@@ -948,11 +950,12 @@ impl<'a> FunctionTypeChecker<'a> {
             let name = "default".to_owned();
             let position = default_block.position.clone();
 
-            let default_stack = match self.check_function_body(stack.clone(), &default_block.body) {
-                Ok(case_stack) => ReturnTypes::Sometimes(case_stack),
-                Err(TypeError::DoesNotReturn) => ReturnTypes::Never,
-                Err(err) => return Err(err),
-            };
+            let default_stack =
+                match self.check_function_body(stack.to_owned(), &default_block.body) {
+                    Ok(case_stack) => ReturnTypes::Sometimes(case_stack),
+                    Err(TypeError::DoesNotReturn) => ReturnTypes::Never,
+                    Err(err) => return Err(err),
+                };
 
             child_return_types.push((name, position, default_stack));
         }
@@ -961,8 +964,7 @@ impl<'a> FunctionTypeChecker<'a> {
         let returning_type = child_return_types
             .iter()
             .map(|(_, _, return_types)| return_types)
-            .filter(|return_types| matches!(return_types, ReturnTypes::Sometimes(_)))
-            .next();
+            .find(|return_types| matches!(return_types, ReturnTypes::Sometimes(_)));
 
         let Some(returning_type) = returning_type else {
             return does_not_return(); // All cases diverge
@@ -1089,7 +1091,7 @@ impl<'a> FunctionTypeChecker<'a> {
             position: call.position.clone(),
             argument_types: function_pointer.argument_types,
             return_types: function_pointer.return_types,
-            stack: stack,
+            stack,
             type_params: HashMap::new(),
         };
 

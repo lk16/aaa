@@ -108,7 +108,7 @@ impl Transpiler {
 
         let code = self.generate_file();
 
-        fs::create_dir_all(&self.transpiler_root_path.join("src")).unwrap();
+        fs::create_dir_all(self.transpiler_root_path.join("src")).unwrap();
         let main_path = self.transpiler_root_path.join("src/main.rs");
 
         if self.verbose {
@@ -308,7 +308,8 @@ impl Transpiler {
 
         code.add_line("}");
         code.add_line("");
-        return code;
+
+        code
     }
 
     #[allow(non_snake_case)]
@@ -1126,7 +1127,7 @@ impl Transpiler {
         code.add_line("}");
         code.add_line("");
 
-        return code;
+        code
     }
 
     #[allow(non_snake_case)]
@@ -1270,7 +1271,7 @@ impl Transpiler {
         code.add_line("}");
         code.add_line("");
 
-        return code;
+        code
     }
 
     #[allow(non_snake_case)]
@@ -1303,7 +1304,7 @@ impl Transpiler {
         code.add_line("}");
         code.add_line("");
 
-        return code;
+        code
     }
 
     #[allow(non_snake_case)]
@@ -1323,7 +1324,7 @@ impl Transpiler {
         code.add_line("}");
         code.add_line("");
 
-        return code;
+        code
     }
 
     #[allow(non_snake_case)]
