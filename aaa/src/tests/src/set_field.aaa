@@ -1,0 +1,160 @@
+/// name: set field ok
+
+struct Foo {
+    x as int
+}
+
+fn main {
+    Foo "x" { 3 } !
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: set field fail stack underflow
+
+fn main {
+    "x" { 3 } !
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Cannot set field x, because the stack is empty
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: set field fail enum
+
+enum Foo {
+    x as int
+}
+
+fn main {
+    Foo "x" { 3 } !
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:9: Can only set field x on a struct, found enum Foo
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: set field fail field not found
+
+struct Foo {
+    x as int
+}
+
+fn main {
+    Foo "y" { 3 } !
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:9: Cannot set field y on struct Foo, because it doesn't exist
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: set field fail expression is empty stack
+
+struct Foo {
+    x as int
+}
+
+fn main {
+    Foo "x" { nop } !
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:9: Invalid stack types when setting field x on struct Foo:
+///    Found:
+/// Expected: int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: set field fail expression is wrong type
+
+struct Foo {
+    x as int
+}
+
+fn main {
+    Foo "x" { "foo" } !
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:9: Invalid stack types when setting field x on struct Foo:
+///    Found: str
+/// Expected: int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: set field fail expression is multiple values
+
+struct Foo {
+    x as int
+}
+
+fn main {
+    Foo "x" { 3 3 } !
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:9: Invalid stack types when setting field x on struct Foo:
+///    Found: int int
+/// Expected: int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: set struct field with type param ok
+
+struct Foo[T] {
+    foo as T
+}
+
+fn main {
+    Foo[int]
+    "foo" { 69 } !
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: set struct field with type param fail
+
+struct Foo[T] {
+    foo as T
+}
+
+fn main {
+    Foo[int]
+    "foo" { false } !
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:6:5: Invalid stack types when setting field foo on struct Foo:
+///    Found: bool
+/// Expected: int
+///
+/// Found 1 errors

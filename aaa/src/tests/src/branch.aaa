@@ -1,0 +1,142 @@
+/// name: branch without else ok
+
+fn main {
+    if true {
+        nop
+    }
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: branch with else ok
+
+fn main {
+    if true {
+        nop
+    } else {
+        nop
+    }
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: branch without else fail
+
+fn main {
+    if true {
+        3
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Mismatching branch types:
+/// before stack:
+///     if stack: int
+///   else stack:
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: branch with else fail
+
+fn main {
+    if true {
+        3
+    } else {
+        "hello"
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Mismatching branch types:
+/// before stack:
+///     if stack: int
+///   else stack: str
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: branch with invalid condition
+
+fn main {
+    if 3 {
+        nop
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:8: Unexpected stack after condition:
+///   before:
+///    after: int
+/// expected: bool
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: else with type never
+
+fn main {
+    if true {
+        nop
+    } else {
+        unreachable
+    }
+
+    nop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: if with type never
+
+fn main {
+    if false {
+        unreachable
+    } else {
+        nop
+    }
+
+    nop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: if with type never without else
+
+fn main {
+    if false {
+        unreachable
+    }
+
+    nop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: if and else with type never
+
+fn main {
+    if true {
+        unreachable
+    } else {
+        unreachable
+    }
+
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:7:5: Code is unreachable
+///
+/// Found 1 errors

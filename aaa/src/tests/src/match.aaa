@@ -1,0 +1,364 @@
+/// name: match fail empty stack
+
+enum Foo {
+    foo,
+}
+
+fn main {
+    match {
+        default {
+            nop
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:5: Cannot match on an empty stack
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail non-enum
+
+fn main {
+    3
+    match {
+        default {
+            nop
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:3:5: Cannot match on struct int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail unexpected enum
+
+enum Foo {
+    foo,
+}
+
+enum Bar {
+    bar,
+}
+
+fn main {
+    Foo
+    match {
+        case Bar:bar {
+            nop
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:10:9: Unexpected enum case:
+/// Expected: Foo
+///    Found: Bar
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail repeated case
+
+enum Foo {
+    foo,
+}
+
+fn main {
+    Foo
+    match {
+        case Foo:foo {
+            nop
+        }
+        case Foo:foo {
+            nop
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// Found colliding case blocks:
+/// $SOURCE_PATH/main.aaa:7:9: case Foo:foo
+/// $SOURCE_PATH/main.aaa:10:9: case Foo:foo
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail repeated default
+
+enum Foo {
+    foo,
+}
+
+fn main {
+    Foo
+    match {
+        default {
+            nop
+        }
+        default {
+            nop
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// Found colliding default blocks:
+/// $SOURCE_PATH/main.aaa:7:9: default
+/// $SOURCE_PATH/main.aaa:10:9: default
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail missing case
+
+enum FooBar {
+    foo,
+    bar,
+}
+
+fn main {
+    FooBar
+    match {
+        case FooBar:foo {
+            nop
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:7:5: Some enum variant(s) are unhandled:
+/// case FooBar:bar
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail unreachable default
+
+enum Foo {
+    foo,
+}
+
+fn main {
+    Foo
+    match {
+        case Foo:foo {
+            nop
+        }
+        default {
+            nop
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:10:9: Default block is unreachable
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail inconsistent child stacks
+
+enum FooBar {
+    foo,
+    bar,
+}
+
+fn main {
+    FooBar
+    match {
+        case FooBar:foo {
+            false
+        }
+        case FooBar:bar {
+            3
+        }
+    }
+    drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:7:5: Children of match have inconsistent stacks:
+/// case FooBar:foo: bool
+/// case FooBar:bar: int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail unexpected variable expecting multiple
+
+enum Foo {
+    foo as { int, int },
+}
+
+fn main {
+    Foo
+    match {
+        case Foo:foo as x {
+            nop
+        }
+    }
+    drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:7:9: Unexpected amount of variables for case Foo:foo:
+/// Expected: 0 or 2
+///    Found: 1
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail unexpected variable expecting none
+
+enum Foo {
+    foo,
+}
+
+fn main {
+    Foo
+    match {
+        case Foo:foo as x {
+            nop
+        }
+    }
+    drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:7:9: Unexpected amount of variables for case Foo:foo:
+/// Expected: 0
+///    Found: 1
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail var name collision
+
+enum Foo {
+    foo as int,
+}
+
+fn main {
+    3
+    use x {
+        Foo
+        match {
+            case Foo:foo as x {
+                nop
+            }
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// Found name collision:
+/// $SOURCE_PATH/main.aaa:6:9: local variable x
+/// $SOURCE_PATH/main.aaa:9:29: local variable x
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match fail unreachable code afterwards
+
+enum Foo {
+    foo,
+}
+
+fn main {
+    Foo
+    match {
+        case Foo:foo {
+            todo
+        }
+    }
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:11:5: Code is unreachable
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: match ok simple
+
+enum FooBar {
+    foo as int,
+    bar,
+}
+
+fn main {
+    FooBar
+    match {
+        case FooBar:foo as x {
+            3 x +
+        }
+        case FooBar:bar {
+            6 9 +
+        }
+    }
+    drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: match ok with never
+
+enum FooBar {
+    foo as int,
+    bar,
+}
+
+fn main {
+    FooBar
+    match {
+        case FooBar:foo as x {
+            3 x +
+        }
+        case FooBar:bar {
+            todo
+        }
+    }
+    drop
+}

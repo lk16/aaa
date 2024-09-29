@@ -11,6 +11,7 @@ use std::{path::PathBuf, process::exit};
 
 use clap::{Arg, Command};
 use runner::runner::{Runner, RunnerOptions};
+use tests::doctests::DocTestRunner;
 
 fn main() {
     let verbose_arg = Arg::new("verbose")
@@ -25,6 +26,10 @@ fn main() {
         .short('o')
         .long("output")
         .help("Path of generated binary");
+
+    let doctest_filter = Arg::new("test_or_file")
+        .short('t')
+        .help("Specify test or file with tests to run");
 
     let mut command = Command::new("aaa")
         .about("Check, build and run Aaa programs")
@@ -46,6 +51,15 @@ fn main() {
                 .arg(&verbose_arg)
                 .arg(&output_arg)
                 .about("Build executable from code without running it"),
+        )
+        .subcommand(
+            Command::new("dev")
+                .about("Commands for developing the Aaa language itself")
+                .subcommand(
+                    Command::new("doctests")
+                        .arg(&doctest_filter)
+                        .about("Run doctests"),
+                ),
         );
 
     let matches = command.clone().get_matches();
@@ -53,6 +67,22 @@ fn main() {
     let mut options = RunnerOptions::default();
 
     match matches.subcommand() {
+        Some(("dev", sub_matches)) => match sub_matches.subcommand() {
+            Some(("doctests", doctest_matches)) => {
+                let mut test_runner = DocTestRunner::new();
+
+                if let Some(test_or_file) = doctest_matches.get_one::<String>("test_or_file") {
+                    test_runner.set_filter(test_or_file);
+                }
+
+                exit(test_runner.run());
+            }
+
+            _ => {
+                command.print_help().unwrap();
+                exit(1);
+            }
+        },
         Some(("run", sub_matches))
         | Some(("check", sub_matches))
         | Some(("build", sub_matches)) => {

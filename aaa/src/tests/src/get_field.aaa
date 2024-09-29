@@ -1,0 +1,103 @@
+/// name: get field ok
+
+struct Foo {
+    x as int
+}
+
+fn main {
+    Foo "x" ? drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: get field fail stack underflow
+
+fn main {
+    "x" ?
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Cannot get field x, because the stack is empty
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: get field fail enum
+
+enum Foo {
+    x as int
+}
+
+fn main {
+    Foo "x" ? drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:9: Can only get field x from a struct, found enum Foo
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: get field fail field not found
+
+struct Foo {
+    x as int
+}
+
+fn main {
+    Foo "y" ? drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:9: Cannot get field y from struct Foo, because it doesn't exist
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: get struct field with type param ok
+
+struct Foo[T] {
+    foo as T
+}
+
+fn main {
+    Foo[int]
+    dup "foo" { 69 } !
+    "foo" ?
+    69 =
+    drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: get struct field with type param fail
+
+struct Foo[T] {
+    foo as T
+}
+
+fn main {
+    Foo[int]
+    dup "foo" { 69 } !
+    "foo" ?
+    false =
+    drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:8:11: Invalid stack when calling =
+///        stack: int bool
+/// expected top: A A
+///
+/// Found 1 errors

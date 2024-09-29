@@ -1,0 +1,55 @@
+/// name: get function ok custom non-returning
+
+fn never_returns return never {
+    1 exit
+}
+
+fn main {
+    "never_returns" fn drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: get function fail non existent
+
+fn main {
+    "foo" fn drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Cannot get function foo, it does not exist.
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: get function fail not a function
+
+fn main {
+    "int" fn drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Cannot get function int, found struct int instead.
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: get function ok builtin
+
+fn main {
+    "+" fn drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: get function ok custom returning
+
+fn main {
+    "main" fn drop
+}

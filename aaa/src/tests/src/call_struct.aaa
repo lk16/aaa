@@ -1,0 +1,39 @@
+/// name: call struct ok
+
+fn main {
+    vec[int] drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: call struct with too many type parameters
+
+fn main {
+    vec[int, str]
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Unexpected number of parameters
+///    Found: 2
+/// Expected: 1
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: call struct with too few type parameters
+
+fn main {
+    vec
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Unexpected number of parameters
+///    Found: 0
+/// Expected: 1
+///
+/// Found 1 errors

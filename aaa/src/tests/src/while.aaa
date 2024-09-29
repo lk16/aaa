@@ -1,0 +1,47 @@
+/// name: while loop ok
+
+fn main {
+    while false {
+        nop
+    }
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: while loop fail condition
+
+fn main {
+    while 3 {
+        nop
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:11: Unexpected stack after condition:
+///   before:
+///    after: int
+/// expected: bool
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: while loop fail body
+
+fn main {
+    while true {
+        3
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Stack types changed in loop:
+///   before:
+///    after: int
+/// expected:
+///
+/// Found 1 errors
