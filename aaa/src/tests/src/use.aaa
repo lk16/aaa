@@ -141,7 +141,7 @@ fn main {
 
 /// stderr:
 /// Found name collision:
-/// $AAA_STDLIB_PATH/builtins.aaa:161:1: function exit
+/// $AAA_STDLIB_PATH/builtins.aaa:179:1: function exit
 /// $SOURCE_PATH/main.aaa:3:9: local variable exit
 ///
 /// Found 1 errors

@@ -49,6 +49,8 @@ lazy_static! {
             ("map", "Variable::map_zero_value()"),
             ("set", "Variable::set_zero_value()"),
             ("regex", "Variable::regex_zero_value()"),
+            ("Option", "Variable::option_zero_value()"),
+            ("Result", "Variable::result_zero_value()"),
         ];
 
         HashMap::from(array)
@@ -423,7 +425,7 @@ impl Transpiler {
             return name.to_string();
         }
 
-        function_name.replace(":", "_")
+        function_name.replace(":", "_").to_lowercase()
     }
 
     fn hash_name(path: PathBuf, name: String) -> String {
@@ -1348,6 +1350,10 @@ impl Transpiler {
     }
 
     fn generate_enum_constructor_name(&self, enum_: &Enum, variant_name: String) -> String {
+        if enum_.is_builtin() {
+            return format!("{}_{}", enum_.name(), variant_name).to_lowercase();
+        }
+
         let function_name = format!("{}:{}", enum_.name(), variant_name);
         let hash = Self::hash_name(enum_.position().path, function_name);
         format!("enum_ctor_{}", hash)
@@ -1358,7 +1364,12 @@ impl Transpiler {
         let variant_name = enum_ctor.variant_name();
         let enum_ = &*enum_ctor.enum_.borrow();
         let enum_ctor_name = self.generate_enum_constructor_name(enum_, variant_name);
-        Code::from_string(format!("{}(stack);", enum_ctor_name))
+
+        if enum_.is_builtin() {
+            Code::from_string(format!("stack.{}();", enum_ctor_name))
+        } else {
+            Code::from_string(format!("{}(stack);", enum_ctor_name))
+        }
     }
 
     fn generate_call(&self) -> Code {

@@ -139,6 +139,11 @@ impl Parser {
                             (struct_, offset) = self.parse_struct(offset)?;
                             source_file.structs.push(struct_);
                         }
+                        TokenType::Enum => {
+                            let enum_;
+                            (enum_, offset) = self.parse_enum(offset)?;
+                            source_file.enums.push(enum_);
+                        }
                         TokenType::Fn => {
                             let (function, child_offset) = self.parse_function(offset)?;
                             offset = child_offset;
@@ -878,9 +883,22 @@ impl Parser {
     fn parse_enum(&self, mut offset: usize) -> ParseResult<Enum> {
         let mut enum_ = Enum::default();
 
-        let first_token;
-        (first_token, offset) = self.parse_token(offset, TokenType::Enum)?;
-        enum_.position = first_token.position();
+        let mut builtin_token = None;
+
+        if self.peek_token_type(offset) == Some(TokenType::Builtin) {
+            let first_token;
+            (first_token, offset) = self.parse_token(offset, TokenType::Builtin)?;
+            builtin_token = Some(first_token);
+            enum_.is_builtin = true;
+        }
+
+        let enum_token;
+        (enum_token, offset) = self.parse_token(offset, TokenType::Enum)?;
+
+        enum_.position = match builtin_token {
+            Some(builtin_token) => builtin_token.position(),
+            None => enum_token.position(),
+        };
 
         (enum_.name, offset) = self.parse_identifier(offset)?;
 

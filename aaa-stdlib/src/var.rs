@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    fmt::{Debug, Display, Formatter, Result},
+    fmt::{self, Debug, Display, Formatter},
     hash::Hash,
     mem,
     rc::Rc,
@@ -38,6 +38,8 @@ where
     SetIterator(Rc<RefCell<SetIterator<Variable<T>>>>),
     Regex(Rc<RefCell<Regex>>),
     FunctionPointer(fn(&mut Stack<T>)),
+    Option(Rc<RefCell<Option<Variable<T>>>>),
+    Result(Rc<RefCell<Result<Variable<T>, Variable<T>>>>),
     UserType(Rc<RefCell<T>>),
 }
 
@@ -94,6 +96,14 @@ where
 
     pub fn function_pointer_zero_value() -> Variable<T> {
         Variable::FunctionPointer(Stack::zero_function_pointer_value)
+    }
+
+    pub fn option_zero_value() -> Variable<T> {
+        Variable::Option(Rc::new(RefCell::new(None)))
+    }
+
+    pub fn result_zero_value() -> Variable<T> {
+        Variable::Result(Rc::new(RefCell::new(Ok(Variable::None))))
     }
 
     pub fn get_integer(&self) -> isize {
@@ -201,6 +211,8 @@ where
             Self::Regex(_) => String::from("regex"),
             Self::FunctionPointer(_) => String::from("fn_ptr"),
             Self::UserType(v) => (**v).borrow().kind(),
+            Self::Option(_) => String::from("Option"),
+            Self::Result(_) => String::from("Result"),
         }
     }
 
@@ -249,6 +261,8 @@ where
                 let cloned = (**v).borrow().clone_recursive();
                 Self::UserType(Rc::new(RefCell::new(cloned)))
             }
+            Self::Option(_) => todo!(), // TODO
+            Self::Result(_) => todo!(), // TODO
         }
     }
 }
@@ -257,7 +271,7 @@ impl<T> Display for Variable<T>
 where
     T: UserType,
 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Boolean(v) => write!(f, "{}", v),
             Self::Integer(v) => write!(f, "{}", v),
@@ -273,6 +287,14 @@ where
             Self::Regex(_) => write!(f, "regex"),
             Self::FunctionPointer(_) => write!(f, "func_ptr"),
             Self::UserType(v) => write!(f, "{}", (**v).borrow()),
+            Self::Option(v) => match &*(**v).borrow() {
+                Some(v) => write!(f, "Option:some{{{}}}", v),
+                None => write!(f, "Option:none{{}}"),
+            },
+            Self::Result(v) => match &*(**v).borrow() {
+                Ok(v) => write!(f, "Result:ok{{{}}}", v),
+                Err(v) => write!(f, "Result:error{{{}}}", v),
+            },
         }
     }
 }
@@ -281,7 +303,7 @@ impl<T> Debug for Variable<T>
 where
     T: UserType,
 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::String(v) => write!(f, "{:?}", (**v).borrow()),
             _ => write!(f, "{}", self),
@@ -309,6 +331,8 @@ where
             }
             (Self::FunctionPointer(lhs), Self::FunctionPointer(rhs)) => lhs == rhs,
             (Self::UserType(lhs), Self::UserType(rhs)) => lhs == rhs,
+            (Self::Option(_), Self::Option(_)) => todo!(), // TODO
+            (Self::Result(_), Self::Result(_)) => todo!(), // TODO
             _ => unreachable!(), // Can't compare variables of different types
         }
     }
@@ -329,9 +353,7 @@ where
                 let string = (**v).borrow().clone();
                 Hash::hash(&string, state)
             }
-            _ => {
-                unreachable!() // Can't hash variables of different types
-            }
+            _ => unreachable!(), // Can't hash variables of different types
         }
     }
 }
