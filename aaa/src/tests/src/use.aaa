@@ -1,0 +1,167 @@
+/// name: use simple
+
+fn main {
+    3
+    use x {
+        x drop
+    }
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: use variable too early
+
+fn main {
+    3
+    use x {
+        nop
+    }
+    x
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:6:5: Unknown identifiable x
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: use fail variable too late
+
+fn main {
+    x
+    3
+    use x {
+        nop
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Unknown identifiable x
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: use fail stack underflow
+
+fn main {
+    use x {
+        nop
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5: Cannot use 1 value(s), because the stack is too small.
+/// Stack:
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: use fail same variable reused with overlap
+
+fn main {
+    3
+    use x {
+        3
+        use x {
+            nop
+        }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// Found name collision:
+/// $SOURCE_PATH/main.aaa:3:9: local variable x
+/// $SOURCE_PATH/main.aaa:5:13: local variable x
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: use ok same variable reused without overlap
+
+fn main {
+    3
+    use x {
+        nop
+    }
+
+    3
+    use x {
+        nop
+    }
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: use fail argument name collision
+
+fn main {
+    nop
+}
+
+fn foo args x as int {
+    3
+    use x {
+        nop
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// Found name collision:
+/// $SOURCE_PATH/main.aaa:4:13: argument x
+/// $SOURCE_PATH/main.aaa:6:9: local variable x
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: use fail builtin function name collision
+
+fn main {
+    3
+    use exit {
+        nop
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// Found name collision:
+/// $AAA_STDLIB_PATH/builtins.aaa:161:1: function exit
+/// $SOURCE_PATH/main.aaa:3:9: local variable exit
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: use fail builtin type name collision
+
+fn main {
+    3
+    use vec {
+        nop
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// Found name collision:
+/// $AAA_STDLIB_PATH/builtins.aaa:11:1: struct vec
+/// $SOURCE_PATH/main.aaa:3:9: local variable vec
+///
+/// Found 1 errors

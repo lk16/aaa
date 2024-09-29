@@ -1,0 +1,31 @@
+/// name: unexpected builtin function
+
+fn main {
+    nop
+}
+
+builtin fn foo
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:1: Found unexpected builtin function foo
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: unexpected builtin struct
+
+fn main {
+    nop
+}
+
+builtin struct bar
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:1: Found unexpected builtin struct bar
+///
+/// Found 1 errors

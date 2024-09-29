@@ -1,0 +1,94 @@
+/// name: assign local variable ok
+
+fn main {
+    3
+    use x {
+        x <- { 4 }
+    }
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: assign local variable fail too many values
+
+fn main {
+    3
+    use x {
+        x <- { 4 3 }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:9: Cannot assign 2 value(s) to 1 variable(s)
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: assign local variable fail not enough values
+
+fn main {
+    3
+    use x {
+        x <- { nop }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:9: Cannot assign 0 value(s) to 1 variable(s)
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: assign local variable fail wrong type
+
+fn main {
+    3
+    use x {
+        x <- { false }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:9: Cannot set variable x, due to invalid type.
+/// Expected: int
+///    Found: bool
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: assign local variable fail non existing variable
+
+fn main {
+    3
+    use x {
+        y <- { 3 }
+    }
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:9: Cannot set variable y, because it doesn't exist.
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: assign argument ok
+
+fn main {
+    nop
+}
+
+fn foo args x as int {
+    x <- { 3 }
+}

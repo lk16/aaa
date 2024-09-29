@@ -1,0 +1,78 @@
+/// name: member function ok
+
+struct Foo {}
+
+fn Foo:bar args foo as Foo {
+    nop
+}
+
+fn main {
+    nop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: member function fail missing argument
+
+struct Foo {}
+
+fn Foo:bar {
+    nop
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:1: Member function Foo:bar should have associated type as first argument
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: member function fail invalid first argument
+
+struct Foo {}
+
+fn Foo:bar args baz as fn[][] {
+    nop
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:1: Invalid first argument of member function Foo:bar
+/// Expected: struct or enum
+///    Found: fn[][]
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: member function fail unexpected first argument type
+
+struct Foo {}
+
+fn Foo:bar args baz as int {
+    nop
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:1: First argument of member function Foo:bar has unexpected type
+/// Expected: Foo
+///    Found: int
+///
+/// Found 1 errors

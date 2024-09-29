@@ -1,0 +1,51 @@
+/// name: call enum ok
+
+enum Enum[T] {
+    value
+}
+
+fn main {
+    Enum[int] drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: call enum with too many type parameters
+
+enum Enum[T] {
+    value
+}
+
+fn main {
+    Enum[int, str]
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:5: Unexpected number of parameters
+///    Found: 2
+/// Expected: 1
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: call enum with too few type parameters
+
+enum Enum[T] {
+    value
+}
+
+fn main {
+    Enum
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:5: Unexpected number of parameters
+///    Found: 0
+/// Expected: 1
+///
+/// Found 1 errors

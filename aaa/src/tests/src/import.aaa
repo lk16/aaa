@@ -1,0 +1,88 @@
+/// name: cyclic import
+
+from "foo" import bar
+
+struct baz {}
+
+fn main {
+    nop
+}
+
+/// file: foo.aaa
+
+from "main" import baz
+
+struct bar {}
+
+/// status: 1
+
+/// stderr:
+/// Found cyclic import:
+/// $SOURCE_PATH/main.aaa
+/// $SOURCE_PATH/foo.aaa
+/// $SOURCE_PATH/main.aaa
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: missing import
+
+from "foo" import bar
+
+fn main {
+    nop
+}
+
+/// file: foo.aaa
+
+struct baz {}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: Cannot find bar in $SOURCE_PATH/foo.aaa.
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: import from non-existent file
+
+from "foo" import bar
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// Could not open $SOURCE_PATH/foo.aaa
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: indirect import
+
+from "foo" import bar
+
+fn main {
+    nop
+}
+
+/// file: foo.aaa
+
+from "bar" import bar
+
+/// file: bar.aaa
+
+struct bar {}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:19: Indirect imports are forbidden.
+///
+/// Found 1 errors

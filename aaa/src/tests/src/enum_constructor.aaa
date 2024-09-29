@@ -1,0 +1,34 @@
+/// name: enum with type parameter and make function
+
+enum Foo[F] {
+    foo as F,
+}
+
+fn make_foo[T] args foo as T return Foo[T] {
+    foo Foo[T]:foo
+}
+
+fn main {
+    3 make_foo drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: enum constructor call with missing parameters
+
+enum Foo[int] {
+    foo
+}
+
+fn main {
+    Foo:foo drop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:5:5: Unexpected number of parameters
+///    Found: 0
+/// Expected: 1
+///
+/// Found 1 errors

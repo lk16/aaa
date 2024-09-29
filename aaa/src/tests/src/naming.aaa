@@ -1,0 +1,113 @@
+/// name: colliding struct and function
+
+fn main {
+    nop
+}
+
+struct main {}
+
+/// status: 1
+
+/// stderr:
+/// Found name collision:
+/// $SOURCE_PATH/main.aaa:1:1: function main
+/// $SOURCE_PATH/main.aaa:4:1: struct main
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: argument name collision with function
+
+fn main {
+    nop
+}
+
+fn bar args main as int {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// Found name collision:
+/// $SOURCE_PATH/main.aaa:1:1: function main
+/// $SOURCE_PATH/main.aaa:4:13: argument main
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: invalid argument type
+
+fn main {
+    nop
+}
+
+fn bar args x as foo {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:18: Unknown identifiable foo
+///
+///Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: invalid argument param type
+
+fn main {
+    nop
+}
+
+fn bar args x as vec[Foo] {
+    nop
+}
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:22: Unknown identifiable Foo
+///
+///Found 1 errors
+
+/// status: 1
+
+/// ----------------------------------------------------------------------------
+
+/// name: invalid return type
+
+fn main {
+    nop
+}
+
+fn bar return foo {
+    nop
+}
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:15: Unknown identifiable foo
+///
+///Found 1 errors
+
+/// status: 1
+
+/// ----------------------------------------------------------------------------
+
+/// name: invalid return param type
+
+fn main {
+    nop
+}
+
+fn bar return vec[Foo] {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:4:19: Unknown identifiable Foo
+///
+///Found 1 errors

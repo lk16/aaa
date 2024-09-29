@@ -1,0 +1,105 @@
+/// name: nop
+
+fn main {
+    nop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: add ok
+
+fn main {
+    3 3 +
+    drop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: add stack underflow
+
+fn main {
+    3 +
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:7: Stack underflow when calling +
+///        stack: int
+/// expected top: int int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: call function fail
+
+fn main {
+    3 "hello" +
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:15: Invalid stack when calling +
+///        stack: int str
+/// expected top: int int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: signature error
+
+fn foo return bool {
+    3
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: Computed stack types don't match signature for function "foo"
+///    Found: int
+/// Expected: bool
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: invalid stack on return
+
+fn foo return bool {
+    3 return
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:7: Invalid stack when using "return"
+///    Found: int
+/// Expected: bool
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: correct stack on return
+
+fn foo return int, str {
+    if true {
+        69 "hello" return
+    }
+    unreachable
+}
+
+fn main {
+    nop
+}

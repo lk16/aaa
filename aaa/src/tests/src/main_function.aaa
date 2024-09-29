@@ -1,0 +1,146 @@
+/// name: main signature ok basic
+
+fn main {
+    nop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature ok with argument
+
+fn main args argv as vec[str] {
+    nop
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature ok with arguments and return type
+
+fn main args argv as vec[str] return int {
+    0
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature with return type
+
+fn main return int {
+    0
+}
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature fail with argument
+
+fn main args argv as int {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: Main function has wrong signature, it should have:
+/// - no type parameters
+/// - either no arguments or one vec[str] argument
+/// - return either nothing or an int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature fail with argument parameter
+
+fn main args argv as vec[int] {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: Main function has wrong signature, it should have:
+/// - no type parameters
+/// - either no arguments or one vec[str] argument
+/// - return either nothing or an int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature fail with argument amount
+
+fn main args argv as vec[str], extra as int {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: Main function has wrong signature, it should have:
+/// - no type parameters
+/// - either no arguments or one vec[str] argument
+/// - return either nothing or an int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature fail with return type
+
+fn main return str {
+    ""
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: Main function has wrong signature, it should have:
+/// - no type parameters
+/// - either no arguments or one vec[str] argument
+/// - return either nothing or an int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature fail with return type amount
+
+fn main return int, str {
+    0 ""
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: Main function has wrong signature, it should have:
+/// - no type parameters
+/// - either no arguments or one vec[str] argument
+/// - return either nothing or an int
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: main signature fail no main function
+
+// If we leave this out no file is being created by doctest framework
+struct dummy {}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa: No main function found
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: main not a function
+
+struct main {}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:1:1: main should be a function, found struct main instead.
+///
+/// Found 1 errors
