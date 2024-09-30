@@ -7,7 +7,7 @@ use regex::{Captures, Regex};
 
 use crate::common::position::Position;
 
-use super::types::{Token, TokenType, ENUM_REGEX_PAIRS};
+use super::types::{Token, TokenType, TOKEN_REGEX_TUPLES};
 
 pub struct TokenizerError {
     pub position: Position,
@@ -84,7 +84,7 @@ fn captures_at_offset<'a>(s: &'a str, re: &Regex, offset: usize) -> Option<Captu
 }
 
 fn get_token(line: &str, offset: usize) -> Option<(TokenType, String)> {
-    for (token_type, regex, group) in ENUM_REGEX_PAIRS.iter() {
+    for (token_type, regex, group) in TOKEN_REGEX_TUPLES.iter() {
         if let Some(captures) = captures_at_offset(line, regex, offset) {
             let value = String::from(captures.get(*group).unwrap().as_str());
             return Some((*token_type, value));

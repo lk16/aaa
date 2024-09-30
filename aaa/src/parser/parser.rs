@@ -10,8 +10,8 @@ use super::types::{
     Argument, Assignment, Boolean, Branch, CallByPointer, CaseBlock, CaseLabel, Char, DefaultBlock,
     Enum, EnumVariant, Foreach, FreeFunctionCall, FreeFunctionName, Function, FunctionBody,
     FunctionBodyItem, FunctionCall, FunctionName, FunctionType, Identifier, Import, ImportItem,
-    Integer, Match, MemberFunctionCall, MemberFunctionName, RegularType, Return, ReturnTypes,
-    SourceFile, Struct, StructField, Type, While,
+    Integer, Interface, InterfaceFunction, Match, MemberFunctionCall, MemberFunctionName,
+    RegularType, Return, ReturnTypes, SourceFile, Struct, StructField, Type, While,
 };
 
 pub enum ParseError {
@@ -145,9 +145,14 @@ impl Parser {
                             source_file.enums.push(enum_);
                         }
                         TokenType::Fn => {
-                            let (function, child_offset) = self.parse_function(offset)?;
-                            offset = child_offset;
+                            let function;
+                            (function, offset) = self.parse_function(offset)?;
                             source_file.functions.push(function);
+                        }
+                        TokenType::Interface => {
+                            let interface;
+                            (interface, offset) = self.parse_interface(offset)?;
+                            source_file.interfaces.push(interface);
                         }
                         _ => return Err(ParseError::UnexpectedToken(token)),
                     }
@@ -969,6 +974,59 @@ impl Parser {
 
         Ok((item, offset))
     }
+
+    fn parse_interface(&self, mut offset: usize) -> ParseResult<Interface> {
+        let mut interface = Interface::default();
+
+        let mut builtin_token = None;
+
+        if self.peek_token_type(offset) == Some(TokenType::Builtin) {
+            let first_token;
+            (first_token, offset) = self.parse_token(offset, TokenType::Builtin)?;
+            builtin_token = Some(first_token);
+            interface.is_builtin = true;
+        }
+
+        let interface_token;
+        (interface_token, offset) = self.parse_token(offset, TokenType::Interface)?;
+
+        interface.position = match builtin_token {
+            Some(builtin_token) => builtin_token.position(),
+            None => interface_token.position(),
+        };
+
+        (interface.name, offset) = self.parse_identifier(offset)?;
+
+        (_, offset) = self.parse_token(offset, TokenType::Start)?;
+        (interface.functions, offset) =
+            self.parse_comma_separated(offset, Parser::parse_interface_function)?;
+        (_, offset) = self.parse_token(offset, TokenType::End)?;
+
+        Ok((interface, offset))
+    }
+
+    fn parse_interface_function(&self, mut offset: usize) -> ParseResult<InterfaceFunction> {
+        let mut function = InterfaceFunction::default();
+
+        let fn_token;
+
+        (fn_token, offset) = self.parse_token(offset, TokenType::Fn)?;
+        function.position = fn_token.position();
+
+        (function.name, offset) = self.parse_member_function_name(offset)?;
+        (function.arguments, offset) = self.parse_arguments(offset)?;
+
+        if self.peek_token_type(offset) == Some(TokenType::Return) {
+            (function.return_types, offset) = self.parse_function_return_types(offset)?;
+        }
+
+        if self.tokens[offset - 1].type_ == TokenType::Comma {
+            // Prevent consuming trailing comma
+            offset -= 1;
+        }
+
+        Ok((function, offset))
+    }
 }
 
 #[cfg(test)]
@@ -1664,6 +1722,34 @@ mod tests {
     #[case("from \"file\" import foo, baz,", true)]
     fn test_parse_import(#[case] code: &str, #[case] expected_parsed: bool) {
         check_parse(code, expected_parsed, Parser::parse_import);
+    }
+
+    #[rstest]
+    #[case("", false)]
+    #[case("fn Self:foo args self as Self return int", true)]
+    #[case("fn Self:foo args self as Self", true)]
+    #[case("fn Self:foo args self as Self return int, bool", true)]
+    #[case("fn Self:foo args self as Self return never", true)]
+    #[case("fn Self:foo args self as Self, bar as Bar return int", true)]
+    #[case("fn foo args self as Self, bar as Bar return int", false)]
+    fn test_parse_interface_function(#[case] code: &str, #[case] expected_parsed: bool) {
+        check_parse(code, expected_parsed, Parser::parse_interface_function);
+    }
+
+    #[rstest]
+    #[case("", false)]
+    #[case("interface Fooable {}", false)]
+    #[case("interface Fooable { fn Self:foo args self as Self }", true)]
+    #[case("interface Fooable { fn Self:foo args self as Self, }", true)]
+    #[case(
+        "interface Fooable {
+            fn Self:foo args self as Self,
+            fn Self:foo args self as Self,
+        }",
+        true
+    )]
+    fn test_parse_interface(#[case] code: &str, #[case] expected_parsed: bool) {
+        check_parse(code, expected_parsed, Parser::parse_interface);
     }
 
     #[rstest]

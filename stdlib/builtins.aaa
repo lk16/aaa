@@ -195,7 +195,19 @@ builtin fn usleep args microseconds as int
 builtin fn waitpid args pid as const int, options as const int return int, int, bool, bool
 builtin fn write args fd as const int, data as const str return int, bool
 
+builtin interface Showable {
+    fn Self:show args self as const Self return str
+}
 
-// TODO add interfaces Showable and Representable and implement for all types here
+// TODO detect name collisions of interface
+// TODO detect name collisions inside interface
+// TODO require Self as first argument for all interface functions
+// TODO change signature for `.` to  `builtin fn . args s as Showable`.
+// TODO implement Showable for `int` and make it work with type checker and transpiler.
+// TODO make it fail for types that don't implement Showable
+// TODO implement Showable for all builtin types
+// TODO support checking if a type implements a certain interface
+
+// TODO add interface Representable and implement for all types here
 
 // TODO add interfaces Iterable and Iterator
