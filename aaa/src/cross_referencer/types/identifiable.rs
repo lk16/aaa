@@ -274,7 +274,6 @@ impl Display for Argument {
 pub struct Enum {
     pub parsed: parsed::Enum,
     pub resolved: Option<ResolvedEnum>,
-    pub is_builtin: bool,
 }
 
 impl PartialEq for Enum {
@@ -286,7 +285,6 @@ impl PartialEq for Enum {
 impl From<parsed::Enum> for Enum {
     fn from(parsed: parsed::Enum) -> Self {
         Self {
-            is_builtin: false, // TODO #224 add is_builtin to parsed Enum, Struct and Function
             parsed,
             resolved: None,
         }
@@ -346,6 +344,10 @@ impl Enum {
         }
 
         mapping
+    }
+
+    pub fn is_builtin(&self) -> bool {
+        self.parsed.is_builtin
     }
 }
 
@@ -562,9 +564,9 @@ impl Identifiable {
         match self {
             Identifiable::Function(function) => function.borrow().is_builtin,
             Identifiable::Struct(struct_) => struct_.borrow().is_builtin,
-            Identifiable::Enum(enum_) => enum_.borrow().is_builtin,
+            Identifiable::Enum(enum_) => enum_.borrow().is_builtin(),
             Identifiable::EnumConstructor(enum_ctor) => {
-                enum_ctor.borrow().enum_.borrow().is_builtin
+                enum_ctor.borrow().enum_.borrow().is_builtin()
             }
             _ => false,
         }

@@ -34,6 +34,7 @@ pub struct Enum {
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
     pub variants: Vec<EnumVariant>,
+    pub is_builtin: bool,
 }
 
 #[derive(Clone, Default)]

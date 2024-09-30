@@ -2,7 +2,7 @@ use std::{
     cell::RefCell,
     env,
     ffi::CString,
-    fmt::{Display, Formatter, Result},
+    fmt::{self, Display, Formatter},
     fs,
     io::{stdout, Write},
     net::{Ipv4Addr, ToSocketAddrs},
@@ -50,7 +50,7 @@ impl<T> Display for Stack<T>
 where
     T: UserType,
 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "Stack ({}):", self.len())?;
         for item in self.items.iter() {
             write!(f, " ")?;
@@ -280,6 +280,20 @@ where
         match self.pop() {
             Variable::FunctionPointer(v) => v,
             v => self.pop_type_error("func_ptr", &v),
+        }
+    }
+
+    pub fn pop_option(&mut self) -> Rc<RefCell<Option<Variable<T>>>> {
+        match self.pop() {
+            Variable::Option(v) => v,
+            v => self.pop_type_error("Option", &v),
+        }
+    }
+
+    pub fn pop_result(&mut self) -> Rc<RefCell<Result<Variable<T>, Variable<T>>>> {
+        match self.pop() {
+            Variable::Result(v) => v,
+            v => self.pop_type_error("Result", &v),
         }
     }
 
@@ -1605,5 +1619,86 @@ where
         let lhs = self.pop();
         let rhs = self.pop();
         self.push_bool(lhs == rhs);
+    }
+
+    pub fn option_some(&mut self) {
+        let popped = self.pop();
+        self.push(Variable::Option(Rc::new(RefCell::new(Some(popped)))));
+    }
+
+    pub fn option_none(&mut self) {
+        self.push(Variable::Option(Rc::new(RefCell::new(None))));
+    }
+
+    pub fn result_ok(&mut self) {
+        let popped = self.pop();
+        self.push(Variable::Result(Rc::new(RefCell::new(Ok(popped)))));
+    }
+
+    pub fn result_error(&mut self) {
+        let popped = self.pop();
+        self.push(Variable::Result(Rc::new(RefCell::new(Err(popped)))));
+    }
+
+    pub fn option_unwrap(&mut self) {
+        let option = self.pop_option();
+        let option = &*option.borrow();
+
+        match option {
+            Some(v) => self.push(v.clone()),
+            None => panic!("option:unwrap failed!"),
+        }
+    }
+
+    pub fn option_unwrap_or(&mut self) {
+        let default = self.pop();
+
+        let option = self.pop_option();
+        let option = &*option.borrow();
+
+        match option {
+            Some(v) => self.push(v.clone()),
+            None => self.push(default),
+        }
+    }
+
+    pub fn option_is_some(&mut self) {
+        let option = self.pop_option();
+        self.push_bool(option.borrow().is_some());
+    }
+
+    pub fn option_is_none(&mut self) {
+        let option = self.pop_option();
+        self.push_bool(option.borrow().is_none());
+    }
+
+    pub fn result_unwrap(&mut self) {
+        let result = self.pop_result();
+        let result = &*result.borrow();
+
+        match result {
+            Ok(v) => self.push(v.clone()),
+            Err(_) => panic!("result:unwrap failed"),
+        }
+    }
+
+    pub fn result_unwrap_error(&mut self) {
+        let result = self.pop_result();
+        let result = &*result.borrow();
+
+        match result {
+            Ok(_) => panic!("result:unwrap_error failed"),
+            Err(v) => self.push(v.clone()),
+        }
+    }
+
+    pub fn result_is_ok(&mut self) {
+        let result = self.pop_result();
+        self.push_bool(result.borrow().is_ok());
+    }
+
+    pub fn result_is_error(&mut self) {
+        let result = self.pop_result();
+        self.push_bool(result.borrow().is_err());
     }
 }

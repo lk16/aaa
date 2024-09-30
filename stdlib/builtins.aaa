@@ -22,6 +22,27 @@ builtin fn make_const[A] args a as A return const A
 // compiled regular expression
 builtin struct regex
 
+builtin enum Option[T] {
+    none,
+    some as T,
+}
+
+builtin fn Option[T]:unwrap    args option as Option[T]                return T
+builtin fn Option[T]:unwrap_or args option as Option[T], default_ as T return T
+builtin fn Option[T]:is_some   args option as Option[T]                return bool
+builtin fn Option[T]:is_none   args option as Option[T]                return bool
+
+builtin enum Result[T, E] {
+    ok as T,
+    error as E,
+}
+
+builtin fn Result[T, E]:unwrap       args result as Result[T, E] return T
+builtin fn Result[T, E]:unwrap_error args result as Result[T, E] return E
+builtin fn Result[T, E]:is_ok        args result as Result[T, E] return bool
+builtin fn Result[T, E]:is_error     args result as Result[T, E] return bool
+
+
 // stack operations
 builtin fn copy[A]      args a as A                 return A, A  // The top object will be non-const
 builtin fn drop[A]      args a as A
@@ -147,10 +168,7 @@ builtin fn regex:=    args lhs as const regex, rhs as const regex return bool
 builtin fn todo return never
 builtin fn unreachable return never
 
-
-
 // Syscall list: http://faculty.nps.edu/cseagle/assembly/sys_call.html
-
 builtin fn accept args fd as const int return str, int, int, bool
 builtin fn bind args fd as const int, ip_addr as str, port as int return bool
 builtin fn chdir args dir as const str return bool
@@ -176,10 +194,3 @@ builtin fn unsetenv args name as const str
 builtin fn usleep args microseconds as int
 builtin fn waitpid args pid as const int, options as const int return int, int, bool, bool
 builtin fn write args fd as const int, data as const str return int, bool
-
-
-// TODO #214 move Option and Result enums into this file
-
-// TODO #214 add interfaces Showable and Representable and implement for all types here
-
-// TODO #214 add interfaces Iterable and Iterator
