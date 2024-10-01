@@ -522,6 +522,50 @@ impl HasPosition for Import {
     }
 }
 
+pub struct Interface {
+    pub parsed: parsed::Interface,
+
+    #[allow(dead_code)] // TODO
+    pub resolved: Option<ResolvedInterface>,
+}
+
+impl Interface {
+    pub fn name(&self) -> String {
+        self.parsed.name.value.clone()
+    }
+
+    pub fn is_builtin(&self) -> bool {
+        self.parsed.is_builtin
+    }
+}
+
+impl HasPosition for Interface {
+    fn position(&self) -> Position {
+        self.parsed.position.clone()
+    }
+}
+
+impl From<parsed::Interface> for Interface {
+    fn from(parsed: parsed::Interface) -> Self {
+        Self {
+            parsed,
+            resolved: None,
+        }
+    }
+}
+
+#[allow(dead_code)] // TODO
+pub struct ResolvedInterface {
+    pub functions: Vec<InterfaceFunction>,
+}
+
+#[allow(dead_code)] // TODO
+pub struct InterfaceFunction {
+    pub position: Position,
+    pub arguments: Vec<Argument>,
+    pub return_types: ReturnTypes,
+}
+
 #[derive(Clone)]
 pub enum Identifiable {
     Struct(Rc<RefCell<Struct>>),
@@ -529,6 +573,7 @@ pub enum Identifiable {
     EnumConstructor(Rc<RefCell<EnumConstructor>>),
     Function(Rc<RefCell<Function>>),
     Import(Rc<RefCell<Import>>),
+    Interface(Rc<RefCell<Interface>>),
 }
 
 impl From<parsed::Struct> for Identifiable {
@@ -561,6 +606,12 @@ impl From<(parsed::Import, parsed::ImportItem)> for Identifiable {
     }
 }
 
+impl From<parsed::Interface> for Identifiable {
+    fn from(parsed: parsed::Interface) -> Self {
+        Identifiable::Interface(Rc::new(RefCell::new(parsed.into())))
+    }
+}
+
 impl Identifiable {
     pub fn is_builtin(&self) -> bool {
         match self {
@@ -570,6 +621,7 @@ impl Identifiable {
             Identifiable::EnumConstructor(enum_ctor) => {
                 enum_ctor.borrow().enum_.borrow().is_builtin()
             }
+            Identifiable::Interface(interface) => interface.borrow().is_builtin(),
             _ => false,
         }
     }
@@ -581,6 +633,7 @@ impl Identifiable {
             Identifiable::Function(function) => function.borrow().name(),
             Identifiable::Import(import) => import.borrow().name(),
             Identifiable::Struct(struct_) => struct_.borrow().name(),
+            Identifiable::Interface(interface) => interface.borrow().name(),
         }
     }
 
@@ -597,6 +650,7 @@ impl HasPosition for Identifiable {
             Identifiable::Function(function) => function.borrow().position(),
             Identifiable::Import(import) => import.borrow().position(),
             Identifiable::Struct(struct_) => struct_.borrow().position(),
+            Identifiable::Interface(interface) => interface.borrow().position(),
         }
     }
 }
@@ -609,6 +663,7 @@ impl Display for Identifiable {
             Identifiable::Function(_) => "function",
             Identifiable::Import(_) => "import",
             Identifiable::Struct(_) => "struct",
+            Identifiable::Interface(_) => "interface",
         };
 
         write!(f, "{} {}", prefix, self.name())

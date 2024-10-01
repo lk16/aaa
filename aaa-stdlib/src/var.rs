@@ -261,8 +261,14 @@ where
                 let cloned = (**v).borrow().clone_recursive();
                 Self::UserType(Rc::new(RefCell::new(cloned)))
             }
-            Self::Option(_) => todo!(), // TODO
-            Self::Result(_) => todo!(), // TODO
+            Self::Option(v) => {
+                let cloned = (**v).borrow().clone();
+                Self::Option(Rc::new(RefCell::new(cloned)))
+            }
+            Self::Result(v) => {
+                let cloned = (**v).borrow().clone();
+                Self::Result(Rc::new(RefCell::new(cloned)))
+            }
         }
     }
 }
@@ -331,8 +337,8 @@ where
             }
             (Self::FunctionPointer(lhs), Self::FunctionPointer(rhs)) => lhs == rhs,
             (Self::UserType(lhs), Self::UserType(rhs)) => lhs == rhs,
-            (Self::Option(_), Self::Option(_)) => todo!(), // TODO
-            (Self::Result(_), Self::Result(_)) => todo!(), // TODO
+            (Self::Option(lhs), Self::Option(rhs)) => lhs == rhs,
+            (Self::Result(lhs), Self::Result(rhs)) => lhs == rhs,
             _ => unreachable!(), // Can't compare variables of different types
         }
     }

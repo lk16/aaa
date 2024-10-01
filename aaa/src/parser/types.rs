@@ -517,7 +517,7 @@ impl ParsedString {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InterfaceFunction {
     pub position: Position,
     pub name: MemberFunctionName,
@@ -525,7 +525,7 @@ pub struct InterfaceFunction {
     pub return_types: ReturnTypes,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Interface {
     pub position: Position,
     pub name: Identifier,
