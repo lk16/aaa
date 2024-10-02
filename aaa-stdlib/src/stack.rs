@@ -101,13 +101,13 @@ where
     }
 
     fn pop_type_error(&self, expected_type: &str, found: &Variable<T>) -> ! {
-        let found = found.kind();
+        let found = found.type_id();
         let msg = format!("pop failed, expected {expected_type}, found {found}");
         self.type_error(&msg);
     }
 
     fn type_error_vec_str(&self, v: &Variable<T>) {
-        let found = v.kind();
+        let found = v.type_id();
         let msg = format!("expected vec[str], but found {found} in vec");
         self.type_error(&msg);
     }
@@ -1536,7 +1536,7 @@ where
             let found_stack_top = self
                 .items
                 .iter()
-                .map(|i| i.kind())
+                .map(|i| i.type_id())
                 .collect::<Vec<_>>()
                 .join(" ");
 
@@ -1549,7 +1549,7 @@ where
         let start_index = self.items.len() - expected_top.len();
 
         for (actual, expected) in self.items.iter().skip(start_index).zip(expected_top.iter()) {
-            if actual.kind() != *expected && actual.kind() != "none" {
+            if actual.type_id() != *expected && actual.type_id() != "none" {
                 // #33 Remove check for none
                 ok = false;
             }
@@ -1560,7 +1560,7 @@ where
                 .items
                 .iter()
                 .skip(start_index)
-                .map(|i| i.kind())
+                .map(|i| i.type_id())
                 .collect::<Vec<_>>()
                 .join(" ");
 
@@ -1700,5 +1700,39 @@ where
     pub fn result_is_error(&mut self) {
         let result = self.pop_result();
         self.push_bool(result.borrow().is_err());
+    }
+
+    pub fn bool_show(&mut self) {
+        let popped = self.pop_bool();
+        self.push_str(format!("{}", popped).as_str());
+    }
+
+    pub fn int_show(&mut self) {
+        let popped = self.pop_int();
+        self.push_str(format!("{}", popped).as_str());
+    }
+
+    pub fn str_show(&mut self) {
+        self.dup();
+    }
+
+    pub fn char_show(&mut self) {
+        let popped = self.pop_char();
+        self.push_str(format!("{}", popped).as_str());
+    }
+
+    pub fn map_show(&mut self) {
+        let popped = self.pop_map();
+        self.push_str(format!("{}", (*popped).borrow()).as_str());
+    }
+
+    pub fn set_show(&mut self) {
+        let popped = self.pop_set();
+        self.push_str((*popped).borrow().fmt_as_set().as_str());
+    }
+
+    pub fn vec_show(&mut self) {
+        let popped = self.pop_vec();
+        self.push_str(format!("{}", (*popped).borrow()).as_str());
     }
 }

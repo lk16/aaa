@@ -106,8 +106,6 @@ impl Transpiler {
     }
 
     pub fn run(&self) {
-        // TODO #225 Support runtime type checking
-
         let code = self.generate_file();
 
         fs::create_dir_all(self.transpiler_root_path.join("src")).unwrap();
@@ -321,14 +319,14 @@ impl Transpiler {
         let mut code = Code::new();
         code.add_line("impl UserType for UserTypeEnum {");
 
-        code.add_line("fn kind(&self) -> String {");
+        code.add_line("fn type_id(&self) -> String {");
 
         if names.is_empty() {
             code.add_line("unreachable!();");
         } else {
             code.add_line("match self {");
             for name in &names {
-                code.add_line(format!("Self::{name}(v) => v.kind(),"));
+                code.add_line(format!("Self::{name}(v) => v.type_id(),"));
             }
             code.add_line("}");
         }
@@ -707,6 +705,7 @@ impl Transpiler {
                 "Variable::FunctionPointer(Stack::zero_function_pointer_value)".to_owned()
             }
             Type::Parameter(_) => "Variable::None".to_owned(),
+            Type::Interface(_) => unreachable!(),
         }
     }
 
@@ -983,8 +982,8 @@ impl Transpiler {
 
         code.add_line(format!("impl UserType for {enum_name} {{"));
 
-        code.add_line("fn kind(&self) -> String {");
-        code.add_line(format!("String::from(\"{}\")", enum_.name()));
+        code.add_line("fn type_id(&self) -> String {");
+        code.add_line(format!("String::from(\"{}\")", enum_name));
         code.add_line("}");
 
         code.add_line("");
@@ -1217,8 +1216,8 @@ impl Transpiler {
 
         code.add_line(format!("impl UserType for {} {{", name));
 
-        code.add_line("fn kind(&self) -> String {");
-        code.add_line(format!("String::from(\"{}\")", struct_.name()));
+        code.add_line("fn type_id(&self) -> String {");
+        code.add_line(format!("String::from(\"{}\")", name));
         code.add_line("}");
 
         code.add_line("");

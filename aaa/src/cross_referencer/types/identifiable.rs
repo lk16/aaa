@@ -135,6 +135,7 @@ pub enum Type {
     Struct(StructType),
     Enum(EnumType),
     Parameter(TypeParameter),
+    Interface(InterfaceType),
 }
 
 impl Display for Type {
@@ -144,6 +145,7 @@ impl Display for Type {
             Self::Struct(struct_) => write!(f, "{}", struct_),
             Self::Enum(enum_) => write!(f, "{}", enum_),
             Self::Parameter(param) => write!(f, "{}", param),
+            Self::Interface(interface) => write!(f, "{}", interface),
         }
     }
 }
@@ -155,6 +157,7 @@ impl Type {
             Self::Struct(_) => "struct",
             Self::Enum(_) => "enum",
             Self::Parameter(_) => "parameter",
+            Self::Interface(_) => "interface",
         }
     }
 }
@@ -166,6 +169,7 @@ impl HasPosition for Type {
             &Self::Struct(struct_type) => struct_type.struct_.borrow().position(),
             &Self::Enum(enum_type) => enum_type.enum_.borrow().position(),
             &Self::Parameter(parameter) => parameter.position.clone(),
+            &Self::Interface(interface_type) => interface_type.interface.borrow().position(),
         }
     }
 }
@@ -223,6 +227,17 @@ impl Display for FunctionPointerType {
         write!(f, "fn[{}][{}]", joined_args, self.return_types)?;
 
         Ok(())
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct InterfaceType {
+    pub interface: Rc<RefCell<Interface>>,
+}
+
+impl Display for InterfaceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.interface.borrow().name())
     }
 }
 
@@ -529,6 +544,12 @@ pub struct Interface {
     pub resolved: Option<ResolvedInterface>,
 }
 
+impl PartialEq for Interface {
+    fn eq(&self, other: &Self) -> bool {
+        self.name() == other.name() && self.position() == other.position()
+    }
+}
+
 impl Interface {
     pub fn name(&self) -> String {
         self.parsed.name.value.clone()
@@ -536,6 +557,13 @@ impl Interface {
 
     pub fn is_builtin(&self) -> bool {
         self.parsed.is_builtin
+    }
+
+    pub fn resolved(&self) -> &ResolvedInterface {
+        match &self.resolved {
+            Some(resolved) => resolved,
+            None => unreachable!(),
+        }
     }
 }
 
@@ -562,6 +590,7 @@ pub struct ResolvedInterface {
 #[allow(dead_code)] // TODO
 pub struct InterfaceFunction {
     pub position: Position,
+    pub name: String,
     pub arguments: Vec<Argument>,
     pub return_types: ReturnTypes,
 }

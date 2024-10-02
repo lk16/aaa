@@ -533,6 +533,7 @@ impl<'a> FunctionTypeChecker<'a> {
             name: function.name(),
             position: call.position.clone(),
             stack,
+            identifiables: &self.type_checker.identifiables,
         };
 
         checker.check()
@@ -1072,6 +1073,7 @@ impl<'a> FunctionTypeChecker<'a> {
             name: enum_ctor.name(),
             position: call.position.clone(),
             stack,
+            identifiables: &self.type_checker.identifiables,
         };
 
         checker.check()
@@ -1093,6 +1095,7 @@ impl<'a> FunctionTypeChecker<'a> {
             return_types: function_pointer.return_types,
             stack,
             type_params: HashMap::new(),
+            identifiables: &self.type_checker.identifiables,
         };
 
         checker.check()

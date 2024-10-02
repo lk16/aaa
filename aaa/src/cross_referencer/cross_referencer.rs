@@ -20,8 +20,8 @@ use super::{
         },
         identifiable::{
             Argument, Enum, EnumType, Function, FunctionPointerType, FunctionSignature,
-            Identifiable, Import, Interface, InterfaceFunction, ResolvedEnum, ResolvedInterface,
-            ResolvedStruct, ReturnTypes, Struct, StructType, Type,
+            Identifiable, Import, Interface, InterfaceFunction, InterfaceType, ResolvedEnum,
+            ResolvedInterface, ResolvedStruct, ReturnTypes, Struct, StructType, Type,
         },
     },
 };
@@ -784,6 +784,7 @@ impl CrossReferencer {
                 struct_,
                 parameters,
             }),
+            Identifiable::Interface(interface) => Type::Interface(InterfaceType { interface }),
             _ => unreachable!(),
         };
 
@@ -875,6 +876,7 @@ impl CrossReferencer {
 
             let resolved_function = InterfaceFunction {
                 position: function.position.clone(),
+                name: function.name.func_name.value.clone(),
                 arguments: self
                     .resolve_function_arguments(&function.arguments[1..], &HashMap::new())?,
                 return_types: self

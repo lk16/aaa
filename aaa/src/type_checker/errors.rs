@@ -1080,6 +1080,7 @@ impl Display for MemberFunctionUnexpectedTarget {
     }
 }
 
+// TODO find ways to run these checks for the builtins file
 pub fn member_function_unexpected_target<T>(
     position: Position,
     function_name: String,

@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub trait UserType: Clone + Debug + Display + Hash + PartialEq {
-    fn kind(&self) -> String;
+    fn type_id(&self) -> String;
     fn clone_recursive(&self) -> Self;
 }
 
@@ -195,24 +195,24 @@ impl<T> UserType for Variable<T>
 where
     T: UserType,
 {
-    fn kind(&self) -> String {
+    fn type_id(&self) -> String {
         match self {
-            Self::None => String::from("none"),
-            Self::Integer(_) => String::from("int"),
             Self::Boolean(_) => String::from("bool"),
             Self::Character(_) => String::from("char"),
+            Self::FunctionPointer(_) => String::from("fn_ptr"),
+            Self::Integer(_) => String::from("int"),
+            Self::Map(_) => String::from("map"),
+            Self::MapIterator(_) => String::from("map_iter"),
+            Self::None => String::from("none"),
+            Self::Option(_) => String::from("Option"),
+            Self::Regex(_) => String::from("regex"),
+            Self::Result(_) => String::from("Result"),
+            Self::Set(_) => String::from("set"),
+            Self::SetIterator(_) => String::from("set_iter"),
             Self::String(_) => String::from("str"),
             Self::Vector(_) => String::from("vec"),
-            Self::Set(_) => String::from("set"),
-            Self::Map(_) => String::from("map"),
             Self::VectorIterator(_) => String::from("vec_iter"),
-            Self::MapIterator(_) => String::from("map_iter"),
-            Self::SetIterator(_) => String::from("set_iter"),
-            Self::Regex(_) => String::from("regex"),
-            Self::FunctionPointer(_) => String::from("fn_ptr"),
-            Self::UserType(v) => (**v).borrow().kind(),
-            Self::Option(_) => String::from("Option"),
-            Self::Result(_) => String::from("Result"),
+            Self::UserType(v) => (**v).borrow().type_id(),
         }
     }
 
