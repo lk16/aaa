@@ -22,7 +22,7 @@ use crate::{
             },
             identifiable::{
                 Argument, EnumType, Function, FunctionPointerType, Identifiable, Interface,
-                ReturnTypes, StructType, Type,
+                InterfaceFunction, ReturnTypes, StructType, Type,
             },
         },
     },
@@ -53,7 +53,10 @@ pub struct TypeChecker {
     pub builtins_path: PathBuf,
     pub entrypoint_path: PathBuf,
     pub verbose: bool,
+    pub interface_mapping: HashMap<(String, String), InterfaceMapping>,
 }
+
+type InterfaceMapping = HashMap<String, Rc<RefCell<Function>>>;
 
 pub struct Output {
     pub main_function: Rc<RefCell<Function>>,
@@ -74,6 +77,7 @@ impl TypeChecker {
             builtins_path: input.builtins_path,
             entrypoint_path: input.entrypoint_path,
             verbose,
+            interface_mapping: HashMap::new(),
         }
     }
 
@@ -92,8 +96,10 @@ impl TypeChecker {
         functions
     }
 
-    fn run(self) -> Result<Output, Vec<TypeError>> {
+    fn run(mut self) -> Result<Output, Vec<TypeError>> {
         let mut errors = vec![];
+
+        self.build_interface_mapping_table();
 
         for function_rc in self.functions() {
             let function = &*(*function_rc).borrow();
@@ -212,13 +218,8 @@ impl TypeChecker {
         true
     }
 
-    #[allow(dead_code)] // TODO call this in `run()`
-    fn build_interface_implementors_table(&self) {
-        #[allow(clippy::type_complexity)] // TODO
-        let table: HashMap<
-            String,
-            HashMap<String, HashMap<String, Rc<RefCell<Function>>>>,
-        > = HashMap::new();
+    fn build_interface_mapping_table(&mut self) {
+        let mut table: HashMap<(String, String), InterfaceMapping> = HashMap::new();
 
         let mut interfaces = vec![];
 
@@ -229,28 +230,86 @@ impl TypeChecker {
         }
 
         for identifiable in self.identifiables.values() {
+            if matches!(
+                identifiable,
+                Identifiable::EnumConstructor(_) | Identifiable::Function(_),
+            ) {
+                continue;
+            }
+
             for interface in &interfaces {
-                if self.supports_interface(identifiable, interface) {
-                    todo!() // TODO compute and add functions to `table`
+                let interface = &*interface.borrow();
+
+                if let Some(mapping) = self.get_interface_mapping(identifiable, interface) {
+                    let key = (interface.hash(), identifiable.hash());
+                    table.insert(key, mapping);
                 }
             }
         }
 
-        // with structure: hash(type_id) -> ( hash(interface_id) -> ( interface_func_name -> function pointer ))
-        // type: HashMap<String, HashMap<String, HashMap<String, Rc<RefCell<Function>>>>>
-
-        // TODO set computed value in self.
-        _ = table;
-
-        todo!(); // TODO
+        self.interface_mapping = table;
     }
 
-    fn supports_interface(
+    fn get_interface_mapping(
         &self,
-        _identifiable: &Identifiable,
-        _interface: &Rc<RefCell<Interface>>,
-    ) -> bool {
-        todo!() // TODO move code from CallChecker here
+        identifiable: &Identifiable,
+        interface: &Interface,
+    ) -> Option<InterfaceMapping> {
+        let mut mapping = HashMap::new();
+
+        for required_function in &interface.resolved().functions {
+            let target = self.get_interface_function_target(required_function, identifiable)?;
+            mapping.insert(required_function.name.clone(), target);
+        }
+
+        Some(mapping)
+    }
+
+    fn get_interface_function_target(
+        &self,
+        interface_function: &InterfaceFunction,
+        identifiable: &Identifiable,
+    ) -> Option<Rc<RefCell<Function>>> {
+        let key = (
+            identifiable.key().0,
+            format!("{}:{}", identifiable.key().1, &interface_function.name),
+        );
+
+        let identifiable = self.identifiables.get(&key)?;
+
+        let Identifiable::Function(function_rc) = identifiable else {
+            dbg!();
+            return None;
+        };
+
+        let function = &*function_rc.borrow();
+
+        // InterfaceFunction does not store Self argument
+        if function.arguments().len() != interface_function.arguments.len() + 1 {
+            return None;
+        }
+
+        for (interface_function_arg, function_arg) in
+            zip(&interface_function.arguments, &function.arguments()[1..])
+        {
+            if interface_function_arg.type_ != function_arg.type_ {
+                return None;
+            }
+        }
+
+        use ReturnTypes::*;
+
+        match (&interface_function.return_types, function.return_types()) {
+            (_, Never) => (),
+            (Never, Sometimes(_)) => return None,
+            (Sometimes(lhs), Sometimes(rhs)) => {
+                if lhs != rhs {
+                    return None;
+                }
+            }
+        }
+
+        Some(function_rc.clone())
     }
 }
 

@@ -1,5 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, fmt::Display, iter::zip, path::PathBuf, rc::Rc};
 
+use sha2::{Digest, Sha256};
+
 use crate::{
     common::{formatting::join_display, position::Position, traits::HasPosition},
     parser::types::{self as parsed, RegularType},
@@ -565,6 +567,17 @@ impl Interface {
             None => unreachable!(),
         }
     }
+
+    pub fn hash(&self) -> String {
+        let input = format!("{} {}", self.position(), self.name());
+
+        let mut hasher = Sha256::new();
+        hasher.update(input.as_bytes());
+        let hash = hasher.finalize();
+        let hash = format!("{:x}", hash);
+
+        hash[..16].to_owned()
+    }
 }
 
 impl HasPosition for Interface {
@@ -669,6 +682,17 @@ impl Identifiable {
     pub fn key(&self) -> (PathBuf, String) {
         (self.position().path, self.name())
     }
+
+    pub fn hash(&self) -> String {
+        let input = format!("{} {}", self.position(), self.name());
+
+        let mut hasher = Sha256::new();
+        hasher.update(input.as_bytes());
+        let hash = hasher.finalize();
+        let hash = format!("{:x}", hash);
+
+        hash[..16].to_owned()
+    }
 }
 
 impl HasPosition for Identifiable {
@@ -687,7 +711,7 @@ impl HasPosition for Identifiable {
 impl Display for Identifiable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let prefix = match self {
-            Identifiable::Enum(_) => "enum ",
+            Identifiable::Enum(_) => "enum",
             Identifiable::EnumConstructor(_) => "enum constructor",
             Identifiable::Function(_) => "function",
             Identifiable::Import(_) => "import",
