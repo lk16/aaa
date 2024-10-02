@@ -207,15 +207,8 @@ builtin interface Showable {
     fn Self:show args self as const Self return str
 }
 
-// TODO generate table in transpiled file
-// with structure: hash(type_id) -> ( hash(interface_id) -> ( interface_func_name -> function pointer ))
-// type: HashMap<String, HashMap<String, HashMap<String, func (&mut Stack)>>>
-
-// TODO Make Display implementation use this table
-
 // TODO UserType in aaa-stdlib should no longer require Display
 // TODO remove generated Display implementation in Transpiler
-
 
 // TODO make Foo:show work for some custom struct Foo
 // TODO make using `.` work for custom struct Foo
