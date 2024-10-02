@@ -56,11 +56,12 @@ pub struct TypeChecker {
     pub interface_mapping: HashMap<(String, String), InterfaceMapping>,
 }
 
-type InterfaceMapping = HashMap<String, Rc<RefCell<Function>>>;
+pub type InterfaceMapping = HashMap<String, Rc<RefCell<Function>>>;
 
 pub struct Output {
     pub main_function: Rc<RefCell<Function>>,
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
+    pub interface_mapping: HashMap<(String, String), InterfaceMapping>,
 }
 
 pub fn type_check(
@@ -124,6 +125,7 @@ impl TypeChecker {
         let output = Output {
             main_function: main_function.unwrap(),
             identifiables: self.identifiables,
+            interface_mapping: self.interface_mapping,
         };
 
         Ok(output)

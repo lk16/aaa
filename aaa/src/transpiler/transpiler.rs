@@ -13,7 +13,7 @@ use crate::{
         identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
     },
     transpiler::code::Code,
-    type_checker::type_checker,
+    type_checker::type_checker::{self, InterfaceMapping},
 };
 use lazy_static::lazy_static;
 use std::{cell::RefCell, collections::HashMap, fs, iter::zip, path::PathBuf, rc::Rc};
@@ -62,6 +62,7 @@ pub struct Transpiler {
     pub structs: HashMap<(PathBuf, String), Rc<RefCell<Struct>>>,
     pub enums: HashMap<(PathBuf, String), Rc<RefCell<Enum>>>,
     pub functions: HashMap<(PathBuf, String), Rc<RefCell<Function>>>,
+    pub interface_mapping: HashMap<(String, String), InterfaceMapping>,
     pub main_function: Rc<RefCell<Function>>,
     pub verbose: bool,
 }
@@ -102,6 +103,7 @@ impl Transpiler {
             functions,
             main_function: type_checked.main_function,
             verbose,
+            interface_mapping: type_checked.interface_mapping,
         }
     }
 
@@ -124,6 +126,8 @@ impl Transpiler {
         code.add_code(self.generate_header_comment());
         code.add_code(self.generate_warning_silencing_macros());
         code.add_code(self.generate_imports());
+
+        code.add_code(self.generate_interface_mapping());
 
         code.add_code(self.generate_UserTypeEnum());
 
@@ -183,6 +187,7 @@ impl Transpiler {
         code.add_line("use aaa_stdlib::set::{Set, SetValue};");
         code.add_line("use aaa_stdlib::var::{UserType, Variable};");
         code.add_line("use aaa_stdlib::vector::Vector;");
+        code.add_line("use lazy_static::lazy_static;");
         code.add_line("use regex::Regex;");
         code.add_line("use std::cell::RefCell;");
         code.add_line("use std::collections::HashMap;");
@@ -190,6 +195,56 @@ impl Transpiler {
         code.add_line("use std::hash::Hash;");
         code.add_line("use std::process;");
         code.add_line("use std::rc::Rc;");
+        code.add_line("");
+
+        code
+    }
+
+    fn generate_interface_mapping(&self) -> Code {
+        let mut code = Code::new();
+
+        code.add_line("type FunctionPointer = fn(&mut Stack<UserTypeEnum>);");
+        code.add_line("");
+        code.add_line("lazy_static! {");
+        code.add_line(
+            "pub static ref INTERFACE_MAPPING: HashMap<(&'static str, &'static str), HashMap<&'static str, FunctionPointer>> = {",
+        );
+        code.add_line("HashMap::from([");
+        code.indent();
+
+        for ((interface_hash, implementor_hash), interface_mapping) in &self.interface_mapping {
+            code.add_line(format!(
+                "((\"{}\", \"{}\"), HashMap::from([",
+                interface_hash, implementor_hash
+            ));
+            code.indent();
+
+            for (function_name, function) in interface_mapping {
+                let function = &*function.borrow();
+
+                let function_ptr_expr = if function.is_builtin {
+                    format!("Stack::{}", self.generate_builtin_function_name(function))
+                } else {
+                    let hash = Self::hash_name(function.position().path, function.name());
+                    format!("user_func_{}", hash)
+                };
+
+                code.add_line(format!(
+                    "(\"{}\", {} as FunctionPointer),",
+                    function_name, function_ptr_expr
+                ));
+            }
+
+            code.unindent();
+            code.add_line("])),")
+        }
+
+        code.unindent();
+        code.add_line("])");
+
+        code.add_line("};");
+        code.add_line("}");
+
         code.add_line("");
 
         code
@@ -259,7 +314,7 @@ impl Transpiler {
     fn generate_UserTypeEnum_definition(&self) -> Code {
         let mut code = Code::new();
         code.add_line("#[derive(Clone, Hash, PartialEq)]");
-        code.add_line("enum UserTypeEnum {");
+        code.add_line("pub enum UserTypeEnum {");
 
         for ((path, name), struct_) in &self.structs {
             let struct_ = &*struct_.borrow();

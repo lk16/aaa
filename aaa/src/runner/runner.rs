@@ -185,6 +185,7 @@ impl Runner {
             )
             .as_str(),
             "regex = \"1.8.4\"",
+            "lazy_static = \"1.4.0\"",
             "",
         ]
         .join("\n");
