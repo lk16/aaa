@@ -242,8 +242,14 @@ impl TypeChecker {
             for interface in &interfaces {
                 let interface = &*interface.borrow();
 
+                let interface_hash = if interface.is_builtin() {
+                    format!("builtin:{}", interface.name())
+                } else {
+                    interface.hash()
+                };
+
                 if let Some(mapping) = self.get_interface_mapping(identifiable, interface) {
-                    let key = (interface.hash(), identifiable.hash());
+                    let key = (interface_hash, identifiable.hash());
                     table.insert(key, mapping);
                 }
             }

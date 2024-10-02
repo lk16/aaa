@@ -127,8 +127,6 @@ impl Transpiler {
         code.add_code(self.generate_warning_silencing_macros());
         code.add_code(self.generate_imports());
 
-        code.add_code(self.generate_interface_mapping());
-
         code.add_code(self.generate_UserTypeEnum());
 
         for enum_ in self.enums.values() {
@@ -195,56 +193,6 @@ impl Transpiler {
         code.add_line("use std::hash::Hash;");
         code.add_line("use std::process;");
         code.add_line("use std::rc::Rc;");
-        code.add_line("");
-
-        code
-    }
-
-    fn generate_interface_mapping(&self) -> Code {
-        let mut code = Code::new();
-
-        code.add_line("type FunctionPointer = fn(&mut Stack<UserTypeEnum>);");
-        code.add_line("");
-        code.add_line("lazy_static! {");
-        code.add_line(
-            "pub static ref INTERFACE_MAPPING: HashMap<(&'static str, &'static str), HashMap<&'static str, FunctionPointer>> = {",
-        );
-        code.add_line("HashMap::from([");
-        code.indent();
-
-        for ((interface_hash, implementor_hash), interface_mapping) in &self.interface_mapping {
-            code.add_line(format!(
-                "((\"{}\", \"{}\"), HashMap::from([",
-                interface_hash, implementor_hash
-            ));
-            code.indent();
-
-            for (function_name, function) in interface_mapping {
-                let function = &*function.borrow();
-
-                let function_ptr_expr = if function.is_builtin {
-                    format!("Stack::{}", self.generate_builtin_function_name(function))
-                } else {
-                    let hash = Self::hash_name(function.position().path, function.name());
-                    format!("user_func_{}", hash)
-                };
-
-                code.add_line(format!(
-                    "(\"{}\", {} as FunctionPointer),",
-                    function_name, function_ptr_expr
-                ));
-            }
-
-            code.unindent();
-            code.add_line("])),")
-        }
-
-        code.unindent();
-        code.add_line("])");
-
-        code.add_line("};");
-        code.add_line("}");
-
         code.add_line("");
 
         code
@@ -529,10 +477,49 @@ impl Transpiler {
         let mut code = Code::new();
         code.add_line("fn main() {");
 
+        code.add_line("type InterfaceMapPointer = fn(&mut Stack<UserTypeEnum>);");
+        code.add_line("");
+        code.add_line("let interface_mapping = HashMap::from([");
+        code.indent();
+
+        for ((interface_hash, implementor_hash), interface_mapping) in &self.interface_mapping {
+            // TODO put comments in generated files to assist future debugging
+            code.add_line(format!(
+                "((\"{}\", \"{}\"), HashMap::from([",
+                interface_hash, implementor_hash
+            ));
+            code.indent();
+
+            for (function_name, function) in interface_mapping {
+                let function = &*function.borrow();
+
+                let function_ptr_expr = if function.is_builtin {
+                    format!("Stack::{}", self.generate_builtin_function_name(function))
+                } else {
+                    let hash = Self::hash_name(function.position().path, function.name());
+                    format!("user_func_{}", hash)
+                };
+
+                code.add_line(format!(
+                    "(\"{}\", {} as InterfaceMapPointer),",
+                    function_name, function_ptr_expr
+                ));
+            }
+
+            code.unindent();
+            code.add_line("])),")
+        }
+
+        code.unindent();
+        code.add_line("]);");
+        code.add_line("");
+
         if main_function.arguments().is_empty() {
-            code.add_line("let mut stack: Stack<UserTypeEnum> = Stack::new();");
+            code.add_line("let mut stack: Stack<UserTypeEnum> = Stack::new(interface_mapping);");
         } else {
-            code.add_line("let mut stack:Stack<UserTypeEnum> = Stack::from_argv();");
+            code.add_line(
+                "let mut stack:Stack<UserTypeEnum> = Stack::from_argv(interface_mapping);",
+            );
         }
 
         code.add_line(format!("{}(&mut stack);", main_func_name));

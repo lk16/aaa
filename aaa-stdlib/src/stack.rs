@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    collections::HashMap,
     env,
     ffi::CString,
     fmt::{self, Display, Formatter},
@@ -39,11 +40,18 @@ use crate::{
     vector::Vector,
 };
 
+type FunctionPointer<T> = fn(&mut Stack<T>);
+
 pub struct Stack<T>
 where
     T: UserType,
 {
     items: Vec<Variable<T>>,
+
+    // TODO consider aliasing type
+    #[allow(dead_code)] // TODO use
+    interface_mapping:
+        HashMap<(&'static str, &'static str), HashMap<&'static str, FunctionPointer<T>>>,
 }
 
 impl<T> Display for Stack<T>
@@ -60,25 +68,29 @@ where
     }
 }
 
-impl<T> Default for Stack<T>
-where
-    T: UserType,
-{
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<T> Stack<T>
 where
     T: UserType,
 {
-    pub fn new() -> Self {
-        Self { items: Vec::new() }
+    pub fn new(
+        interface_mapping: HashMap<
+            (&'static str, &'static str),
+            HashMap<&'static str, FunctionPointer<T>>,
+        >,
+    ) -> Self {
+        Self {
+            items: Vec::new(),
+            interface_mapping,
+        }
     }
 
-    pub fn from_argv() -> Self {
-        let mut stack = Self::new();
+    pub fn from_argv(
+        interface_mapping: HashMap<
+            (&'static str, &'static str),
+            HashMap<&'static str, FunctionPointer<T>>,
+        >,
+    ) -> Self {
+        let mut stack = Self::new(interface_mapping);
         let mut arg_vector = Vector::new();
         for arg in env::args() {
             arg_vector.push(Variable::String(Rc::new(RefCell::new(arg))));
@@ -304,6 +316,7 @@ where
 
     pub fn print(&mut self) {
         let top = self.pop();
+
         print!("{top}");
         _ = stdout().flush(); // TODO remove when #67 `fflush` is added
     }
