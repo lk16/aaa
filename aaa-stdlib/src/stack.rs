@@ -40,18 +40,15 @@ use crate::{
     vector::Vector,
 };
 
-type FunctionPointer<T> = fn(&mut Stack<T>);
+type InterfaceMappingType<T> =
+    HashMap<(&'static str, &'static str), HashMap<&'static str, fn(&mut Stack<T>)>>;
 
 pub struct Stack<T>
 where
     T: UserType,
 {
     items: Vec<Variable<T>>,
-
-    // TODO consider aliasing type
-    #[allow(dead_code)] // TODO use
-    interface_mapping:
-        HashMap<(&'static str, &'static str), HashMap<&'static str, FunctionPointer<T>>>,
+    interface_mapping: InterfaceMappingType<T>,
 }
 
 impl<T> Display for Stack<T>
@@ -72,24 +69,14 @@ impl<T> Stack<T>
 where
     T: UserType,
 {
-    pub fn new(
-        interface_mapping: HashMap<
-            (&'static str, &'static str),
-            HashMap<&'static str, FunctionPointer<T>>,
-        >,
-    ) -> Self {
+    pub fn new(interface_mapping: InterfaceMappingType<T>) -> Self {
         Self {
             items: Vec::new(),
             interface_mapping,
         }
     }
 
-    pub fn from_argv(
-        interface_mapping: HashMap<
-            (&'static str, &'static str),
-            HashMap<&'static str, FunctionPointer<T>>,
-        >,
-    ) -> Self {
+    pub fn from_argv(interface_mapping: InterfaceMappingType<T>) -> Self {
         let mut stack = Self::new(interface_mapping);
         let mut arg_vector = Vector::new();
         for arg in env::args() {
@@ -314,10 +301,30 @@ where
         func(self);
     }
 
-    pub fn print(&mut self) {
-        let top = self.pop();
+    fn call_interface_function(&mut self, interface_name: &str, function_name: &str) {
+        let top = self.top();
+        let top_type_id = top.type_id();
 
-        print!("{top}");
+        let interface_name = format!("builtins:{}", interface_name);
+
+        let first_key = &(interface_name.as_str(), top_type_id.as_str());
+
+        let function = self
+            .interface_mapping
+            .get(first_key)
+            .unwrap()
+            .get(function_name)
+            .unwrap();
+
+        function(self);
+    }
+
+    pub fn print(&mut self) {
+        self.call_interface_function("Showable", "show");
+
+        let printed = self.pop_str();
+        print!("{}", printed.borrow());
+
         _ = stdout().flush(); // TODO remove when #67 `fflush` is added
     }
 
