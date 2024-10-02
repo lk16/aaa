@@ -21,8 +21,8 @@ use crate::{
                 Use, While,
             },
             identifiable::{
-                Argument, EnumType, Function, FunctionPointerType, Identifiable, ReturnTypes,
-                StructType, Type,
+                Argument, EnumType, Function, FunctionPointerType, Identifiable, Interface,
+                ReturnTypes, StructType, Type,
             },
         },
     },
@@ -210,6 +210,47 @@ impl TypeChecker {
         }
 
         true
+    }
+
+    #[allow(dead_code)] // TODO call this in `run()`
+    fn build_interface_implementors_table(&self) {
+        #[allow(clippy::type_complexity)] // TODO
+        let table: HashMap<
+            String,
+            HashMap<String, HashMap<String, Rc<RefCell<Function>>>>,
+        > = HashMap::new();
+
+        let mut interfaces = vec![];
+
+        for identifiable in self.identifiables.values() {
+            if let Identifiable::Interface(interface) = identifiable {
+                interfaces.push(interface.clone());
+            }
+        }
+
+        for identifiable in self.identifiables.values() {
+            for interface in &interfaces {
+                if self.supports_interface(identifiable, interface) {
+                    todo!() // TODO compute and add functions to `table`
+                }
+            }
+        }
+
+        // with structure: hash(type_id) -> ( hash(interface_id) -> ( interface_func_name -> function pointer ))
+        // type: HashMap<String, HashMap<String, HashMap<String, Rc<RefCell<Function>>>>>
+
+        // TODO set computed value in self.
+        _ = table;
+
+        todo!(); // TODO
+    }
+
+    fn supports_interface(
+        &self,
+        _identifiable: &Identifiable,
+        _interface: &Rc<RefCell<Interface>>,
+    ) -> bool {
+        todo!() // TODO move code from CallChecker here
     }
 }
 

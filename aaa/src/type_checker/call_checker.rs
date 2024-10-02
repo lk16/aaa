@@ -153,6 +153,8 @@ impl<'a> CallChecker<'a> {
         interface_function: &InterfaceFunction,
         struct_: &Struct,
     ) -> bool {
+        // TODO lookup in TypeChecker
+
         let key = (
             struct_.position().path.clone(),
             format!("{}:{}", struct_.name(), &interface_function.name),
