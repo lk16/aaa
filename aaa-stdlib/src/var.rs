@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    fmt::{self, Debug, Display, Formatter},
+    fmt::{self, Debug, Formatter},
     hash::Hash,
     mem,
     rc::Rc,
@@ -15,7 +15,7 @@ use crate::{
     vector::{Vector, VectorIterator},
 };
 
-pub trait UserType: Clone + Debug + Display + Hash + PartialEq {
+pub trait UserType: Clone + Debug + Hash + PartialEq {
     fn type_id(&self) -> String;
     fn clone_recursive(&self) -> Self;
 }
@@ -273,38 +273,6 @@ where
     }
 }
 
-impl<T> Display for Variable<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Boolean(v) => write!(f, "{}", v),
-            Self::Integer(v) => write!(f, "{}", v),
-            Self::String(v) => write!(f, "{}", (**v).borrow()),
-            Self::Character(v) => write!(f, "{}", v),
-            Self::Vector(v) => write!(f, "{}", (**v).borrow()),
-            Self::Set(v) => write!(f, "{}", (**v).borrow().fmt_as_set()),
-            Self::Map(v) => write!(f, "{}", (**v).borrow()),
-            Self::VectorIterator(_) => write!(f, "vec_iter"),
-            Self::MapIterator(_) => write!(f, "map_iter"),
-            Self::SetIterator(_) => write!(f, "set_iter"),
-            Self::None => write!(f, "None"),
-            Self::Regex(_) => write!(f, "regex"),
-            Self::FunctionPointer(_) => write!(f, "func_ptr"),
-            Self::UserType(v) => write!(f, "{}", (**v).borrow()),
-            Self::Option(v) => match &*(**v).borrow() {
-                Some(v) => write!(f, "Option:some{{{}}}", v),
-                None => write!(f, "Option:none{{}}"),
-            },
-            Self::Result(v) => match &*(**v).borrow() {
-                Ok(v) => write!(f, "Result:ok{{{}}}", v),
-                Err(v) => write!(f, "Result:error{{{}}}", v),
-            },
-        }
-    }
-}
-
 impl<T> Debug for Variable<T>
 where
     T: UserType,
@@ -312,7 +280,7 @@ where
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::String(v) => write!(f, "{:?}", (**v).borrow()),
-            _ => write!(f, "{}", self),
+            _ => unreachable!(), // TODO remove entire function
         }
     }
 }

@@ -205,7 +205,6 @@ impl Transpiler {
         code.add_code(self.generate_UserTypeEnum_definition());
         code.add_code(self.generate_UserTypeEnum_impl());
         code.add_code(self.generate_UserTypeEnum_UserType_impl());
-        code.add_code(self.generate_UserTypeEnum_Display_impl());
         code.add_code(self.generate_UserTypeEnum_Debug_impl());
 
         code
@@ -218,7 +217,6 @@ impl Transpiler {
         code.add_code(self.generate_enum_constructors(enum_));
         code.add_code(self.generate_enum_impl(enum_));
         code.add_code(self.generate_enum_UserType_impl(enum_));
-        code.add_code(self.generate_enum_Display_impl(enum_));
         code.add_code(self.generate_enum_Debug_impl(enum_));
         code.add_code(self.generate_enum_Hash_impl(enum_));
         code.add_code(self.generate_enum_PartialEq_impl(enum_));
@@ -232,7 +230,6 @@ impl Transpiler {
         code.add_code(self.generate_struct_definition(struct_));
         code.add_code(self.generate_struct_impl(struct_));
         code.add_code(self.generate_struct_UserType_impl(struct_));
-        code.add_code(self.generate_struct_Display_impl(struct_));
         code.add_code(self.generate_struct_Debug_impl(struct_));
         code.add_code(self.generate_struct_Hash_impl(struct_));
         code.add_code(self.generate_struct_PartialEq_impl(struct_));
@@ -349,36 +346,6 @@ impl Transpiler {
                     "Self::{name}(v) => Self::{name}(v.clone_recursive()),"
                 ));
             }
-            code.add_line("}");
-        }
-
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
-        code
-    }
-
-    #[allow(non_snake_case)]
-    fn generate_UserTypeEnum_Display_impl(&self) -> Code {
-        let mut code = Code::new();
-
-        code.add_line("impl Display for UserTypeEnum {");
-
-        code.add_line("fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {");
-
-        let names = self.user_type_names();
-
-        if names.is_empty() {
-            code.add_line("unreachable!();");
-        } else {
-            code.add_line("match self {");
-
-            for name in names {
-                code.add_line(format!("Self::{}(v) => write!(f, \"{{}}\", v),", name));
-            }
-
             code.add_line("}");
         }
 
@@ -1062,52 +1029,6 @@ impl Transpiler {
     }
 
     #[allow(non_snake_case)]
-    fn generate_enum_Display_impl(&self, enum_: &Enum) -> Code {
-        let enum_name = self.generate_enum_name(enum_);
-
-        let mut code = Code::new();
-        code.add_line(format!("impl Display for {} {{", enum_name));
-
-        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-        code.add_line("match self {");
-
-        for (variant_name, associated_data) in enum_.variants() {
-            let mut line = format!("Self::variant_{}(", variant_name);
-            line += (0..associated_data.len())
-                .map(|i| format!("arg{}", i))
-                .collect::<Vec<String>>()
-                .join(", ")
-                .as_str();
-
-            line += ") => {";
-
-            code.add_line(line);
-
-            code.add_line(format!(
-                "write!(f, \"{}:{}{{{{\")?;",
-                enum_.name(),
-                variant_name
-            ));
-
-            for (offset, _) in associated_data.iter().enumerate() {
-                if offset != 0 {
-                    code.add_line("write!(f, \", \")?;");
-                }
-                code.add_line(format!("write!(f, \"{{:?}}\", arg{offset})?;"));
-            }
-
-            code.add_line("write!(f, \"}}\")");
-            code.add_line("}");
-        }
-        code.add_line("}");
-        code.add_line("}");
-        code.add_line("}");
-        code.add_line("");
-
-        code
-    }
-
-    #[allow(non_snake_case)]
     fn generate_enum_Debug_impl(&self, enum_: &Enum) -> Code {
         let enum_name = self.generate_enum_name(enum_);
 
@@ -1281,39 +1202,6 @@ impl Transpiler {
         code.add_line("}");
 
         code.add_line("");
-        code
-    }
-
-    #[allow(non_snake_case)]
-    fn generate_struct_Display_impl(&self, struct_: &Struct) -> Code {
-        let name = self.generate_struct_name(struct_);
-
-        let mut code = Code::new();
-
-        code.add_line(format!("impl Display for {} {{", name));
-
-        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-
-        code.add_line(format!("write!(f, \"{}{{{{\")?;", name));
-
-        for (offset, field_name) in struct_.fields().keys().enumerate() {
-            if offset != 0 {
-                code.add_line("write!(f, \", \")?;");
-            }
-
-            code.add_line(format!(
-                "write!(f, \"{}: {{}}\", self.{})?;",
-                field_name, field_name
-            ));
-        }
-
-        code.add_line("write!(f, \"}}\")");
-
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
         code
     }
 

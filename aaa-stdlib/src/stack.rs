@@ -3,7 +3,6 @@ use std::{
     collections::HashMap,
     env,
     ffi::CString,
-    fmt::{self, Display, Formatter},
     fs,
     io::{stdout, Write},
     net::{Ipv4Addr, ToSocketAddrs},
@@ -49,20 +48,6 @@ where
 {
     items: Vec<Variable<T>>,
     interface_mapping: InterfaceMappingType<T>,
-}
-
-impl<T> Display for Stack<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "Stack ({}):", self.len())?;
-        for item in self.items.iter() {
-            write!(f, " ")?;
-            write!(f, "{}", item)?;
-        }
-        Ok(())
-    }
 }
 
 impl<T> Stack<T>
@@ -1138,7 +1123,10 @@ where
         let mut env: Vec<CString> = vec![];
 
         for (key, value) in popped_env.iter() {
-            env.push(CString::new(format!("{key:}={value:}")).unwrap())
+            let key = key.get_string();
+            let value = value.get_string();
+
+            env.push(CString::new(format!("{}={}", key.borrow(), value.borrow())).unwrap())
         }
 
         let argv_rc = self.pop_vec();
