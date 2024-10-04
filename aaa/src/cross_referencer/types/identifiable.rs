@@ -1,9 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, fmt::Display, iter::zip, path::PathBuf, rc::Rc};
 
-use sha2::{Digest, Sha256};
-
 use crate::{
-    common::{formatting::join_display, position::Position, traits::HasPosition},
+    common::{formatting::join_display, hash::hash_key, position::Position, traits::HasPosition},
     parser::types::{self as parsed, RegularType},
 };
 
@@ -567,17 +565,6 @@ impl Interface {
             None => unreachable!(),
         }
     }
-
-    pub fn hash(&self) -> String {
-        let input = format!("{} {}", self.position(), self.name());
-
-        let mut hasher = Sha256::new();
-        hasher.update(input.as_bytes());
-        let hash = hasher.finalize();
-        let hash = format!("{:x}", hash);
-
-        hash[..16].to_owned()
-    }
 }
 
 impl HasPosition for Interface {
@@ -684,14 +671,7 @@ impl Identifiable {
     }
 
     pub fn hash(&self) -> String {
-        let input = format!("{} {}", self.position(), self.name());
-
-        let mut hasher = Sha256::new();
-        hasher.update(input.as_bytes());
-        let hash = hasher.finalize();
-        let hash = format!("{:x}", hash);
-
-        hash[..16].to_owned()
+        hash_key(self.key())
     }
 }
 

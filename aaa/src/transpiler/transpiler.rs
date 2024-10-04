@@ -1,8 +1,10 @@
 use chrono::Local;
-use sha2::{Digest, Sha256};
 
 use crate::{
-    common::{position::Position, traits::HasPosition},
+    common::{
+        hash::{hash_key, hash_position},
+        traits::HasPosition,
+    },
     cross_referencer::types::{
         function_body::{
             Assignment, Boolean, Branch, CallArgument, CallEnum, CallEnumConstructor, CallFunction,
@@ -363,21 +365,7 @@ impl Transpiler {
         code.add_line("impl Debug for UserTypeEnum {");
 
         code.add_line("fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {");
-
-        let names = self.user_type_names();
-
-        if names.is_empty() {
-            code.add_line("unreachable!();");
-        } else {
-            code.add_line("match self {");
-
-            for name in names {
-                code.add_line(format!("Self::{}(v) => write!(f, \"{{}}\", v),", name));
-            }
-
-            code.add_line("}");
-        }
-
+        code.add_line("unreachable!();"); // TODO remove Debug impl completely
         code.add_line("}");
 
         code.add_line("}");
@@ -397,24 +385,7 @@ impl Transpiler {
     }
 
     fn hash_name(path: PathBuf, name: String) -> String {
-        let mut hasher = Sha256::new();
-        hasher.update(path.to_string_lossy().as_bytes());
-        hasher.update(name.as_bytes());
-
-        let hash = hasher.finalize();
-        let hash = format!("{:x}", hash);
-
-        hash[..16].to_owned()
-    }
-
-    fn hash_position(position: &Position) -> String {
-        let mut hasher = Sha256::new();
-        hasher.update(format!("{}", position).as_bytes());
-
-        let hash = hasher.finalize();
-        let hash = format!("{:x}", hash);
-
-        hash[..16].to_owned()
+        hash_key((path, name))
     }
 
     fn generate_function_name(&self, function: &Function) -> String {
@@ -768,7 +739,7 @@ impl Transpiler {
         let enum_ = &*enum_rc.borrow();
         let enum_name = self.generate_enum_name(enum_);
 
-        let match_var = format!("match_var_{}", Self::hash_position(&match_.position));
+        let match_var = format!("match_var_{}", hash_position(&match_.position));
 
         let mut code = Code::new();
 
@@ -803,7 +774,7 @@ impl Transpiler {
         let data_items = enum_.variants().get(&block.variant_name).unwrap().len();
 
         // We add the hash of location to prevent collisions with nested case blocks.
-        let var_prefix = format!("case_var_{}", Self::hash_position(&block.position));
+        let var_prefix = format!("case_var_{}", hash_position(&block.position));
 
         let mut line = format!("{}::variant_{}(", enum_name, block.variant_name);
 
@@ -1036,38 +1007,9 @@ impl Transpiler {
         code.add_line(format!("impl Debug for {} {{", enum_name));
 
         code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-        code.add_line("match self {");
-
-        for (variant_name, associated_data) in enum_.variants() {
-            let mut line = format!("Self::variant_{}(", variant_name);
-            line += (0..associated_data.len())
-                .map(|i| format!("arg{}", i))
-                .collect::<Vec<String>>()
-                .join(", ")
-                .as_str();
-
-            line += ") => {";
-
-            code.add_line(line);
-
-            code.add_line(format!(
-                "write!(f, \"{}:{}{{{{\")?;",
-                enum_.name(),
-                variant_name
-            ));
-
-            for (offset, _) in associated_data.iter().enumerate() {
-                if offset != 0 {
-                    code.add_line("write!(f, \", \")?;");
-                }
-                code.add_line(format!("write!(f, \"{{:?}}\", arg{offset})?;"));
-            }
-
-            code.add_line("write!(f, \"}}\")");
-            code.add_line("}");
-        }
+        code.add_line("unreachable!();"); // TODO remove Debug impl completely
         code.add_line("}");
-        code.add_line("}");
+
         code.add_line("}");
         code.add_line("");
 
@@ -1214,22 +1156,7 @@ impl Transpiler {
         code.add_line(format!("impl Debug for {} {{", name));
 
         code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-
-        code.add_line(format!("write!(f, \"{}{{{{\")?;", name));
-
-        for (offset, field_name) in struct_.fields().keys().enumerate() {
-            if offset != 0 {
-                code.add_line("write!(f, \", \")?;");
-            }
-
-            code.add_line(format!(
-                "write!(f, \"{}: {{:?}}\", self.{})?;",
-                field_name, field_name
-            ));
-        }
-
-        code.add_line("write!(f, \"}}\")");
-
+        code.add_line("unreachable!();"); // TODO remove Debug impl completely
         code.add_line("}");
 
         code.add_line("}");

@@ -221,6 +221,7 @@ impl TypeChecker {
     }
 
     fn build_interface_mapping_table(&mut self) {
+        // TODO send vec of tuples instead, so we don't compute hashes here but use the functions from Transpiler there
         let mut table: HashMap<(String, String), InterfaceMapping> = HashMap::new();
 
         let mut interfaces = vec![];
@@ -245,13 +246,13 @@ impl TypeChecker {
                 let interface_hash = if interface.is_builtin() {
                     format!("builtins:{}", interface.name())
                 } else {
-                    interface.hash()
+                    format!("user_type_{}", identifiable.hash())
                 };
 
                 let identifiable_hash = if identifiable.is_builtin() {
                     format!("builtins:{}", identifiable.name())
                 } else {
-                    identifiable.hash()
+                    format!("user_type_{}", identifiable.hash())
                 };
 
                 if let Some(mapping) = self.get_interface_mapping(identifiable, interface) {
@@ -292,7 +293,6 @@ impl TypeChecker {
         let identifiable = self.identifiables.get(&key)?;
 
         let Identifiable::Function(function_rc) = identifiable else {
-            dbg!();
             return None;
         };
 
