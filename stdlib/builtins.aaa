@@ -60,7 +60,7 @@ builtin fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
 builtin fn swap[A, B]   args a as A, b as B         return B, A
 
 // special operators
-builtin fn .            args   a as const Showable
+builtin fn .            args   a as const Show
 builtin fn repr[A]      args   a as const A                 return str
 builtin fn assert       args   a as const bool
 builtin fn nop
@@ -203,7 +203,7 @@ builtin fn usleep args microseconds as int
 builtin fn waitpid args pid as const int, options as const int return int, int, bool, bool
 builtin fn write args fd as const int, data as const str return int, bool
 
-builtin interface Showable {
+builtin interface Show {
     fn Self:show args self as const Self return str
 }
 

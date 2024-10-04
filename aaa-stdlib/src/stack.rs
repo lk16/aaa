@@ -305,7 +305,7 @@ where
     }
 
     pub fn print(&mut self) {
-        self.call_interface_function("Showable", "show");
+        self.call_interface_function("Show", "show");
 
         let printed = self.pop_str();
         print!("{}", printed.borrow());
