@@ -86,12 +86,8 @@ impl<T> Display for Vector<T>
 where
     T: UserType,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut reprs: Vec<String> = vec![];
-        for item in self.iter() {
-            reprs.push(format!("{item:?}"))
-        }
-        write!(f, "[{}]", reprs.join(", "))
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!() // TODO Display for Vector
     }
 }
 

@@ -448,9 +448,7 @@ where
     }
 
     pub fn repr(&mut self) {
-        let top = self.pop();
-        let repr = format!("{top:?}");
-        self.push_str(&repr);
+        self.call_interface_function("Debug", "debug");
     }
 
     #[allow(clippy::should_implement_trait)] // TODO #238 Rename drop function
@@ -1742,5 +1740,34 @@ where
     pub fn vec_show(&mut self) {
         let popped = self.pop_vec();
         self.push_str(format!("{}", (*popped).borrow()).as_str());
+    }
+
+    pub fn bool_debug(&mut self) {
+        self.bool_show();
+    }
+
+    pub fn int_debug(&mut self) {
+        self.int_show();
+    }
+
+    pub fn str_debug(&mut self) {
+        let popped = self.pop_str();
+        self.push_str(format!("{:?}", popped.borrow()).as_str());
+    }
+
+    pub fn char_debug(&mut self) {
+        self.char_show();
+    }
+
+    pub fn map_debug(&mut self) {
+        self.map_show();
+    }
+
+    pub fn set_debug(&mut self) {
+        self.set_show();
+    }
+
+    pub fn vec_debug(&mut self) {
+        self.vec_show();
     }
 }

@@ -191,7 +191,6 @@ impl Transpiler {
         code.add_line("use regex::Regex;");
         code.add_line("use std::cell::RefCell;");
         code.add_line("use std::collections::HashMap;");
-        code.add_line("use std::fmt::{Debug, Display, Formatter, Result};");
         code.add_line("use std::hash::Hash;");
         code.add_line("use std::process;");
         code.add_line("use std::rc::Rc;");
@@ -207,7 +206,6 @@ impl Transpiler {
         code.add_code(self.generate_UserTypeEnum_definition());
         code.add_code(self.generate_UserTypeEnum_impl());
         code.add_code(self.generate_UserTypeEnum_UserType_impl());
-        code.add_code(self.generate_UserTypeEnum_Debug_impl());
 
         code
     }
@@ -219,7 +217,6 @@ impl Transpiler {
         code.add_code(self.generate_enum_constructors(enum_));
         code.add_code(self.generate_enum_impl(enum_));
         code.add_code(self.generate_enum_UserType_impl(enum_));
-        code.add_code(self.generate_enum_Debug_impl(enum_));
         code.add_code(self.generate_enum_Hash_impl(enum_));
         code.add_code(self.generate_enum_PartialEq_impl(enum_));
 
@@ -232,7 +229,6 @@ impl Transpiler {
         code.add_code(self.generate_struct_definition(struct_));
         code.add_code(self.generate_struct_impl(struct_));
         code.add_code(self.generate_struct_UserType_impl(struct_));
-        code.add_code(self.generate_struct_Debug_impl(struct_));
         code.add_code(self.generate_struct_Hash_impl(struct_));
         code.add_code(self.generate_struct_PartialEq_impl(struct_));
 
@@ -351,21 +347,6 @@ impl Transpiler {
             code.add_line("}");
         }
 
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
-        code
-    }
-
-    #[allow(non_snake_case)]
-    fn generate_UserTypeEnum_Debug_impl(&self) -> Code {
-        let mut code = Code::new();
-        code.add_line("impl Debug for UserTypeEnum {");
-
-        code.add_line("fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {");
-        code.add_line("unreachable!();"); // TODO remove Debug impl completely
         code.add_line("}");
 
         code.add_line("}");
@@ -1000,23 +981,6 @@ impl Transpiler {
     }
 
     #[allow(non_snake_case)]
-    fn generate_enum_Debug_impl(&self, enum_: &Enum) -> Code {
-        let enum_name = self.generate_enum_name(enum_);
-
-        let mut code = Code::new();
-        code.add_line(format!("impl Debug for {} {{", enum_name));
-
-        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-        code.add_line("unreachable!();"); // TODO remove Debug impl completely
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
-        code
-    }
-
-    #[allow(non_snake_case)]
     fn generate_enum_Hash_impl(&self, enum_: &Enum) -> Code {
         let name = self.generate_enum_name(enum_);
 
@@ -1144,24 +1108,6 @@ impl Transpiler {
         code.add_line("}");
 
         code.add_line("");
-        code
-    }
-
-    #[allow(non_snake_case)]
-    fn generate_struct_Debug_impl(&self, struct_: &Struct) -> Code {
-        let name = self.generate_struct_name(struct_);
-
-        let mut code = Code::new();
-
-        code.add_line(format!("impl Debug for {} {{", name));
-
-        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-        code.add_line("unreachable!();"); // TODO remove Debug impl completely
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
         code
     }
 

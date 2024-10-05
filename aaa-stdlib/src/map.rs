@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     collections::hash_map::DefaultHasher,
-    fmt::{Display, Formatter, Result},
+    fmt::{self, Display, Formatter},
     hash::{Hash, Hasher},
     rc::Rc,
 };
@@ -151,13 +151,7 @@ where
     }
 
     pub fn fmt_as_set(&self) -> String {
-        let mut parts = vec![];
-        for bucket in self.buckets.borrow().iter() {
-            for (k, _) in bucket.iter() {
-                parts.push(format!("{k:?}"));
-            }
-        }
-        format!("{{{}}}", parts.join(","))
+        todo!() // TODO format map as set
     }
 }
 
@@ -198,14 +192,8 @@ where
     K: UserType,
     V: UserType,
 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let mut parts = vec![];
-        for bucket in self.buckets.borrow().iter() {
-            for (k, v) in bucket.iter() {
-                parts.push(format!("{k:?}: {v:?}"));
-            }
-        }
-        write!(f, "{{{}}}", parts.join(", "))
+    fn fmt(&self, _f: &mut Formatter<'_>) -> fmt::Result {
+        todo!() // TODO Display for Map
     }
 }
 

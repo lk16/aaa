@@ -1,10 +1,4 @@
-use std::{
-    cell::RefCell,
-    fmt::{self, Debug, Formatter},
-    hash::Hash,
-    mem,
-    rc::Rc,
-};
+use std::{cell::RefCell, hash::Hash, mem, rc::Rc};
 
 use regex::Regex;
 
@@ -15,7 +9,7 @@ use crate::{
     vector::{Vector, VectorIterator},
 };
 
-pub trait UserType: Clone + Debug + Hash + PartialEq {
+pub trait UserType: Clone + Hash + PartialEq {
     fn type_id(&self) -> String;
     fn clone_recursive(&self) -> Self;
 }
@@ -269,18 +263,6 @@ where
                 let cloned = (**v).borrow().clone();
                 Self::Result(Rc::new(RefCell::new(cloned)))
             }
-        }
-    }
-}
-
-impl<T> Debug for Variable<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::String(v) => write!(f, "{:?}", (**v).borrow()),
-            _ => unreachable!(), // TODO remove entire function
         }
     }
 }

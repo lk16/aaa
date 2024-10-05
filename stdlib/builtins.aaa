@@ -6,9 +6,17 @@ builtin struct str {}
 builtin struct char {}
 
 builtin fn bool:show args self as bool return str
+builtin fn bool:debug args self as bool return str
+
 builtin fn int:show args self as int return str
+builtin fn int:debug args self as int return str
+
 builtin fn str:show args self as str return str
+builtin fn str:debug args self as str return str
+
 builtin fn char:show args self as char return str
+builtin fn char:debug args self as char return str
+
 
 // container types
 builtin struct map[K, V] {}
@@ -16,8 +24,14 @@ builtin struct set[T] {}
 builtin struct vec[T] {}
 
 builtin fn map[K, V]:show args self as map[K, V] return str
+builtin fn map[K, V]:debug args self as map[K, V] return str
+
 builtin fn set[T]:show args self as set[T] return str
+builtin fn set[T]:debug args self as set[T] return str
+
 builtin fn vec[T]:show args self as vec[T] return str
+builtin fn vec[T]:debug args self as vec[T] return str
+
 
 // container iterator types
 builtin struct map_const_iter[K, V] {}
@@ -61,7 +75,7 @@ builtin fn swap[A, B]   args a as A, b as B         return B, A
 
 // special operators
 builtin fn .            args   a as const Show
-builtin fn repr[A]      args   a as const A                 return str
+builtin fn repr         args   a as const Debug             return str
 builtin fn assert       args   a as const bool
 builtin fn nop
 builtin fn =[A]         args lhs as const A, rhs as const A return bool
@@ -207,7 +221,10 @@ builtin interface Show {
     fn Self:show args self as const Self return str
 }
 
-// TODO setup Debug interface like Show but for repr
+builtin interface Debug {
+    fn Self:debug args self as const Self return str
+}
+
 
 // TODO temporarily support running code from doctest
 

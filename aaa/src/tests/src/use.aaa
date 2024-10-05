@@ -141,7 +141,7 @@ fn main {
 
 /// stderr:
 /// Found name collision:
-/// $AAA_STDLIB_PATH/builtins.aaa:187:1: function exit
+/// $AAA_STDLIB_PATH/builtins.aaa:201:1: function exit
 /// $SOURCE_PATH/main.aaa:3:9: local variable exit
 ///
 /// Found 1 errors
@@ -161,7 +161,7 @@ fn main {
 
 /// stderr:
 /// Found name collision:
-/// $AAA_STDLIB_PATH/builtins.aaa:16:1: struct vec
+/// $AAA_STDLIB_PATH/builtins.aaa:24:1: struct vec
 /// $SOURCE_PATH/main.aaa:3:9: local variable vec
 ///
 /// Found 1 errors
