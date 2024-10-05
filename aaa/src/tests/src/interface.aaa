@@ -1,0 +1,106 @@
+
+/// name: use builtin interface
+
+fn main {
+    "hello\n" .
+    69 .
+    "\n" .
+}
+
+/// stdout:
+/// hello
+/// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use interface function as regular function
+
+fn main {
+    "hello\n" str:show .
+    69 int:show .
+    "\n" .
+}
+
+/// stdout:
+/// hello
+/// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use interface function explicitly
+
+/// skip TODO support using interface function explicitly
+
+fn main {
+    "hello\n" Show:show .
+    69 Show:show .
+    "\n" .
+}
+
+/// stdout:
+/// hello
+/// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use builtin interface on custom type
+
+struct Foo {}
+
+fn Foo:show args foo as Foo return str {
+    "I am foo!"
+}
+
+fn main {
+    Foo .
+    "\n" .
+}
+
+/// stdout:
+/// I am foo!
+
+/// ----------------------------------------------------------------------------
+
+/// name: use interface function explicitly on custom type
+
+/// skip TODO support using interface function explicitly on custom type
+
+struct Foo {}
+
+fn Foo:show args foo as Foo return str {
+    "I am foo!"
+}
+
+fn main {
+    Foo Show:show .
+    "\n" .
+}
+
+/// stdout:
+/// I am foo!
+
+/// ----------------------------------------------------------------------------
+
+/// name: use custom interface on custom type
+
+/// skip TODO use custom interface on custom type
+
+interface Bar {
+    fn Self:bar args self as Self return int
+}
+
+struct Foo {}
+
+fn Foo:bar args foo as Foo return int {
+    69
+}
+
+fn main {
+    Foo Foo:bar .
+    "\n" .
+}
+
+/// stdout:
+/// 69
+
+// TODO add test for trying to use type with non-implemented trait

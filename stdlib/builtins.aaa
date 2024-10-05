@@ -225,9 +225,6 @@ builtin interface Debug {
     fn Self:debug args self as const Self return str
 }
 
-
-// TODO add a bunch of test cases for interface features implemented so far
-
 // TODO make functions accept interface values
 
 // TODO make functions accept vec[int] if vec[Show] is accepted
