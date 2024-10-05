@@ -4,8 +4,8 @@ use super::errors::{does_not_return, stack_error, TypeResult};
 use crate::{
     common::{position::Position, traits::HasPosition},
     cross_referencer::types::identifiable::{
-        EnumType, Identifiable, InterfaceFunction, InterfaceType, ReturnTypes, Struct, StructType,
-        Type,
+        EnumType, Identifiable, InterfaceType, ResolvedInterfaceFunction, ReturnTypes, Struct,
+        StructType, Type,
     },
     type_checker::errors::stack_underflow,
 };
@@ -131,7 +131,7 @@ impl<'a> CallChecker<'a> {
             .all(|x| x)
     }
 
-    fn struct_implements_interface(
+    pub fn struct_implements_interface(
         &self,
         interface_type: &InterfaceType,
         struct_type: &StructType,
@@ -150,7 +150,7 @@ impl<'a> CallChecker<'a> {
 
     fn struct_implements_interface_function(
         &self,
-        interface_function: &InterfaceFunction,
+        interface_function: &ResolvedInterfaceFunction,
         struct_: &Struct,
     ) -> bool {
         // TODO lookup in TypeChecker
@@ -165,14 +165,12 @@ impl<'a> CallChecker<'a> {
         };
 
         let Identifiable::Function(function) = identifiable else {
-            dbg!();
             return false;
         };
 
         let function = &*function.borrow();
 
-        // InterfaceFunction does not store Self argument
-        if function.arguments().len() != interface_function.arguments.len() + 1 {
+        if function.arguments().len() != interface_function.arguments.len() {
             return false;
         }
 

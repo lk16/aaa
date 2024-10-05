@@ -10,6 +10,7 @@ use std::{
     process,
     rc::Rc,
     str::FromStr,
+    sync::Arc,
     thread::sleep,
     time::{Duration, SystemTime, UNIX_EPOCH},
     vec,
@@ -47,21 +48,21 @@ where
     T: UserType,
 {
     items: Vec<Variable<T>>,
-    interface_mapping: InterfaceMappingType<T>,
+    interface_mapping: Arc<InterfaceMappingType<T>>,
 }
 
 impl<T> Stack<T>
 where
     T: UserType,
 {
-    pub fn new(interface_mapping: InterfaceMappingType<T>) -> Self {
+    pub fn new(interface_mapping: Arc<InterfaceMappingType<T>>) -> Self {
         Self {
             items: Vec::new(),
             interface_mapping,
         }
     }
 
-    pub fn from_argv(interface_mapping: InterfaceMappingType<T>) -> Self {
+    pub fn from_argv(interface_mapping: Arc<InterfaceMappingType<T>>) -> Self {
         let mut stack = Self::new(interface_mapping);
         let mut arg_vector = Vector::new();
         for arg in env::args() {

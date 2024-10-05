@@ -16,13 +16,13 @@ use crate::{
         types::{
             function_body::{
                 Assignment, Branch, Call, CallArgument, CallEnum, CallEnumConstructor,
-                CallFunction, CallLocalVariable, CallStruct, CaseBlock, Foreach, FunctionBody,
-                FunctionBodyItem, FunctionType, GetField, GetFunction, Match, Return, SetField,
-                Use, While,
+                CallFunction, CallInterfaceFunction, CallLocalVariable, CallStruct, CaseBlock,
+                Foreach, FunctionBody, FunctionBodyItem, FunctionType, GetField, GetFunction,
+                Match, Return, SetField, Use, While,
             },
             identifiable::{
                 Argument, EnumType, Function, FunctionPointerType, Identifiable, Interface,
-                InterfaceFunction, ReturnTypes, StructType, Type,
+                ResolvedInterfaceFunction, ReturnTypes, StructType, Type,
             },
         },
     },
@@ -282,7 +282,7 @@ impl TypeChecker {
 
     fn get_interface_function_target(
         &self,
-        interface_function: &InterfaceFunction,
+        interface_function: &ResolvedInterfaceFunction,
         identifiable: &Identifiable,
     ) -> Option<Rc<RefCell<Function>>> {
         let key = (
@@ -298,8 +298,7 @@ impl TypeChecker {
 
         let function = &*function_rc.borrow();
 
-        // InterfaceFunction does not store Self argument
-        if function.arguments().len() != interface_function.arguments.len() + 1 {
+        if function.arguments().len() != interface_function.arguments.len() {
             return None;
         }
 
@@ -528,28 +527,29 @@ impl<'a> FunctionTypeChecker<'a> {
         use FunctionBodyItem::*;
 
         match item {
-            Integer(_) => self.check_integer(stack),
-            String(_) => self.check_string(stack),
-            Boolean(_) => self.check_boolean(stack),
-            Char(_) => self.check_character(stack),
-            Branch(branch) => self.check_branch(stack, branch),
-            While(while_) => self.check_while(stack, while_),
-            CallFunction(call) => self.check_call_function(stack, call),
-            CallStruct(call) => self.check_call_struct(stack, call),
-            FunctionType(func_type) => self.check_function_type(stack, func_type),
-            CallEnum(call) => self.check_call_enum(stack, call),
-            CallArgument(call) => self.check_call_argument(stack, call),
-            Return(return_) => self.check_return(stack, return_),
-            Use(use_) => self.check_use(stack, use_),
-            CallLocalVariable(call) => self.check_call_local_variable(stack, call),
-            GetField(get_field) => self.check_get_field(stack, get_field),
-            SetField(set_field) => self.check_set_field(stack, set_field),
             Assignment(assignment) => self.check_assignment(stack, assignment),
-            GetFunction(get_function) => self.check_get_function(stack, get_function),
-            Foreach(foreach) => self.check_foreach(stack, foreach),
-            Match(match_) => self.check_match(stack, match_),
-            CallEnumConstructor(call) => self.check_call_enum_constructor(stack, call),
+            Boolean(_) => self.check_boolean(stack),
+            Branch(branch) => self.check_branch(stack, branch),
             Call(call) => self.check_call(stack, call),
+            CallArgument(call) => self.check_call_argument(stack, call),
+            CallEnum(call) => self.check_call_enum(stack, call),
+            CallEnumConstructor(call) => self.check_call_enum_constructor(stack, call),
+            CallFunction(call) => self.check_call_function(stack, call),
+            CallInterfaceFunction(function) => self.check_call_interface_function(stack, function),
+            CallLocalVariable(call) => self.check_call_local_variable(stack, call),
+            CallStruct(call) => self.check_call_struct(stack, call),
+            Char(_) => self.check_character(stack),
+            Foreach(foreach) => self.check_foreach(stack, foreach),
+            FunctionType(func_type) => self.check_function_type(stack, func_type),
+            GetField(get_field) => self.check_get_field(stack, get_field),
+            GetFunction(get_function) => self.check_get_function(stack, get_function),
+            Integer(_) => self.check_integer(stack),
+            Match(match_) => self.check_match(stack, match_),
+            Return(return_) => self.check_return(stack, return_),
+            SetField(set_field) => self.check_set_field(stack, set_field),
+            String(_) => self.check_string(stack),
+            Use(use_) => self.check_use(stack, use_),
+            While(while_) => self.check_while(stack, while_),
         }
     }
 
@@ -1213,5 +1213,32 @@ impl<'a> FunctionTypeChecker<'a> {
         };
 
         checker.check()
+    }
+
+    fn check_call_interface_function(
+        &self,
+        stack: Vec<Type>,
+        call: &CallInterfaceFunction,
+    ) -> TypeResult {
+        let function = call.function.resolved_function();
+
+        let argument_types = function
+            .arguments
+            .iter()
+            .cloned()
+            .map(|arg| arg.type_)
+            .collect();
+
+        let call_checker = CallChecker {
+            name: call.function.name(),
+            position: call.position.clone(),
+            argument_types,
+            return_types: function.return_types.clone(),
+            stack: stack.clone(),
+            type_params: HashMap::new(),
+            identifiables: &self.type_checker.identifiables,
+        };
+
+        call_checker.check()
     }
 }

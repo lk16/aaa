@@ -14,14 +14,14 @@ use super::{
     types::{
         function_body::{
             Assignment, Boolean, Branch, Call, CallArgument, CallEnum, CallEnumConstructor,
-            CallFunction, CallLocalVariable, CallStruct, CaseBlock, Char, DefaultBlock, Foreach,
-            FunctionBody, FunctionBodyItem, GetField, GetFunction, Integer, Match, ParsedString,
-            Return, SetField, Use, Variable, While,
+            CallFunction, CallInterfaceFunction, CallLocalVariable, CallStruct, CaseBlock, Char,
+            DefaultBlock, Foreach, FunctionBody, FunctionBodyItem, GetField, GetFunction, Integer,
+            Match, ParsedString, Return, SetField, Use, Variable, While,
         },
         identifiable::{
             Argument, Enum, EnumType, Function, FunctionPointerType, FunctionSignature,
-            Identifiable, Import, Interface, InterfaceFunction, InterfaceType, ResolvedEnum,
-            ResolvedInterface, ResolvedStruct, ReturnTypes, Struct, StructType, Type,
+            Identifiable, Import, Interface, InterfaceType, ResolvedEnum, ResolvedInterface,
+            ResolvedInterfaceFunction, ResolvedStruct, ReturnTypes, Struct, StructType, Type,
         },
     },
 };
@@ -177,6 +177,7 @@ impl CrossReferencer {
         let mut functions = vec![];
         let mut imports = vec![];
         let mut interfaces = vec![];
+        let mut interface_functions = vec![];
 
         for identifiable in indentifiables.into_iter() {
             match identifiable {
@@ -185,6 +186,7 @@ impl CrossReferencer {
                 Identifiable::Function(function) => functions.push(function),
                 Identifiable::Import(import) => imports.push(import),
                 Identifiable::Interface(interface) => interfaces.push(interface),
+                Identifiable::InterfaceFunction(function) => interface_functions.push(function),
                 _ => (),
             }
         }
@@ -289,13 +291,23 @@ impl CrossReferencer {
     }
 
     fn load_interfaces(parsed_interfaces: &[parsed::Interface]) -> Vec<Identifiable> {
-        // TODO add interface functions
+        let mut identifiables = vec![];
 
-        parsed_interfaces
-            .iter()
-            .cloned()
-            .map(|interface| interface.into())
-            .collect()
+        for parsed_interface in parsed_interfaces {
+            let identifiable: Identifiable = parsed_interface.clone().into();
+
+            identifiables.push(identifiable.clone());
+
+            let Identifiable::Interface(interface) = identifiable else {
+                unreachable!();
+            };
+
+            for parsed_interface_function in &parsed_interface.functions {
+                identifiables.push((interface.clone(), parsed_interface_function).into());
+            }
+        }
+
+        identifiables
     }
 
     fn resolve_import(&self, import_rc: Rc<RefCell<Import>>) -> Result<(), CrossReferencerError> {
@@ -876,10 +888,24 @@ impl CrossReferencer {
         for function in &interface_rc.borrow().parsed.functions {
             Self::validate_interface_function_self_argument(function.arguments.first())?;
 
-            let resolved_function = InterfaceFunction {
+            let mut resolved_arguments = vec![];
+
+            // TODO replace interface function arguments by interface when their type is Self
+            resolved_arguments.push(Argument {
+                name: function.arguments[0].name.value.clone(),
+                position: function.arguments[0].position(),
+                type_: Type::Interface(InterfaceType {
+                    interface: interface_rc.clone(),
+                }),
+            });
+
+            resolved_arguments.extend(
+                self.resolve_function_arguments(&function.arguments[1..], &HashMap::new())?,
+            );
+
+            let resolved_function = ResolvedInterfaceFunction {
                 name: function.name.func_name.value.clone(),
-                arguments: self
-                    .resolve_function_arguments(&function.arguments[1..], &HashMap::new())?,
+                arguments: resolved_arguments,
                 return_types: self
                     .resolve_function_return_types(&function.return_types, &HashMap::new())?,
             };
@@ -1140,6 +1166,12 @@ impl<'a> FunctionBodyResolver<'a> {
                 }))
             }
             Identifiable::Interface(_) => todo!(), // TODO calling an interface should lead to an error
+            Identifiable::InterfaceFunction(function) => Ok(
+                FunctionBodyItem::CallInterfaceFunction(CallInterfaceFunction {
+                    function,
+                    position: parsed.position(),
+                }),
+            ),
         }
     }
 

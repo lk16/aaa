@@ -8,9 +8,9 @@ use crate::{
     cross_referencer::types::{
         function_body::{
             Assignment, Boolean, Branch, CallArgument, CallEnum, CallEnumConstructor, CallFunction,
-            CallLocalVariable, CallStruct, CaseBlock, Char, DefaultBlock, FunctionBody,
-            FunctionBodyItem, FunctionType, GetField, GetFunction, Integer, Match, ParsedString,
-            Return, SetField, Use, While,
+            CallInterfaceFunction, CallLocalVariable, CallStruct, CaseBlock, Char, DefaultBlock,
+            FunctionBody, FunctionBodyItem, FunctionType, GetField, GetFunction, Integer, Match,
+            ParsedString, Return, SetField, Use, While,
         },
         identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
     },
@@ -129,6 +129,8 @@ impl Transpiler {
         code.add_code(self.generate_warning_silencing_macros());
         code.add_code(self.generate_imports());
 
+        code.add_code(self.generate_interface_mapping());
+
         code.add_code(self.generate_UserTypeEnum());
 
         for enum_ in self.enums.values() {
@@ -183,8 +185,8 @@ impl Transpiler {
         let mut code = Code::new();
 
         code.add_line("use aaa_stdlib::map::Map;");
-        code.add_line("use aaa_stdlib::stack::Stack;");
         code.add_line("use aaa_stdlib::set::{Set, SetValue};");
+        code.add_line("use aaa_stdlib::stack::Stack;");
         code.add_line("use aaa_stdlib::var::{UserType, Variable};");
         code.add_line("use aaa_stdlib::vector::Vector;");
         code.add_line("use lazy_static::lazy_static;");
@@ -194,6 +196,60 @@ impl Transpiler {
         code.add_line("use std::hash::Hash;");
         code.add_line("use std::process;");
         code.add_line("use std::rc::Rc;");
+        code.add_line("use std::sync::Arc;");
+        code.add_line("");
+
+        code
+    }
+
+    fn generate_interface_mapping(&self) -> Code {
+        let mut code = Code::new();
+
+        code.add_line("type InterfaceMapPointer = fn(&mut Stack<UserTypeEnum>);");
+        code.add_line("");
+
+        code.add_line("lazy_static! {");
+        code.add_line("static ref INTERFACE_MAPPING: Arc<HashMap<(&'static str, &'static str), HashMap<&'static str, InterfaceMapPointer>>> = {");
+
+        code.add_line("let hash_map = HashMap::from([");
+        code.indent();
+
+        for ((interface_hash, implementor_hash), interface_mapping) in &self.interface_mapping {
+            // TODO put comments in generated files to assist future debugging
+            code.add_line(format!(
+                "((\"{}\", \"{}\"), HashMap::from([",
+                interface_hash, implementor_hash
+            ));
+            code.indent();
+
+            for (function_name, function) in interface_mapping {
+                let function = &*function.borrow();
+
+                let function_ptr_expr = if function.is_builtin {
+                    format!("Stack::{}", self.generate_builtin_function_name(function))
+                } else {
+                    let hash = Self::hash_name(function.position().path, function.name());
+                    format!("user_func_{}", hash)
+                };
+
+                code.add_line(format!(
+                    "(\"{}\", {} as InterfaceMapPointer),",
+                    function_name, function_ptr_expr
+                ));
+            }
+
+            code.unindent();
+            code.add_line("])),")
+        }
+
+        code.unindent();
+        code.add_line("]);");
+
+        code.add_line("Arc::new(hash_map)");
+
+        code.add_line("};");
+        code.add_line("}");
+
         code.add_line("");
 
         code
@@ -396,42 +452,7 @@ impl Transpiler {
         let mut code = Code::new();
         code.add_line("fn main() {");
 
-        code.add_line("type InterfaceMapPointer = fn(&mut Stack<UserTypeEnum>);");
-        code.add_line("");
-        code.add_line("let interface_mapping = HashMap::from([");
-        code.indent();
-
-        for ((interface_hash, implementor_hash), interface_mapping) in &self.interface_mapping {
-            // TODO put comments in generated files to assist future debugging
-            code.add_line(format!(
-                "((\"{}\", \"{}\"), HashMap::from([",
-                interface_hash, implementor_hash
-            ));
-            code.indent();
-
-            for (function_name, function) in interface_mapping {
-                let function = &*function.borrow();
-
-                let function_ptr_expr = if function.is_builtin {
-                    format!("Stack::{}", self.generate_builtin_function_name(function))
-                } else {
-                    let hash = Self::hash_name(function.position().path, function.name());
-                    format!("user_func_{}", hash)
-                };
-
-                code.add_line(format!(
-                    "(\"{}\", {} as InterfaceMapPointer),",
-                    function_name, function_ptr_expr
-                ));
-            }
-
-            code.unindent();
-            code.add_line("])),")
-        }
-
-        code.unindent();
-        code.add_line("]);");
-        code.add_line("");
+        code.add_line("let interface_mapping = Arc::clone(&INTERFACE_MAPPING);");
 
         if main_function.arguments().is_empty() {
             code.add_line("let mut stack: Stack<UserTypeEnum> = Stack::new(interface_mapping);");
@@ -499,27 +520,28 @@ impl Transpiler {
 
         match item {
             Assignment(assignment) => self.generate_assignment(assignment),
-            Branch(branch) => self.generate_branch(branch),
             Boolean(bool) => self.generate_boolean(bool),
+            Branch(branch) => self.generate_branch(branch),
             Call(_) => self.generate_call(),
             CallArgument(call) => self.generate_call_argument(call),
-            CallFunction(call) => self.generate_call_function(call),
             CallEnum(call) => self.generate_call_enum(call),
             CallEnumConstructor(call) => self.generate_call_enum_constructor(call),
+            CallFunction(call) => self.generate_call_function(call),
+            CallInterfaceFunction(call) => self.generate_call_interface_function(call),
             CallLocalVariable(call) => self.generate_call_local_variabiable(call),
             CallStruct(call) => self.generate_call_struct(call),
             Char(char) => self.generate_char(char),
             Foreach(_) => unreachable!(), // TODO Support interfaces
             FunctionType(function_type) => self.generate_function_type(function_type),
+            GetField(get_field) => self.generate_get_field(get_field),
             GetFunction(get_function) => self.generate_get_function(get_function),
             Integer(integer) => self.generate_integer(integer),
             Match(match_) => self.generate_match(match_),
             Return(return_) => self.generate_return(return_),
-            GetField(get_field) => self.generate_get_field(get_field),
             SetField(set_field) => self.generate_set_field(set_field),
+            String(string) => self.generate_string(string),
             Use(use_) => self.generate_use(use_),
             While(while_) => self.generate_while(while_),
-            String(string) => self.generate_string(string),
         }
     }
 
@@ -1176,5 +1198,13 @@ impl Transpiler {
 
     fn generate_call(&self) -> Code {
         Code::from_string("stack.pop_function_pointer_and_call();")
+    }
+
+    fn generate_call_interface_function(&self, _call: &CallInterfaceFunction) -> Code {
+        let mut code = Code::new();
+
+        code.add_line("// TODO generate_call_interface_function");
+
+        code
     }
 }
