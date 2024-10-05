@@ -1728,17 +1728,60 @@ where
 
     pub fn map_show(&mut self) {
         let popped = self.pop_map();
-        self.push_str(format!("{}", (*popped).borrow()).as_str());
+
+        let mut parts: Vec<String> = vec![];
+
+        for (key, value) in popped.borrow().iter() {
+            self.push(key);
+            self.call_interface_function("builtins:Debug", "debug");
+            let key_str = self.pop_str();
+
+            self.push(value);
+            self.call_interface_function("builtins:Debug", "debug");
+            let value_str = self.pop_str();
+
+            parts.push(format!(
+                "{}: {}",
+                (*key_str.borrow()).clone(),
+                (*value_str.borrow()).clone()
+            ));
+        }
+
+        let combined = format!("{{{}}}", parts.join(", "));
+        self.push_str(combined.as_str());
     }
 
     pub fn set_show(&mut self) {
         let popped = self.pop_set();
-        self.push_str((*popped).borrow().fmt_as_set().as_str());
+
+        let mut parts: Vec<String> = vec![];
+
+        for (key, _) in popped.borrow().iter() {
+            self.push(key);
+            self.call_interface_function("builtins:Debug", "debug");
+            let key_str = self.pop_str();
+
+            parts.push((*key_str.borrow()).clone());
+        }
+
+        let combined = format!("{{{}}}", parts.join(", "));
+        self.push_str(combined.as_str());
     }
 
     pub fn vec_show(&mut self) {
         let popped = self.pop_vec();
-        self.push_str(format!("{}", (*popped).borrow()).as_str());
+
+        let mut parts: Vec<String> = vec![];
+
+        for item in popped.borrow().iter() {
+            self.push(item);
+            self.call_interface_function("builtins:Debug", "debug");
+            let part = self.pop_str();
+            parts.push((*part.borrow()).clone());
+        }
+
+        let combined = format!("[{}]", parts.join(", "));
+        self.push_str(combined.as_str());
     }
 
     pub fn bool_debug(&mut self) {

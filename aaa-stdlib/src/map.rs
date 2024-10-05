@@ -1,7 +1,6 @@
 use std::{
     cell::RefCell,
     collections::hash_map::DefaultHasher,
-    fmt::{self, Display, Formatter},
     hash::{Hash, Hasher},
     rc::Rc,
 };
@@ -149,10 +148,6 @@ where
             );
         }
     }
-
-    pub fn fmt_as_set(&self) -> String {
-        todo!() // TODO format map as set
-    }
 }
 
 impl<K, V> PartialEq for Map<K, V>
@@ -185,16 +180,6 @@ where
     K: UserType,
     V: UserType,
 {
-}
-
-impl<K, V> Display for Map<K, V>
-where
-    K: UserType,
-    V: UserType,
-{
-    fn fmt(&self, _f: &mut Formatter<'_>) -> fmt::Result {
-        todo!() // TODO Display for Map
-    }
 }
 
 impl<K, V> Clone for Map<K, V>
