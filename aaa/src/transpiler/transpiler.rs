@@ -1200,10 +1200,23 @@ impl Transpiler {
         Code::from_string("stack.pop_function_pointer_and_call();")
     }
 
-    fn generate_call_interface_function(&self, _call: &CallInterfaceFunction) -> Code {
+    fn generate_call_interface_function(&self, call: &CallInterfaceFunction) -> Code {
         let mut code = Code::new();
 
-        code.add_line("// TODO generate_call_interface_function");
+        let interface = &call.function.interface.borrow();
+
+        let interface_hash = if interface.is_builtin() {
+            format!("builtins:{}", interface.name())
+        } else {
+            format!("user_type_{}", interface.hash())
+        };
+
+        let function_name = &call.function.function_name;
+
+        code.add_line(format!(
+            "stack.call_interface_function(\"{}\", \"{}\");",
+            interface_hash, function_name,
+        ));
 
         code
     }

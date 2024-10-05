@@ -246,7 +246,7 @@ impl TypeChecker {
                 let interface_hash = if interface.is_builtin() {
                     format!("builtins:{}", interface.name())
                 } else {
-                    format!("user_type_{}", identifiable.hash())
+                    format!("user_type_{}", interface.hash())
                 };
 
                 let identifiable_hash = if identifiable.is_builtin() {

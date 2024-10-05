@@ -40,7 +40,7 @@ use crate::{
     vector::Vector,
 };
 
-type InterfaceMappingType<T> =
+pub type InterfaceMappingType<T> =
     HashMap<(&'static str, &'static str), HashMap<&'static str, fn(&mut Stack<T>)>>;
 
 pub struct Stack<T>
@@ -287,13 +287,11 @@ where
         func(self);
     }
 
-    fn call_interface_function(&mut self, interface_name: &str, function_name: &str) {
+    pub fn call_interface_function(&mut self, interface_name: &str, function_name: &str) {
         let top = self.top();
         let top_type_id = top.type_id();
 
-        let interface_name = format!("builtins:{}", interface_name);
-
-        let first_key = &(interface_name.as_str(), top_type_id.as_str());
+        let first_key = &(interface_name, top_type_id.as_str());
 
         let function = self
             .interface_mapping
@@ -306,7 +304,7 @@ where
     }
 
     pub fn print(&mut self) {
-        self.call_interface_function("Show", "show");
+        self.call_interface_function("builtins:Show", "show");
 
         let printed = self.pop_str();
         print!("{}", printed.borrow());
@@ -449,7 +447,7 @@ where
     }
 
     pub fn repr(&mut self) {
-        self.call_interface_function("Debug", "debug");
+        self.call_interface_function("builtins:Debug", "debug");
     }
 
     #[allow(clippy::should_implement_trait)] // TODO #238 Rename drop function

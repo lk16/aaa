@@ -29,8 +29,6 @@ fn main {
 
 /// name: use interface function explicitly
 
-/// skip TODO support using interface function explicitly
-
 fn main {
     "hello\n" Show:show .
     69 Show:show .
@@ -63,8 +61,6 @@ fn main {
 
 /// name: use interface function explicitly on custom type
 
-/// skip TODO support using interface function explicitly on custom type
-
 struct Foo {}
 
 fn Foo:show args foo as Foo return str {
@@ -83,8 +79,6 @@ fn main {
 
 /// name: use custom interface on custom type
 
-/// skip TODO use custom interface on custom type
-
 interface Bar {
     fn Self:bar args self as Self return int
 }
@@ -102,5 +96,28 @@ fn main {
 
 /// stdout:
 /// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use custom interface explicitly on custom type
+
+interface Bar {
+    fn Self:bar args self as Self return int
+}
+
+struct Foo {}
+
+fn Foo:bar args foo as Foo return int {
+    69
+}
+
+fn main {
+    Foo Bar:bar .
+    "\n" .
+}
+
+/// stdout:
+/// 69
+
 
 // TODO add test for trying to use type with non-implemented trait

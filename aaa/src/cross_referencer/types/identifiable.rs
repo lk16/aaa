@@ -563,6 +563,10 @@ impl Interface {
             None => unreachable!(),
         }
     }
+
+    pub fn hash(&self) -> String {
+        hash_key((self.position().path, self.name()))
+    }
 }
 
 impl HasPosition for Interface {
