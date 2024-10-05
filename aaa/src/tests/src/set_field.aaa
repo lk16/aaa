@@ -1,5 +1,7 @@
 /// name: set field ok
 
+/// action: check
+
 struct Foo {
     x as int
 }
@@ -11,6 +13,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: set field fail stack underflow
+
+/// action: check
 
 fn main {
     "x" { 3 } !
@@ -26,6 +30,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: set field fail enum
+
+/// action: check
 
 enum Foo {
     x as int
@@ -46,6 +52,8 @@ fn main {
 
 /// name: set field fail field not found
 
+/// action: check
+
 struct Foo {
     x as int
 }
@@ -64,6 +72,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: set field fail expression is empty stack
+
+/// action: check
 
 struct Foo {
     x as int
@@ -86,6 +96,8 @@ fn main {
 
 /// name: set field fail expression is wrong type
 
+/// action: check
+
 struct Foo {
     x as int
 }
@@ -106,6 +118,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: set field fail expression is multiple values
+
+/// action: check
 
 struct Foo {
     x as int
@@ -128,6 +142,8 @@ fn main {
 
 /// name: set struct field with type param ok
 
+/// action: check
+
 struct Foo[T] {
     foo as T
 }
@@ -140,6 +156,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: set struct field with type param fail
+
+/// action: check
 
 struct Foo[T] {
     foo as T

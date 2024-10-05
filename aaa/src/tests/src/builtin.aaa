@@ -1,5 +1,7 @@
 /// name: unexpected builtin function
 
+/// action: check
+
 fn main {
     nop
 }
@@ -16,6 +18,8 @@ builtin fn foo
 /// ----------------------------------------------------------------------------
 
 /// name: unexpected builtin struct
+
+/// action: check
 
 fn main {
     nop

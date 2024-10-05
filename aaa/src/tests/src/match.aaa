@@ -1,5 +1,7 @@
 /// name: match fail empty stack
 
+/// action: check
+
 enum Foo {
     foo,
 }
@@ -23,6 +25,8 @@ fn main {
 
 /// name: match fail non-enum
 
+/// action: check
+
 fn main {
     3
     match {
@@ -42,6 +46,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: match fail unexpected enum
+
+/// action: check
 
 enum Foo {
     foo,
@@ -73,6 +79,8 @@ fn main {
 
 /// name: match fail repeated case
 
+/// action: check
+
 enum Foo {
     foo,
 }
@@ -101,6 +109,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: match fail repeated default
+
+/// action: check
 
 enum Foo {
     foo,
@@ -131,6 +141,8 @@ fn main {
 
 /// name: match fail missing case
 
+/// action: check
+
 enum FooBar {
     foo,
     bar,
@@ -156,6 +168,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: match fail unreachable default
+
+/// action: check
 
 enum Foo {
     foo,
@@ -183,6 +197,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: match fail inconsistent child stacks
+
+/// action: check
 
 enum FooBar {
     foo,
@@ -215,6 +231,8 @@ fn main {
 
 /// name: match fail unexpected variable expecting multiple
 
+/// action: check
+
 enum Foo {
     foo as { int, int },
 }
@@ -242,6 +260,8 @@ fn main {
 
 /// name: match fail unexpected variable expecting none
 
+/// action: check
+
 enum Foo {
     foo,
 }
@@ -268,6 +288,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: match fail var name collision
+
+/// action: check
 
 enum Foo {
     foo as int,
@@ -298,6 +320,8 @@ fn main {
 
 /// name: match fail unreachable code afterwards
 
+/// action: check
+
 enum Foo {
     foo,
 }
@@ -323,6 +347,8 @@ fn main {
 
 /// name: match ok simple
 
+/// action: check
+
 enum FooBar {
     foo as int,
     bar,
@@ -344,6 +370,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: match ok with never
+
+/// action: check
 
 enum FooBar {
     foo as int,

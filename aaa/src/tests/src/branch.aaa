@@ -1,5 +1,7 @@
 /// name: branch without else ok
 
+/// action: check
+
 fn main {
     if true {
         nop
@@ -9,6 +11,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: branch with else ok
+
+/// action: check
 
 fn main {
     if true {
@@ -21,6 +25,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: branch without else fail
+
+/// action: check
 
 fn main {
     if true {
@@ -41,6 +47,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: branch with else fail
+
+/// action: check
 
 fn main {
     if true {
@@ -64,6 +72,8 @@ fn main {
 
 /// name: branch with invalid condition
 
+/// action: check
+
 fn main {
     if 3 {
         nop
@@ -84,6 +94,8 @@ fn main {
 
 /// name: else with type never
 
+/// action: check
+
 fn main {
     if true {
         nop
@@ -97,6 +109,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: if with type never
+
+/// action: check
 
 fn main {
     if false {
@@ -112,6 +126,8 @@ fn main {
 
 /// name: if with type never without else
 
+/// action: check
+
 fn main {
     if false {
         unreachable
@@ -123,6 +139,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: if and else with type never
+
+/// action: check
 
 fn main {
     if true {

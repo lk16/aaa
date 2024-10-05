@@ -15,7 +15,15 @@ enum CommentMode {
     Stderr,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, PartialEq, Default)]
+enum Action {
+    Skip,
+    Check,
+    #[default]
+    Run,
+}
+
+#[derive(Default, Clone)]
 struct DocTest {
     name: String,
     path: PathBuf,
@@ -24,7 +32,7 @@ struct DocTest {
     expected_stdout: String,
     expected_stderr: String,
     source_path: PathBuf,
-    skipped: bool,
+    action: Action,
 }
 
 impl DocTest {
@@ -156,8 +164,6 @@ impl DocTestRunner {
     }
 
     pub fn run(&mut self) -> i32 {
-        print!("\n\n");
-
         for path in self.paths.clone() {
             self.parse_doctest_file(path);
         }
@@ -236,6 +242,7 @@ impl DocTestRunner {
     }
 
     fn parse_doc_test(path: &Path, lines: Vec<String>) -> DocTest {
+        use Action::*;
         use CommentMode::*;
 
         let mut comment_mode = Default;
@@ -265,12 +272,23 @@ impl DocTestRunner {
                         to_do
                     );
                 }
-                doc_test.skipped = true;
+                doc_test.action = Skip;
             }
 
             if let Some(suffix) = line.strip_prefix("/// name:") {
                 doc_test.name = suffix.trim().to_owned();
                 continue;
+            }
+
+            if let Some(suffix) = line.strip_prefix("/// action:") {
+                if doc_test.action != Skip {
+                    match suffix.trim() {
+                        "check" => doc_test.action = Check,
+                        "run" => doc_test.action = Run,
+                        "skip" => doc_test.action = Skip,
+                        action => panic!("Found doctest with invalid action {}", action),
+                    }
+                }
             }
 
             if let Some(suffix) = line.strip_prefix("/// file:") {
@@ -317,7 +335,7 @@ impl DocTestRunner {
     fn run_doc_test(&self, doc_test: &DocTest) -> DocTestResult {
         print!("{} ... ", doc_test.pretty_name());
 
-        if doc_test.skipped {
+        if doc_test.action == Action::Skip {
             println!("SKIPPED");
             return DocTestResult::Skipped;
         }
@@ -336,9 +354,15 @@ impl DocTestRunner {
             .to_string_lossy()
             .into_owned();
 
+        let command = match doc_test.action {
+            Action::Check => ["run", "-q", "--release", "check", &main_file],
+            Action::Run => ["run", "-q", "--release", "run", &main_file],
+            Action::Skip => unreachable!(),
+        };
+
         // Enable optimizations with `--release` to speed up running doctests.
         let output = Command::new("cargo")
-            .args(["run", "-q", "--release", "check", &main_file])
+            .args(command)
             .output()
             .expect("Failed to execute command");
 
