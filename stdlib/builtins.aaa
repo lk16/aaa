@@ -225,7 +225,6 @@ builtin interface Debug {
     fn Self:debug args self as const Self return str
 }
 
-// TODO only support Show for vec[T] if T is Debug, likewise for map for set and map
 
 // TODO make functions accept vec[int] if vec[Show] is accepted
 
@@ -234,3 +233,5 @@ builtin interface Debug {
 // TODO support checking if a type implements a certain interface
 
 // TODO add interfaces Iterable and Iterator
+
+// TODO add interface bounds on type parameters: only support Show for vec[T] if T is Debug, likewise for map for set and map

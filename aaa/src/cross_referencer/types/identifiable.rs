@@ -1,4 +1,11 @@
-use std::{cell::RefCell, collections::HashMap, fmt::Display, iter::zip, path::PathBuf, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    fmt::{Debug, Display},
+    iter::zip,
+    path::PathBuf,
+    rc::Rc,
+};
 
 use crate::{
     common::{formatting::join_display, hash::hash_key, position::Position, traits::HasPosition},
@@ -136,6 +143,12 @@ pub enum Type {
     Enum(EnumType),
     Parameter(TypeParameter),
     Interface(InterfaceType),
+}
+
+impl Debug for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
 }
 
 impl Display for Type {

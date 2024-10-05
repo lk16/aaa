@@ -508,6 +508,7 @@ impl CrossReferencer {
                 struct_,
                 parameters,
             }),
+            Identifiable::Interface(interface) => Type::Interface(InterfaceType { interface }),
             _ => unreachable!(),
         };
 
