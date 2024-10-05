@@ -289,6 +289,8 @@ impl CrossReferencer {
     }
 
     fn load_interfaces(parsed_interfaces: &[parsed::Interface]) -> Vec<Identifiable> {
+        // TODO add interface functions
+
         parsed_interfaces
             .iter()
             .cloned()
@@ -875,7 +877,6 @@ impl CrossReferencer {
             Self::validate_interface_function_self_argument(function.arguments.first())?;
 
             let resolved_function = InterfaceFunction {
-                position: function.position.clone(),
                 name: function.name.func_name.value.clone(),
                 arguments: self
                     .resolve_function_arguments(&function.arguments[1..], &HashMap::new())?,

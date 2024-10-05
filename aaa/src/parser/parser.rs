@@ -131,6 +131,11 @@ impl Parser {
                     offset = child_offset;
                     source_file.functions.push(function);
                 }
+                TokenType::Interface => {
+                    let (interface, child_offset) = self.parse_interface(offset)?;
+                    offset = child_offset;
+                    source_file.interfaces.push(interface);
+                }
                 TokenType::Builtin => {
                     let next_token = self.peek_token(offset + 1)?;
                     match next_token.type_ {

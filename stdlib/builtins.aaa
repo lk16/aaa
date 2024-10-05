@@ -225,6 +225,8 @@ builtin interface Debug {
     fn Self:debug args self as const Self return str
 }
 
+// TODO support calling interface functions explicitly such as `Show:show`
+
 // TODO make functions accept interface values
 
 // TODO make functions accept vec[int] if vec[Show] is accepted

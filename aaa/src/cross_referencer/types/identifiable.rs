@@ -539,8 +539,6 @@ impl HasPosition for Import {
 
 pub struct Interface {
     pub parsed: parsed::Interface,
-
-    #[allow(dead_code)] // TODO
     pub resolved: Option<ResolvedInterface>,
 }
 
@@ -582,14 +580,11 @@ impl From<parsed::Interface> for Interface {
     }
 }
 
-#[allow(dead_code)] // TODO
 pub struct ResolvedInterface {
     pub functions: Vec<InterfaceFunction>,
 }
 
-#[allow(dead_code)] // TODO
 pub struct InterfaceFunction {
-    pub position: Position,
     pub name: String,
     pub arguments: Vec<Argument>,
     pub return_types: ReturnTypes,
