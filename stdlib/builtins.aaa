@@ -225,16 +225,10 @@ builtin interface Debug {
     fn Self:debug args self as const Self return str
 }
 
-// TODO support calling interface functions explicitly such as `Show:show`
-
-// TODO make functions accept interface values
-
 // TODO make functions accept vec[int] if vec[Show] is accepted
 
 // TODO detect name collisions of interface
 // TODO detect name collisions inside interface
 // TODO support checking if a type implements a certain interface
-
-// TODO add interface Representable and implement for all types here
 
 // TODO add interfaces Iterable and Iterator

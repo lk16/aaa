@@ -564,8 +564,12 @@ impl Interface {
         }
     }
 
+    pub fn key(&self) -> (PathBuf, String) {
+        (self.position().path, self.name())
+    }
+
     pub fn hash(&self) -> String {
-        hash_key((self.position().path, self.name()))
+        hash_key(self.key())
     }
 }
 

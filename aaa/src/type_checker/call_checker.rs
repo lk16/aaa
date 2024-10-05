@@ -85,7 +85,7 @@ impl<'a> CallChecker<'a> {
             }
             (Interface(lhs), Struct(rhs)) => self.struct_implements_interface(lhs, rhs),
             (Interface(_lhs), Enum(_rhs)) => todo!(), // TODO
-            (Interface(_lhs), Interface(_rhs)) => todo!(), // TODO
+            (Interface(lhs), Interface(rhs)) => self.interface_implements_interface(lhs, rhs),
             _ => false,
         }
     }
@@ -198,6 +198,15 @@ impl<'a> CallChecker<'a> {
         }
 
         true
+    }
+
+    fn interface_implements_interface(&self, lhs: &InterfaceType, rhs: &InterfaceType) -> bool {
+        if lhs.interface.borrow().key() == rhs.interface.borrow().key() {
+            return true;
+        }
+
+        // TODO find out if rhs is subset of rhs
+        false
     }
 
     pub fn apply_type_params(type_: &Type, type_params: &HashMap<String, Type>) -> Type {

@@ -119,5 +119,22 @@ fn main {
 /// stdout:
 /// 69
 
+/// ----------------------------------------------------------------------------
+
+/// name: use interface as argument type
+
+fn show_twice args s as Show return str, str {
+    s Show:show
+    s Show:show
+}
+
+fn main {
+    69 show_twice . .
+    "\n" .
+}
+
+/// stdout:
+/// 6969
+
 
 // TODO add test for trying to use type with non-implemented trait
