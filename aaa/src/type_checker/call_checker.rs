@@ -18,7 +18,6 @@ pub struct CallChecker<'a> {
     pub position: Position,
     pub stack: Vec<Type>,
 
-    #[allow(dead_code)] // TODO
     pub identifiables: &'a HashMap<(PathBuf, String), Identifiable>,
 }
 

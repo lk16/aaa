@@ -257,7 +257,5 @@ pub struct ParsedString {
 
 pub struct CallInterfaceFunction {
     pub position: Position,
-
-    #[allow(dead_code)] // TODO
     pub function: InterfaceFunction,
 }
