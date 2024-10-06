@@ -225,3 +225,73 @@ fn main {
 /// expected top: vec[Show]
 ///
 /// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: first interface function argument is not named self
+
+/// action: check
+
+
+interface Foo {
+    fn Self:foo args x as Self
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5 Invalid function foo in interface Foo
+/// The first argument must be named self and have type Self.
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: first interface function argument is function type
+
+/// action: check
+
+
+interface Foo {
+    fn Self:foo args self as fn[][]
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5 Invalid function foo in interface Foo
+/// The first argument must be named self and have type Self.
+///
+/// Found 1 errors
+
+
+/// ----------------------------------------------------------------------------
+
+/// name: first interface function argument does not have type Self
+
+/// action: check
+
+
+interface Foo {
+    fn Self:foo args self as int
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5 Invalid function foo in interface Foo
+/// The first argument must be named self and have type Self.
+///
+/// Found 1 errors

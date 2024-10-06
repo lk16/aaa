@@ -27,7 +27,10 @@ use super::{
 };
 use crate::{
     common::{position::Position, traits::HasPosition},
-    cross_referencer::{errors::get_function_non_function, types::function_body::FunctionType},
+    cross_referencer::{
+        errors::{get_function_non_function, invalid_interface_function},
+        types::function_body::FunctionType,
+    },
     parser::types::{self as parsed, SourceFile},
     type_checker::errors::NameCollision,
 };
@@ -861,21 +864,26 @@ impl CrossReferencer {
     }
 
     fn validate_interface_function_self_argument(
-        first_argument: Option<&parsed::Argument>,
+        interface: &Interface,
+        interface_function: &parsed::InterfaceFunction,
     ) -> Result<(), CrossReferencerError> {
         // The parser enforces we get at least one argument
-        let first_argument = first_argument.unwrap();
+        let first_argument = interface_function.arguments.first().unwrap();
+
+        let function_name = interface_function.name.func_name.value.clone();
+        let interface_name = interface.name();
+        let position = interface_function.position.clone();
 
         if first_argument.name.value != "self" {
-            todo!(); // TODO first interface function argument is not named self
+            return invalid_interface_function(position, function_name, interface_name);
         };
 
         let parsed::Type::Regular(type_) = &first_argument.type_ else {
-            todo!() // TODO got function type as first argument
+            return invalid_interface_function(position, function_name, interface_name);
         };
 
         if type_.name.value != "Self" {
-            todo!() // TODO first argument does not have special type Self
+            return invalid_interface_function(position, function_name, interface_name);
         }
 
         // TODO ban usage of the "Self" identifier in any other place
@@ -889,32 +897,36 @@ impl CrossReferencer {
     ) -> Result<(), CrossReferencerError> {
         let mut resolved_functions = vec![];
 
-        for function in &interface_rc.borrow().parsed.functions {
-            Self::validate_interface_function_self_argument(function.arguments.first())?;
+        {
+            let interface = &*interface_rc.borrow();
 
-            let mut resolved_arguments = vec![];
+            for function in &interface.parsed.functions {
+                Self::validate_interface_function_self_argument(interface, function)?;
 
-            // TODO replace interface function arguments by interface when their type is Self
-            resolved_arguments.push(Argument {
-                name: function.arguments[0].name.value.clone(),
-                position: function.arguments[0].position(),
-                type_: Type::Interface(InterfaceType {
-                    interface: interface_rc.clone(),
-                }),
-            });
+                let mut resolved_arguments = vec![];
 
-            resolved_arguments.extend(
-                self.resolve_function_arguments(&function.arguments[1..], &HashMap::new())?,
-            );
+                // TODO replace interface function arguments by interface when their type is Self
+                resolved_arguments.push(Argument {
+                    name: function.arguments[0].name.value.clone(),
+                    position: function.arguments[0].position(),
+                    type_: Type::Interface(InterfaceType {
+                        interface: interface_rc.clone(),
+                    }),
+                });
 
-            let resolved_function = ResolvedInterfaceFunction {
-                name: function.name.func_name.value.clone(),
-                arguments: resolved_arguments,
-                return_types: self
-                    .resolve_function_return_types(&function.return_types, &HashMap::new())?,
-            };
+                resolved_arguments.extend(
+                    self.resolve_function_arguments(&function.arguments[1..], &HashMap::new())?,
+                );
 
-            resolved_functions.push(resolved_function);
+                let resolved_function = ResolvedInterfaceFunction {
+                    name: function.name.func_name.value.clone(),
+                    arguments: resolved_arguments,
+                    return_types: self
+                        .resolve_function_return_types(&function.return_types, &HashMap::new())?,
+                };
+
+                resolved_functions.push(resolved_function);
+            }
         }
 
         (*interface_rc).borrow_mut().resolved = Some(ResolvedInterface {
