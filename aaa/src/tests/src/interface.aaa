@@ -295,3 +295,24 @@ fn main {
 /// The first argument must be named self and have type Self.
 ///
 /// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: interface with extra argument
+
+/// skip TODO interface with extra argument this fails
+
+interface Foo {
+    fn Self:foo args self as Self, x as int return int
+}
+
+struct Bar {}
+
+fn Bar:foo args bar as Bar, x as int return int {
+    x
+}
+
+fn main {
+    Bar 69 Foo:foo .
+    "\n" .
+}
