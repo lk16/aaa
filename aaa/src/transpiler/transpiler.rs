@@ -531,7 +531,7 @@ impl Transpiler {
             CallLocalVariable(call) => self.generate_call_local_variabiable(call),
             CallStruct(call) => self.generate_call_struct(call),
             Char(char) => self.generate_char(char),
-            Foreach(_) => unreachable!(), // TODO Support interfaces
+            Foreach(_) => unreachable!(), // TODO #243 Support foreach loops
             FunctionType(function_type) => self.generate_function_type(function_type),
             GetField(get_field) => self.generate_get_field(get_field),
             GetFunction(get_function) => self.generate_get_function(get_function),

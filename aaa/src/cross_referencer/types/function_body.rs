@@ -141,7 +141,7 @@ pub struct Char {
     pub value: char,
 }
 
-#[allow(dead_code)] // TODO implement interfaces
+#[allow(dead_code)] // TODO #243 Support foreach loops
 pub struct Foreach {
     pub position: Position,
     pub body: FunctionBody,

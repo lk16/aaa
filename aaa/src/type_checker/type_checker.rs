@@ -900,7 +900,7 @@ impl<'a> FunctionTypeChecker<'a> {
     }
 
     fn check_foreach(&self, _stack: Vec<Type>, _for_each: &Foreach) -> TypeResult {
-        todo!() // TODO Implement interfaces
+        todo!() // TODO #243 Support foreach loops
     }
 
     fn check_assignment(&mut self, stack: Vec<Type>, assignment: &Assignment) -> TypeResult {

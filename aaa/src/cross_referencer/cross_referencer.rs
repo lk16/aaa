@@ -921,7 +921,7 @@ impl CrossReferencer {
             functions: resolved_functions,
         });
 
-        Ok(()) // TODO resolve interface
+        Ok(())
     }
 
     fn resolve_function(

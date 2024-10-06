@@ -614,7 +614,6 @@ pub struct ResolvedInterfaceFunction {
 
 #[derive(Clone)]
 pub struct InterfaceFunction {
-    #[allow(dead_code)] // TODO
     pub interface: Rc<RefCell<Interface>>,
     pub function_name: String,
     pub position: Position,
