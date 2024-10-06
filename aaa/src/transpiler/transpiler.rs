@@ -209,9 +209,10 @@ impl Transpiler {
         code.add_line("");
 
         code.add_line("lazy_static! {");
-        code.add_line("static ref INTERFACE_MAPPING: Arc<HashMap<(&'static str, &'static str), HashMap<&'static str, InterfaceMapPointer>>> = {");
+        code.add_line("static ref INTERFACE_MAPPING: Arc<HashMap<(&'static str, &'static str, &'static str), InterfaceMapPointer>> = {");
 
         code.add_line("let hash_map = HashMap::from([");
+
         code.indent();
 
         for (interface_rc, implementor_rc, interface_mapping) in &self.interfaces_table {
@@ -230,17 +231,7 @@ impl Transpiler {
                 hash_key(implementor.key())
             };
 
-            code.add_line(format!(
-                "// {} implementation for {}",
-                interface.name(),
-                implementor
-            ));
-
-            code.add_line(format!(
-                "((\"{}\", \"{}\"), HashMap::from([",
-                interface_hash, implementor_hash
-            ));
-            code.indent();
+            // TODO generate comments for future debugging
 
             for (function_name, function) in interface_mapping {
                 let function = &*function.borrow();
@@ -253,13 +244,10 @@ impl Transpiler {
                 };
 
                 code.add_line(format!(
-                    "(\"{}\", {} as InterfaceMapPointer),",
-                    function_name, function_ptr_expr
+                    "((\"{}\", \"{}\", \"{}\"), {} as InterfaceMapPointer),",
+                    interface_hash, implementor_hash, function_name, function_ptr_expr
                 ));
             }
-
-            code.unindent();
-            code.add_line("])),")
         }
 
         code.unindent();

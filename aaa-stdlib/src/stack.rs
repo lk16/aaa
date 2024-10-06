@@ -41,7 +41,7 @@ use crate::{
 };
 
 pub type InterfaceMappingType<T> =
-    HashMap<(&'static str, &'static str), HashMap<&'static str, fn(&mut Stack<T>)>>;
+    HashMap<(&'static str, &'static str, &'static str), fn(&mut Stack<T>)>;
 
 pub struct Stack<T>
 where
@@ -291,14 +291,9 @@ where
         let top = self.top();
         let top_type_id = top.type_id();
 
-        let first_key = &(interface_name, top_type_id.as_str());
+        let key = &(interface_name, top_type_id.as_str(), function_name);
 
-        let function = self
-            .interface_mapping
-            .get(first_key)
-            .unwrap()
-            .get(function_name)
-            .unwrap();
+        let function = self.interface_mapping.get(key).unwrap();
 
         function(self);
     }
