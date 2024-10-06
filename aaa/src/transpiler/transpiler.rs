@@ -15,7 +15,7 @@ use crate::{
         identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
     },
     transpiler::code::Code,
-    type_checker::type_checker::{self, InterfaceMapping},
+    type_checker::type_checker::{self, InterfacesTable},
 };
 use lazy_static::lazy_static;
 use std::{cell::RefCell, collections::HashMap, fs, iter::zip, path::PathBuf, rc::Rc};
@@ -64,7 +64,7 @@ pub struct Transpiler {
     pub structs: HashMap<(PathBuf, String), Rc<RefCell<Struct>>>,
     pub enums: HashMap<(PathBuf, String), Rc<RefCell<Enum>>>,
     pub functions: HashMap<(PathBuf, String), Rc<RefCell<Function>>>,
-    pub interface_mapping: HashMap<(String, String), InterfaceMapping>,
+    pub interfaces_table: InterfacesTable,
     pub main_function: Rc<RefCell<Function>>,
     pub verbose: bool,
 }
@@ -105,7 +105,7 @@ impl Transpiler {
             functions,
             main_function: type_checked.main_function,
             verbose,
-            interface_mapping: type_checked.interface_mapping,
+            interfaces_table: type_checked.interfaces_table,
         }
     }
 
@@ -214,8 +214,28 @@ impl Transpiler {
         code.add_line("let hash_map = HashMap::from([");
         code.indent();
 
-        for ((interface_hash, implementor_hash), interface_mapping) in &self.interface_mapping {
-            // TODO put comments in generated files to assist future debugging
+        for (interface_rc, implementor_rc, interface_mapping) in &self.interfaces_table {
+            let interface = &*interface_rc.borrow();
+            let implementor = &*implementor_rc.borrow();
+
+            let interface_hash = if interface.is_builtin() {
+                format!("builtins:{}", interface.name())
+            } else {
+                hash_key(interface.key())
+            };
+
+            let implementor_hash = if implementor.is_builtin() {
+                format!("builtins:{}", implementor.name())
+            } else {
+                hash_key(implementor.key())
+            };
+
+            code.add_line(format!(
+                "// {} implementation for {}",
+                interface.name(),
+                implementor
+            ));
+
             code.add_line(format!(
                 "((\"{}\", \"{}\"), HashMap::from([",
                 interface_hash, implementor_hash
@@ -1209,7 +1229,7 @@ impl Transpiler {
         let interface_hash = if interface.is_builtin() {
             format!("builtins:{}", interface.name())
         } else {
-            format!("user_type_{}", interface.hash())
+            format!("user_type_{}", hash_key(interface.key()))
         };
 
         let function_name = &call.function.function_name;

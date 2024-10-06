@@ -48,20 +48,25 @@ use super::{
     },
 };
 
+pub type InterfaceMapping = HashMap<String, Rc<RefCell<Function>>>;
+
+pub type InterfacesTable = Vec<(
+    Rc<RefCell<Interface>>,
+    Rc<RefCell<Identifiable>>,
+    InterfaceMapping,
+)>;
 pub struct TypeChecker {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
     pub builtins_path: PathBuf,
     pub entrypoint_path: PathBuf,
     pub verbose: bool,
-    pub interface_mapping: HashMap<(String, String), InterfaceMapping>,
+    pub interfaces_table: InterfacesTable,
 }
-
-pub type InterfaceMapping = HashMap<String, Rc<RefCell<Function>>>;
 
 pub struct Output {
     pub main_function: Rc<RefCell<Function>>,
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
-    pub interface_mapping: HashMap<(String, String), InterfaceMapping>,
+    pub interfaces_table: InterfacesTable,
 }
 
 pub fn type_check(
@@ -78,7 +83,7 @@ impl TypeChecker {
             builtins_path: input.builtins_path,
             entrypoint_path: input.entrypoint_path,
             verbose,
-            interface_mapping: HashMap::new(),
+            interfaces_table: vec![],
         }
     }
 
@@ -100,7 +105,7 @@ impl TypeChecker {
     fn run(mut self) -> Result<Output, Vec<TypeError>> {
         let mut errors = vec![];
 
-        self.build_interface_mapping_table();
+        self.interfaces_table = self.build_interfaces_table();
 
         for function_rc in self.functions() {
             let function = &*(*function_rc).borrow();
@@ -125,7 +130,7 @@ impl TypeChecker {
         let output = Output {
             main_function: main_function.unwrap(),
             identifiables: self.identifiables,
-            interface_mapping: self.interface_mapping,
+            interfaces_table: self.interfaces_table,
         };
 
         Ok(output)
@@ -220,9 +225,8 @@ impl TypeChecker {
         true
     }
 
-    fn build_interface_mapping_table(&mut self) {
-        // TODO send vec of tuples instead, so we don't compute hashes here but use the functions from Transpiler there
-        let mut table: HashMap<(String, String), InterfaceMapping> = HashMap::new();
+    fn build_interfaces_table(&self) -> InterfacesTable {
+        let mut interfaces_table = vec![];
 
         let mut interfaces = vec![];
 
@@ -241,35 +245,24 @@ impl TypeChecker {
             }
 
             for interface in &interfaces {
-                let interface = &*interface.borrow();
-
-                let interface_hash = if interface.is_builtin() {
-                    format!("builtins:{}", interface.name())
-                } else {
-                    format!("user_type_{}", interface.hash())
-                };
-
-                let identifiable_hash = if identifiable.is_builtin() {
-                    format!("builtins:{}", identifiable.name())
-                } else {
-                    format!("user_type_{}", identifiable.hash())
-                };
-
                 if let Some(mapping) = self.get_interface_mapping(identifiable, interface) {
-                    let key = (interface_hash, identifiable_hash);
-                    table.insert(key, mapping);
+                    let identifiable = Rc::new(RefCell::new(identifiable.clone()));
+
+                    interfaces_table.push((interface.clone(), identifiable, mapping));
                 }
             }
         }
 
-        self.interface_mapping = table;
+        interfaces_table
     }
 
     fn get_interface_mapping(
         &self,
         identifiable: &Identifiable,
-        interface: &Interface,
+        interface: &Rc<RefCell<Interface>>,
     ) -> Option<InterfaceMapping> {
+        let interface = &*interface.borrow();
+
         let mut mapping = HashMap::new();
 
         for required_function in &interface.resolved().functions {

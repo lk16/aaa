@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    common::{formatting::join_display, hash::hash_key, position::Position, traits::HasPosition},
+    common::{formatting::join_display, position::Position, traits::HasPosition},
     parser::types::{self as parsed, RegularType},
 };
 
@@ -580,10 +580,6 @@ impl Interface {
     pub fn key(&self) -> (PathBuf, String) {
         (self.position().path, self.name())
     }
-
-    pub fn hash(&self) -> String {
-        hash_key(self.key())
-    }
 }
 
 impl HasPosition for Interface {
@@ -728,10 +724,6 @@ impl Identifiable {
 
     pub fn key(&self) -> (PathBuf, String) {
         (self.position().path, self.name())
-    }
-
-    pub fn hash(&self) -> String {
-        hash_key(self.key())
     }
 }
 
