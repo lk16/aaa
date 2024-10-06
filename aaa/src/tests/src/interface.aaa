@@ -169,4 +169,51 @@ fn main {
 /// stdout:
 /// [69]
 
-// TODO add test for trying to use type with non-implemented trait
+/// ----------------------------------------------------------------------------
+
+/// name: use type as interface it does not implement
+
+/// action: check
+
+struct Foo {}
+
+fn main {
+    Foo .
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:3:9: Invalid stack when calling .
+///        stack: Foo
+/// expected top: Show
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: use vec type as vec of interface it does not implement
+
+/// action: check
+
+struct Foo {}
+
+fn show_vec args v as vec[Show] {
+    v .
+}
+
+fn main {
+    vec[Foo]
+    dup Foo vec:push
+    show_vec
+    "\n" .
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:8:5: Invalid stack when calling show_vec
+///        stack: vec[Foo]
+/// expected top: vec[Show]
+///
+/// Found 1 errors
