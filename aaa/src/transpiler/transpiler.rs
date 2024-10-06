@@ -1012,7 +1012,7 @@ impl Transpiler {
 
         code.add_line("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {");
 
-        code.add_line("todo!();"); // TODO #125 Implement hash for structs and enums
+        code.add_line("todo!();"); // TODO #244 Support type param interface bounds: remove this from generated code and use interface Hash
 
         code.add_line("}");
 
@@ -1032,7 +1032,7 @@ impl Transpiler {
 
         code.add_line("fn eq(&self, other: &Self) -> bool {");
 
-        code.add_line("todo!();"); // TODO Implement interfaces
+        code.add_line("todo!();"); // TODO #244 Support type param interface bounds: remove this from generated code and use interface Equals
 
         code.add_line("}");
 
@@ -1143,7 +1143,7 @@ impl Transpiler {
 
         code.add_line("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {");
 
-        code.add_line("todo!();"); // TODO #125 Support hash for structs and enums
+        code.add_line("todo!();"); // TODO #244 Support type param interface bounds: remove this from generated code and use interface Hash
 
         code.add_line("}");
 
@@ -1163,7 +1163,8 @@ impl Transpiler {
 
         code.add_line("fn eq(&self, other: &Self) -> bool {");
 
-        code.add_line("todo!();"); // TODO Implement interfaces
+        code.add_line("todo!();");
+        // TODO #244 Support type param interface bounds: remove this from generated code and use interface Equals
 
         code.add_line("}");
 

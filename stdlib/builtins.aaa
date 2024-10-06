@@ -228,7 +228,3 @@ builtin interface Debug {
 // TODO detect name collisions of interface
 // TODO detect name collisions inside interface
 // TODO support checking if a type implements a certain interface
-
-// TODO add interfaces Iterable and Iterator
-
-// TODO add interface bounds on type parameters: only support Show for vec[T] if T is Debug, likewise for map for set and map
