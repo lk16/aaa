@@ -140,14 +140,16 @@ fn main {
 
 /// name: use interface as type param
 
-/// skip TODO use interface as type param
-
 fn main {
     vec[Show]
     dup 69 vec:push
+    dup false vec:push
     .
     "\n" .
 }
+
+/// stdout:
+/// [69, false]
 
 
 // TODO add test for trying to use type with non-implemented trait

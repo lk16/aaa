@@ -72,6 +72,7 @@ impl<'a> CallChecker<'a> {
                 if let Some(lhs) = type_params.get(&lhs.name) {
                     match lhs {
                         Parameter(_) => (),
+                        Interface(lhs) => return self.implements_interface(lhs, rhs),
                         _ => {
                             if lhs != rhs {
                                 return false;
@@ -128,6 +129,15 @@ impl<'a> CallChecker<'a> {
             .zip(&rhs.parameters)
             .map(|(lhs, rhs)| self.types_match(lhs, rhs, type_params))
             .all(|x| x)
+    }
+
+    pub fn implements_interface(&self, interface_type: &InterfaceType, type_: &Type) -> bool {
+        match type_ {
+            Type::Struct(struct_type) => {
+                self.struct_implements_interface(interface_type, struct_type)
+            }
+            _ => todo!(), // TODO
+        }
     }
 
     pub fn struct_implements_interface(
