@@ -848,6 +848,9 @@ impl CrossReferencer {
                         parameters,
                     }),
                     Identifiable::Enum(enum_) => Type::Enum(EnumType { enum_, parameters }),
+                    Identifiable::Interface(interface) => {
+                        Type::Interface(InterfaceType { interface })
+                    }
                     _ => todo!(), // InvalidType
                 }
             }

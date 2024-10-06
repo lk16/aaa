@@ -151,5 +151,22 @@ fn main {
 /// stdout:
 /// [69, false]
 
+/// ----------------------------------------------------------------------------
+
+/// name: use vec int as vec show
+
+fn show_vec args v as vec[Show] {
+    v .
+}
+
+fn main {
+    vec[int]
+    dup 69 vec:push
+    show_vec
+    "\n" .
+}
+
+/// stdout:
+/// [69]
 
 // TODO add test for trying to use type with non-implemented trait
