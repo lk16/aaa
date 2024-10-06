@@ -17,6 +17,7 @@ pub struct SourceFile {
     pub functions: Vec<Function>,
     pub imports: Vec<Import>,
     pub structs: Vec<Struct>,
+    pub interfaces: Vec<Interface>,
 }
 
 impl SourceFile {
@@ -355,7 +356,8 @@ pub struct Struct {
     pub position: Position,
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
-    pub fields: Option<Vec<StructField>>,
+    pub fields: Vec<StructField>,
+    pub is_builtin: bool,
 }
 
 #[derive(Clone)]
@@ -513,6 +515,22 @@ impl ParsedString {
             value: unescape_string(&token.value[1..token.len() - 1]),
         }
     }
+}
+
+#[derive(Default, Clone)]
+pub struct InterfaceFunction {
+    pub position: Position,
+    pub name: MemberFunctionName,
+    pub arguments: Vec<Argument>,
+    pub return_types: ReturnTypes,
+}
+
+#[derive(Default, Clone)]
+pub struct Interface {
+    pub position: Position,
+    pub name: Identifier,
+    pub functions: Vec<InterfaceFunction>,
+    pub is_builtin: bool,
 }
 
 lazy_static! {

@@ -1,5 +1,7 @@
 /// name: get field ok
 
+/// action: check
+
 struct Foo {
     x as int
 }
@@ -11,6 +13,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: get field fail stack underflow
+
+/// action: check
 
 fn main {
     "x" ?
@@ -26,6 +30,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: get field fail enum
+
+/// action: check
 
 enum Foo {
     x as int
@@ -46,6 +52,8 @@ fn main {
 
 /// name: get field fail field not found
 
+/// action: check
+
 struct Foo {
     x as int
 }
@@ -65,6 +73,8 @@ fn main {
 
 /// name: get struct field with type param ok
 
+/// action: check
+
 struct Foo[T] {
     foo as T
 }
@@ -80,6 +90,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: get struct field with type param fail
+
+/// action: check
 
 struct Foo[T] {
     foo as T

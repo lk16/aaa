@@ -27,11 +27,7 @@ impl Code {
         }
 
         if string.ends_with('}') || string.ends_with("},") {
-            if self.indent_level == 0 {
-                panic!("Cannot indent below level 0.");
-            }
-
-            self.indent_level -= 1;
+            self.unindent();
         }
 
         let prefix = INDENTATION.repeat(self.indent_level);
@@ -40,7 +36,7 @@ impl Code {
         self.lines.push(line);
 
         if string.ends_with('{') {
-            self.indent_level += 1;
+            self.indent();
         }
     }
 
@@ -50,6 +46,18 @@ impl Code {
         for line in &code.lines {
             self.lines.push(format!("{}{}", prefix, line));
         }
+    }
+
+    pub fn indent(&mut self) {
+        self.indent_level += 1;
+    }
+
+    pub fn unindent(&mut self) {
+        if self.indent_level == 0 {
+            panic!("Cannot indent below level 0.");
+        }
+
+        self.indent_level -= 1;
     }
 
     pub fn get(&self) -> String {

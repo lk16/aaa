@@ -1,0 +1,318 @@
+
+/// name: use builtin interface
+
+fn main {
+    "hello\n" .
+    69 .
+    "\n" .
+}
+
+/// stdout:
+/// hello
+/// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use interface function as regular function
+
+fn main {
+    "hello\n" str:show .
+    69 int:show .
+    "\n" .
+}
+
+/// stdout:
+/// hello
+/// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use interface function explicitly
+
+fn main {
+    "hello\n" Show:show .
+    69 Show:show .
+    "\n" .
+}
+
+/// stdout:
+/// hello
+/// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use builtin interface on custom type
+
+/// skip TODO this fails on CI
+
+struct Foo {}
+
+fn Foo:show args foo as Foo return str {
+    "I am foo!"
+}
+
+fn main {
+    Foo .
+    "\n" .
+}
+
+/// stdout:
+/// I am foo!
+
+/// ----------------------------------------------------------------------------
+
+/// name: use interface function explicitly on custom type
+
+/// skip TODO this fails on CI
+
+struct Foo {}
+
+fn Foo:show args foo as Foo return str {
+    "I am foo!"
+}
+
+fn main {
+    Foo Show:show .
+    "\n" .
+}
+
+/// stdout:
+/// I am foo!
+
+/// ----------------------------------------------------------------------------
+
+/// name: use custom interface on custom type
+
+/// skip TODO this fails on CI
+
+interface Bar {
+    fn Self:bar args self as Self return int
+}
+
+struct Foo {}
+
+fn Foo:bar args foo as Foo return int {
+    69
+}
+
+fn main {
+    Foo Foo:bar .
+    "\n" .
+}
+
+/// stdout:
+/// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use custom interface explicitly on custom type
+
+/// skip TODO this fails on CI
+
+interface Bar {
+    fn Self:bar args self as Self return int
+}
+
+struct Foo {}
+
+fn Foo:bar args foo as Foo return int {
+    69
+}
+
+fn main {
+    Foo Bar:bar .
+    "\n" .
+}
+
+/// stdout:
+/// 69
+
+/// ----------------------------------------------------------------------------
+
+/// name: use interface as argument type
+
+fn show_twice args s as Show return str, str {
+    s Show:show
+    s Show:show
+}
+
+fn main {
+    69 show_twice . .
+    "\n" .
+}
+
+/// stdout:
+/// 6969
+
+/// ----------------------------------------------------------------------------
+
+/// name: use interface as type param
+
+fn main {
+    vec[Show]
+    dup 69 vec:push
+    dup false vec:push
+    .
+    "\n" .
+}
+
+/// stdout:
+/// [69, false]
+
+/// ----------------------------------------------------------------------------
+
+/// name: use vec int as vec show
+
+fn show_vec args v as vec[Show] {
+    v .
+}
+
+fn main {
+    vec[int]
+    dup 69 vec:push
+    show_vec
+    "\n" .
+}
+
+/// stdout:
+/// [69]
+
+/// ----------------------------------------------------------------------------
+
+/// name: use type as interface it does not implement
+
+/// action: check
+
+struct Foo {}
+
+fn main {
+    Foo .
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:3:9: Invalid stack when calling .
+///        stack: Foo
+/// expected top: Show
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: use vec type as vec of interface it does not implement
+
+/// action: check
+
+struct Foo {}
+
+fn show_vec args v as vec[Show] {
+    v .
+}
+
+fn main {
+    vec[Foo]
+    dup Foo vec:push
+    show_vec
+    "\n" .
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:8:5: Invalid stack when calling show_vec
+///        stack: vec[Foo]
+/// expected top: vec[Show]
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: first interface function argument is not named self
+
+/// action: check
+
+
+interface Foo {
+    fn Self:foo args x as Self
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5 Invalid function foo in interface Foo
+/// The first argument must be named self and have type Self.
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: first interface function argument is function type
+
+/// action: check
+
+
+interface Foo {
+    fn Self:foo args self as fn[][]
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5 Invalid function foo in interface Foo
+/// The first argument must be named self and have type Self.
+///
+/// Found 1 errors
+
+
+/// ----------------------------------------------------------------------------
+
+/// name: first interface function argument does not have type Self
+
+/// action: check
+
+
+interface Foo {
+    fn Self:foo args self as int
+}
+
+fn main {
+    nop
+}
+
+/// status: 1
+
+/// stderr:
+/// $SOURCE_PATH/main.aaa:2:5 Invalid function foo in interface Foo
+/// The first argument must be named self and have type Self.
+///
+/// Found 1 errors
+
+/// ----------------------------------------------------------------------------
+
+/// name: interface with extra argument
+
+/// skip TODO interface with extra argument this fails
+
+interface Foo {
+    fn Self:foo args self as Self, x as int return int
+}
+
+struct Bar {}
+
+fn Bar:foo args bar as Bar, x as int return int {
+    x
+}
+
+fn main {
+    Bar 69 Foo:foo .
+    "\n" .
+}

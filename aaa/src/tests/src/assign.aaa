@@ -1,5 +1,7 @@
 /// name: assign local variable ok
 
+/// action: check
+
 fn main {
     3
     use x {
@@ -10,6 +12,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: assign local variable fail too many values
+
+/// action: check
 
 fn main {
     3
@@ -29,6 +33,8 @@ fn main {
 
 /// name: assign local variable fail not enough values
 
+/// action: check
+
 fn main {
     3
     use x {
@@ -46,6 +52,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: assign local variable fail wrong type
+
+/// action: check
 
 fn main {
     3
@@ -67,6 +75,8 @@ fn main {
 
 /// name: assign local variable fail non existing variable
 
+/// action: check
+
 fn main {
     3
     use x {
@@ -84,6 +94,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: assign argument ok
+
+/// action: check
 
 fn main {
     nop

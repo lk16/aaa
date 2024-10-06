@@ -16,6 +16,7 @@ pub enum CrossReferencerError {
     NameCollision(NameCollision),
     GetFunctionNotFound(GetFunctionNotFound),
     GetFunctionNonFunction(GetFunctionNonFunction),
+    InvalidInterfaceFunction(InvalidInterfaceFunction),
 }
 
 impl Display for CrossReferencerError {
@@ -29,6 +30,7 @@ impl Display for CrossReferencerError {
             Self::NameCollision(error) => write!(f, "{}", error),
             Self::GetFunctionNotFound(error) => write!(f, "{}", error),
             Self::GetFunctionNonFunction(error) => write!(f, "{}", error),
+            Self::InvalidInterfaceFunction(error) => write!(f, "{}", error),
         }
     }
 }
@@ -205,6 +207,40 @@ pub fn get_function_non_function<T>(
             position,
             function_name,
             identifiable,
+        },
+    ))
+}
+
+pub struct InvalidInterfaceFunction {
+    pub position: Position,
+    pub function_name: String,
+    pub interface_name: String,
+}
+
+impl Display for InvalidInterfaceFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "{} Invalid function {} in interface {}",
+            self.position, self.function_name, self.interface_name
+        )?;
+        writeln!(
+            f,
+            "The first argument must be named self and have type Self."
+        )
+    }
+}
+
+pub fn invalid_interface_function<T>(
+    position: Position,
+    function_name: String,
+    interface_name: String,
+) -> Result<T, CrossReferencerError> {
+    Err(CrossReferencerError::InvalidInterfaceFunction(
+        InvalidInterfaceFunction {
+            position,
+            function_name,
+            interface_name,
         },
     ))
 }

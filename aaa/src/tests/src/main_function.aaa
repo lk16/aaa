@@ -1,5 +1,7 @@
 /// name: main signature ok basic
 
+/// action: check
+
 fn main {
     nop
 }
@@ -7,6 +9,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: main signature ok with argument
+
+/// action: check
 
 fn main args argv as vec[str] {
     nop
@@ -16,6 +20,8 @@ fn main args argv as vec[str] {
 
 /// name: main signature ok with arguments and return type
 
+/// action: check
+
 fn main args argv as vec[str] return int {
     0
 }
@@ -24,6 +30,8 @@ fn main args argv as vec[str] return int {
 
 /// name: main signature with return type
 
+/// action: check
+
 fn main return int {
     0
 }
@@ -31,6 +39,8 @@ fn main return int {
 /// ----------------------------------------------------------------------------
 
 /// name: main signature fail with argument
+
+/// action: check
 
 fn main args argv as int {
     nop
@@ -50,6 +60,8 @@ fn main args argv as int {
 
 /// name: main signature fail with argument parameter
 
+/// action: check
+
 fn main args argv as vec[int] {
     nop
 }
@@ -67,6 +79,8 @@ fn main args argv as vec[int] {
 /// ----------------------------------------------------------------------------
 
 /// name: main signature fail with argument amount
+
+/// action: check
 
 fn main args argv as vec[str], extra as int {
     nop
@@ -86,6 +100,8 @@ fn main args argv as vec[str], extra as int {
 
 /// name: main signature fail with return type
 
+/// action: check
+
 fn main return str {
     ""
 }
@@ -103,6 +119,8 @@ fn main return str {
 /// ----------------------------------------------------------------------------
 
 /// name: main signature fail with return type amount
+
+/// action: check
 
 fn main return int, str {
     0 ""
@@ -122,6 +140,8 @@ fn main return int, str {
 
 /// name: main signature fail no main function
 
+/// action: check
+
 // If we leave this out no file is being created by doctest framework
 struct dummy {}
 
@@ -135,6 +155,8 @@ struct dummy {}
 /// ----------------------------------------------------------------------------
 
 /// name: main not a function
+
+/// action: check
 
 struct main {}
 

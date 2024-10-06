@@ -16,13 +16,13 @@ use crate::{
         types::{
             function_body::{
                 Assignment, Branch, Call, CallArgument, CallEnum, CallEnumConstructor,
-                CallFunction, CallLocalVariable, CallStruct, CaseBlock, Foreach, FunctionBody,
-                FunctionBodyItem, FunctionType, GetField, GetFunction, Match, Return, SetField,
-                Use, While,
+                CallFunction, CallInterfaceFunction, CallLocalVariable, CallStruct, CaseBlock,
+                Foreach, FunctionBody, FunctionBodyItem, FunctionType, GetField, GetFunction,
+                Match, Return, SetField, Use, While,
             },
             identifiable::{
-                Argument, EnumType, Function, FunctionPointerType, Identifiable, ReturnTypes,
-                StructType, Type,
+                Argument, EnumType, Function, FunctionPointerType, Identifiable, Interface,
+                ResolvedInterfaceFunction, ReturnTypes, StructType, Type,
             },
         },
     },
@@ -48,16 +48,25 @@ use super::{
     },
 };
 
+pub type InterfaceMapping = HashMap<String, Rc<RefCell<Function>>>;
+
+pub type InterfacesTable = Vec<(
+    Rc<RefCell<Interface>>,
+    Rc<RefCell<Identifiable>>,
+    InterfaceMapping,
+)>;
 pub struct TypeChecker {
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
     pub builtins_path: PathBuf,
     pub entrypoint_path: PathBuf,
     pub verbose: bool,
+    pub interfaces_table: InterfacesTable,
 }
 
 pub struct Output {
     pub main_function: Rc<RefCell<Function>>,
     pub identifiables: HashMap<(PathBuf, String), Identifiable>,
+    pub interfaces_table: InterfacesTable,
 }
 
 pub fn type_check(
@@ -74,6 +83,7 @@ impl TypeChecker {
             builtins_path: input.builtins_path,
             entrypoint_path: input.entrypoint_path,
             verbose,
+            interfaces_table: vec![],
         }
     }
 
@@ -92,8 +102,10 @@ impl TypeChecker {
         functions
     }
 
-    fn run(self) -> Result<Output, Vec<TypeError>> {
+    fn run(mut self) -> Result<Output, Vec<TypeError>> {
         let mut errors = vec![];
+
+        self.interfaces_table = self.build_interfaces_table();
 
         for function_rc in self.functions() {
             let function = &*(*function_rc).borrow();
@@ -118,6 +130,7 @@ impl TypeChecker {
         let output = Output {
             main_function: main_function.unwrap(),
             identifiables: self.identifiables,
+            interfaces_table: self.interfaces_table,
         };
 
         Ok(output)
@@ -210,6 +223,99 @@ impl TypeChecker {
         }
 
         true
+    }
+
+    fn build_interfaces_table(&self) -> InterfacesTable {
+        let mut interfaces_table = vec![];
+
+        let mut interfaces = vec![];
+
+        for identifiable in self.identifiables.values() {
+            if let Identifiable::Interface(interface) = identifiable {
+                interfaces.push(interface.clone());
+            }
+        }
+
+        for identifiable in self.identifiables.values() {
+            if matches!(
+                identifiable,
+                Identifiable::EnumConstructor(_) | Identifiable::Function(_),
+            ) {
+                continue;
+            }
+
+            for interface in &interfaces {
+                if let Some(mapping) = self.get_interface_mapping(identifiable, interface) {
+                    let identifiable = Rc::new(RefCell::new(identifiable.clone()));
+
+                    interfaces_table.push((interface.clone(), identifiable, mapping));
+                }
+            }
+        }
+
+        interfaces_table
+    }
+
+    fn get_interface_mapping(
+        &self,
+        identifiable: &Identifiable,
+        interface: &Rc<RefCell<Interface>>,
+    ) -> Option<InterfaceMapping> {
+        let interface = &*interface.borrow();
+
+        let mut mapping = HashMap::new();
+
+        for required_function in &interface.resolved().functions {
+            let target = self.get_interface_function_target(required_function, identifiable)?;
+            mapping.insert(required_function.name.clone(), target);
+        }
+
+        Some(mapping)
+    }
+
+    fn get_interface_function_target(
+        &self,
+        interface_function: &ResolvedInterfaceFunction,
+        identifiable: &Identifiable,
+    ) -> Option<Rc<RefCell<Function>>> {
+        let key = (
+            identifiable.key().0,
+            format!("{}:{}", identifiable.key().1, &interface_function.name),
+        );
+
+        let identifiable = self.identifiables.get(&key)?;
+
+        let Identifiable::Function(function_rc) = identifiable else {
+            return None;
+        };
+
+        let function = &*function_rc.borrow();
+
+        if function.arguments().len() != interface_function.arguments.len() {
+            return None;
+        }
+
+        for (interface_function_arg, function_arg) in
+            zip(&interface_function.arguments, &function.arguments()[1..])
+        {
+            if interface_function_arg.type_ != function_arg.type_ {
+                return None;
+            }
+        }
+
+        use ReturnTypes::*;
+
+        match (&interface_function.return_types, function.return_types()) {
+            (_, Never) => (),
+            (Never, Sometimes(_)) => return None,
+            (Sometimes(lhs), Sometimes(rhs)) => {
+                if lhs != rhs {
+                    return None;
+                }
+            }
+        }
+
+        Some(function_rc.clone())
     }
 }
 
@@ -414,28 +520,29 @@ impl<'a> FunctionTypeChecker<'a> {
         use FunctionBodyItem::*;
 
         match item {
-            Integer(_) => self.check_integer(stack),
-            String(_) => self.check_string(stack),
-            Boolean(_) => self.check_boolean(stack),
-            Char(_) => self.check_character(stack),
-            Branch(branch) => self.check_branch(stack, branch),
-            While(while_) => self.check_while(stack, while_),
-            CallFunction(call) => self.check_call_function(stack, call),
-            CallStruct(call) => self.check_call_struct(stack, call),
-            FunctionType(func_type) => self.check_function_type(stack, func_type),
-            CallEnum(call) => self.check_call_enum(stack, call),
-            CallArgument(call) => self.check_call_argument(stack, call),
-            Return(return_) => self.check_return(stack, return_),
-            Use(use_) => self.check_use(stack, use_),
-            CallLocalVariable(call) => self.check_call_local_variable(stack, call),
-            GetField(get_field) => self.check_get_field(stack, get_field),
-            SetField(set_field) => self.check_set_field(stack, set_field),
             Assignment(assignment) => self.check_assignment(stack, assignment),
-            GetFunction(get_function) => self.check_get_function(stack, get_function),
-            Foreach(foreach) => self.check_foreach(stack, foreach),
-            Match(match_) => self.check_match(stack, match_),
-            CallEnumConstructor(call) => self.check_call_enum_constructor(stack, call),
+            Boolean(_) => self.check_boolean(stack),
+            Branch(branch) => self.check_branch(stack, branch),
             Call(call) => self.check_call(stack, call),
+            CallArgument(call) => self.check_call_argument(stack, call),
+            CallEnum(call) => self.check_call_enum(stack, call),
+            CallEnumConstructor(call) => self.check_call_enum_constructor(stack, call),
+            CallFunction(call) => self.check_call_function(stack, call),
+            CallInterfaceFunction(function) => self.check_call_interface_function(stack, function),
+            CallLocalVariable(call) => self.check_call_local_variable(stack, call),
+            CallStruct(call) => self.check_call_struct(stack, call),
+            Char(_) => self.check_character(stack),
+            Foreach(foreach) => self.check_foreach(stack, foreach),
+            FunctionType(func_type) => self.check_function_type(stack, func_type),
+            GetField(get_field) => self.check_get_field(stack, get_field),
+            GetFunction(get_function) => self.check_get_function(stack, get_function),
+            Integer(_) => self.check_integer(stack),
+            Match(match_) => self.check_match(stack, match_),
+            Return(return_) => self.check_return(stack, return_),
+            SetField(set_field) => self.check_set_field(stack, set_field),
+            String(_) => self.check_string(stack),
+            Use(use_) => self.check_use(stack, use_),
+            While(while_) => self.check_while(stack, while_),
         }
     }
 
@@ -533,6 +640,7 @@ impl<'a> FunctionTypeChecker<'a> {
             name: function.name(),
             position: call.position.clone(),
             stack,
+            identifiables: &self.type_checker.identifiables,
         };
 
         checker.check()
@@ -785,7 +893,7 @@ impl<'a> FunctionTypeChecker<'a> {
     }
 
     fn check_foreach(&self, _stack: Vec<Type>, _for_each: &Foreach) -> TypeResult {
-        todo!() // TODO #214 Implement interfaces in Rust-based transpiler
+        todo!() // TODO #243 Support foreach loops
     }
 
     fn check_assignment(&mut self, stack: Vec<Type>, assignment: &Assignment) -> TypeResult {
@@ -1072,6 +1180,7 @@ impl<'a> FunctionTypeChecker<'a> {
             name: enum_ctor.name(),
             position: call.position.clone(),
             stack,
+            identifiables: &self.type_checker.identifiables,
         };
 
         checker.check()
@@ -1093,8 +1202,36 @@ impl<'a> FunctionTypeChecker<'a> {
             return_types: function_pointer.return_types,
             stack,
             type_params: HashMap::new(),
+            identifiables: &self.type_checker.identifiables,
         };
 
         checker.check()
+    }
+
+    fn check_call_interface_function(
+        &self,
+        stack: Vec<Type>,
+        call: &CallInterfaceFunction,
+    ) -> TypeResult {
+        let function = call.function.resolved_function();
+
+        let argument_types = function
+            .arguments
+            .iter()
+            .cloned()
+            .map(|arg| arg.type_)
+            .collect();
+
+        let call_checker = CallChecker {
+            name: call.function.name(),
+            position: call.position.clone(),
+            argument_types,
+            return_types: function.return_types.clone(),
+            stack: stack.clone(),
+            type_params: HashMap::new(),
+            identifiables: &self.type_checker.identifiables,
+        };
+
+        call_checker.check()
     }
 }

@@ -19,7 +19,7 @@ impl Display for SetValue {
 }
 
 impl UserType for SetValue {
-    fn kind(&self) -> String {
+    fn type_id(&self) -> String {
         String::from("SetValue")
     }
 
