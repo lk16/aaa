@@ -1,5 +1,7 @@
 /// name: while loop ok
 
+/// action: check
+
 fn main {
     while false {
         nop
@@ -9,6 +11,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: while loop fail condition
+
+/// action: check
 
 fn main {
     while 3 {
@@ -29,6 +33,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: while loop fail body
+
+/// action: check
 
 fn main {
     while true {

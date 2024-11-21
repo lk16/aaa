@@ -1,10 +1,4 @@
-use std::{
-    cell::RefCell,
-    fmt::{Debug, Display, Formatter, Result},
-    hash::Hash,
-    mem,
-    rc::Rc,
-};
+use std::{cell::RefCell, hash::Hash, mem, rc::Rc};
 
 use regex::Regex;
 
@@ -15,8 +9,8 @@ use crate::{
     vector::{Vector, VectorIterator},
 };
 
-pub trait UserType: Clone + Debug + Display + Hash + PartialEq {
-    fn kind(&self) -> String;
+pub trait UserType: Clone + Hash + PartialEq {
+    fn type_id(&self) -> String;
     fn clone_recursive(&self) -> Self;
 }
 
@@ -38,6 +32,8 @@ where
     SetIterator(Rc<RefCell<SetIterator<Variable<T>>>>),
     Regex(Rc<RefCell<Regex>>),
     FunctionPointer(fn(&mut Stack<T>)),
+    Option(Rc<RefCell<Option<Variable<T>>>>),
+    Result(Rc<RefCell<Result<Variable<T>, Variable<T>>>>),
     UserType(Rc<RefCell<T>>),
 }
 
@@ -94,6 +90,14 @@ where
 
     pub fn function_pointer_zero_value() -> Variable<T> {
         Variable::FunctionPointer(Stack::zero_function_pointer_value)
+    }
+
+    pub fn option_zero_value() -> Variable<T> {
+        Variable::Option(Rc::new(RefCell::new(None)))
+    }
+
+    pub fn result_zero_value() -> Variable<T> {
+        Variable::Result(Rc::new(RefCell::new(Ok(Variable::None))))
     }
 
     pub fn get_integer(&self) -> isize {
@@ -168,7 +172,7 @@ where
 
     pub fn get_function_pointer(&self) -> fn(&mut Stack<T>) {
         match self {
-            Self::FunctionPointer(v) => v.clone(),
+            Self::FunctionPointer(v) => *v,
             _ => unreachable!(),
         }
     }
@@ -185,22 +189,24 @@ impl<T> UserType for Variable<T>
 where
     T: UserType,
 {
-    fn kind(&self) -> String {
+    fn type_id(&self) -> String {
         match self {
-            Self::None => String::from("none"),
-            Self::Integer(_) => String::from("int"),
-            Self::Boolean(_) => String::from("bool"),
-            Self::Character(_) => String::from("char"),
-            Self::String(_) => String::from("str"),
-            Self::Vector(_) => String::from("vec"),
-            Self::Set(_) => String::from("set"),
-            Self::Map(_) => String::from("map"),
-            Self::VectorIterator(_) => String::from("vec_iter"),
-            Self::MapIterator(_) => String::from("map_iter"),
-            Self::SetIterator(_) => String::from("set_iter"),
-            Self::Regex(_) => String::from("regex"),
-            Self::FunctionPointer(_) => String::from("fn_ptr"),
-            Self::UserType(v) => (**v).borrow().kind(),
+            Self::Boolean(_) => String::from("builtins:bool"),
+            Self::Character(_) => String::from("builtins:char"),
+            Self::FunctionPointer(_) => String::from("builtins:fn_ptr"),
+            Self::Integer(_) => String::from("builtins:int"),
+            Self::Map(_) => String::from("builtins:map"),
+            Self::MapIterator(_) => String::from("builtins:map_iter"),
+            Self::None => String::from("builtins:none"),
+            Self::Option(_) => String::from("builtins:Option"),
+            Self::Regex(_) => String::from("builtins:regex"),
+            Self::Result(_) => String::from("builtins:Result"),
+            Self::Set(_) => String::from("builtins:set"),
+            Self::SetIterator(_) => String::from("builtins:set_iter"),
+            Self::String(_) => String::from("builtins:str"),
+            Self::Vector(_) => String::from("builtins:vec"),
+            Self::VectorIterator(_) => String::from("builtins:vec_iter"),
+            Self::UserType(v) => (**v).borrow().type_id(),
         }
     }
 
@@ -244,47 +250,19 @@ where
                 unreachable!(); // Cannot recursively clone an iterator
             }
             Self::Regex(regex) => Self::Regex(regex.clone()),
-            Self::FunctionPointer(v) => Self::FunctionPointer(v.clone()),
+            Self::FunctionPointer(v) => Self::FunctionPointer(*v),
             Self::UserType(v) => {
                 let cloned = (**v).borrow().clone_recursive();
                 Self::UserType(Rc::new(RefCell::new(cloned)))
             }
-        }
-    }
-}
-
-impl<T> Display for Variable<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            Self::Boolean(v) => write!(f, "{}", v),
-            Self::Integer(v) => write!(f, "{}", v),
-            Self::String(v) => write!(f, "{}", (**v).borrow()),
-            Self::Character(v) => write!(f, "{}", v),
-            Self::Vector(v) => write!(f, "{}", (**v).borrow()),
-            Self::Set(v) => write!(f, "{}", (**v).borrow().fmt_as_set()),
-            Self::Map(v) => write!(f, "{}", (**v).borrow()),
-            Self::VectorIterator(_) => write!(f, "vec_iter"),
-            Self::MapIterator(_) => write!(f, "map_iter"),
-            Self::SetIterator(_) => write!(f, "set_iter"),
-            Self::None => write!(f, "None"),
-            Self::Regex(_) => write!(f, "regex"),
-            Self::FunctionPointer(_) => write!(f, "func_ptr"),
-            Self::UserType(v) => write!(f, "{}", (**v).borrow()),
-        }
-    }
-}
-
-impl<T> Debug for Variable<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            Self::String(v) => write!(f, "{:?}", (**v).borrow()),
-            _ => write!(f, "{}", self),
+            Self::Option(v) => {
+                let cloned = (**v).borrow().clone();
+                Self::Option(Rc::new(RefCell::new(cloned)))
+            }
+            Self::Result(v) => {
+                let cloned = (**v).borrow().clone();
+                Self::Result(Rc::new(RefCell::new(cloned)))
+            }
         }
     }
 }
@@ -309,6 +287,8 @@ where
             }
             (Self::FunctionPointer(lhs), Self::FunctionPointer(rhs)) => lhs == rhs,
             (Self::UserType(lhs), Self::UserType(rhs)) => lhs == rhs,
+            (Self::Option(lhs), Self::Option(rhs)) => lhs == rhs,
+            (Self::Result(lhs), Self::Result(rhs)) => lhs == rhs,
             _ => unreachable!(), // Can't compare variables of different types
         }
     }
@@ -329,9 +309,7 @@ where
                 let string = (**v).borrow().clone();
                 Hash::hash(&string, state)
             }
-            _ => {
-                unreachable!() // Can't hash variables of different types
-            }
+            _ => unreachable!(), // Can't hash variables of different types
         }
     }
 }

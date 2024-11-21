@@ -1,19 +1,21 @@
 use chrono::Local;
-use sha2::{Digest, Sha256};
 
 use crate::{
-    common::{position::Position, traits::HasPosition},
+    common::{
+        hash::{hash_key, hash_position},
+        traits::HasPosition,
+    },
     cross_referencer::types::{
         function_body::{
             Assignment, Boolean, Branch, CallArgument, CallEnum, CallEnumConstructor, CallFunction,
-            CallLocalVariable, CallStruct, CaseBlock, Char, DefaultBlock, FunctionBody,
-            FunctionBodyItem, FunctionType, GetField, GetFunction, Integer, Match, ParsedString,
-            Return, SetField, Use, While,
+            CallInterfaceFunction, CallLocalVariable, CallStruct, CaseBlock, Char, DefaultBlock,
+            FunctionBody, FunctionBodyItem, FunctionType, GetField, GetFunction, Integer, Match,
+            ParsedString, Return, SetField, Use, While,
         },
         identifiable::{Enum, Function, Identifiable, ReturnTypes, Struct, Type},
     },
     transpiler::code::Code,
-    type_checker::type_checker,
+    type_checker::type_checker::{self, InterfacesTable},
 };
 use lazy_static::lazy_static;
 use std::{cell::RefCell, collections::HashMap, fs, iter::zip, path::PathBuf, rc::Rc};
@@ -49,6 +51,8 @@ lazy_static! {
             ("map", "Variable::map_zero_value()"),
             ("set", "Variable::set_zero_value()"),
             ("regex", "Variable::regex_zero_value()"),
+            ("Option", "Variable::option_zero_value()"),
+            ("Result", "Variable::result_zero_value()"),
         ];
 
         HashMap::from(array)
@@ -60,6 +64,7 @@ pub struct Transpiler {
     pub structs: HashMap<(PathBuf, String), Rc<RefCell<Struct>>>,
     pub enums: HashMap<(PathBuf, String), Rc<RefCell<Enum>>>,
     pub functions: HashMap<(PathBuf, String), Rc<RefCell<Function>>>,
+    pub interfaces_table: InterfacesTable,
     pub main_function: Rc<RefCell<Function>>,
     pub verbose: bool,
 }
@@ -100,15 +105,14 @@ impl Transpiler {
             functions,
             main_function: type_checked.main_function,
             verbose,
+            interfaces_table: type_checked.interfaces_table,
         }
     }
 
     pub fn run(&self) {
-        // TODO #225 Support runtime type checking
-
         let code = self.generate_file();
 
-        fs::create_dir_all(&self.transpiler_root_path.join("src")).unwrap();
+        fs::create_dir_all(self.transpiler_root_path.join("src")).unwrap();
         let main_path = self.transpiler_root_path.join("src/main.rs");
 
         if self.verbose {
@@ -124,6 +128,8 @@ impl Transpiler {
         code.add_code(self.generate_header_comment());
         code.add_code(self.generate_warning_silencing_macros());
         code.add_code(self.generate_imports());
+
+        code.add_code(self.generate_interface_mapping());
 
         code.add_code(self.generate_UserTypeEnum());
 
@@ -179,17 +185,79 @@ impl Transpiler {
         let mut code = Code::new();
 
         code.add_line("use aaa_stdlib::map::Map;");
-        code.add_line("use aaa_stdlib::stack::Stack;");
         code.add_line("use aaa_stdlib::set::{Set, SetValue};");
+        code.add_line("use aaa_stdlib::stack::Stack;");
         code.add_line("use aaa_stdlib::var::{UserType, Variable};");
         code.add_line("use aaa_stdlib::vector::Vector;");
+        code.add_line("use lazy_static::lazy_static;");
         code.add_line("use regex::Regex;");
         code.add_line("use std::cell::RefCell;");
         code.add_line("use std::collections::HashMap;");
-        code.add_line("use std::fmt::{Debug, Display, Formatter, Result};");
         code.add_line("use std::hash::Hash;");
         code.add_line("use std::process;");
         code.add_line("use std::rc::Rc;");
+        code.add_line("use std::sync::Arc;");
+        code.add_line("");
+
+        code
+    }
+
+    fn generate_interface_mapping(&self) -> Code {
+        let mut code = Code::new();
+
+        code.add_line("type InterfaceMapPointer = fn(&mut Stack<UserTypeEnum>);");
+        code.add_line("");
+
+        code.add_line("lazy_static! {");
+        code.add_line("static ref INTERFACE_MAPPING: Arc<HashMap<(&'static str, &'static str, &'static str), InterfaceMapPointer>> = {");
+
+        code.add_line("let hash_map = HashMap::from([");
+
+        code.indent();
+
+        for (interface_rc, implementor_rc, interface_mapping) in &self.interfaces_table {
+            let interface = &*interface_rc.borrow();
+            let implementor = &*implementor_rc.borrow();
+
+            let interface_hash = if interface.is_builtin() {
+                format!("builtins:{}", interface.name())
+            } else {
+                hash_key(interface.key())
+            };
+
+            let implementor_hash = if implementor.is_builtin() {
+                format!("builtins:{}", implementor.name())
+            } else {
+                hash_key(implementor.key())
+            };
+
+            // TODO generate comments for future debugging
+
+            for (function_name, function) in interface_mapping {
+                let function = &*function.borrow();
+
+                let function_ptr_expr = if function.is_builtin {
+                    format!("Stack::{}", self.generate_builtin_function_name(function))
+                } else {
+                    let hash = Self::hash_name(function.position().path, function.name());
+                    format!("user_func_{}", hash)
+                };
+
+                code.add_line(format!(
+                    "((\"{}\", \"{}\", \"{}\"), {} as InterfaceMapPointer),",
+                    interface_hash, implementor_hash, function_name, function_ptr_expr
+                ));
+            }
+        }
+
+        code.unindent();
+        code.add_line("]);");
+
+        code.add_line("Arc::new(hash_map)");
+
+        code.add_line("};");
+        code.add_line("}");
+
         code.add_line("");
 
         code
@@ -202,8 +270,6 @@ impl Transpiler {
         code.add_code(self.generate_UserTypeEnum_definition());
         code.add_code(self.generate_UserTypeEnum_impl());
         code.add_code(self.generate_UserTypeEnum_UserType_impl());
-        code.add_code(self.generate_UserTypeEnum_Display_impl());
-        code.add_code(self.generate_UserTypeEnum_Debug_impl());
 
         code
     }
@@ -215,8 +281,6 @@ impl Transpiler {
         code.add_code(self.generate_enum_constructors(enum_));
         code.add_code(self.generate_enum_impl(enum_));
         code.add_code(self.generate_enum_UserType_impl(enum_));
-        code.add_code(self.generate_enum_Display_impl(enum_));
-        code.add_code(self.generate_enum_Debug_impl(enum_));
         code.add_code(self.generate_enum_Hash_impl(enum_));
         code.add_code(self.generate_enum_PartialEq_impl(enum_));
 
@@ -229,8 +293,6 @@ impl Transpiler {
         code.add_code(self.generate_struct_definition(struct_));
         code.add_code(self.generate_struct_impl(struct_));
         code.add_code(self.generate_struct_UserType_impl(struct_));
-        code.add_code(self.generate_struct_Display_impl(struct_));
-        code.add_code(self.generate_struct_Debug_impl(struct_));
         code.add_code(self.generate_struct_Hash_impl(struct_));
         code.add_code(self.generate_struct_PartialEq_impl(struct_));
 
@@ -259,7 +321,7 @@ impl Transpiler {
     fn generate_UserTypeEnum_definition(&self) -> Code {
         let mut code = Code::new();
         code.add_line("#[derive(Clone, Hash, PartialEq)]");
-        code.add_line("enum UserTypeEnum {");
+        code.add_line("pub enum UserTypeEnum {");
 
         for ((path, name), struct_) in &self.structs {
             let struct_ = &*struct_.borrow();
@@ -308,7 +370,8 @@ impl Transpiler {
 
         code.add_line("}");
         code.add_line("");
-        return code;
+
+        code
     }
 
     #[allow(non_snake_case)]
@@ -318,14 +381,14 @@ impl Transpiler {
         let mut code = Code::new();
         code.add_line("impl UserType for UserTypeEnum {");
 
-        code.add_line("fn kind(&self) -> String {");
+        code.add_line("fn type_id(&self) -> String {");
 
         if names.is_empty() {
             code.add_line("unreachable!();");
         } else {
             code.add_line("match self {");
             for name in &names {
-                code.add_line(format!("Self::{name}(v) => v.kind(),"));
+                code.add_line(format!("Self::{name}(v) => v.type_id(),"));
             }
             code.add_line("}");
         }
@@ -356,65 +419,6 @@ impl Transpiler {
         code
     }
 
-    #[allow(non_snake_case)]
-    fn generate_UserTypeEnum_Display_impl(&self) -> Code {
-        let mut code = Code::new();
-
-        code.add_line("impl Display for UserTypeEnum {");
-
-        code.add_line("fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {");
-
-        let names = self.user_type_names();
-
-        if names.is_empty() {
-            code.add_line("unreachable!();");
-        } else {
-            code.add_line("match self {");
-
-            for name in names {
-                code.add_line(format!("Self::{}(v) => write!(f, \"{{}}\", v),", name));
-            }
-
-            code.add_line("}");
-        }
-
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
-        code
-    }
-
-    #[allow(non_snake_case)]
-    fn generate_UserTypeEnum_Debug_impl(&self) -> Code {
-        let mut code = Code::new();
-        code.add_line("impl Debug for UserTypeEnum {");
-
-        code.add_line("fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {");
-
-        let names = self.user_type_names();
-
-        if names.is_empty() {
-            code.add_line("unreachable!();");
-        } else {
-            code.add_line("match self {");
-
-            for name in names {
-                code.add_line(format!("Self::{}(v) => write!(f, \"{{}}\", v),", name));
-            }
-
-            code.add_line("}");
-        }
-
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
-        code
-    }
-
     fn generate_builtin_function_name(&self, function: &Function) -> String {
         let function_name = function.name();
 
@@ -422,28 +426,11 @@ impl Transpiler {
             return name.to_string();
         }
 
-        function_name.replace(":", "_")
+        function_name.replace(":", "_").to_lowercase()
     }
 
     fn hash_name(path: PathBuf, name: String) -> String {
-        let mut hasher = Sha256::new();
-        hasher.update(path.to_string_lossy().as_bytes());
-        hasher.update(name.as_bytes());
-
-        let hash = hasher.finalize();
-        let hash = format!("{:x}", hash);
-
-        hash[..16].to_owned()
-    }
-
-    fn hash_position(position: &Position) -> String {
-        let mut hasher = Sha256::new();
-        hasher.update(format!("{}", position).as_bytes());
-
-        let hash = hasher.finalize();
-        let hash = format!("{:x}", hash);
-
-        hash[..16].to_owned()
+        hash_key((path, name))
     }
 
     fn generate_function_name(&self, function: &Function) -> String {
@@ -473,10 +460,14 @@ impl Transpiler {
         let mut code = Code::new();
         code.add_line("fn main() {");
 
+        code.add_line("let interface_mapping = Arc::clone(&INTERFACE_MAPPING);");
+
         if main_function.arguments().is_empty() {
-            code.add_line("let mut stack: Stack<UserTypeEnum> = Stack::new();");
+            code.add_line("let mut stack: Stack<UserTypeEnum> = Stack::new(interface_mapping);");
         } else {
-            code.add_line("let mut stack:Stack<UserTypeEnum> = Stack::from_argv();");
+            code.add_line(
+                "let mut stack:Stack<UserTypeEnum> = Stack::from_argv(interface_mapping);",
+            );
         }
 
         code.add_line(format!("{}(&mut stack);", main_func_name));
@@ -537,27 +528,28 @@ impl Transpiler {
 
         match item {
             Assignment(assignment) => self.generate_assignment(assignment),
-            Branch(branch) => self.generate_branch(branch),
             Boolean(bool) => self.generate_boolean(bool),
+            Branch(branch) => self.generate_branch(branch),
             Call(_) => self.generate_call(),
             CallArgument(call) => self.generate_call_argument(call),
-            CallFunction(call) => self.generate_call_function(call),
             CallEnum(call) => self.generate_call_enum(call),
             CallEnumConstructor(call) => self.generate_call_enum_constructor(call),
+            CallFunction(call) => self.generate_call_function(call),
+            CallInterfaceFunction(call) => self.generate_call_interface_function(call),
             CallLocalVariable(call) => self.generate_call_local_variabiable(call),
             CallStruct(call) => self.generate_call_struct(call),
             Char(char) => self.generate_char(char),
-            Foreach(_) => unreachable!(), // TODO #214 support interfaces
+            Foreach(_) => unreachable!(), // TODO #243 Support foreach loops
             FunctionType(function_type) => self.generate_function_type(function_type),
+            GetField(get_field) => self.generate_get_field(get_field),
             GetFunction(get_function) => self.generate_get_function(get_function),
             Integer(integer) => self.generate_integer(integer),
             Match(match_) => self.generate_match(match_),
             Return(return_) => self.generate_return(return_),
-            GetField(get_field) => self.generate_get_field(get_field),
             SetField(set_field) => self.generate_set_field(set_field),
+            String(string) => self.generate_string(string),
             Use(use_) => self.generate_use(use_),
             While(while_) => self.generate_while(while_),
-            String(string) => self.generate_string(string),
         }
     }
 
@@ -704,6 +696,7 @@ impl Transpiler {
                 "Variable::FunctionPointer(Stack::zero_function_pointer_value)".to_owned()
             }
             Type::Parameter(_) => "Variable::None".to_owned(),
+            Type::Interface(_) => unreachable!(),
         }
     }
 
@@ -757,7 +750,7 @@ impl Transpiler {
         let enum_ = &*enum_rc.borrow();
         let enum_name = self.generate_enum_name(enum_);
 
-        let match_var = format!("match_var_{}", Self::hash_position(&match_.position));
+        let match_var = format!("match_var_{}", hash_position(&match_.position));
 
         let mut code = Code::new();
 
@@ -792,7 +785,7 @@ impl Transpiler {
         let data_items = enum_.variants().get(&block.variant_name).unwrap().len();
 
         // We add the hash of location to prevent collisions with nested case blocks.
-        let var_prefix = format!("case_var_{}", Self::hash_position(&block.position));
+        let var_prefix = format!("case_var_{}", hash_position(&block.position));
 
         let mut line = format!("{}::variant_{}(", enum_name, block.variant_name);
 
@@ -980,8 +973,8 @@ impl Transpiler {
 
         code.add_line(format!("impl UserType for {enum_name} {{"));
 
-        code.add_line("fn kind(&self) -> String {");
-        code.add_line(format!("String::from(\"{}\")", enum_.name()));
+        code.add_line("fn type_id(&self) -> String {");
+        code.add_line(format!("String::from(\"{}\")", enum_name));
         code.add_line("}");
 
         code.add_line("");
@@ -1018,98 +1011,6 @@ impl Transpiler {
     }
 
     #[allow(non_snake_case)]
-    fn generate_enum_Display_impl(&self, enum_: &Enum) -> Code {
-        let enum_name = self.generate_enum_name(enum_);
-
-        let mut code = Code::new();
-        code.add_line(format!("impl Display for {} {{", enum_name));
-
-        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-        code.add_line("match self {");
-
-        for (variant_name, associated_data) in enum_.variants() {
-            let mut line = format!("Self::variant_{}(", variant_name);
-            line += (0..associated_data.len())
-                .map(|i| format!("arg{}", i))
-                .collect::<Vec<String>>()
-                .join(", ")
-                .as_str();
-
-            line += ") => {";
-
-            code.add_line(line);
-
-            code.add_line(format!(
-                "write!(f, \"{}:{}{{{{\")?;",
-                enum_.name(),
-                variant_name
-            ));
-
-            for (offset, _) in associated_data.iter().enumerate() {
-                if offset != 0 {
-                    code.add_line("write!(f, \", \")?;");
-                }
-                code.add_line(format!("write!(f, \"{{:?}}\", arg{offset})?;"));
-            }
-
-            code.add_line("write!(f, \"}}\")");
-            code.add_line("}");
-        }
-        code.add_line("}");
-        code.add_line("}");
-        code.add_line("}");
-        code.add_line("");
-
-        code
-    }
-
-    #[allow(non_snake_case)]
-    fn generate_enum_Debug_impl(&self, enum_: &Enum) -> Code {
-        let enum_name = self.generate_enum_name(enum_);
-
-        let mut code = Code::new();
-        code.add_line(format!("impl Debug for {} {{", enum_name));
-
-        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-        code.add_line("match self {");
-
-        for (variant_name, associated_data) in enum_.variants() {
-            let mut line = format!("Self::variant_{}(", variant_name);
-            line += (0..associated_data.len())
-                .map(|i| format!("arg{}", i))
-                .collect::<Vec<String>>()
-                .join(", ")
-                .as_str();
-
-            line += ") => {";
-
-            code.add_line(line);
-
-            code.add_line(format!(
-                "write!(f, \"{}:{}{{{{\")?;",
-                enum_.name(),
-                variant_name
-            ));
-
-            for (offset, _) in associated_data.iter().enumerate() {
-                if offset != 0 {
-                    code.add_line("write!(f, \", \")?;");
-                }
-                code.add_line(format!("write!(f, \"{{:?}}\", arg{offset})?;"));
-            }
-
-            code.add_line("write!(f, \"}}\")");
-            code.add_line("}");
-        }
-        code.add_line("}");
-        code.add_line("}");
-        code.add_line("}");
-        code.add_line("");
-
-        code
-    }
-
-    #[allow(non_snake_case)]
     fn generate_enum_Hash_impl(&self, enum_: &Enum) -> Code {
         let name = self.generate_enum_name(enum_);
 
@@ -1119,14 +1020,14 @@ impl Transpiler {
 
         code.add_line("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {");
 
-        code.add_line("todo!();"); // TODO #125 Implement hash for structs and enums
+        code.add_line("todo!();"); // TODO #244 Support type param interface bounds: remove this from generated code and use interface Hash
 
         code.add_line("}");
 
         code.add_line("}");
         code.add_line("");
 
-        return code;
+        code
     }
 
     #[allow(non_snake_case)]
@@ -1139,7 +1040,7 @@ impl Transpiler {
 
         code.add_line("fn eq(&self, other: &Self) -> bool {");
 
-        code.add_line("todo!();"); // TODO #214 Implement interfaces
+        code.add_line("todo!();"); // TODO #244 Support type param interface bounds: remove this from generated code and use interface Equals
 
         code.add_line("}");
 
@@ -1214,8 +1115,8 @@ impl Transpiler {
 
         code.add_line(format!("impl UserType for {} {{", name));
 
-        code.add_line("fn kind(&self) -> String {");
-        code.add_line(format!("String::from(\"{}\")", struct_.name()));
+        code.add_line("fn type_id(&self) -> String {");
+        code.add_line(format!("String::from(\"{}\")", name));
         code.add_line("}");
 
         code.add_line("");
@@ -1241,72 +1142,6 @@ impl Transpiler {
     }
 
     #[allow(non_snake_case)]
-    fn generate_struct_Display_impl(&self, struct_: &Struct) -> Code {
-        let name = self.generate_struct_name(struct_);
-
-        let mut code = Code::new();
-
-        code.add_line(format!("impl Display for {} {{", name));
-
-        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-
-        code.add_line(format!("write!(f, \"{}{{{{\")?;", name));
-
-        for (offset, field_name) in struct_.fields().keys().enumerate() {
-            if offset != 0 {
-                code.add_line("write!(f, \", \")?;");
-            }
-
-            code.add_line(format!(
-                "write!(f, \"{}: {{}}\", self.{})?;",
-                field_name, field_name
-            ));
-        }
-
-        code.add_line("write!(f, \"}}\")");
-
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
-        return code;
-    }
-
-    #[allow(non_snake_case)]
-    fn generate_struct_Debug_impl(&self, struct_: &Struct) -> Code {
-        let name = self.generate_struct_name(struct_);
-
-        let mut code = Code::new();
-
-        code.add_line(format!("impl Debug for {} {{", name));
-
-        code.add_line("fn fmt(&self, f: &mut Formatter<'_>) -> Result {");
-
-        code.add_line(format!("write!(f, \"{}{{{{\")?;", name));
-
-        for (offset, field_name) in struct_.fields().keys().enumerate() {
-            if offset != 0 {
-                code.add_line("write!(f, \", \")?;");
-            }
-
-            code.add_line(format!(
-                "write!(f, \"{}: {{:?}}\", self.{})?;",
-                field_name, field_name
-            ));
-        }
-
-        code.add_line("write!(f, \"}}\")");
-
-        code.add_line("}");
-
-        code.add_line("}");
-        code.add_line("");
-
-        return code;
-    }
-
-    #[allow(non_snake_case)]
     fn generate_struct_Hash_impl(&self, struct_: &Struct) -> Code {
         let name = self.generate_struct_name(struct_);
 
@@ -1316,14 +1151,14 @@ impl Transpiler {
 
         code.add_line("fn hash<H: std::hash::Hasher>(&self, state: &mut H) {");
 
-        code.add_line("todo!();"); // TODO #125 Support hash for structs and enums
+        code.add_line("todo!();"); // TODO #244 Support type param interface bounds: remove this from generated code and use interface Hash
 
         code.add_line("}");
 
         code.add_line("}");
         code.add_line("");
 
-        return code;
+        code
     }
 
     #[allow(non_snake_case)]
@@ -1336,7 +1171,8 @@ impl Transpiler {
 
         code.add_line("fn eq(&self, other: &Self) -> bool {");
 
-        code.add_line("todo!();"); // TODO #214 Implement interfaces
+        code.add_line("todo!();");
+        // TODO #244 Support type param interface bounds: remove this from generated code and use interface Equals
 
         code.add_line("}");
 
@@ -1347,6 +1183,10 @@ impl Transpiler {
     }
 
     fn generate_enum_constructor_name(&self, enum_: &Enum, variant_name: String) -> String {
+        if enum_.is_builtin() {
+            return format!("{}_{}", enum_.name(), variant_name).to_lowercase();
+        }
+
         let function_name = format!("{}:{}", enum_.name(), variant_name);
         let hash = Self::hash_name(enum_.position().path, function_name);
         format!("enum_ctor_{}", hash)
@@ -1357,10 +1197,36 @@ impl Transpiler {
         let variant_name = enum_ctor.variant_name();
         let enum_ = &*enum_ctor.enum_.borrow();
         let enum_ctor_name = self.generate_enum_constructor_name(enum_, variant_name);
-        Code::from_string(format!("{}(stack);", enum_ctor_name))
+
+        if enum_.is_builtin() {
+            Code::from_string(format!("stack.{}();", enum_ctor_name))
+        } else {
+            Code::from_string(format!("{}(stack);", enum_ctor_name))
+        }
     }
 
     fn generate_call(&self) -> Code {
         Code::from_string("stack.pop_function_pointer_and_call();")
+    }
+
+    fn generate_call_interface_function(&self, call: &CallInterfaceFunction) -> Code {
+        let mut code = Code::new();
+
+        let interface = &call.function.interface.borrow();
+
+        let interface_hash = if interface.is_builtin() {
+            format!("builtins:{}", interface.name())
+        } else {
+            format!("user_type_{}", hash_key(interface.key()))
+        };
+
+        let function_name = &call.function.function_name;
+
+        code.add_line(format!(
+            "stack.call_interface_function(\"{}\", \"{}\");",
+            interface_hash, function_name,
+        ));
+
+        code
     }
 }

@@ -1,4 +1,11 @@
-use std::{cell::RefCell, collections::HashMap, fmt::Display, iter::zip, path::PathBuf, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    fmt::{Debug, Display},
+    iter::zip,
+    path::PathBuf,
+    rc::Rc,
+};
 
 use crate::{
     common::{formatting::join_display, position::Position, traits::HasPosition},
@@ -8,7 +15,6 @@ use crate::{
 use super::function_body::FunctionBody;
 
 pub struct Struct {
-    pub is_builtin: bool,
     pub parsed: parsed::Struct,
     pub resolved: Option<ResolvedStruct>,
 }
@@ -22,7 +28,6 @@ impl PartialEq for Struct {
 impl From<parsed::Struct> for Struct {
     fn from(parsed: parsed::Struct) -> Self {
         Self {
-            is_builtin: parsed.fields.is_none(),
             parsed,
             resolved: None,
         }
@@ -84,6 +89,10 @@ impl Struct {
 
         mapping
     }
+
+    pub fn is_builtin(&self) -> bool {
+        self.parsed.is_builtin
+    }
 }
 
 pub struct ResolvedStruct {
@@ -133,6 +142,13 @@ pub enum Type {
     Struct(StructType),
     Enum(EnumType),
     Parameter(TypeParameter),
+    Interface(InterfaceType),
+}
+
+impl Debug for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
 }
 
 impl Display for Type {
@@ -142,6 +158,7 @@ impl Display for Type {
             Self::Struct(struct_) => write!(f, "{}", struct_),
             Self::Enum(enum_) => write!(f, "{}", enum_),
             Self::Parameter(param) => write!(f, "{}", param),
+            Self::Interface(interface) => write!(f, "{}", interface),
         }
     }
 }
@@ -149,10 +166,11 @@ impl Display for Type {
 impl Type {
     pub fn kind(&self) -> &'static str {
         match &self {
-            &Self::FunctionPointer(_) => "function pointer",
-            &Self::Struct(_) => "struct",
-            &Self::Enum(_) => "enum",
-            &Self::Parameter(_) => "parameter",
+            Self::FunctionPointer(_) => "function pointer",
+            Self::Struct(_) => "struct",
+            Self::Enum(_) => "enum",
+            Self::Parameter(_) => "parameter",
+            Self::Interface(_) => "interface",
         }
     }
 }
@@ -164,6 +182,7 @@ impl HasPosition for Type {
             &Self::Struct(struct_type) => struct_type.struct_.borrow().position(),
             &Self::Enum(enum_type) => enum_type.enum_.borrow().position(),
             &Self::Parameter(parameter) => parameter.position.clone(),
+            &Self::Interface(interface_type) => interface_type.interface.borrow().position(),
         }
     }
 }
@@ -225,6 +244,17 @@ impl Display for FunctionPointerType {
 }
 
 #[derive(Clone, PartialEq)]
+pub struct InterfaceType {
+    pub interface: Rc<RefCell<Interface>>,
+}
+
+impl Display for InterfaceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.interface.borrow().name())
+    }
+}
+
+#[derive(Clone, PartialEq)]
 pub enum ReturnTypes {
     Sometimes(Vec<Type>),
     Never,
@@ -233,7 +263,7 @@ pub enum ReturnTypes {
 impl Display for ReturnTypes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Never => return write!(f, "never"),
+            Self::Never => write!(f, "never"),
             Self::Sometimes(types) => {
                 let joined_types = join_display(", ", types);
                 write!(f, "{}", joined_types)
@@ -274,7 +304,6 @@ impl Display for Argument {
 pub struct Enum {
     pub parsed: parsed::Enum,
     pub resolved: Option<ResolvedEnum>,
-    pub is_builtin: bool,
 }
 
 impl PartialEq for Enum {
@@ -286,7 +315,6 @@ impl PartialEq for Enum {
 impl From<parsed::Enum> for Enum {
     fn from(parsed: parsed::Enum) -> Self {
         Self {
-            is_builtin: false, // TODO #224 add is_builtin to parsed Enum, Struct and Function
             parsed,
             resolved: None,
         }
@@ -319,12 +347,12 @@ impl Enum {
     }
 
     pub fn zero_variant_name(&self) -> &String {
-        &self.parsed.variants.get(0).unwrap().name.value
+        &self.parsed.variants.first().unwrap().name.value
     }
 
     pub fn zero_variant_data(&self) -> &Vec<Type> {
         let name = self.zero_variant_name();
-        &self.variants().get(name).unwrap()
+        self.variants().get(name).unwrap()
     }
 
     pub fn parameter_names(&self) -> Vec<String> {
@@ -346,6 +374,10 @@ impl Enum {
         }
 
         mapping
+    }
+
+    pub fn is_builtin(&self) -> bool {
+        self.parsed.is_builtin
     }
 }
 
@@ -422,7 +454,7 @@ impl From<parsed::Function> for Function {
     fn from(parsed: parsed::Function) -> Self {
         Self {
             is_builtin: parsed.body.is_none(),
-            parsed: parsed,
+            parsed,
             resolved_signature: None,
             resolved_body: None,
         }
@@ -438,8 +470,7 @@ impl Function {
         self.signature()
             .arguments
             .iter()
-            .filter(|arg| &arg.name == name)
-            .next()
+            .find(|arg| &arg.name == name)
     }
 
     pub fn has_argument(&self, name: &String) -> bool {
@@ -519,6 +550,95 @@ impl HasPosition for Import {
     }
 }
 
+pub struct Interface {
+    pub parsed: parsed::Interface,
+    pub resolved: Option<ResolvedInterface>,
+}
+
+impl PartialEq for Interface {
+    fn eq(&self, other: &Self) -> bool {
+        self.name() == other.name() && self.position() == other.position()
+    }
+}
+
+impl Interface {
+    pub fn name(&self) -> String {
+        self.parsed.name.value.clone()
+    }
+
+    pub fn is_builtin(&self) -> bool {
+        self.parsed.is_builtin
+    }
+
+    pub fn resolved(&self) -> &ResolvedInterface {
+        match &self.resolved {
+            Some(resolved) => resolved,
+            None => unreachable!(),
+        }
+    }
+
+    pub fn key(&self) -> (PathBuf, String) {
+        (self.position().path, self.name())
+    }
+}
+
+impl HasPosition for Interface {
+    fn position(&self) -> Position {
+        self.parsed.position.clone()
+    }
+}
+
+impl From<parsed::Interface> for Interface {
+    fn from(parsed: parsed::Interface) -> Self {
+        Self {
+            parsed,
+            resolved: None,
+        }
+    }
+}
+
+pub struct ResolvedInterface {
+    pub functions: Vec<ResolvedInterfaceFunction>,
+}
+
+#[derive(Clone)]
+pub struct ResolvedInterfaceFunction {
+    pub name: String,
+    pub arguments: Vec<Argument>,
+    pub return_types: ReturnTypes,
+}
+
+#[derive(Clone)]
+pub struct InterfaceFunction {
+    pub interface: Rc<RefCell<Interface>>,
+    pub function_name: String,
+    pub position: Position,
+}
+
+impl InterfaceFunction {
+    pub fn name(&self) -> String {
+        format!("{}:{}", self.interface.borrow().name(), self.function_name)
+    }
+
+    pub fn resolved_function(&self) -> ResolvedInterfaceFunction {
+        let interface = self.interface.borrow();
+
+        interface
+            .resolved()
+            .functions
+            .iter()
+            .find(|function| function.name == self.function_name)
+            .unwrap()
+            .clone()
+    }
+}
+
+impl HasPosition for InterfaceFunction {
+    fn position(&self) -> Position {
+        self.position.clone()
+    }
+}
+
 #[derive(Clone)]
 pub enum Identifiable {
     Struct(Rc<RefCell<Struct>>),
@@ -526,6 +646,8 @@ pub enum Identifiable {
     EnumConstructor(Rc<RefCell<EnumConstructor>>),
     Function(Rc<RefCell<Function>>),
     Import(Rc<RefCell<Import>>),
+    Interface(Rc<RefCell<Interface>>),
+    InterfaceFunction(InterfaceFunction),
 }
 
 impl From<parsed::Struct> for Identifiable {
@@ -558,15 +680,32 @@ impl From<(parsed::Import, parsed::ImportItem)> for Identifiable {
     }
 }
 
+impl From<parsed::Interface> for Identifiable {
+    fn from(parsed: parsed::Interface) -> Self {
+        Identifiable::Interface(Rc::new(RefCell::new(parsed.into())))
+    }
+}
+
+impl From<(Rc<RefCell<Interface>>, &parsed::InterfaceFunction)> for Identifiable {
+    fn from(tuple: (Rc<RefCell<Interface>>, &parsed::InterfaceFunction)) -> Self {
+        Identifiable::InterfaceFunction(InterfaceFunction {
+            interface: tuple.0,
+            function_name: tuple.1.name.func_name.value.clone(),
+            position: tuple.1.position.clone(),
+        })
+    }
+}
+
 impl Identifiable {
     pub fn is_builtin(&self) -> bool {
         match self {
             Identifiable::Function(function) => function.borrow().is_builtin,
-            Identifiable::Struct(struct_) => struct_.borrow().is_builtin,
-            Identifiable::Enum(enum_) => enum_.borrow().is_builtin,
+            Identifiable::Struct(struct_) => struct_.borrow().is_builtin(),
+            Identifiable::Enum(enum_) => enum_.borrow().is_builtin(),
             Identifiable::EnumConstructor(enum_ctor) => {
-                enum_ctor.borrow().enum_.borrow().is_builtin
+                enum_ctor.borrow().enum_.borrow().is_builtin()
             }
+            Identifiable::Interface(interface) => interface.borrow().is_builtin(),
             _ => false,
         }
     }
@@ -578,6 +717,8 @@ impl Identifiable {
             Identifiable::Function(function) => function.borrow().name(),
             Identifiable::Import(import) => import.borrow().name(),
             Identifiable::Struct(struct_) => struct_.borrow().name(),
+            Identifiable::Interface(interface) => interface.borrow().name(),
+            Identifiable::InterfaceFunction(interface_function) => interface_function.name(),
         }
     }
 
@@ -594,6 +735,8 @@ impl HasPosition for Identifiable {
             Identifiable::Function(function) => function.borrow().position(),
             Identifiable::Import(import) => import.borrow().position(),
             Identifiable::Struct(struct_) => struct_.borrow().position(),
+            Identifiable::Interface(interface) => interface.borrow().position(),
+            Identifiable::InterfaceFunction(interface_function) => interface_function.position(),
         }
     }
 }
@@ -601,11 +744,13 @@ impl HasPosition for Identifiable {
 impl Display for Identifiable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let prefix = match self {
-            Identifiable::Enum(_) => "enum ",
+            Identifiable::Enum(_) => "enum",
             Identifiable::EnumConstructor(_) => "enum constructor",
             Identifiable::Function(_) => "function",
             Identifiable::Import(_) => "import",
             Identifiable::Struct(_) => "struct",
+            Identifiable::Interface(_) => "interface",
+            Identifiable::InterfaceFunction(_) => "interface function",
         };
 
         write!(f, "{} {}", prefix, self.name())

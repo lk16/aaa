@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt::Display, hash::Hash, rc::Rc};
+use std::{cell::RefCell, hash::Hash, rc::Rc};
 
 use crate::var::UserType;
 
@@ -79,19 +79,6 @@ where
         } // be sure borrow ends here
 
         vec
-    }
-}
-
-impl<T> Display for Vector<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut reprs: Vec<String> = vec![];
-        for item in self.iter() {
-            reprs.push(format!("{item:?}"))
-        }
-        write!(f, "[{}]", reprs.join(", "))
     }
 }
 

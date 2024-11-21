@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 use std::{
     collections::HashMap,
     fmt::Display,
-    path::{PathBuf, MAIN_SEPARATOR},
+    path::{Path, PathBuf, MAIN_SEPARATOR_STR},
 };
 
 use crate::{
@@ -17,10 +17,11 @@ pub struct SourceFile {
     pub functions: Vec<Function>,
     pub imports: Vec<Import>,
     pub structs: Vec<Struct>,
+    pub interfaces: Vec<Interface>,
 }
 
 impl SourceFile {
-    pub fn dependencies(&self, current_dir: &PathBuf) -> Vec<PathBuf> {
+    pub fn dependencies(&self, current_dir: &Path) -> Vec<PathBuf> {
         self.imports
             .iter()
             .map(|import| import.get_source_path(current_dir))
@@ -34,6 +35,7 @@ pub struct Enum {
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
     pub variants: Vec<EnumVariant>,
+    pub is_builtin: bool,
 }
 
 #[derive(Clone, Default)]
@@ -242,7 +244,7 @@ pub enum FunctionName {
 
 impl Default for FunctionName {
     fn default() -> Self {
-        return Self::Free(FreeFunctionName::default());
+        Self::Free(FreeFunctionName::default())
     }
 }
 
@@ -286,7 +288,7 @@ pub struct Import {
 }
 
 impl Import {
-    pub fn get_source_path(&self, current_dir: &PathBuf) -> PathBuf {
+    pub fn get_source_path(&self, current_dir: &Path) -> PathBuf {
         let source = &self.source.value;
 
         if source.ends_with(".aaa") {
@@ -306,7 +308,7 @@ impl Import {
             .path
             .parent()
             .unwrap()
-            .join(source.replace(".", &MAIN_SEPARATOR.to_string()));
+            .join(source.replace(".", MAIN_SEPARATOR_STR));
 
         path.set_extension("aaa");
 
@@ -345,7 +347,7 @@ pub enum ReturnTypes {
 
 impl Default for ReturnTypes {
     fn default() -> Self {
-        return ReturnTypes::Sometimes(vec![]);
+        ReturnTypes::Sometimes(vec![])
     }
 }
 
@@ -354,7 +356,8 @@ pub struct Struct {
     pub position: Position,
     pub name: Identifier,
     pub parameters: Vec<Identifier>,
-    pub fields: Option<Vec<StructField>>,
+    pub fields: Vec<StructField>,
+    pub is_builtin: bool,
 }
 
 #[derive(Clone)]
@@ -434,7 +437,7 @@ impl HasPosition for Type {
 
 impl Default for Type {
     fn default() -> Self {
-        return Self::Regular(RegularType::default());
+        Self::Regular(RegularType::default())
     }
 }
 
@@ -512,6 +515,22 @@ impl ParsedString {
             value: unescape_string(&token.value[1..token.len() - 1]),
         }
     }
+}
+
+#[derive(Default, Clone)]
+pub struct InterfaceFunction {
+    pub position: Position,
+    pub name: MemberFunctionName,
+    pub arguments: Vec<Argument>,
+    pub return_types: ReturnTypes,
+}
+
+#[derive(Default, Clone)]
+pub struct Interface {
+    pub position: Position,
+    pub name: Identifier,
+    pub functions: Vec<InterfaceFunction>,
+    pub is_builtin: bool,
 }
 
 lazy_static! {

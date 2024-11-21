@@ -1,26 +1,69 @@
 
 // elementary types
-builtin struct bool
-builtin struct int
-builtin struct str
-builtin struct char
+builtin struct bool {}
+builtin struct int {}
+builtin struct str {}
+builtin struct char {}
+
+builtin fn bool:show args self as bool return str
+builtin fn bool:debug args self as bool return str
+
+builtin fn int:show args self as int return str
+builtin fn int:debug args self as int return str
+
+builtin fn str:show args self as str return str
+builtin fn str:debug args self as str return str
+
+builtin fn char:show args self as char return str
+builtin fn char:debug args self as char return str
+
 
 // container types
-builtin struct map[K, V]
-builtin struct set[T]
-builtin struct vec[T]
+builtin struct map[K, V] {}
+builtin struct set[T] {}
+builtin struct vec[T] {}
+
+builtin fn map[K, V]:show args self as map[K, V] return str
+builtin fn map[K, V]:debug args self as map[K, V] return str
+
+builtin fn set[T]:show args self as set[T] return str
+builtin fn set[T]:debug args self as set[T] return str
+
+builtin fn vec[T]:show args self as vec[T] return str
+builtin fn vec[T]:debug args self as vec[T] return str
+
 
 // container iterator types
-builtin struct map_const_iter[K, V]
-builtin struct map_iter[K, V]
-builtin struct set_iter[T]
-builtin struct vec_const_iter[T]
-builtin struct vec_iter[T]
-
-builtin fn make_const[A] args a as A return const A
+builtin struct map_const_iter[K, V] {}
+builtin struct map_iter[K, V] {}
+builtin struct set_iter[T] {}
+builtin struct vec_const_iter[T] {}
+builtin struct vec_iter[T] {}
 
 // compiled regular expression
-builtin struct regex
+builtin struct regex {}
+
+builtin enum Option[T] {
+    none,
+    some as T,
+}
+
+builtin fn Option[T]:unwrap    args option as Option[T]                return T
+builtin fn Option[T]:unwrap_or args option as Option[T], default_ as T return T
+builtin fn Option[T]:is_some   args option as Option[T]                return bool
+builtin fn Option[T]:is_none   args option as Option[T]                return bool
+
+builtin enum Result[T, E] {
+    ok as T,
+    error as E,
+}
+
+builtin fn Result[T, E]:unwrap       args result as Result[T, E] return T
+builtin fn Result[T, E]:unwrap_error args result as Result[T, E] return E
+builtin fn Result[T, E]:is_ok        args result as Result[T, E] return bool
+builtin fn Result[T, E]:is_error     args result as Result[T, E] return bool
+
+builtin fn make_const[A] args a as A return const A
 
 // stack operations
 builtin fn copy[A]      args a as A                 return A, A  // The top object will be non-const
@@ -31,8 +74,8 @@ builtin fn rot[A, B, C] args a as A, b as B, c as C return B, C, A
 builtin fn swap[A, B]   args a as A, b as B         return B, A
 
 // special operators
-builtin fn .[A]         args   a as const A
-builtin fn repr[A]      args   a as const A                 return str
+builtin fn .            args   a as const Show
+builtin fn repr         args   a as const Debug             return str
 builtin fn assert       args   a as const bool
 builtin fn nop
 builtin fn =[A]         args lhs as const A, rhs as const A return bool
@@ -147,10 +190,7 @@ builtin fn regex:=    args lhs as const regex, rhs as const regex return bool
 builtin fn todo return never
 builtin fn unreachable return never
 
-
-
 // Syscall list: http://faculty.nps.edu/cseagle/assembly/sys_call.html
-
 builtin fn accept args fd as const int return str, int, int, bool
 builtin fn bind args fd as const int, ip_addr as str, port as int return bool
 builtin fn chdir args dir as const str return bool
@@ -176,3 +216,15 @@ builtin fn unsetenv args name as const str
 builtin fn usleep args microseconds as int
 builtin fn waitpid args pid as const int, options as const int return int, int, bool, bool
 builtin fn write args fd as const int, data as const str return int, bool
+
+builtin interface Show {
+    fn Self:show args self as const Self return str
+}
+
+builtin interface Debug {
+    fn Self:debug args self as const Self return str
+}
+
+// TODO detect name collisions of interface
+// TODO detect name collisions inside interface
+// TODO support checking if a type implements a certain interface

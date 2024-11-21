@@ -10,8 +10,8 @@ use super::types::{
     Argument, Assignment, Boolean, Branch, CallByPointer, CaseBlock, CaseLabel, Char, DefaultBlock,
     Enum, EnumVariant, Foreach, FreeFunctionCall, FreeFunctionName, Function, FunctionBody,
     FunctionBodyItem, FunctionCall, FunctionName, FunctionType, Identifier, Import, ImportItem,
-    Integer, Match, MemberFunctionCall, MemberFunctionName, RegularType, Return, ReturnTypes,
-    SourceFile, Struct, StructField, Type, While,
+    Integer, Interface, InterfaceFunction, Match, MemberFunctionCall, MemberFunctionName,
+    RegularType, Return, ReturnTypes, SourceFile, Struct, StructField, Type, While,
 };
 
 pub enum ParseError {
@@ -50,7 +50,7 @@ struct Parser {
 
 impl Parser {
     fn new(tokens: Vec<Token>) -> Self {
-        return Self { tokens };
+        Self { tokens }
     }
 
     fn parse(&self) -> Result<SourceFile, ParseError> {
@@ -89,17 +89,14 @@ impl Parser {
         let mut items = vec![];
         let item;
 
-        (item, offset) = parse_func(&self, offset)?;
+        (item, offset) = parse_func(self, offset)?;
         items.push(item);
 
-        loop {
-            match self.peek_token_type(offset) {
-                Some(TokenType::Comma) => offset += 1,
-                _ => break,
-            }
+        while let Some(TokenType::Comma) = self.peek_token_type(offset) {
+            offset += 1;
 
             let item;
-            (item, offset) = match parse_func(&self, offset) {
+            (item, offset) = match parse_func(self, offset) {
                 Ok((item, offset)) => (item, offset),
                 Err(_) => break,
             };
@@ -134,6 +131,11 @@ impl Parser {
                     offset = child_offset;
                     source_file.functions.push(function);
                 }
+                TokenType::Interface => {
+                    let (interface, child_offset) = self.parse_interface(offset)?;
+                    offset = child_offset;
+                    source_file.interfaces.push(interface);
+                }
                 TokenType::Builtin => {
                     let next_token = self.peek_token(offset + 1)?;
                     match next_token.type_ {
@@ -142,10 +144,20 @@ impl Parser {
                             (struct_, offset) = self.parse_struct(offset)?;
                             source_file.structs.push(struct_);
                         }
+                        TokenType::Enum => {
+                            let enum_;
+                            (enum_, offset) = self.parse_enum(offset)?;
+                            source_file.enums.push(enum_);
+                        }
                         TokenType::Fn => {
-                            let (function, child_offset) = self.parse_function(offset)?;
-                            offset = child_offset;
+                            let function;
+                            (function, offset) = self.parse_function(offset)?;
                             source_file.functions.push(function);
+                        }
+                        TokenType::Interface => {
+                            let interface;
+                            (interface, offset) = self.parse_interface(offset)?;
+                            source_file.interfaces.push(interface);
                         }
                         _ => return Err(ParseError::UnexpectedToken(token)),
                     }
@@ -159,14 +171,13 @@ impl Parser {
     fn parse_struct(&self, mut offset: usize) -> ParseResult<Struct> {
         let mut struct_ = Struct::default();
 
-        let mut is_builtin = false;
         let mut builtin_token = None;
 
         if self.peek_token_type(offset) == Some(TokenType::Builtin) {
             let first_token;
             (first_token, offset) = self.parse_token(offset, TokenType::Builtin)?;
             builtin_token = Some(first_token);
-            is_builtin = true;
+            struct_.is_builtin = true;
         }
 
         let struct_token;
@@ -183,11 +194,7 @@ impl Parser {
             (struct_.parameters, offset) = self.parse_parameter_list(offset)?;
         }
 
-        if !is_builtin {
-            let fields;
-            (fields, offset) = self.parse_struct_fields(offset)?;
-            struct_.fields = Some(fields);
-        }
+        (struct_.fields, offset) = self.parse_struct_fields(offset)?;
 
         Ok((struct_, offset))
     }
@@ -881,9 +888,22 @@ impl Parser {
     fn parse_enum(&self, mut offset: usize) -> ParseResult<Enum> {
         let mut enum_ = Enum::default();
 
-        let first_token;
-        (first_token, offset) = self.parse_token(offset, TokenType::Enum)?;
-        enum_.position = first_token.position();
+        let mut builtin_token = None;
+
+        if self.peek_token_type(offset) == Some(TokenType::Builtin) {
+            let first_token;
+            (first_token, offset) = self.parse_token(offset, TokenType::Builtin)?;
+            builtin_token = Some(first_token);
+            enum_.is_builtin = true;
+        }
+
+        let enum_token;
+        (enum_token, offset) = self.parse_token(offset, TokenType::Enum)?;
+
+        enum_.position = match builtin_token {
+            Some(builtin_token) => builtin_token.position(),
+            None => enum_token.position(),
+        };
 
         (enum_.name, offset) = self.parse_identifier(offset)?;
 
@@ -958,6 +978,59 @@ impl Parser {
         }
 
         Ok((item, offset))
+    }
+
+    fn parse_interface(&self, mut offset: usize) -> ParseResult<Interface> {
+        let mut interface = Interface::default();
+
+        let mut builtin_token = None;
+
+        if self.peek_token_type(offset) == Some(TokenType::Builtin) {
+            let first_token;
+            (first_token, offset) = self.parse_token(offset, TokenType::Builtin)?;
+            builtin_token = Some(first_token);
+            interface.is_builtin = true;
+        }
+
+        let interface_token;
+        (interface_token, offset) = self.parse_token(offset, TokenType::Interface)?;
+
+        interface.position = match builtin_token {
+            Some(builtin_token) => builtin_token.position(),
+            None => interface_token.position(),
+        };
+
+        (interface.name, offset) = self.parse_identifier(offset)?;
+
+        (_, offset) = self.parse_token(offset, TokenType::Start)?;
+        (interface.functions, offset) =
+            self.parse_comma_separated(offset, Parser::parse_interface_function)?;
+        (_, offset) = self.parse_token(offset, TokenType::End)?;
+
+        Ok((interface, offset))
+    }
+
+    fn parse_interface_function(&self, mut offset: usize) -> ParseResult<InterfaceFunction> {
+        let mut function = InterfaceFunction::default();
+
+        let fn_token;
+
+        (fn_token, offset) = self.parse_token(offset, TokenType::Fn)?;
+        function.position = fn_token.position();
+
+        (function.name, offset) = self.parse_member_function_name(offset)?;
+        (function.arguments, offset) = self.parse_arguments(offset)?;
+
+        if self.peek_token_type(offset) == Some(TokenType::Return) {
+            (function.return_types, offset) = self.parse_function_return_types(offset)?;
+        }
+
+        if self.tokens[offset - 1].type_ == TokenType::Comma {
+            // Prevent consuming trailing comma
+            offset -= 1;
+        }
+
+        Ok((function, offset))
     }
 }
 
@@ -1581,13 +1654,14 @@ mod tests {
 
     #[rstest]
     #[case("", false)]
-    #[case("builtin struct foo", true)]
-    #[case("builtin struct foo { }", false)]
-    #[case("builtin struct foo[A]", true)]
-    #[case("builtin struct foo[A,]", true)]
-    #[case("builtin struct foo[A,B]", true)]
-    #[case("builtin struct foo[A,B,]", true)]
-    #[case("builtin struct foo[A,B,]", true)]
+    #[case("builtin struct foo", false)]
+    #[case("builtin struct foo { }", true)]
+    #[case("builtin struct foo[A]", false)]
+    #[case("builtin struct foo[A] { }", true)]
+    #[case("builtin struct foo[A,] { }", true)]
+    #[case("builtin struct foo[A,B] { }", true)]
+    #[case("builtin struct foo[A,B,] { }", true)]
+    #[case("builtin struct foo[A,B,] { }", true)]
     #[case("struct foo { }", true)]
     #[case("struct foo", false)]
     #[case("struct foo[A] { }", true)]
@@ -1653,6 +1727,34 @@ mod tests {
     #[case("from \"file\" import foo, baz,", true)]
     fn test_parse_import(#[case] code: &str, #[case] expected_parsed: bool) {
         check_parse(code, expected_parsed, Parser::parse_import);
+    }
+
+    #[rstest]
+    #[case("", false)]
+    #[case("fn Self:foo args self as Self return int", true)]
+    #[case("fn Self:foo args self as Self", true)]
+    #[case("fn Self:foo args self as Self return int, bool", true)]
+    #[case("fn Self:foo args self as Self return never", true)]
+    #[case("fn Self:foo args self as Self, bar as Bar return int", true)]
+    #[case("fn foo args self as Self, bar as Bar return int", false)]
+    fn test_parse_interface_function(#[case] code: &str, #[case] expected_parsed: bool) {
+        check_parse(code, expected_parsed, Parser::parse_interface_function);
+    }
+
+    #[rstest]
+    #[case("", false)]
+    #[case("interface Fooable {}", false)]
+    #[case("interface Fooable { fn Self:foo args self as Self }", true)]
+    #[case("interface Fooable { fn Self:foo args self as Self, }", true)]
+    #[case(
+        "interface Fooable {
+            fn Self:foo args self as Self,
+            fn Self:foo args self as Self,
+        }",
+        true
+    )]
+    fn test_parse_interface(#[case] code: &str, #[case] expected_parsed: bool) {
+        check_parse(code, expected_parsed, Parser::parse_interface);
     }
 
     #[rstest]

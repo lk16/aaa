@@ -1,3 +1,0 @@
-fn main return never {
-    0 exit
-}

@@ -51,10 +51,12 @@
 	],
 	"repository": {
 		"keywords": {
-			"patterns": [{
-				"name": "keyword.control.aaa",
-				"match": "\\b(if|else|while|fn|as|args|return|import|from|struct|foreach|use|const|enum|match|case|default|call|builtin)\\b"
-			}]
+			"patterns": [
+				{
+					"name": "keyword.control.aaa",
+					"match": "\\b(if|else|while|fn|as|args|return|import|from|struct|foreach|use|const|enum|match|case|default|call|builtin|interface)\\b"
+				}
+			]
 		},
 		"strings": {
 			"name": "string.quoted.double.aaa",

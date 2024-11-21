@@ -1,5 +1,7 @@
 /// name: call struct ok
 
+/// action: check
+
 fn main {
     vec[int] drop
 }
@@ -7,6 +9,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: call struct with too many type parameters
+
+/// action: check
 
 fn main {
     vec[int, str]
@@ -24,6 +28,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: call struct with too few type parameters
+
+/// action: check
 
 fn main {
     vec

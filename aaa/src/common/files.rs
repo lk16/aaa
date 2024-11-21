@@ -8,15 +8,14 @@ pub fn repository_root() -> PathBuf {
         .canonicalize()
         .unwrap()
         .ancestors()
-        .skip(4)
-        .next()
+        .nth(4)
         .unwrap()
         .to_path_buf()
 }
 
-pub fn normalize_path(path: &PathBuf, current_dir: &PathBuf) -> PathBuf {
+pub fn normalize_path(path: &PathBuf, current_dir: &Path) -> PathBuf {
     let path = if path.is_relative() {
-        current_dir.join(&path)
+        current_dir.join(path)
     } else {
         path.clone()
     };

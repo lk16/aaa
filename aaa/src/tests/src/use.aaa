@@ -1,5 +1,7 @@
 /// name: use simple
 
+/// action: check
+
 fn main {
     3
     use x {
@@ -10,6 +12,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: use variable too early
+
+/// action: check
 
 fn main {
     3
@@ -30,6 +34,8 @@ fn main {
 
 /// name: use fail variable too late
 
+/// action: check
+
 fn main {
     x
     3
@@ -49,6 +55,8 @@ fn main {
 
 /// name: use fail stack underflow
 
+/// action: check
+
 fn main {
     use x {
         nop
@@ -66,6 +74,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: use fail same variable reused with overlap
+
+/// action: check
 
 fn main {
     3
@@ -90,6 +100,8 @@ fn main {
 
 /// name: use ok same variable reused without overlap
 
+/// action: check
+
 fn main {
     3
     use x {
@@ -105,6 +117,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: use fail argument name collision
+
+/// action: check
 
 fn main {
     nop
@@ -130,6 +144,8 @@ fn foo args x as int {
 
 /// name: use fail builtin function name collision
 
+/// action: check
+
 fn main {
     3
     use exit {
@@ -141,7 +157,7 @@ fn main {
 
 /// stderr:
 /// Found name collision:
-/// $AAA_STDLIB_PATH/builtins.aaa:161:1: function exit
+/// $AAA_STDLIB_PATH/builtins.aaa:201:1: function exit
 /// $SOURCE_PATH/main.aaa:3:9: local variable exit
 ///
 /// Found 1 errors
@@ -149,6 +165,8 @@ fn main {
 /// ----------------------------------------------------------------------------
 
 /// name: use fail builtin type name collision
+
+/// action: check
 
 fn main {
     3
@@ -161,7 +179,7 @@ fn main {
 
 /// stderr:
 /// Found name collision:
-/// $AAA_STDLIB_PATH/builtins.aaa:11:1: struct vec
+/// $AAA_STDLIB_PATH/builtins.aaa:24:1: struct vec
 /// $SOURCE_PATH/main.aaa:3:9: local variable vec
 ///
 /// Found 1 errors

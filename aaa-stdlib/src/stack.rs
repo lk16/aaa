@@ -1,8 +1,8 @@
 use std::{
     cell::RefCell,
+    collections::HashMap,
     env,
     ffi::CString,
-    fmt::{Display, Formatter, Result},
     fs,
     io::{stdout, Write},
     net::{Ipv4Addr, ToSocketAddrs},
@@ -10,6 +10,7 @@ use std::{
     process,
     rc::Rc,
     str::FromStr,
+    sync::Arc,
     thread::sleep,
     time::{Duration, SystemTime, UNIX_EPOCH},
     vec,
@@ -39,46 +40,30 @@ use crate::{
     vector::Vector,
 };
 
+pub type InterfaceMappingType<T> =
+    HashMap<(&'static str, &'static str, &'static str), fn(&mut Stack<T>)>;
+
 pub struct Stack<T>
 where
     T: UserType,
 {
     items: Vec<Variable<T>>,
-}
-
-impl<T> Display for Stack<T>
-where
-    T: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "Stack ({}):", self.len())?;
-        for item in self.items.iter() {
-            write!(f, " ")?;
-            write!(f, "{}", item)?;
-        }
-        Ok(())
-    }
-}
-
-impl<T> Default for Stack<T>
-where
-    T: UserType,
-{
-    fn default() -> Self {
-        Self::new()
-    }
+    interface_mapping: Arc<InterfaceMappingType<T>>,
 }
 
 impl<T> Stack<T>
 where
     T: UserType,
 {
-    pub fn new() -> Self {
-        Self { items: Vec::new() }
+    pub fn new(interface_mapping: Arc<InterfaceMappingType<T>>) -> Self {
+        Self {
+            items: Vec::new(),
+            interface_mapping,
+        }
     }
 
-    pub fn from_argv() -> Self {
-        let mut stack = Self::new();
+    pub fn from_argv(interface_mapping: Arc<InterfaceMappingType<T>>) -> Self {
+        let mut stack = Self::new(interface_mapping);
         let mut arg_vector = Vector::new();
         for arg in env::args() {
             arg_vector.push(Variable::String(Rc::new(RefCell::new(arg))));
@@ -101,13 +86,13 @@ where
     }
 
     fn pop_type_error(&self, expected_type: &str, found: &Variable<T>) -> ! {
-        let found = found.kind();
+        let found = found.type_id();
         let msg = format!("pop failed, expected {expected_type}, found {found}");
         self.type_error(&msg);
     }
 
     fn type_error_vec_str(&self, v: &Variable<T>) {
-        let found = v.kind();
+        let found = v.type_id();
         let msg = format!("expected vec[str], but found {found} in vec");
         self.type_error(&msg);
     }
@@ -283,14 +268,42 @@ where
         }
     }
 
+    pub fn pop_option(&mut self) -> Rc<RefCell<Option<Variable<T>>>> {
+        match self.pop() {
+            Variable::Option(v) => v,
+            v => self.pop_type_error("Option", &v),
+        }
+    }
+
+    pub fn pop_result(&mut self) -> Rc<RefCell<Result<Variable<T>, Variable<T>>>> {
+        match self.pop() {
+            Variable::Result(v) => v,
+            v => self.pop_type_error("Result", &v),
+        }
+    }
+
     pub fn pop_function_pointer_and_call(&mut self) {
         let func = self.pop_function_pointer();
         func(self);
     }
 
+    pub fn call_interface_function(&mut self, interface_name: &str, function_name: &str) {
+        let top = self.top();
+        let top_type_id = top.type_id();
+
+        let key = &(interface_name, top_type_id.as_str(), function_name);
+
+        let function = self.interface_mapping.get(key).unwrap();
+
+        function(self);
+    }
+
     pub fn print(&mut self) {
-        let top = self.pop();
-        print!("{top}");
+        self.call_interface_function("builtins:Show", "show");
+
+        let printed = self.pop_str();
+        print!("{}", printed.borrow());
+
         _ = stdout().flush(); // TODO remove when #67 `fflush` is added
     }
 
@@ -429,11 +442,10 @@ where
     }
 
     pub fn repr(&mut self) {
-        let top = self.pop();
-        let repr = format!("{top:?}");
-        self.push_str(&repr);
+        self.call_interface_function("builtins:Debug", "debug");
     }
 
+    #[allow(clippy::should_implement_trait)] // TODO #238 Rename drop function
     pub fn drop(&mut self) {
         self.pop();
     }
@@ -601,7 +613,7 @@ where
 
         let result = bind(fd as i32, &addr);
 
-        if !result.is_ok() {
+        if result.is_err() {
             self.push_bool(false);
         }
 
@@ -1034,7 +1046,7 @@ where
         let string_rc = self.pop_str();
         let string = &*string_rc.borrow();
 
-        match string.char_indices().skip(offset as usize).next() {
+        match string.char_indices().nth(offset as usize) {
             None => {
                 self.push_char('\0');
                 self.push_bool(false);
@@ -1054,7 +1066,7 @@ where
 
         string.push(char);
 
-        self.push_str(&string);
+        self.push_str(string);
     }
 
     pub fn vec_copy(&mut self) {
@@ -1103,7 +1115,10 @@ where
         let mut env: Vec<CString> = vec![];
 
         for (key, value) in popped_env.iter() {
-            env.push(CString::new(format!("{key:}={value:}")).unwrap())
+            let key = key.get_string();
+            let value = value.get_string();
+
+            env.push(CString::new(format!("{}={}", key.borrow(), value.borrow())).unwrap())
         }
 
         let argv_rc = self.pop_vec();
@@ -1521,7 +1536,7 @@ where
             let found_stack_top = self
                 .items
                 .iter()
-                .map(|i| i.kind())
+                .map(|i| i.type_id())
                 .collect::<Vec<_>>()
                 .join(" ");
 
@@ -1534,7 +1549,7 @@ where
         let start_index = self.items.len() - expected_top.len();
 
         for (actual, expected) in self.items.iter().skip(start_index).zip(expected_top.iter()) {
-            if actual.kind() != *expected && actual.kind() != "none" {
+            if actual.type_id() != *expected && actual.type_id() != "none" {
                 // #33 Remove check for none
                 ok = false;
             }
@@ -1545,7 +1560,7 @@ where
                 .items
                 .iter()
                 .skip(start_index)
-                .map(|i| i.kind())
+                .map(|i| i.type_id())
                 .collect::<Vec<_>>()
                 .join(" ");
 
@@ -1568,7 +1583,7 @@ where
 
     pub fn char_is_digit(&mut self) {
         let char = self.pop_char();
-        self.push_bool(char.is_digit(10));
+        self.push_bool(char.is_ascii_digit());
     }
 
     pub fn char_equals(&mut self) {
@@ -1604,5 +1619,192 @@ where
         let lhs = self.pop();
         let rhs = self.pop();
         self.push_bool(lhs == rhs);
+    }
+
+    pub fn option_some(&mut self) {
+        let popped = self.pop();
+        self.push(Variable::Option(Rc::new(RefCell::new(Some(popped)))));
+    }
+
+    pub fn option_none(&mut self) {
+        self.push(Variable::Option(Rc::new(RefCell::new(None))));
+    }
+
+    pub fn result_ok(&mut self) {
+        let popped = self.pop();
+        self.push(Variable::Result(Rc::new(RefCell::new(Ok(popped)))));
+    }
+
+    pub fn result_error(&mut self) {
+        let popped = self.pop();
+        self.push(Variable::Result(Rc::new(RefCell::new(Err(popped)))));
+    }
+
+    pub fn option_unwrap(&mut self) {
+        let option = self.pop_option();
+        let option = &*option.borrow();
+
+        match option {
+            Some(v) => self.push(v.clone()),
+            None => panic!("option:unwrap failed!"),
+        }
+    }
+
+    pub fn option_unwrap_or(&mut self) {
+        let default = self.pop();
+
+        let option = self.pop_option();
+        let option = &*option.borrow();
+
+        match option {
+            Some(v) => self.push(v.clone()),
+            None => self.push(default),
+        }
+    }
+
+    pub fn option_is_some(&mut self) {
+        let option = self.pop_option();
+        self.push_bool(option.borrow().is_some());
+    }
+
+    pub fn option_is_none(&mut self) {
+        let option = self.pop_option();
+        self.push_bool(option.borrow().is_none());
+    }
+
+    pub fn result_unwrap(&mut self) {
+        let result = self.pop_result();
+        let result = &*result.borrow();
+
+        match result {
+            Ok(v) => self.push(v.clone()),
+            Err(_) => panic!("result:unwrap failed"),
+        }
+    }
+
+    pub fn result_unwrap_error(&mut self) {
+        let result = self.pop_result();
+        let result = &*result.borrow();
+
+        match result {
+            Ok(_) => panic!("result:unwrap_error failed"),
+            Err(v) => self.push(v.clone()),
+        }
+    }
+
+    pub fn result_is_ok(&mut self) {
+        let result = self.pop_result();
+        self.push_bool(result.borrow().is_ok());
+    }
+
+    pub fn result_is_error(&mut self) {
+        let result = self.pop_result();
+        self.push_bool(result.borrow().is_err());
+    }
+
+    pub fn bool_show(&mut self) {
+        let popped = self.pop_bool();
+        self.push_str(format!("{}", popped).as_str());
+    }
+
+    pub fn int_show(&mut self) {
+        let popped = self.pop_int();
+        self.push_str(format!("{}", popped).as_str());
+    }
+
+    pub fn str_show(&mut self) {
+        self.dup();
+    }
+
+    pub fn char_show(&mut self) {
+        let popped = self.pop_char();
+        self.push_str(format!("{}", popped).as_str());
+    }
+
+    pub fn map_show(&mut self) {
+        let popped = self.pop_map();
+
+        let mut parts: Vec<String> = vec![];
+
+        for (key, value) in popped.borrow().iter() {
+            self.push(key);
+            self.call_interface_function("builtins:Debug", "debug");
+            let key_str = self.pop_str();
+
+            self.push(value);
+            self.call_interface_function("builtins:Debug", "debug");
+            let value_str = self.pop_str();
+
+            parts.push(format!(
+                "{}: {}",
+                (*key_str.borrow()).clone(),
+                (*value_str.borrow()).clone()
+            ));
+        }
+
+        let combined = format!("{{{}}}", parts.join(", "));
+        self.push_str(combined.as_str());
+    }
+
+    pub fn set_show(&mut self) {
+        let popped = self.pop_set();
+
+        let mut parts: Vec<String> = vec![];
+
+        for (key, _) in popped.borrow().iter() {
+            self.push(key);
+            self.call_interface_function("builtins:Debug", "debug");
+            let key_str = self.pop_str();
+
+            parts.push((*key_str.borrow()).clone());
+        }
+
+        let combined = format!("{{{}}}", parts.join(", "));
+        self.push_str(combined.as_str());
+    }
+
+    pub fn vec_show(&mut self) {
+        let popped = self.pop_vec();
+
+        let mut parts: Vec<String> = vec![];
+
+        for item in popped.borrow().iter() {
+            self.push(item);
+            self.call_interface_function("builtins:Debug", "debug");
+            let part = self.pop_str();
+            parts.push((*part.borrow()).clone());
+        }
+
+        let combined = format!("[{}]", parts.join(", "));
+        self.push_str(combined.as_str());
+    }
+
+    pub fn bool_debug(&mut self) {
+        self.bool_show();
+    }
+
+    pub fn int_debug(&mut self) {
+        self.int_show();
+    }
+
+    pub fn str_debug(&mut self) {
+        let popped = self.pop_str();
+        self.push_str(format!("{:?}", popped.borrow()).as_str());
+    }
+
+    pub fn char_debug(&mut self) {
+        self.char_show();
+    }
+
+    pub fn map_debug(&mut self) {
+        self.map_show();
+    }
+
+    pub fn set_debug(&mut self) {
+        self.set_show();
+    }
+
+    pub fn vec_debug(&mut self) {
+        self.vec_show();
     }
 }

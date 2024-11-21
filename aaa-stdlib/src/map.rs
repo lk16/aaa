@@ -1,7 +1,6 @@
 use std::{
     cell::RefCell,
     collections::hash_map::DefaultHasher,
-    fmt::{Display, Formatter, Result},
     hash::{Hash, Hasher},
     rc::Rc,
 };
@@ -149,16 +148,6 @@ where
             );
         }
     }
-
-    pub fn fmt_as_set(&self) -> String {
-        let mut parts = vec![];
-        for bucket in self.buckets.borrow().iter() {
-            for (k, _) in bucket.iter() {
-                parts.push(format!("{k:?}"));
-            }
-        }
-        format!("{{{}}}", parts.join(","))
-    }
 }
 
 impl<K, V> PartialEq for Map<K, V>
@@ -191,22 +180,6 @@ where
     K: UserType,
     V: UserType,
 {
-}
-
-impl<K, V> Display for Map<K, V>
-where
-    K: UserType,
-    V: UserType,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let mut parts = vec![];
-        for bucket in self.buckets.borrow().iter() {
-            for (k, v) in bucket.iter() {
-                parts.push(format!("{k:?}: {v:?}"));
-            }
-        }
-        write!(f, "{{{}}}", parts.join(", "))
-    }
 }
 
 impl<K, V> Clone for Map<K, V>

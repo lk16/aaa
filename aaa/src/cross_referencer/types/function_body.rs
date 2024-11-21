@@ -5,7 +5,9 @@ use std::{cell::RefCell, fmt::Display};
 use crate::common::position::Position;
 use crate::parser::types as parsed;
 
-use super::identifiable::{Enum, EnumConstructor, Function, ReturnTypes, Struct, Type};
+use super::identifiable::{
+    Enum, EnumConstructor, Function, InterfaceFunction, ReturnTypes, Struct, Type,
+};
 
 pub struct FunctionBody {
     pub position: Position,
@@ -14,54 +16,56 @@ pub struct FunctionBody {
 
 pub enum FunctionBodyItem {
     Assignment(Assignment),
-    Branch(Branch),
     Boolean(Boolean),
+    Branch(Branch),
     Call(Call),
     CallArgument(CallArgument),
-    CallFunction(CallFunction),
     CallEnum(CallEnum),
     CallEnumConstructor(CallEnumConstructor),
+    CallFunction(CallFunction),
+    CallInterfaceFunction(CallInterfaceFunction),
     CallLocalVariable(CallLocalVariable),
     CallStruct(CallStruct),
     Char(Char),
     Foreach(Foreach),
     FunctionType(FunctionType),
+    GetField(GetField),
     GetFunction(GetFunction),
     Integer(Integer),
     Match(Match),
     Return(Return),
-    GetField(GetField),
     SetField(SetField),
+    String(ParsedString),
     Use(Use),
     While(While),
-    String(ParsedString),
 }
 
 impl Display for FunctionBodyItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Assignment(_) => write!(f, "Assignment"),
-            Self::Branch(_) => write!(f, "Branch"),
             Self::Boolean(_) => write!(f, "Boolean"),
+            Self::Branch(_) => write!(f, "Branch"),
             Self::Call(_) => write!(f, "Call"),
             Self::CallArgument(_) => write!(f, "CallArgument"),
-            Self::CallFunction(_) => write!(f, "CallFunction"),
             Self::CallEnum(_) => write!(f, "CallEnum"),
             Self::CallEnumConstructor(_) => write!(f, "CallEnumConstructor"),
+            Self::CallFunction(_) => write!(f, "CallFunction"),
+            Self::CallInterfaceFunction(_) => write!(f, "CallInterfaceFunction"),
             Self::CallLocalVariable(_) => write!(f, "CallLocalVariable"),
             Self::CallStruct(_) => write!(f, "CallStruct"),
             Self::Char(_) => write!(f, "Char"),
             Self::Foreach(_) => write!(f, "Foreach"),
             Self::FunctionType(_) => write!(f, "FunctionType"),
+            Self::GetField(_) => write!(f, "GetField"),
             Self::GetFunction(_) => write!(f, "CallByName"),
             Self::Integer(_) => write!(f, "Integer"),
             Self::Match(_) => write!(f, "Match"),
             Self::Return(_) => write!(f, "Return"),
-            Self::GetField(_) => write!(f, "GetField"),
             Self::SetField(_) => write!(f, "SetField"),
+            Self::String(_) => write!(f, "String"),
             Self::Use(_) => write!(f, "Use"),
             Self::While(_) => write!(f, "While"),
-            Self::String(_) => write!(f, "String"),
         }
     }
 }
@@ -70,27 +74,28 @@ impl FunctionBodyItem {
     pub fn position(&self) -> Position {
         match self {
             Self::Assignment(item) => item.position.clone(),
-            Self::Branch(item) => item.position.clone(),
             Self::Boolean(item) => item.position.clone(),
+            Self::Branch(item) => item.position.clone(),
             Self::Call(item) => item.position.clone(),
             Self::CallArgument(item) => item.position.clone(),
-            Self::CallFunction(item) => item.position.clone(),
             Self::CallEnum(item) => item.position.clone(),
             Self::CallEnumConstructor(item) => item.position.clone(),
+            Self::CallFunction(item) => item.position.clone(),
+            Self::CallInterfaceFunction(item) => item.position.clone(),
             Self::CallLocalVariable(item) => item.position.clone(),
             Self::CallStruct(item) => item.position.clone(),
             Self::Char(item) => item.position.clone(),
             Self::Foreach(item) => item.position.clone(),
             Self::FunctionType(item) => item.position.clone(),
+            Self::GetField(item) => item.position.clone(),
             Self::GetFunction(item) => item.position.clone(),
             Self::Integer(item) => item.position.clone(),
             Self::Match(item) => item.position.clone(),
             Self::Return(item) => item.position.clone(),
-            Self::GetField(item) => item.position.clone(),
             Self::SetField(item) => item.position.clone(),
+            Self::String(item) => item.position.clone(),
             Self::Use(item) => item.position.clone(),
             Self::While(item) => item.position.clone(),
-            Self::String(item) => item.position.clone(),
         }
     }
 }
@@ -136,7 +141,7 @@ pub struct Char {
     pub value: char,
 }
 
-#[allow(dead_code)] // TODO #214 implement interfaces
+#[allow(dead_code)] // TODO #243 Support foreach loops
 pub struct Foreach {
     pub position: Position,
     pub body: FunctionBody,
@@ -248,4 +253,9 @@ pub struct While {
 pub struct ParsedString {
     pub position: Position,
     pub value: String,
+}
+
+pub struct CallInterfaceFunction {
+    pub position: Position,
+    pub function: InterfaceFunction,
 }

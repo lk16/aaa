@@ -1,6 +1,6 @@
 use std::{
     cell::{Cell, RefCell},
-    collections::{hash_map::Entry as HashMapEntry, HashMap, HashSet},
+    collections::{HashMap, HashSet},
     fmt::Debug,
     path::PathBuf,
     rc::Rc,
@@ -14,20 +14,23 @@ use super::{
     types::{
         function_body::{
             Assignment, Boolean, Branch, Call, CallArgument, CallEnum, CallEnumConstructor,
-            CallFunction, CallLocalVariable, CallStruct, CaseBlock, Char, DefaultBlock, Foreach,
-            FunctionBody, FunctionBodyItem, GetField, GetFunction, Integer, Match, ParsedString,
-            Return, SetField, Use, Variable, While,
+            CallFunction, CallInterfaceFunction, CallLocalVariable, CallStruct, CaseBlock, Char,
+            DefaultBlock, Foreach, FunctionBody, FunctionBodyItem, GetField, GetFunction, Integer,
+            Match, ParsedString, Return, SetField, Use, Variable, While,
         },
         identifiable::{
             Argument, Enum, EnumType, Function, FunctionPointerType, FunctionSignature,
-            Identifiable, Import, ResolvedEnum, ResolvedStruct, ReturnTypes, Struct, StructType,
-            Type,
+            Identifiable, Import, Interface, InterfaceType, ResolvedEnum, ResolvedInterface,
+            ResolvedInterfaceFunction, ResolvedStruct, ReturnTypes, Struct, StructType, Type,
         },
     },
 };
 use crate::{
     common::{position::Position, traits::HasPosition},
-    cross_referencer::{errors::get_function_non_function, types::function_body::FunctionType},
+    cross_referencer::{
+        errors::{get_function_non_function, invalid_interface_function},
+        types::function_body::FunctionType,
+    },
     parser::types::{self as parsed, SourceFile},
     type_checker::errors::NameCollision,
 };
@@ -93,7 +96,7 @@ impl CrossReferencer {
             self.errors.push(error);
         }
 
-        if self.errors.len() > 0 {
+        if !self.errors.is_empty() {
             return Err(self.errors);
         }
 
@@ -108,7 +111,7 @@ impl CrossReferencer {
         &mut self,
         path: &PathBuf,
     ) -> Result<(), CrossReferencerError> {
-        if self.dependency_stack.contains(&path) {
+        if self.dependency_stack.contains(path) {
             let mut dependencies = self.dependency_stack.clone();
             dependencies.push(path.clone());
 
@@ -160,36 +163,33 @@ impl CrossReferencer {
         }
 
         for identifiable in indentifiables.iter() {
-            let key = identifiable.key();
+            if let Some(colliding) = self
+                .identifiables
+                .insert(identifiable.key(), identifiable.clone())
+            {
+                let error = CrossReferencerError::NameCollision(NameCollision {
+                    items: [Box::new(colliding.clone()), Box::new(identifiable.clone())],
+                });
 
-            match self.identifiables.entry(key) {
-                HashMapEntry::Vacant(entry) => {
-                    entry.insert(identifiable.clone());
-                }
-                HashMapEntry::Occupied(entry) => {
-                    let error = CrossReferencerError::NameCollision(NameCollision {
-                        items: [
-                            Box::new(entry.get().clone()),
-                            Box::new(identifiable.clone()),
-                        ],
-                    });
-
-                    self.errors.push(error);
-                }
-            };
+                self.errors.push(error);
+            }
         }
 
         let mut structs = vec![];
         let mut enums = vec![];
         let mut functions = vec![];
         let mut imports = vec![];
+        let mut interfaces = vec![];
+        let mut interface_functions = vec![];
 
-        for identifiable in indentifiables.iter() {
+        for identifiable in indentifiables.into_iter() {
             match identifiable {
-                Identifiable::Struct(struct_) => structs.push(struct_.clone()),
-                Identifiable::Enum(enum_) => enums.push(enum_.clone()),
-                Identifiable::Function(function) => functions.push(function.clone()),
-                Identifiable::Import(import) => imports.push(import.clone()),
+                Identifiable::Struct(struct_) => structs.push(struct_),
+                Identifiable::Enum(enum_) => enums.push(enum_),
+                Identifiable::Function(function) => functions.push(function),
+                Identifiable::Import(import) => imports.push(import),
+                Identifiable::Interface(interface) => interfaces.push(interface),
+                Identifiable::InterfaceFunction(function) => interface_functions.push(function),
                 _ => (),
             }
         }
@@ -223,6 +223,12 @@ impl CrossReferencer {
                 self.errors.push(error);
             }
         }
+
+        for interface in interfaces.iter().cloned() {
+            if let Err(error) = self.resolve_interface(interface) {
+                self.errors.push(error);
+            }
+        }
     }
 
     fn load_file(&self, source_file: &SourceFile) -> Vec<Identifiable> {
@@ -232,11 +238,12 @@ impl CrossReferencer {
         identifiables.extend(Self::load_enums(&source_file.enums));
         identifiables.extend(Self::load_functions(&source_file.functions));
         identifiables.extend(Self::load_imports(&source_file.imports));
+        identifiables.extend(Self::load_interfaces(&source_file.interfaces));
 
         identifiables
     }
 
-    fn load_structs(parsed_structs: &Vec<parsed::Struct>) -> Vec<Identifiable> {
+    fn load_structs(parsed_structs: &[parsed::Struct]) -> Vec<Identifiable> {
         parsed_structs
             .iter()
             .cloned()
@@ -244,7 +251,7 @@ impl CrossReferencer {
             .collect()
     }
 
-    fn load_enums(parsed_enums: &Vec<parsed::Enum>) -> Vec<Identifiable> {
+    fn load_enums(parsed_enums: &[parsed::Enum]) -> Vec<Identifiable> {
         let mut identifiables = vec![];
 
         for parsed_enum in parsed_enums.iter() {
@@ -265,7 +272,7 @@ impl CrossReferencer {
         identifiables
     }
 
-    fn load_functions(parsed_functions: &Vec<parsed::Function>) -> Vec<Identifiable> {
+    fn load_functions(parsed_functions: &[parsed::Function]) -> Vec<Identifiable> {
         parsed_functions
             .iter()
             .cloned()
@@ -273,7 +280,7 @@ impl CrossReferencer {
             .collect()
     }
 
-    fn load_imports(parsed_imports: &Vec<parsed::Import>) -> Vec<Identifiable> {
+    fn load_imports(parsed_imports: &[parsed::Import]) -> Vec<Identifiable> {
         let mut imports = vec![];
 
         for parsed_import in parsed_imports.iter() {
@@ -284,6 +291,26 @@ impl CrossReferencer {
         }
 
         imports
+    }
+
+    fn load_interfaces(parsed_interfaces: &[parsed::Interface]) -> Vec<Identifiable> {
+        let mut identifiables = vec![];
+
+        for parsed_interface in parsed_interfaces {
+            let identifiable: Identifiable = parsed_interface.clone().into();
+
+            identifiables.push(identifiable.clone());
+
+            let Identifiable::Interface(interface) = identifiable else {
+                unreachable!();
+            };
+
+            for parsed_interface_function in &parsed_interface.functions {
+                identifiables.push((interface.clone(), parsed_interface_function).into());
+            }
+        }
+
+        identifiables
     }
 
     fn resolve_import(&self, import_rc: Rc<RefCell<Import>>) -> Result<(), CrossReferencerError> {
@@ -356,12 +383,10 @@ impl CrossReferencer {
         let struct_ = struct_rc.borrow();
         let mut fields = HashMap::new();
 
-        if let Some(parsed_fields) = &struct_.parsed.fields {
-            for parsed_field in parsed_fields {
-                let name = parsed_field.name.value.clone();
-                let field = self.resolve_type(&parsed_field.type_, &type_parameters)?;
-                fields.insert(name, field);
-            }
+        for parsed_field in &struct_.parsed.fields {
+            let name = parsed_field.name.value.clone();
+            let field = self.resolve_type(&parsed_field.type_, type_parameters)?;
+            fields.insert(name, field);
         }
 
         Ok(fields)
@@ -486,6 +511,7 @@ impl CrossReferencer {
                 struct_,
                 parameters,
             }),
+            Identifiable::Interface(interface) => Type::Interface(InterfaceType { interface }),
             _ => unreachable!(),
         };
 
@@ -500,9 +526,9 @@ impl CrossReferencer {
         let builtins_key = &(self.builtins_path.clone(), name.clone());
         let key = (position.path.clone(), name.clone());
 
-        let mut identifiable = self.identifiables.get(&builtins_key);
+        let mut identifiable = self.identifiables.get(builtins_key);
 
-        if let None = identifiable {
+        if identifiable.is_none() {
             identifiable = self.identifiables.get(&key);
         }
 
@@ -605,7 +631,7 @@ impl CrossReferencer {
             let mut data = vec![];
 
             for unresolved_data_item in parsed_variant.data.iter() {
-                let data_item = self.resolve_type(&unresolved_data_item, &type_parameters)?;
+                let data_item = self.resolve_type(unresolved_data_item, type_parameters)?;
                 data.push(data_item);
             }
             variants.insert(name, data);
@@ -619,9 +645,15 @@ impl CrossReferencer {
         function_rc: Rc<RefCell<Function>>,
     ) -> Result<(), CrossReferencerError> {
         let type_parameters = self.resolve_function_parameters(function_rc.clone())?;
-        let arguments = self.resolve_function_arguments(function_rc.clone(), &type_parameters)?;
-        let return_types =
-            self.resolve_function_return_types(function_rc.clone(), &type_parameters)?;
+        let arguments = {
+            let parsed_arguments = &function_rc.borrow().parsed.arguments;
+            self.resolve_function_arguments(parsed_arguments, &type_parameters)?
+        };
+
+        let return_types = {
+            let parsed_return_types = &function_rc.borrow().parsed.return_types;
+            self.resolve_function_return_types(parsed_return_types, &type_parameters)?
+        };
 
         (*function_rc).borrow_mut().resolved_signature = Some(FunctionSignature {
             type_parameters,
@@ -669,14 +701,10 @@ impl CrossReferencer {
 
     fn resolve_function_arguments(
         &self,
-        function_rc: Rc<RefCell<Function>>,
+        parsed_arguments: &[parsed::Argument],
         type_parameters: &HashMap<String, Type>,
     ) -> Result<Vec<Argument>, CrossReferencerError> {
-        let function = function_rc.borrow();
-
-        function
-            .parsed
-            .arguments
+        parsed_arguments
             .iter()
             .map(|parsed| self.resolve_function_argument(parsed, type_parameters))
             .collect()
@@ -684,12 +712,10 @@ impl CrossReferencer {
 
     fn resolve_function_return_types(
         &self,
-        function_rc: Rc<RefCell<Function>>,
+        parsed_return_types: &parsed::ReturnTypes,
         type_parameters: &HashMap<String, Type>,
     ) -> Result<ReturnTypes, CrossReferencerError> {
-        let function = function_rc.borrow();
-
-        let types = match &function.parsed.return_types {
+        let types = match &parsed_return_types {
             parsed::ReturnTypes::Never => return Ok(ReturnTypes::Never),
             parsed::ReturnTypes::Sometimes(types) => types,
         };
@@ -740,10 +766,10 @@ impl CrossReferencer {
             ),
         };
 
-        return Ok(Type::FunctionPointer(FunctionPointerType {
+        Ok(Type::FunctionPointer(FunctionPointerType {
             argument_types,
             return_types,
-        }));
+        }))
     }
 
     fn resolve_function_return_type(
@@ -776,6 +802,7 @@ impl CrossReferencer {
                 struct_,
                 parameters,
             }),
+            Identifiable::Interface(interface) => Type::Interface(InterfaceType { interface }),
             _ => unreachable!(),
         };
 
@@ -824,6 +851,9 @@ impl CrossReferencer {
                         parameters,
                     }),
                     Identifiable::Enum(enum_) => Type::Enum(EnumType { enum_, parameters }),
+                    Identifiable::Interface(interface) => {
+                        Type::Interface(InterfaceType { interface })
+                    }
                     _ => todo!(), // InvalidType
                 }
             }
@@ -831,6 +861,79 @@ impl CrossReferencer {
         };
 
         Ok(type_)
+    }
+
+    fn validate_interface_function_self_argument(
+        interface: &Interface,
+        interface_function: &parsed::InterfaceFunction,
+    ) -> Result<(), CrossReferencerError> {
+        // The parser enforces we get at least one argument
+        let first_argument = interface_function.arguments.first().unwrap();
+
+        let function_name = interface_function.name.func_name.value.clone();
+        let interface_name = interface.name();
+        let position = interface_function.position.clone();
+
+        if first_argument.name.value != "self" {
+            return invalid_interface_function(position, function_name, interface_name);
+        };
+
+        let parsed::Type::Regular(type_) = &first_argument.type_ else {
+            return invalid_interface_function(position, function_name, interface_name);
+        };
+
+        if type_.name.value != "Self" {
+            return invalid_interface_function(position, function_name, interface_name);
+        }
+
+        // TODO ban usage of the "Self" identifier in any other place
+
+        Ok(())
+    }
+
+    fn resolve_interface(
+        &self,
+        interface_rc: Rc<RefCell<Interface>>,
+    ) -> Result<(), CrossReferencerError> {
+        let mut resolved_functions = vec![];
+
+        {
+            let interface = &*interface_rc.borrow();
+
+            for function in &interface.parsed.functions {
+                Self::validate_interface_function_self_argument(interface, function)?;
+
+                let mut resolved_arguments = vec![];
+
+                // TODO replace interface function arguments by interface when their type is Self
+                resolved_arguments.push(Argument {
+                    name: function.arguments[0].name.value.clone(),
+                    position: function.arguments[0].position(),
+                    type_: Type::Interface(InterfaceType {
+                        interface: interface_rc.clone(),
+                    }),
+                });
+
+                resolved_arguments.extend(
+                    self.resolve_function_arguments(&function.arguments[1..], &HashMap::new())?,
+                );
+
+                let resolved_function = ResolvedInterfaceFunction {
+                    name: function.name.func_name.value.clone(),
+                    arguments: resolved_arguments,
+                    return_types: self
+                        .resolve_function_return_types(&function.return_types, &HashMap::new())?,
+                };
+
+                resolved_functions.push(resolved_function);
+            }
+        }
+
+        (*interface_rc).borrow_mut().resolved = Some(ResolvedInterface {
+            functions: resolved_functions,
+        });
+
+        Ok(())
     }
 
     fn resolve_function(
@@ -939,7 +1042,7 @@ impl<'a> FunctionBodyResolver<'a> {
             .variables
             .iter()
             .cloned()
-            .map(|var| Variable::from(var))
+            .map(Variable::from)
             .collect();
 
         let assignment = Assignment {
@@ -1029,7 +1132,7 @@ impl<'a> FunctionBodyResolver<'a> {
             }));
         }
 
-        if let Some(_) = self.local_variables.get(&name) {
+        if self.local_variables.contains(&name) {
             return Ok(FunctionBodyItem::CallLocalVariable(CallLocalVariable {
                 name,
                 position,
@@ -1055,33 +1158,36 @@ impl<'a> FunctionBodyResolver<'a> {
         match identifiable {
             Identifiable::Import(_) => unreachable!(),
             Identifiable::Function(function_rc) => {
-                return Ok(FunctionBodyItem::CallFunction(CallFunction {
+                Ok(FunctionBodyItem::CallFunction(CallFunction {
                     function: function_rc.clone(),
                     type_parameters: parameters,
                     position: parsed.position(),
                 }))
             }
-            Identifiable::Enum(enum_rc) => {
-                return Ok(FunctionBodyItem::CallEnum(CallEnum {
-                    enum_: enum_rc.clone(),
-                    type_parameters: parameters,
-                    position: parsed.position(),
-                }))
-            }
-            Identifiable::Struct(struct_rc) => {
-                return Ok(FunctionBodyItem::CallStruct(CallStruct {
-                    struct_: struct_rc.clone(),
-                    type_parameters: parameters,
-                    position: parsed.position(),
-                }))
-            }
+            Identifiable::Enum(enum_rc) => Ok(FunctionBodyItem::CallEnum(CallEnum {
+                enum_: enum_rc.clone(),
+                type_parameters: parameters,
+                position: parsed.position(),
+            })),
+            Identifiable::Struct(struct_rc) => Ok(FunctionBodyItem::CallStruct(CallStruct {
+                struct_: struct_rc.clone(),
+                type_parameters: parameters,
+                position: parsed.position(),
+            })),
             Identifiable::EnumConstructor(enum_ctor) => {
-                return Ok(FunctionBodyItem::CallEnumConstructor(CallEnumConstructor {
+                Ok(FunctionBodyItem::CallEnumConstructor(CallEnumConstructor {
                     enum_constructor: enum_ctor.clone(),
                     type_parameters: parameters,
                     position: parsed.position(),
-                }));
+                }))
             }
+            Identifiable::Interface(_) => todo!(), // TODO calling an interface should lead to an error
+            Identifiable::InterfaceFunction(function) => Ok(
+                FunctionBodyItem::CallInterfaceFunction(CallInterfaceFunction {
+                    function,
+                    position: parsed.position(),
+                }),
+            ),
         }
     }
 
@@ -1190,7 +1296,7 @@ impl<'a> FunctionBodyResolver<'a> {
             .variables
             .iter()
             .cloned()
-            .map(|var| Variable::from(var))
+            .map(Variable::from)
             .collect();
 
         for variable in &variables {
@@ -1260,7 +1366,7 @@ impl<'a> FunctionBodyResolver<'a> {
             .variables
             .iter()
             .cloned()
-            .map(|var| Variable::from(var))
+            .map(Variable::from)
             .collect();
 
         for variable in &variables {

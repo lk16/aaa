@@ -3,7 +3,7 @@ use std::{
     env,
     fs::{self, read_to_string},
     io,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
 };
 
@@ -93,9 +93,10 @@ impl Runner {
             let runner_error: RunnerError = error.into();
             eprint!("{}", runner_error);
         }
-        eprintln!("");
+        eprintln!();
         eprintln!("Found {} errors", error_count);
-        return 1;
+
+        1
     }
 
     fn parse_entrypoint(&self) -> Result<SourceFile, RunnerError> {
@@ -103,8 +104,8 @@ impl Runner {
         Ok(parsed)
     }
 
-    fn parse_file(&self, code: &String, path: &PathBuf) -> Result<SourceFile, RunnerError> {
-        let tokens = tokenize_filtered(&code, Some(path.clone()))?;
+    fn parse_file(&self, code: &str, path: &Path) -> Result<SourceFile, RunnerError> {
+        let tokens = tokenize_filtered(code, Some(path.to_path_buf()))?;
         let parsed = parse(tokens)?;
 
         Ok(parsed)
@@ -158,7 +159,7 @@ impl Runner {
             .join(random_folder_name())
     }
 
-    fn compile(&self, transpiler_root_path: &PathBuf) -> Result<PathBuf, RunnerError> {
+    fn compile(&self, transpiler_root_path: &Path) -> Result<PathBuf, RunnerError> {
         // Use shared target dir between executables,
         // because every Aaa compilation would otherwise take 120 MB disk,
         // due to Rust dependencies.
@@ -171,7 +172,7 @@ impl Runner {
         let stdlib_impl_path = repository_root().join("aaa-stdlib");
 
         // Join strings in this ugly fashion to prevent leading whitespace in generated Cargo.toml
-        let cargo_toml_content = vec![
+        let cargo_toml_content = [
             "[package]",
             "name = \"aaa-stdlib-user\"",
             "version = \"0.1.0\"",
@@ -184,6 +185,7 @@ impl Runner {
             )
             .as_str(),
             "regex = \"1.8.4\"",
+            "lazy_static = \"1.4.0\"",
             "",
         ]
         .join("\n");
@@ -216,7 +218,7 @@ impl Runner {
         let binary_path = cargo_target_dir.join("release/aaa-stdlib-user");
 
         if let Some(requested_binary_path) = &self.options.output_binary {
-            fs::rename(binary_path, &requested_binary_path).unwrap();
+            fs::rename(binary_path, requested_binary_path).unwrap();
 
             return Ok(requested_binary_path.clone());
         }
@@ -266,10 +268,8 @@ impl Runner {
                     .expect("could not run binary")
                     .code()
                     .unwrap();
-            } else {
-                if self.options.output_binary.is_none() {
-                    println!("Generated binary in {}", binary_path.display());
-                }
+            } else if self.options.output_binary.is_none() {
+                println!("Generated binary in {}", binary_path.display());
             }
         }
 

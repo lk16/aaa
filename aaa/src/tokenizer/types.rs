@@ -30,7 +30,7 @@ impl Token {
 
 impl HasPosition for Token {
     fn position(&self) -> Position {
-        return self.position.clone();
+        self.position.clone()
     }
 }
 
@@ -53,6 +53,7 @@ pub enum TokenType {
     Fn,
     If,
     Import,
+    Interface,
     Match,
     Never,
     Return,
@@ -99,6 +100,7 @@ impl TokenType {
             | TokenType::Fn
             | TokenType::If
             | TokenType::Import
+            | TokenType::Interface
             | TokenType::Match
             | TokenType::Never
             | TokenType::Return
@@ -111,14 +113,11 @@ impl TokenType {
     }
 
     pub fn is_filtered(&self) -> bool {
-        match self {
-            TokenType::Comment | TokenType::Whitespace => true,
-            _ => false,
-        }
+        matches!(self, TokenType::Comment | TokenType::Whitespace)
     }
 }
 
-const TOKEN_TYPE_REGEXES: &[(TokenType, &'static str, usize)] = &[
+const TOKEN_TYPE_REGEXES: &[(TokenType, &str, usize)] = &[
     (TokenType::Args, "(args)([^_a-zA-Z]|$)", 1),
     (TokenType::As, "(as)([^_a-zA-Z]|$)", 1),
     (TokenType::Builtin, "(builtin)([^_a-zA-Z]|$)", 1),
@@ -134,6 +133,7 @@ const TOKEN_TYPE_REGEXES: &[(TokenType, &'static str, usize)] = &[
     (TokenType::Fn, "(fn)([^_a-zA-Z]|$)", 1),
     (TokenType::If, "(if)([^_a-zA-Z]|$)", 1),
     (TokenType::Import, "(import)([^_a-zA-Z]|$)", 1),
+    (TokenType::Interface, "(interface)([^_a-zA-Z]|$)", 1),
     (TokenType::Match, "(match)([^_a-zA-Z]|$)", 1),
     (TokenType::Never, "(never)([^_a-zA-Z]|$)", 1),
     (TokenType::Return, "(return)([^_a-zA-Z]|$)", 1),
@@ -175,7 +175,7 @@ const TOKEN_TYPE_REGEXES: &[(TokenType, &'static str, usize)] = &[
 ];
 
 lazy_static! {
-    pub static ref ENUM_REGEX_PAIRS: Vec<(TokenType, Regex, usize)> = {
+    pub static ref TOKEN_REGEX_TUPLES: Vec<(TokenType, Regex, usize)> = {
         let mut pairs = Vec::new();
         for (token_type, pattern, group) in TOKEN_TYPE_REGEXES.iter() {
             let regex = Regex::new(pattern).expect("Failed to compile regex pattern");
@@ -261,6 +261,9 @@ mod tests {
     #[case("import", Some(TokenType::Import))]
     #[case("import_", Some(TokenType::Identifier))]
     #[case("importx", Some(TokenType::Identifier))]
+    #[case("interface", Some(TokenType::Interface))]
+    #[case("interface_", Some(TokenType::Identifier))]
+    #[case("interfacex", Some(TokenType::Identifier))]
     #[case("match", Some(TokenType::Match))]
     #[case("match_", Some(TokenType::Identifier))]
     #[case("matchx", Some(TokenType::Identifier))]

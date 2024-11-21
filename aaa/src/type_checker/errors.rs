@@ -1,3 +1,5 @@
+#![allow(clippy::result_large_err)] // TODO #239 Handle linter error for large error result
+
 use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
 use crate::{
@@ -5,6 +7,7 @@ use crate::{
     cross_referencer::types::identifiable::{Identifiable, ReturnTypes, Type},
 };
 
+#[allow(clippy::enum_variant_names)]
 pub enum TypeError {
     BranchError(BranchError),
     CondtionError(ConditionError),
@@ -1077,6 +1080,7 @@ impl Display for MemberFunctionUnexpectedTarget {
     }
 }
 
+// TODO find ways to run these checks for the builtins file
 pub fn member_function_unexpected_target<T>(
     position: Position,
     function_name: String,
